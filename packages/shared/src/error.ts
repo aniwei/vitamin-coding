@@ -15,6 +15,7 @@ export class Error extends globalThis.Error {
 export class ConfigError extends Error {}
 export class NetworkError extends Error {}
 export class ProviderError extends Error {}
+export class OAuthError extends Error {}
 export class StreamError extends Error {}
 export class AgentError extends Error {}
 export class ToolError extends Error {}

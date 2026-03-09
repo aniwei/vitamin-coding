@@ -235,13 +235,18 @@ export function createCopilotProvider(): ProviderStream {
     id: 'github-copilot',
     displayName: 'GitHub Copilot',
 
-    async *stream(
+
+    async resolveKey(model: Model): Promise<string> {
+      
+    }
+
+    async *converse(
       model: Model,
       context: StreamContext,
       options: StreamOptions,
       signal: AbortSignal,
     ): AsyncIterable<StreamEvent> {
-      const key = options.key ?? ''
+      const key = this.resolveKey(model)
       const baseUrl = model.baseUrl ?? 'https://api.githubcopilot.com'
       const url = `${baseUrl}/chat/completions`
       const body = createStreamBody(model, context)

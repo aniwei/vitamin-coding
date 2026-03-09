@@ -13,15 +13,7 @@ export function resolvePath(...segments: string[]): string {
 }
 
 // 标识项目根目录的标记文件
-const PROJECT_ROOT_MARKERS = [
-  '.git',
-  'package.json',
-  'pnpm-workspace.yaml',
-  'Cargo.toml',
-  'go.mod',
-  'pyproject.toml',
-  '.vitamin',
-]
+const PROJECT_ROOT_MARKER = '.vitamin'
 
 // 从 startDir 开始向上遍历，查找包含根标记的目录
 // 如果到达文件系统根仍未找到则返回 undefined
@@ -30,10 +22,8 @@ export async function findProjectRoot(startDir: string): Promise<string | undefi
   let searching = true
 
   while (searching) {
-    for (const marker of PROJECT_ROOT_MARKERS) {
-      if (await exists(resolve(current, marker))) {
-        return current
-      }
+    if (await exists(resolve(current, PROJECT_ROOT_MARKER))) {
+      return current
     }
 
     const parent = dirname(current)

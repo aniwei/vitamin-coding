@@ -179,9 +179,7 @@ export interface StreamContext {
 
 // 流式选项
 export interface StreamOptions {
-  provider: ProviderStream,
   signal?: AbortSignal
-  key?: string
   maxRetries?: number
   timeout?: number
   proxy?: string
@@ -236,12 +234,14 @@ export interface ProviderStream {
   readonly displayName: string
 
   // 流式调用（核心方法）
-  stream(
+  converse(
     model: Model<Api>,
     context: StreamContext,
     options: StreamOptions,
     signal: AbortSignal,
   ): AsyncIterable<StreamEvent>
+
+  key(): Promise<string>
 
   // 平台健康检查
   healthCheck?(key: string): Promise<boolean>
@@ -250,21 +250,25 @@ export interface ProviderStream {
 // Provider 工厂函数类型
 export type ProviderFactory = () => ProviderStream
 
+export type OAuthStore = {
+  type: 'oauth'
+  refreshToken: string
+  accessToken: string
+  expires: number
+}
+
 // OAuth 适配器接口
 export interface OAuth {
   // 唯一标识
   readonly id: string
   readonly displayName: string
 
-  auth(
+  authorize(
     model: Model<Api>,
     context: StreamContext,
     options: StreamOptions,
     signal: AbortSignal,
   ): AsyncIterable<StreamEvent>
-
-  // 平台健康检查
-  healthCheck?(key: string): Promise<boolean>
 }
 
 export type OAuthFactory = () => OAuth

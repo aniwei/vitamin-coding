@@ -5,7 +5,7 @@ import { ProviderError } from '@vitamin/shared'
 
 import { readCopilotOAuthToken } from './copilot-auth'
 
-import type { KnownProvider, Provider } from './types'
+import type { Provider } from './types'
 
 // 环境变量到 Provider 的映射
 const ENV_KEY_MAP: Record<string, string[]> = {

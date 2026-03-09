@@ -2,10 +2,10 @@ import { readFile } from 'node:fs/promises'
 import { homedir } from 'node:os'
 import { join } from 'node:path'
 
-interface CopilotOAuthRecord {
+interface CopilotOAuthStore {
   type: 'oauth'
-  refresh: string
-  access: string
+  refreshToken: string
+  accessToken: string
   expires: number
 }
 

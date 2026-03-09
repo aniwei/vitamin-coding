@@ -1,13 +1,18 @@
 // Provider 注册表 — 管理所有 LLM 提供商适配器
-import { ProviderError } from '@vitamin/shared'
+import { OAuthError } from '@vitamin/shared'
 
-import type { Api } from './types'
+import type { Api, OAuthStore } from './types'
 import type { OAuth, OAuthFactory } from './types'
 
 // OAuth 注册表
 export class OAuthRegistry {
   private readonly factories = new Map<Api, OAuthFactory>()
   private readonly instances = new Map<Api, OAuth>()
+  private readonly stores = new Map<Api, OAuthStore>()
+
+  constructor() {
+
+  }
 
   // 注册 OAuth 工厂
   register(api: Api, factory: OAuthFactory): void {
@@ -26,8 +31,8 @@ export class OAuthRegistry {
 
     const factory = this.factories.get(api)
     if (!factory) {
-      throw new ProviderError(`Oauth not registered, api: ${api}`, {
-        code: 'PROVIDER_NOT_FOUND',
+      throw new OAuthError(`OAuth not registered, api: ${api}`, {
+        code: 'OAUTH_NOT_FOUND',
       })
     }
 
@@ -41,7 +46,7 @@ export class OAuthRegistry {
     return this.factories.has(api)
   }
 
-  // 列出所有已注册的 API 类型
+  // 列出所有已注册的
   list(): Api[] {
     return [...this.factories.keys()]
   }
@@ -63,3 +68,4 @@ export class OAuthRegistry {
 export function createOAuthRegistry(): OAuthRegistry {
   return new OAuthRegistry()
 }
+
