@@ -232,6 +232,8 @@ export interface ProviderStream {
   // 唯一标识
   readonly id: string
   readonly displayName: string
+  
+  resolveKey?(model: Model): Promise<string>
 
   // 流式调用（核心方法）
   converse(
@@ -241,17 +243,15 @@ export interface ProviderStream {
     signal: AbortSignal,
   ): AsyncIterable<StreamEvent>
 
-  key(): Promise<string>
-
   // 平台健康检查
-  healthCheck?(key: string): Promise<boolean>
+  healthCheck?(token: string): Promise<boolean>
 }
 
 // Provider 工厂函数类型
 export type ProviderFactory = () => ProviderStream
 
-export type OAuthStore = {
-  type: 'oauth'
+export type OAuthCredentials = {
+  type: Api
   refreshToken: string
   accessToken: string
   expires: number
@@ -262,13 +262,12 @@ export interface OAuth {
   // 唯一标识
   readonly id: string
   readonly displayName: string
+  credentials: OAuthCredentials | undefined
 
-  authorize(
-    model: Model<Api>,
-    context: StreamContext,
-    options: StreamOptions,
-    signal: AbortSignal,
-  ): AsyncIterable<StreamEvent>
+  authorize(model: Model<Api>): Promise<OAuthCredentials>
+
+  refresh(): Promise<void>
+  resolve(): Promise<string>
 }
 
 export type OAuthFactory = () => OAuth

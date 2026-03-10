@@ -1,5 +1,5 @@
 // 流式编排入口 — stream() / complete() / streamSimple()
-import { ProviderError } from '@vitamin/shared'/.
+import { ProviderError } from '@vitamin/shared'
 import { type EventStream, createEventStream } from './event-stream'
 
 import type {
@@ -48,14 +48,13 @@ async function start<T extends Api>(
     ) {
       stream.push(event)
 
-      // 记录最终消息
-      if (event.type === 'done') {
-        lastMessage = event.message
-      }
-      
-      if (event.type === 'error') {
-        stream.fail(event.error) // TODO: 区分错误类型，部分错误可能不需要完全终止流
-        return
+      switch (event.type) {
+        case 'done':
+          lastMessage = event.message
+          break
+        case 'error':
+          stream.fail(event.error)
+          return
       }
     }
 

@@ -1,16 +1,14 @@
 // 模型注册表 — 管理所有已知模型定义
 import { ProviderError } from '@vitamin/shared'
-import { BUILTIN_MODELS } from './models'
 import type { Provider, Model } from './types'
 
 // 模型注册表
 export class ModelRegistry {
   private readonly models = new Map<string, Model>()
 
-  constructor() {
-    // 注册所有内置模型
-    for (const model of BUILTIN_MODELS) {
-      this.models.set(model.id, model)
+  constructor(models: Model[] = []  ) {
+    for (const model of models) {
+      this.register(model)
     }
   }
 

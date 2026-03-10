@@ -1,6 +1,7 @@
 export {
   ConfigError,
   ProviderError,
+  OAuthError,
   StreamError,
   AgentError,
   ToolError,

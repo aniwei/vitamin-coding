@@ -1,17 +1,19 @@
 // Provider 注册表 — 管理所有 LLM 提供商适配器
 import { OAuthError } from '@vitamin/shared'
 
-import type { Api, OAuthStore } from './types'
+import type { Api, OAuthCredentials } from './types'
 import type { OAuth, OAuthFactory } from './types'
 
 // OAuth 注册表
 export class OAuthRegistry {
   private readonly factories = new Map<Api, OAuthFactory>()
   private readonly instances = new Map<Api, OAuth>()
-  private readonly stores = new Map<Api, OAuthStore>()
+  private readonly stores = new Map<Api, OAuthCredentials>()
 
-  constructor() {
-
+  constructor(stores: OAuthCredentials[]) {
+    for (const store of stores) {
+      this.stores.set(store.type as Api, store)
+    }
   }
 
   // 注册 OAuth 工厂
@@ -65,7 +67,7 @@ export class OAuthRegistry {
 }
 
 // 创建 OAuth 注册表
-export function createOAuthRegistry(): OAuthRegistry {
-  return new OAuthRegistry()
+export function createOAuthRegistry(stores: OAuthCredentials[]): OAuthRegistry {
+  return new OAuthRegistry(stores)
 }
 
