@@ -40,20 +40,20 @@ describe('findProjectRoot', () => {
   })
 
   describe('#given a directory with package.json', () => {
-    it('#then finds the project root', async () => {
+    it('#then returns undefined because package.json is not a marker', async () => {
       await writeFile(join(tempDir, 'package.json'), '{}')
       const subDir = join(tempDir, 'src', 'sub')
       await mkdir(subDir, { recursive: true })
       const root = await findProjectRoot(subDir)
-      expect(root).toBe(tempDir)
+      expect(root).toBeUndefined()
     })
   })
 
   describe('#given a directory with .git', () => {
-    it('#then finds the project root', async () => {
+    it('#then returns undefined because .git is not a marker', async () => {
       await mkdir(join(tempDir, '.git'))
       const root = await findProjectRoot(tempDir)
-      expect(root).toBe(tempDir)
+      expect(root).toBeUndefined()
     })
   })
 

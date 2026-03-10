@@ -1,7 +1,7 @@
 // 核心 Hook 单元测试
 import { describe, expect, it } from 'vitest'
 
-import { createHookEngine } from '../src/hook-engine'
+import { createHookRegistry } from '../src/hook-registry'
 import { createFirstMessageVariantHook } from '../src/core/session/first-message-variant'
 import { createKeywordDetectionHook } from '../src/core/session/keyword-detection'
 import { createFileGuardHook } from '../src/core/tool-guard/file-guard'
@@ -15,7 +15,7 @@ describe('core hooks', () => {
   describe('first-message-variant', () => {
     describe('#given a first message', () => {
       it('#then sets variant metadata', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createFirstMessageVariantHook())
 
         const input = {
@@ -34,7 +34,7 @@ describe('core hooks', () => {
 
     describe('#given a non-first message', () => {
       it('#then does not set variant metadata', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createFirstMessageVariantHook())
 
         const input = {
@@ -54,7 +54,7 @@ describe('core hooks', () => {
   describe('keyword-detection', () => {
     describe('#given message containing plan keyword', () => {
       it('#then sets detectedKeyword to plan', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createKeywordDetectionHook())
 
         const input = {
@@ -72,7 +72,7 @@ describe('core hooks', () => {
 
     describe('#given message containing build keyword', () => {
       it('#then sets detectedKeyword to build', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createKeywordDetectionHook())
 
         const input = {
@@ -92,7 +92,7 @@ describe('core hooks', () => {
   describe('file-guard', () => {
     describe('#given write tool targeting /etc/passwd', () => {
       it('#then throws and sets cancelled', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createFileGuardHook())
 
         const input = {
@@ -117,7 +117,7 @@ describe('core hooks', () => {
 
     describe('#given read tool targeting any path', () => {
       it('#then allows through (not a write tool)', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createFileGuardHook())
 
         const input = {
@@ -153,7 +153,7 @@ describe('core hooks', () => {
   describe('label-truncator', () => {
     describe('#given a long label in args', () => {
       it('#then truncates the label', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createLabelTruncatorHook())
 
         const longLabel = 'A'.repeat(300)
@@ -176,7 +176,7 @@ describe('core hooks', () => {
   describe('output-truncation', () => {
     describe('#given tool output exceeding 60KB', () => {
       it('#then truncates to configured limit', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createOutputTruncationHook(100)) // 100 byte limit for test
 
         const longText = 'x'.repeat(200)
@@ -207,7 +207,7 @@ describe('core hooks', () => {
   describe('anthropic-effort', () => {
     describe('#given anthropic opus model', () => {
       it('#then sets thinkingLevel to high', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createAnthropicEffortHook())
 
         const input = {
@@ -226,7 +226,7 @@ describe('core hooks', () => {
 
     describe('#given non-anthropic model', () => {
       it('#then does not modify thinkingLevel', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createAnthropicEffortHook())
 
         const input = {
@@ -247,7 +247,7 @@ describe('core hooks', () => {
   describe('comment-checker', () => {
     describe('#given write tool with AI-style comment', () => {
       it('#then appends warning to output', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createCommentCheckerHook())
 
         const input = {
@@ -274,7 +274,7 @@ describe('core hooks', () => {
   describe('ralph-loop', () => {
     describe('#given a repeating tool call pattern', () => {
       it('#then detects the loop and warns', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createRalphLoopHook())
 
         const sessionId = `ralph-test-${Date.now()}`
@@ -308,7 +308,7 @@ describe('core hooks', () => {
 
   describe('14 core hooks registration', () => {
     it('#then all 14 hooks are registered and available', () => {
-      const engine = createHookEngine()
+      const engine = createHookRegistry()
 
       // 注册所有 14 个核心 Hook
       engine.register(createFirstMessageVariantHook())

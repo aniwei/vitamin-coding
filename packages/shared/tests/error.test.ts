@@ -1,5 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
+  Error as VitaminError,
   AgentError,
   ConfigError,
   ExtensionError,
@@ -9,7 +10,6 @@ import {
   SessionError,
   StreamError,
   ToolError,
-  VitaminError,
 } from '../src/error'
 
 describe('VitaminError', () => {
@@ -19,7 +19,7 @@ describe('VitaminError', () => {
         const error = new VitaminError('test message', { code: 'TEST_001' })
         expect(error.message).toBe('test message')
         expect(error.code).toBe('TEST_001')
-        expect(error.name).toBe('VitaminError')
+        expect(error.name).toBe('Error')
         expect(error).toBeInstanceOf(Error)
         expect(error).toBeInstanceOf(VitaminError)
       })

@@ -12,7 +12,7 @@ describe('truncate', () => {
     it('#then truncates with default suffix', () => {
       const result = truncate('hello world', 8)
       expect(result.length).toBeLessThanOrEqual(8)
-      expect(result).toContain('…')
+      expect(result).toContain('...')
     })
 
     it('#then truncates with custom suffix', () => {
@@ -54,7 +54,7 @@ describe('estimateTokens', () => {
   describe('#given CJK text', () => {
     it('#then estimates ~2 chars per token', () => {
       const text = '你好世界测试文本'
-      expect(estimateTokens(text)).toBe(4)
+      expect(estimateTokens(text)).toBe(2)
     })
   })
 

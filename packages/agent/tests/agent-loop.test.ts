@@ -122,7 +122,7 @@ describe('agentLoop', () => {
             },
           }),
           toolExecutor: createToolExecutor([makeTool('alpha', 'tool ok')]),
-          streamFn: (_context, _signal) => {
+          stream: (_context, _signal) => {
             const eventStream = createEventStream<
               import('@vitamin/ai').StreamEvent,
               AssistantMessage
@@ -167,7 +167,7 @@ describe('agentLoop', () => {
             },
           }),
           toolExecutor: createToolExecutor([]),
-          streamFn: (_context, _signal) => {
+          stream: (_context, _signal) => {
             const eventStream = createEventStream<
               import('@vitamin/ai').StreamEvent,
               AssistantMessage
@@ -206,7 +206,7 @@ describe('agentLoop', () => {
             messages,
             config: createConfig({ maxToolTurns: 0 }),
             toolExecutor: createToolExecutor([makeTool('alpha', 'tool ok')]),
-            streamFn: (_context, _signal) => {
+            stream: (_context, _signal) => {
               const eventStream = createEventStream<
                 import('@vitamin/ai').StreamEvent,
                 AssistantMessage
@@ -245,7 +245,7 @@ describe('agentLoop', () => {
           messages,
           config: createConfig(),
           toolExecutor: createToolExecutor([brokenTool]),
-          streamFn: (_context, _signal) => {
+          stream: (_context, _signal) => {
             const eventStream = createEventStream<
               import('@vitamin/ai').StreamEvent,
               AssistantMessage

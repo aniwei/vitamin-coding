@@ -1,15 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { createProviderRegistry } from '../src/providers/registry'
+import { createProviderRegistry } from '../src/provider-registry'
 
-import type { ProviderAdapter } from '../src/providers/types'
-import type { Model, StreamContext, StreamEvent, StreamOptions } from '../src/types'
+import type { Model, ProviderStream, StreamContext, StreamEvent, StreamOptions } from '../src/types'
 
-function createNoopProvider(id: string): ProviderAdapter {
+function createNoopProvider(id: string): ProviderStream {
   return {
     id,
     displayName: id,
-    async *stream(
+    async *converse(
       _model: Model,
       _context: StreamContext,
       _options: StreamOptions,

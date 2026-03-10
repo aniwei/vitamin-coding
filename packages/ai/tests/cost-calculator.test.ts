@@ -1,6 +1,6 @@
 // @vitamin/ai cost-calculator 测试
 import { describe, expect, it } from 'vitest'
-import { calculateCost, createCostTracker } from '../src/cost-calculator'
+import { calculate, createCostTracker } from '../src/cost'
 
 import type { Model, Usage } from '../src/types'
 
@@ -31,12 +31,12 @@ function makeUsage(overrides: Partial<Usage> = {}): Usage {
   }
 }
 
-describe('calculateCost', () => {
+describe('calculate', () => {
   describe('#given 1M input tokens at $10/M', () => {
     it('#then returns $10 input cost', () => {
       const model = makeModel()
       const usage = makeUsage({ inputTokens: 1_000_000 })
-      const cost = calculateCost(model, usage)
+      const cost = calculate(model, usage)
       expect(cost.input).toBe(10)
       expect(cost.output).toBe(0)
       expect(cost.total).toBe(10)
@@ -52,7 +52,7 @@ describe('calculateCost', () => {
         cacheReadTokens: 1_000_000,
         cacheWriteTokens: 1_000_000,
       })
-      const cost = calculateCost(model, usage)
+      const cost = calculate(model, usage)
       // 10 + 30 + 1 + 5 = 46
       expect(cost.total).toBe(46)
     })
@@ -60,7 +60,7 @@ describe('calculateCost', () => {
 
   describe('#given zero usage', () => {
     it('#then returns zero cost', () => {
-      const cost = calculateCost(makeModel(), makeUsage())
+      const cost = calculate(makeModel(), makeUsage())
       expect(cost.total).toBe(0)
     })
   })

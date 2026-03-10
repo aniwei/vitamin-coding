@@ -4,7 +4,7 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { createHookEngine } from '../src/hook-engine'
+import { createHookRegistry } from '../src/hook-registry'
 import { createRulesInjectorHook } from '../src/core/tool-guard/rules-injector'
 
 let testDir = ''
@@ -29,7 +29,7 @@ describe('rules-injector hook', () => {
         await writeFile(join(rulesDir, 'code-style.md'), 'Use single quotes')
         await writeFile(join(rulesDir, 'naming.md'), 'Use kebab-case')
 
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createRulesInjectorHook(testDir))
 
         const input = {
@@ -60,7 +60,7 @@ describe('rules-injector hook', () => {
         await mkdir(rulesDir)
         await writeFile(join(rulesDir, 'style.md'), 'No semicolons')
 
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createRulesInjectorHook(testDir))
 
         const input = {
@@ -87,7 +87,7 @@ describe('rules-injector hook', () => {
         await mkdir(rulesDir)
         await writeFile(join(rulesDir, 'style.md'), 'rules content')
 
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createRulesInjectorHook(testDir))
 
         const input = {
@@ -112,7 +112,7 @@ describe('rules-injector hook', () => {
   describe('#given no .rules directory', () => {
     describe('#when a write tool is called', () => {
       it('#then does not inject rules', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createRulesInjectorHook(testDir))
 
         const input = {
@@ -141,7 +141,7 @@ describe('rules-injector hook', () => {
         await mkdir(rulesDir)
         await writeFile(join(rulesDir, 'readme.txt'), 'not markdown')
 
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createRulesInjectorHook(testDir))
 
         const input = {
@@ -170,7 +170,7 @@ describe('rules-injector hook', () => {
         await mkdir(rulesDir)
         await writeFile(join(rulesDir, 'rule.md'), 'diff rules')
 
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register(createRulesInjectorHook(testDir))
 
         const input = {

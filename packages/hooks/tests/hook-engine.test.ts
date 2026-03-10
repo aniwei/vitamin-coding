@@ -1,15 +1,15 @@
-// HookEngine 单元测试
+// HookRegistry 单元测试
 import { describe, expect, it } from 'vitest'
 
-import { HookEngine, createHookEngine } from '../src/hook-engine'
+import { HookRegistry, createHookRegistry } from '../src/hook-registry'
 
 import type { HookRegistration } from '../src/types'
 
-describe('HookEngine', () => {
+describe('HookRegistry', () => {
   describe('#given a fresh engine', () => {
     describe('#when registering hooks', () => {
       it('#then getRegistered returns registered hooks', () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         const hook: HookRegistration<'chat.message.before'> = {
           name: 'test-hook',
           timing: 'chat.message.before',
@@ -25,7 +25,7 @@ describe('HookEngine', () => {
       })
 
       it('#then getRegistered without timing returns all hooks', () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register({
           name: 'hook-a',
           timing: 'chat.message.before',
@@ -47,7 +47,7 @@ describe('HookEngine', () => {
 
     describe('#when unregistering hooks', () => {
       it('#then hook is removed from all timings', () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         engine.register({
           name: 'removable',
           timing: 'chat.message.before',
@@ -62,7 +62,7 @@ describe('HookEngine', () => {
       })
 
       it('#then returns false when hook not found', () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         expect(engine.unregister('nonexistent')).toBe(false)
       })
     })
@@ -71,7 +71,7 @@ describe('HookEngine', () => {
   describe('#given hooks with different priorities', () => {
     describe('#when execute is called', () => {
       it('#then hooks run in priority order (low number first)', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         const order: string[] = []
 
         engine.register({
@@ -108,7 +108,7 @@ describe('HookEngine', () => {
   describe('#given a hook that throws', () => {
     describe('#when execute is called', () => {
       it('#then subsequent hooks still execute', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         const executed: string[] = []
 
         engine.register({
@@ -149,7 +149,7 @@ describe('HookEngine', () => {
   describe('#given a disabled hook', () => {
     describe('#when disable(name) is called', () => {
       it('#then disabled hook is skipped during execution', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         const executed: string[] = []
 
         engine.register({
@@ -179,7 +179,7 @@ describe('HookEngine', () => {
 
     describe('#when enable(name) is called after disable', () => {
       it('#then hook resumes execution', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         const executed: string[] = []
 
         engine.register({
@@ -206,7 +206,7 @@ describe('HookEngine', () => {
   describe('#given an event-type hook', () => {
     describe('#when emit is called', () => {
       it('#then handlers are invoked with input', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         let received: unknown = null
 
         engine.register({
@@ -227,7 +227,7 @@ describe('HookEngine', () => {
   describe('#given hooks registered via enabled=false', () => {
     describe('#when execute is called', () => {
       it('#then disabled-at-registration hooks are skipped', async () => {
-        const engine = createHookEngine()
+        const engine = createHookRegistry()
         const executed: string[] = []
 
         engine.register({
@@ -256,7 +256,7 @@ describe('HookEngine', () => {
 
   describe('#given clear() called', () => {
     it('#then all hooks are removed', () => {
-      const engine = createHookEngine()
+      const engine = createHookRegistry()
       engine.register({
         name: 'hook',
         timing: 'chat.message.before',

@@ -1,6 +1,6 @@
 // @vitamin/ai EventStream 测试
 import { describe, expect, it } from 'vitest'
-import { createEventStream } from '../src/utils/event-stream'
+import { createEventStream } from '../src/event-stream'
 
 describe('EventStream', () => {
   describe('#given a new EventStream', () => {

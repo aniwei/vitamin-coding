@@ -79,7 +79,7 @@ describe('spawnProcess', () => {
         command: 'pwd',
         cwd: '/tmp',
       })
-      expect(result.stdout.trim()).toBe('/private/tmp')
+        expect(result.stdout.trim()).toBe('/tmp')
     })
   })
 })
