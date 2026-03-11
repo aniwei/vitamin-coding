@@ -19,15 +19,6 @@ export interface LoadConfigOptions {
   extensionDefaults?: Partial<VitaminConfig>
 }
 
-// loadConfig() 的返回结果
-export interface LoadConfigResult {
-  config: VitaminConfig
-  // 项目配置文件路径
-  projectConfigPath?: string
-  // 用户配置文件路径
-  userConfigPath?: string
-}
-
 // 根配置类型 —— 从 Zod schema 推导，单一来源
 export type VitaminConfig = VitaminConfigFromSchema
 

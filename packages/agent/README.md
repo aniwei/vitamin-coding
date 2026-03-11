@@ -36,6 +36,12 @@ const result = await agentLoop({ agent, messages: [{ role: 'user', content: 'Hel
 
 `AgentStatus`, `AgentMode`, `AgentEvent`, `ToolCallEvent`, `AgentMessage`, `AgentState`, `AgentLoopConfig`, `AgentTool`, `ToolResult`, `AgentConfig`, `AgentEventListener`
 
+## Build Behavior
+
+- Source keeps development assertions (`invariant` from `@vitamin/invariant`) in `src/agent.ts`.
+- When building with `NODE_ENV=production`, `tsup` strips those assertion blocks from emitted JS.
+- When building with `NODE_ENV=development` (or unset), assertions remain in output.
+
 ## License
 
 See [root README](../../README.md) for details.

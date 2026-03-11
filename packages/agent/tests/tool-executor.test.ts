@@ -37,9 +37,9 @@ function makeTool(
     execute: async (id, args, _signal) => {
       if (handler) {
         const result = await handler(id, args)
-        return result as { content: { type: 'text'; text: string }[]; isError?: boolean }
+        return result as { content: { type: 'text'; data: string }[]; isError?: boolean }
       }
-      return { content: [{ type: 'text' as const, text: `${name} executed` }] }
+      return { content: [{ type: 'text' as const, data: `${name} executed` }] }
     },
   }
 }
@@ -60,7 +60,7 @@ describe('ToolExecutor', () => {
         const executor = createToolExecutor([makeTool('read')])
         const result = await executor.execute(makeToolCall('read'), new AbortController().signal)
         expect(result.isError).toBeUndefined()
-        expect(result.content[0]?.text).toBe('read executed')
+        expect(result.content[0]?.data).toBe('read executed')
       })
     })
 
@@ -72,7 +72,7 @@ describe('ToolExecutor', () => {
           new AbortController().signal,
         )
         expect(result.isError).toBe(true)
-        expect(result.content[0]?.text).toContain('Unknown tool')
+        expect(result.content[0]?.data).toContain('Unknown tool')
       })
     })
 
@@ -82,12 +82,12 @@ describe('ToolExecutor', () => {
           name: 'strict',
           description: 'Strict tool',
           parameters: createFailSchema('path is required') as never,
-          execute: async () => ({ content: [{ type: 'text' as const, text: 'ok' }] }),
+          execute: async () => ({ content: [{ type: 'text' as const, data: 'ok' }] }),
         }
         const executor = createToolExecutor([tool])
         const result = await executor.execute(makeToolCall('strict'), new AbortController().signal)
         expect(result.isError).toBe(true)
-        expect(result.content[0]?.text).toContain('Invalid arguments')
+        expect(result.content[0]?.data).toContain('Invalid arguments')
       })
     })
 
@@ -99,7 +99,7 @@ describe('ToolExecutor', () => {
         const executor = createToolExecutor([tool])
         const result = await executor.execute(makeToolCall('broken'), new AbortController().signal)
         expect(result.isError).toBe(true)
-        expect(result.content[0]?.text).toContain('Disk full')
+        expect(result.content[0]?.data).toContain('Disk full')
       })
     })
   })
@@ -119,8 +119,8 @@ describe('ToolExecutor', () => {
         new AbortController().signal,
       )
       expect(results.size).toBe(2)
-      expect(results.get('c1')?.content[0]?.text).toBe('a executed')
-      expect(results.get('c2')?.content[0]?.text).toBe('b executed')
+      expect(results.get('c1')?.content[0]?.data).toBe('a executed')
+      expect(results.get('c2')?.content[0]?.data).toBe('b executed')
     })
   })
 

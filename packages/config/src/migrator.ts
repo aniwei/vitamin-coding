@@ -8,13 +8,8 @@ const logger = createLogger('@vitamin/config:migrator')
 
 // 单个迁移步骤
 export interface Migration {
-  // 此迁移完成后的目标版本
   version: string
-  
-  // 描述
   description: string
-  
-  // 将配置从前一版本转换到此版本
   migrate(config: Record<string, unknown>): Record<string, unknown>
 }
 

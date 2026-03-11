@@ -11,6 +11,8 @@ import type {
   ZodType,
 } from '@vitamin/ai'
 
+import type { Devtools } from '@vitamin/devtools'
+
 // Agent 运行状态
 export type AgentStatus =
   | 'idle'
@@ -19,6 +21,25 @@ export type AgentStatus =
   | 'completed'
   | 'error'
   | 'aborted'
+
+export type AgentBreakpointPoint =
+  | 'loop:start'
+  | 'model:before'
+  | 'model:after'
+  | 'tool:before'
+  | 'tool:after'
+  | 'loop:end'
+  | 'agent:error'
+  | 'agent:done'
+
+export interface AgentDebugSnapshot {
+  turn: number
+  point: AgentBreakpointPoint
+  frameDepth: number
+  messagesCount: number
+  lastToolName?: string
+  tokenUsage?: { input: number; output: number }
+}
 
 // Agent 模式
 export type AgentMode = 'primary' | 'subagent' | 'all'
@@ -98,6 +119,8 @@ export interface AgentLoopConfig {
   maxTokens?: number
   // 温度
   temperature?: number
+  // 开发工具
+  devtools?: Devtools
 }
 
 // Agent 工具（封装 ToolDefinition + execute）
@@ -131,13 +154,13 @@ export interface AgentConfig {
   thinkingLevel?: ThinkingLevel
   maxTokens?: number
   temperature?: number
-  // 流式调用函数 — 由外部注入，解耦 ProviderRegistry
   stream?: (
     context: StreamContext,
     signal: AbortSignal,
   ) => AsyncIterable<StreamEvent> & {
     result(): Promise<AssistantMessage>
   }
+  devtools?: Devtools
 }
 
 // Agent 事件监听器

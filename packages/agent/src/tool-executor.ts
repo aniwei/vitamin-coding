@@ -77,7 +77,7 @@ class DefaultToolExecutor implements ToolExecutor {
 
     if (!tool) {
       return {
-        content: [{ type: 'text', text: `Unknown tool: ${toolCall.name}` }],
+        content: [{ type: 'text', data: `Unknown tool: ${toolCall.name}` }],
         isError: true,
       }
     }
@@ -100,7 +100,7 @@ class DefaultToolExecutor implements ToolExecutor {
           return {
             content: [{
               type: 'text',
-              text: beforeResult.cancelReason ?? `Tool ${toolCall.name} was blocked by pre-execution hook`,
+              data: beforeResult.cancelReason ?? `Tool ${toolCall.name} was blocked by pre-execution hook`,
             }],
             isError: true,
           }
@@ -116,7 +116,7 @@ class DefaultToolExecutor implements ToolExecutor {
         return {
           content: [{
             type: 'text',
-            text: `Invalid arguments for tool ${toolCall.name}: ${String(parseResult.error)}`,
+            data: `Invalid arguments for tool ${toolCall.name}: ${String(parseResult.error)}`,
           }],
           isError: true,
         }
@@ -145,7 +145,7 @@ class DefaultToolExecutor implements ToolExecutor {
       // 工具执行异常 → 包装为 ToolResult { isError: true }
       const message = error instanceof Error ? error.message : String(error)
       return {
-        content: [{ type: 'text', text: `Tool ${toolCall.name} failed: ${message}` }],
+        content: [{ type: 'text', data: `Tool ${toolCall.name} failed: ${message}` }],
         isError: true,
         metadata: {
           error: error instanceof Error ? error.name : 'UnknownError',

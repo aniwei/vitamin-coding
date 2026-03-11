@@ -1,5 +1,6 @@
 // Agent 核心类 — 状态机 + steering/followUp 队列
 import { createLogger, TypedEventEmitter } from '@vitamin/shared'
+import { invariant } from '@vitamin/invariant'
 
 import { agentLoop } from './agent-loop'
 import { AbortError } from './errors'
@@ -193,12 +194,19 @@ export class Agent {
       thinkingLevel: this.state.thinkingLevel ?? loopConfigOverride?.thinkingLevel,
       maxTokens: loopConfigOverride?.maxTokens,
       temperature: loopConfigOverride?.temperature,
+      debugger: loopConfigOverride?.debugger,
     }
 
     const toolExecutor = createToolExecutor(this.state.tools)
 
     // 构建 stream — 优先使用外部注入，否则使用默认
     const stream: StreamFunction = this.stream ?? createDefaultStream()
+
+    if (process.env.NODE_ENV !== 'production') {
+      invariant(() => {
+        return true
+      }, '')
+    }
 
     try {
       const result = await agentLoop({

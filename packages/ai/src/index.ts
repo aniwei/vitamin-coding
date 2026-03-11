@@ -45,6 +45,7 @@ export { ModelRegistry, createModelRegistry } from './model-registry'
 
 // Provider
 export { createCopilotProvider } from './provider/github-copilot'
+export { ProviderRegistry, createProviderRegistry } from './provider-registry'
 
 // OAuth
 export { GitHubCopilotOAuth } from './oauth/github-copilot'

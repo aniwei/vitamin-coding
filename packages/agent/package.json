@@ -23,7 +23,9 @@
   "dependencies": {
     "@vitamin/shared": "workspace:*",
     "@vitamin/config": "workspace:*",
-    "@vitamin/ai": "workspace:*"
+    "@vitamin/ai": "workspace:*",
+    "@vitamin/invariant": "workspace:*",
+    "@vitamin/devtools": "workspace:*"
   },
   "publishConfig": {
     "access": "public",

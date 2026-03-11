@@ -31,6 +31,9 @@ export {
 // 核心类型
 export type {
   AgentStatus,
+  AgentBreakpointPoint,
+  AgentDebugSnapshot,
+  AgentLoopDebugger,
   AgentMode,
   AgentEvent,
   ToolCallEvent,
