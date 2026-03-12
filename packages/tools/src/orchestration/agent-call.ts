@@ -14,17 +14,19 @@ export type CallAgent = (agent: string, prompt: string) => Promise<{
   error?: string
 }>
 
-interface CallAgentToolOptions {
-  projectRoot: string
+interface CallAgentOptions {
   call?: CallAgent
 }
 
-export function createCallAgent(options: CallAgentToolOptions): AgentTool<CallAgentArgs> {
+export function createCallAgent(
+  _projectRoot: string,
+  options: CallAgentOptions
+): AgentTool<CallAgentArgs> {
   const { call } = options
 
   return {
     name: 'agent_call',
-    description: '直接调用指定 Agent 并等待结果。适用于需要特定 Agent 能力的场景。',
+    description: '直接调用指定Agent并等待结果。适用于需要特定 Agent 能力的场景。',
     parameters: CallAgentArgsSchema,
     visibility: 'always',
 

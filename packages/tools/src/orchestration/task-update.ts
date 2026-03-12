@@ -15,7 +15,16 @@ export type UpdateTask = (id: string, action: 'cancel' | 'retry') => Promise<{
   message: string
 }>
 
-export function createTaskUpdate(update?: UpdateTask): AgentTool<TaskUpdateArgs> {
+export interface TaskUpdateOptions {
+  update?: UpdateTask
+}
+
+export function createTaskUpdate(
+  _projectRoot: string,
+  options: TaskUpdateOptions
+): AgentTool<TaskUpdateArgs> {
+  const { update } = options
+
   return {
     name: 'task_update',
     description: '更新任务状态：取消或重试任务。',

@@ -15,7 +15,7 @@ export type { TaskDispatch, TaskDispatchResult } from './orchestration/task-dele
 export type { StartWork } from './orchestration/worker'
 export type { GetBackgroundOutput } from './orchestration/background-task-output'
 export type { CancelBackground } from './orchestration/background-task-cancel'
-export type { CallAgent } from './orchestration/agent_call'
+export type { CallAgent } from './orchestration/agent-call'
 
 // full 预设 - 会话管理
 export type { SessionManager } from './session/session-manager'

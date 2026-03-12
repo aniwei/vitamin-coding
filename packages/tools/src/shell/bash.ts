@@ -6,7 +6,7 @@ import { z } from 'zod'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 // 输出最大长度（60KB）
-const MAX_OUTPUT_LENGTH = 60 * 1024
+const DEFAULT_MAX_OUTPUT_LENGTH = 60 * 1024
 
 // 默认超时（30 秒）
 const DEFAULT_TIMEOUT = 30_000
@@ -21,33 +21,38 @@ const BashArgsSchema = z.object({
 type BashArgs = z.infer<typeof BashArgsSchema>
 
 interface BashOptions {
-  projectRoot: string,
-  timeoutMs?: number,
+  timeout?: number,
   maxOutputSize?: number,
 }
 
 // 创建 bash 工具
-export function createBash(options: BashOptions): AgentTool<BashArgs> {
-  const { projectRoot, timeoutMs, maxOutputSize = MAX_OUTPUT_LENGTH } = options
+export function createBash(
+  projectRoot: string,
+  options: BashOptions
+): AgentTool<BashArgs> {
+  const { 
+    timeout = DEFAULT_TIMEOUT, 
+    maxOutputSize = DEFAULT_MAX_OUTPUT_LENGTH 
+  } = options
 
   return {
     name: 'bash',
-    description: '执行 shell 命令并返回 stdout/stderr。默认超时 30 秒。',
+    description: '执行 shell 命令并返回 stdout/stderr。默认超时 30 秒',
     parameters: BashArgsSchema,
     visibility: 'always',
 
     async execute(_id, args, signal): Promise<ToolResult> {
       const cwd = args.cwd ? `${projectRoot}/${args.cwd}` : projectRoot
 
-      const timeout = args.timeout ?? timeoutMs ?? DEFAULT_TIMEOUT
+      const t = args.timeout ?? timeout
 
       try {
         const result = await spawnProcess({
           command: 'sh',
           args: ['-c', args.command],
-          cwd,
-          timeout,
+          timeout: t,
           signal,
+          cwd,
         })
 
         // 组合输出
@@ -55,6 +60,7 @@ export function createBash(options: BashOptions): AgentTool<BashArgs> {
         if (result.stdout) {
           output += result.stdout
         }
+
         if (result.stderr) {
           output += output ? '\n--- stderr ---\n' : ''
           output += result.stderr
@@ -73,12 +79,7 @@ export function createBash(options: BashOptions): AgentTool<BashArgs> {
         const isError = result.exitCode !== 0
 
         return {
-          content: [
-            {
-              type: 'text',
-              text: isError ? `Command exited with code ${result.exitCode}\n${output}` : output,
-            },
-          ],
+          content: [{ type: 'text', text: isError ? `Command exited with code ${result.exitCode}\n${output}` : output }],
           isError,
           metadata: {
             exitCode: result.exitCode,

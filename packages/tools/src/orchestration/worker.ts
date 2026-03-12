@@ -12,7 +12,6 @@ type StartWorkArgs = z.infer<typeof StartWorkArgsSchema>
 export type StartWork = (planName: string) => Promise<{ success: boolean; message: string }>
 
 interface WorkerOptions {
-  projectRoot: string
   startWork?: StartWork
 }
 

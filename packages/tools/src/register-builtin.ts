@@ -1,6 +1,6 @@
 // 注册所有内置工具到 ToolRegistry
 import { createAstGrep, type AstGrepOptions } from './search/ast-grep'
-import { createBash } from './builtin/bash'
+import { createBash } from './shell/bash'
 import { createEditDiff } from './builtin/edit-diff'
 import { createFind } from './search/find'
 import { createGlob } from './search/glob'
@@ -18,7 +18,7 @@ import { createDelegateTask } from './orchestration/task-delegate'
 import { createStartWork } from './orchestration/worker'
 import { createBackgroundOutputTool } from './orchestration/background-task-output'
 import { createBackgroundCancelTool } from './orchestration/background-task-cancel'
-import { createCallAgent } from './orchestration/agent_call'
+import { createCallAgent } from './orchestration/agent-call'
 
 // Skill 工具
 import { createSkillExecutor } from './skill/skill-executor'
@@ -39,7 +39,7 @@ import type { DelegateTaskOptions, TaskDispatch } from './orchestration/task-del
 import type { StartWork } from './orchestration/worker'
 import type { GetBackgroundOutput } from './orchestration/background-task-output'
 import type { CancelBackground } from './orchestration/background-task-cancel'
-import type { CallAgent } from './orchestration/agent_call'
+import type { CallAgent } from './orchestration/agent-call'
 import type { ExecuteSkill } from './skill/skill-executor'
 import type { CallSkillMcp } from './skill/skill-mcp'
 import type { LoadSkill } from './skill/skill-loader'

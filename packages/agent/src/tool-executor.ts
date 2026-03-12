@@ -73,11 +73,12 @@ class DefaultToolExecutor implements ToolExecutor {
   }
 
   async execute(toolCall: ToolCall, signal: AbortSignal): Promise<ToolResult> {
-    const tool = this.tools.get(toolCall.name)
+    const { id, name } = toolCall
+    const tool = this.tools.get(name)
 
     if (!tool) {
       return {
-        content: [{ type: 'text', data: `Unknown tool: ${toolCall.name}` }],
+        content: [{ type: 'text', text: `Unknown tool: ${name}` }],
         isError: true,
       }
     }
@@ -89,19 +90,18 @@ class DefaultToolExecutor implements ToolExecutor {
       // tool.execute.before Hook 管线
       if (this.hookExecutor) {
         const beforeResult = await this.hookExecutor.executeBeforeHooks({
-          toolName: toolCall.name,
-          toolCallId: toolCall.id,
+          toolName: name,
+          toolCallId: id,
           args: currentArgs,
           agentName: this.agentName,
           sessionId: this.sessionId,
         })
 
-        if (beforeResult.cancelled) {
+        const { cancelled, cancelReason } = beforeResult
+
+        if (cancelled) {
           return {
-            content: [{
-              type: 'text',
-              data: beforeResult.cancelReason ?? `Tool ${toolCall.name} was blocked by pre-execution hook`,
-            }],
+            content: [{ type: 'text', text: cancelReason ?? `Tool ${name} was blocked by pre-execution hook` }],
             isError: true,
           }
         }
@@ -112,12 +112,10 @@ class DefaultToolExecutor implements ToolExecutor {
 
       // 参数验证
       const parseResult = tool.parameters.safeParse(currentArgs)
-      if (!parseResult.success) {
+      const { success, error } = parseResult
+      if (!success) {
         return {
-          content: [{
-            type: 'text',
-            data: `Invalid arguments for tool ${toolCall.name}: ${String(parseResult.error)}`,
-          }],
+          content: [{ type: 'text', text: `Invalid arguments for tool ${name}: ${String(error)}` }],
           isError: true,
         }
       }
@@ -145,7 +143,7 @@ class DefaultToolExecutor implements ToolExecutor {
       // 工具执行异常 → 包装为 ToolResult { isError: true }
       const message = error instanceof Error ? error.message : String(error)
       return {
-        content: [{ type: 'text', data: `Tool ${toolCall.name} failed: ${message}` }],
+        content: [{ type: 'text', text: `Tool ${toolCall.name} failed: ${message}` }],
         isError: true,
         metadata: {
           error: error instanceof Error ? error.name : 'UnknownError',

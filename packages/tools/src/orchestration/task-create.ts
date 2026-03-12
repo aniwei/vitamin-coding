@@ -21,7 +21,16 @@ export type CreateTask = (args: CreateTaskArgs) => Promise<{
   id: string
 }>
 
-export function createTaskCreate(create?: CreateTask): AgentTool<TaskCreateArgs> {
+export interface TaskCreateOptions {
+  create?: CreateTask
+}
+
+export function createTaskCreate(
+  _projectRoot: string, 
+  options: TaskCreateOptions
+): AgentTool<TaskCreateArgs> {
+  const { create } = options
+
   return {
     name: 'task_create',
     description: '创建一个后台任务',

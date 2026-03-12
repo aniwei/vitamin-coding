@@ -17,7 +17,16 @@ export type ListTasks = (status?: string) => Promise<Array<{
   prompt: string
 }>>
 
-export function createTaskList(list?: ListTasks): AgentTool<TaskListArgs> {
+export interface TaskListOptions {
+  list?: ListTasks
+}
+
+export function createTaskList(
+  _projectRoot: string,
+  options: TaskListOptions
+): AgentTool<TaskListArgs> {
+  const { list } = options
+
   return {
     name: 'task_list',
     description: '列出所有任务及其状态',

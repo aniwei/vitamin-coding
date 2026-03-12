@@ -31,11 +31,11 @@ export interface TaskDispatchResult {
 }
 
 export interface DelegateTaskOptions {
-  projectRoot: string
   dispatch?: TaskDispatch
 }
 
 export function createDelegateTask(
+  _projectRoot: string,
   options: DelegateTaskOptions
 ): AgentTool<DelegateTaskArgs> {
   const { dispatch } = options
@@ -49,10 +49,7 @@ export function createDelegateTask(
     async execute(_id, args, _signal): Promise<ToolResult> {
       if (!dispatch) {
         return {
-          content: [{
-            type: 'text',
-            text: 'task_delegate is not available: orchestrator not initialized',
-          }],
+          content: [{ type: 'text', text: 'task_delegate is not available: orchestrator not initialized' }],
           isError: true,
         }
       }
@@ -85,6 +82,7 @@ export function createDelegateTask(
         }
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
+        
         return {
           content: [{ type: 'text', text: `Task delegation error: ${message}` }],
           isError: true,

@@ -159,7 +159,7 @@ export class MemoryManager {
       const summaryText = this.summaries.map((s) => s.text).join('\n---\n')
       context.push({
         role: 'user',
-        content: [{ type: 'text', data: `[上下文摘要]\n${summaryText}` }],
+        content: [{ type: 'text', text: `[summary]\n${summaryText}` }],
         timestamp: Date.now(),
       } as AgentMessage)
     }
@@ -196,7 +196,7 @@ export class MemoryManager {
     }
     if (Array.isArray(msg.content)) {
       return msg.content
-        .map((c) => (c.type === 'text' ? c.data : ''))
+        .map((c) => (c.type === 'text' ? c.text : ''))
         .filter(Boolean)
         .join('\n')
     }

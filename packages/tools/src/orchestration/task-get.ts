@@ -16,7 +16,16 @@ export type GetTask = (id: string) => Promise<{
   error?: string
 } | undefined>
 
-export function createTaskGet(get?: GetTask): AgentTool<TaskGetArgs> {
+export interface TaskGetOptions {
+  get?: GetTask
+}
+
+export function createTaskGet(
+  _projectRoot: string,
+  options: TaskGetOptions
+): AgentTool<TaskGetArgs> {
+  const { get } = options
+
   return {
     name: 'task_get',
     description: '获取任务的当前状态和结果',
