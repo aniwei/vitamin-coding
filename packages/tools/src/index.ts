@@ -12,7 +12,7 @@ export type { ValidationResult } from './tool-validator'
 export type { TaskDispatch, TaskDispatchResult } from './orchestration/task-delegate'
 
 // full 预设 - 编排工具
-export type { StartWork } from './orchestration/worker'
+export type { StartWork } from './orchestration/perform-work'
 export type { GetBackgroundOutput } from './orchestration/background-task-output'
 export type { CancelBackground } from './orchestration/background-task-cancel'
 export type { CallAgent } from './orchestration/agent-call'

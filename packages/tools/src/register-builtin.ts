@@ -15,7 +15,7 @@ import { createEdit } from './fs/edit'
 
 // 编排工具
 import { createDelegateTask } from './orchestration/task-delegate'
-import { createStartWork } from './orchestration/worker'
+import { createStartWork } from './orchestration/perform-work'
 import { createBackgroundOutputTool } from './orchestration/background-task-output'
 import { createBackgroundCancelTool } from './orchestration/background-task-cancel'
 import { createCallAgent } from './orchestration/agent-call'
@@ -36,7 +36,7 @@ import { createTaskUpdate } from './orchestration/task-update'
 
 import type { ToolRegistry } from './tool-registry'
 import type { DelegateTaskOptions, TaskDispatch } from './orchestration/task-delegate'
-import type { StartWork } from './orchestration/worker'
+import type { StartWork } from './orchestration/perform-work'
 import type { GetBackgroundOutput } from './orchestration/background-task-output'
 import type { CancelBackground } from './orchestration/background-task-cancel'
 import type { CallAgent } from './orchestration/agent-call'
