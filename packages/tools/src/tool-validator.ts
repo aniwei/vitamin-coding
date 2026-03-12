@@ -1,5 +1,5 @@
 // 工具参数验证器 — 基于 ZodType 接口
-import type { ZodType } from '@vitamin/ai'
+import type { ZodType } from 'zod'
 
 // 验证结果
 export interface ValidationResult<T = unknown> {
@@ -29,14 +29,12 @@ function formatValidationError(error: unknown): string {
 
   // Zod v4 error 格式
   if (typeof error === 'object' && 'issues' in error) {
-    const issues = (error as { issues: Array<{ path: (string | number)[]; message: string }> })
-      .issues
-    return issues
-      .map((issue) => {
-        const path = issue.path.length > 0 ? `${issue.path.join('.')}: ` : ''
-        return `${path}${issue.message}`
-      })
-      .join('; ')
+    const issues = (error as { issues: Array<{ path: (string | number)[]; message: string }> }).issues
+    
+    return issues.map((issue) => {
+      const path = issue.path.length > 0 ? `${issue.path.join('.')}: ` : ''
+      return `${path}${issue.message}`
+    }).join('; ')
   }
 
   return String(error)

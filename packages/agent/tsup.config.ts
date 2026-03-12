@@ -14,6 +14,6 @@ export default defineConfig({
   splitting: false,
   treeshake: true,
   esbuildPlugins: isProduction
-    ? [createStripInvariantInProductionPlugin({ filter: /\/src\/(agent|agent-loop)\.ts$/ })]
+    ? [createStripInvariantInProductionPlugin({ filter: /\/src\/(agent|work-loop)\.ts$/ })]
     : [],
 })

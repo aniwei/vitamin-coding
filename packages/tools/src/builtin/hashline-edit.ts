@@ -14,7 +14,12 @@ const HashlineEditArgsSchema = z.object({
 
 type HashlineEditArgs = z.infer<typeof HashlineEditArgsSchema>
 
-export function createHashlineEditTool(projectRoot: string): AgentTool<HashlineEditArgs> {
+interface HashlineEditOptions {
+  projectRoot: string,
+}
+
+export function createHashlineEdit(options: HashlineEditOptions): AgentTool<HashlineEditArgs> {
+  const { projectRoot } = options
   return {
     name: 'hashline-edit',
     description: '基于行号 + 行哈希的精确编辑。先用 read 工具查看行内容，取其 SHA-256 前 8 位作为验证哈希。',

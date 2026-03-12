@@ -4,22 +4,22 @@ import { z } from 'zod'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const TaskGetArgsSchema = z.object({
-  taskId: z.string().describe('任务 ID'),
+  id: z.string().describe('任务 ID'),
 })
 
 type TaskGetArgs = z.infer<typeof TaskGetArgsSchema>
 
-export type GetTask = (taskId: string) => Promise<{
-  taskId: string
+export type GetTask = (id: string) => Promise<{
+  id: string
   status: string
   output?: string
   error?: string
 } | undefined>
 
-export function createTaskGetTool(get?: GetTask): AgentTool<TaskGetArgs> {
+export function createTaskGet(get?: GetTask): AgentTool<TaskGetArgs> {
   return {
     name: 'task_get',
-    description: '获取任务的当前状态和结果。',
+    description: '获取任务的当前状态和结果',
     parameters: TaskGetArgsSchema,
     visibility: 'always',
 
@@ -28,13 +28,13 @@ export function createTaskGetTool(get?: GetTask): AgentTool<TaskGetArgs> {
         return { content: [{ type: 'text', text: 'task_get not available' }], isError: true }
       }
 
-      const task = await get(args.taskId)
+      const task = await get(args.id)
       if (!task) {
-        return { content: [{ type: 'text', text: `Task ${args.taskId} not found` }], isError: true }
+        return { content: [{ type: 'text', text: `Task ${args.id} not found` }], isError: true }
       }
 
       const text = [
-        `Task: ${task.taskId}`,
+        `Task: ${task.id}`,
         `Status: ${task.status}`,
         task.output ? `Output:\n${task.output}` : '',
         task.error ? `Error:\n${task.error}` : '',

@@ -9,8 +9,8 @@ export { createAgent as createAgentWithRegistry } from './agent-factory'
 export type { AgentFactoryConfig } from './agent-factory'
 
 // Agent 循环
-export { agentLoop } from './agent-loop'
-export type { StreamFunction, AgentLoopOptions } from './agent-loop'
+
+export type { StreamFunction } from './work-loop'
 
 // 工具执行器
 export { createToolExecutor } from './tool-executor'
@@ -33,14 +33,12 @@ export type {
   AgentStatus,
   AgentBreakpointPoint,
   AgentDebugSnapshot,
-  AgentLoopDebugger,
   AgentMode,
   AgentEvent,
   ToolCallEvent,
   CustomAgentMessages,
   AgentMessage,
   AgentState,
-  AgentLoopConfig,
   AgentTool,
   ToolResult,
   AgentConfig,

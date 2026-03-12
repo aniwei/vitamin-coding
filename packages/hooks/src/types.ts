@@ -144,6 +144,6 @@ export interface HookRegistration<T extends HookTiming = HookTiming> {
   name: string
   timing: T
   priority: number
-  handler: HookHandler<T>
   enabled: boolean
+  handler: HookHandler<T>
 }

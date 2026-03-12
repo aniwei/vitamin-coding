@@ -81,19 +81,19 @@ export interface Model<T = Api> {
 // 统一内容部分类型
 export interface TextContent {
   type: 'text'
-  data: string
+  text: string
   signature?: string // 可选签名，用于内容验证或追踪
 }
 
 export interface ImageContent {
   type: 'image'
   mime: string
-  data: string // Base64 编码的图像数据
+  text: string // Base64 编码的图像数据
 }
 
 export interface ThinkingContent {
   type: 'thinking'
-  data: string
+  text: string
   signature?: string
 }
 

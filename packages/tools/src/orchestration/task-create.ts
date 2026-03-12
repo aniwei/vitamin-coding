@@ -11,14 +11,20 @@ const TaskCreateArgsSchema = z.object({
 
 type TaskCreateArgs = z.infer<typeof TaskCreateArgsSchema>
 
-export type CreateTask = (args: { prompt: string; category?: string; subagent?: string }) => Promise<{
-  taskId: string
+type CreateTaskArgs = {
+  prompt: string
+  category?: string
+  subagent?: string
+}
+
+export type CreateTask = (args: CreateTaskArgs) => Promise<{
+  id: string
 }>
 
-export function createTaskCreateTool(create?: CreateTask): AgentTool<TaskCreateArgs> {
+export function createTaskCreate(create?: CreateTask): AgentTool<TaskCreateArgs> {
   return {
     name: 'task_create',
-    description: '创建一个后台任务。',
+    description: '创建一个后台任务',
     parameters: TaskCreateArgsSchema,
     visibility: 'always',
 
@@ -33,7 +39,7 @@ export function createTaskCreateTool(create?: CreateTask): AgentTool<TaskCreateA
         subagent: args.subagent,
       })
 
-      return { content: [{ type: 'text', text: `Task created: ${result.taskId}` }] }
+      return { content: [{ type: 'text', text: `Task created: ${result.id}` }] }
     },
   }
 }

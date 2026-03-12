@@ -21,7 +21,16 @@ type AstGrepArgs = z.infer<typeof AstGrepArgsSchema>
 
 const MAX_OUTPUT_SIZE = 60 * 1024
 
-export function createAstGrepTool(projectRoot: string): AgentTool<AstGrepArgs> {
+export interface AstGrepOptions {
+  projectRoot: string,
+  maxOutputSize?: number,
+}
+
+export function createAstGrep(
+  options: AstGrepOptions
+): AgentTool<AstGrepArgs> {
+  const { projectRoot, maxOutputSize = MAX_OUTPUT_SIZE } = options
+
   return {
     name: 'ast-grep',
     description: '使用 AST 模式搜索代码结构。比正则更精确地匹配代码模式。',
@@ -43,7 +52,7 @@ export function createAstGrepTool(projectRoot: string): AgentTool<AstGrepArgs> {
 
         const { stdout } = await execFileAsync('sg', sgArgs, {
           cwd: projectRoot,
-          maxBuffer: MAX_OUTPUT_SIZE * 2,
+          maxBuffer: maxOutputSize * 2,
           timeout: 30_000,
           signal,
         })

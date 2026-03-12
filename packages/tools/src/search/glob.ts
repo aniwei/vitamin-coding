@@ -1,5 +1,5 @@
 // glob 工具 — 文件名 glob 匹配
-import { readdir } from 'node:fs/promises'
+import { readdir, glob } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 
 import { z } from 'zod'
@@ -14,7 +14,12 @@ const GlobArgsSchema = z.object({
 
 type GlobArgs = z.infer<typeof GlobArgsSchema>
 
-export function createGlobTool(projectRoot: string): AgentTool<GlobArgs> {
+interface GlobOptions {
+  projectRoot: string,
+}
+
+export function createGlob(options: GlobOptions): AgentTool<GlobArgs> {
+  const { projectRoot } = options
   return {
     name: 'glob',
     description: '按 glob 模式搜索文件。返回匹配的文件路径列表。',
@@ -25,8 +30,6 @@ export function createGlobTool(projectRoot: string): AgentTool<GlobArgs> {
       const searchRoot = args.path ? join(projectRoot, args.path) : projectRoot
 
       try {
-        // 使用 Node.js 内置 glob (Node 22+)
-        const { glob } = await import('node:fs/promises')
         const matches: string[] = []
 
         for await (const entry of glob(args.pattern, { cwd: searchRoot })) {

@@ -4,12 +4,12 @@ import { z } from 'zod'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const BackgroundOutputArgsSchema = z.object({
-  taskId: z.string().describe('后台任务 ID'),
+  id: z.string().describe('后台任务 ID'),
 })
 
 type BackgroundOutputArgs = z.infer<typeof BackgroundOutputArgsSchema>
 
-export type GetBackgroundOutput = (taskId: string) => Promise<{
+export type GetBackgroundOutput = (id: string) => Promise<{
   status: string
   output?: string
   error?: string
@@ -20,7 +20,7 @@ export function createBackgroundOutputTool(
 ): AgentTool<BackgroundOutputArgs> {
   return {
     name: 'background_output',
-    description: '获取后台任务的当前状态和输出。',
+    description: '获取后台任务的当前状态和输出',
     parameters: BackgroundOutputArgsSchema,
     visibility: 'always',
 
@@ -32,9 +32,9 @@ export function createBackgroundOutputTool(
         }
       }
 
-      const result = await getOutput(args.taskId)
+      const result = await getOutput(args.id)
       const text = [
-        `Task: ${args.taskId}`,
+        `Task: ${args.id}`,
         `Status: ${result.status}`,
         result.output ? `\nOutput:\n${result.output}` : '',
         result.error ? `\nError:\n${result.error}` : '',

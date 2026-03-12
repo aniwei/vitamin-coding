@@ -1,4 +1,3 @@
-// @vitamin/agent 核心类型
 import type {
   AssistantMessage,
   ImageContent,
@@ -23,14 +22,14 @@ export type AgentStatus =
   | 'aborted'
 
 export type AgentBreakpointPoint =
-  | 'loop:start'
-  | 'model:before'
-  | 'model:after'
-  | 'tool:before'
-  | 'tool:after'
-  | 'loop:end'
-  | 'agent:error'
-  | 'agent:done'
+  | 'loop_start'
+  | 'model_before'
+  | 'model_after'
+  | 'tool_before'
+  | 'tool_after'
+  | 'loop_end'
+  | 'agent_error'
+  | 'agent_done'
 
 export interface AgentDebugSnapshot {
   turn: number
@@ -94,11 +93,11 @@ export interface AgentState {
 }
 
 // Agent 循环配置
-export interface AgentLoopConfig {
+export interface AgentLoopRuntime {
   model: Model
   systemPrompt: string
   // AgentMessage[] → LLM Message[] 转换
-  convertToLlm: (messages: AgentMessage[]) => Message[] | Promise<Message[]>
+  convertToLLM: (messages: AgentMessage[]) => Message[] | Promise<Message[]>
   // 上下文转换（压缩/裁剪/注入）
   transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>
   
@@ -107,9 +106,6 @@ export interface AgentLoopConfig {
   
   // FollowUp 消息获取
   getFollowUpMessages?: () => Promise<AgentMessage[]>
-  
-  // API Key 动态获取
-  getApiKey?: (provider: string) => Promise<string | undefined>
   
   // 最大连续工具调用轮次（安全阀）
   maxToolTurns?: number
@@ -124,14 +120,14 @@ export interface AgentLoopConfig {
 }
 
 // Agent 工具（封装 ToolDefinition + execute）
-export interface AgentTool<TArgs = unknown> {
+export interface AgentTool<Args = unknown> {
   name: string
   description: string
-  parameters: ZodType<TArgs>
+  parameters: ZodType<Args>
   visibility?: 'always' | 'when-enabled' | 'when-requested'
   execute: (
     id: string,
-    args: TArgs,
+    args: Args,
     signal: AbortSignal,
     onUpdate?: (update: string) => void,
   ) => Promise<ToolResult>
@@ -149,7 +145,6 @@ export interface AgentConfig {
   model: Model
   systemPrompt: string
   tools?: AgentTool[]
-  loopConfig?: Partial<AgentLoopConfig>
   maxToolTurns?: number
   thinkingLevel?: ThinkingLevel
   maxTokens?: number

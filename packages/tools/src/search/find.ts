@@ -19,7 +19,13 @@ type FindArgs = z.infer<typeof FindArgsSchema>
 // 排除的目录
 const EXCLUDED_DIRS = new Set(['node_modules', '.git', 'dist', '.next', '__pycache__', '.turbo'])
 
-export function createFindTool(projectRoot: string): AgentTool<FindArgs> {
+interface FindOptions {
+  projectRoot: string,
+  excludedDirs?: Set<string>,
+}
+
+export function createFind(options: FindOptions): AgentTool<FindArgs> {
+  const { projectRoot, excludedDirs = EXCLUDED_DIRS } = options
   return {
     name: 'find',
     description: '在项目中查找文件或目录。可按名称、类型过滤。',
@@ -32,7 +38,17 @@ export function createFindTool(projectRoot: string): AgentTool<FindArgs> {
       const results: string[] = []
 
       try {
-        await walkFind(searchRoot, 0, args.maxDepth, args.type, namePattern, results, args.maxResults, projectRoot)
+        await walkFind(
+          searchRoot, 
+          0, 
+          args.maxDepth, 
+          args.type, 
+          namePattern, 
+          results, 
+          args.maxResults, 
+          projectRoot,
+          excludedDirs,
+        )
 
         if (results.length === 0) {
           return {
@@ -65,6 +81,7 @@ async function walkFind(
   results: string[],
   maxResults: number,
   projectRoot: string,
+  excludedDirs: Set<string> = EXCLUDED_DIRS
 ): Promise<void> {
   if (depth > maxDepth || results.length >= maxResults) return
 
@@ -73,7 +90,7 @@ async function walkFind(
     if (results.length >= maxResults) return
 
     const isDir = entry.isDirectory()
-    if (isDir && EXCLUDED_DIRS.has(entry.name)) continue
+    if (isDir && excludedDirs.has(entry.name)) continue
 
     // 类型过滤
     if (type === 'file' && isDir) {
@@ -100,5 +117,6 @@ function nameToRegex(pattern: string): RegExp {
     .replace(/[.+^${}()|[\]\\]/g, '\\$&')
     .replace(/\*/g, '.*')
     .replace(/\?/g, '.')
+    
   return new RegExp(`^${escaped}$`, 'i')
 }

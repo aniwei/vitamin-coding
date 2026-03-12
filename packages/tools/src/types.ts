@@ -15,7 +15,7 @@ export interface ToolMetadata {
 }
 
 // 注册的工具（AgentTool + 元数据）
-export interface RegisteredTool<TArgs = unknown> extends AgentTool<TArgs> {
+export interface RegisteredTool<Args = unknown> extends AgentTool<Args> {
   metadata: ToolMetadata
 }
 
@@ -27,7 +27,7 @@ export interface ToolRegistrationOptions {
 }
 
 // 工具工厂函数类型
-export type ToolFactory<TArgs = unknown> = () => AgentTool<TArgs>
+export type ToolFactory<Args = unknown> = () => AgentTool<Args>
 
 // 工具上下文 — 工具执行时的环境信息
 export interface ToolContext {
@@ -38,3 +38,33 @@ export interface ToolContext {
   // AbortSignal
   signal: AbortSignal
 }
+
+export type SkillLoader = (path: string) => Promise<{
+  success: boolean
+  name?: string
+  error?: string
+}>
+
+export type SkillMcp = (server: string, tool: string, args?: Record<string, unknown>) => Promise<{
+  success: boolean
+  result?: unknown
+  error?: string
+}>
+
+export type SkillExecutor = (name: string, input?: string, params?: Record<string, string>) => Promise<{
+  success: boolean
+  output?: string
+  error?: string
+}>
+
+export interface RegisterSkillOptions {
+  mcp?: SkillMcp
+  loader?: SkillLoader
+  executor?: SkillExecutor
+}
+
+export interface TaskOptions {
+  
+}
+
+export interface RegisterBuiltinOptions {}

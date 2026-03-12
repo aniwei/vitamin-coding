@@ -3,16 +3,15 @@ import { extname } from 'node:path'
 
 import { isFile, exists, readText } from '@vitamin/shared'
 import { normalizePath, resolvePath } from '@vitamin/shared'
-// read 工具 — 读取文件内容（文本 + 图片）
+// read 工具 — 读取文件内容
 import { z } from 'zod'
 
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
-// 支持的图片扩展名
-const IMAGE_EXTENSIONS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg'])
 
-// 图片文件大小上限（5MB）
-const MAX_IMAGE_SIZE = 5 * 1024 * 1024
+const IMAGE_MAX_SIZE = 5 * 1024 * 1024
+const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg'])
+
 
 // 参数 schema
 const ReadArgsSchema = z.object({
@@ -23,11 +22,20 @@ const ReadArgsSchema = z.object({
 
 type ReadArgs = z.infer<typeof ReadArgsSchema>
 
+export interface ReadToolOptions {
+  
+}
+
 // 创建 read 工具
-export function createReadTool(projectRoot: string): AgentTool<ReadArgs> {
+export function createRead(projectRoot: string, options: ReadToolOptions): AgentTool<ReadArgs> {
+  const { 
+    imageMaxSize = IMAGE_MAX_SIZE, 
+    imageExts = IMAGE_EXTS
+  } = options
+
   return {
     name: 'read',
-    description: '读取文件内容。可选指定行范围。',
+    description: '读取文件内容，可选指定行范围',
     parameters: ReadArgsSchema,
     visibility: 'always',
 
@@ -52,25 +60,38 @@ export function createReadTool(projectRoot: string): AgentTool<ReadArgs> {
 
       // 检查是否为图片文件
       const ext = extname(normalizedPath).toLowerCase()
-      if (IMAGE_EXTENSIONS.has(ext)) {
-        return readImageFile(normalizedPath, args.path)
+      if (imageExts?.has(ext)) {
+        return readImageFile(
+          normalizedPath, 
+          args.path, 
+          imageMaxSize
+        )
       }
 
       // 文本文件处理
-      return readTextWithRange(normalizedPath, args.path, args.startLine, args.endLine)
+      return readTextWithRange(
+        normalizedPath, 
+        args.path, 
+        args.startLine, 
+        args.endLine
+      )
     },
   }
 }
 
 // 读取图片文件并返回 base64 编码
-async function readImageFile(absolutePath: string, displayPath: string): Promise<ToolResult> {
+async function readImageFile(
+  absolutePath: string, 
+  displayPath: string,
+  maxSize: number
+): Promise<ToolResult> {
   try {
     const buffer = await readFile(absolutePath)
-    if (buffer.length > MAX_IMAGE_SIZE) {
+    if (buffer.length > maxSize) {
       return {
         content: [{
           type: 'text',
-          text: `Image too large: ${displayPath} (${(buffer.length / 1024 / 1024).toFixed(1)}MB, max ${MAX_IMAGE_SIZE / 1024 / 1024}MB)`,
+          text: `Image too large: ${displayPath} (${(buffer.length / 1024 / 1024).toFixed(1)}MB, max ${(maxSize / 1024 / 1024).toFixed(1)}MB)`,
         }],
         isError: true,
       }
@@ -85,11 +106,16 @@ async function readImageFile(absolutePath: string, displayPath: string): Promise
       }
     }
 
-    const mediaType = ext === '.png' ? 'image/png'
-      : ext === '.gif' ? 'image/gif'
-      : ext === '.webp' ? 'image/webp'
-      : ext === '.bmp' ? 'image/bmp'
-      : 'image/jpeg'
+    let mediaType = 'image/jpeg' // 默认媒体类型
+    if (ext === '.png') {
+      mediaType = 'image/png'
+    } else if (ext === '.gif') {
+      mediaType = 'image/gif'
+    } else if (ext === '.webp') {
+      mediaType = 'image/webp'
+    } else if (ext === '.bmp') {
+      mediaType = 'image/bmp'
+    }
 
     const base64 = buffer.toString('base64')
     return {

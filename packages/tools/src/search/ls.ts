@@ -19,7 +19,13 @@ type LsArgs = z.infer<typeof LsArgsSchema>
 // 排除的目录
 const EXCLUDED_DIRS = new Set(['node_modules', '.git', 'dist', '.next', '__pycache__', '.turbo'])
 
-export function createLsTool(projectRoot: string): AgentTool<LsArgs> {
+interface LsOptions {
+  projectRoot: string,
+  excludedDirs?: Set<string>,
+}
+
+export function createLs(options: LsOptions): AgentTool<LsArgs> {
+  const { projectRoot, excludedDirs } = options
   return {
     name: 'ls',
     description: '列出目录内容。可递归显示子目录结构。',
@@ -38,7 +44,15 @@ export function createLsTool(projectRoot: string): AgentTool<LsArgs> {
 
       try {
         const lines: string[] = []
-        await listDir(targetDir, 0, args.recursive ? args.maxDepth : 0, lines, args.maxEntries, projectRoot)
+        await listDir(
+          targetDir, 
+          0, 
+          args.recursive ? args.maxDepth : 0, 
+          lines, 
+          args.maxEntries, 
+          projectRoot,
+          excludedDirs
+        )
 
         if (lines.length === 0) {
           return {
@@ -72,6 +86,7 @@ async function listDir(
   lines: string[],
   maxEntries: number,
   projectRoot: string,
+  excludedDirs: Set<string> = EXCLUDED_DIRS
 ): Promise<void> {
   if (lines.length >= maxEntries) return
 
@@ -84,12 +99,15 @@ async function listDir(
   })
 
   const indent = '  '.repeat(depth)
+
   for (const entry of sorted) {
     if (lines.length >= maxEntries) return
 
     if (entry.isDirectory()) {
-      if (EXCLUDED_DIRS.has(entry.name)) continue
+      if (excludedDirs.has(entry.name)) continue
+
       lines.push(`${indent}${entry.name}/`)
+      
       if (depth < maxDepth) {
         await listDir(join(dir, entry.name), depth + 1, maxDepth, lines, maxEntries, projectRoot)
       }

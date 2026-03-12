@@ -18,7 +18,14 @@ const InteractiveBashArgsSchema = z.object({
 
 type InteractiveBashArgs = z.infer<typeof InteractiveBashArgsSchema>
 
-export function createInteractiveBashTool(projectRoot: string): AgentTool<InteractiveBashArgs> {
+interface InteractiveBashOptions {
+  projectRoot: string,
+  timeoutMs?: number,
+  maxOutputSize?: number,
+}
+
+export function createInteractiveBash(options: InteractiveBashOptions): AgentTool<InteractiveBashArgs> {
+  const { projectRoot, timeoutMs = TIMEOUT_MS, maxOutputSize = MAX_OUTPUT_SIZE } = options
   return {
     name: 'interactive-bash',
     description: '执行交互式终端命令，支持 stdin 输入和超时控制。',
@@ -27,7 +34,7 @@ export function createInteractiveBashTool(projectRoot: string): AgentTool<Intera
 
     async execute(_id, args, signal): Promise<ToolResult> {
       const cwd = args.cwd ? resolvePath(projectRoot, args.cwd) : projectRoot
-      const timeout = args.timeout ?? TIMEOUT_MS
+      const timeout = args.timeout ?? timeoutMs
 
       return new Promise((resolve) => {
         let stdout = ''
@@ -53,8 +60,8 @@ export function createInteractiveBashTool(projectRoot: string): AgentTool<Intera
 
         child.stdout.on('data', (data: Buffer) => {
           stdout += data.toString()
-          if (stdout.length > MAX_OUTPUT_SIZE) {
-            stdout = stdout.slice(0, MAX_OUTPUT_SIZE) + '\n... (output truncated)'
+          if (stdout.length > maxOutputSize) {
+            stdout = stdout.slice(0, maxOutputSize) + '\n... (output truncated)'
             killed = true
             child.kill('SIGTERM')
           }
@@ -62,8 +69,8 @@ export function createInteractiveBashTool(projectRoot: string): AgentTool<Intera
 
         child.stderr.on('data', (data: Buffer) => {
           stderr += data.toString()
-          if (stderr.length > MAX_OUTPUT_SIZE) {
-            stderr = stderr.slice(0, MAX_OUTPUT_SIZE) + '\n... (output truncated)'
+          if (stderr.length > maxOutputSize) {
+            stderr = stderr.slice(0, maxOutputSize) + '\n... (output truncated)'
           }
         })
 

@@ -5,7 +5,7 @@ import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const DelegateTaskArgsSchema = z.object({
   prompt: z.string().describe('要委派的任务描述'),
-  subagent: z.string().optional().describe('指定子 Agent 名称（如 "explore"、"oracle"）'),
+  subagent: z.string().optional().describe('指定子Agent名称（如 "explore"）'),
   category: z.string().optional().describe('任务类别（如 "quick"、"deep"、"search"）'),
   mode: z.enum(['sync', 'background']).optional().default('sync').describe('执行模式'),
 }).refine(
@@ -26,16 +26,23 @@ export type TaskDispatch = (args: {
 export interface TaskDispatchResult {
   success: boolean
   output?: string
-  taskId?: string
+  id?: string
   error?: string
 }
 
-export function createDelegateTaskTool(
-  dispatch?: TaskDispatch,
+export interface DelegateTaskOptions {
+  projectRoot: string
+  dispatch?: TaskDispatch
+}
+
+export function createDelegateTask(
+  options: DelegateTaskOptions
 ): AgentTool<DelegateTaskArgs> {
+  const { dispatch } = options
+
   return {
-    name: 'delegate_task',
-    description: '委派任务给子 Agent 执行。可指定 Agent 名称或任务类别。',
+    name: 'task_delegate',
+    description: '委派任务给子Agent执行，可指定Agent名称或任务类别',
     parameters: DelegateTaskArgsSchema,
     visibility: 'always',
 
@@ -44,7 +51,7 @@ export function createDelegateTaskTool(
         return {
           content: [{
             type: 'text',
-            text: 'delegate_task is not available: orchestrator not initialized',
+            text: 'task_delegate is not available: orchestrator not initialized',
           }],
           isError: true,
         }
@@ -67,8 +74,8 @@ export function createDelegateTaskTool(
 
         if (args.mode === 'background') {
           return {
-            content: [{ type: 'text', text: `Background task started: ${result.taskId ?? 'unknown'}` }],
-            metadata: { taskId: result.taskId, mode: 'background' },
+            content: [{ type: 'text', text: `Background task started: ${result.id ?? 'unknown'}` }],
+            metadata: { id: result.id, mode: 'background' },
           }
         }
 

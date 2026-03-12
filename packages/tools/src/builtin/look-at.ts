@@ -16,7 +16,14 @@ const LookAtArgsSchema = z.object({
 
 type LookAtArgs = z.infer<typeof LookAtArgsSchema>
 
-export function createLookAtTool(projectRoot: string): AgentTool<LookAtArgs> {
+interface LookAtOptions {
+  projectRoot: string,
+  maxImageSize?: number,
+  imageExtensions?: Set<string>,
+}
+
+export function createLookAt(options: LookAtOptions): AgentTool<LookAtArgs> {
+  const { projectRoot, maxImageSize = MAX_IMAGE_SIZE, imageExtensions = IMAGE_EXTENSIONS } = options
   return {
     name: 'look-at',
     description: '查看图片/截图内容。传入图片路径，返回 base64 编码供多模态模型分析。',
@@ -31,32 +38,32 @@ export function createLookAtTool(projectRoot: string): AgentTool<LookAtArgs> {
       }
 
       const ext = extname(resolved).toLowerCase()
-      if (!IMAGE_EXTENSIONS.has(ext)) {
+      if (!imageExtensions.has(ext)) {
         return { content: [{ type: 'text', text: `Not a supported image format: ${ext}` }], isError: true }
       }
 
       const buffer = await readFile(resolved)
-      if (buffer.length > MAX_IMAGE_SIZE) {
+      if (buffer.length > maxImageSize) {
         return {
           content: [{
             type: 'text',
-            text: `Image too large: ${(buffer.length / 1024 / 1024).toFixed(1)}MB (max ${MAX_IMAGE_SIZE / 1024 / 1024}MB)`,
+            text: `Image too large: ${(buffer.length / 1024 / 1024).toFixed(1)}MB (max ${(maxImageSize / 1024 / 1024).toFixed(1)}MB)`,
           }],
           isError: true,
         }
       }
 
       const base64 = buffer.toString('base64')
-      const mediaType = ext === '.png' ? 'image/png'
-        : ext === '.gif' ? 'image/gif'
-          : ext === '.webp' ? 'image/webp'
+      const mediaType = ext === '.png' 
+        ? 'image/png'
+        : ext === '.gif' 
+          ? 'image/gif'
+          : ext === '.webp' 
+            ? 'image/webp'
             : 'image/jpeg'
 
       const content: ToolResult['content'] = [
-        {
-          type: 'image',
-          source: { type: 'base64', mediaType, data: base64 },
-        },
+        { type: 'image', source: { type: 'base64', mediaType, data: base64 } },
       ]
 
       if (args.question) {

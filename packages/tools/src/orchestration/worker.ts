@@ -1,4 +1,4 @@
-// start-work 工具 — 启动计划执行
+// 启动计划执行
 import { z } from 'zod'
 
 import type { AgentTool, ToolResult } from '@vitamin/agent'
@@ -11,22 +11,30 @@ type StartWorkArgs = z.infer<typeof StartWorkArgsSchema>
 
 export type StartWork = (planName: string) => Promise<{ success: boolean; message: string }>
 
-export function createStartWorkTool(startWork?: StartWork): AgentTool<StartWorkArgs> {
+interface WorkerOptions {
+  projectRoot: string
+  startWork?: StartWork
+}
+
+export function createWorker(options: WorkerOptions): AgentTool<StartWorkArgs> {
+  const { startWork } = options
+
   return {
-    name: 'start_work',
-    description: '启动一个已生成的计划的执行。Atlas 将按 DAG 拓扑并行执行计划步骤。',
+    name: 'worker_start',
+    description: '启动一个已生成的计划的执行，Worker 将按 DAG 拓扑并行执行计划步骤',
     parameters: StartWorkArgsSchema,
     visibility: 'always',
 
     async execute(_id, args, _signal): Promise<ToolResult> {
       if (!startWork) {
         return {
-          content: [{ type: 'text', text: 'start_work is not available: plan executor not initialized' }],
+          content: [{ type: 'text', text: 'worker_start is not available, plan executor not initialized' }],
           isError: true,
         }
       }
 
       const result = await startWork(args.planName)
+
       return {
         content: [{ type: 'text', text: result.message }],
         isError: !result.success,

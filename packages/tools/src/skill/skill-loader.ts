@@ -2,6 +2,7 @@
 import { z } from 'zod'
 
 import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { RegisterSkillOptions } from '../types'
 
 const SkillLoaderArgsSchema = z.object({
   path: z.string().describe('SKILL.md 文件路径（相对或绝对）'),
@@ -9,30 +10,26 @@ const SkillLoaderArgsSchema = z.object({
 
 type SkillLoaderArgs = z.infer<typeof SkillLoaderArgsSchema>
 
-export type LoadSkill = (path: string) => Promise<{
-  success: boolean
-  skillName?: string
-  error?: string
-}>
-
-export function createSkillLoaderTool(loadFn?: LoadSkill): AgentTool<SkillLoaderArgs> {
+export function createSkillLoader(options: RegisterSkillOptions): AgentTool<SkillLoaderArgs> {
+  const { loader } = options
+  
   return {
-    name: 'skill-loader',
+    name: 'skill_loader',
     description: '从 SKILL.md 文件加载 Skill 定义。加载后可通过 skill-executor 执行。',
     parameters: SkillLoaderArgsSchema,
     visibility: 'always',
 
     async execute(_id, args, _signal): Promise<ToolResult> {
-      if (!loadFn) {
+      if (!loader) {
         return {
           content: [{ type: 'text', text: 'skill-loader not available' }],
           isError: true,
         }
       }
 
-      const result = await loadFn(args.path)
+      const result = await loader(args.path)
       if (result.success) {
-        return { content: [{ type: 'text', text: `Skill "${result.skillName}" loaded from ${args.path}` }] }
+        return { content: [{ type: 'text', text: `Skill "${result.name}" loaded from ${args.path}` }] }
       }
 
       return {

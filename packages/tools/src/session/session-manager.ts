@@ -18,7 +18,14 @@ export interface SessionManager {
   compact: (id: string) => Promise<boolean>
 }
 
-export function createSessionManagerTool(fns?: SessionManager): AgentTool<SessionManagerArgs> {
+interface SessionManagerOptions {
+  projectRoot: string
+  sessionManager?: SessionManager
+}
+
+export function createSessionManager(options: SessionManagerOptions): AgentTool<SessionManagerArgs> {
+  const { sessionManager } = options
+
   return {
     name: 'session-manager',
     description: '管理对话会话：列出、创建、删除、压缩会话。',
@@ -26,7 +33,7 @@ export function createSessionManagerTool(fns?: SessionManager): AgentTool<Sessio
     visibility: 'always',
 
     async execute(_id, args, _signal): Promise<ToolResult> {
-      if (!fns) {
+      if (!sessionManager) {
         return {
           content: [{ type: 'text', text: 'session-manager not available' }],
           isError: true,
@@ -35,21 +42,21 @@ export function createSessionManagerTool(fns?: SessionManager): AgentTool<Sessio
 
       switch (args.action) {
         case 'list': {
-          const sessions = await fns.list()
+          const sessions = await sessionManager.list()
           const text = sessions.length === 0
             ? 'No sessions found.'
             : sessions.map((s) => `- ${s.id}: ${s.title} (${s.messageCount} messages)`).join('\n')
           return { content: [{ type: 'text', text }] }
         }
         case 'create': {
-          const session = await fns.create(args.title)
+          const session = await sessionManager.create(args.title)
           return { content: [{ type: 'text', text: `Session created: ${session.id}` }] }
         }
         case 'remove': {
           if (!args.sessionId) {
             return { content: [{ type: 'text', text: 'sessionId required for remove' }], isError: true }
           }
-          const removed = await fns.remove(args.sessionId)
+          const removed = await sessionManager.remove(args.sessionId)
           return {
             content: [{ type: 'text', text: removed ? `Session ${args.sessionId} removed` : 'Session not found' }],
             isError: !removed,
@@ -59,7 +66,7 @@ export function createSessionManagerTool(fns?: SessionManager): AgentTool<Sessio
           if (!args.sessionId) {
             return { content: [{ type: 'text', text: 'sessionId required for compact' }], isError: true }
           }
-          const compacted = await fns.compact(args.sessionId)
+          const compacted = await sessionManager.compact(args.sessionId)
           return {
             content: [{ type: 'text', text: compacted ? `Session ${args.sessionId} compacted` : 'Compact failed' }],
             isError: !compacted,

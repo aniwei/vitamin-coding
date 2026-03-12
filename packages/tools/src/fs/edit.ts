@@ -14,8 +14,13 @@ const EditArgsSchema = z.object({
 
 type EditArgs = z.infer<typeof EditArgsSchema>
 
+export interface EditOptions {
+}
+
 // 创建 edit 工具
-export function createEditTool(projectRoot: string): AgentTool<EditArgs> {
+export function createEdit(projectRoot: string, _options: EditOptions): AgentTool<EditArgs> {
+  
+
   return {
     name: 'edit',
     description: '精确字符串替换编辑。oldString 必须在文件中唯一匹配。',
@@ -55,24 +60,14 @@ export function createEditTool(projectRoot: string): AgentTool<EditArgs> {
 
         if (matchCount === 0) {
           return {
-            content: [
-              {
-                type: 'text',
-                text: `oldString not found in ${args.path}. Make sure the string matches exactly including whitespace and indentation.`,
-              },
-            ],
+            content: [{ type: 'text', text: `Old string not found in ${args.path}. Make sure the string matches exactly including whitespace and indentation.`}],
             isError: true,
           }
         }
 
         if (matchCount > 1) {
           return {
-            content: [
-              {
-                type: 'text',
-                text: `oldString found ${matchCount} times in ${args.path}. It must match exactly once. Include more context to make it unique.`,
-              },
-            ],
+            content: [{ type: 'text', text: `oldString found ${matchCount} times in ${args.path}. It must match exactly once. Include more context to make it unique.` }],
             isError: true,
           }
         }
@@ -86,12 +81,7 @@ export function createEditTool(projectRoot: string): AgentTool<EditArgs> {
         const newLines = args.newString.split('\n').length
 
         return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully edited ${args.path}: replaced ${oldLines} lines with ${newLines} lines`,
-            },
-          ],
+          content: [{ type: 'text', text: `Successfully edited ${args.path}: replaced ${oldLines} lines with ${newLines} lines` }],
           metadata: {
             path: normalizedPath,
             oldLines,

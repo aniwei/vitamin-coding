@@ -15,11 +15,15 @@ const WriteArgsSchema = z.object({
 
 type WriteArgs = z.infer<typeof WriteArgsSchema>
 
+export interface WriteOptions {
+  
+}
+
 // 创建 write 工具
-export function createWriteTool(projectRoot: string): AgentTool<WriteArgs> {
+export function createWrite(projectRoot: string, _options: WriteOptions): AgentTool<WriteArgs> {
   return {
     name: 'write',
-    description: '创建或覆盖文件。自动创建不存在的父目录。',
+    description: '创建或覆盖文件，自动创建不存在的父目录',
     parameters: WriteArgsSchema,
     visibility: 'always',
 
@@ -37,12 +41,7 @@ export function createWriteTool(projectRoot: string): AgentTool<WriteArgs> {
 
         const lineCount = args.content.split('\n').length
         return {
-          content: [
-            {
-              type: 'text',
-              text: `Successfully wrote ${lineCount} lines to ${args.path}`,
-            },
-          ],
+          content: [{ type: 'text', text: `Successfully wrote ${lineCount} lines to ${args.path}`, }],
           metadata: {
             path: normalizedPath,
             lineCount,
@@ -50,7 +49,10 @@ export function createWriteTool(projectRoot: string): AgentTool<WriteArgs> {
           },
         }
       } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
+        const message = error instanceof Error 
+          ? error.message 
+          : String(error)
+
         return {
           content: [{ type: 'text', text: `Failed to write file: ${message}` }],
           isError: true,

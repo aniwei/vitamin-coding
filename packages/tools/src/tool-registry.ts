@@ -1,8 +1,15 @@
 // 工具注册表 — 注册、查询、预设过滤
 import type { AgentTool } from '@vitamin/agent'
-import type { RegisteredTool, ToolMetadata, ToolPreset, ToolRegistrationOptions } from './types'
+import type { 
+  RegisteredTool, 
+  ToolMetadata, 
+  ToolPreset, 
+  ToolRegistrationOptions 
+} from './types'
+import { registerBuiltinTools } from './register-builtin'
 
-// 预设包含关系: minimal ⊂ standard ⊂ full
+
+// 预设包含关系 minimal ⊂ standard ⊂ full
 const PRESET_INCLUDES: Record<ToolPreset, Set<ToolPreset>> = {
   minimal: new Set(['minimal']),
   standard: new Set(['minimal', 'standard']),
@@ -12,25 +19,55 @@ const PRESET_INCLUDES: Record<ToolPreset, Set<ToolPreset>> = {
 export class ToolRegistry {
   private readonly tools = new Map<string, RegisteredTool>()
 
+  // 工具数量
+  get size(): number {
+    return this.tools.size
+  }
+
   // 注册工具
-  register<TArgs = unknown>(tool: AgentTool<TArgs>, options: ToolRegistrationOptions = {}): void {
+  register<Args = unknown>(tools: AgentTool<Args>[], options: ToolRegistrationOptions): void;
+  register<Args = unknown>(tools: AgentTool<Args> | AgentTool<Args>[], options: ToolRegistrationOptions = {}): void {
     const metadata: ToolMetadata = {
       preset: options.preset ?? 'full',
       category: options.category,
       builtin: options.builtin ?? false,
     }
 
-    const registered: RegisteredTool<TArgs> = {
-      ...tool,
-      metadata,
-    }
+    if (Array.isArray(tools)) {
+      for (const tool of tools) {
+        const registered: RegisteredTool<Args> = { ...tool, metadata}
+        this.tools.set(tool.name, registered as RegisteredTool)
+      }
+    } else {
+      const tool = tools
+      const registered: RegisteredTool<Args> = { ...tool, metadata}
 
-    this.tools.set(tool.name, registered as RegisteredTool)
+      this.tools.set(tool.name, registered as RegisteredTool)
+    }
   }
 
   // 注销工具
-  unregister(name: string): boolean {
+  unregister(name: string): boolean;
+  unregister(name: string | string[]): boolean {
+    if (Array.isArray(name)) {
+      let allDeleted = true
+      for (const n of name) {
+        const deleted = this.tools.delete(n)
+        if (!deleted) {
+          allDeleted = false
+        }
+      }
+
+      return allDeleted
+    } 
+
     return this.tools.delete(name)
+  }
+  
+  // 按名称列表获取工具
+  getByNames(names: string[]): RegisteredTool[] {
+    const set = new Set(names)
+    return this.getAll().filter((tool) => set.has(tool.name))
   }
 
   // 按名称获取工具
@@ -76,18 +113,17 @@ export class ToolRegistry {
     return this.getAll().filter((tool) => !nameSet.has(tool.name))
   }
 
-  // 工具数量
-  get size(): number {
-    return this.tools.size
-  }
-
   // 清空所有工具
   clear(): void {
     this.tools.clear()
   }
 }
 
-// 工厂函数
-export function createToolRegistry(): ToolRegistry {
-  return new ToolRegistry()
+export const createToolRegistry = (
+  projectRoot: string,): ToolRegistry => {
+  const registry = new ToolRegistry()
+
+  registerBuiltinTools(registry, projectRoot, {})
+
+  return registry
 }

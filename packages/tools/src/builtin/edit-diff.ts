@@ -14,7 +14,13 @@ const EditDiffArgsSchema = z.object({
 
 type EditDiffArgs = z.infer<typeof EditDiffArgsSchema>
 
-export function createEditDiffTool(projectRoot: string): AgentTool<EditDiffArgs> {
+interface EditDiffOptions {
+  projectRoot: string,
+}
+
+export function createEditDiff(options: EditDiffOptions): AgentTool<EditDiffArgs> {
+  const { projectRoot } = options
+  
   return {
     name: 'edit-diff',
     description: '模糊匹配编辑：当 oldString 有微小差异时仍能匹配并替换。',

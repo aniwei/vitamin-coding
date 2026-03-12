@@ -22,7 +22,13 @@ type GrepArgs = z.infer<typeof GrepArgsSchema>
 // 输出大小上限 60KB
 const MAX_OUTPUT_SIZE = 60 * 1024
 
-export function createGrepTool(projectRoot: string): AgentTool<GrepArgs> {
+interface GrepOptions {
+  projectRoot: string,
+  maxOutputSize?: number,
+}
+
+export function createGrep(options: GrepOptions): AgentTool<GrepArgs> {
+  const { projectRoot, maxOutputSize = MAX_OUTPUT_SIZE } = options
   return {
     name: 'grep',
     description: '在项目中搜索文本或正则模式。返回匹配的文件名、行号和内容。',
@@ -36,12 +42,12 @@ export function createGrepTool(projectRoot: string): AgentTool<GrepArgs> {
       try {
         const { stdout } = await execFileAsync('grep', grepArgs, {
           cwd: projectRoot,
-          maxBuffer: MAX_OUTPUT_SIZE * 2,
+          maxBuffer: maxOutputSize * 2,
           timeout: 30_000,
           signal,
         })
 
-        const trimmed = truncateOutput(stdout)
+        const trimmed = truncateOutput(stdout, maxOutputSize)
         if (!trimmed) {
           return {
             content: [{ type: 'text', text: `No matches found for pattern: ${args.pattern}` }],
@@ -86,10 +92,10 @@ function buildGrepArgs(args: GrepArgs, searchPath: string): string[] {
   return grepArgs
 }
 
-function truncateOutput(output: string): string {
-  if (output.length <= MAX_OUTPUT_SIZE) return output.trim()
-  const truncated = output.slice(0, MAX_OUTPUT_SIZE)
+function truncateOutput(output: string, maxOutputSize: number): string {
+  if (output.length <= maxOutputSize) return output.trim()
+  const truncated = output.slice(0, maxOutputSize)
   const lastNewline = truncated.lastIndexOf('\n')
   const clean = lastNewline > 0 ? truncated.slice(0, lastNewline) : truncated
-  return `${clean}\n\n... [output truncated at ${MAX_OUTPUT_SIZE} bytes]`
+  return `${clean}\n\n... [output truncated at ${maxOutputSize} bytes]`
 }

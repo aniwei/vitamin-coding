@@ -1,6 +1,4 @@
-// call-agent 工具 — 直接调用指定 Agent
 import { z } from 'zod'
-
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const CallAgentArgsSchema = z.object({
@@ -16,9 +14,16 @@ export type CallAgent = (agent: string, prompt: string) => Promise<{
   error?: string
 }>
 
-export function createCallAgentTool(call?: CallAgent): AgentTool<CallAgentArgs> {
+interface CallAgentToolOptions {
+  projectRoot: string
+  call?: CallAgent
+}
+
+export function createCallAgent(options: CallAgentToolOptions): AgentTool<CallAgentArgs> {
+  const { call } = options
+
   return {
-    name: 'call_agent',
+    name: 'agent_call',
     description: '直接调用指定 Agent 并等待结果。适用于需要特定 Agent 能力的场景。',
     parameters: CallAgentArgsSchema,
     visibility: 'always',
@@ -26,7 +31,7 @@ export function createCallAgentTool(call?: CallAgent): AgentTool<CallAgentArgs> 
     async execute(_id, args, _signal): Promise<ToolResult> {
       if (!call) {
         return {
-          content: [{ type: 'text', text: 'call_agent not available: agent system not initialized' }],
+          content: [{ type: 'text', text: 'call_agent not available, agent system not initialized' }],
           isError: true,
         }
       }

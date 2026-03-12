@@ -20,8 +20,16 @@ const BashArgsSchema = z.object({
 
 type BashArgs = z.infer<typeof BashArgsSchema>
 
+interface BashOptions {
+  projectRoot: string,
+  timeoutMs?: number,
+  maxOutputSize?: number,
+}
+
 // 创建 bash 工具
-export function createBashTool(projectRoot: string): AgentTool<BashArgs> {
+export function createBash(options: BashOptions): AgentTool<BashArgs> {
+  const { projectRoot, timeoutMs, maxOutputSize = MAX_OUTPUT_LENGTH } = options
+
   return {
     name: 'bash',
     description: '执行 shell 命令并返回 stdout/stderr。默认超时 30 秒。',
@@ -31,7 +39,7 @@ export function createBashTool(projectRoot: string): AgentTool<BashArgs> {
     async execute(_id, args, signal): Promise<ToolResult> {
       const cwd = args.cwd ? `${projectRoot}/${args.cwd}` : projectRoot
 
-      const timeout = args.timeout ?? DEFAULT_TIMEOUT
+      const timeout = args.timeout ?? timeoutMs ?? DEFAULT_TIMEOUT
 
       try {
         const result = await spawnProcess({
@@ -53,8 +61,8 @@ export function createBashTool(projectRoot: string): AgentTool<BashArgs> {
         }
 
         // 截断过长输出
-        if (output.length > MAX_OUTPUT_LENGTH) {
-          output = truncate(output, MAX_OUTPUT_LENGTH)
+        if (output.length > maxOutputSize) {
+          output = truncate(output, maxOutputSize)
           output += '\n... (output truncated)'
         }
 
@@ -86,7 +94,7 @@ export function createBashTool(projectRoot: string): AgentTool<BashArgs> {
           metadata: {
             command: args.command,
             cwd,
-          },
+          }
         }
       }
     },

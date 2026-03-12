@@ -2,17 +2,18 @@ import {
   type AssistantMessage,
   type Message,
   type Model,
+  type StreamContext,
+  type StreamEvent,
   type ToolCall,
-  type ToolResultMessage,
   createEventStream,
-} from '@vitamin/ai'
+} from '../../ai/src/index'
 import { describe, expect, it } from 'vitest'
 
-import { agentLoop } from '../src/agent-loop'
-import { MaxToolTurnsError } from '../src/errors'
+import { workLoop } from '../src/work-loop'
+import { AbortError, MaxToolTurnsError } from '../src/errors'
 import { createToolExecutor } from '../src/tool-executor'
 
-import type { AgentEvent, AgentLoopConfig, AgentMessage, AgentTool } from '../src/types'
+import type { AgentEvent, AgentLoopRuntime, AgentMessage, AgentTool } from '../src/types'
 
 function makeModel(): Model {
   return {
@@ -40,6 +41,8 @@ function makeAssistantMessage(
   return {
     role: 'assistant',
     content,
+    api: 'openai-completions',
+    provider: 'openai',
     usage: {
       inputTokens: 10,
       outputTokens: 5,
@@ -76,17 +79,17 @@ function makeTool(name: string, executeText: string): AgentTool {
     name,
     description: `tool:${name}`,
     parameters: createSchema<Record<string, unknown>>(),
-    async execute() {
-      return { content: [{ type: 'text' as const, text: executeText }] }
+    async execute(_id, _args, _signal) {
+      return { content: [{ type: 'text' as const, data: executeText }] }
     },
   }
 }
 
-function createConfig(overrides?: Partial<AgentLoopConfig>): AgentLoopConfig {
+function createRuntime(overrides?: Partial<AgentLoopRuntime>): AgentLoopRuntime {
   return {
     model: makeModel(),
     systemPrompt: 'you are helpful',
-    convertToLlm: async (messages) => messages as Message[],
+    convertToLLM: async (messages) => messages as Message[],
     getSteeringMessages: async () => [],
     getFollowUpMessages: async () => [],
     maxToolTurns: 25,
@@ -94,7 +97,21 @@ function createConfig(overrides?: Partial<AgentLoopConfig>): AgentLoopConfig {
   }
 }
 
-describe('agentLoop', () => {
+function makeStream(responses: AssistantMessage[]) {
+  let index = 0
+  return (_context: StreamContext, _signal: AbortSignal) => {
+    const eventStream = createEventStream<StreamEvent, AssistantMessage>()
+    const message = responses[index++]
+    setTimeout(() => {
+      if (!message) return
+      eventStream.push({ type: 'start', partial: message })
+      eventStream.complete(message)
+    }, 0)
+    return eventStream
+  }
+}
+
+describe('workLoop', () => {
   describe('#given steering messages arrive before tool execution', () => {
     describe('#when assistant emits tool calls', () => {
       it('#then injects steering and skips pending tool execution', async () => {
@@ -105,14 +122,13 @@ describe('agentLoop', () => {
             [makeToolCall('alpha', 'tc_1', { q: 1 }), makeToolCall('alpha', 'tc_2', { q: 2 })],
             'tool_use',
           ),
-          makeAssistantMessage([{ type: 'text', text: 'done' }], 'end_turn'),
+          makeAssistantMessage([{ type: 'text', data: 'done' }], 'end_turn'),
         ]
-        let streamIndex = 0
         let steeringReturned = false
 
-        const result = await agentLoop({
+        const result = await workLoop({
           messages,
-          config: createConfig({
+          ...createRuntime({
             getSteeringMessages: async () => {
               if (!steeringReturned) {
                 steeringReturned = true
@@ -122,19 +138,7 @@ describe('agentLoop', () => {
             },
           }),
           toolExecutor: createToolExecutor([makeTool('alpha', 'tool ok')]),
-          stream: (_context, _signal) => {
-            const eventStream = createEventStream<
-              import('@vitamin/ai').StreamEvent,
-              AssistantMessage
-            >()
-            const message = streamCalls[streamIndex++]
-            setTimeout(() => {
-              if (!message) return
-              eventStream.push({ type: 'start', partial: message })
-              eventStream.complete(message)
-            }, 0)
-            return eventStream
-          },
+          stream: makeStream(streamCalls),
           signal: new AbortController().signal,
           emit: (event) => events.push(event),
         })
@@ -155,9 +159,9 @@ describe('agentLoop', () => {
         let streamCount = 0
         let followUpTaken = false
 
-        const result = await agentLoop({
+        const result = await workLoop({
           messages,
-          config: createConfig({
+          ...createRuntime({
             getFollowUpMessages: async () => {
               if (!followUpTaken) {
                 followUpTaken = true
@@ -168,24 +172,17 @@ describe('agentLoop', () => {
           }),
           toolExecutor: createToolExecutor([]),
           stream: (_context, _signal) => {
-            const eventStream = createEventStream<
-              import('@vitamin/ai').StreamEvent,
-              AssistantMessage
-            >()
             const responseText = streamCount === 0 ? 'first' : 'second'
-            const message = makeAssistantMessage([{ type: 'text', text: responseText }], 'end_turn')
             streamCount++
-            setTimeout(() => {
-              eventStream.push({ type: 'start', partial: message })
-              eventStream.complete(message)
-            }, 0)
-            return eventStream
+            return makeStream([
+              makeAssistantMessage([{ type: 'text', data: responseText }], 'end_turn'),
+            ])(_context, _signal)
           },
           signal: new AbortController().signal,
           emit: (event) => events.push(event),
         })
 
-        expect(result.content[0]).toEqual({ type: 'text', text: 'second' })
+        expect(result.content[0]).toEqual({ type: 'text', data: 'second' })
         expect(streamCount).toBe(2)
         expect(events.some((e) => e.type === 'follow_up_start')).toBe(true)
       })
@@ -202,21 +199,11 @@ describe('agentLoop', () => {
         )
 
         await expect(
-          agentLoop({
+          workLoop({
             messages,
-            config: createConfig({ maxToolTurns: 0 }),
+            ...createRuntime({ maxToolTurns: 0 }),
             toolExecutor: createToolExecutor([makeTool('alpha', 'tool ok')]),
-            stream: (_context, _signal) => {
-              const eventStream = createEventStream<
-                import('@vitamin/ai').StreamEvent,
-                AssistantMessage
-              >()
-              setTimeout(() => {
-                eventStream.push({ type: 'start', partial: toolAssistant })
-                eventStream.complete(toolAssistant)
-              }, 0)
-              return eventStream
-            },
+            stream: makeStream([toolAssistant]),
             signal: new AbortController().signal,
             emit: () => undefined,
           }),
@@ -230,7 +217,6 @@ describe('agentLoop', () => {
       it('#then records tool_result as isError and continues to final answer', async () => {
         const messages: AgentMessage[] = [makeUserMessage('start')]
         const events: AgentEvent[] = []
-        let streamCount = 0
 
         const brokenTool: AgentTool = {
           name: 'broken',
@@ -241,36 +227,32 @@ describe('agentLoop', () => {
           },
         }
 
-        const result = await agentLoop({
+        const result = await workLoop({
           messages,
-          config: createConfig(),
+          ...createRuntime(),
           toolExecutor: createToolExecutor([brokenTool]),
-          stream: (_context, _signal) => {
-            const eventStream = createEventStream<
-              import('@vitamin/ai').StreamEvent,
-              AssistantMessage
-            >()
-            const message =
-              streamCount === 0
-                ? makeAssistantMessage([makeToolCall('broken', 'tc_err')], 'tool_use')
-                : makeAssistantMessage([{ type: 'text', text: 'recovered' }], 'end_turn')
-            streamCount++
-            setTimeout(() => {
-              eventStream.push({ type: 'start', partial: message })
-              eventStream.complete(message)
-            }, 0)
-            return eventStream
-          },
+          stream: makeStream([
+            makeAssistantMessage([makeToolCall('broken', 'tc_err')], 'tool_use'),
+            makeAssistantMessage([{ type: 'text', data: 'recovered' }], 'end_turn'),
+          ]),
           signal: new AbortController().signal,
           emit: (event) => events.push(event),
         })
 
-        const toolResultMessage = messages.find(
-          (message): message is ToolResultMessage =>
-            message.role === 'tool_result' && message.toolCallId === 'tc_err',
-        )
+        const toolResultMessage = messages.find((message) => {
+          return (
+            typeof message === 'object' &&
+            message !== null &&
+            'role' in message &&
+            message.role === 'tool_result' &&
+            'toolCallId' in message &&
+            message.toolCallId === 'tc_err'
+          )
+        }) as
+          | { role: 'tool_result'; toolCallId: string; content: Array<{ type: string; data?: string }>; isError?: boolean }
+          | undefined
 
-        expect(result.content[0]).toEqual({ type: 'text', text: 'recovered' })
+        expect(result.content[0]).toEqual({ type: 'text', data: 'recovered' })
         expect(toolResultMessage).toBeDefined()
         expect(toolResultMessage?.isError).toBe(true)
         expect(
@@ -281,6 +263,63 @@ describe('agentLoop', () => {
               event.result.isError === true,
           ),
         ).toBe(true)
+      })
+    })
+  })
+
+  describe('#given no stream function in runtime', () => {
+    describe('#when workLoop starts', () => {
+      it('#then throws missing stream error immediately', async () => {
+        await expect(
+          workLoop({
+            ...createRuntime(),
+            messages: [makeUserMessage('start')],
+            toolExecutor: createToolExecutor([]),
+            stream: undefined,
+            signal: new AbortController().signal,
+            emit: () => undefined,
+          }),
+        ).rejects.toThrow('Agent loop requires stream function via options.stream')
+      })
+    })
+  })
+
+  describe('#given signal already aborted', () => {
+    describe('#when workLoop starts', () => {
+      it('#then throws AbortError before first turn', async () => {
+        const ac = new AbortController()
+        ac.abort()
+
+        await expect(
+          workLoop({
+            ...createRuntime(),
+            messages: [makeUserMessage('start')],
+            toolExecutor: createToolExecutor([]),
+            stream: makeStream([makeAssistantMessage([{ type: 'text', data: 'n/a' }], 'end_turn')]),
+            signal: ac.signal,
+            emit: () => undefined,
+          }),
+        ).rejects.toBeInstanceOf(AbortError)
+      })
+    })
+  })
+
+  describe('#given initial status is completed', () => {
+    describe('#when loop transitions to streaming', () => {
+      it('#then emits status_change from completed to streaming', async () => {
+        const events: AgentEvent[] = []
+
+        await workLoop({
+          ...createRuntime(),
+          messages: [makeUserMessage('start')],
+          toolExecutor: createToolExecutor([]),
+          stream: makeStream([makeAssistantMessage([{ type: 'text', data: 'ok' }], 'end_turn')]),
+          signal: new AbortController().signal,
+          initialStatus: 'completed',
+          emit: (event) => events.push(event),
+        })
+
+        expect(events.some((event) => event.type === 'status_change' && event.from === 'completed' && event.to === 'streaming')).toBe(true)
       })
     })
   })
