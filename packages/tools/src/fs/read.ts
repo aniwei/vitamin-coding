@@ -1,135 +1,83 @@
-import { readFile } from 'node:fs/promises'
-import { extname } from 'node:path'
-
-import { isFile, exists, readText } from '@vitamin/shared'
-import { normalizePath, resolvePath } from '@vitamin/shared'
-// read 工具 — 读取文件内容
 import { z } from 'zod'
+import { readFile } from 'node:fs/promises'
 
+import { isFile, exists, readText, mimeType, TOOLS_MAX_OUTPUT_LINES } from '@vitamin/shared'
+import { truncateHead, formatBytes, normalizePath, resolvePath } from '@vitamin/shared'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
-
-
-const IMAGE_MAX_SIZE = 5 * 1024 * 1024
-const IMAGE_EXTS = new Set(['.png', '.jpg', '.jpeg', '.gif', '.webp', '.bmp', '.svg'])
-
 
 // 参数 schema
 const ReadArgsSchema = z.object({
-  path: z.string().describe('要读取的文件路径（相对于项目根目录或绝对路径）'),
-  startLine: z.number().int().min(1).optional().describe('起始行号（1-based，仅文本文件）'),
-  endLine: z.number().int().min(1).optional().describe('结束行号（1-based，包含，仅文本文件）'),
+  path: z.string().describe('Path to the file to read (relative or absolute)'),
+  limit: z.number().int().min(1).optional().describe('Maximum number of lines to read (text files only)'),
+  offset: z.number().int().min(1).optional().describe('Starting line number (1-based, text files only)'),
 })
 
-type ReadArgs = z.infer<typeof ReadArgsSchema>
-
-export interface ReadToolOptions {
-  
-}
+export type ReadArgs = z.infer<typeof ReadArgsSchema>
 
 // 创建 read 工具
-export function createRead(projectRoot: string, options: ReadToolOptions): AgentTool<ReadArgs> {
-  const { 
-    imageMaxSize = IMAGE_MAX_SIZE, 
-    imageExts = IMAGE_EXTS
-  } = options
-
+export function createRead(projectRoot: string): AgentTool<ReadArgs> {
+ 
   return {
     name: 'read',
-    description: '读取文件内容，可选指定行范围',
+    description: 'Read file content. For text files, can specify line range with limit and offset.',
     parameters: ReadArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute(_id, args, signal): Promise<ToolResult> {
       const resolvedPath = resolvePath(projectRoot, args.path)
       const normalizedPath = normalizePath(resolvedPath)
 
       // 检查文件是否存在
-      if (!(await exists(normalizedPath))) {
-        return {
-          content: [{ type: 'text', text: `File not found: ${args.path}` }],
-          isError: true,
-        }
+      if (!await exists(normalizedPath)) {
+        throw new Error(`File not found: ${args.path}`)
       }
 
-      if (!(await isFile(normalizedPath))) {
-        return {
-          content: [{ type: 'text', text: `Not a file: ${args.path}` }],
-          isError: true,
-        }
+      if (!await isFile(normalizedPath)) {
+        throw new Error(`Not a file: ${args.path}`)
       }
 
-      // 检查是否为图片文件
-      const ext = extname(normalizedPath).toLowerCase()
-      if (imageExts?.has(ext)) {
-        return readImageFile(
-          normalizedPath, 
-          args.path, 
-          imageMaxSize
-        )
-      }
+      const mime = await mimeType(normalizedPath)
+      const isSuppotedImage = mime?.startsWith('image/') && mime !== 'image/svg+xml'
+
+      // 图片文件处理
+      if (isSuppotedImage) {
+        return readImage(normalizedPath, args.path, mime)
+      } 
 
       // 文本文件处理
       return readTextWithRange(
         normalizedPath, 
         args.path, 
-        args.startLine, 
-        args.endLine
+        args.limit, 
+        args.offset
       )
     },
   }
 }
 
 // 读取图片文件并返回 base64 编码
-async function readImageFile(
+async function readImage(
   absolutePath: string, 
   displayPath: string,
-  maxSize: number
+  mime?: string,
 ): Promise<ToolResult> {
-  try {
-    const buffer = await readFile(absolutePath)
-    if (buffer.length > maxSize) {
-      return {
-        content: [{
-          type: 'text',
-          text: `Image too large: ${displayPath} (${(buffer.length / 1024 / 1024).toFixed(1)}MB, max ${(maxSize / 1024 / 1024).toFixed(1)}MB)`,
-        }],
-        isError: true,
-      }
-    }
+  const buffer = await readFile(absolutePath)
+  const base64 = buffer.toString('base64')
 
-    const ext = extname(absolutePath).toLowerCase()
-    // SVG 返回文本内容
-    if (ext === '.svg') {
-      return {
-        content: [{ type: 'text', text: buffer.toString('utf-8') }],
-        metadata: { path: absolutePath, type: 'svg', size: buffer.length },
-      }
-    }
-
-    let mediaType = 'image/jpeg' // 默认媒体类型
-    if (ext === '.png') {
-      mediaType = 'image/png'
-    } else if (ext === '.gif') {
-      mediaType = 'image/gif'
-    } else if (ext === '.webp') {
-      mediaType = 'image/webp'
-    } else if (ext === '.bmp') {
-      mediaType = 'image/bmp'
-    }
-
-    const base64 = buffer.toString('base64')
-    return {
-      content: [{
-        type: 'image',
-        source: { type: 'base64', data: base64, mediaType },
-      }],
-      metadata: { path: absolutePath, type: 'image', size: buffer.length, mediaType },
-    }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    return {
-      content: [{ type: 'text', text: `Failed to read image: ${message}` }],
-      isError: true,
+  return {
+    content: [{
+      type: 'text',
+      text: `Read image file ${displayPath} (${buffer.length} bytes)`,
+    }, {
+      type: 'image',
+      mime,
+      source: `data:${mime};base64,${base64}`,
+    }],
+    details: { 
+      path: absolutePath, 
+      type: 'image', 
+      size: buffer.length, 
+      mime 
     }
   }
 }
@@ -138,45 +86,66 @@ async function readImageFile(
 async function readTextWithRange(
   absolutePath: string,
   displayPath: string,
-  startLineArg?: number,
-  endLineArg?: number,
+  limit: number = TOOLS_MAX_OUTPUT_LINES,
+  offset: number = 1,
+  maxBytes: number = TOOLS_MAX_OUTPUT_LINES,
 ): Promise<ToolResult> {
-  try {
-    const content = await readText(absolutePath)
-    if (content === undefined) {
-      return {
-        content: [{ type: 'text', text: `Failed to read file: ${displayPath}` }],
-        isError: true,
-      }
+  const content = await readText(absolutePath)
+  if (content === undefined) {
+    throw new Error(`Failed to read file ${displayPath}`)
+  }
+
+  const lines = content.split('\n')
+
+  const start = offset ? Math.max(0, offset - 1) : 0
+  const displayLine = start + 1
+
+  // Check if offset is out of bounds
+  if (start >= lines.length) {
+    throw new Error(`Offset ${offset} is beyond end of file (${lines.length} lines total)`)
+  }
+
+  let selectedContent: string
+  let userLimitedLines: number | undefined
+
+  const end = Math.min(start + limit, lines.length)
+  selectedContent = lines.slice(start, end).join('\n')
+  userLimitedLines = end - start
+
+  const truncation = truncateHead(selectedContent);
+  let output: string
+
+  if (truncation.firstLineExceedsLimit) {
+    // 第一个行超过限制 - 提示模型使用 bash 来读取特定行
+    const size = formatBytes(Buffer.byteLength(lines[start] as string, 'utf-8'))
+    output = `(Line ${displayLine} is ${size}, exceeds ${formatBytes(maxBytes)} limit. Use bash: sed -n '${displayLine}p' ${absolutePath} | head -c ${maxBytes})`
+  } else if (truncation.truncated) {
+    const end = displayLine + truncation.outputLines - 1
+    const offset = end + 1
+
+    output = truncation.content
+
+    if (truncation.truncatedBy === 'lines') {
+      output += `\n\n(Showing lines ${displayLine}-${end} of ${lines.length}. Use offset=${offset} to continue)`;
+    } else {
+      output += `\n\n(Showing lines ${displayLine}-${end} of ${lines.length} (${formatBytes(maxBytes)} limit). Use offset=${offset} to continue)`;
     }
-    const lines = content.split('\n')
 
-    // 行范围裁切
-    const startLine = (startLineArg ?? 1) - 1
-    const endLine = endLineArg ?? lines.length
-    const selectedLines = lines.slice(startLine, endLine)
+  } else if (userLimitedLines !== undefined && start + userLimitedLines < lines.length) {
+    const remaining = lines.length - (start + userLimitedLines)
+    const offset = start + userLimitedLines + 1
 
-    // 添加行号
-    const numberedContent = selectedLines
-      .map((line, i) => `${startLine + i + 1} | ${line}`)
-      .join('\n')
+    output = truncation.content;
+    output += `\n\n(${remaining} more lines in file. Use offset=${offset} to continue)`;
+  } else {
+    // No truncation, no user limit exceeded
+    output = truncation.content;
+  }
 
-    const header = `File: ${displayPath} (${lines.length} lines total, showing ${startLine + 1}-${Math.min(endLine, lines.length)})`
-
-    return {
-      content: [{ type: 'text', text: `${header}\n${numberedContent}` }],
-      metadata: {
-        path: absolutePath,
-        totalLines: lines.length,
-        startLine: startLine + 1,
-        endLine: Math.min(endLine, lines.length),
-      },
-    }
-  } catch (error) {
-    const message = error instanceof Error ? error.message : String(error)
-    return {
-      content: [{ type: 'text', text: `Failed to read file: ${message}` }],
-      isError: true,
+  return {
+    content: [{ type: 'text', text: output }],
+    details: {
+      truncation
     }
   }
 }

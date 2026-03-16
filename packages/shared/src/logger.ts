@@ -4,7 +4,8 @@ import { createRequire } from 'node:module'
 import { PassThrough } from 'node:stream'
 import pino from 'pino'
 
-const LOG_FILE = '/tmp/vitamin.log'
+import { LOG_FILE } from './env'
+import { TypedEventEmitter } from './event-emitter'
 const require = createRequire(import.meta.url)
 
 const DEFAULT_LEVEL = process.env.VITAMIN_LOG_LEVEL ?? 'info'
@@ -19,13 +20,11 @@ function isPrettyAvailable(): boolean {
 }
 
 function createTransportTargets(): pino.TransportTargetOptions[] {
-  const targets: pino.TransportTargetOptions[] = [
-    {
-      target: 'pino/file',
-      options: { destination: LOG_FILE, mkdir: true },
-      level: DEFAULT_LEVEL,
-    },
-  ]
+  const targets: pino.TransportTargetOptions[] = [{
+    target: 'pino/file',
+    options: { destination: LOG_FILE, mkdir: true },
+    level: DEFAULT_LEVEL,
+  }]
 
   if (isPrettyAvailable()) {
     targets.push({
@@ -45,38 +44,41 @@ function createTransportTargets(): pino.TransportTargetOptions[] {
   return targets
 }
 
+interface LogEvent {
+  [event: string]: (...args: unknown[]) => void
+}
+
 const logPassThrough = new PassThrough()
-let globalLogListener: ((log: unknown) => void) | undefined = undefined
+const globalLogEventEmitter = new TypedEventEmitter<LogEvent>()
 
 logPassThrough.on('data', (chunk) => {
-  if (globalLogListener) {
-    try {
-      globalLogListener(JSON.parse(chunk.toString()))
-    } catch {
-      // ignore
-    }
+  try {
+    globalLogEventEmitter.emit('log', JSON.parse(chunk.toString()))
+  } catch {
+    console.warn('Failed to parse log chunk for listener:', chunk.toString())
   }
 })
 
 export function attachLogListener(callback: (log: unknown) => void) {
-  globalLogListener = callback
+  globalLogEventEmitter.on('log', callback)
+}
+
+export function detachLogListener(callback: (log: unknown) => void) {
+  globalLogEventEmitter.off('log', callback)
 }
 
 // 根日志器，同时写入文件（JSON）、控制台（美化格式）以及内存监听器
-const rootLogger = pino(
-  { level: DEFAULT_LEVEL },
-  pino.multistream([
-    { level: DEFAULT_LEVEL as pino.Level, stream: logPassThrough },
-    { level: DEFAULT_LEVEL as pino.Level, stream: pino.transport({ targets: createTransportTargets() }) }
-  ])
-)
+const root = pino({ level: DEFAULT_LEVEL }, pino.multistream([
+  { level: DEFAULT_LEVEL as pino.Level, stream: logPassThrough },
+  { level: DEFAULT_LEVEL as pino.Level, stream: pino.transport({ targets: createTransportTargets() }) }
+]))
 
 // 创建带有命名上下文的子日志器
 export function createLogger(name: string): pino.Logger {
-  return rootLogger.child({ name })
+  return root.child({ name })
 }
 
 // 获取根日志器实例
 export function getRootLogger(): pino.Logger {
-  return rootLogger
+  return root
 }

@@ -4,39 +4,44 @@ import { z } from 'zod'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const PerformWorkArgsSchema = z.object({
-  planName: z.string().describe('要执行的计划名称'),
+  name: z.string().describe('Name of the plan to execute'),
 })
 
 type PerformWorkArgs = z.infer<typeof PerformWorkArgsSchema>
 
-export type PerformWork = (planName: string) => Promise<{ success: boolean; message: string }>
+export type PerformWork = (name: string) => Promise<{ success: boolean; error: Error }>
 
-interface PerformWorkOptions {
-  performWork?: PerformWork
-}
 
-export function createPerformWork(options: PerformWorkOptions): AgentTool<PerformWorkArgs> {
-  const { performWork } = options
+export function createPerformWork(
+  _projectRoot: string, 
+  performWork: PerformWork
+): AgentTool<PerformWorkArgs> {
 
   return {
     name: 'perform_work',
-    description: '启动一个已生成的计划的执行，Worker 将按 DAG 拓扑并行执行计划步骤',
+    description: 'Start the execution of a generated plan. The Worker will execute plan steps in parallel according to the DAG topology.',
     parameters: PerformWorkArgsSchema,
     visibility: 'always',
 
     async execute(_id, args, _signal): Promise<ToolResult> {
       if (!performWork) {
+        throw new Error('perform_work function is not provided in options')
+      }
+
+      const result = await performWork(args.name)
+
+      if (result.success) {
         return {
-          content: [{ type: 'text', text: 'perform_work is not available, plan executor not initialized' }],
-          isError: true,
+          content: [{ type: 'text', text: 'Work started successfully' }],
         }
       }
 
-      const result = await performWork(args.planName)
-
       return {
-        content: [{ type: 'text', text: result.message }],
-        isError: !result.success,
+        content: [{ type: 'text', text: `Failed to start work: ${result.error?.message ?? 'unknown error'}` }],
+        isError: true,
+        details: {
+          error: result.error,
+        }
       }
     },
   }

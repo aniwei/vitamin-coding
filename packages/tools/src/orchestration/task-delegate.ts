@@ -4,10 +4,10 @@ import { z } from 'zod'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const DelegateTaskArgsSchema = z.object({
-  prompt: z.string().describe('要委派的任务描述'),
-  subagent: z.string().optional().describe('指定子Agent名称（如 "explore"）'),
-  category: z.string().optional().describe('任务类别（如 "quick"、"deep"、"search"）'),
-  mode: z.enum(['sync', 'background']).optional().default('sync').describe('执行模式'),
+  prompt: z.string().describe('Task description to delegate'),
+  subagent: z.string().optional().describe('Agent name to delegate the task to (e.g. "explore")'),
+  category: z.string().optional().describe('Task category (e.g. "quick", "deep", "search")'),
+  mode: z.enum(['sync', 'background']).optional().default('sync').describe('Execution mode'),
 }).refine(
   (data) => data.subagent !== undefined || data.category !== undefined,
   { message: 'Must specify either subagent or category' },
@@ -30,64 +30,35 @@ export interface TaskDispatchResult {
   error?: string
 }
 
-export interface DelegateTaskOptions {
-  dispatch?: TaskDispatch
-}
-
-export function createDelegateTask(
+export function createTaskDelegate(
   _projectRoot: string,
-  options: DelegateTaskOptions
+  dispatch: TaskDispatch
 ): AgentTool<DelegateTaskArgs> {
-  const { dispatch } = options
-
   return {
     name: 'task_delegate',
-    description: '委派任务给子Agent执行，可指定Agent名称或任务类别',
+    description: 'Delegate a task to a sub-agent for execution. You can specify the sub-agent by name or by category.',
     parameters: DelegateTaskArgsSchema,
     visibility: 'always',
 
     async execute(_id, args, _signal): Promise<ToolResult> {
       if (!dispatch) {
+        throw new Error('task_delegate function is not provided in options')
+      }
+
+      const result = await dispatch({
+        prompt: args.prompt,
+        subagent: args.subagent,
+        category: args.category,
+        mode: args.mode,
+      })
+
+      if (result.success) {
         return {
-          content: [{ type: 'text', text: 'task_delegate is not available: orchestrator not initialized' }],
-          isError: true,
+          content: [{ type: 'text', text: `Task delegated successfully${result.output ? `: ${result.output}` : ''}` }]
         }
       }
 
-      try {
-        const result = await dispatch({
-          prompt: args.prompt,
-          subagent: args.subagent,
-          category: args.category,
-          mode: args.mode,
-        })
-
-        if (!result.success) {
-          return {
-            content: [{ type: 'text', text: `Task delegation failed: ${result.error ?? 'Unknown error'}` }],
-            isError: true,
-          }
-        }
-
-        if (args.mode === 'background') {
-          return {
-            content: [{ type: 'text', text: `Background task started: ${result.id ?? 'unknown'}` }],
-            metadata: { id: result.id, mode: 'background' },
-          }
-        }
-
-        return {
-          content: [{ type: 'text', text: result.output ?? 'Task completed with no output' }],
-          metadata: { mode: 'sync' },
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        
-        return {
-          content: [{ type: 'text', text: `Task delegation error: ${message}` }],
-          isError: true,
-        }
-      }
+      throw new Error(`Task delegation failed: ${result.error ?? 'Unknown error'}`)
     },
   }
 }

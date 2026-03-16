@@ -88,7 +88,7 @@ export interface TextContent {
 export interface ImageContent {
   type: 'image'
   mime: string
-  text: string // Base64 编码的图像数据
+  source: string // Base64 编码的图像数据
 }
 
 export interface ThinkingContent {

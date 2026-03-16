@@ -40,7 +40,7 @@ export interface ToolExecutor {
   executeParallel(toolCalls: ToolCall[], signal: AbortSignal): Promise<Map<string, ToolResult>>
 
   // 获取注册的工具列表
-  getTools(): AgentTool[]
+  list(): AgentTool[]
 }
 
 // 工具执行器选项
@@ -68,7 +68,7 @@ class DefaultToolExecutor implements ToolExecutor {
     this.sessionId = options.sessionId ?? ''
   }
 
-  getTools(): AgentTool[] {
+  list(): AgentTool[] {
     return [...this.tools.values()]
   }
 
@@ -87,7 +87,6 @@ class DefaultToolExecutor implements ToolExecutor {
     let currentArgs = toolCall.arguments as Record<string, unknown>
 
     try {
-      // tool.execute.before Hook 管线
       if (this.hookExecutor) {
         const beforeResult = await this.hookExecutor.executeBeforeHooks({
           toolName: name,
@@ -111,8 +110,8 @@ class DefaultToolExecutor implements ToolExecutor {
       }
 
       // 参数验证
-      const parseResult = tool.parameters.safeParse(currentArgs)
-      const { success, error } = parseResult
+      const parsed = tool.parameters.safeParse(currentArgs)
+      const { success, error } = parsed
       if (!success) {
         return {
           content: [{ type: 'text', text: `Invalid arguments for tool ${name}: ${String(error)}` }],
@@ -120,8 +119,22 @@ class DefaultToolExecutor implements ToolExecutor {
         }
       }
 
+      if (signal.aborted) {
+        return {
+          content: [{ type: 'text', text: `Tool ${name} execution was aborted` }],
+          isError: true,
+        }
+      }
+
       // 执行工具
-      let result = await tool.execute(toolCall.id, parseResult.data, signal)
+      let result = await tool.execute(toolCall.id, parsed.data, signal)
+
+      if (signal.aborted) {
+        return {
+          content: [{ type: 'text', text: `Tool ${name} execution was aborted` }],
+          isError: true,
+        }
+      }
 
       // tool.execute.after Hook 管线
       if (this.hookExecutor) {
@@ -138,6 +151,13 @@ class DefaultToolExecutor implements ToolExecutor {
         result = afterResult.result
       }
 
+      if (signal.aborted) {
+        return {
+          content: [{ type: 'text', text: `Tool ${name} execution was aborted` }],
+          isError: true,
+        }
+      }
+
       return result
     } catch (error) {
       // 工具执行异常 → 包装为 ToolResult { isError: true }
@@ -145,7 +165,7 @@ class DefaultToolExecutor implements ToolExecutor {
       return {
         content: [{ type: 'text', text: `Tool ${toolCall.name} failed: ${message}` }],
         isError: true,
-        metadata: {
+        details: {
           error: error instanceof Error ? error.name : 'UnknownError',
         },
       }

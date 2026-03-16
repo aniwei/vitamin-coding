@@ -8,55 +8,38 @@ import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 // 参数 schema
 const WriteArgsSchema = z.object({
-  path: z.string().describe('要写入的文件路径（相对于项目根目录或绝对路径）'),
-  content: z.string().describe('文件内容'),
-  createDirectories: z.boolean().optional().default(true).describe('是否自动创建父目录'),
+  path: z.string().describe('Path to the file to write (relative or absolute)'),
+	content: z.string().describe('Content to write to the file'),
+  createDirectories: z.boolean().optional().default(true).describe('Whether to create parent directories if they do not exist'),
 })
 
-type WriteArgs = z.infer<typeof WriteArgsSchema>
+export type WriteArgs = z.infer<typeof WriteArgsSchema>
 
-export interface WriteOptions {
-  
-}
 
 // 创建 write 工具
-export function createWrite(projectRoot: string, _options: WriteOptions): AgentTool<WriteArgs> {
+export function createWrite(projectRoot: string): AgentTool<WriteArgs> {
   return {
     name: 'write',
-    description: '创建或覆盖文件，自动创建不存在的父目录',
+    description: 'Create or overwrite a file, automatically creating parent directories if they do not exist',
     parameters: WriteArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute(_id, args, signal): Promise<ToolResult> {
       const resolvedPath = resolvePath(projectRoot, args.path)
       const normalizedPath = normalizePath(resolvedPath)
 
-      try {
-        // 创建父目录
-        if (args.createDirectories !== false) {
-          await mkdirp(dirname(normalizedPath))
-        }
+      if (args.createDirectories !== false) {
+        await mkdirp(dirname(normalizedPath))
+      }
 
-        await writeText(normalizedPath, args.content)
+      if (signal.aborted) {
+        throw new Error('Write operation was aborted')
+      }
 
-        const lineCount = args.content.split('\n').length
-        return {
-          content: [{ type: 'text', text: `Successfully wrote ${lineCount} lines to ${args.path}`, }],
-          metadata: {
-            path: normalizedPath,
-            lineCount,
-            byteSize: Buffer.byteLength(args.content, 'utf-8'),
-          },
-        }
-      } catch (error) {
-        const message = error instanceof Error 
-          ? error.message 
-          : String(error)
+      await writeText(normalizedPath, args.content)
 
-        return {
-          content: [{ type: 'text', text: `Failed to write file: ${message}` }],
-          isError: true,
-        }
+      return {
+        content: [{ type: 'text', text: `Successfully wrote to ${args.path}` }],
       }
     },
   }

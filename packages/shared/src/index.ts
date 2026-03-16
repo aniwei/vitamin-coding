@@ -31,31 +31,56 @@ export {
 } from './disposable'
 export type { Disposable, AsyncDisposable } from './disposable'
 
-export { createLogger, getRootLogger, attachLogListener } from './logger'
+export {
+  LOG_FILE,
+  TOOLS_LS_MAX_ENTRIES,
+  TOOLS_EXECUTE_TIMEOUT,
+  TOOLS_MAX_OUTPUT_BYTES,
+  TOOLS_MAX_OUTPUT_LINES,
+  TOOLS_GREP_MAX_OUTPUT_LINES
+} from './env'
+
+export { 
+  createLogger, 
+  getRootLogger, 
+  attachLogListener, 
+  detachLogListener 
+} from './logger'
 
 export {
   readText,
   writeText,
+  readdir,
   mkdirp,
   rimraf,
   exists,
+  mimeType,
   isDirectory,
   isFile,
 } from './fs'
 
-export { normalizePath, resolvePath, findProjectRoot } from './path'
+export {
+  formatBytes,
+  truncateLine,
+  truncateHead,
+  truncateTail,
+} from './truncate'
 
-export { spawnProcess } from './process'
-export type { SpawnOptions, SpawnResult } from './process'
+
+
+export { 
+  normalizePath, 
+  resolvePath, 
+  findProjectRoot 
+} from './path'
 
 export {
-  truncate,
-  slugify,
-  estimateTokens,
-  truncateToTokenBudget,
+  slugify
 } from './string'
 
 export { parseJsonc, safeStringify } from './json'
 
 export { request, stream } from './http'
 export type { HttpRequestOptions, HttpResponse, SseEvent } from './http'
+
+export { createTempLoggerPath } from './tmp'

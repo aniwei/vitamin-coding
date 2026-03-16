@@ -137,7 +137,7 @@ export interface AgentTool<Args = unknown> {
 export interface ToolResult {
   content: (TextContent | ImageContent)[]
   isError?: boolean
-  metadata?: Record<string, unknown>
+  details?: Record<string, unknown>
 }
 
 // Agent 配置

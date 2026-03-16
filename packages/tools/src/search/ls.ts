@@ -1,118 +1,117 @@
 // ls 工具 — 目录列表（递归可选）
-import { readdir } from 'node:fs/promises'
-import { join } from 'node:path'
-
-import { exists } from '@vitamin/shared'
+import { 
+  exists, 
+  formatBytes, 
+  isDirectory, 
+  normalizePath, 
+  resolvePath, 
+  readdir,
+  truncateHead, 
+  TOOLS_LS_MAX_ENTRIES, 
+  TOOLS_MAX_OUTPUT_BYTES 
+} from '@vitamin/shared'
 import { z } from 'zod'
 
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const LsArgsSchema = z.object({
-  path: z.string().optional().default('.').describe('要列出的目录路径（相对于项目根目录）'),
-  recursive: z.boolean().optional().default(false).describe('是否递归列出子目录'),
-  maxDepth: z.number().int().min(1).max(10).optional().default(3).describe('递归深度上限'),
-  maxEntries: z.number().int().min(1).max(2000).optional().default(500).describe('最大条目数'),
+  path: z.string().optional().default('.').describe('Directory path to list (relative to project root)'),
+  limit: z.number().int().min(1).max(2000).optional().default(500).describe('Maximum number of entries to list')
 })
 
 type LsArgs = z.infer<typeof LsArgsSchema>
 
-// 排除的目录
-const EXCLUDED_DIRS = new Set(['node_modules', '.git', 'dist', '.next', '__pycache__', '.turbo'])
-
-interface LsOptions {
-  projectRoot: string,
+interface LsToolOptions {
   excludedDirs?: Set<string>,
 }
 
-export function createLs(options: LsOptions): AgentTool<LsArgs> {
-  const { projectRoot, excludedDirs } = options
+export function createLs(projectRoot: string, options: LsToolOptions = {
+  excludedDirs: new Set(['node_modules', '.git', '.turbo']),
+}): AgentTool<LsArgs> {
   return {
     name: 'ls',
-    description: '列出目录内容。可递归显示子目录结构。',
+    description: 'List directory contents. Can optionally show subdirectory structure recursively.',
     parameters: LsArgsSchema,
     visibility: 'always',
 
     async execute(_id, args, _signal): Promise<ToolResult> {
-      const targetDir = join(projectRoot, args.path)
+      const targetDir = resolvePath(projectRoot, args.path)
+      const normaizedTargetDir = normalizePath(targetDir)
+      const limit = args.limit ?? TOOLS_LS_MAX_ENTRIES
 
-      if (!(await exists(targetDir))) {
-        return {
-          content: [{ type: 'text', text: `Directory not found: ${args.path}` }],
-          isError: true,
-        }
+      if (!await exists(normaizedTargetDir)) {
+        throw new Error(`Directory not found: ${args.path}`)
       }
 
-      try {
-        const lines: string[] = []
-        await listDir(
-          targetDir, 
-          0, 
-          args.recursive ? args.maxDepth : 0, 
-          lines, 
-          args.maxEntries, 
-          projectRoot,
-          excludedDirs
-        )
-
-        if (lines.length === 0) {
-          return {
-            content: [{ type: 'text', text: `Empty directory: ${args.path}` }],
-          }
-        }
-
-        const truncationNote = lines.length >= args.maxEntries
-          ? `\n\n... [truncated at ${args.maxEntries} entries]`
-          : ''
-
-        return {
-          content: [{ type: 'text', text: `Directory: ${args.path}\n${lines.join('\n')}${truncationNote}` }],
-          metadata: { entryCount: lines.length, path: args.path },
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        return {
-          content: [{ type: 'text', text: `ls failed: ${message}` }],
-          isError: true,
-        }
+      if (!await isDirectory(normaizedTargetDir)) {
+        throw new Error(`Not a directory: ${args.path}`)
       }
+
+      return await listDir(normaizedTargetDir, limit)
     },
   }
 }
 
 async function listDir(
   dir: string,
-  depth: number,
-  maxDepth: number,
-  lines: string[],
-  maxEntries: number,
-  projectRoot: string,
-  excludedDirs: Set<string> = EXCLUDED_DIRS
-): Promise<void> {
-  if (lines.length >= maxEntries) return
+  limit: number
+): Promise<ToolResult> {
+  const entries = await readdir(dir)
+  entries.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
 
-  const entries = await readdir(dir, { withFileTypes: true })
-  // 目录在前，文件在后，分别按字母排序
-  const sorted = entries.sort((a, b) => {
-    if (a.isDirectory() && !b.isDirectory()) return -1
-    if (!a.isDirectory() && b.isDirectory()) return 1
-    return a.name.localeCompare(b.name)
-  })
+  const results: string[] = [];
+  let entryLimitReached = false;
 
-  const indent = '  '.repeat(depth)
-
-  for (const entry of sorted) {
-    if (lines.length >= maxEntries) return
-
-    if (entry.isDirectory()) {
-      if (excludedDirs.has(entry.name)) continue
-
-      lines.push(`${indent}${entry.name}/`)
-      
-      if (depth < maxDepth) {
-        await listDir(join(dir, entry.name), depth + 1, maxDepth, lines, maxEntries, projectRoot)
-      }
-    } else {
-      lines.push(`${indent}${entry.name}`)
+  for (const entry of entries) {
+    if (results.length >= limit) {
+      entryLimitReached = true
+      break
     }
+
+    const path = resolvePath(dir, entry)
+    let suffix = ''
+
+    try {
+      if (await isDirectory(path)) {
+        suffix = '/'
+      }
+    } catch {
+      continue
+    }
+
+    results.push(entry + suffix)
+  }
+
+  if (results.length === 0) {
+    return { 
+      content: [{ type: 'text', text: '(empty directory)' }]
+    }
+  }
+
+  const raw = results.join('\n')
+  const truncation = truncateHead(raw)
+
+  let output = truncation.content
+  let details: Record<string, unknown> = {}
+
+  const notices: string[] = []
+
+  if (entryLimitReached) {
+    notices.push(`${limit} entries limit reached. Use limit=${limit * 2} for more`)
+    details.entryLimitReached = limit
+  }
+
+  if (truncation.truncated) {
+    notices.push(`${formatBytes(TOOLS_MAX_OUTPUT_BYTES)} limit reached`)
+    details.truncation = truncation
+  }
+
+  if (notices.length > 0) {
+    output += `\n\n(${notices.join(". ")})`;
+  }
+
+  return {
+    content: [{ type: 'text', text: output }],
+    details: Object.keys(details).length > 0 ? details : undefined,
   }
 }

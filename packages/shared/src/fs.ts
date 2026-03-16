@@ -1,6 +1,12 @@
 // 文件系统工具 —— 异步读写、mkdirp、rimraf
 import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
 import { dirname } from 'node:path'
+import { lookup } from 'mime-types'
+
+// 支持的图片扩展名列表
+export async function mimeType(path: string): Promise<string> {
+  return lookup(path) || 'application/octet-stream'
+}
 
 // 以 UTF-8 读取文件，文件不存在时返回 undefined
 export async function readText(path: string): Promise<string | undefined> {
@@ -30,6 +36,11 @@ export async function rimraf(path: string): Promise<void> {
   await rm(path, { recursive: true, force: true })
 }
 
+// 以 UTF-8 读取目录内容，返回文件和子目录列表
+export async function readdir(path: string): Promise<string[]> {
+  return await readdir(path)
+}
+
 // 检查路径是否存在
 export async function exists(path: string): Promise<boolean> {
   try {
@@ -42,7 +53,6 @@ export async function exists(path: string): Promise<boolean> {
     throw error
   }
 }
-
 
 // 检查路径是否为目录
 export async function isDirectory(path: string): Promise<boolean> {

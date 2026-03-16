@@ -16,16 +16,19 @@ const FindArgsSchema = z.object({
 
 type FindArgs = z.infer<typeof FindArgsSchema>
 
-// 排除的目录
-const EXCLUDED_DIRS = new Set(['node_modules', '.git', 'dist', '.next', '__pycache__', '.turbo'])
 
-interface FindOptions {
-  projectRoot: string,
+interface FindToolOptions {
   excludedDirs?: Set<string>,
 }
 
-export function createFind(options: FindOptions): AgentTool<FindArgs> {
-  const { projectRoot, excludedDirs = EXCLUDED_DIRS } = options
+export function createFind(
+  projectRoot: string,
+  options: FindToolOptions = {
+    excludedDirs: new Set(['node_modules', '.git'])
+  }
+): AgentTool<FindArgs> {
+  const excludedDirs = options.excludedDirs 
+  
   return {
     name: 'find',
     description: '在项目中查找文件或目录。可按名称、类型过滤。',

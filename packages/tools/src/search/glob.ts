@@ -14,15 +14,10 @@ const GlobArgsSchema = z.object({
 
 type GlobArgs = z.infer<typeof GlobArgsSchema>
 
-interface GlobOptions {
-  projectRoot: string,
-}
-
-export function createGlob(options: GlobOptions): AgentTool<GlobArgs> {
-  const { projectRoot } = options
+export function createGlob(projectRoot: string): AgentTool<GlobArgs> {
   return {
     name: 'glob',
-    description: '按 glob 模式搜索文件。返回匹配的文件路径列表。',
+    description: 'Search for files matching a glob pattern. Returns a list of matching file paths.',
     parameters: GlobArgsSchema,
     visibility: 'always',
 

@@ -34,7 +34,7 @@ export function createTaskGet(
 
     async execute(_id, args, _signal): Promise<ToolResult> {
       if (!get) {
-        return { content: [{ type: 'text', text: 'task_get not available' }], isError: true }
+        throw new Error('get function is not provided in options')
       }
 
       const task = await get(args.id)

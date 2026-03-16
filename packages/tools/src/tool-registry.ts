@@ -6,7 +6,7 @@ import type {
   ToolPreset, 
   ToolRegistrationOptions 
 } from './types'
-import { registerBuiltinTools } from './register-builtin'
+import { registerBuiltinTools, type RegisterBuiltinOptions } from './register-builtin'
 
 
 // 预设包含关系 minimal ⊂ standard ⊂ full
@@ -14,6 +14,10 @@ const PRESET_INCLUDES: Record<ToolPreset, Set<ToolPreset>> = {
   minimal: new Set(['minimal']),
   standard: new Set(['minimal', 'standard']),
   full: new Set(['minimal', 'standard', 'full']),
+}
+
+type AgentToolTuple<T extends readonly unknown[]> = T & {
+  [K in keyof T]: T[K] extends AgentTool<infer _Args> ? T[K] : never
 }
 
 export class ToolRegistry {
@@ -25,24 +29,23 @@ export class ToolRegistry {
   }
 
   // 注册工具
-  register<Args = unknown>(tools: AgentTool<Args>[], options: ToolRegistrationOptions): void;
-  register<Args = unknown>(tools: AgentTool<Args> | AgentTool<Args>[], options: ToolRegistrationOptions = {}): void {
+  register<Args = unknown>(tool: AgentTool<Args>, options?: ToolRegistrationOptions): void;
+  register<Tools extends readonly unknown[]>(tools: AgentToolTuple<Tools>, options?: ToolRegistrationOptions): void;
+  register(
+    tools: AgentTool<unknown> | readonly unknown[],
+    options: ToolRegistrationOptions = {},
+  ): void {
     const metadata: ToolMetadata = {
       preset: options.preset ?? 'full',
       category: options.category,
       builtin: options.builtin ?? false,
     }
 
-    if (Array.isArray(tools)) {
-      for (const tool of tools) {
-        const registered: RegisteredTool<Args> = { ...tool, metadata}
-        this.tools.set(tool.name, registered as RegisteredTool)
-      }
-    } else {
-      const tool = tools
-      const registered: RegisteredTool<Args> = { ...tool, metadata}
-
-      this.tools.set(tool.name, registered as RegisteredTool)
+    const toolList = Array.isArray(tools) ? tools : [tools]
+    for (const tool of toolList) {
+      const typedTool = tool as AgentTool
+      const registered: RegisteredTool = { ...typedTool, metadata }
+      this.tools.set(typedTool.name, registered)
     }
   }
 
@@ -120,10 +123,12 @@ export class ToolRegistry {
 }
 
 export const createToolRegistry = (
-  projectRoot: string,): ToolRegistry => {
+  projectRoot: string,
+  options: RegisterBuiltinOptions
+): ToolRegistry => {
   const registry = new ToolRegistry()
 
-  registerBuiltinTools(registry, projectRoot, {})
+  registerBuiltinTools(registry, projectRoot, options)
 
   return registry
 }
