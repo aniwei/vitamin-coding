@@ -14,24 +14,3 @@ export function normalizePath(path: string): string {
 export function resolvePath(...segments: string[]): string {
   return resolve(...segments)
 }
-
-// 从 startDir 开始向上遍历，查找包含根标记的目录
-// 如果到达文件系统根仍未找到则返回 undefined
-export async function findProjectRoot(startDir: string): Promise<string | undefined> {
-  let current = resolve(startDir)
-  let searching = true
-
-  while (searching) {
-    if (await exists(resolve(current, PROJECT_ROOT_MARKER))) {
-      return current
-    }
-
-    const parent = dirname(current)
-    
-    if (parent === current) {
-      searching = false
-    }
-    current = parent
-  }
-  return undefined
-}

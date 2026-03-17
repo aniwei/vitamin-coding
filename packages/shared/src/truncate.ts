@@ -1,9 +1,3 @@
-import { 
-	TOOLS_MAX_OUTPUT_BYTES,
-	TOOLS_MAX_OUTPUT_LINES,
-	TOOLS_GREP_MAX_OUTPUT_LINES,
-} from './env'
-
 export interface TruncatedResult {
 	// content 可能是完整内容，也可能是被截断的内容，取决于是否超过限制
 	content: string 
@@ -74,10 +68,7 @@ function createResult(params: {
 
 export function truncateHead(
 	content: string, 
-	options: TruncateOptions = {
-		maxLines: TOOLS_MAX_OUTPUT_LINES,
-		maxBytes: TOOLS_MAX_OUTPUT_BYTES,
-	}
+	options: TruncateOptions
 ): TruncatedResult {
 	const { maxLines, maxBytes } = options
 
@@ -173,10 +164,10 @@ export function truncateHead(
 }
 
 // 截断内容从尾部（保留最后 N 行/字节），适用于 bash 输出等场景，优先保留行完整性但在极端情况下可能返回部分第一行
-export function truncateTail(content: string, options: TruncateOptions = {
-	maxLines: TOOLS_MAX_OUTPUT_LINES,
-	maxBytes: TOOLS_MAX_OUTPUT_BYTES,
-}): TruncatedResult {
+export function truncateTail(
+	content: string, 
+	options: TruncateOptions
+): TruncatedResult {
 	const { maxLines, maxBytes } = options
 
 	const totalBytes = Buffer.byteLength(content, 'utf-8')
@@ -285,7 +276,7 @@ function truncateStringToBytesFromEnd(string: string, maxBytes: number): string 
 // 截断单行文本（适用于 grep 等工具输出中单行过长的情况）
 export function truncateLine(
 	line: string,
-	maxChars: number = TOOLS_GREP_MAX_OUTPUT_LINES,
+	maxChars: number,
 ): { text: string; wasTruncated: boolean } {
 	if (line.length <= maxChars) {
 		return { text: line, wasTruncated: false }

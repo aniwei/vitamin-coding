@@ -31,15 +31,6 @@ export {
 } from './disposable'
 export type { Disposable, AsyncDisposable } from './disposable'
 
-export {
-  LOG_FILE,
-  TOOLS_LS_MAX_ENTRIES,
-  TOOLS_EXECUTE_TIMEOUT,
-  TOOLS_MAX_OUTPUT_BYTES,
-  TOOLS_MAX_OUTPUT_LINES,
-  TOOLS_GREP_MAX_OUTPUT_LINES
-} from './env'
-
 export { 
   createLogger, 
   getRootLogger, 
@@ -54,7 +45,7 @@ export {
   mkdirp,
   rimraf,
   exists,
-  mimeType,
+  mime,
   isDirectory,
   isFile,
 } from './fs'
@@ -71,7 +62,6 @@ export {
 export { 
   normalizePath, 
   resolvePath, 
-  findProjectRoot 
 } from './path'
 
 export {

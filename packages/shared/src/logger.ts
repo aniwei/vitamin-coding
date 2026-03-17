@@ -1,13 +1,10 @@
-// 基于 pino 的结构化日志
-// JSON Lines 输出到 /tmp/vitamin.log，控制台输出优先使用 pino-pretty（可选）
+import pino from 'pino'
+import invariant from '@vitamin/invariant'
 import { createRequire } from 'node:module'
 import { PassThrough } from 'node:stream'
-import pino from 'pino'
-
-import { LOG_FILE } from './env'
 import { TypedEventEmitter } from './event-emitter'
-const require = createRequire(import.meta.url)
 
+const require = createRequire(import.meta.url)
 const DEFAULT_LEVEL = process.env.VITAMIN_LOG_LEVEL ?? 'info'
 
 function isPrettyAvailable(): boolean {
@@ -19,10 +16,10 @@ function isPrettyAvailable(): boolean {
   }
 }
 
-function createTransportTargets(): pino.TransportTargetOptions[] {
+function createTransportTargets(destination: string): pino.TransportTargetOptions[] {
   const targets: pino.TransportTargetOptions[] = [{
     target: 'pino/file',
-    options: { destination: LOG_FILE, mkdir: true },
+    options: { destination, mkdir: true },
     level: DEFAULT_LEVEL,
   }]
 
@@ -68,17 +65,41 @@ export function detachLogListener(callback: (log: unknown) => void) {
 }
 
 // 根日志器，同时写入文件（JSON）、控制台（美化格式）以及内存监听器
-const root = pino({ level: DEFAULT_LEVEL }, pino.multistream([
-  { level: DEFAULT_LEVEL as pino.Level, stream: logPassThrough },
-  { level: DEFAULT_LEVEL as pino.Level, stream: pino.transport({ targets: createTransportTargets() }) }
-]))
+let root: pino.Logger | null = null
+
+export function ensureLogger(
+  level: string, 
+  destination: string): pino.Logger 
+{
+  root ??= pino({ level }, pino.multistream([
+    { level: level as pino.Level, stream: logPassThrough },
+    { level: level as pino.Level, stream: pino.transport({ targets: createTransportTargets(destination) }) }
+  ]))
+
+  return root
+}
+
+interface LoggerOptions {
+  level: 'info' | 'warn' | 'error',
+  destination: string
+}
 
 // 创建带有命名上下文的子日志器
-export function createLogger(name: string): pino.Logger {
+export function createLogger(
+  name: string, 
+  options?: LoggerOptions
+): pino.Logger {
+  ensureLogger(
+    options?.level ?? DEFAULT_LEVEL,
+    options?.destination ?? 'vitamin.log'
+  )
+
+  invariant(root, `Root logger is not initialized`)
   return root.child({ name })
 }
 
 // 获取根日志器实例
 export function getRootLogger(): pino.Logger {
+  invariant(root, `Root logger is not initialized`) 
   return root
 }
