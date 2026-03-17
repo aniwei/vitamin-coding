@@ -1,10 +1,16 @@
 // 文件系统工具 —— 异步读写、mkdirp、rimraf
-import { mkdir, readFile, rm, stat, writeFile } from 'node:fs/promises'
+import { 
+  mkdir, 
+  rm, 
+  stat, 
+  readFile, 
+  writeFile 
+} from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { lookup } from 'mime-types'
 
 // 支持的图片扩展名列表
-export async function mimeType(path: string): Promise<string> {
+export async function mime(path: string): Promise<string> {
   return lookup(path) || 'application/octet-stream'
 }
 
