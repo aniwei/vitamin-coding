@@ -103,7 +103,7 @@ export abstract class ToolBinaryInstance implements ToolBinary {
     options?: ToolBinaryExecutionOptions
   ): Promise<ToolBinaryExecutionResult> {
     return new Promise(async (resolve, reject) => {
-      const executablePath = this.getExecutablePath()
+      const executablePath = await this.getExecutablePath()
       if (!executablePath) {
         if (!this.downloadTask) {
           this.downloadTask = this.download()
