@@ -1,19 +1,13 @@
 import { VITAMIN_PROJECT_ROOT, VITAMIN_HOME  } from '@vitamin/env'
-import { normalize, resolve, relative, sep } from 'node:path'
+import { normalize, resolve, join, sep } from 'node:path'
+import { tmpdir } from 'node:os'
+import { v5 } from 'uuid'
 
 // 规范化路径：解析 .. 和 .，统一使用正斜杠
 export function normalizePath(path: string): string {
   return normalize(path).replaceAll(sep === '\\' ? '\\' : sep, '/')
 }
 
-// 从多个路径片段解析出绝对路径
-export function resolvePath(...segments: string[]): string {
-  return resolve(...segments)
-}
-
-export function relativePath(from: string, to: string): string {
-  return relative(from, to)
-}
 
 export function getVitaminProjectRootPath(): string {
   return VITAMIN_PROJECT_ROOT
@@ -24,9 +18,15 @@ export function getVitaminHomePath(): string {
 }
 
 export function getThirdPartyToolPath(): string {
-  return resolvePath(getVitaminHomePath(), 'tools')
+  return resolve(getVitaminHomePath(), 'tools')
 }
 
 export function getThirdPartyToolBinaryPath(toolName: string): string {
-  return resolvePath(getThirdPartyToolPath(), toolName)
+  return resolve(getThirdPartyToolPath(), toolName)
 }
+
+export function createTempLoggerPath(): string {
+  const id = v5(Date.now().toString(), v5.URL);
+  return join(tmpdir(), `vitamin-coding-${id}.log`);
+}
+

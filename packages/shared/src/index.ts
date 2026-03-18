@@ -58,9 +58,8 @@ export {
 } from './truncate'
 
 export { 
-  relativePath,
   normalizePath, 
-  resolvePath, 
+  createTempLoggerPath,
   getVitaminHomePath,
   getVitaminProjectRootPath,
   getThirdPartyToolPath,
@@ -76,4 +75,3 @@ export { parseJsonc, safeStringify } from './json'
 export { request, stream } from './http'
 export type { HttpRequestOptions, HttpResponse, SseEvent } from './http'
 
-export { createTempLoggerPath } from './tmp'

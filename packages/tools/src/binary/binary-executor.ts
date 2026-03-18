@@ -1,28 +1,37 @@
 import os from 'node:os'
 import invariant from '@vitamin/invariant'
+import { createWriteStream } from 'node:fs'
+import { resolve } from 'node:path'
+import { Readable } from 'stream'
+import { finished } from 'stream/promises'
 import { spawn } from 'node:child_process'
 import { 
   createLogger, 
   mkdirp,
+  getThirdPartyToolPath,
   getThirdPartyToolBinaryPath,
   exists,
 } from '@vitamin/shared'
 import { TOOLS_BINARY_DOWNLOAD_TIMEOUT } from '@vitamin/env'
 import { 
-  type ToolBinary, 
-  type ToolBinaryExecutionOptions, 
-  type ToolBinaryExecutionResult 
+  type BinaryTool, 
+  type BinaryToolExecutionOptions, 
+  type BinaryToolExecutionResult 
 } from '../types'
 
-const logger = createLogger('@vitamin/tools:binary-instance')
+const logger = createLogger('@vitamin/tools:binary-executor')
 
-export abstract class ToolBinaryInstance implements ToolBinary {
+export abstract class BinaryToolExecutor implements BinaryTool {
   abstract name: string
   abstract repository: string
 
   private downloadTask: Promise<void> | null = null
 
-  protected abstract getAssetName(version: string, platform: string, architecture: string): string | null
+  protected abstract getAsset(
+    version: string, 
+    platform: string, 
+    arch: string
+  ): string | null
 
   protected async getLatestVersion(): Promise<string> {
     const response = await fetch(`https://api.github.com/repos/${this.repository}/releases/latest`, {
@@ -40,11 +49,13 @@ export abstract class ToolBinaryInstance implements ToolBinary {
     return data.tag_name.replace(/^v/, "")
   }
 
-  protected getDownloadUrl(version: string, platform: string, architecture: string): string | null {
-    return `https://github.com/${this.repository}/releases/download/${version}/${this.getAssetName(version, platform, architecture)}`
+  protected getDownloadUrl(
+    version: string, 
+    platform: string, 
+    arch: string
+  ): string | null {
+    return `https://github.com/${this.repository}/releases/download/${version}/${this.getAsset(version, platform, arch)}`
   }
-
-  protected async isToolAvailable(): Promise<boolean> {}
 
   protected async tryExecute(toolPath: string): Promise<boolean> {
     try {
@@ -58,7 +69,7 @@ export abstract class ToolBinaryInstance implements ToolBinary {
     }
   }
 
-  protected async getExecutablePath(): Promise<string | null> {
+  protected async resolvePath(): Promise<string | null> {
     let toolPath = getThirdPartyToolBinaryPath(this.name)
 
     if (os.platform() === 'win32') {
@@ -81,12 +92,12 @@ export abstract class ToolBinaryInstance implements ToolBinary {
     const arch = os.arch()
 
     const version = await this.getLatestVersion()
-    const asset = this.getAssetName(version, platform, arch)
+    const asset = this.getAsset(version, platform, arch)
     if (!asset) {
       throw new Error(`Unsupported platform/architecture: ${platform}/${arch}`)
     }
 
-    const dest = `/${asset}`
+    const dest = resolve(getThirdPartyToolPath(this.name))
     await mkdirp(dest)
 
     const url = this.getDownloadUrl(version, platform, arch)
@@ -95,13 +106,25 @@ export abstract class ToolBinaryInstance implements ToolBinary {
     }
 
     
+    const response = await fetch(url, {
+      headers: { 
+        'User-Agent': `vitamin-agent` 
+      },
+      signal: AbortSignal.timeout(TOOLS_BINARY_DOWNLOAD_TIMEOUT),
+    })
 
+    if (!response.ok || !response.body) {
+      throw new Error(`Failed to download binary: ${response.status}`)
+    }
+
+    const fileStream = createWriteStream(dest)
+    await finished(Readable.fromWeb(response.body as any).pipe(fileStream))
   }
 
   async execute(
     args: string[], 
-    options?: ToolBinaryExecutionOptions
-  ): Promise<ToolBinaryExecutionResult> {
+    options?: BinaryToolExecutionOptions
+  ): Promise<BinaryToolExecutionResult> {
     return new Promise(async (resolve, reject) => {
       const executablePath = await this.getExecutablePath()
       if (!executablePath) {
@@ -144,7 +167,7 @@ export abstract class ToolBinaryInstance implements ToolBinary {
   }
 }
 
-export class ConfiguredBinaryInstance implements ToolBinary {
+export class ConfiguredBinaryExecutor implements BinaryTool {
   public name: string
   public repository: string
 
