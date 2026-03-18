@@ -39,16 +39,13 @@ export {
 } from './logger'
 
 export {
-  readText,
-  writeText,
-  readdir,
   mkdirp,
   rimraf,
   exists,
   mime,
   isFile,
   isDirectory,
-} from './fs'
+} from './fs-extra'
 
 export {
   formatBytes,

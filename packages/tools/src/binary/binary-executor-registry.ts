@@ -1,120 +1,9 @@
-import chalk from 'chalk'
-import extractZip from 'extract-zip'
-import { spawnSync } from 'child_process'
-import { 
-	chmodSync, 
-	existsSync, 
-	mkdirSync, 
-	readdirSync, 
-	renameSync, 
-	rmSync 
-} from 'node:fs'
-import { arch, platform } from 'node:os'
-import { join } from 'path'
-import type { BinaryTool } from '../types'
+
+import { createLogger } from '@vitamin/shared'
+import type { BinaryTool } from './binary-executor'
 
 
-function findBinaryRecursively(rootDir: string, binaryFileName: string): string | null {
-	const stack: string[] = [rootDir];
-
-	while (stack.length > 0) {
-		const currentDir = stack.pop();
-		if (!currentDir) continue;
-
-		const entries = readdirSync(currentDir, { withFileTypes: true });
-		for (const entry of entries) {
-			const fullPath = join(currentDir, entry.name);
-			if (entry.isFile() && entry.name === binaryFileName) {
-				return fullPath;
-			}
-			if (entry.isDirectory()) {
-				stack.push(fullPath);
-			}
-		}
-	}
-
-	return null;
-}
-
-// Download and install a tool
-async function downloadTool(tool: "fd" | "rg"): Promise<string> {
-	const config = TOOLS[tool];
-	if (!config) throw new Error(`Unknown tool: ${tool}`);
-
-	const plat = platform();
-	const architecture = arch();
-
-	// Get latest version
-	const version = await getLatestVersion(config.repo);
-
-	// Get asset name for this platform
-	const assetName = config.getAssetName(version, plat, architecture);
-	if (!assetName) {
-		throw new Error(`Unsupported platform: ${plat}/${architecture}`);
-	}
-
-	// Create tools directory
-	mkdirSync(TOOLS_DIR, { recursive: true });
-
-	const downloadUrl = `https://github.com/${config.repo}/releases/download/${config.tagPrefix}${version}/${assetName}`;
-	const archivePath = join(TOOLS_DIR, assetName);
-	const binaryExt = plat === "win32" ? ".exe" : "";
-	const binaryPath = join(TOOLS_DIR, config.binaryName + binaryExt);
-
-	// Download
-	await downloadFile(downloadUrl, archivePath);
-
-	// Extract into a unique temp directory. fd and rg downloads can run concurrently
-	// during startup, so sharing a fixed directory causes races.
-	const extractDir = join(
-		TOOLS_DIR,
-		`extract_tmp_${config.binaryName}_${process.pid}_${Date.now()}_${Math.random().toString(36).slice(2, 10)}`,
-	);
-	mkdirSync(extractDir, { recursive: true });
-
-	try {
-		if (assetName.endsWith(".tar.gz")) {
-			const extractResult = spawnSync("tar", ["xzf", archivePath, "-C", extractDir], { stdio: "pipe" });
-			if (extractResult.error || extractResult.status !== 0) {
-				const errMsg = extractResult.error?.message ?? extractResult.stderr?.toString().trim() ?? "unknown error";
-				throw new Error(`Failed to extract ${assetName}: ${errMsg}`);
-			}
-		} else if (assetName.endsWith(".zip")) {
-			await extractZip(archivePath, { dir: extractDir });
-		} else {
-			throw new Error(`Unsupported archive format: ${assetName}`);
-		}
-
-		// Find the binary in extracted files. Some archives contain files directly
-		// at root, others nest under a versioned subdirectory.
-		const binaryFileName = config.binaryName + binaryExt;
-		const extractedDir = join(extractDir, assetName.replace(/\.(tar\.gz|zip)$/, ""));
-		const extractedBinaryCandidates = [join(extractedDir, binaryFileName), join(extractDir, binaryFileName)];
-		let extractedBinary = extractedBinaryCandidates.find((candidate) => existsSync(candidate));
-
-		if (!extractedBinary) {
-			extractedBinary = findBinaryRecursively(extractDir, binaryFileName) ?? undefined;
-		}
-
-		if (extractedBinary) {
-			renameSync(extractedBinary, binaryPath);
-		} else {
-			throw new Error(`Binary not found in archive: expected ${binaryFileName} under ${extractDir}`);
-		}
-
-		// Make executable (Unix only)
-		if (plat !== "win32") {
-			chmodSync(binaryPath, 0o755);
-		}
-	} finally {
-		// Cleanup
-		rmSync(archivePath, { force: true });
-		rmSync(extractDir, { recursive: true, force: true });
-	}
-
-	return binaryPath;
-}
-
+const logger = createLogger('@vitamin/tools:binary-executor-registry')
 
 export class BinaryExecutorRegistry {
 	private binaries: Map<string, BinaryTool> = new Map()
@@ -127,9 +16,28 @@ export class BinaryExecutorRegistry {
 		return this.binaries.get(tool)
 	}
 
-	register(binary: BinaryTool): void {}
-	registerWithOptions(binary: BinaryTool, options?: { preset?: string; category?: string; builtin?: boolean }): void {}
-	unregister(tool: string): void {}
+	register(tool: BinaryTool): void {
+		if (!this.binaries.has(tool.name)) {
+			this.binaries.set(tool.name, tool)
+		} else {
+			logger.warn(`Tool ${tool.name} is already registered, skipping`)
+		}
+	}
+
+	registerWithOptions(
+		name: string, 
+		options?: { preset?: string; category?: string; builtin?: boolean }
+	): void {
+
+	}
+
+	unregister(tool: string): void {
+		if (this.binaries.has(tool)) {
+			this.binaries.delete(tool)
+		} else {
+			logger.warn(`Tool ${tool} is not registered, skipping`)
+		}
+	}
 
 	async ensure(tool: string): Promise<BinaryTool> {
 		if (this.binaries.has(tool)) {

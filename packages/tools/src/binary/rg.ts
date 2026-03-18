@@ -1,15 +1,14 @@
-import { Binary } from './binary-instance'
-import { type ToolBinary } from '../types'
+import { BinaryToolExecutor, type BinaryTool } from './binary-executor'
 
-export class Rg extends Binary {
-  name = 'ripgrep'
-  repository = 'BurntSushi/ripgrep'
+export class RgExecutor extends BinaryToolExecutor {
+  protected readonly name = 'ripgrep'
+  protected readonly repository = 'BurntSushi/ripgrep'
 
-  getAssetName(version: string, platform: string, architecture: string): string | null {
+  getAsset(version: string, platform: string, architecture: string): string | null {
     
   }
 }
 
-export const createRgBinary = (): ToolBinary => {
-  return new Rg()
+export const createRgExecutor = (): BinaryTool => {
+  return new RgExecutor()
 }

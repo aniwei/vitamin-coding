@@ -1,4 +1,5 @@
 import os from 'node:os'
+import extract from 'extract-zip'
 import invariant from '@vitamin/invariant'
 import { createWriteStream } from 'node:fs'
 import { resolve } from 'node:path'
@@ -13,11 +14,28 @@ import {
   exists,
 } from '@vitamin/shared'
 import { TOOLS_BINARY_DOWNLOAD_TIMEOUT } from '@vitamin/env'
-import { 
-  type BinaryTool, 
-  type BinaryToolExecutionOptions, 
-  type BinaryToolExecutionResult 
-} from '../types'
+
+
+export interface BinaryToolExecutionOptions {
+  cwd?: string
+  env?: NodeJS.ProcessEnv
+  timeout?: number
+}
+
+export interface BinaryToolExecutionResult {
+  stdout: string
+  stderr: string
+  exitCode: number | null
+}
+
+export interface BinaryTool {
+  name: string
+  repository: string
+  execute(
+    args: string[], 
+    options?: BinaryToolExecutionOptions
+  ): Promise<BinaryToolExecutionResult>
+}
 
 const logger = createLogger('@vitamin/tools:binary-executor')
 
@@ -87,6 +105,10 @@ export abstract class BinaryToolExecutor implements BinaryTool {
     return null
   } 
 
+  protected async extract(dir: string, options: { dir: string }): Promise<void> {
+
+  }
+
   protected async download(): Promise<void> {
     const platform = os.platform()
     const arch = os.arch()
@@ -105,7 +127,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
       throw new Error(`No download URL for platform/architecture: ${platform}/${arch}`)
     }
 
-    
+    const extractDir = resolve(getThirdPartyToolPath(this.name))
     const response = await fetch(url, {
       headers: { 
         'User-Agent': `vitamin-agent` 
@@ -119,6 +141,8 @@ export abstract class BinaryToolExecutor implements BinaryTool {
 
     const fileStream = createWriteStream(dest)
     await finished(Readable.fromWeb(response.body as any).pipe(fileStream))
+
+    await this.extract(dest, { dir: extractDir })
   }
 
   async execute(

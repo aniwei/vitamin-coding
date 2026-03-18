@@ -38,24 +38,3 @@ export interface ToolContext {
   // AbortSignal
   signal: AbortSignal
 }
-
-export interface BinaryToolExecutionOptions {
-  cwd?: string
-  env?: NodeJS.ProcessEnv
-  timeout?: number
-}
-
-export interface BinaryToolExecutionResult {
-  stdout: string
-  stderr: string
-  exitCode: number | null
-}
-
-export interface BinaryTool {
-  name: string
-  repository: string
-  execute(
-    args: string[], 
-    options?: BinaryToolExecutionOptions
-  ): Promise<BinaryToolExecutionResult>
-}
