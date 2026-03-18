@@ -1,7 +1,12 @@
 import os from 'node:os'
 import invariant from '@vitamin/invariant'
 import { spawn } from 'node:child_process'
-import { createLogger, mkdirp } from '@vitamin/shared'
+import { 
+  createLogger, 
+  mkdirp,
+  getThirdPartyToolBinaryPath,
+  exists,
+} from '@vitamin/shared'
 import { TOOLS_BINARY_DOWNLOAD_TIMEOUT } from '@vitamin/env'
 import { 
   type ToolBinary, 
@@ -39,9 +44,36 @@ export abstract class ToolBinaryInstance implements ToolBinary {
     return `https://github.com/${this.repository}/releases/download/${version}/${this.getAssetName(version, platform, architecture)}`
   }
 
-  protected getExecutablePath(
-  ): string | null {
-    
+  protected async isToolAvailable(): Promise<boolean> {}
+
+  protected async tryExecute(toolPath: string): Promise<boolean> {
+    try {
+      const ps = spawn(toolPath, ['--version'], { stdio: 'pipe' }) 
+      return new Promise((resolve) => {
+        ps.on('error', () => resolve(false))
+        ps.on('close', (code) => resolve(code === 0))
+      })
+    } catch {
+      return false
+    }
+  }
+
+  protected async getExecutablePath(): Promise<string | null> {
+    let toolPath = getThirdPartyToolBinaryPath(this.name)
+
+    if (os.platform() === 'win32') {
+      toolPath += '.exe'
+    }
+
+    if (await exists(toolPath)) {
+      return toolPath
+    }
+
+    if (await this.tryExecute(this.name)) {
+      return this.name
+    }
+
+    return null
   } 
 
   protected async download(): Promise<void> {
@@ -121,5 +153,5 @@ export class ConfiguredBinaryInstance implements ToolBinary {
     this.repository = repository
   }
 
-  
+
 }

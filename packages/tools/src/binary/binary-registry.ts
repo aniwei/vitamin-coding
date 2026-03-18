@@ -1,65 +1,28 @@
 import chalk from 'chalk'
 import extractZip from 'extract-zip'
 import { spawnSync } from 'child_process'
-import { chmodSync, createWriteStream, existsSync, mkdirSync, readdirSync, renameSync, rmSync } from 'node:fs'
+import { 
+	chmodSync, 
+	createWriteStream, 
+	existsSync, 
+	mkdirSync, 
+	readdirSync, 
+	renameSync, 
+	rmSync 
+} from 'node:fs'
 import { arch, platform } from 'node:os'
 import { join } from 'path'
 import { Readable } from 'stream'
 import { finished } from 'stream/promises'
-import { APP_NAME, getBinDir } from "../config.js";
-import type { ToolBinary } from '../types.js'
 
-const TOOLS_DIR = getBinDir();
-const NETWORK_TIMEOUT_MS = 10000;
+const TOOLS_DIR = getBinDir()
+const NETWORK_TIMEOUT_MS = 10000
 
 function isOfflineModeEnabled(): boolean {
 	const value = process.env.PI_OFFLINE;
 	if (!value) return false;
 	return value === "1" || value.toLowerCase() === "true" || value.toLowerCase() === "yes";
 }
-
-const TOOLS: Record<string, ToolBinary> = {
-	fd: {
-		name: "fd",
-		repository: "sharkdp/fd",
-		binaryName: "fd",
-		tagPrefix: "v",
-		getAssetName: (version, platform, architecture) => {
-			if (platform === "darwin") {
-				const archStr = architecture === "arm64" ? "aarch64" : "x86_64";
-				return `fd-v${version}-${archStr}-apple-darwin.tar.gz`;
-			} else if (platform === "linux") {
-				const archStr = architecture === "arm64" ? "aarch64" : "x86_64";
-				return `fd-v${version}-${archStr}-unknown-linux-gnu.tar.gz`;
-			} else if (platform === "win32") {
-				const archStr = architecture === "arm64" ? "aarch64" : "x86_64";
-				return `fd-v${version}-${archStr}-pc-windows-msvc.zip`;
-			}
-			return null;
-		},
-	},
-	rg: {
-		name: "ripgrep",
-		repository: "BurntSushi/ripgrep",
-		binaryName: "rg",
-		tagPrefix: "",
-		getAssetName: (version, platform, architecture) => {
-			if (platform === "darwin") {
-				const archStr = architecture === "arm64" ? "aarch64" : "x86_64";
-				return `ripgrep-${version}-${archStr}-apple-darwin.tar.gz`;
-			} else if (platform === "linux") {
-				if (architecture === "arm64") {
-					return `ripgrep-${version}-aarch64-unknown-linux-gnu.tar.gz`;
-				}
-				return `ripgrep-${version}-x86_64-unknown-linux-musl.tar.gz`;
-			} else if (platform === "win32") {
-				const archStr = architecture === "arm64" ? "aarch64" : "x86_64";
-				return `ripgrep-${version}-${archStr}-pc-windows-msvc.zip`;
-			}
-			return null;
-		},
-	},
-};
 
 // Check if a command exists in PATH by trying to run it
 function commandExists(cmd: string): boolean {

@@ -46,8 +46,8 @@ export {
   rimraf,
   exists,
   mime,
-  isDirectory,
   isFile,
+  isDirectory,
 } from './fs'
 
 export {
@@ -61,6 +61,10 @@ export {
   relativePath,
   normalizePath, 
   resolvePath, 
+  getVitaminHomePath,
+  getVitaminProjectRootPath,
+  getThirdPartyToolPath,
+  getThirdPartyToolBinaryPath
 } from './path'
 
 export {

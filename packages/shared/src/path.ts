@@ -23,6 +23,10 @@ export function getVitaminHomePath(): string {
   return VITAMIN_HOME
 }
 
-export function getThirdPartyToolPath(toolName: string): string {
-  return resolvePath(getVitaminHomePath(), 'tools', toolName)
+export function getThirdPartyToolPath(): string {
+  return resolvePath(getVitaminHomePath(), 'tools')
+}
+
+export function getThirdPartyToolBinaryPath(toolName: string): string {
+  return resolvePath(getThirdPartyToolPath(), toolName)
 }
