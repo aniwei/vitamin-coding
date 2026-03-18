@@ -1,33 +1,27 @@
-// find 工具 — 按名称/类型/大小/修改时间查找文件
-import { readdir } from 'node:fs/promises'
-import { join, relative } from 'node:path'
-
 import { z } from 'zod'
 
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const FindArgsSchema = z.object({
-  name: z.string().optional().describe('按文件名模式搜索（支持 * 通配符）'),
-  type: z.enum(['file', 'directory', 'any']).optional().default('any').describe('仅搜索文件或目录'),
-  path: z.string().optional().describe('搜索起始路径（默认项目根目录）'),
-  maxDepth: z.number().int().min(1).max(20).optional().default(10).describe('最大递归深度'),
-  maxResults: z.number().int().min(1).max(1000).optional().default(200).describe('最大结果数'),
+  pattern: z.string().describe('File name pattern with optional wildcards (*, ?), e.g. "*.ts", "data-??.json"'),
+  path: z.string().optional().describe('Search starting path (default is project root)'),
+  limit: z.number().int().min(1).max(500).optional().default(100).describe('Maximum number of results to return'),
 })
 
 type FindArgs = z.infer<typeof FindArgsSchema>
 
 
 interface FindToolOptions {
-  excludedDirs?: Set<string>,
+  excluded: string[]
 }
 
 export function createFind(
   projectRoot: string,
   options: FindToolOptions = {
-    excludedDirs: new Set(['node_modules', '.git'])
+    excluded: ['node_modules', 'dist', 'build', '.git', '.cache'], // 默认排除常见的构建输出和依赖目录
   }
 ): AgentTool<FindArgs> {
-  const excludedDirs = options.excludedDirs 
+  const excluded = options.excluded
   
   return {
     name: 'find',
@@ -36,90 +30,7 @@ export function createFind(
     visibility: 'always',
 
     async execute(_id, args, _signal): Promise<ToolResult> {
-      const searchRoot = args.path ? join(projectRoot, args.path) : projectRoot
-      const namePattern = args.name ? nameToRegex(args.name) : null
-      const results: string[] = []
-
-      try {
-        await walkFind(
-          searchRoot, 
-          0, 
-          args.maxDepth, 
-          args.type, 
-          namePattern, 
-          results, 
-          args.maxResults, 
-          projectRoot,
-          excludedDirs,
-        )
-
-        if (results.length === 0) {
-          return {
-            content: [{ type: 'text', text: `No matches found${args.name ? ` for name: ${args.name}` : ''}` }],
-          }
-        }
-
-        const listing = results.sort().join('\n')
-        return {
-          content: [{ type: 'text', text: `Found ${results.length} entries:\n${listing}` }],
-          metadata: { matchCount: results.length },
-        }
-      } catch (error) {
-        const message = error instanceof Error ? error.message : String(error)
-        return {
-          content: [{ type: 'text', text: `Find failed: ${message}` }],
-          isError: true,
-        }
-      }
+      
     },
   }
-}
-
-async function walkFind(
-  dir: string,
-  depth: number,
-  maxDepth: number,
-  type: 'file' | 'directory' | 'any',
-  namePattern: RegExp | null,
-  results: string[],
-  maxResults: number,
-  projectRoot: string,
-  excludedDirs: Set<string> = EXCLUDED_DIRS
-): Promise<void> {
-  if (depth > maxDepth || results.length >= maxResults) return
-
-  const entries = await readdir(dir, { withFileTypes: true })
-  for (const entry of entries) {
-    if (results.length >= maxResults) return
-
-    const isDir = entry.isDirectory()
-    if (isDir && excludedDirs.has(entry.name)) continue
-
-    // 类型过滤
-    if (type === 'file' && isDir) {
-      // 仍然递归进入目录，但不记录
-    } else if (type === 'directory' && !isDir) {
-      continue
-    } else {
-      // 名称匹配
-      if (!namePattern || namePattern.test(entry.name)) {
-        const relPath = relative(projectRoot, join(dir, entry.name))
-        results.push(isDir ? `${relPath}/` : relPath)
-      }
-    }
-
-    if (isDir) {
-      await walkFind(join(dir, entry.name), depth + 1, maxDepth, type, namePattern, results, maxResults, projectRoot)
-    }
-  }
-}
-
-// 将 * 通配符转正则
-function nameToRegex(pattern: string): RegExp {
-  const escaped = pattern
-    .replace(/[.+^${}()|[\]\\]/g, '\\$&')
-    .replace(/\*/g, '.*')
-    .replace(/\?/g, '.')
-    
-  return new RegExp(`^${escaped}$`, 'i')
 }

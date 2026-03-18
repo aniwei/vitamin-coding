@@ -1,6 +1,6 @@
 # @vitamin/shared
 
-Common utilities shared across all Vitamin packages: logger, filesystem helpers, path utils, typed event emitter, error hierarchy, and string/JSON tools.
+Common utilities shared across all Vitamin packages: logger, filesystem helpers, path utils, typed event emitter, error hierarchy, and JSON/HTTP helpers.
 
 ## Installation
 
@@ -11,12 +11,14 @@ pnpm add @vitamin/shared
 ## Usage
 
 ```typescript
-import { createLogger, readText, TypedEventEmitter, VitaminError } from '@vitamin/shared'
+import { createLogger, readText, TypedEventEmitter, ConfigError } from '@vitamin/shared'
 
 const log = createLogger('my-module')
 log.info('started')
 
 const content = await readText('/path/to/file.txt')
+
+throw new ConfigError('Missing config', { code: 'CONFIG_MISSING' })
 ```
 
 ## Key Exports
@@ -24,18 +26,20 @@ const content = await readText('/path/to/file.txt')
 | Export | Description |
 |--------|-------------|
 | `createLogger`, `getRootLogger` | Structured logger |
-| `readText`, `writeText`, `mkdirp`, `rimraf`, `exists` | Filesystem helpers |
-| `normalizePath`, `resolvePath`, `findProjectRoot` | Path utilities |
+| `readText`, `writeText`, `readdir`, `mkdirp`, `rimraf`, `exists`, `mime` | Filesystem helpers |
+| `normalizePath`, `resolvePath` | Path utilities |
 | `TypedEventEmitter` | Generic typed event emitter |
-| `VitaminError`, `ConfigError`, `ProviderError`, ... | Error hierarchy (10 types) |
+| `ConfigError`, `ProviderError`, `OAuthError`, ... | Error hierarchy |
 | `createDisposable`, `DisposableStack` | Resource cleanup |
-| `spawnProcess` | Child process spawner |
-| `truncate`, `slugify`, `estimateTokens` | String utilities |
+| `formatBytes`, `truncateLine`, `truncateHead`, `truncateTail` | Text truncation helpers |
+| `slugify` | String utility |
+| `request`, `stream` | HTTP & SSE helpers |
 | `parseJsonc`, `safeStringify` | JSON/JSONC helpers |
+| `createTempLoggerPath` | Temp log path helper |
 
 ## Types
 
-`Brand`, `DeepPartial`, `DeepReadonly`, `Awaitable`, `Disposable`, `AsyncDisposable`, `EventMap`, `SpawnOptions`, `SpawnResult`
+`Brand`, `DeepPartial`, `DeepReadonly`, `Awaitable`, `Disposable`, `AsyncDisposable`, `Events`, `HttpRequestOptions`, `HttpResponse`, `SseEvent`
 
 ## License
 

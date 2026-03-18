@@ -12,8 +12,8 @@ describe('truncateHead', () => {
 
     expect(result.truncated).toBe(false)
     expect(result.content).toBe(content)
-    expect(result.lines).toBe(3)
-    expect(result.bytes).toBe(Buffer.byteLength(content, 'utf-8'))
+    expect(result.outputLines).toBe(3)
+    expect(result.outputBytes).toBe(Buffer.byteLength(content, 'utf-8'))
   })
 
   it('truncates by line limit first', () => {
@@ -22,7 +22,7 @@ describe('truncateHead', () => {
     expect(result.truncated).toBe(true)
     expect(result.truncatedBy).toBe('lines')
     expect(result.content).toBe('1\n2')
-    expect(result.lines).toBe(2)
+    expect(result.outputLines).toBe(2)
   })
 
   it('returns empty when first line exceeds byte limit', () => {
@@ -32,8 +32,8 @@ describe('truncateHead', () => {
     expect(result.truncatedBy).toBe('bytes')
     expect(result.content).toBe('')
     expect(result.firstLineExceedsLimit).toBe(true)
-    expect(result.lines).toBe(0)
-    expect(result.bytes).toBe(0)
+    expect(result.outputLines).toBe(0)
+    expect(result.outputBytes).toBe(0)
   })
 
   it('truncates by byte limit while preserving complete lines', () => {
@@ -43,15 +43,15 @@ describe('truncateHead', () => {
     expect(result.truncated).toBe(true)
     expect(result.truncatedBy).toBe('bytes')
     expect(result.content).toBe('aa')
-    expect(result.lines).toBe(1)
-    expect(result.bytes).toBe(2)
+    expect(result.outputLines).toBe(1)
+    expect(result.outputBytes).toBe(2)
   })
 
-  it('normalizes invalid options to non-negative integers', () => {
+  it('keeps provided options as-is', () => {
     const result = truncateHead('x\ny', { maxLines: -1, maxBytes: Number.NaN })
 
-    expect(result.options.maxLines).toBe(0)
-    expect(result.options.maxBytes).toBeGreaterThan(0)
+    expect(result.options.maxLines).toBe(-1)
+    expect(Number.isNaN(result.options.maxBytes)).toBe(true)
     expect(result.content).toBe('')
     expect(result.truncatedBy).toBe('lines')
   })
@@ -64,7 +64,7 @@ describe('truncateTail', () => {
 
     expect(result.truncated).toBe(false)
     expect(result.content).toBe(content)
-    expect(result.lines).toBe(3)
+    expect(result.outputLines).toBe(3)
   })
 
   it('truncates by line limit from tail', () => {
@@ -88,13 +88,13 @@ describe('truncateTail', () => {
     expect(Buffer.byteLength(result.content, 'utf-8')).toBeLessThanOrEqual(maxBytes)
   })
 
-  it('returns empty when maxLines is normalized to zero', () => {
+  it('returns empty when maxLines is negative', () => {
     const result = truncateTail('a\nb', { maxLines: -10, maxBytes: 10 })
 
     expect(result.truncated).toBe(true)
     expect(result.truncatedBy).toBe('lines')
     expect(result.content).toBe('')
-    expect(result.lines).toBe(0)
+    expect(result.outputLines).toBe(0)
   })
 })
 

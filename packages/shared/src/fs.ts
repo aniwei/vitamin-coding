@@ -32,12 +32,12 @@ export async function writeText(path: string, content: string): Promise<void> {
   await writeFile(path, content, 'utf-8')
 }
 
-// 递归创建目录（等同于 mkdir -p）
+// 递归创建目录
 export async function mkdirp(path: string): Promise<void> {
   await mkdir(path, { recursive: true })
 }
 
-// 递归删除路径（等同于 rm -rf）
+// 递归删除路径
 export async function rimraf(path: string): Promise<void> {
   await rm(path, { recursive: true, force: true })
 }

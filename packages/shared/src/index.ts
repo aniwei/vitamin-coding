@@ -57,9 +57,8 @@ export {
   truncateTail,
 } from './truncate'
 
-
-
 export { 
+  relativePath,
   normalizePath, 
   resolvePath, 
 } from './path'

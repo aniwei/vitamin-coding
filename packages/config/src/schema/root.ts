@@ -14,12 +14,6 @@ import { BackgroundTaskConfigSchema, ExperimentalConfigSchema } from './experime
 export const LogLevelSchema = z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
 
 export const VitaminConfigStrictSchema = z.object({
-  env: z.object({
-    PROJ_DIR: z.string(),
-    USER_DIR: z.string(),
-    PROJ_CONFIG_PATH: z.string(),
-    USER_CONFIG_PATH: z.string(),
-  }).optional(),
   config_version: z.string().optional(),
   version: z.string().optional(),
   log_level: LogLevelSchema.optional(),

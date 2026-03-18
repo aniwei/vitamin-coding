@@ -39,32 +39,23 @@ export interface ToolContext {
   signal: AbortSignal
 }
 
-export type SkillLoader = (path: string) => Promise<{
-  success: boolean
-  name?: string
-  error?: string
-}>
-
-export type SkillMcp = (server: string, tool: string, args?: Record<string, unknown>) => Promise<{
-  success: boolean
-  result?: unknown
-  error?: string
-}>
-
-export type SkillExecutor = (name: string, input?: string, params?: Record<string, string>) => Promise<{
-  success: boolean
-  output?: string
-  error?: string
-}>
-
-export interface RegisterSkillOptions {
-  mcp?: SkillMcp
-  loader?: SkillLoader
-  executor?: SkillExecutor
+export interface ToolBinaryExecutionOptions {
+  cwd?: string
+  env?: NodeJS.ProcessEnv
+  timeout?: number
 }
 
-export interface TaskOptions {
-  
+export interface ToolBinaryExecutionResult {
+  stdout: string
+  stderr: string
+  exitCode: number | null
 }
 
-export interface RegisterBuiltinOptions {}
+export interface ToolBinary {
+  name: string
+  repository: string
+  execute(
+    args: string[], 
+    options?: ToolBinaryExecutionOptions
+  ): Promise<ToolBinaryExecutionResult>
+}

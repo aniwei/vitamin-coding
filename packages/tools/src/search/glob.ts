@@ -1,71 +1,99 @@
 // glob 工具 — 文件名 glob 匹配
 import { readdir, glob } from 'node:fs/promises'
 import { join, relative } from 'node:path'
+import { exists, truncateHead, formatBytes } from '@vitamin/shared'
+import { TOOLS_SEARCH_MAX_OUTPUT_LINES } from '@viteamin/env'
 
 import { z } from 'zod'
 
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const GlobArgsSchema = z.object({
-  pattern: z.string().describe('Glob 模式（如 "**/*.ts"、"src/**/*.test.ts"）'),
-  path: z.string().optional().describe('搜索起始路径（默认项目根目录）'),
-  maxResults: z.number().int().min(1).max(5000).optional().default(500).describe('最大结果数'),
+  pattern: z.string().describe('Glob pattern (e.g. "**/*.ts", "src/**/*.test.ts")'),
+  path: z.string().optional().describe('Search starting path (default is project root)'),
+  limit: z.number().int().min(1).max(500).optional().default(500).describe('Maximum number of results'),
 })
 
 type GlobArgs = z.infer<typeof GlobArgsSchema>
 
-export function createGlob(projectRoot: string): AgentTool<GlobArgs> {
+interface GlobToolOptions {
+  exclude?: string[] // 额外的排除模式
+}
+
+export function createGlob(
+  projectRoot: string, 
+  options: GlobToolOptions
+): AgentTool<GlobArgs> {
+  const exclude = options.exclude ?? []
+
   return {
     name: 'glob',
     description: 'Search for files matching a glob pattern. Returns a list of matching file paths.',
     parameters: GlobArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
-      const searchRoot = args.path ? join(projectRoot, args.path) : projectRoot
+    async execute(_id, args, signal): Promise<ToolResult> {
+      const searchDir = args.path 
+        ? join(projectRoot, args.path) 
+        : projectRoot
 
-      try {
-        const matches: string[] = []
+      if (!await exists(searchDir)) {
+        throw new Error(`Search path does not exist: ${searchDir}`)
+      }
 
-        for await (const entry of glob(args.pattern, { cwd: searchRoot })) {
-          if (matches.length >= args.maxResults) break
-          matches.push(entry)
-        }
+      const limit = args.limit ?? TOOLS_SEARCH_MAX_OUTPUT_LINES
 
-        if (matches.length === 0) {
-          return {
-            content: [{ type: 'text', text: `No files match pattern: ${args.pattern}` }],
-          }
-        }
+      const results = await Array.fromAsync(glob(args.pattern, {
+        cwd: searchDir,
+        exclude,
+      }))
 
-        const listing = matches.sort().join('\n')
+      if (signal.aborted) {
+        throw new Error('Search operation was aborted')
+      }
+
+      if (results.length === 0) {
         return {
-          content: [{ type: 'text', text: `Found ${matches.length} files:\n${listing}` }],
-          metadata: { matchCount: matches.length, pattern: args.pattern },
-        }
-      } catch (error) {
-        // node:fs/promises glob 不可用时 fallback
-        try {
-          const matches = await walkGlob(searchRoot, args.pattern, args.maxResults, projectRoot)
-          if (matches.length === 0) {
-            return {
-              content: [{ type: 'text', text: `No files match pattern: ${args.pattern}` }],
-            }
-          }
-          const listing = matches.sort().join('\n')
-          return {
-            content: [{ type: 'text', text: `Found ${matches.length} files:\n${listing}` }],
-            metadata: { matchCount: matches.length, pattern: args.pattern },
-          }
-        } catch (walkError) {
-          const message = walkError instanceof Error ? walkError.message : String(walkError)
-          return {
-            content: [{ type: 'text', text: `Glob failed: ${message}` }],
-            isError: true,
-          }
+          content: [{ type: 'text', text: 'No files found matching pattern' }],
         }
       }
-    },
+
+      const relativized = results.map((p) => {
+        return p.startsWith(searchDir) 
+          ? p.slice(searchDir.length + 1) 
+          : relative(searchDir, p)
+      })
+
+      const limitReached = relativized.length >= limit
+      const rawOutput = relativized.join('\n')
+      const truncation = truncateHead(rawOutput, { 
+        maxLines: Number.MAX_SAFE_INTEGER,
+        maxBytes: TOOLS_MAX
+      })
+
+      let output = truncation.content
+      const notices: string[] = []
+
+      if (limitReached) {
+        notices.push(`${limit} results limit reached`)
+      }
+
+      if (truncation.truncated) {
+        notices.push(`${formatBytes(TOOLS_MAX_OUTPUT_BYTTES)} limit reached`)
+      }
+
+      if (notices.length > 0) {
+        output += `\n\n(${notices.join(". ")})`
+      }
+
+      return {
+        content: [{ type: 'text', text: output }],
+        details: {
+          limitReached,
+          truncation,
+        }
+      }
+    }
   }
 }
 
