@@ -1,7 +1,8 @@
 // write 工具 — 创建或覆盖文件
 import { dirname } from 'node:path'
-import { mkdirp, writeText } from '@vitamin/shared'
-import { normalizePath, resolvePath } from '@vitamin/shared'
+import { mkdirp, normalizePath } from '@vitamin/shared'
+import { resolve } from 'node:path'
+import { writeFile } from 'node:fs/promises'
 import { z } from 'zod'
 
 import type { AgentTool, ToolResult } from '@vitamin/agent'
@@ -25,7 +26,7 @@ export function createWrite(projectRoot: string): AgentTool<WriteArgs> {
     visibility: 'always',
 
     async execute(_id, args, signal): Promise<ToolResult> {
-      const resolvedPath = resolvePath(projectRoot, args.path)
+      const resolvedPath = resolve(projectRoot, args.path)
       const normalizedPath = normalizePath(resolvedPath)
 
       if (args.createDirectories !== false) {
@@ -36,7 +37,7 @@ export function createWrite(projectRoot: string): AgentTool<WriteArgs> {
         throw new Error('Write operation was aborted')
       }
 
-      await writeText(normalizedPath, args.content)
+      await writeFile(normalizedPath, args.content, 'utf-8')
 
       return {
         content: [{ type: 'text', text: `Successfully wrote to ${args.path}` }],

@@ -30,7 +30,6 @@ export interface BinaryToolExecutionResult {
 
 export interface BinaryTool {
   name: string
-  repository: string
   execute(
     args: string[], 
     options?: BinaryToolExecutionOptions
@@ -40,10 +39,15 @@ export interface BinaryTool {
 const logger = createLogger('@vitamin/tools:binary-executor')
 
 export abstract class BinaryToolExecutor implements BinaryTool {
-  abstract name: string
-  abstract repository: string
+  public abstract name: string
+  public abstract repository: string
 
+  protected projectRoot: string
   private downloadTask: Promise<void> | null = null
+
+  constructor(projectRoot: string) {
+    this.projectRoot = projectRoot
+  }
 
   protected abstract getAsset(
     version: string, 
@@ -119,7 +123,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
       throw new Error(`Unsupported platform/architecture: ${platform}/${arch}`)
     }
 
-    const dest = resolve(getThirdPartyToolPath(this.name))
+    const dest = resolve(getThirdPartyToolPath())
     await mkdirp(dest)
 
     const url = this.getDownloadUrl(version, platform, arch)
@@ -127,7 +131,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
       throw new Error(`No download URL for platform/architecture: ${platform}/${arch}`)
     }
 
-    const extractDir = resolve(getThirdPartyToolPath(this.name))
+    const extractDir = resolve(getThirdPartyToolPath())
     const response = await fetch(url, {
       headers: { 
         'User-Agent': `vitamin-agent` 
@@ -150,7 +154,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
     options?: BinaryToolExecutionOptions
   ): Promise<BinaryToolExecutionResult> {
     return new Promise(async (resolve, reject) => {
-      const executablePath = await this.getExecutablePath()
+      const executablePath = await this.resolvePath()
       if (!executablePath) {
         if (!this.downloadTask) {
           this.downloadTask = this.download()
@@ -191,14 +195,28 @@ export abstract class BinaryToolExecutor implements BinaryTool {
   }
 }
 
+type ConfiguredBinaryExecutorExecute = (
+  args: string[],
+  options?: BinaryToolExecutionOptions
+) => Promise<BinaryToolExecutionResult>
+
 export class ConfiguredBinaryExecutor implements BinaryTool {
   public name: string
-  public repository: string
 
-  constructor(name: string, repository: string) {
+  protected executeHandler: ConfiguredBinaryExecutorExecute
+
+  constructor(
+    name: string, 
+    execute: ConfiguredBinaryExecutorExecute
+  ) {
     this.name = name
-    this.repository = repository
+    this.executeHandler = execute
   }
 
-
+  async execute(
+    args: string[], 
+    options?: BinaryToolExecutionOptions
+  ): Promise<BinaryToolExecutionResult> {
+    return this.executeHandler(args, options)
+  }
 }

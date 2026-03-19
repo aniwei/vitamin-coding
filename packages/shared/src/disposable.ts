@@ -1,4 +1,3 @@
-// 资源释放协议，支持 ECMAScript using / await using 语义
 // 同步可释放资源
 export interface Disposable {
   [Symbol.dispose](): void
@@ -28,7 +27,6 @@ export function createAsyncDisposable(cleanup: () => Promise<void>): AsyncDispos
 }
 
 // 可释放资源栈管理器
-// 释放时按 LIFO 顺序清理资源
 export class DisposableStack implements Disposable {
   private readonly cleanups: (() => void)[] = []
   private disposed = false

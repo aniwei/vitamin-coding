@@ -1,9 +1,10 @@
 import { z } from 'zod'
 import { readFile } from 'node:fs/promises'
-
-import { isFile, exists, readText, mimeType, TOOLS_MAX_OUTPUT_LINES } from '@vitamin/shared'
-import { truncateHead, formatBytes, normalizePath, resolvePath } from '@vitamin/shared'
+import { resolve } from 'node:path'
+import { isFile, exists, mime } from '@vitamin/shared'
+import { truncateHead, formatBytes, normalizePath } from '@vitamin/shared'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
+import { TOOLS_MAX_OUTPUT_BYTES, TOOLS_MAX_OUTPUT_LINES } from '@vitamin/env'
 
 // 参数 schema
 const ReadArgsSchema = z.object({
@@ -24,7 +25,7 @@ export function createRead(projectRoot: string): AgentTool<ReadArgs> {
     visibility: 'always',
 
     async execute(_id, args, signal): Promise<ToolResult> {
-      const resolvedPath = resolvePath(projectRoot, args.path)
+      const resolvedPath = resolve(projectRoot, args.path)
       const normalizedPath = normalizePath(resolvedPath)
 
       // 检查文件是否存在
@@ -36,12 +37,12 @@ export function createRead(projectRoot: string): AgentTool<ReadArgs> {
         throw new Error(`Not a file: ${args.path}`)
       }
 
-      const mime = await mimeType(normalizedPath)
-      const isSuppotedImage = mime?.startsWith('image/') && mime !== 'image/svg+xml'
+      const mt = await mime(normalizedPath)
+      const isSuppotedImage = mt?.startsWith('image/') && mt !== 'image/svg+xml'
 
       // 图片文件处理
       if (isSuppotedImage) {
-        return readImage(normalizedPath, args.path, mime)
+        return readImage(normalizedPath, args.path, mt)
       } 
 
       // 文本文件处理
@@ -86,11 +87,11 @@ async function readImage(
 async function readTextWithRange(
   absolutePath: string,
   displayPath: string,
-  limit: number = TOOLS_MAX_OUTPUT_LINES,
   offset: number = 1,
+  limit: number = TOOLS_MAX_OUTPUT_LINES,
   maxBytes: number = TOOLS_MAX_OUTPUT_LINES,
 ): Promise<ToolResult> {
-  const content = await readText(absolutePath)
+  const content = await readFile(absolutePath, 'utf-8')
   if (content === undefined) {
     throw new Error(`Failed to read file ${displayPath}`)
   }
@@ -112,7 +113,10 @@ async function readTextWithRange(
   selectedContent = lines.slice(start, end).join('\n')
   userLimitedLines = end - start
 
-  const truncation = truncateHead(selectedContent);
+  const truncation = truncateHead(selectedContent, {
+    maxBytes: TOOLS_MAX_OUTPUT_BYTES,
+    maxLines: TOOLS_MAX_OUTPUT_LINES
+  })
   let output: string
 
   if (truncation.firstLineExceedsLimit) {

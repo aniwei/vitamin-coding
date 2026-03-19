@@ -1,11 +1,13 @@
 
 import { createLogger } from '@vitamin/shared'
+import { createFdExecutor } from './fd'
+import { createRipgrepExecutor } from './rg'
 import type { BinaryTool } from './binary-executor'
 
 
 const logger = createLogger('@vitamin/tools:binary-executor-registry')
 
-export class BinaryExecutorRegistry {
+export class BinaryToolExecutorRegistry {
 	private binaries: Map<string, BinaryTool> = new Map()
 
 	has(tool: string): boolean {
@@ -48,11 +50,11 @@ export class BinaryExecutorRegistry {
 	}
 }
 
-export const createBinaryExecutorRegistry = (projectRoot: string): BinaryToolRegistry => {
-	const registry = new BinaryExecutorRegistry()
+export const createBinaryExecutorRegistry = (projectRoot: string): BinaryToolExecutorRegistry => {
+	const registry = new BinaryToolExecutorRegistry()
 
-	registry.register(createFdExecutor())
-	registry.register(createRgExecutor())
+	registry.register(createFdExecutor(projectRoot))
+	registry.register(createRipgrepExecutor(projectRoot))
 
 	return registry
 }
