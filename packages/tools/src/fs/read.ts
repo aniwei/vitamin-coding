@@ -24,7 +24,7 @@ export function createRead(projectRoot: string): AgentTool<ReadArgs> {
     parameters: ReadArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       const resolvedPath = resolve(projectRoot, args.path)
       const normalizedPath = normalizePath(resolvedPath)
 

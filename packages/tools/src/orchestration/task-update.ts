@@ -31,7 +31,7 @@ export function createTaskUpdate(
     parameters: TaskUpdateArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       if (!update) {
         return { content: [{ type: 'text', text: 'task_update not available' }], isError: true }
       }

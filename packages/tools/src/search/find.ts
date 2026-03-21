@@ -16,21 +16,20 @@ interface FindToolOptions {
 }
 
 export function createFind(
-  projectRoot: string,
-  options: FindToolOptions = {
-    excluded: ['node_modules', 'dist', 'build', '.git', '.cache'], // 默认排除常见的构建输出和依赖目录
+  _projectRoot: string,
+  _options: FindToolOptions = {
+    excluded: ['node_modules', 'dist', 'build', '.git', '.cache'],
   }
 ): AgentTool<FindArgs> {
-  const excluded = options.excluded
-  
   return {
     name: 'find',
     description: '在项目中查找文件或目录。可按名称、类型过滤。',
     parameters: FindArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
-      
+    async execute(_ctx): Promise<ToolResult> {
+      // TODO
+      throw new Error('Find tool is not implemented yet')
     },
   }
 }

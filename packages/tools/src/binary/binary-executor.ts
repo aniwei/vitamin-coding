@@ -1,5 +1,4 @@
 import os from 'node:os'
-import extract from 'extract-zip'
 import invariant from '@vitamin/invariant'
 import { createWriteStream } from 'node:fs'
 import { resolve } from 'node:path'
@@ -7,7 +6,6 @@ import { Readable } from 'stream'
 import { finished } from 'stream/promises'
 import { spawn } from 'node:child_process'
 import { 
-  createLogger, 
   mkdirp,
   getThirdPartyToolPath,
   getThirdPartyToolBinaryPath,
@@ -35,8 +33,6 @@ export interface BinaryTool {
     options?: BinaryToolExecutionOptions
   ): Promise<BinaryToolExecutionResult>
 }
-
-const logger = createLogger('@vitamin/tools:binary-executor')
 
 export abstract class BinaryToolExecutor implements BinaryTool {
   public abstract name: string
@@ -109,7 +105,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
     return null
   } 
 
-  protected async extract(dir: string, options: { dir: string }): Promise<void> {
+  protected async extract(_dir: string, _options: { dir: string }): Promise<void> {
 
   }
 
@@ -170,16 +166,14 @@ export abstract class BinaryToolExecutor implements BinaryTool {
         timeout: options?.timeout,
       })
   
-      ps.on('error', (err) => {
-        logger.error(`Failed to execute ${this.name}:`, err)
-        reject(err)
-      })
-  
+      
       let stdout: Buffer[] = []
       let stderr: Buffer[] = []
-  
+      
       ps.stdout.on('data', (data) => stdout.push(data))
       ps.stderr.on('data', (data) => stderr.push(data))
+
+      ps.on('error', (err) => reject(err))
       ps.on('close', (code) => {
         if (code !== 0) {
           return reject(new Error(`Process exited with code ${code}: ${Buffer.concat(stderr).toString()}`))

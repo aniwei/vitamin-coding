@@ -25,7 +25,7 @@ export function createWrite(projectRoot: string): AgentTool<WriteArgs> {
     parameters: WriteArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, signal): Promise<ToolResult> {
+    async execute({ args, signal }): Promise<ToolResult> {
       const resolvedPath = resolve(projectRoot, args.path)
       const normalizedPath = normalizePath(resolvedPath)
 

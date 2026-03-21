@@ -19,7 +19,7 @@ export function createSkillLoader(options: RegisterSkillOptions): AgentTool<Skil
     parameters: SkillLoaderArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       if (!loader) {
         return {
           content: [{ type: 'text', text: 'skill-loader not available' }],

@@ -21,7 +21,7 @@ export function createSkillMcp(options: RegisterSkillOptions): AgentTool<SkillMc
     parameters: SkillMcpArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       if (!mcp) {
         return {
           content: [{ type: 'text', text: 'skill-mcp not available: MCP system not initialized' }],

@@ -24,7 +24,7 @@ export function createBackgroundOutputTool(
     parameters: BackgroundOutputArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       if (!getOutput) {
         return {
           content: [{ type: 'text', text: 'background_output not available: background manager not initialized' }],

@@ -37,7 +37,7 @@ export function createTaskCreate(
     parameters: TaskCreateArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       if (!create) {
         return { content: [{ type: 'text', text: 'task_create not available' }], isError: true }
       }

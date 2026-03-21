@@ -5,10 +5,9 @@ import { join } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { createReadTool } from '../src/builtin/read'
-import { createEditTool } from '../src/builtin/edit'
-import { createGlobTool } from '../src/builtin/glob'
-import { createAstGrepTool } from '../src/builtin/ast-grep'
+import { createRead } from '../src/fs/read'
+import { createEdit } from '../src/fs/edit'
+import { createGlob } from '../src/search/glob'
 
 let workspaceDir = ''
 
@@ -33,9 +32,9 @@ describe('read tool — coverage branches', () => {
     describe('#when read is called', () => {
       it('#then returns isError with message', async () => {
         const root = await createWorkspace()
-        const readTool = createReadTool(root)
+        const readTool = createRead(root)
 
-        const result = await readTool.execute('r1', { path: 'nonexistent.ts' }, signal)
+        const result = await readTool.execute({ id: 'r1', args: { path: 'nonexistent.ts' }, signal })
         expect(result.isError).toBe(true)
         expect(result.content[0]?.text).toContain('File not found')
       })
@@ -47,9 +46,9 @@ describe('read tool — coverage branches', () => {
       it('#then returns isError with not-a-file message', async () => {
         const root = await createWorkspace()
         await mkdir(join(root, 'subdir'))
-        const readTool = createReadTool(root)
+        const readTool = createRead(root)
 
-        const result = await readTool.execute('r2', { path: 'subdir' }, signal)
+        const result = await readTool.execute({ id: 'r2', args: { path: 'subdir' }, signal })
         expect(result.isError).toBe(true)
         expect(result.content[0]?.text).toContain('Not a file')
       })
@@ -67,9 +66,9 @@ describe('read tool — coverage branches', () => {
           'hex',
         )
         await writeFile(join(root, 'tiny.png'), pngBuffer)
-        const readTool = createReadTool(root)
+        const readTool = createRead(root)
 
-        const result = await readTool.execute('r3', { path: 'tiny.png' }, signal)
+        const result = await readTool.execute({ id: 'r3', args: { path: 'tiny.png' }, signal })
         expect(result.isError).toBeUndefined()
         const content = result.content[0] as { type: string; source?: { type: string; mediaType: string } }
         expect(content.type).toBe('image')
@@ -83,9 +82,9 @@ describe('read tool — coverage branches', () => {
       it('#then returns text content', async () => {
         const root = await createWorkspace()
         await writeFile(join(root, 'icon.svg'), '<svg><circle/></svg>')
-        const readTool = createReadTool(root)
+        const readTool = createRead(root)
 
-        const result = await readTool.execute('r-svg', { path: 'icon.svg' }, signal)
+        const result = await readTool.execute({ id: 'r-svg', args: { path: 'icon.svg' }, signal })
         expect(result.isError).toBeUndefined()
         expect(result.content[0]).toHaveProperty('type', 'text')
         expect((result.content[0] as { text: string }).text).toContain('<svg>')
@@ -100,9 +99,9 @@ describe('read tool — coverage branches', () => {
         // 最小 JPEG header
         const jpegBuffer = Buffer.from('ffd8ffe000104a46494600', 'hex')
         await writeFile(join(root, 'photo.jpg'), jpegBuffer)
-        const readTool = createReadTool(root)
+        const readTool = createRead(root)
 
-        const result = await readTool.execute('r-jpg', { path: 'photo.jpg' }, signal)
+        const result = await readTool.execute({ id: 'r-jpg', args: { path: 'photo.jpg' }, signal })
         expect(result.isError).toBeUndefined()
         const content = result.content[0] as { type: string; source?: { type: string; mediaType: string } }
         expect(content.type).toBe('image')
@@ -116,9 +115,9 @@ describe('read tool — coverage branches', () => {
       it('#then returns all lines with numbers', async () => {
         const root = await createWorkspace()
         await writeFile(join(root, 'all.txt'), 'AAA\nBBB\nCCC')
-        const readTool = createReadTool(root)
+        const readTool = createRead(root)
 
-        const result = await readTool.execute('r-all', { path: 'all.txt' }, signal)
+        const result = await readTool.execute({ id: 'r-all', args: { path: 'all.txt' }, signal })
         expect(result.isError).toBeUndefined()
         const text = (result.content[0] as { text: string }).text
         expect(text).toContain('1 | AAA')
@@ -137,13 +136,13 @@ describe('edit tool — coverage branches', () => {
       it('#then replaces content and reports success', async () => {
         const root = await createWorkspace()
         await writeFile(join(root, 'target.ts'), 'const x = 1\nconst y = 2\n')
-        const editTool = createEditTool(root)
+        const editTool = createEdit(root)
 
-        const result = await editTool.execute('e1', {
+        const result = await editTool.execute({ id: 'e1', args: {
           path: 'target.ts',
           oldString: 'const x = 1',
           newString: 'const x = 42',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBeUndefined()
         expect(result.content[0]?.text).toContain('Successfully edited')
@@ -157,13 +156,13 @@ describe('edit tool — coverage branches', () => {
     describe('#when edit is called', () => {
       it('#then returns isError', async () => {
         const root = await createWorkspace()
-        const editTool = createEditTool(root)
+        const editTool = createEdit(root)
 
-        const result = await editTool.execute('e2', {
+        const result = await editTool.execute({ id: 'e2', args: {
           path: 'missing.ts',
           oldString: 'x',
           newString: 'y',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBe(true)
         expect(result.content[0]?.text).toContain('File not found')
@@ -176,13 +175,13 @@ describe('edit tool — coverage branches', () => {
       it('#then returns not-a-file error', async () => {
         const root = await createWorkspace()
         await mkdir(join(root, 'mydir'))
-        const editTool = createEditTool(root)
+        const editTool = createEdit(root)
 
-        const result = await editTool.execute('e3', {
+        const result = await editTool.execute({ id: 'e3', args: {
           path: 'mydir',
           oldString: 'x',
           newString: 'y',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBe(true)
         expect(result.content[0]?.text).toContain('Not a file')
@@ -195,13 +194,13 @@ describe('edit tool — coverage branches', () => {
       it('#then returns not-found error', async () => {
         const root = await createWorkspace()
         await writeFile(join(root, 'a.ts'), 'hello world')
-        const editTool = createEditTool(root)
+        const editTool = createEdit(root)
 
-        const result = await editTool.execute('e4', {
+        const result = await editTool.execute({ id: 'e4', args: {
           path: 'a.ts',
           oldString: 'NOPE',
           newString: 'y',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBe(true)
         expect(result.content[0]?.text).toContain('oldString not found')
@@ -214,13 +213,13 @@ describe('edit tool — coverage branches', () => {
       it('#then reports correct line counts', async () => {
         const root = await createWorkspace()
         await writeFile(join(root, 'ml.ts'), 'a\nb\nc\nd')
-        const editTool = createEditTool(root)
+        const editTool = createEdit(root)
 
-        const result = await editTool.execute('e5', {
+        const result = await editTool.execute({ id: 'e5', args: {
           path: 'ml.ts',
           oldString: 'b\nc',
           newString: 'B\nC\nC2',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBeUndefined()
         expect(result.content[0]?.text).toContain('replaced 2 lines with 3 lines')
@@ -243,10 +242,10 @@ describe('glob tool — coverage branches', () => {
         await writeFile(join(root, 'src/b.ts'), '')
         await writeFile(join(root, 'src/c.js'), '')
 
-        const globTool = createGlobTool(root)
-        const result = await globTool.execute('g1', {
+        const globTool = createGlob(root)
+        const result = await globTool.execute({ id: 'g1', args: {
           pattern: 'src/*.ts',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBeUndefined()
         const text = (result.content[0] as { text: string }).text
@@ -262,10 +261,10 @@ describe('glob tool — coverage branches', () => {
       it('#then returns no-match message', async () => {
         const root = await createWorkspace()
 
-        const globTool = createGlobTool(root)
-        const result = await globTool.execute('g2', {
+        const globTool = createGlob(root)
+        const result = await globTool.execute({ id: 'g2', args: {
           pattern: '**/*.xyz',
-        }, signal)
+        }, signal })
 
         const text = (result.content[0] as { text: string }).text
         expect(text).toContain('No files match pattern')
@@ -274,24 +273,3 @@ describe('glob tool — coverage branches', () => {
   })
 })
 
-// ═══ ast-grep tool 覆盖率补充 ═══
-
-describe('ast-grep tool — basic tests', () => {
-  describe('#given sg command not available', () => {
-    describe('#when execute is called', () => {
-      it('#then returns installation hint error', async () => {
-        const root = await createWorkspace()
-        const astGrepTool = createAstGrepTool(root)
-
-        const result = await astGrepTool.execute('ag1', {
-          pattern: 'function $NAME($$$) { $$$ }',
-        }, signal)
-
-        // sg likely not installed in test env
-        expect(result.isError).toBe(true)
-        const text = (result.content[0] as { text: string }).text
-        expect(text.toLowerCase()).toMatch(/not installed|failed|error/)
-      })
-    })
-  })
-})

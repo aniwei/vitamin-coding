@@ -23,7 +23,7 @@ export function createPerformWork(
     parameters: PerformWorkArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       if (!performWork) {
         throw new Error('perform_work function is not provided in options')
       }

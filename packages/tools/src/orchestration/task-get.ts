@@ -32,7 +32,7 @@ export function createTaskGet(
     parameters: TaskGetArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       if (!get) {
         throw new Error('get function is not provided in options')
       }

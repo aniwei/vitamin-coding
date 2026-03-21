@@ -27,11 +27,10 @@ export function createEdit(projectRoot: string): AgentTool<EditArgs> {
     parameters: EditArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       const resolvedPath = resolve(projectRoot, args.path)
       const normalizedPath = normalizePath(resolvedPath)
 
-      // 检查文件存在
       if (!await exists(normalizedPath)) {
         throw new Error(`File not found: ${args.path}`)
       }
@@ -45,7 +44,26 @@ export function createEdit(projectRoot: string): AgentTool<EditArgs> {
         throw new Error(`Failed to read file: ${args.path}`)
       }
 
-      
+      const occurrences = content.split(args.oldContent).length - 1
+      if (occurrences === 0) {
+        throw new Error(`oldContent not found in ${args.path}`)
+      }
+      if (!args.replaceAll && occurrences > 1) {
+        throw new Error(`oldContent appears ${occurrences} times in ${args.path}. Use replaceAll or provide more context for a unique match.`)
+      }
+
+      const newContent = args.replaceAll
+        ? content.replaceAll(args.oldContent, args.content)
+        : content.replace(args.oldContent, args.content)
+
+      await writeFile(normalizedPath, newContent, 'utf-8')
+
+      return {
+        content: [{
+          type: 'text',
+          text: `Edited ${args.path}: replaced ${occurrences} occurrence(s)`,
+        }],
+      }
     },
   }
 }

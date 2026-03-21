@@ -13,7 +13,7 @@ import { workLoop } from '../src/work-loop'
 import { AbortError, MaxToolTurnsError } from '../src/errors'
 import { createToolExecutor } from '../src/tool-executor'
 
-import type { AgentEvent, AgentLoopRuntime, AgentMessage, AgentTool } from '../src/types'
+import type { AgentEvent, AgentLoopContext, AgentMessage, AgentTool } from '../src/types'
 
 function makeModel(): Model {
   return {
@@ -79,13 +79,13 @@ function makeTool(name: string, executeText: string): AgentTool {
     name,
     description: `tool:${name}`,
     parameters: createSchema<Record<string, unknown>>(),
-    async execute(_id, _args, _signal) {
+    async execute(_ctx) {
       return { content: [{ type: 'text' as const, data: executeText }] }
     },
   }
 }
 
-function createRuntime(overrides?: Partial<AgentLoopRuntime>): AgentLoopRuntime {
+function createRuntime(overrides?: Partial<AgentLoopContext>): AgentLoopContext {
   return {
     model: makeModel(),
     systemPrompt: 'you are helpful',

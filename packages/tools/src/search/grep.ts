@@ -13,7 +13,7 @@ const GrepArgsSchema = z.object({
 type GrepArgs = z.infer<typeof GrepArgsSchema>
 
 
-export function createGrep(projectRoot: string): AgentTool<GrepArgs> {
+export function createGrep(_projectRoot: string): AgentTool<GrepArgs> {
   
   return {
     name: 'grep',
@@ -21,7 +21,7 @@ export function createGrep(projectRoot: string): AgentTool<GrepArgs> {
     parameters: GrepArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, signal): Promise<ToolResult> {
+    async execute(_ctx): Promise<ToolResult> {
       // TODO
       throw new Error('Grep tool is not implemented yet')
     },

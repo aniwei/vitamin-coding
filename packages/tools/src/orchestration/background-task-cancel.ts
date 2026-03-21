@@ -20,7 +20,7 @@ export function createBackgroundCancelTool(
     parameters: BackgroundCancelArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       if (!cancel) {
         return {
           content: [{ type: 'text', text: 'background-cancel not available' }],

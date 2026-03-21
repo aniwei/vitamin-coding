@@ -70,11 +70,11 @@ describe('full preset tools', () => {
         await writeFile(join(testDir, 'test.txt'), 'hello world\nfoo bar\nbaz')
         const tool = createEditDiffTool(testDir)
 
-        const result = await tool.execute('t1', {
+        const result = await tool.execute({ id: 't1', args: {
           path: 'test.txt',
           oldString: 'foo bar',
           newString: 'replaced line',
-        }, signal)
+        }, signal })
 
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
         expect(result.isError).toBeUndefined()
@@ -97,12 +97,12 @@ describe('full preset tools', () => {
         const tool = createEditDiffTool(testDir)
 
         // oldString 用 2 空格缩进 — 微小差异
-        const result = await tool.execute('t2', {
+        const result = await tool.execute({ id: 't2', args: {
           path: 'fuzzy.ts',
           oldString: '  function hello() {\n  console.log("world")\n  }',
           newString: '    function hello() {\n    console.log("updated")\n    }',
           fuzzyThreshold: 0.6,
-        }, signal)
+        }, signal })
 
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
         // 应为模糊匹配成功或精确匹配
@@ -117,11 +117,11 @@ describe('full preset tools', () => {
         testDir = await setupTestDir()
         const tool = createEditDiffTool(testDir)
 
-        const result = await tool.execute('t3', {
+        const result = await tool.execute({ id: 't3', args: {
           path: 'nonexistent.txt',
           oldString: 'foo',
           newString: 'bar',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBe(true)
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -135,12 +135,12 @@ describe('full preset tools', () => {
         await writeFile(join(testDir, 'nope.txt'), 'completely different content')
         const tool = createEditDiffTool(testDir)
 
-        const result = await tool.execute('t4', {
+        const result = await tool.execute({ id: 't4', args: {
           path: 'nope.txt',
           oldString: 'zzz xxx yyy totally different string that wont match',
           newString: 'replacement',
           fuzzyThreshold: 0.95,
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBe(true)
       })
@@ -158,12 +158,12 @@ describe('full preset tools', () => {
 
         const expectedHash = hashLine('line two').slice(0, 8)
 
-        const result = await tool.execute('h1', {
+        const result = await tool.execute({ id: 'h1', args: {
           path: 'hash.txt',
           lineNumber: 2,
           lineHash: expectedHash,
           newContent: 'modified line two',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBeUndefined()
         const content = await readFile(join(testDir, 'hash.txt'), 'utf-8')
@@ -178,12 +178,12 @@ describe('full preset tools', () => {
         await writeFile(join(testDir, 'hash2.txt'), 'abc\ndef\nghi')
         const tool = createHashlineEditTool(testDir)
 
-        const result = await tool.execute('h2', {
+        const result = await tool.execute({ id: 'h2', args: {
           path: 'hash2.txt',
           lineNumber: 2,
           lineHash: 'wrong-hash',
           newContent: 'replaced',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBe(true)
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -197,12 +197,12 @@ describe('full preset tools', () => {
         await writeFile(join(testDir, 'hash3.txt'), 'only one line')
         const tool = createHashlineEditTool(testDir)
 
-        const result = await tool.execute('h3', {
+        const result = await tool.execute({ id: 'h3', args: {
           path: 'hash3.txt',
           lineNumber: 99,
           lineHash: 'any',
           newContent: 'nope',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBe(true)
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -234,9 +234,9 @@ describe('full preset tools', () => {
         await writeFile(join(testDir, 'doc.txt'), 'plain text')
         const tool = createLookAtTool(testDir)
 
-        const result = await tool.execute('l1', {
+        const result = await tool.execute({ id: 'l1', args: {
           path: 'doc.txt',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBe(true)
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -249,9 +249,9 @@ describe('full preset tools', () => {
         testDir = await setupTestDir()
         const tool = createLookAtTool(testDir)
 
-        const result = await tool.execute('l2', {
+        const result = await tool.execute({ id: 'l2', args: {
           path: 'ghost.png',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBe(true)
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -271,9 +271,9 @@ describe('full preset tools', () => {
         await writeFile(join(testDir, 'test.png'), pngHeader)
         const tool = createLookAtTool(testDir)
 
-        const result = await tool.execute('l3', {
+        const result = await tool.execute({ id: 'l3', args: {
           path: 'test.png',
-        }, signal)
+        }, signal })
 
         // 应该成功返回包含 image 类型的内容块
         expect(result.isError).toBeUndefined()
@@ -290,9 +290,9 @@ describe('full preset tools', () => {
         testDir = await setupTestDir()
         const tool = createInteractiveBashTool(testDir)
 
-        const result = await tool.execute('ib1', {
+        const result = await tool.execute({ id: 'ib1', args: {
           command: 'echo hello-interactive',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBeFalsy()
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -305,9 +305,9 @@ describe('full preset tools', () => {
         testDir = await setupTestDir()
         const tool = createInteractiveBashTool(testDir)
 
-        const result = await tool.execute('ib2', {
+        const result = await tool.execute({ id: 'ib2', args: {
           command: 'nonexistent_command_xyz_123',
-        }, signal)
+        }, signal })
 
         // 命令不存在会返回错误
         expect(result.isError).toBe(true)
@@ -323,9 +323,9 @@ describe('full preset tools', () => {
         const { createStartWorkTool } = await import('../src/orchestration/start-work')
         const tool = createStartWorkTool()
 
-        const result = await tool.execute('sw1', {
+        const result = await tool.execute({ id: 'sw1', args: {
           planName: 'test-plan',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBe(true)
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -342,10 +342,10 @@ describe('full preset tools', () => {
           return { taskId: 'task-123' }
         })
 
-        const result = await tool.execute('tc1', {
+        const result = await tool.execute({ id: 'tc1', args: {
           prompt: '测试任务',
           subagent: 'central-secretariat',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBeUndefined()
         expect(calledWith).toEqual({ prompt: '测试任务', category: undefined, subagent: 'central-secretariat' })
@@ -362,7 +362,7 @@ describe('full preset tools', () => {
           { taskId: 't2', prompt: '任务 2', status: 'running' },
         ])
 
-        const result = await tool.execute('tl1', {}, signal)
+        const result = await tool.execute({ id: 'tl1', args: {}, signal })
 
         expect(result.isError).toBeUndefined()
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -383,9 +383,9 @@ describe('full preset tools', () => {
           compact: async () => ({ success: true }),
         })
 
-        const result = await tool.execute('sm1', {
+        const result = await tool.execute({ id: 'sm1', args: {
           action: 'list',
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBeUndefined()
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''

@@ -3,10 +3,10 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { createBashTool } from '../src/builtin/bash'
-import { createEditTool } from '../src/builtin/edit'
-import { createReadTool } from '../src/builtin/read'
-import { createWriteTool } from '../src/builtin/write'
+import { createBash } from '../src/shell/bash'
+import { createEdit } from '../src/fs/edit'
+import { createRead } from '../src/fs/read'
+import { createWrite } from '../src/fs/write'
 
 let workspaceDir = ''
 
@@ -27,16 +27,16 @@ describe('builtin tools', () => {
     describe('#when writing content to non-existing directory', () => {
       it('#then creates directories and writes file', async () => {
         const root = await createWorkspace()
-        const writeTool = createWriteTool(root)
+        const writeTool = createWrite(root)
 
-        const result = await writeTool.execute(
-          'w1',
-          {
+        const result = await writeTool.execute({
+          id: 'w1',
+          args: {
             path: 'a/b/c.txt',
             content: 'hello\nworld',
           },
-          new AbortController().signal,
-        )
+          signal: new AbortController().signal,
+        })
 
         const saved = await readFile(join(root, 'a/b/c.txt'), 'utf-8')
 
@@ -51,27 +51,27 @@ describe('builtin tools', () => {
     describe('#when reading an existing file', () => {
       it('#then returns numbered selected lines', async () => {
         const root = await createWorkspace()
-        const writeTool = createWriteTool(root)
-        const readTool = createReadTool(root)
+        const writeTool = createWrite(root)
+        const readTool = createRead(root)
 
-        await writeTool.execute(
-          'w2',
-          {
+        await writeTool.execute({
+          id: 'w2',
+          args: {
             path: 'note.txt',
             content: 'line1\nline2\nline3\nline4',
           },
-          new AbortController().signal,
-        )
+          signal: new AbortController().signal,
+        })
 
-        const result = await readTool.execute(
-          'r1',
-          {
+        const result = await readTool.execute({
+          id: 'r1',
+          args: {
             path: 'note.txt',
             startLine: 2,
             endLine: 3,
           },
-          new AbortController().signal,
-        )
+          signal: new AbortController().signal,
+        })
 
         const text = result.content[0]?.text ?? ''
         expect(result.isError).toBeUndefined()
@@ -86,27 +86,27 @@ describe('builtin tools', () => {
     describe('#when oldString appears multiple times', () => {
       it('#then returns an error without modifying file', async () => {
         const root = await createWorkspace()
-        const writeTool = createWriteTool(root)
-        const editTool = createEditTool(root)
+        const writeTool = createWrite(root)
+        const editTool = createEdit(root)
 
-        await writeTool.execute(
-          'w3',
-          {
+        await writeTool.execute({
+          id: 'w3',
+          args: {
             path: 'dup.txt',
             content: 'foo\nfoo\nbar',
           },
-          new AbortController().signal,
-        )
+          signal: new AbortController().signal,
+        })
 
-        const result = await editTool.execute(
-          'e1',
-          {
+        const result = await editTool.execute({
+          id: 'e1',
+          args: {
             path: 'dup.txt',
             oldString: 'foo',
             newString: 'baz',
           },
-          new AbortController().signal,
-        )
+          signal: new AbortController().signal,
+        })
 
         const content = await readFile(join(root, 'dup.txt'), 'utf-8')
         expect(result.isError).toBe(true)
@@ -120,15 +120,15 @@ describe('builtin tools', () => {
     describe('#when command output exceeds 60KB', () => {
       it('#then truncates output to bounded size', async () => {
         const root = await createWorkspace()
-        const bashTool = createBashTool(root)
+        const bashTool = createBash(root)
 
-        const result = await bashTool.execute(
-          'b1',
-          {
+        const result = await bashTool.execute({
+          id: 'b1',
+          args: {
             command: 'node -e "process.stdout.write(\'a\'.repeat(70000))"',
           },
-          new AbortController().signal,
-        )
+          signal: new AbortController().signal,
+        })
 
         const text = result.content[0]?.text ?? ''
         expect(result.isError).toBe(false)
@@ -140,16 +140,16 @@ describe('builtin tools', () => {
     describe('#when command exceeds timeout', () => {
       it('#then returns command failure result', async () => {
         const root = await createWorkspace()
-        const bashTool = createBashTool(root)
+        const bashTool = createBash(root)
 
-        const result = await bashTool.execute(
-          'b2',
-          {
+        const result = await bashTool.execute({
+          id: 'b2',
+          args: {
             command: 'sleep 2',
             timeout: 1000,
           },
-          new AbortController().signal,
-        )
+          signal: new AbortController().signal,
+        })
 
         expect(result.isError).toBe(true)
         expect(result.content[0]?.text).toContain('Command exited with code')

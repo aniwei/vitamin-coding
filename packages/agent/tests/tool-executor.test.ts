@@ -34,9 +34,9 @@ function makeTool(
     name,
     description: `Test tool: ${name}`,
     parameters: createSchema() as never,
-    execute: async (id, args, _signal) => {
+    execute: async (ctx) => {
       if (handler) {
-        const result = await handler(id, args)
+        const result = await handler(ctx.id, ctx.args)
         return result as { content: { type: 'text'; data: string }[]; isError?: boolean }
       }
       return { content: [{ type: 'text' as const, data: `${name} executed` }] }
@@ -104,10 +104,10 @@ describe('ToolExecutor', () => {
     })
   })
 
-  describe('#when getTools() is called', () => {
+  describe('#when list() is called', () => {
     it('#then returns all registered tools', () => {
       const executor = createToolExecutor([makeTool('a'), makeTool('b')])
-      expect(executor.getTools()).toHaveLength(2)
+      expect(executor.list()).toHaveLength(2)
     })
   })
 

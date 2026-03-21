@@ -27,8 +27,8 @@ export class BinaryToolExecutorRegistry {
 	}
 
 	registerWithOptions(
-		name: string, 
-		options?: { preset?: string; category?: string; builtin?: boolean }
+		_name: string, 
+		_options?: { preset?: string; category?: string; builtin?: boolean }
 	): void {
 
 	}

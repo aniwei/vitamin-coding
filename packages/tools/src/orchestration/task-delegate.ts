@@ -40,7 +40,7 @@ export function createTaskDelegate(
     parameters: DelegateTaskArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       if (!dispatch) {
         throw new Error('task_delegate function is not provided in options')
       }

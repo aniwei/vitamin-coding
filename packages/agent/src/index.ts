@@ -36,6 +36,7 @@ export type {
   AgentMode,
   AgentEvent,
   ToolCallEvent,
+  ToolCallContext,
   CustomAgentMessages,
   AgentMessage,
   AgentState,

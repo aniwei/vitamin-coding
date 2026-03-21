@@ -32,7 +32,7 @@ export function createSessionManager(options: SessionManagerOptions): AgentTool<
     parameters: SessionManagerArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       if (!sessionManager) {
         return {
           content: [{ type: 'text', text: 'session-manager not available' }],

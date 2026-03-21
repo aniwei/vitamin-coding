@@ -40,7 +40,7 @@ export function createCallAgent(
     parameters: CallAgentArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       if (!call) {
         throw new Error('call_agent function is not provided in options')
       }

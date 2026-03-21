@@ -6,11 +6,11 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 
 import { createToolRegistry } from '../src/tool-registry'
 import { registerBuiltinTools } from '../src/register-builtin'
-import { createGrepTool } from '../src/builtin/grep'
-import { createGlobTool } from '../src/builtin/glob'
-import { createFindTool } from '../src/builtin/find'
-import { createLsTool } from '../src/builtin/ls'
-import { createDelegateTaskTool } from '../src/orchestration/delegate-task'
+import { createGrep } from '../src/search/grep'
+import { createGlob } from '../src/search/glob'
+import { createFind } from '../src/search/find'
+import { createLs } from '../src/search/ls'
+import { createTaskDelegate } from '../src/orchestration/task-delegate'
 
 let testDir: string
 const signal = new AbortController().signal
@@ -39,13 +39,13 @@ describe('extended tools', () => {
   describe('grep', () => {
     describe('#given a text pattern', () => {
       it('#then finds matching lines with line numbers', async () => {
-        const tool = createGrepTool(testDir)
-        const result = await tool.execute('t1', {
+        const tool = createGrep(testDir)
+        const result = await tool.execute({ id: 't1', args: {
           pattern: 'hello',
           isRegex: false,
           caseSensitive: false,
           maxResults: 100,
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBeUndefined()
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -56,13 +56,13 @@ describe('extended tools', () => {
 
     describe('#given pattern with no matches', () => {
       it('#then returns no matches message', async () => {
-        const tool = createGrepTool(testDir)
-        const result = await tool.execute('t1', {
+        const tool = createGrep(testDir)
+        const result = await tool.execute({ id: 't1', args: {
           pattern: 'nonexistent_xyz_123',
           isRegex: false,
           caseSensitive: false,
           maxResults: 100,
-        }, signal)
+        }, signal })
 
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
         expect(text).toContain('No matches')
@@ -73,11 +73,11 @@ describe('extended tools', () => {
   describe('glob', () => {
     describe('#given **/*.ts pattern', () => {
       it('#then finds TypeScript files recursively', async () => {
-        const tool = createGlobTool(testDir)
-        const result = await tool.execute('t1', {
+        const tool = createGlob(testDir)
+        const result = await tool.execute({ id: 't1', args: {
           pattern: '**/*.ts',
           maxResults: 500,
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBeUndefined()
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -90,13 +90,13 @@ describe('extended tools', () => {
   describe('find', () => {
     describe('#given name filter "*.ts"', () => {
       it('#then finds TypeScript files', async () => {
-        const tool = createFindTool(testDir)
-        const result = await tool.execute('t1', {
+        const tool = createFind(testDir)
+        const result = await tool.execute({ id: 't1', args: {
           name: '*.ts',
           type: 'file',
           maxDepth: 10,
           maxResults: 200,
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBeUndefined()
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -107,12 +107,12 @@ describe('extended tools', () => {
 
     describe('#given type filter "directory"', () => {
       it('#then finds only directories', async () => {
-        const tool = createFindTool(testDir)
-        const result = await tool.execute('t1', {
+        const tool = createFind(testDir)
+        const result = await tool.execute({ id: 't1', args: {
           type: 'directory',
           maxDepth: 10,
           maxResults: 200,
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBeUndefined()
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -124,13 +124,13 @@ describe('extended tools', () => {
   describe('ls', () => {
     describe('#given root directory', () => {
       it('#then lists directory contents', async () => {
-        const tool = createLsTool(testDir)
-        const result = await tool.execute('t1', {
+        const tool = createLs(testDir)
+        const result = await tool.execute({ id: 't1', args: {
           path: '.',
           recursive: false,
           maxDepth: 3,
           maxEntries: 500,
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBeUndefined()
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -142,13 +142,13 @@ describe('extended tools', () => {
 
     describe('#given recursive=true', () => {
       it('#then lists subdirectory contents', async () => {
-        const tool = createLsTool(testDir)
-        const result = await tool.execute('t1', {
+        const tool = createLs(testDir)
+        const result = await tool.execute({ id: 't1', args: {
           path: '.',
           recursive: true,
           maxDepth: 3,
           maxEntries: 500,
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBeUndefined()
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -159,13 +159,13 @@ describe('extended tools', () => {
 
     describe('#given nonexistent directory', () => {
       it('#then returns error', async () => {
-        const tool = createLsTool(testDir)
-        const result = await tool.execute('t1', {
+        const tool = createLs(testDir)
+        const result = await tool.execute({ id: 't1', args: {
           path: 'nonexistent',
           recursive: false,
           maxDepth: 3,
           maxEntries: 500,
-        }, signal)
+        }, signal })
 
         expect(result.isError).toBe(true)
       })
@@ -175,12 +175,12 @@ describe('extended tools', () => {
   describe('delegate-task', () => {
     describe('#given no dispatch function', () => {
       it('#then returns unavailable error', async () => {
-        const tool = createDelegateTaskTool()
-        const result = await tool.execute('t1', {
+        const tool = createTaskDelegate()
+        const result = await tool.execute({ id: 't1', args: {
           prompt: 'Find all auth files',
           subagent: 'explore',
           mode: 'sync',
-        } as never, signal)
+        } as never, signal })
 
         expect(result.isError).toBe(true)
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
@@ -190,16 +190,16 @@ describe('extended tools', () => {
 
     describe('#given a dispatch function', () => {
       it('#then delegates the task and returns result', async () => {
-        const tool = createDelegateTaskTool(async (args) => ({
+        const tool = createTaskDelegate(async (args) => ({
           success: true,
           output: `Processed: ${args.prompt}`,
         }))
 
-        const result = await tool.execute('t1', {
+        const result = await tool.execute({ id: 't1', args: {
           prompt: 'Find all auth files',
           subagent: 'explore',
           mode: 'sync',
-        } as never, signal)
+        } as never, signal })
 
         expect(result.isError).toBeUndefined()
         const text = result.content[0]?.type === 'text' ? result.content[0].text : ''

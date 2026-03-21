@@ -4,12 +4,15 @@ import {
   formatBytes, 
   isDirectory, 
   normalizePath, 
-  resolvePath, 
-  readdir,
   truncateHead, 
-  TOOLS_LS_MAX_ENTRIES, 
-  TOOLS_MAX_OUTPUT_BYTES 
 } from '@vitamin/shared'
+import {
+  TOOLS_LS_MAX_ENTRIES, 
+  TOOLS_MAX_OUTPUT_BYTES,
+  TOOLS_MAX_OUTPUT_LINES,
+} from '@vitamin/env'
+import { resolve } from 'node:path'
+import { readdir } from 'node:fs/promises'
 import { z } from 'zod'
 
 import type { AgentTool, ToolResult } from '@vitamin/agent'
@@ -25,7 +28,7 @@ interface LsToolOptions {
   excludedDirs?: Set<string>,
 }
 
-export function createLs(projectRoot: string, options: LsToolOptions = {
+export function createLs(projectRoot: string, _options: LsToolOptions = {
   excludedDirs: new Set(['node_modules', '.git', '.turbo']),
 }): AgentTool<LsArgs> {
   return {
@@ -34,8 +37,8 @@ export function createLs(projectRoot: string, options: LsToolOptions = {
     parameters: LsArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
-      const targetDir = resolvePath(projectRoot, args.path)
+    async execute({ args }): Promise<ToolResult> {
+      const targetDir = resolve(projectRoot, args.path)
       const normaizedTargetDir = normalizePath(targetDir)
       const limit = args.limit ?? TOOLS_LS_MAX_ENTRIES
 
@@ -57,7 +60,7 @@ async function listDir(
   limit: number
 ): Promise<ToolResult> {
   const entries = await readdir(dir)
-  entries.sort((a, b) => a.toLowerCase().localeCompare(b.toLowerCase()));
+  entries.sort((a: string, b: string) => a.toLowerCase().localeCompare(b.toLowerCase()));
 
   const results: string[] = [];
   let entryLimitReached = false;
@@ -68,7 +71,7 @@ async function listDir(
       break
     }
 
-    const path = resolvePath(dir, entry)
+    const path = resolve(dir, entry)
     let suffix = ''
 
     try {
@@ -89,7 +92,7 @@ async function listDir(
   }
 
   const raw = results.join('\n')
-  const truncation = truncateHead(raw)
+  const truncation = truncateHead(raw, { maxLines: TOOLS_MAX_OUTPUT_LINES, maxBytes: TOOLS_MAX_OUTPUT_BYTES })
 
   let output = truncation.content
   let details: Record<string, unknown> = {}

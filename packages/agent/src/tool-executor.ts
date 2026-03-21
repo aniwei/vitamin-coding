@@ -127,7 +127,7 @@ class DefaultToolExecutor implements ToolExecutor {
       }
 
       // 执行工具
-      let result = await tool.execute(toolCall.id, parsed.data, signal)
+      let result = await tool.execute({ id: toolCall.id, args: parsed.data, signal })
 
       if (signal.aborted) {
         return {

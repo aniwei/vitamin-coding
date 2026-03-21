@@ -11,7 +11,7 @@ import type {
   AgentConfig,
   AgentEvent,
   AgentEventListener,
-  AgentLoopRuntime,
+  AgentLoopContext,
   AgentMessage,
   AgentState,
   AgentStatus,
@@ -22,8 +22,7 @@ const log = createLogger('@vitamin/agent')
 
 // Agent 事件映射
 type AgentEvents = {
-  [key: string]: (...args: never[]) => void
-  event: (event: AgentEvent) => void
+  event: AgentEventListener
 }
 
 // Agent 状态合法转换表
@@ -111,22 +110,23 @@ export class Agent {
   // 发起对话 — 进入 Agent 循环
   async prompt(
     userMessage: AgentMessage,
-    runtime?: Partial<AgentLoopRuntime>,
+    context?: Partial<AgentLoopContext>,
   ): Promise<AssistantMessage> {
     if (this.state.status !== 'idle' && this.state.status !== 'completed') {
       throw new Error(`Cannot prompt in ${this.state.status} status`)
     }
 
     this.state.messages.push(userMessage)
-    return this.runLoop(runtime)
+    return this.runLoop(context)
   }
 
   // 从中止/完成状态继续运行
-  async continue(runtime?: Partial<AgentLoopRuntime>): Promise<AssistantMessage> {
+  async continue(context?: Partial<AgentLoopContext>): Promise<AssistantMessage> {
     if (this.state.status !== 'aborted' && this.state.status !== 'completed') {
       throw new Error(`Cannot continue in ${this.state.status} status`)
     }
-    return this.runLoop(runtime)
+    
+    return this.runLoop(context)
   }
 
   // Steering 注入（工具间隙检查）
@@ -178,12 +178,12 @@ export class Agent {
   }
 
   // 内部: 运行 Agent 循环
-  private async runLoop(override?: Partial<AgentLoopRuntime>): Promise<AssistantMessage> {
+  private async runLoop(override?: Partial<AgentLoopContext>): Promise<AssistantMessage> {
     this.abortController = new AbortController()
     const signal = this.abortController.signal
 
     // 组装完整 runtime
-    const runtime: AgentLoopRuntime = {
+    const runtime: AgentLoopContext = {
       model: this.state.model,
       systemPrompt: this.state.systemPrompt,
       convertToLLM: override?.convertToLLM ?? defaultConvertToLLM,

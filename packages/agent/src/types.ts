@@ -93,11 +93,12 @@ export interface AgentState {
 }
 
 // Agent 循环配置
-export interface AgentLoopRuntime {
+export interface AgentLoopContext {
   model: Model
   systemPrompt: string
   // AgentMessage[] → LLM Message[] 转换
   convertToLLM: (messages: AgentMessage[]) => Message[] | Promise<Message[]>
+  
   // 上下文转换（压缩/裁剪/注入）
   transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>
   
@@ -109,14 +110,26 @@ export interface AgentLoopRuntime {
   
   // 最大连续工具调用轮次（安全阀）
   maxToolTurns?: number
+  
   // 思维级别
   thinkingLevel?: ThinkingLevel
+  
   // 最大输出 token
   maxTokens?: number
+  
   // 温度
   temperature?: number
+
   // 开发工具
   devtools?: Devtools
+}
+
+// 工具调用上下文（参考 Hono Context 模式）
+export interface ToolCallContext<Args = unknown> {
+  id: string
+  args: Args
+  signal: AbortSignal
+  onUpdate?: (update: string) => void
 }
 
 // Agent 工具（封装 ToolDefinition + execute）
@@ -125,12 +138,7 @@ export interface AgentTool<Args = unknown> {
   description: string
   parameters: ZodType<Args>
   visibility?: 'always' | 'when-enabled' | 'when-requested'
-  execute: (
-    id: string,
-    args: Args,
-    signal: AbortSignal,
-    onUpdate?: (update: string) => void,
-  ) => Promise<ToolResult>
+  execute: (ctx: ToolCallContext<Args>) => Promise<ToolResult>
 }
 
 // 工具执行结果

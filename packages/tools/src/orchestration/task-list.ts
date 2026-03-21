@@ -33,7 +33,7 @@ export function createTaskList(
     parameters: TaskListArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       if (!list) {
         return { content: [{ type: 'text', text: 'task_list not available' }], isError: true }
       }

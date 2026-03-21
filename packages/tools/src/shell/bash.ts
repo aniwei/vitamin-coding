@@ -1,10 +1,13 @@
 import { 
-  TOOLS_EXECUTE_TIMEOUT, 
-  TOOLS_MAX_OUTPUT_BYTES,
   createTempLoggerPath, 
   formatBytes, 
   truncateTail 
 } from '@vitamin/shared'
+import {
+  TOOLS_EXECUTE_TIMEOUT, 
+  TOOLS_MAX_OUTPUT_BYTES,
+  TOOLS_MAX_OUTPUT_LINES,
+} from '@vitamin/env'
 import { createWriteStream, WriteStream } from 'node:fs'
 import { spawn } from './process'
 // bash 工具 — 执行 shell 命令
@@ -35,7 +38,7 @@ export function createBash(
     parameters: BashArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, signal): Promise<ToolResult> {
+    async execute({ args, signal }): Promise<ToolResult> {
       const cwd = args.cwd ?? projectRoot
       const timeout = args.timeout ?? TOOLS_EXECUTE_TIMEOUT
       
@@ -55,7 +58,7 @@ export function createBash(
           totalBytes += chunk.byteLength
 
           const text = Buffer.concat(output).toString('utf-8')
-          const truncation = truncateTail(text)
+          const truncation = truncateTail(text, { maxLines: TOOLS_MAX_OUTPUT_LINES, maxBytes: TOOLS_MAX_OUTPUT_BYTES })
 
           if (totalBytes > TOOLS_MAX_OUTPUT_BYTES && !outputPath) {
             outputPath = createTempLoggerPath()
@@ -97,7 +100,7 @@ export function createBash(
       const buffer = Buffer.concat(output)
       const fullOutput = buffer.toString('utf-8')
 
-      const truncation = truncateTail(fullOutput)
+      const truncation = truncateTail(fullOutput, { maxLines: TOOLS_MAX_OUTPUT_LINES, maxBytes: TOOLS_MAX_OUTPUT_BYTES })
       let text = truncation.content || '(no output)'
 
       const details = {

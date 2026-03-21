@@ -8,7 +8,7 @@ import type { ToolExecutor } from './tool-executor'
 import type { AssistantMessage, StreamContext, ToolDefinition, StreamEvent } from '@vitamin/ai'
 import type {
   AgentEvent,
-  AgentLoopRuntime,
+  AgentLoopContext,
   AgentMessage,
   AgentStatus,
   AgentTool,
@@ -21,7 +21,7 @@ export type StreamFunction = (
   signal: AbortSignal,
 ) => AsyncIterable<StreamEvent> & { result(): Promise<AssistantMessage> }
 
-export interface ProgressRuntime extends AgentLoopRuntime {
+export interface WorkLoopContext extends AgentLoopContext {
   messages: AgentMessage[]
   toolExecutor: ToolExecutor
   stream?: StreamFunction
@@ -30,18 +30,18 @@ export interface ProgressRuntime extends AgentLoopRuntime {
   initialStatus?: AgentStatus
 }
 
-export async function workLoop(runtime: ProgressRuntime): Promise<AssistantMessage> {
-  const stream = runtime.stream
+export async function workLoop(context: WorkLoopContext): Promise<AssistantMessage> {
+  const stream = context.stream
   
   if (!stream) {
     throw new Error('Agent loop requires stream function via options.stream')
   }
 
-  const { devtools } = runtime
+  const { devtools } = context
   let lastAssistantMessage: AssistantMessage | null = null
   let toolTurnCount = 0
   let turnIndex = 0
-  let currentStatus: AgentStatus = runtime.initialStatus ?? 'idle'
+  let currentStatus: AgentStatus = context.initialStatus ?? 'idle'
   let lastTokenUsage: { input: number; output: number } | undefined
 
   const { 
@@ -58,7 +58,7 @@ export async function workLoop(runtime: ProgressRuntime): Promise<AssistantMessa
     emit, 
     transformContext, 
     convertToLLM,
-  } = runtime
+  } = context
 
   try {
     invariant(() => {
@@ -71,7 +71,7 @@ export async function workLoop(runtime: ProgressRuntime): Promise<AssistantMessa
       })
 
       return true
-    }, `Agent loop started with model ${runtime.model.name}`)
+    }, `Agent loop started with model ${context.model.name}`)
     
     while (true) {
       if (signal.aborted) throw new AbortError()
@@ -95,7 +95,7 @@ export async function workLoop(runtime: ProgressRuntime): Promise<AssistantMessa
         }
 
         const llmMessages = await convertToLLM(contextMessages)
-        const tools = createToolDefinitions(toolExecutor.getTools())
+        const tools = createToolDefinitions(toolExecutor.list())
 
         const context: StreamContext = {
           systemPrompt,

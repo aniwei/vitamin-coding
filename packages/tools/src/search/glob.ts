@@ -2,7 +2,7 @@
 import { readdir, glob } from 'node:fs/promises'
 import { join, relative } from 'node:path'
 import { exists, truncateHead, formatBytes } from '@vitamin/shared'
-import { TOOLS_SEARCH_MAX_OUTPUT_LINES } from '@viteamin/env'
+import { TOOLS_SEARCH_MAX_OUTPUT_LINES, TOOLS_MAX_OUTPUT_BYTES } from '@vitamin/env'
 
 import { z } from 'zod'
 
@@ -32,7 +32,7 @@ export function createGlob(
     parameters: GlobArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, signal): Promise<ToolResult> {
+    async execute({ args, signal }): Promise<ToolResult> {
       const searchDir = args.path 
         ? join(projectRoot, args.path) 
         : projectRoot
@@ -68,7 +68,7 @@ export function createGlob(
       const rawOutput = relativized.join('\n')
       const truncation = truncateHead(rawOutput, { 
         maxLines: Number.MAX_SAFE_INTEGER,
-        maxBytes: TOOLS_MAX
+        maxBytes: TOOLS_MAX_OUTPUT_BYTES
       })
 
       let output = truncation.content
@@ -79,7 +79,7 @@ export function createGlob(
       }
 
       if (truncation.truncated) {
-        notices.push(`${formatBytes(TOOLS_MAX_OUTPUT_BYTTES)} limit reached`)
+        notices.push(`${formatBytes(TOOLS_MAX_OUTPUT_BYTES)} limit reached`)
       }
 
       if (notices.length > 0) {
@@ -101,7 +101,7 @@ export function createGlob(
 const EXCLUDED_DIRS = new Set(['node_modules', '.git', 'dist', '.next', '__pycache__'])
 
 // 简易 glob 匹配 fallback
-async function walkGlob(
+async function _walkGlob(
   dir: string,
   pattern: string,
   maxResults: number,

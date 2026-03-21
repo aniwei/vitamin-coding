@@ -22,7 +22,7 @@ export function createSkillExecutor(options: RegisterSkillOptions): AgentTool<Sk
     parameters: SkillExecutorArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ args }): Promise<ToolResult> {
       if (!executor) {
         return {
           content: [{ type: 'text', text: 'skill_executor not available: skill system not initialized' }],
