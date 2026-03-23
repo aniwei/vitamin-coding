@@ -1,4 +1,3 @@
-// 模型注册表 — 管理所有已知模型定义
 import { ProviderError } from '@vitamin/shared'
 import type { Provider, Model } from './types'
 

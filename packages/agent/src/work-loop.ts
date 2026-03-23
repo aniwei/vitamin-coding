@@ -37,34 +37,34 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
     throw new Error('Agent loop requires stream function via options.stream')
   }
 
-  const { devtools } = context
-  let lastAssistantMessage: AssistantMessage | null = null
-  let toolTurnCount = 0
   let turnIndex = 0
+  let toolTurnCount = 0
+  let lastAssistantMessage: AssistantMessage | null = null
   let currentStatus: AgentStatus = context.initialStatus ?? 'idle'
   let lastTokenUsage: { input: number; output: number } | undefined
 
   const { 
     messages, 
-    toolExecutor, 
     signal, 
-    systemPrompt,
-    maxToolTurns, 
-    thinkingLevel,
     maxTokens,
     temperature,
+    devtools,
+    systemPrompt,
+    toolExecutor, 
+    thinkingLevel,
+    maxToolTurns, 
     getSteeringMessages,
     getFollowUpMessages,
-    emit, 
     transformContext, 
     convertToLLM,
+    emit, 
   } = context
 
   try {
     invariant(() => {
       devtools?.debugger.paused({
         turn: turnIndex,
-        point: 'loop:start',
+        point: 'loop_start',
         frameDepth: 0,
         messagesCount: messages.length,
         tokenUsage: lastTokenUsage,  
@@ -76,7 +76,12 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
     while (true) {
       if (signal.aborted) throw new AbortError()
 
-      emit({ type: 'status_change', from: currentStatus, to: 'streaming' })
+      emit({ 
+        type: 'status_change', 
+        from: currentStatus, 
+        to: 'streaming' 
+      })
+
       currentStatus = 'streaming'
 
       while (true) {
@@ -86,7 +91,10 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
           throw new MaxToolTurnsError(maxToolTurns ?? 25)
         }
 
-        emit({ type: 'turn_start', turnIndex })
+        emit({ 
+          type: 'turn_start', 
+          turnIndex 
+        })
 
         let contextMessages = [...messages]
         if (transformContext) {
@@ -109,7 +117,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
         invariant(() => {
           devtools?.debugger.paused({
             turn: turnIndex,
-            point: 'model:before',
+            point: 'model_before',
             frameDepth: 0,
             messagesCount: messages.length,
             tokenUsage: lastTokenUsage,  
@@ -136,7 +144,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
         invariant(() => {
           devtools?.debugger.paused({
             turn: turnIndex,
-            point: 'model:after',
+            point: 'model_after',
             frameDepth: 0,
             messagesCount: messages.length,
             tokenUsage: lastTokenUsage,  
@@ -149,7 +157,11 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
         turnIndex++
 
         if (hasToolCalls(assistantMessage)) {
-          emit({ type: 'status_change', from: currentStatus, to: 'tool_executing' })
+          emit({ 
+            type: 'status_change', 
+            from: currentStatus, 
+            to: 'tool_executing' 
+          })
           currentStatus = 'tool_executing'
 
           const toolCalls = getToolCalls(assistantMessage)
@@ -221,7 +233,12 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
           }
 
           toolTurnCount++
-          emit({ type: 'status_change', from: currentStatus, to: 'streaming' })
+          emit({ 
+            type: 'status_change', 
+            from: currentStatus, 
+            to: 'streaming' 
+          })
+
           currentStatus = 'streaming'
           continue
         }
@@ -234,7 +251,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
       invariant(() => {
         devtools?.debugger.paused({
           turn: turnIndex,
-          point: 'loop:end',
+          point: 'loop_end',
           frameDepth: 0,
           messagesCount: messages.length,
           tokenUsage: lastTokenUsage,  
@@ -246,7 +263,11 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
       const followUpMessages = (await getFollowUpMessages?.()) ?? []
       if (followUpMessages.length > 0) {
         messages.push(...followUpMessages)
-        emit({ type: 'follow_up_start', messages: followUpMessages })
+
+        emit({ 
+          type: 'follow_up_start', 
+          messages: followUpMessages 
+        })
         continue
       }
 
@@ -260,7 +281,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
     invariant(() => {
       devtools?.debugger.paused({
         turn: turnIndex,
-        point: 'agent:done',
+        point: 'agent_done',
         frameDepth: 0,
         messagesCount: messages.length,
         tokenUsage: lastTokenUsage,  

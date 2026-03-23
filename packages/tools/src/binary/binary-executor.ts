@@ -80,7 +80,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
       const ps = spawn(toolPath, ['--version'], { stdio: 'pipe' }) 
       return new Promise((resolve) => {
         ps.on('error', () => resolve(false))
-        ps.on('close', (code) => resolve(code === 0))
+        ps.on('close', code => resolve(code === 0))
       })
     } catch {
       return false
@@ -170,11 +170,11 @@ export abstract class BinaryToolExecutor implements BinaryTool {
       let stdout: Buffer[] = []
       let stderr: Buffer[] = []
       
-      ps.stdout.on('data', (data) => stdout.push(data))
-      ps.stderr.on('data', (data) => stderr.push(data))
+      ps.stdout.on('data', data => stdout.push(data))
+      ps.stderr.on('data', data => stderr.push(data))
 
-      ps.on('error', (err) => reject(err))
-      ps.on('close', (code) => {
+      ps.on('error', err => reject(err))
+      ps.on('close', code => {
         if (code !== 0) {
           return reject(new Error(`Process exited with code ${code}: ${Buffer.concat(stderr).toString()}`))
         }
@@ -189,7 +189,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
   }
 }
 
-type ConfiguredBinaryExecutorExecute = (
+type ConfiguredBinaryExecute = (
   args: string[],
   options?: BinaryToolExecutionOptions
 ) => Promise<BinaryToolExecutionResult>
@@ -197,11 +197,11 @@ type ConfiguredBinaryExecutorExecute = (
 export class ConfiguredBinaryExecutor implements BinaryTool {
   public name: string
 
-  protected executeHandler: ConfiguredBinaryExecutorExecute
+  protected executeHandler: ConfiguredBinaryExecute
 
   constructor(
     name: string, 
-    execute: ConfiguredBinaryExecutorExecute
+    execute: ConfiguredBinaryExecute
   ) {
     this.name = name
     this.executeHandler = execute

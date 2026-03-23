@@ -1,6 +1,3 @@
-// @vitamin/ai — 统一 LLM API 层
-
-// 核心类型
 export type {
   Api,
   KnownProvider,
@@ -26,15 +23,6 @@ export type {
   ToolDefinition,
   StreamContext,
   StreamOptions,
-} from './types'
-export {
-  isGptFamily,
-  isClaudeFamily,
-  isGeminiFamily,
-  getToolCalls,
-  hasToolCalls,
-  emptyUsage,
-  mergeUsage,
 } from './types'
 
 // EventStream

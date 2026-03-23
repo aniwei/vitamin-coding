@@ -34,6 +34,6 @@ export class BusSubscription extends TypedEventEmitter<SubscribeEvent> {
   }
 
   subscribeAll(callback: (...args: unknown[]) => void): () => void {
-    return this.subscribe("*", callback)
+    return this.subscribe('*', callback)
   }
 }

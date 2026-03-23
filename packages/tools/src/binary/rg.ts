@@ -16,13 +16,18 @@ export class RipgrepExecutor extends BinaryToolExecutor {
     if (platform === 'darwin') {
       const str = arch === 'arm64' ? 'aarch64' : 'x86_64'
       return `ripgrep-v${version}-${str}-apple-darwin.tar.gz`
-    } else if (platform === 'linux') {
+    }
+    
+    if (platform === 'linux') {
       const str = arch === 'arm64' ? 'aarch64' : 'x86_64'
       return `ripgrep-v${version}-${str}-unknown-linux-gnu.tar.gz`
-    } else if (platform === 'win32') {
+    }  
+    
+    if (platform === 'win32') {
       const str = arch === 'arm64' ? 'aarch64' : 'x86_64'
       return `ripgrep-v${version}-${str}-pc-windows-msvc.zip`
     }
+    
     return null
   }
 }

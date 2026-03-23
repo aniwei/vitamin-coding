@@ -108,18 +108,17 @@ export class EventStream<E, R> implements AsyncIterable<E> {
     let index = 0
     return {
       next: () => {
-        // 有缓冲事件，立即返回
         if (index < this.events.length) {
           return Promise.resolve({ value: this.events[index++]!, done: false })
         }
-        // 流已结束
+
         if (this.done) {
           if (this.error) {
             return Promise.reject(this.error)
           }
           return Promise.resolve({ value: undefined as never, done: true })
         }
-        // 等待下一个事件
+        
         return new Promise<IteratorResult<E>>((resolve, reject) => {
           this.waiters.push({ resolve, reject })
         })

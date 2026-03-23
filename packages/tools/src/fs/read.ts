@@ -16,7 +16,9 @@ const ReadArgsSchema = z.object({
 export type ReadArgs = z.infer<typeof ReadArgsSchema>
 
 // 创建 read 工具
-export function createRead(projectRoot: string): AgentTool<ReadArgs> {
+export function createRead(
+  projectRoot: string
+): AgentTool<ReadArgs> {
  
   return {
     name: 'read',
@@ -119,8 +121,8 @@ async function readTextWithRange(
   })
   let output: string
 
+  // 第一个行超过限制 - 提示模型使用 bash 来读取特定行
   if (truncation.firstLineExceedsLimit) {
-    // 第一个行超过限制 - 提示模型使用 bash 来读取特定行
     const size = formatBytes(Buffer.byteLength(lines[start] as string, 'utf-8'))
     output = `(Line ${displayLine} is ${size}, exceeds ${formatBytes(maxBytes)} limit. Use bash: sed -n '${displayLine}p' ${absolutePath} | head -c ${maxBytes})`
   } else if (truncation.truncated) {

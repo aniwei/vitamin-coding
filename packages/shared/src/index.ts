@@ -67,8 +67,10 @@ export {
   slugify
 } from './string'
 
-export { parseJsonc, safeStringify } from './json'
+export { parseJsonc, safeStringify } from './jsonc'
 
 export { request, stream } from './http'
 export type { HttpRequestOptions, HttpResponse, SseEvent } from './http'
+
+export { BusSubscription } from './bus-subscrption'
 
