@@ -2,7 +2,7 @@
 import { createLogger } from '@vitamin/shared'
 import { createFindExecutor } from './find'
 import { createRipgrepExecutor } from './ripgrep'
-import type { BinaryTool } from './binary-executor'
+import { BinaryToolExecutor, type BinaryTool } from './binary-executor'
 
 
 const logger = createLogger('@vitamin/tools:binary-executor-registry')
@@ -26,6 +26,7 @@ export class BinaryToolExecutorRegistry {
 		}
 	}
 
+	// TODO: Configure tools
 	registerWithOptions(
 		_name: string, 
 		_options?: { preset?: string; category?: string; builtin?: boolean }
@@ -42,15 +43,20 @@ export class BinaryToolExecutorRegistry {
 	}
 
 	async ensure(tool: string): Promise<BinaryTool> {
-		if (this.binaries.has(tool)) {
-			return this.binaries.get(tool) as BinaryTool;
+		const binary = this.binaries.get(tool)
+		if (!binary) {
+			throw new Error(`Tool ${tool} not found in registry`)
 		}
 
-		throw new Error(`Tool ${tool} not found in registry`)
+		if (binary instanceof BinaryToolExecutor) {
+			await binary.ensure()
+		}
+
+		return binary
 	}
 }
 
-export const createBinaryExecutorRegistry = (projectRoot: string): BinaryToolExecutorRegistry => {
+export const createBinaryToolExecutorRegistry = (projectRoot: string): BinaryToolExecutorRegistry => {
 	const registry = new BinaryToolExecutorRegistry()
 
 	registry.register(createFindExecutor(projectRoot))

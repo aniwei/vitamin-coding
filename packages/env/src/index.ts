@@ -1,4 +1,5 @@
 import { homedir } from 'node:os'
+import { readFileSync } from 'node:fs'
 import { normalize, sep } from 'node:path'
 
 export const normalizeEnv = (value: string | undefined, defaultValue: number): number => {
@@ -19,6 +20,18 @@ function normalizePath(path: string): string {
   return normalize(path).replaceAll(sep === '\\' ? '\\' : sep, '/')
 }
 
+function readPackageVersion(): string {
+  try {
+    const packageJsonPath = normalizePath(`${__dirname}/../package.json`)
+    const packageJson = JSON.parse(readFileSync(packageJsonPath, 'utf-8'))
+    return packageJson.version || 'unknown'
+  } catch (error) {
+    console.warn('Failed to read package version:', error)
+    return 'unknown'
+  }
+}
+
+export const VITAMIN_USER_AGENT = `vitamin/${readPackageVersion()}`
 export const VITAMIN_ROOT = '.vitamin'
 export const VITAMIN_HOME = normalizePath(process.env['VITAMIN_HOME'] || `${homedir()}/${VITAMIN_ROOT}`)
 export const VITAMIN_PROJECT_ROOT = normalizePath(process.env['VITAMIN_PROJECT_ROOT'] || `${process.cwd()}/${VITAMIN_ROOT}`)

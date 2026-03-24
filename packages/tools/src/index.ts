@@ -30,5 +30,4 @@ export type {
   RegisteredTool,
   ToolRegistrationOptions,
   ToolFactory,
-  ToolContext,
 } from './types'

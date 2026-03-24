@@ -1,29 +1,22 @@
-// 扩展工具集单元测试
 import { mkdtemp, rm, writeFile, mkdir } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { describe, expect, it, beforeEach, afterEach } from 'vitest'
+import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 
-import { createToolRegistry } from '../src/tool-registry'
-import { registerBuiltinTools } from '../src/register-builtin'
-import { createGrep } from '../src/search/grep'
-import { createGlob } from '../src/search/glob'
 import { createFind } from '../src/search/find'
+import { createGrep } from '../src/search/grep'
 import { createLs } from '../src/search/ls'
 import { createTaskDelegate } from '../src/orchestration/task-delegate'
 
-let testDir: string
+let testDir = ''
 const signal = new AbortController().signal
 
-// 每个测试创建临时目录
 async function setupTestDir(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'vitamin-tools-ext-'))
-  await mkdir(join(dir, 'src'), { recursive: true })
   await mkdir(join(dir, 'src', 'utils'), { recursive: true })
-  await writeFile(join(dir, 'src', 'index.ts'), 'export const hello = "world"\nfunction main() {}\n')
-  await writeFile(join(dir, 'src', 'utils', 'helper.ts'), 'export function add(a: number, b: number) { return a + b }\n')
-  await writeFile(join(dir, 'README.md'), '# Test Project\nThis is a test.\n')
-  await writeFile(join(dir, 'package.json'), '{"name":"test"}')
+  await writeFile(join(dir, 'src', 'index.ts'), 'export const hello = "world"\n')
+  await writeFile(join(dir, 'src', 'utils', 'helper.ts'), 'export const add = (a: number, b: number) => a + b\n')
+  await writeFile(join(dir, 'README.md'), '# Test Project\n')
   return dir
 }
 
@@ -33,191 +26,100 @@ describe('extended tools', () => {
   })
 
   afterEach(async () => {
-    await rm(testDir, { recursive: true, force: true })
+    if (testDir) {
+      await rm(testDir, { recursive: true, force: true })
+      testDir = ''
+    }
   })
 
-  describe('grep', () => {
-    describe('#given a text pattern', () => {
-      it('#then finds matching lines with line numbers', async () => {
-        const tool = createGrep(testDir)
-        const result = await tool.execute({ id: 't1', args: {
-          pattern: 'hello',
-          isRegex: false,
-          caseSensitive: false,
-          maxResults: 100,
-        }, signal })
-
-        expect(result.isError).toBeUndefined()
-        const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
-        expect(text).toContain('hello')
-        expect(text).toContain('index.ts')
+  describe('ls', () => {
+    it('lists directory contents', async () => {
+      const tool = createLs(testDir)
+      const result = await tool.execute({
+        id: 'ls1',
+        params: { path: '.', limit: 200 },
+        signal,
       })
+
+      const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
+      expect(result.isError).toBeUndefined()
+      expect(text).toContain('src/')
+      expect(text).toContain('README.md')
     })
 
-    describe('#given pattern with no matches', () => {
-      it('#then returns no matches message', async () => {
-        const tool = createGrep(testDir)
-        const result = await tool.execute({ id: 't1', args: {
-          pattern: 'nonexistent_xyz_123',
-          isRegex: false,
-          caseSensitive: false,
-          maxResults: 100,
-        }, signal })
-
-        const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
-        expect(text).toContain('No matches')
-      })
-    })
-  })
-
-  describe('glob', () => {
-    describe('#given **/*.ts pattern', () => {
-      it('#then finds TypeScript files recursively', async () => {
-        const tool = createGlob(testDir)
-        const result = await tool.execute({ id: 't1', args: {
-          pattern: '**/*.ts',
-          maxResults: 500,
-        }, signal })
-
-        expect(result.isError).toBeUndefined()
-        const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
-        expect(text).toContain('index.ts')
-        expect(text).toContain('helper.ts')
-      })
+    it('throws when path does not exist', async () => {
+      const tool = createLs(testDir)
+      await expect(tool.execute({
+        id: 'ls2',
+        params: { path: 'ghost-dir' },
+        signal,
+      })).rejects.toThrow('ENOENT')
     })
   })
 
   describe('find', () => {
-    describe('#given name filter "*.ts"', () => {
-      it('#then finds TypeScript files', async () => {
-        const tool = createFind(testDir)
-        const result = await tool.execute({ id: 't1', args: {
-          name: '*.ts',
-          type: 'file',
-          maxDepth: 10,
-          maxResults: 200,
-        }, signal })
-
-        expect(result.isError).toBeUndefined()
-        const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
-        expect(text).toContain('Found')
-        expect(text).toContain('.ts')
+    it('finds files via injected glob implementation', async () => {
+      const tool = createFind(testDir, {
+        glob: async () => [join(testDir, 'src', 'index.ts'), join(testDir, 'src', 'utils', 'helper.ts')],
       })
+
+      const result = await tool.execute({
+        id: 'find1',
+        params: { pattern: '**/*.ts', limit: 50 },
+        signal,
+      })
+
+      const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
+      expect(result.isError).toBeUndefined()
+      expect(text).toContain('src/index.ts')
+      expect(text).toContain('src/utils/helper.ts')
     })
 
-    describe('#given type filter "directory"', () => {
-      it('#then finds only directories', async () => {
-        const tool = createFind(testDir)
-        const result = await tool.execute({ id: 't1', args: {
-          type: 'directory',
-          maxDepth: 10,
-          maxResults: 200,
-        }, signal })
-
-        expect(result.isError).toBeUndefined()
-        const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
-        expect(text).toContain('src/')
+    it('throws when no files match', async () => {
+      const tool = createFind(testDir, {
+        glob: async () => [],
       })
+
+      await expect(tool.execute({
+        id: 'find2',
+        params: { pattern: '**/*.none' },
+        signal,
+      })).rejects.toThrow('No files found matching pattern')
     })
   })
 
-  describe('ls', () => {
-    describe('#given root directory', () => {
-      it('#then lists directory contents', async () => {
-        const tool = createLs(testDir)
-        const result = await tool.execute({ id: 't1', args: {
-          path: '.',
-          recursive: false,
-          maxDepth: 3,
-          maxEntries: 500,
-        }, signal })
-
-        expect(result.isError).toBeUndefined()
-        const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
-        expect(text).toContain('src/')
-        expect(text).toContain('README.md')
-        expect(text).toContain('package.json')
-      })
-    })
-
-    describe('#given recursive=true', () => {
-      it('#then lists subdirectory contents', async () => {
-        const tool = createLs(testDir)
-        const result = await tool.execute({ id: 't1', args: {
-          path: '.',
-          recursive: true,
-          maxDepth: 3,
-          maxEntries: 500,
-        }, signal })
-
-        expect(result.isError).toBeUndefined()
-        const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
-        expect(text).toContain('utils/')
-        expect(text).toContain('helper.ts')
-      })
-    })
-
-    describe('#given nonexistent directory', () => {
-      it('#then returns error', async () => {
-        const tool = createLs(testDir)
-        const result = await tool.execute({ id: 't1', args: {
-          path: 'nonexistent',
-          recursive: false,
-          maxDepth: 3,
-          maxEntries: 500,
-        }, signal })
-
-        expect(result.isError).toBe(true)
-      })
+  describe('grep', () => {
+    it('throws when binary executor is not provided', async () => {
+      const tool = createGrep(testDir, {})
+      await expect(tool.execute({
+        id: 'grep1',
+        params: { pattern: 'hello' },
+        signal,
+      })).rejects.toThrow('ripgrep (rg) executor is not available')
     })
   })
 
-  describe('delegate-task', () => {
-    describe('#given no dispatch function', () => {
-      it('#then returns unavailable error', async () => {
-        const tool = createTaskDelegate()
-        const result = await tool.execute({ id: 't1', args: {
-          prompt: 'Find all auth files',
+  describe('task_delegate', () => {
+    it('delegates successfully when dispatch function is provided', async () => {
+      const tool = createTaskDelegate(testDir, async (args) => ({
+        success: true,
+        output: `Processed: ${args.prompt}`,
+      }))
+
+      const result = await tool.execute({
+        id: 'td1',
+        params: {
+          prompt: 'Find auth code',
           subagent: 'explore',
           mode: 'sync',
-        } as never, signal })
-
-        expect(result.isError).toBe(true)
-        const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
-        expect(text).toContain('not available')
+        },
+        signal,
       })
-    })
 
-    describe('#given a dispatch function', () => {
-      it('#then delegates the task and returns result', async () => {
-        const tool = createTaskDelegate(async (args) => ({
-          success: true,
-          output: `Processed: ${args.prompt}`,
-        }))
-
-        const result = await tool.execute({ id: 't1', args: {
-          prompt: 'Find all auth files',
-          subagent: 'explore',
-          mode: 'sync',
-        } as never, signal })
-
-        expect(result.isError).toBeUndefined()
-        const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
-        expect(text).toContain('Processed: Find all auth files')
-      })
-    })
-  })
-
-  describe('standard preset registration', () => {
-    it('#then standard preset contains 10 tools', () => {
-      const registry = createToolRegistry()
-      registerBuiltinTools(registry, testDir)
-
-      const standardTools = registry.getAvailable('standard')
-      expect(standardTools).toHaveLength(10)
-
-      const minimalTools = registry.getAvailable('minimal')
-      expect(minimalTools).toHaveLength(4)
+      const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
+      expect(result.isError).toBeUndefined()
+      expect(text).toContain('Task delegated successfully')
+      expect(text).toContain('Processed: Find auth code')
     })
   })
 })

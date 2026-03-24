@@ -1,34 +1,372 @@
-import { readFileSync } from "fs"
-import { extname, resolve } from "path"
-import { pathToFileURL } from "node:url"
+import { spawn, type ChildProcess } from 'node:child_process'
+import { existsSync, statSync } from 'node:fs'
+import { readFileSync } from 'node:fs'
+import { resolve, extname } from 'node:path'
+import { pathToFileURL } from 'node:url'
+import { createLogger } from '@vitamin/shared'
+import type { Diagnostic, ResolvedServer } from './types'
+import { EXT_TO_LANG } from './constants'
 
-import { getLanguageId } from "./config"
-import { LSPClientConnection } from "./lsp-client-connection"
-import type { Diagnostic } from "./types"
+const logger = createLogger('@vitamin/tools:lsp')
 
-export class LSPClient extends LSPClientConnection {
+// ─── JSON-RPC transport (hand-written, no vscode-jsonrpc needed) ────────────
+
+const CONTENT_LENGTH = 'Content-Length: '
+
+function encodeMessage(body: string): Buffer {
+  const buf = Buffer.from(body, 'utf-8')
+  return Buffer.concat([
+    Buffer.from(`Content-Length: ${buf.byteLength}\r\n\r\n`, 'ascii'),
+    buf,
+  ])
+}
+
+interface PendingRequest {
+  resolve: (value: unknown) => void
+  reject: (reason: Error) => void
+  timer: ReturnType<typeof setTimeout>
+}
+
+// ─── LSP Client ─────────────────────────────────────────────────────────────
+
+export class LSPClient {
+  private proc: ChildProcess | null = null
+  private nextId = 1
+  private pending = new Map<number, PendingRequest>()
+  private buffer = Buffer.alloc(0)
+  private contentLength = -1
+  private processExited = false
+  private stderrBuffer: string[] = []
+  private diagnosticsStore = new Map<string, Diagnostic[]>()
+
   private openedFiles = new Set<string>()
   private documentVersions = new Map<string, number>()
   private lastSyncedText = new Map<string, string>()
 
+  private readonly REQUEST_TIMEOUT = 15_000
+
+  constructor(
+    private readonly root: string,
+    private readonly server: ResolvedServer,
+  ) {}
+
+  // ─── Lifecycle ──────────────────────────────────────────────────────────
+
+  async start(): Promise<void> {
+    const cwdValidation = validateCwd(this.root)
+    if (!cwdValidation.valid) {
+      throw new Error(`[LSP] ${cwdValidation.error}`)
+    }
+
+    if (this.server.command.length === 0) {
+      throw new Error('[LSP] Server command is empty')
+    }
+
+    const [cmd, ...args] = this.server.command
+    this.proc = spawn(cmd!, args, {
+      cwd: this.root,
+      env: { ...process.env, ...this.server.env },
+      stdio: ['pipe', 'pipe', 'pipe'],
+    })
+
+    const proc = this.proc
+
+    proc.on('exit', (code) => {
+      this.processExited = true
+      logger.debug(`LSP server exited with code ${code}`)
+    })
+
+    proc.on('error', (err) => {
+      this.processExited = true
+      logger.error(`LSP spawn error: ${err.message}`)
+    })
+
+    // Wait a moment for potential immediate crashes
+    await new Promise((r) => setTimeout(r, 100))
+
+    if (proc.exitCode !== null) {
+      const stderr = this.stderrBuffer.join('\n')
+      throw new Error(
+        `LSP server exited immediately with code ${proc.exitCode}` +
+          (stderr ? `\nstderr: ${stderr}` : ''),
+      )
+    }
+
+    // Wire up stdout parsing
+    proc.stdout?.on('data', (chunk: Buffer) => {
+      this.processBuffer(chunk)
+    })
+
+    // Wire up stderr
+    proc.stderr?.on('data', (chunk: Buffer) => {
+      const text = chunk.toString('utf-8')
+      this.stderrBuffer.push(text)
+      if (this.stderrBuffer.length > 100) {
+        this.stderrBuffer.shift()
+      }
+    })
+
+    // Handle server-initiated notifications / requests
+    // (publishDiagnostics, workspace/configuration, etc. handled in onMessage)
+  }
+
+  async initialize(): Promise<void> {
+    const rootUri = pathToFileURL(this.root).href
+    await this.sendRequest('initialize', {
+      processId: process.pid,
+      rootUri,
+      rootPath: this.root,
+      workspaceFolders: [{ uri: rootUri, name: 'workspace' }],
+      capabilities: {
+        textDocument: {
+          hover: { contentFormat: ['markdown', 'plaintext'] },
+          definition: { linkSupport: true },
+          references: {},
+          documentSymbol: { hierarchicalDocumentSymbolSupport: true },
+          publishDiagnostics: {},
+          rename: {
+            prepareSupport: true,
+            prepareSupportDefaultBehavior: 1,
+            honorsChangeAnnotations: true,
+          },
+          codeAction: {
+            codeActionLiteralSupport: {
+              codeActionKind: {
+                valueSet: [
+                  'quickfix',
+                  'refactor',
+                  'refactor.extract',
+                  'refactor.inline',
+                  'refactor.rewrite',
+                  'source',
+                  'source.organizeImports',
+                  'source.fixAll',
+                ],
+              },
+            },
+            isPreferredSupport: true,
+            disabledSupport: true,
+            dataSupport: true,
+            resolveSupport: { properties: ['edit', 'command'] },
+          },
+        },
+        workspace: {
+          symbol: {},
+          workspaceFolders: true,
+          configuration: true,
+          applyEdit: true,
+          workspaceEdit: { documentChanges: true },
+        },
+      },
+      ...this.server.initialization,
+    })
+
+    this.sendNotification('initialized')
+    this.sendNotification('workspace/didChangeConfiguration', {
+      settings: { json: { validate: { enable: true } } },
+    })
+
+    await new Promise((r) => setTimeout(r, 300))
+  }
+
+  async stop(): Promise<void> {
+    // Reject all pending requests
+    for (const [, req] of this.pending) {
+      clearTimeout(req.timer)
+      req.reject(new Error('LSP client stopping'))
+    }
+    this.pending.clear()
+
+    if (!this.processExited && this.proc) {
+      try {
+        this.sendNotification('shutdown')
+        this.sendNotification('exit')
+      } catch {}
+
+      const proc = this.proc
+      this.proc = null
+
+      // Wait for graceful exit
+      const exited = await Promise.race([
+        new Promise<boolean>((res) => proc.on('exit', () => res(true))),
+        new Promise<boolean>((res) => setTimeout(() => res(false), 5000)),
+      ])
+
+      if (!exited) {
+        logger.debug('LSP process did not exit within timeout, sending SIGKILL')
+        try {
+          proc.kill('SIGKILL')
+        } catch {}
+      }
+    }
+
+    this.processExited = true
+    this.proc = null
+    this.diagnosticsStore.clear()
+    this.openedFiles.clear()
+    this.documentVersions.clear()
+    this.lastSyncedText.clear()
+  }
+
+  isAlive(): boolean {
+    return this.proc !== null && !this.processExited && this.proc.exitCode === null
+  }
+
+  // ─── JSON-RPC protocol ─────────────────────────────────────────────────
+
+  private processBuffer(chunk: Buffer): void {
+    this.buffer = Buffer.concat([this.buffer, chunk])
+
+    while (true) {
+      if (this.contentLength === -1) {
+        const headerEnd = this.buffer.indexOf('\r\n\r\n')
+        if (headerEnd === -1) break
+
+        const header = this.buffer.subarray(0, headerEnd).toString('ascii')
+        for (const line of header.split('\r\n')) {
+          if (line.startsWith(CONTENT_LENGTH)) {
+            this.contentLength = parseInt(line.slice(CONTENT_LENGTH.length), 10)
+          }
+        }
+
+        if (this.contentLength === -1) {
+          // Malformed header — discard up to headerEnd
+          this.buffer = this.buffer.subarray(headerEnd + 4)
+          continue
+        }
+
+        this.buffer = this.buffer.subarray(headerEnd + 4)
+      }
+
+      if (this.buffer.length < this.contentLength) break
+
+      const body = this.buffer.subarray(0, this.contentLength).toString('utf-8')
+      this.buffer = this.buffer.subarray(this.contentLength)
+      this.contentLength = -1
+
+      try {
+        this.onMessage(JSON.parse(body))
+      } catch (err) {
+        logger.error(`Failed to parse LSP message: ${err}`)
+      }
+    }
+  }
+
+  private onMessage(msg: Record<string, unknown>): void {
+    // Response to a request we sent
+    if ('id' in msg && ('result' in msg || 'error' in msg)) {
+      const id = msg.id as number
+      const pending = this.pending.get(id)
+      if (pending) {
+        this.pending.delete(id)
+        clearTimeout(pending.timer)
+        if ('error' in msg) {
+          const err = msg.error as { message: string; code?: number }
+          pending.reject(new Error(`LSP error ${err.code ?? ''}: ${err.message}`))
+        } else {
+          pending.resolve(msg.result)
+        }
+      }
+      return
+    }
+
+    const method = msg.method as string | undefined
+    if (!method) return
+
+    // Server-initiated notification
+    if (!('id' in msg)) {
+      if (method === 'textDocument/publishDiagnostics') {
+        const params = msg.params as { uri?: string; diagnostics?: Diagnostic[] }
+        if (params.uri) {
+          this.diagnosticsStore.set(params.uri, params.diagnostics ?? [])
+        }
+      }
+      return
+    }
+
+    // Server-initiated request (needs response)
+    const id = msg.id as number
+    if (method === 'workspace/configuration') {
+      const params = msg.params as { items?: Array<{ section?: string }> }
+      const items = params?.items ?? []
+      const result = items.map((item) => {
+        if (item.section === 'json') return { validate: { enable: true } }
+        return {}
+      })
+      this.respond(id, result)
+    } else if (
+      method === 'client/registerCapability' ||
+      method === 'window/workDoneProgress/create'
+    ) {
+      this.respond(id, null)
+    } else {
+      // Unknown server request — respond with null
+      this.respond(id, null)
+    }
+  }
+
+  private sendRequest<T = unknown>(method: string, params?: unknown): Promise<T> {
+    if (!this.proc?.stdin?.writable) {
+      throw new Error('LSP client not started')
+    }
+
+    if (this.processExited || (this.proc && this.proc.exitCode !== null)) {
+      const stderr = this.stderrBuffer.slice(-10).join('\n')
+      throw new Error(
+        `LSP server already exited (code: ${this.proc?.exitCode})` +
+          (stderr ? `\nstderr: ${stderr}` : ''),
+      )
+    }
+
+    const id = this.nextId++
+
+    return new Promise<T>((resolve, reject) => {
+      const timer = setTimeout(() => {
+        this.pending.delete(id)
+        const stderr = this.stderrBuffer.slice(-5).join('\n')
+        reject(
+          new Error(
+            `LSP request timeout (method: ${method})` +
+              (stderr ? `\nrecent stderr: ${stderr}` : ''),
+          ),
+        )
+      }, this.REQUEST_TIMEOUT)
+
+      this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject, timer })
+
+      const body = JSON.stringify({ jsonrpc: '2.0', id, method, params })
+      this.proc!.stdin!.write(encodeMessage(body))
+    })
+  }
+
+  private sendNotification(method: string, params?: unknown): void {
+    if (!this.proc?.stdin?.writable) return
+    if (this.processExited || (this.proc && this.proc.exitCode !== null)) return
+
+    const body = JSON.stringify({ jsonrpc: '2.0', method, params })
+    this.proc.stdin.write(encodeMessage(body))
+  }
+
+  private respond(id: number, result: unknown): void {
+    if (!this.proc?.stdin?.writable) return
+    const body = JSON.stringify({ jsonrpc: '2.0', id, result })
+    this.proc.stdin.write(encodeMessage(body))
+  }
+
+  // ─── Document management ───────────────────────────────────────────────
+
   async openFile(filePath: string): Promise<void> {
     const absPath = resolve(filePath)
-
     const uri = pathToFileURL(absPath).href
-    const text = readFileSync(absPath, "utf-8")
+    const text = readFileSync(absPath, 'utf-8')
 
     if (!this.openedFiles.has(absPath)) {
       const ext = extname(absPath)
-      const languageId = getLanguageId(ext)
+      const languageId = EXT_TO_LANG[ext] || 'plaintext'
       const version = 1
 
-      this.sendNotification("textDocument/didOpen", {
-        textDocument: {
-          uri,
-          languageId,
-          version,
-          text,
-        },
+      this.sendNotification('textDocument/didOpen', {
+        textDocument: { uri, languageId, version, text },
       })
 
       this.openedFiles.add(absPath)
@@ -39,39 +377,43 @@ export class LSPClient extends LSPClientConnection {
     }
 
     const prevText = this.lastSyncedText.get(uri)
-    if (prevText === text) {
-      return
-    }
+    if (prevText === text) return
 
     const nextVersion = (this.documentVersions.get(uri) ?? 1) + 1
     this.documentVersions.set(uri, nextVersion)
     this.lastSyncedText.set(uri, text)
 
-    this.sendNotification("textDocument/didChange", {
+    this.sendNotification('textDocument/didChange', {
       textDocument: { uri, version: nextVersion },
       contentChanges: [{ text }],
     })
 
-    // Some servers update diagnostics only after save
-    this.sendNotification("textDocument/didSave", {
+    this.sendNotification('textDocument/didSave', {
       textDocument: { uri },
       text,
     })
   }
 
+  // ─── LSP operations ────────────────────────────────────────────────────
+
   async definition(filePath: string, line: number, character: number): Promise<unknown> {
     const absPath = resolve(filePath)
     await this.openFile(absPath)
-    return this.sendRequest("textDocument/definition", {
+    return this.sendRequest('textDocument/definition', {
       textDocument: { uri: pathToFileURL(absPath).href },
       position: { line: line - 1, character },
     })
   }
 
-  async references(filePath: string, line: number, character: number, includeDeclaration = true): Promise<unknown> {
+  async references(
+    filePath: string,
+    line: number,
+    character: number,
+    includeDeclaration = true,
+  ): Promise<unknown> {
     const absPath = resolve(filePath)
     await this.openFile(absPath)
-    return this.sendRequest("textDocument/references", {
+    return this.sendRequest('textDocument/references', {
       textDocument: { uri: pathToFileURL(absPath).href },
       position: { line: line - 1, character },
       context: { includeDeclaration },
@@ -81,13 +423,13 @@ export class LSPClient extends LSPClientConnection {
   async documentSymbols(filePath: string): Promise<unknown> {
     const absPath = resolve(filePath)
     await this.openFile(absPath)
-    return this.sendRequest("textDocument/documentSymbol", {
+    return this.sendRequest('textDocument/documentSymbol', {
       textDocument: { uri: pathToFileURL(absPath).href },
     })
   }
 
   async workspaceSymbols(query: string): Promise<unknown> {
-    return this.sendRequest("workspace/symbol", { query })
+    return this.sendRequest('workspace/symbol', { query })
   }
 
   async diagnostics(filePath: string): Promise<{ items: Diagnostic[] }> {
@@ -97,10 +439,11 @@ export class LSPClient extends LSPClientConnection {
     await new Promise((r) => setTimeout(r, 500))
 
     try {
-      const result = await this.sendRequest<{ items?: Diagnostic[] }>("textDocument/diagnostic", {
-        textDocument: { uri },
-      })
-      if (result && typeof result === "object" && "items" in result) {
+      const result = await this.sendRequest<{ items?: Diagnostic[] }>(
+        'textDocument/diagnostic',
+        { textDocument: { uri } },
+      )
+      if (result && typeof result === 'object' && 'items' in result) {
         return result as { items: Diagnostic[] }
       }
     } catch {}
@@ -108,22 +451,297 @@ export class LSPClient extends LSPClientConnection {
     return { items: this.diagnosticsStore.get(uri) ?? [] }
   }
 
-  async prepareRename(filePath: string, line: number, character: number): Promise<unknown> {
+  async prepareRename(
+    filePath: string,
+    line: number,
+    character: number,
+  ): Promise<unknown> {
     const absPath = resolve(filePath)
     await this.openFile(absPath)
-    return this.sendRequest("textDocument/prepareRename", {
+    return this.sendRequest('textDocument/prepareRename', {
       textDocument: { uri: pathToFileURL(absPath).href },
       position: { line: line - 1, character },
     })
   }
 
-  async rename(filePath: string, line: number, character: number, newName: string): Promise<unknown> {
+  async rename(
+    filePath: string,
+    line: number,
+    character: number,
+    newName: string,
+  ): Promise<unknown> {
     const absPath = resolve(filePath)
     await this.openFile(absPath)
-    return this.sendRequest("textDocument/rename", {
+    return this.sendRequest('textDocument/rename', {
       textDocument: { uri: pathToFileURL(absPath).href },
       position: { line: line - 1, character },
       newName,
     })
+  }
+}
+
+// ─── LSP Server Manager (singleton with ref-counting) ────────────────────────
+
+interface ManagedClient {
+  client: LSPClient
+  lastUsedAt: number
+  refCount: number
+  initPromise?: Promise<void>
+  isInitializing: boolean
+  initializingSince?: number
+}
+
+type ProcessCleanupHandle = { unregister: () => void }
+
+class LSPServerManager {
+  private static instance: LSPServerManager
+  private clients = new Map<string, ManagedClient>()
+  private cleanupInterval: ReturnType<typeof setInterval> | null = null
+  private cleanupHandle: ProcessCleanupHandle | null = null
+  private readonly IDLE_TIMEOUT = 5 * 60 * 1000
+  private readonly INIT_TIMEOUT = 60 * 1000
+
+  private constructor() {
+    this.startCleanupTimer()
+    this.registerProcessCleanup()
+  }
+
+  static getInstance(): LSPServerManager {
+    if (!LSPServerManager.instance) {
+      LSPServerManager.instance = new LSPServerManager()
+    }
+    return LSPServerManager.instance
+  }
+
+  private getKey(root: string, serverId: string): string {
+    return `${root}::${serverId}`
+  }
+
+  private startCleanupTimer(): void {
+    if (this.cleanupInterval) return
+    this.cleanupInterval = setInterval(() => this.cleanupIdleClients(), 60_000)
+    // Don't keep process alive just for cleanup
+    if (this.cleanupInterval.unref) {
+      this.cleanupInterval.unref()
+    }
+  }
+
+  private cleanupIdleClients(): void {
+    const now = Date.now()
+    for (const [key, managed] of this.clients) {
+      if (managed.refCount === 0 && now - managed.lastUsedAt > this.IDLE_TIMEOUT) {
+        void managed.client.stop()
+        this.clients.delete(key)
+      }
+    }
+  }
+
+  private registerProcessCleanup(): void {
+    const handlers: Array<{ event: string; listener: (...args: unknown[]) => void }> = []
+
+    const syncCleanup = () => {
+      for (const [, managed] of this.clients) {
+        try {
+          void managed.client.stop().catch(() => {})
+        } catch {}
+      }
+      this.clients.clear()
+      if (this.cleanupInterval) {
+        clearInterval(this.cleanupInterval)
+        this.cleanupInterval = null
+      }
+    }
+
+    const asyncCleanup = async () => {
+      const promises: Promise<void>[] = []
+      for (const [, managed] of this.clients) {
+        promises.push(managed.client.stop().catch(() => {}))
+      }
+      await Promise.allSettled(promises)
+      this.clients.clear()
+      if (this.cleanupInterval) {
+        clearInterval(this.cleanupInterval)
+        this.cleanupInterval = null
+      }
+    }
+
+    const register = (event: string, listener: (...args: unknown[]) => void) => {
+      handlers.push({ event, listener })
+      process.on(event, listener)
+    }
+
+    register('exit', syncCleanup)
+    const signalCleanup = () => void asyncCleanup().catch(() => {})
+    register('SIGINT', signalCleanup)
+    register('SIGTERM', signalCleanup)
+
+    this.cleanupHandle = {
+      unregister: () => {
+        for (const { event, listener } of handlers) {
+          process.off(event, listener)
+        }
+        handlers.length = 0
+      },
+    }
+  }
+
+  async getClient(root: string, server: ResolvedServer): Promise<LSPClient> {
+    const key = this.getKey(root, server.id)
+    let managed = this.clients.get(key)
+
+    // Handle stale initializations
+    if (managed) {
+      const now = Date.now()
+      if (
+        managed.isInitializing &&
+        managed.initializingSince !== undefined &&
+        now - managed.initializingSince >= this.INIT_TIMEOUT
+      ) {
+        try { await managed.client.stop() } catch {}
+        this.clients.delete(key)
+        managed = undefined
+      }
+    }
+
+    // Wait for existing init
+    if (managed) {
+      if (managed.initPromise) {
+        try {
+          await managed.initPromise
+        } catch {
+          try { await managed.client.stop() } catch {}
+          this.clients.delete(key)
+          managed = undefined
+        }
+      }
+
+      if (managed) {
+        if (managed.client.isAlive()) {
+          managed.refCount++
+          managed.lastUsedAt = Date.now()
+          return managed.client
+        }
+        try { await managed.client.stop() } catch {}
+        this.clients.delete(key)
+      }
+    }
+
+    // Create new client
+    const client = new LSPClient(root, server)
+    const initStartedAt = Date.now()
+    const initPromise = (async () => {
+      await client.start()
+      await client.initialize()
+    })()
+
+    this.clients.set(key, {
+      client,
+      lastUsedAt: initStartedAt,
+      refCount: 1,
+      initPromise,
+      isInitializing: true,
+      initializingSince: initStartedAt,
+    })
+
+    try {
+      await initPromise
+    } catch (error) {
+      this.clients.delete(key)
+      try { await client.stop() } catch {}
+      throw error
+    }
+
+    const m = this.clients.get(key)
+    if (m) {
+      m.initPromise = undefined
+      m.isInitializing = false
+      m.initializingSince = undefined
+    }
+
+    return client
+  }
+
+  warmupClient(root: string, server: ResolvedServer): void {
+    const key = this.getKey(root, server.id)
+    if (this.clients.has(key)) return
+
+    const client = new LSPClient(root, server)
+    const initStartedAt = Date.now()
+    const initPromise = (async () => {
+      await client.start()
+      await client.initialize()
+    })()
+
+    this.clients.set(key, {
+      client,
+      lastUsedAt: initStartedAt,
+      refCount: 0,
+      initPromise,
+      isInitializing: true,
+      initializingSince: initStartedAt,
+    })
+
+    initPromise
+      .then(() => {
+        const m = this.clients.get(key)
+        if (m) {
+          m.initPromise = undefined
+          m.isInitializing = false
+          m.initializingSince = undefined
+        }
+      })
+      .catch(() => {
+        this.clients.delete(key)
+        void client.stop().catch(() => {})
+      })
+  }
+
+  releaseClient(root: string, serverId: string): void {
+    const key = this.getKey(root, serverId)
+    const managed = this.clients.get(key)
+    if (managed && managed.refCount > 0) {
+      managed.refCount--
+      managed.lastUsedAt = Date.now()
+    }
+  }
+
+  isServerInitializing(root: string, serverId: string): boolean {
+    const key = this.getKey(root, serverId)
+    return this.clients.get(key)?.isInitializing ?? false
+  }
+
+  async stopAll(): Promise<void> {
+    this.cleanupHandle?.unregister()
+    this.cleanupHandle = null
+    for (const [, managed] of this.clients) {
+      await managed.client.stop()
+    }
+    this.clients.clear()
+    if (this.cleanupInterval) {
+      clearInterval(this.cleanupInterval)
+      this.cleanupInterval = null
+    }
+  }
+}
+
+export const lspManager = LSPServerManager.getInstance()
+
+// ─── Utilities ─────────────────────────────────────────────────────────────
+
+export function validateCwd(cwd: string): { valid: boolean; error?: string } {
+  try {
+    if (!existsSync(cwd)) {
+      return { valid: false, error: `Working directory does not exist: ${cwd}` }
+    }
+    const stats = statSync(cwd)
+    if (!stats.isDirectory()) {
+      return { valid: false, error: `Path is not a directory: ${cwd}` }
+    }
+    return { valid: true }
+  } catch (err) {
+    return {
+      valid: false,
+      error: `Cannot access working directory: ${cwd} (${err instanceof Error ? err.message : String(err)})`,
+    }
   }
 }

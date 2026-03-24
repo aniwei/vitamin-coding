@@ -1,6 +1,5 @@
 import { z } from 'zod'
-import { readFile } from 'node:fs'
-import { relative, resolve } from 'node:path'
+import { resolve } from 'node:path'
 import { TOOLS_MAX_OUTPUT_LINES } from '@vitamin/env'
 import { exists, isDirectory, normalizePath } from '@vitamin/shared'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
@@ -19,7 +18,7 @@ const GrepArgsSchema = z.object({
 type GrepArgs = z.infer<typeof GrepArgsSchema>
 
 interface GrepToolOptions {
-  binaryExecutorRegistry?: BinaryToolExecutorRegistry
+  binaryToolExecutorRegistry?: BinaryToolExecutorRegistry
 }
 
 
@@ -38,7 +37,7 @@ export function createGrep(
       const searchDir = resolve(projectRoot, params.path ?? '.')
       const normalizedSearchDir = normalizePath(searchDir)
 
-      const rg = await options.binaryExecutorRegistry?.get('rg')
+      const rg = await options.binaryToolExecutorRegistry?.get('rg')
       if (!rg) {
         throw new Error('ripgrep (rg) executor is not available')
       }
@@ -59,7 +58,7 @@ export function createGrep(
         params.ignore ?? false,
         params.context && params.context > 0 ? params.context : 0,
         Math.max(1, params.limit ?? TOOLS_MAX_OUTPUT_LINES),
-        options.binaryExecutorRegistry,
+        options.binaryToolExecutorRegistry,
       )
     }
   }

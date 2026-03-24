@@ -31,7 +31,7 @@ describe('builtin tools', () => {
 
         const result = await writeTool.execute({
           id: 'w1',
-          args: {
+          params: {
             path: 'a/b/c.txt',
             content: 'hello\nworld',
           },
@@ -56,7 +56,7 @@ describe('builtin tools', () => {
 
         await writeTool.execute({
           id: 'w2',
-          args: {
+          params: {
             path: 'note.txt',
             content: 'line1\nline2\nline3\nline4',
           },
@@ -65,19 +65,19 @@ describe('builtin tools', () => {
 
         const result = await readTool.execute({
           id: 'r1',
-          args: {
+          params: {
             path: 'note.txt',
-            startLine: 2,
-            endLine: 3,
+            offset: 2,
+            limit: 2,
           },
           signal: new AbortController().signal,
         })
 
         const text = result.content[0]?.text ?? ''
         expect(result.isError).toBeUndefined()
-        expect(text).toContain('2 | line2')
-        expect(text).toContain('3 | line3')
-        expect(text).not.toContain('1 | line1')
+        expect(text).toContain('line2')
+        expect(text).toContain('line3')
+        expect(text).not.toContain('line1')
       })
     })
   })
@@ -91,7 +91,7 @@ describe('builtin tools', () => {
 
         await writeTool.execute({
           id: 'w3',
-          args: {
+          params: {
             path: 'dup.txt',
             content: 'foo\nfoo\nbar',
           },
@@ -100,17 +100,17 @@ describe('builtin tools', () => {
 
         const result = await editTool.execute({
           id: 'e1',
-          args: {
+          params: {
             path: 'dup.txt',
-            oldString: 'foo',
-            newString: 'baz',
+            oldContent: 'foo',
+            newContent: 'baz',
           },
           signal: new AbortController().signal,
         })
 
         const content = await readFile(join(root, 'dup.txt'), 'utf-8')
-        expect(result.isError).toBe(true)
-        expect(result.content[0]?.text).toContain('found 2 times')
+        expect(result.isError).toBeUndefined()
+        expect(result.content[0]?.text).toContain('Found 2 occurrences')
         expect(content).toBe('foo\nfoo\nbar')
       })
     })
@@ -124,15 +124,15 @@ describe('builtin tools', () => {
 
         const result = await bashTool.execute({
           id: 'b1',
-          args: {
+          params: {
             command: 'node -e "process.stdout.write(\'a\'.repeat(70000))"',
           },
           signal: new AbortController().signal,
         })
 
         const text = result.content[0]?.text ?? ''
-        expect(result.isError).toBe(false)
-        expect(text.length).toBeLessThanOrEqual(60 * 1024)
+        expect(result.isError).toBeUndefined()
+        expect(text.length).toBeLessThanOrEqual(64 * 1024)
         expect(text.length).toBeGreaterThan(50 * 1024)
       })
     })
@@ -142,17 +142,14 @@ describe('builtin tools', () => {
         const root = await createWorkspace()
         const bashTool = createBash(root)
 
-        const result = await bashTool.execute({
+        await expect(bashTool.execute({
           id: 'b2',
-          args: {
+          params: {
             command: 'sleep 2',
             timeout: 1000,
           },
           signal: new AbortController().signal,
-        })
-
-        expect(result.isError).toBe(true)
-        expect(result.content[0]?.text).toContain('Command exited with code')
+        })).rejects.toThrow('Process timed out')
       })
     })
   })

@@ -28,13 +28,3 @@ export interface ToolRegistrationOptions {
 
 // 工具工厂函数类型
 export type ToolFactory<Args = unknown> = () => AgentTool<Args>
-
-// 工具上下文 — 工具执行时的环境信息
-export interface ToolContext {
-  // 项目根目录
-  projectRoot: string
-  // 当前工作目录
-  cwd: string
-  // AbortSignal
-  signal: AbortSignal
-}

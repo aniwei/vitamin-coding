@@ -1,3 +1,4 @@
+import { OFFLINE_MODE_ENABLED } from './env'
 // 所有 @vitamin/* 包共享的公共类型
 
 // 品牌类型辅助 —— 从基础类型创建名义类型
@@ -22,3 +23,8 @@ export type VoidCallback = () => void
 
 // 返回 Promise<void> 的异步回调函数
 export type AsyncVoidCallback = () => Promise<void>
+
+// 离线模式检查函数
+export function isOfflineMode(): boolean {
+  return OFFLINE_MODE_ENABLED
+}

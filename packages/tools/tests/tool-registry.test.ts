@@ -1,6 +1,6 @@
 // @vitamin/tools ToolRegistry 测试
 import { describe, expect, it } from 'vitest'
-import { createToolRegistry } from '../src/tool-registry'
+import { ToolRegistry } from '../src/tool-registry'
 
 import type { AgentTool } from '@vitamin/agent'
 
@@ -21,19 +21,19 @@ function makeTool(name: string): AgentTool {
 describe('ToolRegistry', () => {
   describe('#given empty registry', () => {
     it('#then size is 0', () => {
-      const registry = createToolRegistry()
+      const registry = new ToolRegistry()
       expect(registry.size).toBe(0)
     })
 
     it('#then getAll returns empty', () => {
-      const registry = createToolRegistry()
+      const registry = new ToolRegistry()
       expect(registry.getAll()).toHaveLength(0)
     })
   })
 
   describe('#when register() is called', () => {
     it('#then tool is retrievable by name', () => {
-      const registry = createToolRegistry()
+      const registry = new ToolRegistry()
       registry.register(makeTool('read'), {
         preset: 'minimal',
         category: 'filesystem',
@@ -47,7 +47,7 @@ describe('ToolRegistry', () => {
 
   describe('#when unregister() is called', () => {
     it('#then tool is removed', () => {
-      const registry = createToolRegistry()
+      const registry = new ToolRegistry()
       registry.register(makeTool('read'))
       expect(registry.has('read')).toBe(true)
       registry.unregister('read')
@@ -56,14 +56,14 @@ describe('ToolRegistry', () => {
     })
 
     it('#then returns false for unknown tool', () => {
-      const registry = createToolRegistry()
+      const registry = new ToolRegistry()
       expect(registry.unregister('nonexistent')).toBe(false)
     })
   })
 
   describe('#given tools with different presets', () => {
     function setupRegistry() {
-      const registry = createToolRegistry()
+      const registry = new ToolRegistry()
       registry.register(makeTool('core'), { preset: 'minimal' })
       registry.register(makeTool('std'), { preset: 'standard' })
       registry.register(makeTool('extra'), { preset: 'full' })
@@ -101,7 +101,7 @@ describe('ToolRegistry', () => {
 
   describe('#given tools with categories', () => {
     it('#then getByCategory() filters correctly', () => {
-      const registry = createToolRegistry()
+      const registry = new ToolRegistry()
       registry.register(makeTool('read'), { category: 'filesystem' })
       registry.register(makeTool('write'), { category: 'filesystem' })
       registry.register(makeTool('bash'), { category: 'shell' })
@@ -115,7 +115,7 @@ describe('ToolRegistry', () => {
 
   describe('#given builtin and non-builtin tools', () => {
     it('#then getBuiltin() returns only builtin', () => {
-      const registry = createToolRegistry()
+      const registry = new ToolRegistry()
       registry.register(makeTool('read'), { builtin: true })
       registry.register(makeTool('custom'), { builtin: false })
 
@@ -127,7 +127,7 @@ describe('ToolRegistry', () => {
 
   describe('#when filterByNames() is called', () => {
     it('#then returns only named tools', () => {
-      const registry = createToolRegistry()
+      const registry = new ToolRegistry()
       registry.register(makeTool('a'))
       registry.register(makeTool('b'))
       registry.register(makeTool('c'))
@@ -139,7 +139,7 @@ describe('ToolRegistry', () => {
 
   describe('#when excludeByNames() is called', () => {
     it('#then excludes named tools', () => {
-      const registry = createToolRegistry()
+      const registry = new ToolRegistry()
       registry.register(makeTool('a'))
       registry.register(makeTool('b'))
       registry.register(makeTool('c'))
@@ -152,7 +152,7 @@ describe('ToolRegistry', () => {
 
   describe('#when clear() is called', () => {
     it('#then registry is empty', () => {
-      const registry = createToolRegistry()
+      const registry = new ToolRegistry()
       registry.register(makeTool('a'))
       registry.register(makeTool('b'))
       expect(registry.size).toBe(2)

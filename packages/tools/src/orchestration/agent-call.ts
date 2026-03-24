@@ -25,7 +25,7 @@ export type CallAgent = (
 }>
 
 
-export function createCallAgent(
+export function createAgentCall(
   _projectRoot: string,
   call: CallAgent
 ): AgentTool<CallAgentArgs> {

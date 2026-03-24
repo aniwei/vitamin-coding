@@ -1,4 +1,6 @@
 // 工具注册表 — 注册、查询、预设过滤
+import { createBinaryToolExecutorRegistry, type BinaryToolExecutorRegistry } from './binary/binary-executor-registry'
+import { registerBuiltinTools, type RegisterBuiltinOptions } from './register-builtin'
 import type { AgentTool } from '@vitamin/agent'
 import type { 
   RegisteredTool, 
@@ -6,7 +8,7 @@ import type {
   ToolPreset, 
   ToolRegistrationOptions 
 } from './types'
-import { registerBuiltinTools, type RegisterBuiltinOptions } from './register-builtin'
+
 
 
 // 预设包含关系 minimal ⊂ standard ⊂ full
@@ -22,10 +24,22 @@ type AgentToolTuple<T extends readonly unknown[]> = T & {
 
 export class ToolRegistry {
   private readonly tools = new Map<string, RegisteredTool>()
+  private binaryToolExecutors: BinaryToolExecutorRegistry | null = null
 
   // 工具数量
   get size(): number {
     return this.tools.size
+  }
+
+  setBinaryToolExecutors(registry: BinaryToolExecutorRegistry): void {
+    this.binaryToolExecutors = registry
+  }
+
+  getBinaryToolExecutors(): BinaryToolExecutorRegistry {
+    if (!this.binaryToolExecutors) {
+      throw new Error('BinaryToolExecutorRegistry is not set in ToolRegistry')
+    }
+    return this.binaryToolExecutors
   }
 
   // 注册工具
@@ -127,8 +141,15 @@ export const createToolRegistry = (
   options: RegisterBuiltinOptions
 ): ToolRegistry => {
   const registry = new ToolRegistry()
-
-  registerBuiltinTools(registry, projectRoot, options)
+  
+  const binaryRegistry = createBinaryToolExecutorRegistry(projectRoot)
+  registry.setBinaryToolExecutors(binaryRegistry)
+  
+  registerBuiltinTools(
+    registry, 
+    projectRoot, 
+    options
+  )
 
   return registry
 }

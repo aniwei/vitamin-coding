@@ -17,14 +17,25 @@ import {
   createPerformWork, 
   type PerformWork 
 } from './orchestration/perform-work'
+import {
+  createAgentCall,
+  type CallAgent,
+} from './orchestration/agent-call'
 
 
+// LSP
+// import { createLspDefinition } from './lsp/definition'
+// import { createLspReferences } from './lsp/references'
+// import { createLspSymbols } from './lsp/symbols'
+// import { createLspDiagnostics } from './lsp/diagnostics'
+// import { createLspPrepareRename, createLspRename } from './lsp/rename'
 
 import type { ToolRegistry } from './tool-registry'
 
 export interface RegisterBuiltinOptions {
   dispatchTask: TaskDispatch
   performWork: PerformWork
+  callAgent: CallAgent
 }
 
 // 注册所有内置工具 (minimal + standard + full 预设)
@@ -50,18 +61,32 @@ export function registerBuiltinTools(
   /// standard 
   // 搜索/导航工具
   registry.register([
-    createFind(projectRoot),
     createLs(projectRoot),
+    createFind(projectRoot),
+    createGrep(projectRoot, {
+      binaryToolExecutorRegistry: registry.getBinaryToolExecutors()
+    }),
   ], { preset: 'standard', category: 'search', builtin: true })
 
   // 任务调度工具
   registry.register([
-    createTaskDelegate(projectRoot, options.dispatchTask)
+    createTaskDelegate(projectRoot, options.dispatchTask),
   ], { preset: 'standard', category: 'orchestration', builtin: true })
+
+  // LSP 工具
+  // registry.register([
+  //   createLspDefinition(projectRoot),
+  //   createLspReferences(projectRoot),
+  //   createLspSymbols(projectRoot),
+  //   createLspDiagnostics(projectRoot),
+  //   createLspPrepareRename(projectRoot),
+  //   createLspRename(projectRoot),
+  // ], { preset: 'standard', category: 'lsp', builtin: true })
 
   /// full
   // 任务执行工具
   registry.register([
-    createPerformWork(projectRoot, options?.performWork)
+    createAgentCall(projectRoot, options.callAgent),
+    createPerformWork(projectRoot, options?.performWork),
   ], { preset: 'full', category: 'orchestration', builtin: true })
 }
