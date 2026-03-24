@@ -1,12 +1,12 @@
 import os from 'node:os'
 import { 
-  createWriteStream, 
-  chmodSync, 
-  readdirSync, 
-  statSync, 
-  renameSync, 
-  rmSync 
-} from 'node:fs'
+  chmod, 
+  readdir, 
+  stat, 
+  rename, 
+  rm 
+} from 'node:fs/promises'
+import { createWriteStream } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
@@ -77,7 +77,7 @@ async function tryExecute(toolPath: string): Promise<boolean> {
   }
 }
 
-async function resolveExecutablePath(toolName: string): Promise<string | null> {
+async function tryResolveExecutablePath(toolName: string): Promise<string | null> {
   const binaryExt = os.platform() === 'win32' ? '.exe' : ''
   const toolPath = getThirdPartyToolBinaryPath(toolName) + binaryExt
 
@@ -94,6 +94,58 @@ async function resolveExecutablePath(toolName: string): Promise<string | null> {
   }
 
   return null
+}
+
+async function tryDownloadAndExtract(
+  name: string,
+  repository: string,
+  version: string,
+  asset: string
+) {
+  const platform = os.platform()
+  const toolsDir = getThirdPartyToolPath()
+  const url = getDownloadUrl(repository, version, asset)
+  const archivePath = resolve(toolsDir, asset)
+
+  const ext = platform === 'win32' ? '.exe' : ''
+  const filename = name + ext
+  const binaryPath = resolve(toolsDir, filename)
+  const extractDir = resolve(toolsDir, `extract_${name}_${process.pid}_${Date.now()}`)
+  
+  try {
+    await downloadToFile(url, archivePath)
+    await mkdirp(extractDir)
+
+    if (asset.endsWith('.tar.gz')) {
+      const result = spawnSync('tar', ['xzf', archivePath, '-C', extractDir], { stdio: 'pipe' })
+
+      if (result.error || result.status !== 0) {
+        const errMsg = result.error?.message ?? result.stderr?.toString().trim() ?? 'unknown error'
+        throw new Error(`Failed to extract ${asset}: ${errMsg}`)
+      }
+
+    } else if (asset.endsWith('.zip')) {
+      await extractZip(archivePath, { dir: extractDir })
+    } else {
+      throw new Error(`Unsupported archive format: ${asset}`)
+    }
+
+    const found = await findBinaryRecursively(extractDir, filename)
+    if (!found) {
+      throw new Error(`Binary ${filename} not found in archive`)
+    }
+
+    await rename(found, binaryPath)
+
+    if (platform !== 'win32') {
+      await chmod(binaryPath, 0o755)
+    }
+  } finally {
+    await Promise.allSettled([
+      rm(archivePath, { force: true }),
+      rm(extractDir, { force: true })
+    ])
+  }
 }
 
 async function downloadToFile(url: string, dest: string): Promise<void> {
@@ -121,7 +173,7 @@ async function findBinaryRecursively(
 
     let entries: string[]
     try {
-      entries = readdirSync(currentDir, { encoding: 'utf-8' }) as string[]
+      entries = await readdir(currentDir, { encoding: 'utf-8' })
     } catch {
       continue
     }
@@ -130,10 +182,10 @@ async function findBinaryRecursively(
       const fullPath = join(currentDir, name)
 
       try {
-        const stat = statSync(fullPath)
-        if (stat.isDirectory()) {
+        const st = await stat(fullPath)
+        if (st.isDirectory()) {
           stack.push(fullPath)
-        } else if (stat.isFile() && name === binaryFileName) {
+        } else if (st.isFile() && name === binaryFileName) {
           return fullPath
         }
       } catch {
@@ -161,7 +213,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
   ): string | undefined
 
   async ensure(): Promise<string> {
-    const existing = await resolveExecutablePath(this.name)
+    const existing = await tryResolveExecutablePath(this.name)
     if (existing) return existing
 
     if (OFFLINE_MODE_ENABLED) {
@@ -194,51 +246,12 @@ export abstract class BinaryToolExecutor implements BinaryTool {
       throw new Error(`Unsupported platform/architecture: ${platform}/${architecture}`)
     }
 
-    const toolsDir = getThirdPartyToolPath()
-    await mkdirp(toolsDir)
-
-    const url = getDownloadUrl(this.repository, version, asset)
-    const archivePath = resolve(toolsDir, asset)
-    const binaryExt = platform === 'win32' ? '.exe' : ''
-    const binaryPath = resolve(toolsDir, this.name + binaryExt)
-
-    await downloadToFile(url, archivePath)
-
-    const extractDir = resolve(
-      toolsDir,
-      `extract_${this.name}_${process.pid}_${Date.now()}`
+    await tryDownloadAndExtract(
+      this.name,
+      this.repository,
+      version,
+      asset
     )
-
-    await mkdirp(extractDir)
-
-    try {
-      if (asset.endsWith('.tar.gz')) {
-        const result = spawnSync('tar', ['xzf', archivePath, '-C', extractDir], { stdio: 'pipe' })
-        if (result.error || result.status !== 0) {
-          const errMsg = result.error?.message ?? result.stderr?.toString().trim() ?? 'unknown error'
-          throw new Error(`Failed to extract ${asset}: ${errMsg}`)
-        }
-      } else if (asset.endsWith('.zip')) {
-        await extractZip(archivePath, { dir: extractDir })
-      } else {
-        throw new Error(`Unsupported archive format: ${asset}`)
-      }
-
-      const binaryFileName = this.name + binaryExt
-      const found = await findBinaryRecursively(extractDir, binaryFileName)
-      if (!found) {
-        throw new Error(`Binary ${binaryFileName} not found in archive`)
-      }
-
-      renameSync(found, binaryPath)
-
-      if (platform !== 'win32') {
-        chmodSync(binaryPath, 0o755)
-      }
-    } finally {
-      rmSync(archivePath, { force: true })
-      rmSync(extractDir, { recursive: true, force: true })
-    }
   }
 
   async execute(
