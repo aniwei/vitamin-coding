@@ -25,6 +25,16 @@ export type {
   StreamOptions,
 } from './types'
 
+export {
+  isClaudeFamily,
+  isGPTFamily,
+  isGeminiFamily,
+  getToolCallsByAssistantMessage,
+  hasToolCalls,
+  emptyUsage,
+  mergeUsage,
+} from './types'
+
 // EventStream
 export { EventStream, createEventStream } from './event-stream'
 

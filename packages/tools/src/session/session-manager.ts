@@ -32,7 +32,7 @@ export function createSessionManager(options: SessionManagerOptions): AgentTool<
     parameters: SessionManagerArgsSchema,
     visibility: 'always',
 
-    async execute({ args }): Promise<ToolResult> {
+    async execute({ params }): Promise<ToolResult> {
       if (!sessionManager) {
         return {
           content: [{ type: 'text', text: 'session-manager not available' }],
@@ -40,7 +40,7 @@ export function createSessionManager(options: SessionManagerOptions): AgentTool<
         }
       }
 
-      switch (args.action) {
+      switch (params.action) {
         case 'list': {
           const sessions = await sessionManager.list()
           const text = sessions.length === 0
@@ -49,26 +49,26 @@ export function createSessionManager(options: SessionManagerOptions): AgentTool<
           return { content: [{ type: 'text', text }] }
         }
         case 'create': {
-          const session = await sessionManager.create(args.title)
+          const session = await sessionManager.create(params.title)
           return { content: [{ type: 'text', text: `Session created: ${session.id}` }] }
         }
         case 'remove': {
-          if (!args.sessionId) {
+          if (!params.sessionId) {
             return { content: [{ type: 'text', text: 'sessionId required for remove' }], isError: true }
           }
-          const removed = await sessionManager.remove(args.sessionId)
+          const removed = await sessionManager.remove(params.sessionId)
           return {
-            content: [{ type: 'text', text: removed ? `Session ${args.sessionId} removed` : 'Session not found' }],
+            content: [{ type: 'text', text: removed ? `Session ${params.sessionId} removed` : 'Session not found' }],
             isError: !removed,
           }
         }
         case 'compact': {
-          if (!args.sessionId) {
+          if (!params.sessionId) {
             return { content: [{ type: 'text', text: 'sessionId required for compact' }], isError: true }
           }
-          const compacted = await sessionManager.compact(args.sessionId)
+          const compacted = await sessionManager.compact(params.sessionId)
           return {
-            content: [{ type: 'text', text: compacted ? `Session ${args.sessionId} compacted` : 'Compact failed' }],
+            content: [{ type: 'text', text: compacted ? `Session ${params.sessionId} compacted` : 'Compact failed' }],
             isError: !compacted,
           }
         }

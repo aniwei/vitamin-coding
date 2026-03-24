@@ -110,9 +110,9 @@ export function createEdit(projectRoot: string): AgentTool<EditArgs> {
     description: 'Edit a file by replacing exact text using oldContent/content.',
     parameters: EditArgsSchema,
     visibility: 'always',
-    execute: async ({ args, signal }): Promise<ToolResult> => {
-      const oldContent = args.oldContent
-      const newContent = args.newContent
+    execute: async ({ params, signal }): Promise<ToolResult> => {
+      const oldContent = params.oldContent
+      const newContent = params.newContent
 
       if (oldContent === undefined) {
         throw new Error('Missing oldContent')
@@ -122,15 +122,15 @@ export function createEdit(projectRoot: string): AgentTool<EditArgs> {
         throw new Error('Missing content')
       }
 
-      const resolvedPath = resolve(projectRoot, args.path)
+      const resolvedPath = resolve(projectRoot, params.path)
       const normalizedPath = normalizePath(resolvedPath)
 
       if (!await exists(normalizedPath)) {
-        throw new Error(`File not found: ${args.path}`)
+        throw new Error(`File not found: ${params.path}`)
       }
 
       if (!await isFile(normalizedPath)) {
-        throw new Error(`Not a file: ${args.path}`)
+        throw new Error(`Not a file: ${params.path}`)
       }
 
       const raw = await readFile(normalizedPath, 'utf-8')
@@ -162,7 +162,7 @@ export function createEdit(projectRoot: string): AgentTool<EditArgs> {
       const fuzzyMatchResult = fuzzyMatch(normalizedContent, normalizedOldContent)
 
       if (!fuzzyMatchResult.found) {
-        throw new Error(`Could not find the exact text in ${args.path}. The old text must match exactly including all whitespace and newlines.`)
+        throw new Error(`Could not find the exact text in ${params.path}. The old text must match exactly including all whitespace and newlines.`)
       }
 
       const fuzzyContent = normalizeUnicodePunctuation(normalizedContent)
@@ -170,7 +170,7 @@ export function createEdit(projectRoot: string): AgentTool<EditArgs> {
       const occurrences = fuzzyContent.split(fuzzyOldContent).length - 1
 
       if (occurrences > 1) {
-        throw new Error(`Found ${occurrences} occurrences of the text in ${args.path}. The text must be unique. Please provide more context to make it unique.`)
+        throw new Error(`Found ${occurrences} occurrences of the text in ${params.path}. The text must be unique. Please provide more context to make it unique.`)
       }
 
       const replacement = fuzzyMatchResult.contentForReplacement
@@ -179,7 +179,7 @@ export function createEdit(projectRoot: string): AgentTool<EditArgs> {
         + replacement.substring(fuzzyMatchResult.index + fuzzyMatchResult.matchLength)
 
       if (replacement === content) {
-        throw new Error(`No changes made to ${args.path}. The replacement produced identical content. This might indicate an issue with special characters or the text not existing as expected.`)
+        throw new Error(`No changes made to ${params.path}. The replacement produced identical content. This might indicate an issue with special characters or the text not existing as expected.`)
       }
 
       const finalContent = bom + (
@@ -191,7 +191,7 @@ export function createEdit(projectRoot: string): AgentTool<EditArgs> {
       await writeFile(normalizedPath, finalContent)
 
       return {
-        content: [{ type: "text", text: `Successfully replaced text in ${args.path}.` }],
+        content: [{ type: "text", text: `Successfully replaced text in ${params.path}.` }],
         details: { diff:  diff(replacement, content) }
       }
     }

@@ -71,20 +71,20 @@ export interface TextDocumentEdit {
 }
 
 export interface CreateFile {
-  kind: "create"
+  kind: 'create'
   uri: string
   options?: { overwrite?: boolean; ignoreIfExists?: boolean }
 }
 
 export interface RenameFile {
-  kind: "rename"
+  kind: 'rename'
   oldUri: string
   newUri: string
   options?: { overwrite?: boolean; ignoreIfExists?: boolean }
 }
 
 export interface DeleteFile {
-  kind: "delete"
+  kind: 'delete'
   uri: string
   options?: { recursive?: boolean; ignoreIfNotExists?: boolean }
 }
@@ -110,9 +110,9 @@ export interface ServerLookupInfo {
 }
 
 export type ServerLookupResult =
-  | { status: "found"; server: ResolvedServer }
-  | { status: "not_configured"; extension: string; availableServers: string[] }
-  | { status: "not_installed"; server: ServerLookupInfo; installHint: string }
+  | { status: 'found'; server: ResolvedServer }
+  | { status: 'not_configured'; extension: string; availableServers: string[] }
+  | { status: 'not_installed'; server: ServerLookupInfo; installHint: string }
 
 export interface ResolvedServer {
   id: string

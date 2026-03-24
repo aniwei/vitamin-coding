@@ -17,7 +17,7 @@ import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 // 参数 schema
 const BashArgsSchema = z.object({
-  command: z.string().describe('要执行的 shell 命令'),
+  command: z.string().describe('Shell command to execute'),
   cwd: z.string().optional().describe('工作目录（相对于项目根目录）'),
   timeout: z.number().int().min(1000).optional().describe('超时时间（毫秒），默认 30000'),
   onProgress: z.function().describe('命令执行进度回调，接收输出 chunk')
@@ -38,9 +38,9 @@ export function createBash(
     parameters: BashArgsSchema,
     visibility: 'always',
 
-    async execute({ args, signal }): Promise<ToolResult> {
-      const cwd = args.cwd ?? projectRoot
-      const timeout = args.timeout ?? TOOLS_EXECUTE_TIMEOUT
+    async execute({ params, signal }): Promise<ToolResult> {
+      const cwd = params.cwd ?? projectRoot
+      const timeout = params.timeout ?? TOOLS_EXECUTE_TIMEOUT
       
       const maxOutputBytes = TOOLS_MAX_OUTPUT_BYTES * 2
       let output: Buffer[] = []
@@ -49,7 +49,7 @@ export function createBash(
       let outputPath: string | undefined
       let outputStream: WriteStream | undefined
 
-      const result = await spawn('sh', ['-c', args.command], {
+      const result = await spawn('sh', ['-c', params.command], {
         timeout,
         signal,
         cwd,
@@ -82,7 +82,6 @@ export function createBash(
               outputBytes -= removed.byteLength
             }
           }
-
 
           onProgress?.({
             content: [{ type: 'text', text: truncation.content || '' }],

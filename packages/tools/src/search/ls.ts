@@ -24,38 +24,32 @@ const LsArgsSchema = z.object({
 
 type LsArgs = z.infer<typeof LsArgsSchema>
 
-interface LsToolOptions {
-  excludedDirs?: Set<string>,
-}
-
-export function createLs(projectRoot: string, _options: LsToolOptions = {
-  excludedDirs: new Set(['node_modules', '.git', '.turbo']),
-}): AgentTool<LsArgs> {
+export function createLs(projectRoot: string): AgentTool<LsArgs> {
   return {
     name: 'ls',
     description: 'List directory contents. Can optionally show subdirectory structure recursively.',
     parameters: LsArgsSchema,
     visibility: 'always',
 
-    async execute({ args }): Promise<ToolResult> {
-      const targetDir = resolve(projectRoot, args.path)
+    async execute({ params }): Promise<ToolResult> {
+      const targetDir = resolve(projectRoot, params.path)
       const normaizedTargetDir = normalizePath(targetDir)
-      const limit = args.limit ?? TOOLS_LS_MAX_ENTRIES
+      const limit = params.limit ?? TOOLS_LS_MAX_ENTRIES
 
       if (!await exists(normaizedTargetDir)) {
-        throw new Error(`Directory not found: ${args.path}`)
+        throw new Error(`Directory not found: ${params.path}`)
       }
 
       if (!await isDirectory(normaizedTargetDir)) {
-        throw new Error(`Not a directory: ${args.path}`)
+        throw new Error(`Not a directory: ${params.path}`)
       }
 
-      return await listDir(normaizedTargetDir, limit)
+      return await ls(normaizedTargetDir, limit)
     },
   }
 }
 
-async function listDir(
+async function ls(
   dir: string,
   limit: number
 ): Promise<ToolResult> {
@@ -115,6 +109,6 @@ async function listDir(
 
   return {
     content: [{ type: 'text', text: output }],
-    details: Object.keys(details).length > 0 ? details : undefined,
+    details
   }
 }

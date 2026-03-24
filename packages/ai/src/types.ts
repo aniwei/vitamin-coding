@@ -5,15 +5,15 @@ type Timestamp = number // Unix 时间戳（毫秒）
 
 // 已知 API 协议类型
 export type KnownApi =
-	| "openai-completions"
-	| "openai-responses"
-	| "azure-openai-responses"
-	| "openai-codex-responses"
-	| "anthropic-messages"
-	| "bedrock-converse-stream"
-	| "google-generative-ai"
-	| "google-gemini-cli"
-	| "google-vertex";
+	| 'openai-completions'
+	| 'openai-responses'
+	| 'azure-openai-responses'
+	| 'openai-codex-responses'
+	| 'anthropic-messages'
+	| 'bedrock-converse-stream'
+	| 'google-generative-ai'
+	| 'google-gemini-cli'
+	| 'google-vertex"'
 
 export type Api = KnownApi | (string & {});
 
@@ -147,8 +147,8 @@ export type StreamEvent =
 	| { type: 'tool_call_start'; index: number; partial: AssistantMessage }
 	| { type: 'tool_call_delta'; index: number; delta: string; partial: AssistantMessage }
 	| { type: 'tool_call_end'; index: number; toolCall: ToolCall; partial: AssistantMessage }
-	| { type: 'done'; reason: Extract<StopReason, "stop" | "length" | "tool_use">; message: AssistantMessage }
-	| { type: 'error'; reason: Extract<StopReason, "aborted" | "error">; error: AssistantMessage };
+	| { type: 'done'; reason: Extract<StopReason, 'stop' | 'length' | 'tool_use'>; message: AssistantMessage }
+	| { type: 'error'; reason: Extract<StopReason, 'aborted' | 'error'>; error: AssistantMessage };
 
 // Zod schema 类型占位（避免直接依赖 zod）
 export interface ZodType<T = unknown> {
@@ -229,3 +229,46 @@ export interface OAuth {
 }
 
 export type OAuthFactory = () => OAuth
+
+// 用于辅助判断模型家族
+export function isGPTFamily(model: Model): boolean {
+  return (
+    model.provider === 'openai' ||
+    model.api === 'openai-completions' ||
+    model.api === 'openai-responses'
+  )
+}
+
+export function isClaudeFamily(model: Model): boolean {
+  return model.provider === 'anthropic' || model.api === 'anthropic-messages'
+}
+
+export function isGeminiFamily(model: Model): boolean {
+  return model.provider === 'google' || model.api === 'google-generative-ai'
+}
+
+// 从 AssistantMessage 提取工具调用
+export function getToolCallsByAssistantMessage(message: AssistantMessage): ToolCall[] {
+  return message.content.filter((c): c is ToolCall => c.type === 'tool_call')
+}
+
+// 检查 AssistantMessage 是否包含工具调用
+export function hasToolCalls(message: AssistantMessage): boolean {
+  return message.content.some(c => c.type === 'tool_call')
+}
+
+
+// 创建空的 Usage
+export function emptyUsage(): Usage {
+  return { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 }
+}
+
+// 合并两个 Usage
+export function mergeUsage(a: Usage, b: Usage): Usage {
+  return {
+    inputTokens: a.inputTokens + b.inputTokens,
+    outputTokens: a.outputTokens + b.outputTokens,
+    cacheReadTokens: a.cacheReadTokens + b.cacheReadTokens,
+    cacheWriteTokens: a.cacheWriteTokens + b.cacheWriteTokens,
+  }
+}

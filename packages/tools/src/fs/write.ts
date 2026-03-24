@@ -25,11 +25,11 @@ export function createWrite(projectRoot: string): AgentTool<WriteArgs> {
     parameters: WriteArgsSchema,
     visibility: 'always',
 
-    async execute({ args, signal }): Promise<ToolResult> {
-      const resolvedPath = resolve(projectRoot, args.path)
+    async execute({ params, signal }): Promise<ToolResult> {
+      const resolvedPath = resolve(projectRoot, params.path)
       const normalizedPath = normalizePath(resolvedPath)
 
-      if (args.createDirectories !== false) {
+      if (params.createDirectories !== false) {
         await mkdirp(dirname(normalizedPath))
       }
 
@@ -37,10 +37,10 @@ export function createWrite(projectRoot: string): AgentTool<WriteArgs> {
         throw new Error('Write operation was aborted')
       }
 
-      await writeFile(normalizedPath, args.content, 'utf-8')
+      await writeFile(normalizedPath, params.content, 'utf-8')
 
       return {
-        content: [{ type: 'text', text: `Successfully wrote to ${args.path}` }],
+        content: [{ type: 'text', text: `Successfully wrote to ${params.path}` }],
       }
     },
   }

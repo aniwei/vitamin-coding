@@ -125,20 +125,20 @@ export interface AgentLoopContext {
 }
 
 // 工具调用上下文（参考 Hono Context 模式）
-export interface ToolCallContext<Args = unknown> {
+export interface ToolCallContext<Params = unknown> {
   id: string
-  args: Args
+  params: Params
   signal: AbortSignal
   onUpdate?: (update: string) => void
 }
 
 // Agent 工具（封装 ToolDefinition + execute）
-export interface AgentTool<Args = unknown> {
+export interface AgentTool<Params = unknown> {
   name: string
   description: string
-  parameters: ZodType<Args>
+  parameters: ZodType<Params>
   visibility?: 'always' | 'when-enabled' | 'when-requested'
-  execute: (ctx: ToolCallContext<Args>) => Promise<ToolResult>
+  execute: (ctx: ToolCallContext<Params>) => Promise<ToolResult>
 }
 
 // 工具执行结果

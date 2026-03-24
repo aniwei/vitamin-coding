@@ -26,17 +26,17 @@ export function createRead(
     parameters: ReadArgsSchema,
     visibility: 'always',
 
-    async execute({ args }): Promise<ToolResult> {
-      const resolvedPath = resolve(projectRoot, args.path)
+    async execute({ params }): Promise<ToolResult> {
+      const resolvedPath = resolve(projectRoot, params.path)
       const normalizedPath = normalizePath(resolvedPath)
 
       // 检查文件是否存在
       if (!await exists(normalizedPath)) {
-        throw new Error(`File not found: ${args.path}`)
+        throw new Error(`File not found: ${params.path}`)
       }
 
       if (!await isFile(normalizedPath)) {
-        throw new Error(`Not a file: ${args.path}`)
+        throw new Error(`Not a file: ${params.path}`)
       }
 
       const mt = await mime(normalizedPath)
@@ -44,15 +44,15 @@ export function createRead(
 
       // 图片文件处理
       if (isSuppotedImage) {
-        return readImage(normalizedPath, args.path, mt)
+        return readImage(normalizedPath, params.path, mt)
       } 
 
       // 文本文件处理
       return readTextWithRange(
         normalizedPath, 
-        args.path, 
-        args.limit, 
-        args.offset
+        params.path, 
+        params.limit, 
+        params.offset
       )
     },
   }
