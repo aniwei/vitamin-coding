@@ -4,7 +4,7 @@ import { z } from 'zod'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const TaskGetArgsSchema = z.object({
-  id: z.string().describe('任务 ID'),
+  id: z.string().describe('Task ID to retrieve'),
 })
 
 type TaskGetArgs = z.infer<typeof TaskGetArgsSchema>
@@ -14,7 +14,7 @@ export type GetTask = (id: string) => Promise<{
   status: string
   output?: string
   error?: string
-} | undefined>
+}>
 
 export interface TaskGetOptions {
   get?: GetTask
@@ -28,28 +28,21 @@ export function createTaskGet(
 
   return {
     name: 'task_get',
-    description: '获取任务的当前状态和结果',
+    description: 'Get the current status and result of a task by its ID.',
     parameters: TaskGetArgsSchema,
     visibility: 'always',
 
-    async execute({ args }): Promise<ToolResult> {
+    async execute({ params }): Promise<ToolResult> {
       if (!get) {
         throw new Error('get function is not provided in options')
       }
 
-      const task = await get(args.id)
+      const task = await get(params.id)
       if (!task) {
-        return { content: [{ type: 'text', text: `Task ${args.id} not found` }], isError: true }
+        return { content: [{ type: 'text', text: `Task ${params.id} not found` }], isError: true }
       }
 
-      const text = [
-        `Task: ${task.id}`,
-        `Status: ${task.status}`,
-        task.output ? `Output:\n${task.output}` : '',
-        task.error ? `Error:\n${task.error}` : '',
-      ].filter(Boolean).join('\n')
-
-      return { content: [{ type: 'text', text }] }
+      throw new Error(task.error ?? `Task ${params.id} status: ${task.status}\nOutput: ${task.output ?? 'N/A'}`)  
     },
   }
 }

@@ -1,11 +1,10 @@
-// task-update 工具 — 更新任务状态
 import { z } from 'zod'
 
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const TaskUpdateArgsSchema = z.object({
-  id: z.string().describe('任务 ID'),
-  action: z.enum(['cancel', 'retry']).describe('执行的操作'),
+  id: z.string().describe('Task ID to update'),
+  action: z.enum(['cancel', 'retry']).describe('Action to perform'),
 })
 
 type TaskUpdateArgs = z.infer<typeof TaskUpdateArgsSchema>
@@ -27,21 +26,25 @@ export function createTaskUpdate(
 
   return {
     name: 'task_update',
-    description: '更新任务状态：取消或重试任务。',
+    description: 'Update task status: cancel or retry a task.',
     parameters: TaskUpdateArgsSchema,
     visibility: 'always',
 
-    async execute({ args }): Promise<ToolResult> {
+    async execute({ params }): Promise<ToolResult> {
       if (!update) {
         return { content: [{ type: 'text', text: 'task_update not available' }], isError: true }
       }
 
-      const result = await update(args.id, args.action)
+      const result = await update(params.id, params.action)
 
-      return {
-        content: [{ type: 'text', text: result.message }],
-        isError: !result.success,
+      if (result.success) {
+        return {
+          content: [{ type: 'text', text: result.message }],
+          isError: !result.success,
+        }
       }
+
+      throw new Error(result.message || 'Unknown error updating task')
     },
   }
 }

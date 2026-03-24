@@ -1,5 +1,5 @@
 // Agent 双层循环 — 外循环(FollowUp) + 内循环(工具+Steering)
-import { getToolCalls, hasToolCalls } from '@vitamin/ai'
+import { getToolCallsByAssistantMessage, hasToolCalls } from '@vitamin/ai'
 import { invariant } from '@vitamin/invariant'
 
 import { AbortError, MaxToolTurnsError } from './errors'
@@ -164,7 +164,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
           })
           currentStatus = 'tool_executing'
 
-          const toolCalls = getToolCalls(assistantMessage)
+          const toolCalls = getToolCallsByAssistantMessage(assistantMessage)
 
           for (const toolCall of toolCalls) {
             if (signal.aborted) throw new AbortError()

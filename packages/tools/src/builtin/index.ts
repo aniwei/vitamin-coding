@@ -1,9 +1,0 @@
-// 内置工具桶导出
-export { createRead } from '../fs/read'
-export { createWrite } from '../fs/write'
-export { createEdit } from '../fs/edit'
-export { createBash } from '../shell/bash'
-export { createGrep } from '../search/grep'
-export { createGlob } from '../search/glob'
-export { createFind } from '../search/find'
-export { createLs } from '../search/ls'

@@ -18,6 +18,7 @@ export interface BinaryToolExecutionOptions {
   cwd?: string
   env?: NodeJS.ProcessEnv
   timeout?: number
+  stdio?: 'inherit' | 'pipe' | 'ignore'
 }
 
 export interface BinaryToolExecutionResult {
@@ -34,6 +35,63 @@ export interface BinaryTool {
   ): Promise<BinaryToolExecutionResult>
 }
 
+async function getLatestVersionFromGitHub(
+  repository: string,
+  timeout: number = TOOLS_BINARY_DOWNLOAD_TIMEOUT
+): Promise<string> {
+  const response = await fetch(`https://api.github.com/repos/${repository}/releases/latest`, {
+    headers: { 
+      'User-Agent': `vitamin-agent` 
+    },
+    signal: AbortSignal.timeout(timeout),
+  })
+  
+  if (!response.ok) {
+    throw new Error(`GitHub API error: ${response.status}`)
+  }
+
+  const data = (await response.json()) as { tag_name: string }
+  return data.tag_name.replace(/^v/, "")
+}
+
+function getDownloadUrl(repository: string, version: string, asset: string): string | null {
+  return `https://github.com/${repository}/releases/download/${version}/${asset}`
+}
+
+async function tryExecute(toolPath: string): Promise<boolean> {
+  try {
+    const ps = spawn(toolPath, ['--version'], { stdio: 'pipe' }) 
+    return new Promise(resolve => {
+      ps.on('error', () => resolve(false))
+      ps.on('close', code => resolve(code === 0))
+    })
+  } catch {
+    return false
+  }
+}
+
+async function resolveBinaryExecutablePath(toolName: string): Promise<string | null> {
+  let toolPath = getThirdPartyToolBinaryPath(toolName)
+
+  if (os.platform() === 'win32') {
+    toolPath += '.exe'
+  }
+
+  if (await exists(toolPath)) {
+    return toolPath
+  }
+
+  if (await tryExecute(toolName)) {
+    return toolName
+  }
+
+  return null
+} 
+
+async function extract(archivePath: string, options: { dir: string }): Promise<void> {
+
+}
+
 export abstract class BinaryToolExecutor implements BinaryTool {
   public abstract name: string
   public abstract repository: string
@@ -45,76 +103,18 @@ export abstract class BinaryToolExecutor implements BinaryTool {
     this.projectRoot = projectRoot
   }
 
-  protected abstract getAsset(
+  protected abstract resolveAsset(
     version: string, 
     platform: string, 
     arch: string
-  ): string | null
-
-  protected async getLatestVersion(): Promise<string> {
-    const response = await fetch(`https://api.github.com/repos/${this.repository}/releases/latest`, {
-      headers: { 
-        'User-Agent': `vitamin-agent` 
-      },
-      signal: AbortSignal.timeout(TOOLS_BINARY_DOWNLOAD_TIMEOUT),
-    })
-    
-    if (!response.ok) {
-      throw new Error(`GitHub API error: ${response.status}`)
-    }
-  
-    const data = (await response.json()) as { tag_name: string }
-    return data.tag_name.replace(/^v/, "")
-  }
-
-  protected getDownloadUrl(
-    version: string, 
-    platform: string, 
-    arch: string
-  ): string | null {
-    return `https://github.com/${this.repository}/releases/download/${version}/${this.getAsset(version, platform, arch)}`
-  }
-
-  protected async tryExecute(toolPath: string): Promise<boolean> {
-    try {
-      const ps = spawn(toolPath, ['--version'], { stdio: 'pipe' }) 
-      return new Promise((resolve) => {
-        ps.on('error', () => resolve(false))
-        ps.on('close', code => resolve(code === 0))
-      })
-    } catch {
-      return false
-    }
-  }
-
-  protected async resolvePath(): Promise<string | null> {
-    let toolPath = getThirdPartyToolBinaryPath(this.name)
-
-    if (os.platform() === 'win32') {
-      toolPath += '.exe'
-    }
-
-    if (await exists(toolPath)) {
-      return toolPath
-    }
-
-    if (await this.tryExecute(this.name)) {
-      return this.name
-    }
-
-    return null
-  } 
-
-  protected async extract(_dir: string, _options: { dir: string }): Promise<void> {
-
-  }
+  ): string | undefined
 
   protected async download(): Promise<void> {
     const platform = os.platform()
     const arch = os.arch()
 
-    const version = await this.getLatestVersion()
-    const asset = this.getAsset(version, platform, arch)
+    const version = await getLatestVersionFromGitHub(this.repository)
+    const asset = this.resolveAsset(version, platform, arch)
     if (!asset) {
       throw new Error(`Unsupported platform/architecture: ${platform}/${arch}`)
     }
@@ -122,7 +122,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
     const dest = resolve(getThirdPartyToolPath())
     await mkdirp(dest)
 
-    const url = this.getDownloadUrl(version, platform, arch)
+    const url = getDownloadUrl(this.repository, version, asset)
     if (!url) {
       throw new Error(`No download URL for platform/architecture: ${platform}/${arch}`)
     }
@@ -140,9 +140,9 @@ export abstract class BinaryToolExecutor implements BinaryTool {
     }
 
     const fileStream = createWriteStream(dest)
-    await finished(Readable.fromWeb(response.body as any).pipe(fileStream))
 
-    await this.extract(dest, { dir: extractDir })
+    await finished(Readable.fromWeb(response.body as any).pipe(fileStream))
+    await extract(dest, { dir: extractDir })
   }
 
   async execute(
@@ -150,7 +150,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
     options?: BinaryToolExecutionOptions
   ): Promise<BinaryToolExecutionResult> {
     return new Promise(async (resolve, reject) => {
-      const executablePath = await this.resolvePath()
+      const executablePath = await resolveBinaryExecutablePath(this.name)
       if (!executablePath) {
         if (!this.downloadTask) {
           this.downloadTask = this.download()
@@ -163,12 +163,11 @@ export abstract class BinaryToolExecutor implements BinaryTool {
       const ps = spawn(executablePath, args, {
         cwd: options?.cwd,
         env: options?.env,
-        timeout: options?.timeout,
+        timeout: options?.timeout
       })
-  
       
-      let stdout: Buffer[] = []
-      let stderr: Buffer[] = []
+      const stdout: Buffer[] = []
+      const stderr: Buffer[] = []
       
       ps.stdout.on('data', data => stdout.push(data))
       ps.stderr.on('data', data => stderr.push(data))

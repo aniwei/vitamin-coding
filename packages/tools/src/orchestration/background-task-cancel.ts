@@ -1,43 +1,43 @@
-// background-cancel 工具 — 取消后台任务
 import { z } from 'zod'
-
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const BackgroundCancelArgsSchema = z.object({
-  taskId: z.string().describe('要取消的后台任务 ID'),
+  id: z.string().describe('Background task ID to cancel'),
 })
 
 type BackgroundCancelArgs = z.infer<typeof BackgroundCancelArgsSchema>
 
-export type CancelBackground = (taskId: string) => Promise<boolean>
+export type CancelBackground = (id: string) => Promise<{
+  success: boolean
+  error?: string
+}>
 
 export function createBackgroundCancelTool(
   cancel?: CancelBackground,
 ): AgentTool<BackgroundCancelArgs> {
   return {
     name: 'background_cancel',
-    description: '取消一个正在运行的后台任务。',
+    description: 'Cancel a running background task.',
     parameters: BackgroundCancelArgsSchema,
     visibility: 'always',
 
-    async execute({ args }): Promise<ToolResult> {
+    async execute({ params }): Promise<ToolResult> {
       if (!cancel) {
-        return {
-          content: [{ type: 'text', text: 'background-cancel not available' }],
-          isError: true,
-        }
+        throw new Error('cancel function is not provided in options')
       }
 
-      const cancelled = await cancel(args.taskId)
-      return {
-        content: [{
-          type: 'text',
-          text: cancelled
-            ? `Task ${args.taskId} cancelled successfully`
-            : `Failed to cancel task ${args.taskId} (may already be completed)`,
-        }],
-        isError: !cancelled,
-      }
+      const cancelled = await cancel(params.id)
+      if (cancelled.success) {
+        return {
+          content: [{
+            type: 'text',
+            text: `Task ${params.id} cancelled successfully`,
+          }],
+          isError: false,
+        }
+      } 
+
+      throw new Error(cancelled.error ?? `Failed to cancel task ${params.id}`)
     },
   }
 }

@@ -80,9 +80,7 @@ async function ls(
   }
 
   if (results.length === 0) {
-    return { 
-      content: [{ type: 'text', text: '(empty directory)' }]
-    }
+    throw new Error('Directory is empty')
   }
 
   const raw = results.join('\n')

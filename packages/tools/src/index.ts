@@ -8,7 +8,7 @@ export { validateToolArgs } from './tool-validator'
 export type { ValidationResult } from './tool-validator'
 
 
-export type { TaskDispatch, TaskDispatchResult } from './orchestration/task-delegate'
+export type { TaskDispatch } from './orchestration/task-delegate'
 
 export type { PerformWork } from './orchestration/perform-work'
 export type { GetBackgroundOutput } from './orchestration/background-task-output'

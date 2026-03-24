@@ -6,9 +6,8 @@ import {
 } from '@vitamin/shared'
 import { resolve } from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
-
+import { diff } from './diff'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
-import { diff } from 'node:util'
 
 // 参数 schema
 const EditArgsSchema = z.object({
@@ -39,7 +38,6 @@ const EditArgsSchema = z.object({
 export type EditArgs = z.infer<typeof EditArgsSchema>
 
 type LineEnding = '\r\n' | '\n'
-
 
 interface FuzzyMatch {
   found: boolean
@@ -98,13 +96,11 @@ export function fuzzyMatch(
 		matchLength: fuzzyOldContent.length,
 		usedFuzzyMatch: true,
 		contentForReplacement: fuzzyContent,
-	};
+	}
 }
 
 // 创建 edit 工具
 export function createEdit(projectRoot: string): AgentTool<EditArgs> {
-  
-
   return {
     name: 'edit',
     description: 'Edit a file by replacing exact text using oldContent/content.',
@@ -133,67 +129,87 @@ export function createEdit(projectRoot: string): AgentTool<EditArgs> {
         throw new Error(`Not a file: ${params.path}`)
       }
 
-      const raw = await readFile(normalizedPath, 'utf-8')
-
-      if (signal.aborted) {
-        throw new Error('Operation aborted')
-      }
-
-      const { bom, content: stripedContent } = raw.startsWith('\uFEFF') 
-        ? { bom: '\uFEFF', content: raw.slice(1) }
-        : { bom: '', content: raw }
-
-      const crlf = stripedContent.indexOf('\r\n')
-      const lf = stripedContent.indexOf('\n')
-
-      let lineEnding: LineEnding = '\n'
-      if (lf === -1) {
-        lineEnding = '\n'
-      } else if (crlf === -1) {
-        lineEnding = '\n'
-      } else {
-        lineEnding = crlf < lf ? '\r\n' : '\n'
-      }
-
-      const normalizedContent = normalizeLineEndings(stripedContent)
-      const normalizedOldContent = normalizeLineEndings(oldContent)
-      const normalizedNewContent = normalizeLineEndings(newContent)
-
-      const fuzzyMatchResult = fuzzyMatch(normalizedContent, normalizedOldContent)
-
-      if (!fuzzyMatchResult.found) {
-        throw new Error(`Could not find the exact text in ${params.path}. The old text must match exactly including all whitespace and newlines.`)
-      }
-
-      const fuzzyContent = normalizeUnicodePunctuation(normalizedContent)
-      const fuzzyOldContent = normalizeUnicodePunctuation(normalizedOldContent)
-      const occurrences = fuzzyContent.split(fuzzyOldContent).length - 1
-
-      if (occurrences > 1) {
-        throw new Error(`Found ${occurrences} occurrences of the text in ${params.path}. The text must be unique. Please provide more context to make it unique.`)
-      }
-
-      const replacement = fuzzyMatchResult.contentForReplacement
-      const content = replacement.substring(0, fuzzyMatchResult.index) 
-        + normalizedNewContent 
-        + replacement.substring(fuzzyMatchResult.index + fuzzyMatchResult.matchLength)
-
-      if (replacement === content) {
-        throw new Error(`No changes made to ${params.path}. The replacement produced identical content. This might indicate an issue with special characters or the text not existing as expected.`)
-      }
-
-      const finalContent = bom + (
-        lineEnding === '\r\n' 
-          ? content.replace(/\n/g, '\r\n') 
-          : content
+      return await edit(
+        normalizedPath,
+        oldContent,
+        newContent,
+        signal
       )
-
-      await writeFile(normalizedPath, finalContent)
-
-      return {
-        content: [{ type: "text", text: `Successfully replaced text in ${params.path}.` }],
-        details: { diff:  diff(replacement, content) }
-      }
     }
+  }
+}
+
+async function edit(
+  path: string,
+  oldContent: string,
+  newContent: string,
+  signal: AbortSignal
+): Promise<ToolResult> {
+  const raw = await readFile(path, 'utf-8')
+
+  if (signal.aborted) {
+    throw new Error('Operation aborted')
+  }
+
+  const { bom, content: stripedContent } = raw.startsWith('\uFEFF') 
+    ? { bom: '\uFEFF', content: raw.slice(1) }
+    : { bom: '', content: raw }
+
+  const crlf = stripedContent.indexOf('\r\n')
+  const lf = stripedContent.indexOf('\n')
+
+  let lineEnding: LineEnding = '\n'
+  if (lf === -1) {
+    lineEnding = '\n'
+  } else if (crlf === -1) {
+    lineEnding = '\n'
+  } else {
+    lineEnding = crlf < lf ? '\r\n' : '\n'
+  }
+
+  const normalizedContent = normalizeLineEndings(stripedContent)
+  const normalizedOldContent = normalizeLineEndings(oldContent)
+  const normalizedNewContent = normalizeLineEndings(newContent)
+
+  const fuzzyMatchResult = fuzzyMatch(normalizedContent, normalizedOldContent)
+
+  if (!fuzzyMatchResult.found) {
+    return {
+      content: [{ type: 'text', text: `Could not find the specified text in ${path}. No changes were made.` }],
+    }
+  }
+
+  const fuzzyContent = normalizeUnicodePunctuation(normalizedContent)
+  const fuzzyOldContent = normalizeUnicodePunctuation(normalizedOldContent)
+  const occurrences = fuzzyContent.split(fuzzyOldContent).length - 1
+
+  if (occurrences > 1) {
+    return {
+      content: [{ type: 'text', text: `Found ${occurrences} occurrences of the text in ${path}. The text must be unique. Please provide more context to make it unique.` }],
+    }
+  }
+
+  const replacement = fuzzyMatchResult.contentForReplacement
+  const content = replacement.substring(0, fuzzyMatchResult.index) 
+    + normalizedNewContent 
+    + replacement.substring(fuzzyMatchResult.index + fuzzyMatchResult.matchLength)
+
+  if (replacement === content) {
+    return {
+      content: [{ type: 'text', text: `No changes made to ${path}. The replacement produced identical content. This might indicate an issue with special characters or the text not existing as expected.` }],
+    }
+  }
+
+  const finalContent = bom + (
+    lineEnding === '\r\n' 
+      ? content.replace(/\n/g, '\r\n') 
+      : content
+  )
+
+  await writeFile(path, finalContent)
+
+  return {
+    content: [{ type: 'text', text: `Successfully replaced text in ${path}.` }],
+    details: { diff:  diff(replacement, content) }
   }
 }

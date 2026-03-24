@@ -5,6 +5,7 @@ import {
   TOOLS_MAX_OUTPUT_LINES 
 } from '@vitamin/env'
 import { 
+  createLogger,
   exists, 
   formatBytes, 
   isDirectory, 
@@ -15,6 +16,8 @@ import { join, relative, resolve } from 'node:path'
 import { glob } from 'node:fs/promises'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 import type { BinaryToolExecutorRegistry } from '../binary/binary-executor-registry'
+
+const logger = createLogger('@vitamin/tools:find')
 
 const FindArgsSchema = z.object({
   pattern: z.string().describe('File name pattern with optional wildcards (*, ?), e.g. "*.ts", "data-??.json"'),
@@ -55,165 +58,182 @@ export function createFind(
         throw new Error(`Search path is not a directory: ${params.path}`)
       }
 
-      if (typeof options.glob === 'function') {
-        const results = await options.glob(params.pattern, normalizedSearchDir, {
-          ignore: ['**/node_modules/**', '**/.git/**'],
-          limit,
-        })
+      return await find(
+        normalizedSearchDir, 
+        params.pattern, 
+        limit, 
+        options.glob, 
+        options.binaryExecutorRegistry
+      )
+    }
+  }
+}
 
-        if (results.length === 0) {
-          throw new Error('No files found matching pattern');
-        }
+async function prepareSearchArgs (
+  pattern: string,
+  normalizedSearchDir: string, 
+  limit: number
+) {
+  const args: string[] = [
+    '--glob',
+    '--color=never',
+    '--hidden',
+    '--max-results',
+    String(limit),
+  ]
 
-        // Relativize paths
-        const relativized = results.map((p) => {
-          if (p.startsWith(normalizedSearchDir)) {
-            return p.slice(normalizedSearchDir.length + 1)
-          }
+  const ignores = new Set<string>()
+  const root = join(normalizedSearchDir, '.gitignore')
+  if (await exists(root)) {
+    ignores.add(root)
+  }
 
-          return relative(normalizedSearchDir, p)
-        })
+  try {
+    for await (const file of await glob('**/.gitignore', {
+      cwd: normalizedSearchDir,
+    })) {
+      ignores.add(file)
+    }
+  } catch { }
 
-        const resultLimitReached = relativized.length >= limit
-        const rawOutput = relativized.join('\n')
-        const truncation = truncateHead(rawOutput, { 
-          maxLines: TOOLS_MAX_OUTPUT_LINES,
-          maxBytes: TOOLS_MAX_OUTPUT_BYTES,
-        })
+  for (const path of ignores) {
+    args.push('--ignore-file', path)
+  }
 
-        let resultOutput = truncation.content
-        const details: Record<string, unknown> = {}
-        const notices: string[] = []
+  args.push(pattern, normalizedSearchDir)
 
-        if (resultLimitReached) {
-          notices.push(`${limit} results limit reached`)
-          details.resultLimitReached = limit
-        }
+  return args
+}
 
-        if (truncation.truncated) {
-          notices.push(`${formatBytes(TOOLS_MAX_OUTPUT_BYTES)} limit reached`)
-          details.truncation = truncation
-        }
 
-        if (notices.length > 0) {
-          resultOutput += `\n\n(${notices.join('. ')})`
-        }
+async function find(
+  targetDir: string,
+  pattern: string,
+  limit: number,
+  glob?: Glob,
+  binaryExecutorRegistry?: BinaryToolExecutorRegistry
+) {
+  if (typeof glob === 'function') {
+    logger.debug('Using custom glob implementation for find tool')
 
-        return {
-          content: [{ type: 'text', text: resultOutput }],
-          details
-        }
-      } 
+    const results = await glob(pattern, targetDir, {
+      ignore: ['**/node_modules/**', '**/.git/**'],
+      limit,
+    })
 
-      const fd = options.binaryExecutorRegistry?.get('fd')
-      if (!fd) {
-        throw new Error('Find tool requires a glob implementation or fd binary available')
-      }
+    if (results.length === 0) {
+      throw new Error('No files found matching pattern');
+    }
 
-      // Build fd arguments
-      const args: string[] = [
-        '--glob',
-        '--color=never',
-        '--hidden',
-        '--max-results',
-        String(limit),
-      ]
+    const relativized = results.map(path => 
+      path.startsWith(targetDir) 
+        ? path.slice(targetDir.length + 1) 
+        : relative(targetDir, path)
+    )
 
-      const ignores = new Set<string>()
-      const root = join(normalizedSearchDir, '.gitignore')
-      if (await exists(root)) {
-        ignores.add(root)
-      }
+    const resultLimitReached = relativized.length >= limit
+    const raw = relativized.join('\n')
+    const truncation = truncateHead(raw, { 
+      maxLines: TOOLS_MAX_OUTPUT_LINES,
+      maxBytes: TOOLS_MAX_OUTPUT_BYTES,
+    })
 
-      try {
-        for await (const file of await glob('**/.gitignore', {
-          cwd: normalizedSearchDir,
-        })) {
-          ignores.add(file)
-        }
-      } catch { }
+    let content = truncation.content
+    const details: Record<string, unknown> = {}
+    const notices: string[] = []
 
-      for (const gitignorePath of ignores) {
-        args.push('--ignore-file', gitignorePath)
-      }
+    if (resultLimitReached) {
+      notices.push(`${limit} results limit reached`)
+      details.resultLimitReached = limit
+    }
 
-      args.push(params.pattern, normalizedSearchDir)
+    if (truncation.truncated) {
+      notices.push(`${formatBytes(TOOLS_MAX_OUTPUT_BYTES)} limit reached`)
+      details.truncation = truncation
+    }
 
-      const result = await fd.execute(args, {
-        maxBuffer: 10 * 1024 * 1024,
-      })
+    if (notices.length > 0) {
+      content += `\n\n(${notices.join('. ')})`
+    }
 
-      if (result.error) {
-        throw result.error
-      }
+    return {
+      content: [{ type: 'text', text: content }],
+      details
+    }
+  } 
 
-      const output = result.stdout?.trim() || ''
+  logger.debug('No custom glob provided, using fd binary for find tool')
 
-      if (result.status !== 0) {
-        const message = result.stderr?.trim() || `fd exited with code ${result.status}`
-        if (!output) {
-          throw new Error(message)
-        }
-      }
+  const fd = await binaryExecutorRegistry?.ensure('fd')
+  if (!fd) {
+    throw new Error('Find tool requires a glob implementation or fd binary available')
+  }
 
-      if (!output) {
-        return {
-          content: [{ type: 'text', text: 'No files found matching pattern' }],
-        }
-      }
+  const args = await prepareSearchArgs(pattern, targetDir, limit)
+  const result = await fd.execute(args, {
+    // TODO: add max buffer
+  })
 
-      const lines = output.split('\n')
-      const relativized: string[] = []
+  if (result.exitCode !== 0) {
+    throw new Error(result.stderr?.trim() || `fd exited with code ${result.exitCode}`)
+  }
 
-      for (const rawLine of lines) {
-        const line = rawLine.replace(/\r$/, '').trim()
-        if (!line) continue
+  const output = result.stdout?.trim() || ''
 
-        const hadTrailingSlash = line.endsWith('/') || line.endsWith('\\')
-        let relativePath = line
+  if (!output) {
+    throw new Error('No files found matching pattern')
+  }
 
-        if (line.startsWith(normalizedSearchDir)) {
-          relativePath = line.slice(normalizedSearchDir.length + 1)
-        } else {
-          relativePath = relative(normalizedSearchDir, line)
-        }
+  const lines = output.split('\n')
+  const relativized: string[] = []
 
-        if (hadTrailingSlash && !relativePath.endsWith('/')) {
-          relativePath += '/'
-        }
+  for (const raw of lines) {
+    const line = raw.replace(/\r$/, '').trim()
+    if (!line) continue
 
-        relativized.push(relativePath)
-      }
+    const hadTrailingSlash = line.endsWith('/') || line.endsWith('\\')
+    let relativePath = line
 
-      const resultLimitReached = relativized.length >= limit
-      const rawOutput = relativized.join('\n')
-      const truncation = truncateHead(rawOutput, { 
-        maxLines: TOOLS_MAX_OUTPUT_LINES,
-        maxBytes: TOOLS_MAX_OUTPUT_BYTES,
-      })
+    if (line.startsWith(targetDir)) {
+      relativePath = line.slice(targetDir.length + 1)
+    } else {
+      relativePath = relative(targetDir, line)
+    }
 
-      let resultOutput = truncation.content
-      const details: Record<string, unknown> = {}
-      const notices: string[] = [];
+    if (hadTrailingSlash && !relativePath.endsWith('/')) {
+      relativePath += '/'
+    }
 
-      if (resultLimitReached) {
-        notices.push(`${limit} results limit reached. Use limit=${limit * 2} for more, or refine pattern`)
-        details.resultLimitReached = limit
-      }
+    relativized.push(relativePath)
+  }
 
-      if (truncation.truncated) {
-        notices.push(`${formatBytes(TOOLS_MAX_OUTPUT_BYTES)} limit reached`)
-        details.truncation = truncation
-      }
+  const resultLimitReached = relativized.length >= limit
+  const rawOutput = relativized.join('\n')
+  const truncation = truncateHead(rawOutput, { 
+    maxLines: TOOLS_MAX_OUTPUT_LINES,
+    maxBytes: TOOLS_MAX_OUTPUT_BYTES,
+  })
 
-      if (notices.length > 0) {
-        resultOutput += `\n\n(${notices.join('. ')})`
-      }
+  let content = truncation.content
+  const details: Record<string, unknown> = {}
+  const notices: string[] = []
 
-      return {
-        content: [{ type: 'text', text: resultOutput }],
-        details
-      }
-    },
+  if (resultLimitReached) {
+    notices.push(`${limit} results limit reached. Use limit=${limit * 2} for more, or refine pattern`)
+    details.resultLimitReached = limit
+  }
+
+  if (truncation.truncated) {
+    notices.push(`${formatBytes(TOOLS_MAX_OUTPUT_BYTES)} limit reached`)
+    details.truncation = truncation
+  }
+
+  if (notices.length > 0) {
+    content += `\n\n(${notices.join('. ')})`
+  }
+
+  return {
+    content: [{ type: 'text', text: content }],
+    details
   }
 }

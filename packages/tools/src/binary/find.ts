@@ -3,7 +3,7 @@ import {
 	type BinaryTool 
 } from './binary-executor'
 
-export class FdExecutor extends BinaryToolExecutor {
+export class FindExecutor extends BinaryToolExecutor {
 	public readonly name = 'fd'
 	public readonly repository = 'sharkdp/fd'
 
@@ -11,11 +11,11 @@ export class FdExecutor extends BinaryToolExecutor {
 		super(projectRoot)
 	}
 
-	getAsset(
+	resolveAsset(
 		version: string, 
 		platform: string, 
 		arch: string
-	): string | null {
+	): string | undefined {
 		if (platform === 'darwin') {
 			const str = arch === 'arm64' ? 'aarch64' : 'x86_64'
 			return `fd-v${version}-${str}-apple-darwin.tar.gz`
@@ -30,11 +30,9 @@ export class FdExecutor extends BinaryToolExecutor {
 			const str = arch === 'arm64' ? 'aarch64' : 'x86_64'
 			return `fd-v${version}-${str}-pc-windows-msvc.zip`
 		}
-		
-		return null
 	}
 }
 
-export const createFdExecutor = (projectRoot: string): BinaryTool => {
-  return new FdExecutor(projectRoot)
+export const createFindExecutor = (projectRoot: string): BinaryTool => {
+  return new FindExecutor(projectRoot)
 }

@@ -5,13 +5,13 @@ const CallAgentArgsSchema = z.object({
   agent: z.string().describe('Agent name (e.g. "explore", "librarian")'),
   prompt: z.string().describe('Prompt to send to the Agent'),
   mode: z.enum(['sync', 'async']).optional().default('sync').describe('Call mode, sync waits for result, async does not wait'),
-  sessionID: z.string().optional().describe('Optional session ID to maintain context across calls'),
+  sessionId: z.string().optional().describe('Optional session ID to maintain context across calls'),
 })
 
 type CallAgentArgs = z.infer<typeof CallAgentArgsSchema>
 type CallAgentOptions = {
   mode?: 'sync' | 'async'
-  sessionID?: string
+  sessionId?: string
 }
 
 export type CallAgent = (
@@ -24,15 +24,11 @@ export type CallAgent = (
   error?: string
 }>
 
-interface CallAgentToolOptions {
-  call?: CallAgent
-}
 
 export function createCallAgent(
   _projectRoot: string,
-  options: CallAgentToolOptions
+  call: CallAgent
 ): AgentTool<CallAgentArgs> {
-  const { call } = options
 
   return {
     name: 'agent_call',
@@ -40,27 +36,21 @@ export function createCallAgent(
     parameters: CallAgentArgsSchema,
     visibility: 'always',
 
-    async execute({ args }): Promise<ToolResult> {
+    async execute({ params }): Promise<ToolResult> {
       if (!call) {
         throw new Error('call_agent function is not provided in options')
       }
 
-      const result = await call(args.agent, args.prompt, {
-        mode: args.mode ?? 'sync',
-        sessionID: args.sessionID,
+      const result = await call(params.agent, params.prompt, {
+        mode: params.mode ?? 'sync',
+        sessionId: params.sessionId,
       })
       
       if (result.success) {
         return { content: [{ type: 'text', text: result.output ?? '(no output)' }] }
       }
 
-      return {
-        content: [{ type: 'text', text: `Agent ${args.agent} failed: ${result.error ?? 'unknown error'}` }],
-        isError: true,
-        details: {
-          error: result.error,
-        }
-      }
-    },
+      throw new Error(result.error ?? 'Unknown error from called agent')
+    }
   }
 }

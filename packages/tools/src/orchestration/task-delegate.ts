@@ -15,6 +15,13 @@ const DelegateTaskArgsSchema = z.object({
 
 type DelegateTaskArgs = z.infer<typeof DelegateTaskArgsSchema>
 
+interface TaskDispatchResult {
+  success: boolean
+  output?: string
+  id?: string
+  error?: string
+}
+
 // 任务委派函数类型（由 orchestrator 注入）
 export type TaskDispatch = (args: {
   prompt: string
@@ -23,12 +30,6 @@ export type TaskDispatch = (args: {
   mode: 'sync' | 'background'
 }) => Promise<TaskDispatchResult>
 
-export interface TaskDispatchResult {
-  success: boolean
-  output?: string
-  id?: string
-  error?: string
-}
 
 export function createTaskDelegate(
   _projectRoot: string,
@@ -40,16 +41,16 @@ export function createTaskDelegate(
     parameters: DelegateTaskArgsSchema,
     visibility: 'always',
 
-    async execute({ args }): Promise<ToolResult> {
+    async execute({ params }): Promise<ToolResult> {
       if (!dispatch) {
         throw new Error('task_delegate function is not provided in options')
       }
 
       const result = await dispatch({
-        prompt: args.prompt,
-        subagent: args.subagent,
-        category: args.category,
-        mode: args.mode,
+        prompt: params.prompt,
+        subagent: params.subagent,
+        category: params.category,
+        mode: params.mode,
       })
 
       if (result.success) {

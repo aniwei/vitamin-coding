@@ -1,46 +1,45 @@
-// background-output 工具 — 获取后台任务输出
 import { z } from 'zod'
 
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const BackgroundOutputArgsSchema = z.object({
-  id: z.string().describe('后台任务 ID'),
+  id: z.string().describe('Background task ID to get output for'),
 })
 
 type BackgroundOutputArgs = z.infer<typeof BackgroundOutputArgsSchema>
 
 export type GetBackgroundOutput = (id: string) => Promise<{
   status: string
+  success: boolean
   output?: string
   error?: string
 }>
 
 export function createBackgroundOutputTool(
-  getOutput?: GetBackgroundOutput,
+  output?: GetBackgroundOutput,
 ): AgentTool<BackgroundOutputArgs> {
   return {
     name: 'background_output',
-    description: '获取后台任务的当前状态和输出',
+    description: 'Get the current status and output of a background task by its ID.',
     parameters: BackgroundOutputArgsSchema,
     visibility: 'always',
 
-    async execute({ args }): Promise<ToolResult> {
-      if (!getOutput) {
-        return {
-          content: [{ type: 'text', text: 'background_output not available: background manager not initialized' }],
-          isError: true,
-        }
+    async execute({ params }): Promise<ToolResult> {
+      if (!output) {
+        throw new Error('output function is not provided in options')
       }
 
-      const result = await getOutput(args.id)
-      const text = [
-        `Task: ${args.id}`,
-        `Status: ${result.status}`,
-        result.output ? `\nOutput:\n${result.output}` : '',
-        result.error ? `\nError:\n${result.error}` : '',
-      ].filter(Boolean).join('\n')
-
-      return { content: [{ type: 'text', text }] }
+      const result = await output(params.id)
+      if (result.success) {
+        return {
+          content: [{ 
+            type: 'text', 
+            text: `Status: ${result.status}\nOutput:\n${result.output ?? '(no output)'}` 
+          }]
+        }
+      }
+      
+      throw new Error(result.error ?? `Failed to get output for task ${params.id}`)
     },
   }
 }

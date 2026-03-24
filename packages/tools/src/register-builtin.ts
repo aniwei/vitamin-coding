@@ -9,8 +9,14 @@ import { createWrite } from './fs/write'
 import { createEdit } from './fs/edit'
 
 // Orchestration
-import { createTaskDelegate, type TaskDispatch } from './orchestration/task-delegate'
-import { createPerformWork, type PerformWork } from './orchestration/perform-work'
+import { 
+  createTaskDelegate, 
+  type TaskDispatch 
+} from './orchestration/task-delegate'
+import { 
+  createPerformWork, 
+  type PerformWork 
+} from './orchestration/perform-work'
 
 
 
@@ -44,7 +50,6 @@ export function registerBuiltinTools(
   /// standard 
   // 搜索/导航工具
   registry.register([
-    createGrep(projectRoot),
     createFind(projectRoot),
     createLs(projectRoot),
   ], { preset: 'standard', category: 'search', builtin: true })

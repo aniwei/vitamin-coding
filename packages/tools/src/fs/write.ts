@@ -1,4 +1,3 @@
-// write 工具 — 创建或覆盖文件
 import { dirname } from 'node:path'
 import { mkdirp, normalizePath } from '@vitamin/shared'
 import { resolve } from 'node:path'
@@ -37,11 +36,28 @@ export function createWrite(projectRoot: string): AgentTool<WriteArgs> {
         throw new Error('Write operation was aborted')
       }
 
-      await writeFile(normalizedPath, params.content, 'utf-8')
-
-      return {
-        content: [{ type: 'text', text: `Successfully wrote to ${params.path}` }],
-      }
+      return await write(
+        normalizedPath,
+        params.content,
+        signal
+      )
     },
+  }
+}
+
+
+async function write(
+  path: string,
+  content: string,
+  signal: AbortSignal
+): Promise<ToolResult> {
+  if (signal.aborted) {
+    throw new Error('Write operation was aborted')
+  }
+
+  await writeFile(path, content, 'utf-8')
+
+  return {
+    content: [{ type: 'text', text: `Successfully wrote to ${path}` }],
   }
 }

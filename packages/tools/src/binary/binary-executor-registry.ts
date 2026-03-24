@@ -1,7 +1,7 @@
 
 import { createLogger } from '@vitamin/shared'
-import { createFdExecutor } from './fd'
-import { createRipgrepExecutor } from './rg'
+import { createFindExecutor } from './find'
+import { createRipgrepExecutor } from './ripgrep'
 import type { BinaryTool } from './binary-executor'
 
 
@@ -53,7 +53,7 @@ export class BinaryToolExecutorRegistry {
 export const createBinaryExecutorRegistry = (projectRoot: string): BinaryToolExecutorRegistry => {
 	const registry = new BinaryToolExecutorRegistry()
 
-	registry.register(createFdExecutor(projectRoot))
+	registry.register(createFindExecutor(projectRoot))
 	registry.register(createRipgrepExecutor(projectRoot))
 
 	return registry
