@@ -30,12 +30,17 @@ import {
 // import { createLspDiagnostics } from './lsp/diagnostics'
 // import { createLspPrepareRename, createLspRename } from './lsp/rename'
 
+import { createSkillLoad, type LoadSkill  } from './skill/skill-load'
+import { createSkillExecute, type ExecuteSkill } from './skill/skill-execute'
+
 import type { ToolRegistry } from './tool-registry'
 
 export interface RegisterBuiltinOptions {
   dispatchTask: TaskDispatch
   performWork: PerformWork
   callAgent: CallAgent
+  loadSkill: LoadSkill,
+  executeSkill: ExecuteSkill,
 }
 
 // 注册所有内置工具 (minimal + standard + full 预设)
@@ -89,4 +94,10 @@ export function registerBuiltinTools(
     createAgentCall(projectRoot, options.callAgent),
     createPerformWork(projectRoot, options?.performWork),
   ], { preset: 'full', category: 'orchestration', builtin: true })
+
+  // Skill 工具
+  registry.register([
+    createSkillLoad(projectRoot, options.loadSkill),
+    createSkillExecute(projectRoot, options.executeSkill),
+  ], { preset: 'full', category: 'skill', builtin: true })
 }
