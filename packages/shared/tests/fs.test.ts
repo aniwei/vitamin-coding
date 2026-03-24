@@ -2,15 +2,15 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
+import { writeFile } from 'node:fs/promises'
+import { stat } from 'node:fs/promises'
 import {
   isDirectory,
   isFile,
   mkdirp,
   exists,
-  readText,
   rimraf,
-  writeText,
-} from '../src/fs'
+} from '../src/fs-extra'
 
 describe('fs utilities', () => {
   let tempDir: string
@@ -21,35 +21,6 @@ describe('fs utilities', () => {
 
   afterEach(async () => {
     await rm(tempDir, { recursive: true, force: true })
-  })
-
-  describe('readText', () => {
-    describe('#given a file that exists', () => {
-      it('#then returns its content', async () => {
-        const filePath = join(tempDir, 'test.txt')
-        await writeText(filePath, 'hello')
-        const content = await readText(filePath)
-        expect(content).toBe('hello')
-      })
-    })
-
-    describe('#given a file that does not exist', () => {
-      it('#then returns undefined', async () => {
-        const content = await readText(join(tempDir, 'nonexistent.txt'))
-        expect(content).toBeUndefined()
-      })
-    })
-  })
-
-  describe('writeText', () => {
-    describe('#given a nested path', () => {
-      it('#then creates parent directories', async () => {
-        const filePath = join(tempDir, 'a', 'b', 'c.txt')
-        await writeText(filePath, 'deep')
-        const content = await readText(filePath)
-        expect(content).toBe('deep')
-      })
-    })
   })
 
   describe('mkdirp', () => {
@@ -67,9 +38,9 @@ describe('fs utilities', () => {
       it('#then removes it entirely', async () => {
         const dirPath = join(tempDir, 'to-remove')
         await mkdirp(join(dirPath, 'sub'))
-        await writeText(join(dirPath, 'sub', 'file.txt'), 'data')
+        await writeFile(join(dirPath, 'sub', 'file.txt'), 'data', 'utf8')
         await rimraf(dirPath)
-        expect(await exists(dirPath)).toBe(false)
+        await expect(stat(dirPath)).rejects.toThrow()
       })
     })
 
@@ -88,8 +59,8 @@ describe('fs utilities', () => {
     })
 
     describe('#given a nonexistent path', () => {
-      it('#then returns false', async () => {
-        expect(await exists(join(tempDir, 'nope'))).toBe(false)
+      it('#then throws ENOENT', async () => {
+        await expect(exists(join(tempDir, 'nope'))).rejects.toThrow()
       })
     })
   })
@@ -104,7 +75,7 @@ describe('fs utilities', () => {
     describe('#given a file', () => {
       it('#then returns false', async () => {
         const filePath = join(tempDir, 'file.txt')
-        await writeText(filePath, 'data')
+        await writeFile(filePath, 'data', 'utf8')
         expect(await isDirectory(filePath)).toBe(false)
       })
     })
@@ -114,7 +85,7 @@ describe('fs utilities', () => {
     describe('#given a file', () => {
       it('#then returns true', async () => {
         const filePath = join(tempDir, 'file.txt')
-        await writeText(filePath, 'data')
+        await writeFile(filePath, 'data', 'utf8')
         expect(await isFile(filePath)).toBe(true)
       })
     })

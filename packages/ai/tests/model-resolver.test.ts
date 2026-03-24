@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { isClaudeFamily, isGeminiFamily, isGptFamily } from '../src/types'
+import { isClaudeFamily, isGeminiFamily, isGPTFamily } from '../src/types'
 
 import type { Model } from '../src/types'
 
@@ -21,8 +21,8 @@ function makeModel(api: Model['api'], provider: Model['provider']): Model {
 
 describe('model family helpers', () => {
   it('identifies gpt family', () => {
-    expect(isGptFamily(makeModel('openai-completions', 'openai'))).toBe(true)
-    expect(isGptFamily(makeModel('anthropic-messages', 'anthropic'))).toBe(false)
+    expect(isGPTFamily(makeModel('openai-completions', 'openai'))).toBe(true)
+    expect(isGPTFamily(makeModel('anthropic-messages', 'anthropic'))).toBe(false)
   })
 
   it('identifies claude family', () => {

@@ -60,8 +60,8 @@ describe('AGENT_MODEL_PRIORITY', () => {
   describe('#given model priority map', () => {
     describe('#when checking required agents', () => {
       it('#then sisyphus has fallback chain', () => {
-        expect(AGENT_MODEL_PRIORITY.sisyphus).toBeDefined()
-        expect(AGENT_MODEL_PRIORITY.sisyphus.length).toBeGreaterThan(0)
+        expect(AGENT_MODEL_PRIORITY['central-secretariat']).toBeDefined()
+        expect(AGENT_MODEL_PRIORITY['central-secretariat'].length).toBeGreaterThan(0)
       })
 
       it('#then explore has fallback chain', () => {

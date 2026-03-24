@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { parseJsonc, safeStringify } from '../src/json'
+import { parseJsonc, safeStringify } from '../src/jsonc'
 
 describe('parseJsonc', () => {
   describe('#given valid JSON', () => {

@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { getToolCalls, hasToolCalls } from '../src/types'
+import { getToolCallsByAssistantMessage, hasToolCalls } from '../src/types'
 
 import type { AssistantMessage } from '../src/types'
 
@@ -29,13 +29,13 @@ describe('tool call helpers', () => {
     ])
 
     expect(hasToolCalls(message)).toBe(true)
-    expect(getToolCalls(message)).toHaveLength(1)
-    expect(getToolCalls(message)[0]?.name).toBe('read_file')
+    expect(getToolCallsByAssistantMessage(message)).toHaveLength(1)
+    expect(getToolCallsByAssistantMessage(message)[0]?.name).toBe('read_file')
   })
 
   it('returns false/empty when no tool calls exist', () => {
     const message = makeAssistantMessage([{ type: 'text', data: 'only text' }])
     expect(hasToolCalls(message)).toBe(false)
-    expect(getToolCalls(message)).toEqual([])
+    expect(getToolCallsByAssistantMessage(message)).toEqual([])
   })
 })

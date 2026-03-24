@@ -72,7 +72,7 @@ describe('ToolExecutor', () => {
           new AbortController().signal,
         )
         expect(result.isError).toBe(true)
-        expect(result.content[0]?.data).toContain('Unknown tool')
+        expect(result.content[0]?.text).toContain('Unknown tool')
       })
     })
 
@@ -87,7 +87,7 @@ describe('ToolExecutor', () => {
         const executor = createToolExecutor([tool])
         const result = await executor.execute(makeToolCall('strict'), new AbortController().signal)
         expect(result.isError).toBe(true)
-        expect(result.content[0]?.data).toContain('Invalid arguments')
+        expect(result.content[0]?.text).toContain('Invalid arguments')
       })
     })
 
@@ -99,7 +99,7 @@ describe('ToolExecutor', () => {
         const executor = createToolExecutor([tool])
         const result = await executor.execute(makeToolCall('broken'), new AbortController().signal)
         expect(result.isError).toBe(true)
-        expect(result.content[0]?.data).toContain('Disk full')
+        expect(result.content[0]?.text).toContain('Disk full')
       })
     })
   })

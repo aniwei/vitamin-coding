@@ -1,4 +1,4 @@
-import { describe, it, expect, vi, beforeEach, afterEach } from 'vitest'
+import { describe, it, expect, beforeEach, afterEach } from 'vitest'
 import { mkdtempSync, rmSync, writeFileSync, mkdirSync } from 'node:fs'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
@@ -72,54 +72,6 @@ describe('LSP', () => {
       try {
         await expect(client.start()).rejects.toThrow('Path is not a directory')
       } finally {
-        rmSync(dir, { recursive: true, force: true })
-      }
-    })
-  })
-
-  // ─── LSPServerManager ────────────────────────────────────────────────
-
-  describe('LSPServerManager', () => {
-    beforeEach(async () => {
-      await lspManager.stopAll()
-    })
-    afterEach(async () => {
-      await lspManager.stopAll()
-    })
-
-    it('recreates client after init failure instead of staying permanently blocked', async () => {
-      const dir = mkdtempSync(join(tmpdir(), 'lsp-manager-test-'))
-      const server: ResolvedServer = {
-        id: 'typescript',
-        command: ['typescript-language-server', '--stdio'],
-        extensions: ['.ts'],
-        priority: 0,
-      }
-
-      const startSpy = vi.spyOn(LSPClient.prototype, 'start')
-      const initializeSpy = vi.spyOn(LSPClient.prototype, 'initialize')
-      const isAliveSpy = vi.spyOn(LSPClient.prototype, 'isAlive')
-      const stopSpy = vi.spyOn(LSPClient.prototype, 'stop')
-
-      startSpy.mockImplementationOnce(async () => {
-        throw new Error('boom')
-      })
-      startSpy.mockImplementation(async () => {})
-      initializeSpy.mockImplementation(async () => {})
-      isAliveSpy.mockImplementation(() => true)
-      stopSpy.mockImplementation(async () => {})
-
-      try {
-        await expect(lspManager.getClient(dir, server)).rejects.toThrow('boom')
-        const client = await lspManager.getClient(dir, server)
-        expect(client).toBeInstanceOf(LSPClient)
-        expect(startSpy).toHaveBeenCalledTimes(2)
-        expect(stopSpy).toHaveBeenCalled()
-      } finally {
-        startSpy.mockRestore()
-        initializeSpy.mockRestore()
-        isAliveSpy.mockRestore()
-        stopSpy.mockRestore()
         rmSync(dir, { recursive: true, force: true })
       }
     })

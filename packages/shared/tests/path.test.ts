@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { normalizePath, resolvePath } from '../src/path'
+import { getThirdPartyToolBinaryPath, normalizePath } from '../src/path'
 
 describe('normalizePath', () => {
   describe('#given a path with backslashes and double dots', () => {
@@ -16,11 +16,11 @@ describe('normalizePath', () => {
   })
 })
 
-describe('resolvePath', () => {
-  describe('#given relative segments', () => {
-    it('#then returns an absolute path', () => {
-      const result = resolvePath('/base', 'sub', 'file.ts')
-      expect(result).toBe('/base/sub/file.ts')
+describe('getThirdPartyToolBinaryPath', () => {
+  describe('#given a tool name', () => {
+    it('#then returns a tool path ending with that tool name', () => {
+      const result = getThirdPartyToolBinaryPath('fd')
+      expect(result.endsWith('/fd')).toBe(true)
     })
   })
 })

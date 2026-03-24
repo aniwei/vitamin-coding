@@ -2,7 +2,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { extractTextContent, wrapAgent } from '../src/agents/agent-adapter'
-import { createCentralSecretariatAgent } from '../src/agents/sisyphus'
+import { createCentralSecretariatAgent } from '../src/agents/central-secretariat'
 import { createHephaestusAgent } from '../src/agents/hephaestus'
 import { createExploreAgent } from '../src/agents/explore'
 import { createOracleAgent } from '../src/agents/oracle'
@@ -12,14 +12,14 @@ import { createSisyphusJuniorAgent } from '../src/agents/sisyphus-junior'
 import type { AgentEventListener, AgentMessage, AgentState, AgentTool } from '@vitamin/agent'
 import type { AssistantMessage, Model } from '@vitamin/ai'
 
-// ═══ 手工 Stub（禁止 vi.mock/vi.fn）═══
+// ═══ 手工 Stub（不使用测试框架 mock/spyon）═══
 
-interface FakeAgentOptions {
+interface TestAgentOptions {
   promptResult?: AssistantMessage
   state?: Partial<AgentState>
 }
 
-function createFakeAgent(opts: FakeAgentOptions = {}) {
+function createTestAgent(opts: TestAgentOptions = {}) {
   let listener: AgentEventListener | null = null
   let aborted = false
 
@@ -132,17 +132,17 @@ describe('extractTextContent', () => {
 // ═══ wrapAgent 测试 ═══
 
 describe('wrapAgent', () => {
-  describe('#given a fake agent', () => {
+  describe('#given a test agent', () => {
     describe('#when prompt is called', () => {
       it('#then delegates to agent.prompt and returns AgentResult', async () => {
-        const fake = createFakeAgent({
+        const testAgent = createTestAgent({
           promptResult: {
             role: 'assistant',
             content: [{ type: 'text', text: 'wrapped response' }],
           },
         })
 
-        const instance = wrapAgent(fake as never)
+        const instance = wrapAgent(testAgent as never)
         const result = await instance.prompt('test message')
 
         expect(result.output).toBe('wrapped response')
@@ -154,22 +154,22 @@ describe('wrapAgent', () => {
 
     describe('#when abort is called', () => {
       it('#then delegates to agent.abort', () => {
-        const fake = createFakeAgent()
-        const instance = wrapAgent(fake as never)
+        const testAgent = createTestAgent()
+        const instance = wrapAgent(testAgent as never)
 
         instance.abort()
-        expect(fake._aborted).toBe(true)
+        expect(testAgent._aborted).toBe(true)
       })
     })
 
     describe('#when on is called', () => {
       it('#then registers the listener on agent', () => {
-        const fake = createFakeAgent()
-        const instance = wrapAgent(fake as never)
+        const testAgent = createTestAgent()
+        const instance = wrapAgent(testAgent as never)
 
         const listener = (() => {}) as AgentEventListener
         instance.on(listener)
-        expect(fake._listener).toBe(listener)
+        expect(testAgent._listener).toBe(listener)
       })
     })
   })
