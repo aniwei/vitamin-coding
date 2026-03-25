@@ -48,3 +48,6 @@ export const TOOLS_BINARY_DOWNLOAD_TIMEOUT = normalizeEnv(process.env['TOOLS_BIN
 export const AGENT_TOOLS_MAX_TURNS = normalizeEnv(process.env['AGENT_TOOLS_MAX_TURNS'], 25)
 export const OFFLINE_MODE_ENABLED = process.env['PI_OFFLINE'] === '1' || process.env['PI_OFFLINE']?.toLowerCase() === 'true' || process.env['VITAMIN_OFFLINE']?.toLowerCase() === 'yes'
 
+export const VITAMIN_SESSION_DIR = process.env['VITAMIN_SESSION_DIR'] ? normalizePath(process.env['VITAMIN_SESSION_DIR']) : undefined
+export const VITAMIN_SESSION_REMOTE_URL = process.env['VITAMIN_SESSION_REMOTE_URL'] || undefined
+

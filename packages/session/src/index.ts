@@ -9,6 +9,6 @@ export {
 
 export type { 
   Session, 
+  SessionStore,
   SessionMessage, 
-  SessionStore 
 } from './types'

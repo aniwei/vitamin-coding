@@ -30,6 +30,7 @@ const result = await agentLoop({ agent, messages: [{ role: 'user', content: 'Hel
 | `createAgentWithRegistry` | Factory with built-in ProviderRegistry |
 | `agentLoop` | Main agent execution loop |
 | `createToolExecutor` | Tool call executor |
+| `MemoryManager`, `createMemoryManager` | Memory management |
 | `AgentLoopError`, `ToolExecutionError`, `AbortError`, `MaxToolTurnsError` | Error types |
 
 ## Types

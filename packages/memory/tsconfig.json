@@ -1,0 +1,14 @@
+{
+  "extends": "../../tsconfig.base.json",
+  "compilerOptions": {
+    "outDir": "dist",
+    "rootDir": "..",
+    "baseUrl": ".",
+    "paths": {
+      "@vitamin/ai": ["../ai/src/index.ts"],
+      "@vitamin/shared": ["../shared/src/index.ts"],
+      "@vitamin/env": ["../env/src/index.ts"]
+    }
+  },
+  "include": ["src"]
+}
