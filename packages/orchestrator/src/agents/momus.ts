@@ -1,7 +1,7 @@
 // Momus — 计划审查员 Agent (§S14.1 Step 4)
 // temperature=0.1, 80% 通过偏好, 拒绝时最多 3 条 issue
 import { createAgentWithRegistry as createAgent } from '@vitamin/agent'
-import type { AgentConfig, AgentTool } from '@vitamin/agent'
+import type { AgentTool } from '@vitamin/agent'
 import type { Model } from '@vitamin/ai'
 
 import type { AgentFactoryOptions, AgentInstance } from '../types'
@@ -44,23 +44,18 @@ export function createMomusAgent(
   tools: AgentTool[],
   options?: AgentFactoryOptions,
 ): AgentInstance {
-  const config: AgentConfig = {
-    model,
-    systemPrompt: options?.systemPrompt ?? MOMUS_SYSTEM_PROMPT,
-    tools,
-    maxToolTurns: options?.maxToolTurns ?? 10,
-  }
+  const systemPrompt = options?.systemPrompt ?? MOMUS_SYSTEM_PROMPT
+  const maxToolTurns = options?.maxToolTurns ?? 10
 
   const agent = createAgent({
-    ...config,
+    model,
     providerRegistry: options?.providerRegistry,
-    apiKey: options?.apiKey,
   })
   if (options?.eventListener) {
     agent.on(options.eventListener)
   }
 
-  return wrapAgent(agent)
+  return wrapAgent(agent, { model, systemPrompt, tools, maxToolTurns })
 }
 
 // 解析 Momus 审查结果

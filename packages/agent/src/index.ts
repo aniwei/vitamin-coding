@@ -9,16 +9,11 @@ export { createAgent as createAgentWithRegistry } from './agent-factory'
 export type { AgentFactoryConfig } from './agent-factory'
 
 // Agent 循环
-
 export type { StreamFunction } from './work-loop'
 
 // 工具执行器
 export { createToolExecutor } from './tool-executor'
 export type { ToolExecutor, ToolHookExecutor } from './tool-executor'
-
-// 记忆管理
-export { MemoryManager, createMemoryManager } from './memory'
-export type { MemoryEntry, MemorySummary, MemoryManagerConfig } from './memory'
 
 // 错误类型
 export {
@@ -40,8 +35,10 @@ export type {
   CustomAgentMessages,
   AgentMessage,
   AgentState,
+  AgentRunContext,
   AgentTool,
   ToolResult,
   AgentConfig,
   AgentEventListener,
+  AgentLoopContext,
 } from './types'

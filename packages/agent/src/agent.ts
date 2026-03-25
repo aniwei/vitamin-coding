@@ -1,11 +1,11 @@
-// Agent 核心类 — 状态机 + steering/followUp 队列
+// Agent 核心类 — 无状态执行引擎 + steering/followUp 队列
 import { createLogger, TypedEventEmitter } from '@vitamin/shared'
 
 import { workLoop } from './work-loop'
 import { AbortError } from './errors'
 import { createToolExecutor } from './tool-executor'
 
-import type { AssistantMessage, Message as LlmMessage, Model, ThinkingLevel } from '@vitamin/ai'
+import type { AssistantMessage, Message as LlmMessage } from '@vitamin/ai'
 import type { StreamFunction } from './work-loop'
 import type {
   AgentConfig,
@@ -13,9 +13,9 @@ import type {
   AgentEventListener,
   AgentLoopContext,
   AgentMessage,
+  AgentRunContext,
   AgentState,
   AgentStatus,
-  AgentTool,
 } from './types'
 
 const log = createLogger('@vitamin/agent')
@@ -47,27 +47,14 @@ export class Agent {
     return this.state.status
   }
 
-  get model(): Model {
-    return this.state.model
-  }
-
-  get messages(): readonly AgentMessage[] {
-    return this.state.messages
-  }
-
   get turnCount(): number {
     return this.state.turnCount
   }
 
-  constructor(config: AgentConfig) {
+  constructor(config: AgentConfig = {}) {
     this.stream = config.stream as StreamFunction | undefined
     this.state = {
       status: 'idle',
-      systemPrompt: config.systemPrompt,
-      model: config.model,
-      thinkingLevel: config.thinkingLevel,
-      tools: config.tools ?? [],
-      messages: [],
       turnCount: 0,
       tokenUsage: { input: 0, output: 0, cacheRead: 0 },
       isStreaming: false,
@@ -82,50 +69,18 @@ export class Agent {
     return { ...this.state }
   }
 
-  // 注册工具
-  registerTools(tools: AgentTool[]): void {
-    this.state.tools = [...this.state.tools, ...tools]
-  }
-
-  // 清除工具
-  clearTools(): void {
-    this.state.tools = []
-  }
-
-  // 更新模型
-  setModel(model: Model): void {
-    this.state.model = model
-  }
-
-  // 更新系统提示
-  setSystemPrompt(prompt: string): void {
-    this.state.systemPrompt = prompt
-  }
-
-  // 更新思考级别
-  setThinkingLevel(level: ThinkingLevel): void {
-    this.state.thinkingLevel = level
-  }
-
-  // 发起对话 — 进入 Agent 循环
-  async prompt(
-    userMessage: AgentMessage,
-    context?: Partial<AgentLoopContext>,
-  ): Promise<AssistantMessage> {
-    if (this.state.status !== 'idle' && this.state.status !== 'completed') {
-      throw new Error(`Cannot prompt in ${this.state.status} status`)
+  /**
+   * 核心方法 — 执行 Agent 循环。
+   * 
+   * Agent 不持有 messages/model/tools，每次由调用方构建完整上下文传入。
+   * messages 数组会被 workLoop 就地修改（追加 assistant/tool_result 消息），
+   * 调用方负责将变更持久化到 Session。
+   */
+  async run(context: AgentRunContext): Promise<AssistantMessage> {
+    if (this.state.status !== 'idle' && this.state.status !== 'completed' && this.state.status !== 'aborted') {
+      throw new Error(`Cannot run in ${this.state.status} status`)
     }
 
-    this.state.messages.push(userMessage)
-    return this.runLoop(context)
-  }
-
-  // 从中止/完成状态继续运行
-  async continue(context?: Partial<AgentLoopContext>): Promise<AssistantMessage> {
-    if (this.state.status !== 'aborted' && this.state.status !== 'completed') {
-      throw new Error(`Cannot continue in ${this.state.status} status`)
-    }
-    
     return this.runLoop(context)
   }
 
@@ -158,7 +113,6 @@ export class Agent {
 
     this.steeringQueue = []
     this.followUpQueue = []
-    this.state.messages = []
     this.state.turnCount = 0
     this.state.tokenUsage = { input: 0, output: 0, cacheRead: 0 }
     this.state.currentStreamMessage = null
@@ -178,26 +132,26 @@ export class Agent {
   }
 
   // 内部: 运行 Agent 循环
-  private async runLoop(override?: Partial<AgentLoopContext>): Promise<AssistantMessage> {
+  private async runLoop(context: AgentRunContext): Promise<AssistantMessage> {
     this.abortController = new AbortController()
     const signal = this.abortController.signal
 
     // 组装完整 runtime
     const runtime: AgentLoopContext = {
-      model: this.state.model,
-      systemPrompt: this.state.systemPrompt,
-      convertToLLM: override?.convertToLLM ?? defaultConvertToLLM,
-      transformContext: override?.transformContext,
+      model: context.model,
+      systemPrompt: context.systemPrompt,
+      convertToLLM: context.convertToLLM ?? defaultConvertToLLM,
+      transformContext: context.transformContext,
       getSteeringMessages: () => this.drainSteeringQueue(),
       getFollowUpMessages: () => this.drainFollowUpQueue(),
-      maxToolTurns: override?.maxToolTurns ?? 25,
-      thinkingLevel: this.state.thinkingLevel ?? override?.thinkingLevel,
-      maxTokens: override?.maxTokens,
-      temperature: override?.temperature,
-      devtools: override?.devtools,
+      maxToolTurns: context.maxToolTurns ?? 25,
+      thinkingLevel: context.thinkingLevel,
+      maxTokens: context.maxTokens,
+      temperature: context.temperature,
+      devtools: context.devtools,
     }
 
-    const toolExecutor = createToolExecutor(this.state.tools)
+    const toolExecutor = createToolExecutor(context.tools)
 
     // 构建 stream — 优先使用外部注入，否则使用默认
     const stream: StreamFunction = this.stream ?? createDefaultStream()
@@ -205,7 +159,7 @@ export class Agent {
     try {
       const result = await workLoop({
         ...runtime,
-        messages: this.state.messages,
+        messages: context.messages,
         toolExecutor,
         stream,
         signal,
@@ -305,11 +259,11 @@ function defaultConvertToLLM(messages: AgentMessage[]) {
 // 默认 stream — 抛错提示需要注入
 function createDefaultStream(): StreamFunction {
   return () => {
-    throw new Error('No stream funcntion provided. Pass a stream in AgentConfig or use createAgent with a ProviderRegistry.')
+    throw new Error('No stream function provided. Pass a stream in AgentConfig or via AgentRunContext.')
   }
 }
 
 // 工厂函数
-export function createAgent(config: AgentConfig): Agent {
+export function createAgent(config: AgentConfig = {}): Agent {
   return new Agent(config)
 }

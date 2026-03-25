@@ -8,7 +8,8 @@ export {
 } from './store'
 
 export type { 
-  Session, 
+  Session,
+  SessionContext,
+  SessionEntry,
   SessionStore,
-  SessionMessage, 
 } from './types'

@@ -1,6 +1,6 @@
 import type { createLogger } from '@vitamin/shared'
 import type { loadConfig } from '@vitamin/config'
-import type { AgentConfig, AgentEventListener, AgentTool } from '@vitamin/agent'
+import type { AgentEventListener, AgentMessage, AgentTool } from '@vitamin/agent'
 import type { Model, ProviderRegistry, ThinkingLevel } from '@vitamin/ai'
 import type { Session } from '@vitamin/session'
 
@@ -21,8 +21,6 @@ export interface AgentSessionOptions {
   cwd?: string
   /** Provider 注册表（用于自动构建 stream） */
   providerRegistry?: ProviderRegistry
-  /** 自定义 Agent 配置覆盖 */
-  agentConfig?: Partial<AgentConfig>
 }
 
 // ═══ AgentSession 事件 ═══
@@ -74,7 +72,7 @@ export interface SystemContext {
 
 export interface AgentSession {
   readonly id: string
-  readonly session: Session
+  readonly session: Session<AgentMessage>
   readonly status: string
   prompt(text: string, options?: PromptOptions): Promise<void>
   steer(text: string): void

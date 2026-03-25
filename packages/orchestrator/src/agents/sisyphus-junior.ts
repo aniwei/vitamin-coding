@@ -2,7 +2,7 @@
 import { createAgentWithRegistry as createAgent } from '@vitamin/agent'
 import { wrapAgent } from './agent-adapter'
 
-import type { AgentConfig, AgentTool } from '@vitamin/agent'
+import type { AgentTool } from '@vitamin/agent'
 import type { Model } from '@vitamin/ai'
 
 import type { AgentFactoryOptions, AgentInstance } from '../types'
@@ -28,21 +28,16 @@ export function createSisyphusJuniorAgent(
   tools: AgentTool[],
   options?: AgentFactoryOptions,
 ): AgentInstance {
-  const config: AgentConfig = {
-    model,
-    systemPrompt: options?.systemPrompt ?? SISYPHUS_JUNIOR_SYSTEM_PROMPT,
-    tools,
-    maxToolTurns: options?.maxToolTurns ?? 20,
-  }
+  const systemPrompt = options?.systemPrompt ?? SISYPHUS_JUNIOR_SYSTEM_PROMPT
+  const maxToolTurns = options?.maxToolTurns ?? 20
 
   const agent = createAgent({
-    ...config,
+    model,
     providerRegistry: options?.providerRegistry,
-    apiKey: options?.apiKey,
   })
   if (options?.eventListener) {
     agent.on(options.eventListener)
   }
 
-  return wrapAgent(agent)
+  return wrapAgent(agent, { model, systemPrompt, tools, maxToolTurns })
 }

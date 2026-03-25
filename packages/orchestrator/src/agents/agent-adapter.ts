@@ -1,17 +1,37 @@
 // Agent → AgentInstance 适配工具 (消除 Agent 文件间重复)
-import type { AgentEventListener } from '@vitamin/agent'
+import type { AgentEventListener, AgentMessage, AgentTool } from '@vitamin/agent'
 import type { Agent } from '@vitamin/agent'
+import type { Model } from '@vitamin/ai'
 
 import type { AgentInstance, AgentResult } from '../types'
 
+// wrapAgent 的运行时配置
+export interface WrapAgentConfig {
+  model: Model
+  systemPrompt: string
+  tools: AgentTool[]
+  maxToolTurns?: number
+}
+
 // 将 @vitamin/agent 的 Agent 实例包装为 AgentInstance 接口
-export function wrapAgent(agent: Agent): AgentInstance {
+export function wrapAgent(agent: Agent, config: WrapAgentConfig): AgentInstance {
   return {
     async prompt(message: string): Promise<AgentResult> {
-      const result = await agent.prompt({ role: 'user', content: message, timestamp: Date.now() })
+      const messages: AgentMessage[] = [
+        { role: 'user', content: [{ type: 'text', text: message }] } as AgentMessage,
+      ]
+
+      const result = await agent.run({
+        model: config.model,
+        systemPrompt: config.systemPrompt,
+        tools: config.tools,
+        messages,
+        maxToolTurns: config.maxToolTurns,
+      })
+
       const output = extractTextContent(result)
       return {
-        messages: agent.getState().messages,
+        messages,
         output,
         usage: {
           inputTokens: agent.getState().tokenUsage.input,

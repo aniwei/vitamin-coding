@@ -1,7 +1,7 @@
 // Atlas — Todo 编排执行器 Agent (§S14.1 Step 5)
 // 读取计划 → 提取 checkbox → 构建 DAG → 可并行步骤同时 task() → 失败时取消依赖步骤
 import { createAgentWithRegistry as createAgent } from '@vitamin/agent'
-import type { AgentConfig, AgentTool } from '@vitamin/agent'
+import type { AgentTool } from '@vitamin/agent'
 import type { Model } from '@vitamin/ai'
 
 import type { AgentFactoryOptions, AgentInstance } from '../../types'
@@ -32,21 +32,16 @@ export function createAtlasAgent(
   tools: AgentTool[],
   options?: AgentFactoryOptions,
 ): AgentInstance {
-  const config: AgentConfig = {
-    model,
-    systemPrompt: options?.systemPrompt ?? ATLAS_SYSTEM_PROMPT,
-    tools,
-    maxToolTurns: options?.maxToolTurns ?? 40,
-  }
+  const systemPrompt = options?.systemPrompt ?? ATLAS_SYSTEM_PROMPT
+  const maxToolTurns = options?.maxToolTurns ?? 40
 
   const agent = createAgent({
-    ...config,
+    model,
     providerRegistry: options?.providerRegistry,
-    apiKey: options?.apiKey,
   })
   if (options?.eventListener) {
     agent.on(options.eventListener)
   }
 
-  return wrapAgent(agent)
+  return wrapAgent(agent, { model, systemPrompt, tools, maxToolTurns })
 }

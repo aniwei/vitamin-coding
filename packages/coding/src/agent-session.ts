@@ -1,35 +1,52 @@
-import { Agent } from '@vitamin/agent'
-import { createAgent } from '@vitamin/agent'
-import type { AgentEventListener, AgentMessage } from '@vitamin/agent'
+import type { Agent, AgentEventListener, AgentMessage } from '@vitamin/agent'
+import type { AgentTool } from '@vitamin/agent'
 import type { Session } from '@vitamin/session'
-import type { AssistantMessage, Message } from '@vitamin/ai'
+import type { Message, Model, ThinkingLevel } from '@vitamin/ai'
 import type {
   AgentSession as IAgentSession,
   AgentSessionEvent,
   AgentSessionEventListener,
-  AgentSessionOptions,
   PromptOptions,
 } from './types'
 
 
+export interface AgentSessionConfig {
+  model: Model
+  systemPrompt: string
+  tools?: AgentTool[]
+  thinkingLevel?: ThinkingLevel
+}
+
 export class AgentSession implements IAgentSession {
   readonly id: string
-  readonly session: Session
+  readonly session: Session<AgentMessage>
 
   private agent: Agent
   private agentUnsubscribe: (() => void) | null = null
   private sessionEventListeners: AgentSessionEventListener[] = []
   private disposed = false
 
+  // Session 级别的运行时配置
+  private model: Model
+  private systemPrompt: string
+  private tools: AgentTool[]
+  private thinkingLevel?: ThinkingLevel
+
   constructor(
-    session: Session,
+    session: Session<AgentMessage>,
     agent: Agent,
+    config: AgentSessionConfig,
   ) {
     this.id = session.id
     this.session = session
     this.agent = agent
 
-    // 监听 Agent 事件，自动持久化消息到 Session
+    this.model = config.model
+    this.systemPrompt = config.systemPrompt
+    this.tools = config.tools ?? []
+    this.thinkingLevel = config.thinkingLevel
+
+    // 监听 Agent 事件
     this.agentUnsubscribe = this.agent.on((event) => {
       this.handleAgentEvent(event)
     })
@@ -41,18 +58,29 @@ export class AgentSession implements IAgentSession {
     return this.agent.status
   }
 
+  /**
+   * 发起对话 — Session 是唯一的数据源。
+   *
+   * 流程:
+   * 1. 用户消息 → 追加到 Session
+   * 2. Session.buildContext() → 构建上下文（含压缩摘要）
+   * 3. agent.run(context) → workLoop 就地修改 messages 数组
+   * 4. 新产生的消息 → 追加回 Session
+   */
   async prompt(
-    text: string, 
-    options?: PromptOptions
+    text: string,
+    options?: PromptOptions,
   ): Promise<void> {
     this.ensureNotDisposed()
 
-    // 如果正在流式处理，按 streamingBehavior 排队
+    // 如果正在处理，按 streamingBehavior 排队
     if (this.agent.status === 'streaming' || this.agent.status === 'tool_executing') {
       if (options?.streamingBehavior === 'followUp') {
         this.followUp(text)
+        return
       } else if (options?.streamingBehavior === 'steer') {
         this.steer(text)
+        return
       } else {
         throw new Error('Agent is processing. Specify streamingBehavior ("steer" or "followUp") to queue the message.')
       }
@@ -60,27 +88,46 @@ export class AgentSession implements IAgentSession {
 
     this.emitSessionEvent({ type: 'prompt_start', sessionId: this.id, text })
 
-    // 持久化用户消息
-    this.session.appendUserMessage(text)
-    this.emitSessionEvent({ type: 'message_persisted', sessionId: this.id, role: 'user' })
-
+    // 1. 构建用户消息 → 持久化到 Session
     const userMessage: Message = {
       role: 'user',
       content: [{ type: 'text', text }],
     }
+    this.session.append(userMessage)
+
+    // 2. 从 Session 构建上下文
+    const ctx = this.session.buildContext()
+    const messages: AgentMessage[] = []
+
+    if (ctx.summary) {
+      messages.push({
+        role: 'user',
+        content: [{ type: 'text', text: `[Previous conversation summary]\n${ctx.summary}` }],
+      } as Message)
+    }
+
+    messages.push(...ctx.messages)
+
+    const messagesBefore = messages.length
 
     try {
-      const result = await this.agent.prompt(userMessage)
+      // 3. agent.run() — workLoop 就地修改 messages
+      await this.agent.run({
+        model: this.model,
+        systemPrompt: this.systemPrompt,
+        tools: this.tools,
+        messages,
+        thinkingLevel: this.thinkingLevel,
+      })
 
-      // 持久化助手回复
-      const assistantText = this.extractAssistantText(result)
-      if (assistantText) {
-        this.session.appendAssistantMessage(assistantText)
-        this.emitSessionEvent({ type: 'message_persisted', sessionId: this.id, role: 'assistant' })
-      }
+      // 4. 将 workLoop 追加的新消息持久化回 Session
+      this.persistNewMessages(messages, messagesBefore)
 
       this.emitSessionEvent({ type: 'prompt_end', sessionId: this.id })
     } catch (error) {
+      // 即使出错也持久化中间消息
+      this.persistNewMessages(messages, messagesBefore)
+
       this.emitSessionEvent({
         type: 'error',
         sessionId: this.id,
@@ -141,25 +188,21 @@ export class AgentSession implements IAgentSession {
 
   // ──── 内部方法 ────
 
-  private handleAgentEvent(event: import('@vitamin/agent').AgentEvent): void {
-    // 工具调用结果等细粒度事件可在此扩展持久化逻辑
-    // 当前保持简洁：仅在 prompt() 层面持久化 user/assistant 消息
+  private persistNewMessages(messages: AgentMessage[], startIndex: number): void {
+    const newMessages = messages.slice(startIndex)
+    for (const msg of newMessages) {
+      this.session.append(msg)
+    }
+  }
+
+  private handleAgentEvent(_event: import('@vitamin/agent').AgentEvent): void {
+    // 细粒度事件处理可在此扩展
   }
 
   private emitSessionEvent(event: AgentSessionEvent): void {
     for (const listener of this.sessionEventListeners) {
       listener(event)
     }
-  }
-
-  private extractAssistantText(message: AssistantMessage): string {
-    const parts: string[] = []
-    for (const block of message.content) {
-      if (block.type === 'text') {
-        parts.push(block.text)
-      }
-    }
-    return parts.join('')
   }
 
   private ensureNotDisposed(): void {

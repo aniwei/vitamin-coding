@@ -4,11 +4,11 @@ import { createLogger } from '@vitamin/shared'
 import { loadConfig } from '@vitamin/config'
 import { attachLogListener } from '@vitamin/shared'
 import { createInMemorySessionStore } from '@vitamin/session'
-import { createAgent } from '@vitamin/agent'
+import { createAgentWithRegistry } from '@vitamin/agent'
 import { AgentSession } from './agent-session'
 
 import type { SessionStore } from '@vitamin/session'
-import type { AgentTool } from '@vitamin/agent'
+import type { AgentMessage, AgentTool } from '@vitamin/agent'
 import type { Model, ProviderRegistry } from '@vitamin/ai'
 import type {
   SystemContext,
@@ -27,7 +27,7 @@ interface VitaminAppOptions {
     destination: string
   }
   /** 自定义 SessionStore 实现（默认 InMemorySessionStore） */
-  sessionStore?: SessionStore
+  sessionStore?: SessionStore<AgentMessage>
   /** 默认模型 */
   model?: Model
   /** 默认工具集 */
@@ -60,7 +60,7 @@ interface VitaminAppOptions {
 class VitaminApp implements SystemContext {
   private devtools: Devtools | null = null
   private globalLogSubscription: ReturnType<typeof attachLogListener> | null = null
-  private sessionStore: SessionStore
+  private sessionStore: SessionStore<AgentMessage>
   private activeSessions = new Map<string, AgentSession>()
   private options: VitaminAppOptions
 
@@ -87,7 +87,7 @@ class VitaminApp implements SystemContext {
     })
 
     this.config = {} as Awaited<ReturnType<typeof loadConfig>>
-    this.sessionStore = options.sessionStore ?? createInMemorySessionStore()
+    this.sessionStore = options.sessionStore ?? createInMemorySessionStore<AgentMessage>()
   }
 
   // ──── 会话管理（多会话核心） ────
@@ -106,6 +106,7 @@ class VitaminApp implements SystemContext {
     const model = options?.model ?? this.options.model
     const tools = options?.tools ?? this.options.tools ?? []
     const systemPrompt = options?.systemPrompt ?? this.options.systemPrompt ?? ''
+    const providerRegistry = options?.providerRegistry ?? this.options.providerRegistry
 
     if (!model) {
       throw new Error(
@@ -113,15 +114,18 @@ class VitaminApp implements SystemContext {
       )
     }
 
-    const agent = createAgent({
+    // Agent 只需要 stream — 通过 providerRegistry + model 自动构建
+    const agent = createAgentWithRegistry({
+      model,
+      providerRegistry,
+    })
+
+    const agentSession = new AgentSession(session, agent, {
       model,
       systemPrompt,
       tools,
       thinkingLevel: options?.thinkingLevel,
-      ...(options?.agentConfig ?? {}),
     })
-
-    const agentSession = new AgentSession(session, agent)
 
     this.activeSessions.set(sessionId, agentSession)
 

@@ -9,13 +9,28 @@ import { createOracleAgent } from '../src/agents/oracle'
 import { createLibrarianAgent } from '../src/agents/librarian'
 import { createSisyphusJuniorAgent } from '../src/agents/sisyphus-junior'
 
-import type { AgentEventListener, AgentMessage, AgentState, AgentTool } from '@vitamin/agent'
+import type { AgentEventListener, AgentMessage, AgentRunContext, AgentState, AgentTool } from '@vitamin/agent'
 import type { AssistantMessage, Model } from '@vitamin/ai'
 
 // ═══ 手工 Stub（不使用测试框架 mock/spyon）═══
 
+function makeModel(): Model {
+  return {
+    id: 'test/stub',
+    name: 'Stub',
+    api: 'openai-completions',
+    provider: 'openai',
+    baseUrl: 'https://example.com',
+    reasoning: false,
+    input: ['text'],
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    contextWindow: 128000,
+    maxOutputTokens: 4096,
+  }
+}
+
 interface TestAgentOptions {
-  promptResult?: AssistantMessage
+  runResult?: AssistantMessage
   state?: Partial<AgentState>
 }
 
@@ -25,10 +40,6 @@ function createTestAgent(opts: TestAgentOptions = {}) {
 
   const defaultState: AgentState = {
     status: 'idle',
-    systemPrompt: 'test',
-    model: 'test-model' as Model,
-    tools: [],
-    messages: [{ role: 'user', content: 'hello' }] as AgentMessage[],
     turnCount: 1,
     tokenUsage: { input: 100, output: 50, cacheRead: 0 },
     isStreaming: false,
@@ -38,8 +49,8 @@ function createTestAgent(opts: TestAgentOptions = {}) {
   }
 
   return {
-    async prompt(_msg: AgentMessage): Promise<AssistantMessage> {
-      return opts.promptResult ?? { role: 'assistant' as const, content: 'default response' }
+    async run(_context: AgentRunContext): Promise<AssistantMessage> {
+      return opts.runResult ?? { role: 'assistant' as const, content: 'default response' }
     },
     getState(): Readonly<AgentState> {
       return defaultState
@@ -133,16 +144,22 @@ describe('extractTextContent', () => {
 
 describe('wrapAgent', () => {
   describe('#given a test agent', () => {
+    const testModel = makeModel()
+
     describe('#when prompt is called', () => {
-      it('#then delegates to agent.prompt and returns AgentResult', async () => {
+      it('#then delegates to agent.run and returns AgentResult', async () => {
         const testAgent = createTestAgent({
-          promptResult: {
+          runResult: {
             role: 'assistant',
             content: [{ type: 'text', text: 'wrapped response' }],
           },
         })
 
-        const instance = wrapAgent(testAgent as never)
+        const instance = wrapAgent(testAgent as never, {
+          model: testModel,
+          systemPrompt: 'test prompt',
+          tools: [],
+        })
         const result = await instance.prompt('test message')
 
         expect(result.output).toBe('wrapped response')
@@ -155,7 +172,11 @@ describe('wrapAgent', () => {
     describe('#when abort is called', () => {
       it('#then delegates to agent.abort', () => {
         const testAgent = createTestAgent()
-        const instance = wrapAgent(testAgent as never)
+        const instance = wrapAgent(testAgent as never, {
+          model: testModel,
+          systemPrompt: 'test',
+          tools: [],
+        })
 
         instance.abort()
         expect(testAgent._aborted).toBe(true)
@@ -165,7 +186,11 @@ describe('wrapAgent', () => {
     describe('#when on is called', () => {
       it('#then registers the listener on agent', () => {
         const testAgent = createTestAgent()
-        const instance = wrapAgent(testAgent as never)
+        const instance = wrapAgent(testAgent as never, {
+          model: testModel,
+          systemPrompt: 'test',
+          tools: [],
+        })
 
         const listener = (() => {}) as AgentEventListener
         instance.on(listener)

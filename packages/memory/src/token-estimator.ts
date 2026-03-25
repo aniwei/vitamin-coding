@@ -1,5 +1,3 @@
-// @vitamin/memory — Token 估算工具
-
 import type { Message, AssistantMessage } from '@vitamin/ai'
 import type { ContextTokenEstimate } from './types'
 

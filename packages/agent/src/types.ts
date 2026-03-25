@@ -76,14 +76,9 @@ export interface CustomAgentMessages {
 }
 export type AgentMessage = Message | CustomAgentMessages[keyof CustomAgentMessages]
 
-// Agent 状态
+// Agent 运行时状态（纯执行快照，不持有 messages/model/tools）
 export interface AgentState {
   status: AgentStatus
-  systemPrompt: string
-  model: Model
-  thinkingLevel?: ThinkingLevel
-  tools: AgentTool[]
-  messages: AgentMessage[]
   turnCount: number
   tokenUsage: { input: number; output: number; cacheRead: number }
   isStreaming: boolean
@@ -92,7 +87,29 @@ export interface AgentState {
   error?: Error
 }
 
-// Agent 循环配置
+// Agent 运行上下文 — 每次 run() 由调用方构建传入
+export interface AgentRunContext {
+  model: Model
+  systemPrompt: string
+  messages: AgentMessage[]
+  tools: AgentTool[]
+  // AgentMessage[] → LLM Message[] 转换
+  convertToLLM?: (messages: AgentMessage[]) => Message[] | Promise<Message[]>
+  // 上下文转换（压缩/裁剪/注入）— 由外部 MemoryManager 驱动
+  transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>
+  // 最大连续工具调用轮次（安全阀）
+  maxToolTurns?: number
+  // 思维级别
+  thinkingLevel?: ThinkingLevel
+  // 最大输出 token
+  maxTokens?: number
+  // 温度
+  temperature?: number
+  // 开发工具
+  devtools?: Devtools
+}
+
+// Agent 循环配置（内部使用，由 Agent.run() 从 AgentRunContext 构建）
 export interface AgentLoopContext {
   model: Model
   systemPrompt: string
@@ -148,15 +165,9 @@ export interface ToolResult {
   details?: Record<string, unknown>
 }
 
-// Agent 配置
+// Agent 配置（创建时仅需 stream 函数，其余通过 run() 传入）
 export interface AgentConfig {
-  model: Model
-  systemPrompt: string
-  tools?: AgentTool[]
-  maxToolTurns?: number
-  thinkingLevel?: ThinkingLevel
-  maxTokens?: number
-  temperature?: number
+  /** stream 函数（LLM 调用实现） */
   stream?: (
     context: StreamContext,
     signal: AbortSignal,

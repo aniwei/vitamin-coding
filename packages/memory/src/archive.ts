@@ -187,10 +187,6 @@ export class RemoteArchiveStorage implements ArchiveStorage {
   }
 }
 
-// ══════════════════════════════════════════════════════
-// 工厂函数
-// ══════════════════════════════════════════════════════
-
 export function createArchiveStorage(config: import('./types').StorageConfig): ArchiveStorage {
   switch (config.type) {
     case 'local': {
@@ -208,10 +204,6 @@ export function createArchiveStorage(config: import('./types').StorageConfig): A
       return new InMemoryArchiveStorage()
   }
 }
-
-// ══════════════════════════════════════════════════════
-// 内部辅助
-// ══════════════════════════════════════════════════════
 
 function formatArchive(messages: Message[], summary: string, timestamp: number): string {
   const date = new Date(timestamp).toISOString()
