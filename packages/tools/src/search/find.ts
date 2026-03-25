@@ -122,7 +122,9 @@ async function find(
     })
 
     if (results.length === 0) {
-      throw new Error('No files found matching pattern');
+      return {
+        content: [{ type: 'text', text: 'No files found matching pattern' }],
+      }
     }
 
     const relativized = results.map(path => 
@@ -175,13 +177,17 @@ async function find(
   })
 
   if (result.exitCode !== 0) {
-    throw new Error(result.stderr?.trim() || `fd exited with code ${result.exitCode}`)
+    return {
+      content: [{ type: 'text', text: result.stderr?.trim() || `fd exited with code ${result.exitCode}` }],
+    }
   }
 
   const output = result.stdout?.trim() || ''
 
   if (!output) {
-    throw new Error('No files found matching pattern')
+    return {
+      content: [{ type: 'text', text: 'No files found matching pattern' }],
+    }
   }
 
   const lines = output.split('\n')

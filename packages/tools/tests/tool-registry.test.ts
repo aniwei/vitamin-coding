@@ -161,4 +161,64 @@ describe('ToolRegistry', () => {
       expect(registry.size).toBe(0)
     })
   })
+
+  describe('#when execute is called on a retrieved tool', () => {
+    it('#then execute receives ctx params and returns expected content', async () => {
+      const registry = new ToolRegistry()
+      let received: unknown
+
+      const execTool: AgentTool = {
+        name: 'echo',
+        description: 'echo tool',
+        parameters: {
+          safeParse(input: unknown) {
+            return { success: true as const, data: input }
+          },
+        } as never,
+        execute: async (ctx) => {
+          received = ctx.params
+          return { content: [{ type: 'text' as const, text: `echo:${String(ctx.params)}` }] }
+        },
+      }
+
+      registry.register(execTool)
+      const tool = registry.get('echo')
+      const result = await tool!.execute({
+        id: 'call-1',
+        params: 'hello',
+        signal: new AbortController().signal,
+      })
+
+      expect(received).toBe('hello')
+      expect(result.content[0]?.type).toBe('text')
+      expect(result.content[0]?.text).toBe('echo:hello')
+    })
+
+    it('#then getAvailable tools are executable', async () => {
+      const registry = new ToolRegistry()
+
+      const standardTool: AgentTool = {
+        name: 'std-exec',
+        description: 'standard executable tool',
+        parameters: {
+          safeParse(input: unknown) {
+            return { success: true as const, data: input }
+          },
+        } as never,
+        execute: async () => ({ content: [{ type: 'text' as const, text: 'ran' }] }),
+      }
+
+      registry.register(standardTool, { preset: 'standard' })
+      const available = registry.getAvailable('standard')
+      const result = await available[0]!.execute({
+        id: 'call-2',
+        params: {},
+        signal: new AbortController().signal,
+      })
+
+      expect(available).toHaveLength(1)
+      expect(available[0]?.name).toBe('std-exec')
+      expect(result.content[0]?.text).toBe('ran')
+    })
+  })
 })

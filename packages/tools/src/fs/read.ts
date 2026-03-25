@@ -104,7 +104,9 @@ async function readTextWithRange(
 
   // Check if offset is out of bounds
   if (start >= lines.length) {
-    throw new Error(`Offset ${offset} is beyond end of file (${lines.length} lines total)`)
+    return {
+      content: [{ type: 'text', text: `Offset ${offset} is beyond end of file (${lines.length} lines total)` }],
+    }
   }
 
   let selectedContent: string
@@ -131,20 +133,19 @@ async function readTextWithRange(
     output = truncation.content
 
     if (truncation.truncatedBy === 'lines') {
-      output += `\n\n(Showing lines ${displayLine}-${end} of ${lines.length}. Use offset=${offset} to continue)`;
+      output += `\n\n(Showing lines ${displayLine}-${end} of ${lines.length}. Use offset=${offset} to continue)`
     } else {
-      output += `\n\n(Showing lines ${displayLine}-${end} of ${lines.length} (${formatBytes(maxBytes)} limit). Use offset=${offset} to continue)`;
+      output += `\n\n(Showing lines ${displayLine}-${end} of ${lines.length} (${formatBytes(maxBytes)} limit). Use offset=${offset} to continue)`
     }
 
   } else if (userLimitedLines !== undefined && start + userLimitedLines < lines.length) {
     const remaining = lines.length - (start + userLimitedLines)
     const offset = start + userLimitedLines + 1
 
-    output = truncation.content;
-    output += `\n\n(${remaining} more lines in file. Use offset=${offset} to continue)`;
+    output = truncation.content
+    output += `\n\n(${remaining} more lines in file. Use offset=${offset} to continue)`
   } else {
-    // No truncation, no user limit exceeded
-    output = truncation.content;
+    output = truncation.content
   }
 
   return {
