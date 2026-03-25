@@ -1,8 +1,9 @@
 // @vitamin/hooks — 生命周期 Hook 引擎
-export { HookRegistry, createHookRegistry } from './hook-registry'
+export { HookRegistry, createHookRegistry, HookEngine, createHookEngine } from './hook-registry'
+export type { HookPreset, HookRegistryOptions, HookEngineOptions } from './hook-registry'
 export { safeCreateHook, isHookEnabled, safeHookEnabled } from './safe-hook'
 
-// 16 个核心 Hook
+// 核心 Hook
 export {
   createFirstMessageVariantHook,
   createSessionRecoveryHook,
@@ -21,8 +22,33 @@ export {
   createCommentCheckerHook,
   createBabysittingHook,
   createRalphLoopHook,
+  // Stream 生命周期
+  createStreamMetricsHook,
+  createStreamEndMetricsHook,
+  getStreamMetrics,
+  clearStreamMetrics,
+  // Compaction 生命周期
+  createCompactionLoggerHook,
+  createCompactionAfterHook,
+  getCompactionStats,
+  clearCompactionStats,
+  // Background 生命周期
+  createBackgroundStartHook,
+  createBackgroundEndHook,
+  getActiveBackgroundTasks,
+  getCompletedBackgroundTasks,
+  clearBackgroundTaskHistory,
+  // Tool 错误追踪
+  createToolErrorTrackerHook,
+  getToolErrors,
+  clearToolErrors,
+  // Token 预算
+  createTokenBudgetHook,
+  trackTokenUsage,
+  getTokenUsage,
+  clearTokenUsage,
 } from './core'
-export type { ContextInjectorConfig, ContextProvider, IdleContinuationConfig, ErrorRecoveryConfig } from './core'
+export type { ContextInjectorConfig, ContextProvider, IdleContinuationConfig, ErrorRecoveryConfig, ToolErrorTrackerConfig, TokenBudgetConfig } from './core'
 
 // 类型导出
 export type {

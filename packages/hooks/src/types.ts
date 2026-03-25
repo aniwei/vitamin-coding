@@ -48,13 +48,13 @@ export interface ChatMessageOutput {
 export interface ToolExecuteBeforeInput {
   toolName: string
   toolCallId: string
-  arguments: Record<string, unknown>
+  args: Record<string, unknown>
   agentName: string
   sessionId: string
 }
 
 export interface ToolExecuteBeforeOutput {
-  arguments: Record<string, unknown>
+  args: Record<string, unknown>
   cancelled: boolean
   cancelReason?: string
 }
@@ -62,7 +62,7 @@ export interface ToolExecuteBeforeOutput {
 export interface ToolExecuteAfterInput {
   toolName: string
   toolCallId: string
-  arguments: Record<string, unknown>
+  args: Record<string, unknown>
   result: ToolResult
   agentName: string
   sessionId: string

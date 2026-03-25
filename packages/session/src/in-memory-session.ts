@@ -1,9 +1,25 @@
-import type { Session, SessionContext, SessionEntry } from './types'
+import type { Session, SessionContext, SessionEntry, SessionMetadata } from './types'
 
 export class InMemorySession<T = unknown> implements Session<T> {
   private readonly sessionEntries: SessionEntry<T>[] = []
+  private readonly meta: SessionMetadata
 
-  constructor(public readonly id: string) {}
+  constructor(
+    public readonly id: string,
+    parentSessionId?: string,
+    forkPoint?: number,
+  ) {
+    const now = Date.now()
+    this.meta = {
+      createdAt: now,
+      lastActiveAt: now,
+      messageCount: 0,
+      compactionCount: 0,
+      parentSessionId,
+      forkPoint,
+      tags: [],
+    }
+  }
 
   append(message: T): void {
     this.sessionEntries.push({
@@ -11,6 +27,8 @@ export class InMemorySession<T = unknown> implements Session<T> {
       message,
       timestamp: Date.now(),
     })
+    this.meta.messageCount++
+    this.meta.lastActiveAt = Date.now()
   }
 
   compact(summary: string, compactedCount: number): void {
@@ -27,6 +45,8 @@ export class InMemorySession<T = unknown> implements Session<T> {
       compactedCount,
       timestamp: Date.now(),
     })
+    this.meta.compactionCount++
+    this.meta.lastActiveAt = Date.now()
   }
 
   entries(): ReadonlyArray<SessionEntry<T>> {
@@ -70,6 +90,45 @@ export class InMemorySession<T = unknown> implements Session<T> {
     return this.sessionEntries
       .filter((e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message')
       .map((e) => e.message)
+  }
+
+  metadata(): SessionMetadata {
+    return { ...this.meta, tags: [...this.meta.tags] }
+  }
+
+  // ── 内部方法供 Store / Manager 使用 ──
+
+  /** 设置标题 */
+  setTitle(title: string): void {
+    this.meta.title = title
+    this.meta.lastActiveAt = Date.now()
+  }
+
+  /** 设置标签 */
+  setTags(tags: string[]): void {
+    this.meta.tags = [...tags]
+  }
+
+  /** 添加标签 */
+  addTag(tag: string): void {
+    if (!this.meta.tags.includes(tag)) {
+      this.meta.tags.push(tag)
+    }
+  }
+
+  /** 从快照恢复 entries（用于持久化加载） */
+  restoreEntries(entries: SessionEntry<T>[], meta: SessionMetadata): void {
+    this.sessionEntries.length = 0
+    this.sessionEntries.push(...entries)
+    Object.assign(this.meta, meta)
+  }
+
+  /** 导出快照 */
+  toSnapshot(): { entries: SessionEntry<T>[]; metadata: SessionMetadata } {
+    return {
+      entries: [...this.sessionEntries],
+      metadata: this.metadata(),
+    }
   }
 
   // 内部: 获取最后一个压缩边界之后的 message 条目

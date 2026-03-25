@@ -1,6 +1,6 @@
 // @vitamin/coding-agent 类型定义
 import type { VitaminConfig } from '@vitamin/config'
-import type { HookEngine } from '@vitamin/hooks'
+import type { HookRegistry } from '@vitamin/hooks'
 import type { AgentRegistry, BackgroundManager, Dispatcher } from '@vitamin/orchestrator'
 import type { ToolRegistry } from '@vitamin/tools'
 import type { ProviderRegistry } from '@vitamin/ai'
@@ -26,7 +26,7 @@ export interface Subsystems {
   config: VitaminConfig
   providerRegistry: ProviderRegistry
   toolRegistry: ToolRegistry
-  hookEngine: HookEngine
+  hookEngine: HookRegistry
   agentRegistry: AgentRegistry
   taskDispatcher: Dispatcher
   backgroundManager: BackgroundManager

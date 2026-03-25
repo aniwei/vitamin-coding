@@ -29,3 +29,40 @@ export {
   createBabysittingHook,
   createRalphLoopHook,
 } from './quality'
+
+export {
+  createStreamMetricsHook,
+  createStreamEndMetricsHook,
+  getStreamMetrics,
+  clearStreamMetrics,
+} from './stream'
+
+export {
+  createCompactionLoggerHook,
+  createCompactionAfterHook,
+  getCompactionStats,
+  clearCompactionStats,
+} from './compaction'
+
+export {
+  createBackgroundStartHook,
+  createBackgroundEndHook,
+  getActiveBackgroundTasks,
+  getCompletedBackgroundTasks,
+  clearBackgroundTaskHistory,
+} from './background'
+
+export {
+  createToolErrorTrackerHook,
+  getToolErrors,
+  clearToolErrors,
+} from './tool-guard'
+export type { ToolErrorTrackerConfig } from './tool-guard'
+
+export {
+  createTokenBudgetHook,
+  trackTokenUsage,
+  getTokenUsage,
+  clearTokenUsage,
+} from './transform'
+export type { TokenBudgetConfig } from './transform'

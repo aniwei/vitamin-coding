@@ -1,4 +1,19 @@
 import { createLogger } from '@vitamin/shared'
+import { createFileGuardHook } from './core/tool-guard/file-guard'
+import { createOutputTruncationHook } from './core/tool-guard/output-truncation'
+import { createLabelTruncatorHook } from './core/tool-guard/label-truncator'
+import { createThinkingValidatorHook } from './core/transform/thinking-validator'
+import { createAnthropicEffortHook } from './core/transform/anthropic-effort'
+import { createFirstMessageVariantHook } from './core/session/first-message-variant'
+import { createBabysittingHook } from './core/quality/babysitting'
+import { createRalphLoopHook } from './core/quality/ralph-loop'
+import { createCommentCheckerHook } from './core/quality/comment-checker'
+import { createStreamMetricsHook } from './core/stream/stream-metrics'
+import { createCompactionLoggerHook } from './core/compaction/compaction-logger'
+import { createToolErrorTrackerHook } from './core/tool-guard/tool-error-tracker'
+import { createTokenBudgetHook } from './core/transform/token-budget'
+import { createBackgroundStartHook, createBackgroundEndHook } from './core/background/background-tracker'
+
 import type { HookHandler, HookInput, HookOutput, HookRegistration, HookTiming } from './types'
 
 const logger = createLogger('@vitamin/hooks')
@@ -63,9 +78,26 @@ function createHookBuckets(): Record<HookTiming, RuntimeHook[]> {
   }
 }
 
+export type HookPreset = 'default' | 'strict' | 'minimal' | 'none'
+
+export interface HookRegistryOptions {
+  preset?: HookPreset
+}
+
+/** @deprecated Use HookRegistryOptions instead */
+export type HookEngineOptions = HookRegistryOptions
+
 export class HookRegistry {
   private readonly hooks = createHookBuckets()
   private readonly disabled = new Set<string>()
+
+  constructor(options?: HookRegistryOptions) {
+    if (options?.preset && options.preset !== 'none') {
+      this.applyPreset(options.preset)
+    }
+  }
+
+  // ── 注册 ──
 
   // 注册 Hook
   register<T extends HookTiming>(registration: HookRegistration<T>): void {
@@ -90,6 +122,29 @@ export class HookRegistry {
     })
 
     logger.debug(`Hook registered: ${registration.name} (timing=${registration.timing}, priority=${registration.priority})`)
+  }
+
+  // 批量注册 Hook
+  registerAll(registrations: HookRegistration[]): void {
+    for (const reg of registrations) {
+      this.register(reg)
+    }
+  }
+
+  // 便捷方法: 创建并注册
+  on<T extends HookTiming>(
+    timing: T,
+    name: string,
+    handler: HookHandler<T>,
+    priority = 50,
+  ): this {
+    this.register({ name, timing, priority, enabled: true, handler })
+    return this
+  }
+
+  // 检查是否存在指定名称的 Hook
+  has(name: string): boolean {
+    return this.getRegistered().some((h) => h.name === name)
   }
 
   // 注销 Hook
@@ -189,6 +244,15 @@ export class HookRegistry {
       .filter((hook) => hook.enabled && !this.disabled.has(hook.name))
       .sort((a, b) => a.priority - b.priority)
   }
+
+  // ── 预设 ──
+
+  private applyPreset(preset: HookPreset): void {
+    const hooks = getPresetHooks(preset)
+    for (const hook of hooks) {
+      this.register(hook)
+    }
+  }
 }
 
 function toHookInfo(hook: RuntimeHook): RegisteredHookInfo {
@@ -200,6 +264,59 @@ function toHookInfo(hook: RuntimeHook): RegisteredHookInfo {
   }
 }
 
-export function createHookRegistry(): HookRegistry {
-  return new HookRegistry()
+export function createHookRegistry(options?: HookRegistryOptions): HookRegistry {
+  return new HookRegistry(options)
+}
+
+/** @deprecated Use HookRegistry instead */
+export const HookEngine = HookRegistry
+/** @deprecated Use createHookRegistry instead */
+export const createHookEngine = createHookRegistry
+
+// ── 预设 Hook 集合 ──
+
+function getPresetHooks(preset: HookPreset): HookRegistration[] {
+  switch (preset) {
+    case 'default':
+      return getDefaultPresetHooks()
+    case 'strict':
+      return getStrictPresetHooks()
+    case 'minimal':
+      return getMinimalPresetHooks()
+    default:
+      return []
+  }
+}
+
+function getDefaultPresetHooks(): HookRegistration[] {
+  return [
+    createFileGuardHook() as HookRegistration,
+    createOutputTruncationHook() as HookRegistration,
+    createLabelTruncatorHook() as HookRegistration,
+    createThinkingValidatorHook() as HookRegistration,
+    createAnthropicEffortHook() as HookRegistration,
+    createFirstMessageVariantHook() as HookRegistration,
+    createBabysittingHook() as HookRegistration,
+    createRalphLoopHook() as HookRegistration,
+    createStreamMetricsHook() as HookRegistration,
+    createCompactionLoggerHook() as HookRegistration,
+    createToolErrorTrackerHook() as HookRegistration,
+    createTokenBudgetHook() as HookRegistration,
+    createBackgroundStartHook() as HookRegistration,
+    createBackgroundEndHook() as HookRegistration,
+  ]
+}
+
+function getStrictPresetHooks(): HookRegistration[] {
+  return [
+    ...getDefaultPresetHooks(),
+    createCommentCheckerHook() as HookRegistration,
+  ]
+}
+
+function getMinimalPresetHooks(): HookRegistration[] {
+  return [
+    createFileGuardHook() as HookRegistration,
+    createOutputTruncationHook() as HookRegistration,
+  ]
 }
