@@ -1,32 +1,49 @@
-import { BinaryToolExecutor, type BinaryTool } from './binary-executor'
+import os from 'os'
+import { 
+  BinaryToolExecutor, 
+  type BinaryTool 
+} from './binary-executor'
+
+function resolveUrl(
+  repository: string, 
+  version: string, 
+  asset: string
+): string {
+  return `https://github.com/${repository}/releases/download/${version}/${asset}`
+}
 
 export class RipgrepExecutor extends BinaryToolExecutor {
-  public readonly name = 'ripgrep'
+  public readonly name = 'rg'
   public readonly repository = 'BurntSushi/ripgrep'
+  public readonly version = '15.1.0'
 
   constructor(projectRoot: string) {
     super(projectRoot)
   }
 
-  resolveAsset(
-    version: string, 
-    platform: string, 
-    arch: string
-  ): string | undefined {
+  resolveUrl(): string | undefined  {
+    const platform = os.platform()
+    const arch = os.arch()
+
     switch (platform) {
       case 'darwin': {
-        const str = arch === 'arm64' ? 'aarch64' : 'x86_64'
-        return `ripgrep-v${version}-${str}-apple-darwin.tar.gz`
+        return arch === 'arm64'
+          ? resolveUrl(this.repository, this.version, `ripgrep-${this.version}-aarch64-apple-darwin.tar.gz`)
+          : resolveUrl(this.repository, this.version, `ripgrep-${this.version}-x86_64-apple-darwin.tar.gz`)
       }
       case 'linux': {
-        const str = arch === 'arm64' ? 'aarch64' : 'x86_64'
-        return `ripgrep-v${version}-${str}-unknown-linux-gnu.tar.gz`
+        return arch === 'arm64'
+          ? resolveUrl(this.repository, this.version, `ripgrep-${this.version}-aarch64-unknown-linux-gnu.tar.gz`)
+          : resolveUrl(this.repository, this.version, `ripgrep-${this.version}-x86_64-unknown-linux-gnu.tar.gz`)
       }
       case 'win32': {
-        const str = arch === 'arm64' ? 'aarch64' : 'x86_64'
-        return `ripgrep-v${version}-${str}-pc-windows-msvc.zip`
+        return arch === 'arm64'
+          ? resolveUrl(this.repository, this.version, `ripgrep-${this.version}-aarch64-pc-windows-msvc.zip`)
+          : resolveUrl(this.repository, this.version, `ripgrep-${this.version}-x86_64-pc-windows-msvc.zip`)
       }
     }
+
+    throw new Error(`Unsupported platform/architecture: ${platform}/${arch}`)
   }
 }
 

@@ -19,7 +19,6 @@ export type ReadArgs = z.infer<typeof ReadArgsSchema>
 export function createRead(
   projectRoot: string
 ): AgentTool<ReadArgs> {
- 
   return {
     name: 'read',
     description: 'Read file content. For text files, can specify line range with limit and offset.',
@@ -54,7 +53,7 @@ export function createRead(
         params.limit, 
         params.offset
       )
-    },
+    }
   }
 }
 

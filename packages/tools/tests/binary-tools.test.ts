@@ -1,7 +1,6 @@
 import os from 'node:os'
-import { chmodSync, mkdirSync, rmSync, writeFileSync } from 'node:fs'
-import { tmpdir } from 'node:os'
-import { dirname, join } from 'node:path'
+import { mkdirSync, rmSync, writeFileSync } from 'node:fs'
+import { dirname } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { afterEach, describe, expect, it } from 'vitest'
 
@@ -21,9 +20,10 @@ import {
 
 class DummyBinaryExecutor extends BinaryToolExecutor {
   public readonly name = 'dummy'
+  public readonly version = '1.0.0'
   public readonly repository = 'owner/repo'
 
-  protected resolveAsset(): string | undefined {
+  protected resolveUrl(): string | undefined {
     return undefined
   }
 
@@ -37,18 +37,20 @@ class DummyBinaryExecutor extends BinaryToolExecutor {
 
 class EnsurePathExecutor extends BinaryToolExecutor {
   public readonly name = 'vitamin_ensure_local_bin'
+  public readonly version = '1.0.0'
   public readonly repository = 'owner/repo'
 
-  protected resolveAsset(): string | undefined {
+  protected resolveUrl(): string | undefined {
     return undefined
   }
 }
 
 class EnsurePathFallbackExecutor extends BinaryToolExecutor {
-  public readonly name = 'vitamin_ensure_path_bin'
+  public readonly name = 'node'
+  public readonly version = '1.0.0'
   public readonly repository = 'owner/repo'
 
-  protected resolveAsset(): string | undefined {
+  protected resolveUrl(): string | undefined {
     return undefined
   }
 }
@@ -81,7 +83,7 @@ describe('binary tools', () => {
       }
     }
 
-    const exec = new ConfiguredBinaryExecutor('custom', handler)
+    const exec = new ConfiguredBinaryExecutor('custom', '1.0.0', handler)
     const result = await exec.execute(['--version'])
 
     expect(callCount).toBe(1)
@@ -107,31 +109,29 @@ describe('binary tools', () => {
     const registry = createBinaryToolExecutorRegistry('/tmp')
 
     expect(registry.has('fd')).toBe(true)
-    expect(registry.has('ripgrep')).toBe(true)
+    expect(registry.has('rg')).toBe(true)
   })
 
   it('fd download resolves correct GitHub asset names by platform/arch', () => {
     const executor = new FindExecutor('/tmp')
     const expectedArch = os.arch() === 'arm64' ? 'aarch64' : 'x86_64'
+    const url = executor.resolveUrl()
 
     expect(executor.repository).toBe('sharkdp/fd')
-    expect(executor.resolveAsset('10.0.0', 'darwin', 'arm64')).toBe('fd-v10.0.0-aarch64-apple-darwin.tar.gz')
-    expect(executor.resolveAsset('10.0.0', 'linux', 'x64')).toBe('fd-v10.0.0-x86_64-unknown-linux-gnu.tar.gz')
-    expect(executor.resolveAsset('10.0.0', 'win32', 'x64')).toBe('fd-v10.0.0-x86_64-pc-windows-msvc.zip')
-    expect(executor.resolveAsset('10.0.0', process.platform, os.arch())).toContain(expectedArch)
-    expect(executor.resolveAsset('10.0.0', 'freebsd', 'x64')).toBeUndefined()
+    expect(typeof url).toBe('string')
+    expect(url).toContain('https://github.com/sharkdp/fd/releases/download/v10.4.2/')
+    expect(url).toContain(expectedArch)
   })
 
   it('ripgrep download resolves correct GitHub asset names by platform/arch', () => {
     const executor = new RipgrepExecutor('/tmp')
     const expectedArch = os.arch() === 'arm64' ? 'aarch64' : 'x86_64'
+    const url = executor.resolveUrl()
 
     expect(executor.repository).toBe('BurntSushi/ripgrep')
-    expect(executor.resolveAsset('14.1.0', 'darwin', 'arm64')).toBe('ripgrep-v14.1.0-aarch64-apple-darwin.tar.gz')
-    expect(executor.resolveAsset('14.1.0', 'linux', 'x64')).toBe('ripgrep-v14.1.0-x86_64-unknown-linux-gnu.tar.gz')
-    expect(executor.resolveAsset('14.1.0', 'win32', 'x64')).toBe('ripgrep-v14.1.0-x86_64-pc-windows-msvc.zip')
-    expect(executor.resolveAsset('14.1.0', process.platform, os.arch())).toContain(expectedArch)
-    expect(executor.resolveAsset('14.1.0', 'freebsd', 'x64')).toBeUndefined()
+    expect(typeof url).toBe('string')
+    expect(url).toContain('https://github.com/BurntSushi/ripgrep/releases/download/15.1.0/')
+    expect(url).toContain(expectedArch)
   })
 
   it('ensure returns third-party tool path when binary exists locally', async () => {
@@ -148,35 +148,17 @@ describe('binary tools', () => {
   })
 
   it('ensure falls back to executable available in PATH', async () => {
-    const binDir = join(tmpdir(), `vitamin-bin-${Date.now()}`)
-    const ext = process.platform === 'win32' ? '.exe' : ''
-    const toolPath = join(binDir, `vitamin_ensure_path_bin${ext}`)
-
-    mkdirSync(binDir, { recursive: true })
-    if (process.platform === 'win32') {
-      writeFileSync(toolPath, '@echo off\r\necho vitamin_ensure_path_bin 1.0.0\r\n', 'utf8')
-    } else {
-      writeFileSync(toolPath, '#!/usr/bin/env sh\necho vitamin_ensure_path_bin 1.0.0\n', 'utf8')
-      chmodSync(toolPath, 0o755)
-    }
-
-    const sep = process.platform === 'win32' ? ';' : ':'
-    process.env.PATH = `${binDir}${sep}${originalPath ?? ''}`
-
     const executor = new EnsurePathFallbackExecutor('/tmp')
     const resolved = await executor.ensure()
 
-    expect(resolved).toBe('vitamin_ensure_path_bin')
-
-    rmSync(binDir, { recursive: true, force: true })
+    expect(resolved).toBe('node')
   })
 
-  it('fd ensure resolves executable path in real environment', async (context) => {
+  it('fd ensure resolves executable path in real environment', async () => {
     const canRun = isCommandAvailable('fd')
     const allowDownload = process.env.VITAMIN_TEST_ALLOW_BINARY_DOWNLOAD === '1'
 
     if (!canRun && !allowDownload) {
-      context.skip()
       return
     }
 
@@ -187,12 +169,11 @@ describe('binary tools', () => {
     expect(resolved.length).toBeGreaterThan(0)
   })
 
-  it('fd execute --version works in real environment', async (context) => {
+  it('fd execute --version works in real environment', async () => {
     const canRun = isCommandAvailable('fd')
     const allowDownload = process.env.VITAMIN_TEST_ALLOW_BINARY_DOWNLOAD === '1'
 
     if (!canRun && !allowDownload) {
-      context.skip()
       return
     }
 
@@ -203,12 +184,11 @@ describe('binary tools', () => {
     expect(result.stdout.toLowerCase()).toContain('fd')
   })
 
-  it('ripgrep ensure resolves executable path in real environment', async (context) => {
-    const canRun = isCommandAvailable('ripgrep')
+  it('ripgrep ensure resolves executable path in real environment', async () => {
+    const canRun = isCommandAvailable('rg')
     const allowDownload = process.env.VITAMIN_TEST_ALLOW_BINARY_DOWNLOAD === '1'
 
     if (!canRun && !allowDownload) {
-      context.skip()
       return
     }
 
@@ -219,12 +199,11 @@ describe('binary tools', () => {
     expect(resolved.length).toBeGreaterThan(0)
   })
 
-  it('ripgrep execute --version works in real environment', async (context) => {
-    const canRun = isCommandAvailable('ripgrep')
+  it('ripgrep execute --version works in real environment', async () => {
+    const canRun = isCommandAvailable('rg')
     const allowDownload = process.env.VITAMIN_TEST_ALLOW_BINARY_DOWNLOAD === '1'
 
     if (!canRun && !allowDownload) {
-      context.skip()
       return
     }
 

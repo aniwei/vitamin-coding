@@ -4,8 +4,8 @@ import { readFileSync } from 'node:fs'
 import { resolve, extname } from 'node:path'
 import { pathToFileURL } from 'node:url'
 import { createLogger } from '@vitamin/shared'
-import type { Diagnostic, ResolvedServer } from './types'
 import { EXT_TO_LANG } from './constants'
+import type { Diagnostic, ResolvedServer } from './types'
 
 const logger = createLogger('@vitamin/tools:lsp')
 
@@ -27,10 +27,8 @@ interface PendingRequest {
   timer: ReturnType<typeof setTimeout>
 }
 
-// ─── LSP Client ─────────────────────────────────────────────────────────────
-
 export class LSPClient {
-  private proc: ChildProcess | null = null
+  private process: ChildProcess | null = null
   private nextId = 1
   private pending = new Map<number, PendingRequest>()
   private buffer = Buffer.alloc(0)
@@ -50,8 +48,6 @@ export class LSPClient {
     private readonly server: ResolvedServer,
   ) {}
 
-  // ─── Lifecycle ──────────────────────────────────────────────────────────
-
   async start(): Promise<void> {
     const cwdValidation = validateCwd(this.root)
     if (!cwdValidation.valid) {
@@ -63,13 +59,13 @@ export class LSPClient {
     }
 
     const [cmd, ...args] = this.server.command
-    this.proc = spawn(cmd!, args, {
+    this.process = spawn(cmd!, args, {
       cwd: this.root,
       env: { ...process.env, ...this.server.env },
       stdio: ['pipe', 'pipe', 'pipe'],
     })
 
-    const proc = this.proc
+    const proc = this.process
 
     proc.on('exit', (code) => {
       this.processExited = true
@@ -177,14 +173,14 @@ export class LSPClient {
     }
     this.pending.clear()
 
-    if (!this.processExited && this.proc) {
+    if (!this.processExited && this.process) {
       try {
         this.sendNotification('shutdown')
         this.sendNotification('exit')
       } catch {}
 
-      const proc = this.proc
-      this.proc = null
+      const proc = this.process
+      this.process = null
 
       // Wait for graceful exit
       const exited = await Promise.race([
@@ -201,7 +197,7 @@ export class LSPClient {
     }
 
     this.processExited = true
-    this.proc = null
+    this.process = null
     this.diagnosticsStore.clear()
     this.openedFiles.clear()
     this.documentVersions.clear()
@@ -209,7 +205,7 @@ export class LSPClient {
   }
 
   isAlive(): boolean {
-    return this.proc !== null && !this.processExited && this.proc.exitCode === null
+    return this.process !== null && !this.processExited && this.process.exitCode === null
   }
 
   // ─── JSON-RPC protocol ─────────────────────────────────────────────────
@@ -306,14 +302,14 @@ export class LSPClient {
   }
 
   private sendRequest<T = unknown>(method: string, params?: unknown): Promise<T> {
-    if (!this.proc?.stdin?.writable) {
+    if (!this.process?.stdin?.writable) {
       throw new Error('LSP client not started')
     }
 
-    if (this.processExited || (this.proc && this.proc.exitCode !== null)) {
+    if (this.processExited || (this.process && this.process.exitCode !== null)) {
       const stderr = this.stderrBuffer.slice(-10).join('\n')
       throw new Error(
-        `LSP server already exited (code: ${this.proc?.exitCode})` +
+        `LSP server already exited (code: ${this.process?.exitCode})` +
           (stderr ? `\nstderr: ${stderr}` : ''),
       )
     }
@@ -335,22 +331,22 @@ export class LSPClient {
       this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject, timer })
 
       const body = JSON.stringify({ jsonrpc: '2.0', id, method, params })
-      this.proc!.stdin!.write(encodeMessage(body))
+      this.process!.stdin!.write(encodeMessage(body))
     })
   }
 
   private sendNotification(method: string, params?: unknown): void {
-    if (!this.proc?.stdin?.writable) return
-    if (this.processExited || (this.proc && this.proc.exitCode !== null)) return
+    if (!this.process?.stdin?.writable) return
+    if (this.processExited || (this.process && this.process.exitCode !== null)) return
 
     const body = JSON.stringify({ jsonrpc: '2.0', method, params })
-    this.proc.stdin.write(encodeMessage(body))
+    this.process.stdin.write(encodeMessage(body))
   }
 
   private respond(id: number, result: unknown): void {
-    if (!this.proc?.stdin?.writable) return
+    if (!this.process?.stdin?.writable) return
     const body = JSON.stringify({ jsonrpc: '2.0', id, result })
-    this.proc.stdin.write(encodeMessage(body))
+    this.process.stdin.write(encodeMessage(body))
   }
 
   // ─── Document management ───────────────────────────────────────────────

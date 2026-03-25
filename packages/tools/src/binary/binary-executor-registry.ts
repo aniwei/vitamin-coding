@@ -42,6 +42,14 @@ export class BinaryToolExecutorRegistry {
 		}
 	}
 
+	async ensureAll(): Promise<void> {
+		for (const tool of this.binaries.values()) {
+			if (tool instanceof BinaryToolExecutor) {
+				await tool.ensure()
+			}
+		}
+	}
+
 	async ensure(tool: string): Promise<BinaryTool> {
 		const binary = this.binaries.get(tool)
 		if (!binary) {

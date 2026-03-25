@@ -1,31 +1,39 @@
 import os from 'node:os'
+import invariant from '@vitamin/invariant'
 import { 
-  chmod, 
-  readdir, 
-  stat, 
-  rename, 
-  rm 
-} from 'node:fs/promises'
-import { createWriteStream } from 'node:fs'
+  createWriteStream, 
+  existsSync, 
+  mkdirSync,
+  readdirSync,
+  statSync,
+  copyFileSync,
+  rmSync,
+  chmodSync
+} from 'node:fs'
 import { join, resolve } from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
-import { spawnSync, spawn } from 'node:child_process'
-import extractZip from 'extract-zip'
 import { 
-  mkdirp,
+  spawnSync, 
+  spawn, 
+  type SpawnOptionsWithoutStdio 
+} from 'node:child_process'
+import { 
   getThirdPartyToolPath,
   getThirdPartyToolBinaryPath,
-  exists,
+  createLogger
 } from '@vitamin/shared'
-import { OFFLINE_MODE_ENABLED, TOOLS_BINARY_DOWNLOAD_TIMEOUT, VITAMIN_USER_AGENT } from '@vitamin/env'
+import { 
+  OFFLINE_MODE_ENABLED, 
+  TOOLS_BINARY_DOWNLOAD_TIMEOUT, 
+  VITAMIN_USER_AGENT 
+} from '@vitamin/env'
 
 
-export interface BinaryToolExecutionOptions {
-  cwd?: string
-  env?: NodeJS.ProcessEnv
-  timeout?: number
-  stdio?: 'inherit' | 'pipe' | 'ignore'
+const logger = createLogger('@vitamin/tools:binary')
+
+export interface BinaryToolExecutionOptions extends SpawnOptionsWithoutStdio {
+  
 }
 
 export interface BinaryToolExecutionResult {
@@ -36,60 +44,35 @@ export interface BinaryToolExecutionResult {
 
 export interface BinaryTool {
   name: string
+  version: string
   execute(
     args: string[], 
-    options?: BinaryToolExecutionOptions
+    options?: SpawnOptionsWithoutStdio
   ): Promise<BinaryToolExecutionResult>
 }
 
-async function getLatestVersionFromGitHub(
-  repository: string,
-  timeout: number = TOOLS_BINARY_DOWNLOAD_TIMEOUT
-): Promise<string> {
-  const response = await fetch(`https://api.github.com/repos/${repository}/releases/latest`, {
-    headers: { 
-      'User-Agent': VITAMIN_USER_AGENT
-    },
-    signal: AbortSignal.timeout(timeout),
-  })
-  
-  if (!response.ok) {
-    throw new Error(`GitHub API error: ${response.status}`)
-  }
-
-  const data = (await response.json()) as { tag_name: string }
-  return data.tag_name.replace(/^v/, '')
+function tryExecuteSync(
+  toolPath: string,
+  args: string[] = ['--version']
+): boolean {
+  const result = spawnSync(toolPath, args, { stdio: 'pipe' }) 
+  return result.status === 0
 }
 
-function getDownloadUrl(repository: string, version: string, asset: string): string {
-  return `https://github.com/${repository}/releases/download/v${version}/${asset}`
-}
-
-async function tryExecute(toolPath: string): Promise<boolean> {
-  try {
-    const ps = spawn(toolPath, ['--version'], { stdio: 'pipe' }) 
-    return new Promise(resolve => {
-      ps.on('error', () => resolve(false))
-      ps.on('close', code => resolve(code === 0))
-    })
-  } catch {
-    return false
-  }
-}
-
-async function tryResolveExecutablePath(toolName: string): Promise<string | null> {
-  const binaryExt = os.platform() === 'win32' ? '.exe' : ''
-  const toolPath = getThirdPartyToolBinaryPath(toolName) + binaryExt
+async function tryResolveExecutablePath(
+  toolName: string, 
+  target: string = toolName
+): Promise<string | null> {
+  const ext = os.platform() === 'win32' ? '.exe' : ''
+  const toolPath = getThirdPartyToolBinaryPath(target, toolName) + ext
 
   try {
-    if (await exists(toolPath)) {
-      return toolPath
-    }
-  } catch {
-    // file not found
+    if (existsSync((toolPath))) return toolPath
+  } catch { 
+    logger.debug(`Error checking existence of ${toolPath}, will try PATH lookup: %s`, toolPath)
   }
 
-  if (await tryExecute(toolName)) {
+  if (tryExecuteSync(toolName)) {
     return toolName
   }
 
@@ -98,74 +81,68 @@ async function tryResolveExecutablePath(toolName: string): Promise<string | null
 
 async function tryDownloadAndExtract(
   name: string,
-  repository: string,
-  version: string,
-  asset: string
+  cacheDir: string,
+  url: string
 ) {
   const platform = os.platform()
   const toolsDir = getThirdPartyToolPath()
-  const url = getDownloadUrl(repository, version, asset)
-  const archivePath = resolve(toolsDir, asset)
+  const archivePath = resolve(toolsDir, `${cacheDir}.download`)
 
-  const ext = platform === 'win32' ? '.exe' : ''
-  const filename = name + ext
-  const binaryPath = resolve(toolsDir, filename)
-  const extractDir = resolve(toolsDir, `extract_${name}_${process.pid}_${Date.now()}`)
+  const filename = name + (platform === 'win32' ? '.exe' : '')
+  const binaryDir = resolve(toolsDir, cacheDir)
+  const binaryPath = resolve(binaryDir, filename)
+
+  const extractDir = resolve(toolsDir, `${cacheDir}-extract-${process.pid}_${Date.now()}`)
   
   try {
-    await downloadToFile(url, archivePath)
-    await mkdirp(extractDir)
+    const response = await fetch(url, {
+      headers: { 'User-Agent': VITAMIN_USER_AGENT },
+      signal: AbortSignal.timeout(TOOLS_BINARY_DOWNLOAD_TIMEOUT),
+    })
 
-    if (asset.endsWith('.tar.gz')) {
+    if (!response.ok || !response.body) {
+      throw new Error(`Failed to download: ${response.status}`)
+    }
+
+    const fileStream = createWriteStream(archivePath)
+    await pipeline(Readable.fromWeb(response.body), fileStream)
+
+    mkdirSync(binaryDir, { recursive: true })
+    mkdirSync(extractDir, { recursive: true })
+
+    if (url.endsWith('.tar.gz')) {
       const result = spawnSync('tar', ['xzf', archivePath, '-C', extractDir], { stdio: 'pipe' })
 
       if (result.error || result.status !== 0) {
         const errMsg = result.error?.message ?? result.stderr?.toString().trim() ?? 'unknown error'
-        throw new Error(`Failed to extract ${asset}: ${errMsg}`)
+        throw new Error(`Failed to extract ${url}: ${errMsg}`)
       }
-
-    } else if (asset.endsWith('.zip')) {
-      await extractZip(archivePath, { dir: extractDir })
     } else {
-      throw new Error(`Unsupported archive format: ${asset}`)
+      throw new Error(`Unsupported archive format: ${url}`)
     }
 
-    const found = await findBinaryRecursively(extractDir, filename)
+    const found = findBinaryRecursively(extractDir, filename)
     if (!found) {
       throw new Error(`Binary ${filename} not found in archive`)
     }
 
-    await rename(found, binaryPath)
+    copyFileSync(found, binaryPath)
 
     if (platform !== 'win32') {
-      await chmod(binaryPath, 0o755)
+      chmodSync(binaryPath, 0o755)
     }
+  } catch (error) {
+    logger.warn(error)
   } finally {
-    await Promise.allSettled([
-      rm(archivePath, { force: true }),
-      rm(extractDir, { force: true })
-    ])
+    rmSync(archivePath, { force: true }),
+    rmSync(extractDir, { recursive: true, force: true })
   }
 }
 
-async function downloadToFile(url: string, dest: string): Promise<void> {
-  const response = await fetch(url, {
-    headers: { 'User-Agent': VITAMIN_USER_AGENT },
-    signal: AbortSignal.timeout(TOOLS_BINARY_DOWNLOAD_TIMEOUT),
-  })
-
-  if (!response.ok || !response.body) {
-    throw new Error(`Failed to download: ${response.status}`)
-  }
-
-  const fileStream = createWriteStream(dest)
-  await pipeline(Readable.fromWeb(response.body as any), fileStream)
-}
-
-async function findBinaryRecursively(
+function findBinaryRecursively(
   rootDir: string, 
   binaryFileName: string
-): Promise<string | undefined> {
+) {
   const stack: string[] = [rootDir]
 
   while (stack.length > 0) {
@@ -173,7 +150,7 @@ async function findBinaryRecursively(
 
     let entries: string[]
     try {
-      entries = await readdir(currentDir, { encoding: 'utf-8' })
+      entries = readdirSync(currentDir, { encoding: 'utf-8' })
     } catch {
       continue
     }
@@ -182,7 +159,7 @@ async function findBinaryRecursively(
       const fullPath = join(currentDir, name)
 
       try {
-        const st = await stat(fullPath)
+        const st = statSync(fullPath)
         if (st.isDirectory()) {
           stack.push(fullPath)
         } else if (st.isFile() && name === binaryFileName) {
@@ -197,7 +174,12 @@ async function findBinaryRecursively(
 
 export abstract class BinaryToolExecutor implements BinaryTool {
   public abstract name: string
-  public abstract repository: string
+  public abstract version: string
+
+  // toolName + version
+  protected get cacheDir(): string {
+    return `${this.name}-${this.version}`
+  }
 
   protected projectRoot: string
   private downloadTask: Promise<void> | null = null
@@ -206,14 +188,10 @@ export abstract class BinaryToolExecutor implements BinaryTool {
     this.projectRoot = projectRoot
   }
 
-  protected abstract resolveAsset(
-    version: string, 
-    platform: string, 
-    arch: string
-  ): string | undefined
+  protected abstract resolveUrl(): string | undefined
 
   async ensure(): Promise<string> {
-    const existing = await tryResolveExecutablePath(this.name)
+    const existing = await tryResolveExecutablePath(this.name, this.cacheDir)
     if (existing) return existing
 
     if (OFFLINE_MODE_ENABLED) {
@@ -228,7 +206,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
 
     await this.downloadTask
 
-    const resolved = await resolveExecutablePath(this.name)
+    const resolved = await tryResolveExecutablePath(this.name, this.cacheDir)
     if (!resolved) {
       throw new Error(`${this.name}: download completed but binary not found`)
     }
@@ -237,26 +215,14 @@ export abstract class BinaryToolExecutor implements BinaryTool {
   }
 
   protected async download(): Promise<void> {
-    const platform = os.platform()
-    const architecture = os.arch()
-
-    const version = await getLatestVersionFromGitHub(this.repository)
-    const asset = this.resolveAsset(version, platform, architecture)
-    if (!asset) {
-      throw new Error(`Unsupported platform/architecture: ${platform}/${architecture}`)
-    }
-
-    await tryDownloadAndExtract(
-      this.name,
-      this.repository,
-      version,
-      asset
-    )
+    const url = this.resolveUrl()
+    invariant(url, `No download URL for ${this.name}`)
+    await tryDownloadAndExtract(this.name, this.cacheDir, url)
   }
 
   async execute(
     args: string[], 
-    options?: BinaryToolExecutionOptions
+    options?: SpawnOptionsWithoutStdio
   ): Promise<BinaryToolExecutionResult> {
     const executablePath = await this.ensure()
 
@@ -296,14 +262,17 @@ type ConfiguredBinaryExecute = (
 
 export class ConfiguredBinaryExecutor implements BinaryTool {
   public name: string
+  public version: string
 
   protected executeHandler: ConfiguredBinaryExecute
 
   constructor(
     name: string, 
+    version: string,
     execute: ConfiguredBinaryExecute
   ) {
     this.name = name
+    this.version = version
     this.executeHandler = execute
   }
 

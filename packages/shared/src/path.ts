@@ -21,8 +21,8 @@ export function getThirdPartyToolPath(): string {
   return resolve(getVitaminHomePath(), 'tools')
 }
 
-export function getThirdPartyToolBinaryPath(toolName: string): string {
-  return resolve(getThirdPartyToolPath(), toolName)
+export function getThirdPartyToolBinaryPath(toolName: string, version: string = ''): string {
+  return resolve(getThirdPartyToolPath(), ...(version ? [toolName, version] : [toolName]))
 }
 
 export function createTempLoggerPath(): string {

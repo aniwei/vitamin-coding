@@ -53,7 +53,7 @@ export function diff(
 					oldLine++
 				}
 			}
-			lastWasChange = true;
+			lastWasChange = true
 		} else {
       const nextPart = parts[i + 1] as DiffPart
 			const nextPartIsChange = i < parts.length - 1 && (nextPart.added || nextPart.removed)

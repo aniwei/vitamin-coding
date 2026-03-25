@@ -41,6 +41,6 @@ export const TOOLS_LS_MAX_ENTRIES = normalizeEnv(process.env['TOOLS_LS_MAX_ENTRI
 export const TOOLS_MAX_OUTPUT_LINES = normalizeEnv(process.env['TOOLS_MAX_OUTPUT_LINES'], 2000)
 export const TOOLS_MAX_OUTPUT_BYTES = normalizeEnv(process.env['TOOLS_MAX_OUTPUT_BYTES'], 60 * 1024)
 export const TOOLS_EXECUTE_TIMEOUT = normalizeEnv(process.env['TOOLS_EXECUTE_TIMEOUT'], 30_000)
-export const TOOLS_BINARY_DOWNLOAD_TIMEOUT = normalizeEnv(process.env['TOOLS_BINARY_DOWNLOAD_TIMEOUT'], 10_000)
+export const TOOLS_BINARY_DOWNLOAD_TIMEOUT = normalizeEnv(process.env['TOOLS_BINARY_DOWNLOAD_TIMEOUT'], 1_200_000)
 export const AGENT_TOOLS_MAX_TURNS = normalizeEnv(process.env['AGENT_TOOLS_MAX_TURNS'], 25)
 export const OFFLINE_MODE_ENABLED = process.env['PI_OFFLINE'] === '1' || process.env['PI_OFFLINE']?.toLowerCase() === 'true' || process.env['VITAMIN_OFFLINE']?.toLowerCase() === 'yes'
