@@ -27,3 +27,26 @@ export type AgentConfig = z.infer<typeof AgentConfigSchema>
 
 // 单个分类的配置覆盖 —— 从 Zod schema 推导
 export type CategoryConfig = z.infer<typeof CategoryConfigSchema>
+
+// 
+export const VITAMIN_DEFAULT_CONFIG: VitaminConfig = {
+  config_version: '1.0.0',
+  log_level: 'info',
+  model: undefined,
+  theme: 'auto',
+  tool_preset: 'standard',
+  agents: {},
+  categories: {},
+  extensions: {},
+  mcp: {},
+  session: {},
+  skills: {},
+  compaction: {},
+  background_task: {},
+  experimental: {},
+  disabled_agents: [],
+  disabled_hooks: [],
+  disabled_mcps: [],
+  disabled_skills: [],
+  disabled_tools: [],
+}

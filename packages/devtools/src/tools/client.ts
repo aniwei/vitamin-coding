@@ -1,30 +1,27 @@
 import { TypedEventEmitter } from '@vitamin/shared'
 import { createLogger } from '@vitamin/shared'
-import type { DevtoolsEvents } from '../types'
 
+const logger = createLogger('@vitamin/devtools')
 
-const logger = createLogger('@vitamin/devtools:client')
-
-interface DebuggerClientEvents {
+interface DebuggerEvents {
   [key: string]: (...args: never[]) => void
 }
 
 export interface IncomingMessage<T = unknown> {
   service: string // http://localhost:3000/services/:serviceId/debugger
-  type: DevtoolsEvents
+  type: keyof DebuggerEvents
   payload: T
 }
 
 
-export class DebuggerClient extends TypedEventEmitter<DebuggerClientEvents> {
+export class DebuggerClient extends TypedEventEmitter<DebuggerEvents> {
   private buffer = Buffer.alloc(0)
 
   constructor() {
     super()
     process.stdin.setEncoding('utf-8')
     process.stdin.on('data', this.onStdinData)
-    process.stdin.on('end', this.onStdinEnd)
-    
+    process.stdin.on('end', this.onStdinEnd) 
   }
 
   onStdinData = (data: Buffer) => {
@@ -35,7 +32,7 @@ export class DebuggerClient extends TypedEventEmitter<DebuggerClientEvents> {
     try {
       const message = JSON.parse(this.buffer.toString()) as IncomingMessage
 
-      switch (message.type as unknown as keyof DevtoolsEvents) {
+      switch (message.type as unknown as keyof DebuggerEvents) {
         case 'Debugger.paused':
           this.pause(message).then(() => {
 

@@ -75,16 +75,20 @@ describe('extended tools', () => {
       expect(text).toContain('src/utils/helper.ts')
     })
 
-    it('throws when no files match', async () => {
+    it('returns message when no files match', async () => {
       const tool = createFind(testDir, {
         glob: async () => [],
       })
 
-      await expect(tool.execute({
+      const result = await tool.execute({
         id: 'find2',
         params: { pattern: '**/*.none' },
         signal,
-      })).rejects.toThrow('No files found matching pattern')
+      })
+
+      const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
+      expect(result.isError).toBeUndefined()
+      expect(text).toContain('No files found matching pattern')
     })
   })
 

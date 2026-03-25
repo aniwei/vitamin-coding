@@ -1,6 +1,9 @@
 import { z } from 'zod'
 
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { 
+  AgentTool, 
+  ToolResult 
+} from '@vitamin/agent'
 
 const SkillLoaderArgsSchema = z.object({
   path: z.string().describe('SKILL.md file path, relative to project root'),
@@ -24,14 +27,14 @@ export function createSkillLoad(
     parameters: SkillLoaderArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ params }): Promise<ToolResult> {
       if (!load) {
         throw new Error('Load function not provided')
       }
 
-      const result = await load(args.path)
+      const result = await load(params.path)
       if (result.success) {
-        return { content: [{ type: 'text', text: `Skill "${result.name}" loaded from ${args.path}` }] }
+        return { content: [{ type: 'text', text: `Skill "${result.name}" loaded from ${params.path}` }] }
       }
 
       return {

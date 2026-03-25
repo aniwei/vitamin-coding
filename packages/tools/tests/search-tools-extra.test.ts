@@ -23,15 +23,19 @@ afterEach(async () => {
 })
 
 describe('search tools additional coverage', () => {
-  it('ls throws for empty directory', async () => {
+  it('ls returns informative message for empty directory', async () => {
     const dir = await setup()
     const tool = createLs(dir)
 
-    await expect(tool.execute({
+    const result = await tool.execute({
       id: 'ls-empty',
       params: { path: '.' },
       signal,
-    })).rejects.toThrow('Directory is empty')
+    })
+
+    const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
+    expect(result.isError).toBeUndefined()
+    expect(text).toContain('Directory is empty.')
   })
 
   it('find throws when neither glob nor fd executor is available', async () => {

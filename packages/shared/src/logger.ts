@@ -1,11 +1,11 @@
 import pino from 'pino'
 import invariant from '@vitamin/invariant'
+import { LOG_FILE, LOG_LEVEL } from '@vitamin/env'
 import { createRequire } from 'node:module'
 import { PassThrough } from 'node:stream'
-import { TypedEventEmitter } from './event-emitter'
+import { Subscription } from './subscrption'
 
 const require = createRequire(import.meta.url)
-const DEFAULT_LEVEL = process.env.VITAMIN_LOG_LEVEL ?? 'info'
 
 function isPrettyAvailable(): boolean {
   try {
@@ -16,71 +16,69 @@ function isPrettyAvailable(): boolean {
   }
 }
 
-function createTransportTargets(destination: string): pino.TransportTargetOptions[] {
+function createTransportTargets(
+  destination: string,
+  level: string = 'info'
+): pino.TransportTargetOptions[] {
   const targets: pino.TransportTargetOptions[] = [{
     target: 'pino/file',
     options: { destination, mkdir: true },
-    level: DEFAULT_LEVEL,
+    level,
   }]
 
   if (isPrettyAvailable()) {
     targets.push({
       target: 'pino-pretty',
       options: { colorize: true },
-      level: DEFAULT_LEVEL,
+      level,
     })
   } else {
     // 无 pino-pretty 时退回标准输出
     targets.push({
       target: 'pino/file',
       options: { destination: 1 },
-      level: DEFAULT_LEVEL,
+      level,
     })
   }
 
   return targets
 }
 
-interface LogEvent {
-  [event: string]: (...args: unknown[]) => void
-}
-
 const logPassThrough = new PassThrough()
-const globalLogEventEmitter = new TypedEventEmitter<LogEvent>()
+const globalSubscription = new Subscription()
 
 logPassThrough.on('data', (chunk) => {
   try {
-    globalLogEventEmitter.emit('log', JSON.parse(chunk.toString()))
-  } catch {
-    console.warn('Failed to parse log chunk for listener:', chunk.toString())
+    globalSubscription.publish({
+      log: [JSON.parse(chunk.toString())]
+    })
+  } catch (error) {
+    console.warn('Failed to parse log chunk for listener:', chunk.toString(), error)
   }
 })
 
 export function attachLogListener(callback: (log: unknown) => void) {
-  globalLogEventEmitter.on('log', callback)
+  return globalSubscription.subscribe('log', callback)
 }
 
-export function detachLogListener(callback: (log: unknown) => void) {
-  globalLogEventEmitter.off('log', callback)
-}
 
 // 根日志器，同时写入文件（JSON）、控制台（美化格式）以及内存监听器
 let root: pino.Logger | null = null
 
 export function ensureLogger(
   level: string, 
-  destination: string): pino.Logger 
-{
+  destination: string
+): pino.Logger {
   root ??= pino({ level }, pino.multistream([
     { level: level as pino.Level, stream: logPassThrough },
-    { level: level as pino.Level, stream: pino.transport({ targets: createTransportTargets(destination) }) }
+    { level: level as pino.Level, stream: pino.transport({ targets: createTransportTargets(destination, level) }) }
   ]))
 
   return root
 }
 
 interface LoggerOptions {
-  level: 'info' | 'warn' | 'error',
+  level: 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal',
   destination: string
 }
 
@@ -90,12 +88,14 @@ export function createLogger(
   options?: LoggerOptions
 ): pino.Logger {
   ensureLogger(
-    options?.level ?? DEFAULT_LEVEL,
-    options?.destination ?? 'vitamin.log'
+    options?.level ?? LOG_LEVEL, 
+    options?.destination ?? LOG_FILE
   )
 
   invariant(root, `Root logger is not initialized`)
-  return root.child({ name })
+  return root.child({ name }, {
+    level: options?.level ?? LOG_LEVEL,
+  })
 }
 
 // 获取根日志器实例

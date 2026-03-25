@@ -1,0 +1,42 @@
+{
+  "name": "@vitamin/coding",
+  "version": "0.0.1",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "exports": {
+    ".": {
+      "types": "./dist/index.d.ts",
+      "import": "./dist/index.js"
+    }
+  },
+  "files": [
+    "dist"
+  ],
+  "scripts": {
+    "run:example": "tsx example/vitamin-app-example.ts",
+    "build": "tsup",
+    "typecheck:project": "tsc -p tsconfig.json --noEmit",
+    "typecheck:file": "tsc src/index.ts --noEmit --target ES2024 --module ESNext --moduleResolution bundler --esModuleInterop --skipLibCheck",
+    "typecheck": "tsc --noEmit",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@vitamin/agent": "workspace:*",
+    "@vitamin/ai": "workspace:*",
+    "@vitamin/config": "workspace:*",
+    "@vitamin/devtools": "workspace:*",
+    "@vitamin/hooks": "workspace:*",
+    "@vitamin/orchestrator": "workspace:*",
+    "@vitamin/session": "workspace:*",
+    "@vitamin/shared": "workspace:*",
+    "@vitamin/tools": "workspace:*"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
+  "devDependencies": {
+    "tsx": "^4.19.2"
+  }
+}

@@ -1,10 +1,9 @@
 import { createLogger } from '@vitamin/shared'
-import { VITAMIN_CONFIG } from './constant'
 import { VitaminConfigSchema, VitaminConfigStrictSchema } from './schema'
 import { migrate } from './migrator'
 
 
-import type { VitaminConfig, LoadConfigOptions } from './types'
+import { type VitaminConfig, type LoadConfigOptions, VITAMIN_DEFAULT_CONFIG } from './types'
 
 
 const logger = createLogger('@vitamin/config:manager')
@@ -81,7 +80,7 @@ function mergeLayers(...layers: Partial<VitaminConfig>[]): Partial<VitaminConfig
   return result
 }
 
-function loadConfigFromEnvironments(): Partial<VitaminConfig> {
+function loadConfigFromEnv(): Partial<VitaminConfig> {
   const config: Partial<VitaminConfig> = {}
 
   const model = process.env.VITAMIN_MODEL
@@ -133,9 +132,9 @@ export class ConfigLoader {
   async load(options: LoadConfigOptions = {}): Promise<VitaminConfig> {
     const { overrides = {}, extensionDefaults = {} } = options
 
-    const env = loadConfigFromEnvironments()
+    const env = loadConfigFromEnv()
     const merged = mergeLayers(
-      VITAMIN_CONFIG,
+      VITAMIN_DEFAULT_CONFIG,
       extensionDefaults,
       env,
       overrides,
@@ -148,7 +147,7 @@ export class ConfigLoader {
 
     const validated = validate(migrated as Partial<VitaminConfig>)
 
-    return { ...VITAMIN_CONFIG, ...validated }
+    return { ...VITAMIN_DEFAULT_CONFIG, ...validated }
   }
 }
 

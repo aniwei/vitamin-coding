@@ -35,7 +35,6 @@ export {
   createLogger, 
   getRootLogger, 
   attachLogListener, 
-  detachLogListener 
 } from './logger'
 
 export {
@@ -72,5 +71,6 @@ export { parseJsonc, safeStringify } from './jsonc'
 export { request, stream } from './http'
 export type { HttpRequestOptions, HttpResponse, SseEvent } from './http'
 
+export { Subscription } from './subscrption'
 export { BusSubscription } from './bus-subscrption'
 

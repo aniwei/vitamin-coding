@@ -4,28 +4,28 @@ import { Hono } from 'hono'
 import { WebSocket, WebSocketServer } from 'ws'
 import { createLogger, TypedEventEmitter } from '@vitamin/shared'
 import { createDebuggerRoute, createLoggerRoute, createSessionRoute } from './routes'
-import type { DevtoolServiceEvents } from './types'
 
 const logger = createLogger('@vitamin/devtools:service')
 
-export class DevtoolService extends TypedEventEmitter<DevtoolServiceEvents> {
-  protected port: number
+interface DevtoolsServiceEvents {
+  'Debugger.stepOver': () => void,
+  [key: string]: () => void
+}
 
-  protected get serviceUrl(): string {
+export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
+  
+  public get serviceUrl(): string {
     return `http://localhost:${this.port}/${this.id}`
   }
-
+  
   private app: Hono
   private httpServer: Server
   private wss: WebSocketServer
   private clients = new Set<WebSocket>()
   private id: string = v5('devtool-service', v5.URL)
 
-  constructor(port: number) {
+  constructor(private readonly port: number) {
     super()
-
-    this.port = port
-
     const server = new Server()
     const wss = new WebSocketServer({ server })
 
@@ -62,9 +62,9 @@ export class DevtoolService extends TypedEventEmitter<DevtoolServiceEvents> {
     return new Promise((resolve) => {
       const app = this.app
 
-      app.route(`/${this.id}/logger`, createLoggerRoute(this)) 
-      app.route(`/${this.id}/debugger`, createDebuggerRoute(this))
-      app.route(`/${this.id}/session`, createSessionRoute(this))
+      app.route(`/${this.id}/command/logger`, createLoggerRoute(this)) 
+      app.route(`/${this.id}/command/debugger`, createDebuggerRoute(this))
+      app.route(`/${this.id}/command/session`, createSessionRoute(this))
 
       this.httpServer.on('request', this.app.fetch)
       this.httpServer.listen(this.port, () => {
@@ -74,11 +74,16 @@ export class DevtoolService extends TypedEventEmitter<DevtoolServiceEvents> {
     })
   }
 
-  close(): void {
+  stop(): void {
     this.wss.close()
     
     this.httpServer.close(() => logger.info('Agent debug service stopped'))
     this.clients.forEach((client) => client.close())
     this.clients.clear()
   }
+}
+
+export const createDevtoolsService = (port: number) => {
+  const service = new DevtoolsService(port)
+  return service
 }

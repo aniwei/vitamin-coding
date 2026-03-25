@@ -172,18 +172,22 @@ describe('find tool coverage branches', () => {
     expect(text).toContain('src/b.ts')
   })
 
-  it('throws when no files match with injected glob', async () => {
+  it('returns message when no files match with injected glob', async () => {
     const root = await createWorkspace()
     const findTool = createFind(root, {
       glob: async () => [],
     })
 
-    await expect(findTool.execute({
+    const result = await findTool.execute({
       id: 'f2',
       params: {
         pattern: '**/*.xyz',
       },
       signal,
-    })).rejects.toThrow('No files found matching pattern')
+    })
+
+    const text = (result.content[0] as { text: string }).text
+    expect(result.isError).toBeUndefined()
+    expect(text).toContain('No files found matching pattern')
   })
 })

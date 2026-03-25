@@ -13,7 +13,7 @@ type SkillExecutorArgs = z.infer<typeof SkillExecutorArgsSchema>
 export type ExecuteSkill = (
   name: string, 
   input?: string, 
-  params?: Record<string, string>
+  parameters?: Record<string, string>
 ) => Promise<{
   success: boolean
   output?: string
@@ -30,12 +30,12 @@ export function createSkillExecute(
     parameters: SkillExecutorArgsSchema,
     visibility: 'always',
 
-    async execute(_id, args, _signal): Promise<ToolResult> {
+    async execute({ params }): Promise<ToolResult> {
       if (!execute) {
         throw new Error('Execute function not provided')
       }
 
-      const result = await execute(args.name, args.input, args.parameters)
+      const result = await execute(params.name, params.input, params.parameters)
       if (result.success) {
         return { content: [{ type: 'text', text: result.output ?? 'Skill executed successfully' }] }
       }

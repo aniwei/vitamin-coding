@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
-import type { Devtools } from '../types'
+import type { DevtoolsService } from '../service'
 
-export const createSessionRoute = (devtools: Devtools) => {
+export const createSessionRoute = (devtools: DevtoolsService) => {
   const app = new Hono()
 
   return app

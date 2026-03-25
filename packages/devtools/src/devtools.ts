@@ -1,15 +1,25 @@
-import { DevtoolService } from './service'
-import { DebuggerController } from './debugger'
+import { DevtoolsService, createDevtoolsService } from './service'
+import { DevtoolsDebugger } from './tools/debugger'
+import { DevtoolsLogger } from './tools/logger'
 
-export class Devtools extends DevtoolService {
-  private controller: DebuggerController | null = null
+export class Devtools {
+  private service: DevtoolsService
   
-  get debugger () {
-    if (this.controller === null) {
-      this.controller = new DebuggerController(`${this.serviceUrl}/debugger`)
-    }
+  public debugger: DevtoolsDebugger
+  public logger: DevtoolsLogger
 
-    return this.controller
+  constructor(port: number) {
+    this.service = createDevtoolsService(port)
+    this.debugger = new DevtoolsDebugger(this.service.serviceUrl)
+    this.logger = new DevtoolsLogger(this.service.serviceUrl)
+  }
+
+  start() {
+    return this.service.start()
+  }
+
+  stop() {
+    return this.service.stop()
   }
 }
 

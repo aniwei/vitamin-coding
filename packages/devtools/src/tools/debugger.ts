@@ -1,21 +1,24 @@
 import { execFileSync } from 'node:child_process'
+import { fileURLToPath } from 'node:url'
 import { createLogger } from '@vitamin/shared'
-import { resolveDebugClientPath } from './path'
 
 const logger = createLogger('@vitamin/devtools:debugger')
 
+function resolvePath(): string {
+  return fileURLToPath(new URL('./agent.js', import.meta.url))
+}
 
-export class DebuggerController {
+export class DevtoolsDebugger {
   private serviceUrl: string
 
   constructor(serviceUrl: string) {
     this.serviceUrl = serviceUrl
   }
 
-  paused(message: any) {
+  pause(message: any) {
     logger.debug({ message }, 'Debugger paused')
 
-    execFileSync('node', [resolveDebugClientPath()], {
+    execFileSync('node', [resolvePath()], {
       stdio: ['pipe', 'inherit', 'inherit'],
       env: process.env,
       input: JSON.stringify({ 
