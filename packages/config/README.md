@@ -1,6 +1,6 @@
 # @vitamin/config
 
-JSONC configuration loader with Zod v4 schema validation, multi-level merging (project -> user -> defaults), automatic migration, and file watcher for live reloading.
+Zod v4 configuration schema, multi-layer merging, automatic migration, persistent storage (local/remote/memory), and file watcher for live reloading.
 
 ## Installation
 
@@ -11,29 +11,76 @@ pnpm add @vitamin/config
 ## Usage
 
 ```typescript
-import { loadConfig, createConfigWatcher, DEFAULT_CONFIG } from '@vitamin/config'
+import {
+  loadConfig,
+  createConfigStore,
+  createConfigWatcher,
+  VITAMIN_DEFAULT_CONFIG,
+} from '@vitamin/config'
 
-const result = await loadConfig({ projectDir: process.cwd() })
-console.log(result.config)
+// 1. 纯内存加载（无文件读取）
+const config = await loadConfig()
 
-const watcher = createConfigWatcher({ onUpdate: (cfg) => console.log('updated', cfg) })
+// 2. 从本地文件加载
+const store = createConfigStore({ type: 'local' })
+const config = await loadConfig({
+  store,
+  configPaths: [
+    '~/.config/vitamin/config.jsonc',
+    './.vitamin/config.jsonc',
+  ],
+})
+
+// 3. 从远程服务加载
+const remoteStore = createConfigStore({
+  type: 'remote',
+  baseUrl: 'https://api.example.com',
+  getAuth: async () => ({ token: await getToken() }),
+})
+const config = await loadConfig({
+  store: remoteStore,
+  configPaths: ['user-config'],
+})
+
+// 4. 文件监听
+const watcher = createConfigWatcher({
+  paths: ['./.vitamin/config.jsonc'],
+  reload: async (path) => {
+    const content = await store.read(path)
+    return content ? JSON.parse(content) : {}
+  },
+})
+watcher.on('change', (cfg, path) => console.log('updated', path))
 ```
 
 ## Key Exports
 
 | Export | Description |
 |--------|-------------|
-| `loadConfig` | Load and validate config from project/user/defaults |
-| `mergeConfigs`, `mergeConfigLayers` | Multi-level config merging |
-| `parseConfigPartially` | JSONC parser with position tracking |
-| `DEFAULT_CONFIG` | Built-in default configuration |
-| `migrateConfig`, `registerMigration` | Config migration system |
+| `loadConfig` | Load and validate config with multi-layer merging |
+| `ConfigLoader` | Class-based loader with `load()` and `save()` |
+| `createConfigStore` | Factory: create local/remote/memory store |
+| `LocalConfigStore` | File-system JSONC config store |
+| `RemoteConfigStore` | HTTP REST config store |
+| `InMemoryConfigStore` | In-memory store (testing) |
+| `VITAMIN_DEFAULT_CONFIG` | Built-in default configuration object |
+| `migrate`, `registerMigration` | Config version migration system |
 | `createConfigWatcher`, `ConfigWatcher` | File watcher for live reload |
 | `VitaminConfigSchema` | Zod v4 validation schema |
 
 ## Types
 
-`VitaminConfig`, `AgentConfig`, `CategoryConfig`, `ConfigWarning`, `LoadConfigOptions`, `LoadConfigResult`, `Migration`, `ConfigWatcherOptions`
+`VitaminConfig`, `AgentConfig`, `CategoryConfig`, `ConfigWarning`, `LoadConfigOptions`, `ConfigStore`, `ConfigStoreOptions`, `StorageType`, `Migration`, `ConfigWatcherOptions`
+
+## Merge Priority (low → high)
+
+1. `VITAMIN_DEFAULT_CONFIG` (built-in defaults)
+2. `extensionDefaults` (extension-provided)
+3. File layers from `configPaths` (ordered low → high)
+4. Environment variables (`VITAMIN_MODEL`, `VITAMIN_THEME`, `VITAMIN_LOG_LEVEL`)
+5. `overrides` (CLI-level, highest priority)
+
+`disabled_*` arrays are union-merged with deduplication; objects are deep-merged; other values are overwritten.
 
 ## License
 

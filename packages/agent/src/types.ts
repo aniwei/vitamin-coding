@@ -10,7 +10,8 @@ import type {
   ZodType,
 } from '@vitamin/ai'
 
-import type { Devtools } from '@vitamin/devtools'
+import type { Devtools, BreakpointPoint } from '@vitamin/devtools'
+import type { ToolHookExecutor } from './tool-executor'
 
 // Agent 运行状态
 export type AgentStatus =
@@ -21,15 +22,7 @@ export type AgentStatus =
   | 'error'
   | 'aborted'
 
-export type AgentBreakpointPoint =
-  | 'loop_start'
-  | 'model_before'
-  | 'model_after'
-  | 'tool_before'
-  | 'tool_after'
-  | 'loop_end'
-  | 'agent_error'
-  | 'agent_done'
+export type AgentBreakpointPoint = BreakpointPoint
 
 export interface AgentDebugSnapshot {
   turn: number
@@ -93,6 +86,9 @@ export interface AgentRunContext {
   systemPrompt: string
   messages: AgentMessage[]
   tools: AgentTool[]
+  toolHookExecutor?: ToolHookExecutor
+  agentName?: string
+  sessionId?: string
   // AgentMessage[] → LLM Message[] 转换
   convertToLLM?: (messages: AgentMessage[]) => Message[] | Promise<Message[]>
   // 上下文转换（压缩/裁剪/注入）— 由外部 MemoryManager 驱动
@@ -176,6 +172,3 @@ export interface AgentConfig {
   }
   devtools?: Devtools
 }
-
-// Agent 事件监听器
-export type AgentEventListener = (event: AgentEvent) => void

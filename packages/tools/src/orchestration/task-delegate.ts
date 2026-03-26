@@ -19,6 +19,7 @@ interface TaskDispatchResult {
   success: boolean
   output?: string
   id?: string
+  status?: string
   error?: string
 }
 
@@ -54,12 +55,25 @@ export function createTaskDelegate(
       })
 
       if (result.success) {
+        const isBackground = params.mode === 'background'
+        const text = isBackground
+          ? `Task delegated in background${result.id ? `: ${result.id}` : ''}${result.output ? `\n${result.output}` : ''}`
+          : `Task delegated successfully${result.output ? `: ${result.output}` : ''}`
+
         return {
-          content: [{ type: 'text', text: `Task delegated successfully${result.output ? `: ${result.output}` : ''}` }]
+          content: [{ type: 'text', text }],
+          details: {
+            mode: params.mode,
+            taskId: result.id,
+            status: result.status,
+          },
         }
       }
 
-      throw new Error(`Task delegation failed: ${result.error ?? 'Unknown error'}`)
+      return {
+        content: [{ type: 'text', text: `Task delegation failed: ${result.error ?? 'Unknown error'}` }],
+        isError: true,
+      }
     },
   }
 }

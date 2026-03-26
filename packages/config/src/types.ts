@@ -2,6 +2,7 @@ import type { z } from 'zod'
 import type { VitaminConfigFromSchema } from './schema/root'
 import type { AgentConfigSchema } from './schema/agents'
 import type { CategoryConfigSchema } from './schema/categories'
+import type { ConfigStore } from './store'
 
 // 配置加载/解析过程中产生的警告
 export interface ConfigWarning {
@@ -17,6 +18,11 @@ export interface LoadConfigOptions {
   overrides?: Partial<VitaminConfig>
   // 扩展提供的默认值
   extensionDefaults?: Partial<VitaminConfig>
+  // 持久化后端（不传则不从文件/远程加载）
+  store?: ConfigStore
+  // 配置文件搜索路径列表（按优先级从低到高排序）
+  // 例如 ['~/.config/vitamin/config.jsonc', './.vitamin/config.jsonc']
+  configPaths?: string[]
 }
 
 // 根配置类型 —— 从 Zod schema 推导，单一来源

@@ -1,10 +1,9 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger, parseJsonc } from '@vitamin/shared'
 import { VitaminConfigSchema, VitaminConfigStrictSchema } from './schema'
 import { migrate } from './migrator'
 
-
 import { type VitaminConfig, type LoadConfigOptions, VITAMIN_DEFAULT_CONFIG } from './types'
-
+import type { ConfigStore } from './store'
 
 const logger = createLogger('@vitamin/config:manager')
 const DISABLED_KEYS = new Set([
@@ -123,19 +122,57 @@ function validate(
   return partial.success ? partial.data : {}
 }
 
-export interface ConfigStore {
-  read(path: string): Promise<string | undefined>
+// 从 ConfigStore 按路径列表依次读取配置文件（JSONC），按优先级从低到高合并
+async function loadConfigFromStore(
+  store: ConfigStore,
+  paths: string[],
+): Promise<Partial<VitaminConfig>[]> {
+  const layers: Partial<VitaminConfig>[] = []
+
+  for (const path of paths) {
+    try {
+      const content = await store.read(path)
+      if (content !== undefined) {
+        const parsed = parseJsonc<Partial<VitaminConfig>>(content)
+        layers.push(parsed)
+        logger.debug({ path }, 'Config loaded from store')
+      }
+    } catch (error) {
+      logger.warn({ path, err: error }, 'Failed to parse config file, skipping')
+    }
+  }
+
+  return layers
 }
 
 
 export class ConfigLoader {
+  private store?: ConfigStore
+
+  constructor(store?: ConfigStore) {
+    this.store = store
+  }
+
   async load(options: LoadConfigOptions = {}): Promise<VitaminConfig> {
-    const { overrides = {}, extensionDefaults = {} } = options
+    const {
+      overrides = {},
+      extensionDefaults = {},
+      store = this.store,
+      configPaths = [],
+    } = options
+
+    // 从持久化后端加载文件层
+    const fileLayers = store && configPaths.length > 0
+      ? await loadConfigFromStore(store, configPaths)
+      : []
 
     const env = loadConfigFromEnv()
+
+    // 合并优先级：defaults < extensionDefaults < file layers (低→高) < env < overrides
     const merged = mergeLayers(
       VITAMIN_DEFAULT_CONFIG,
       extensionDefaults,
+      ...fileLayers,
       env,
       overrides,
     )
@@ -149,9 +186,17 @@ export class ConfigLoader {
 
     return { ...VITAMIN_DEFAULT_CONFIG, ...validated }
   }
+
+  // 将当前配置写回持久化后端
+  async save(path: string, config: Partial<VitaminConfig>): Promise<void> {
+    if (!this.store) {
+      throw new Error('Cannot save config: no ConfigStore configured')
+    }
+    await this.store.write(path, config)
+  }
 }
 
 export async function loadConfig(options: LoadConfigOptions = {}): Promise<VitaminConfig> {
-  const loader = new ConfigLoader()
+  const loader = new ConfigLoader(options.store)
   return loader.load(options)
 }

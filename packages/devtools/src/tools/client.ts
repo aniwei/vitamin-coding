@@ -13,7 +13,6 @@ export interface IncomingMessage<T = unknown> {
   payload: T
 }
 
-
 export class DebuggerClient extends TypedEventEmitter<DebuggerEvents> {
   private buffer = Buffer.alloc(0)
 

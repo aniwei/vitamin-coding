@@ -51,7 +51,7 @@ describe('extended tools', () => {
       const tool = createLs(testDir)
       await expect(tool.execute({
         id: 'ls2',
-        params: { path: 'ghost-dir' },
+        params: { path: 'ghost-dir', limit: 200 },
         signal,
       })).rejects.toThrow('ENOENT')
     })
@@ -82,7 +82,7 @@ describe('extended tools', () => {
 
       const result = await tool.execute({
         id: 'find2',
-        params: { pattern: '**/*.none' },
+        params: { pattern: '**/*.none', limit: 100 },
         signal,
       })
 
@@ -97,7 +97,7 @@ describe('extended tools', () => {
       const tool = createGrep(testDir, {})
       await expect(tool.execute({
         id: 'grep1',
-        params: { pattern: 'hello' },
+        params: { pattern: 'hello', ignore: false, literal: false, context: 100 },
         signal,
       })).rejects.toThrow('ripgrep (rg) executor is not available')
     })

@@ -1,10 +1,21 @@
-// FileSystem Session Persistence — 基于文件系统的会话持久化
-import { readFile, writeFile, readdir, unlink, mkdir } from 'node:fs/promises'
 import { join } from 'node:path'
-import type { SessionPersistence, SessionSnapshot } from './types'
+import { SESSION_PAGE_SIZE } from '@vitamin/env'
+import { 
+  readFile, 
+  writeFile, 
+  readdir, 
+  unlink, 
+  mkdir, 
+  stat 
+} from 'node:fs/promises'
+import type { 
+  PaginatedResult, 
+  PaginationOptions, 
+  SessionPersistence, 
+  SessionSnapshot 
+} from './types'
 
 export interface FileSessionPersistenceOptions {
-  /** 存储目录路径 */
   directory: string
 }
 
@@ -48,11 +59,58 @@ export class FileSessionPersistence<T = unknown> implements SessionPersistence<T
     await this.ensureDir()
     try {
       const files = await readdir(this.dir)
-      return files
-        .filter((f) => f.endsWith('.session.json'))
-        .map((f) => f.replace('.session.json', ''))
+      return files.filter(f => f.endsWith('.session.json')).map(f => f.replace('.session.json', ''))
     } catch {
       return []
+    }
+  }
+
+  async listPaginated(options: PaginationOptions): Promise<PaginatedResult<string>> {
+    await this.ensureDir()
+    const { page, sortOrder = 'desc' } = options
+    const pageSize = options.pageSize ?? SESSION_PAGE_SIZE
+
+    try {
+      const files = await readdir(this.dir)
+      const sessionFiles = files.filter(f => f.endsWith('.session.json'))
+
+      // 获取文件修改时间用于排序
+      const withStats = await Promise.all(
+        sessionFiles.map(async (f) => {
+          const filePath = join(this.dir, f)
+          const s = await stat(filePath)
+          return { id: f.replace('.session.json', ''), mtime: s.mtimeMs }
+        }),
+      )
+
+      // 排序（文件系统层面只能按 mtime）
+      withStats.sort((a, b) => sortOrder === 'asc' ? a.mtime - b.mtime : b.mtime - a.mtime)
+
+      const total = withStats.length
+      const totalPages = Math.max(1, Math.ceil(total / pageSize))
+      const safePage = Math.max(0, Math.min(page, totalPages - 1))
+      const start = safePage * pageSize
+      const items = withStats.slice(start, start + pageSize).map(f => f.id)
+
+      return {
+        items,
+        total,
+        page: safePage,
+        pageSize,
+        totalPages,
+        hasNext: safePage < totalPages - 1,
+        hasPrevious: safePage > 0,
+      }
+    } catch {
+      return {
+        items: [],
+        total: 0,
+        page: 0,
+        pageSize,
+        totalPages: 1,
+        hasNext: false,
+        hasPrevious: false,
+      }
     }
   }
 

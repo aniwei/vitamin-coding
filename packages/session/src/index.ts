@@ -14,9 +14,22 @@ export {
 export type { FileSessionPersistenceOptions } from './file-persistence'
 
 export {
+  RemoteSessionPersistence,
+  RemotePersistenceError,
+} from './remote-persistence'
+export type { RemoteSessionPersistenceOptions } from './remote-persistence'
+
+export {
   SessionManager,
+  createFileSessionManager,
+  createRemoteSessionManager,
   createSessionManager,
 } from './session-manager'
+
+export { 
+  
+  createSessionStorage 
+} from './storage'
 
 export type { 
   Session,
@@ -28,4 +41,9 @@ export type {
   SessionPersistence,
   SessionManagerOptions,
   SessionFilter,
+  PaginationOptions,
+  PaginatedResult,
+  StorageOptions,
+  LocalStorageOptions,
+  RemoteStorageOptions,
 } from './types'

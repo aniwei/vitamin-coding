@@ -39,6 +39,5 @@ export type {
   AgentTool,
   ToolResult,
   AgentConfig,
-  AgentEventListener,
   AgentLoopContext,
 } from './types'

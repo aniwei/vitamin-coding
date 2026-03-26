@@ -1,25 +1,15 @@
-// @vitamin/memory — 核心类型定义
-
 import type { Message } from '@vitamin/ai'
 
-// ══════════════════════════════════════════════════════
-// 通用类型
-// ══════════════════════════════════════════════════════
-
-/** 统一的上下文大小度量方式 */
+// 统一的上下文大小度量方式
 export type ContextSize =
   | ['tokens', number]     // 绝对 token 数
   | ['messages', number]   // 消息条数
   | ['fraction', number]   // 占上下文窗口的比例 (0-1)
 
-/** 存储类型标识 */
+// 存储类型标识
 export type StorageType = 'local' | 'remote' | 'memory'
 
-// ══════════════════════════════════════════════════════
-// L1 — Persistent Memory (持久化知识)
-// ══════════════════════════════════════════════════════
-
-/** 知识来源 */
+// 知识来源 
 export interface MemorySource {
   /** 文件路径（支持 ~ 展开） */
   path: string
@@ -27,7 +17,7 @@ export interface MemorySource {
   writable: boolean
 }
 
-/** 知识存储后端 */
+// 知识存储后端
 export interface MemoryStore {
   /** 加载所有 sources 的内容 */
   load(sources: MemorySource[]): Promise<Map<string, string>>
@@ -36,10 +26,6 @@ export interface MemoryStore {
   /** 监听文件变更（可选，支持热重载） */
   watch?(sources: MemorySource[], onChange: (path: string) => void): () => void
 }
-
-// ══════════════════════════════════════════════════════
-// L2 — Prune (无 LLM 裁剪)
-// ══════════════════════════════════════════════════════
 
 export interface PruneConfig {
   /** 触发 prune 的 token 阈值 */
@@ -66,10 +52,6 @@ export interface PruneResult {
   /** 是否有实际变更 */
   changed: boolean
 }
-
-// ══════════════════════════════════════════════════════
-// L2 — Compaction (LLM 摘要)
-// ══════════════════════════════════════════════════════
 
 export interface CompactionConfig {
   /** 是否启用自动压缩 */
@@ -124,10 +106,6 @@ export interface CompactionResult {
   archivePath?: string
 }
 
-// ══════════════════════════════════════════════════════
-// L3 — Archive (历史归档)
-// ══════════════════════════════════════════════════════
-
 /** 归档存储后端 */
 export interface ArchiveStorage {
   /** 存储类型 */
@@ -151,10 +129,6 @@ export interface ArchiveEntry {
   summary: string
 }
 
-// ══════════════════════════════════════════════════════
-// Token 估算
-// ══════════════════════════════════════════════════════
-
 export interface ContextTokenEstimate {
   /** 总估算 token 数 */
   total: number
@@ -165,10 +139,6 @@ export interface ContextTokenEstimate {
   /** 最后一条带 usage 的消息索引 (-1 表示没有) */
   lastUsageIndex: number
 }
-
-// ══════════════════════════════════════════════════════
-// MemoryManager 配置
-// ══════════════════════════════════════════════════════
 
 export interface MemoryManagerConfig {
   // ── L1 ──
@@ -198,27 +168,16 @@ export interface MemoryManagerConfig {
   model?: { contextWindow: number; maxOutput: number }
 }
 
-// ══════════════════════════════════════════════════════
-// Memory Defaults
-// ══════════════════════════════════════════════════════
-
 export interface MemoryDefaults {
   compaction: CompactionConfig
   prune: PruneConfig
 }
 
-// ══════════════════════════════════════════════════════
-// Storage Provider（统一持久化策略）
-// ══════════════════════════════════════════════════════
-
-/**
- * StorageProvider — 统一的持久化策略工厂。
- * 
- * 确保 Session 和 Memory 使用一致的存储后端：
- * - local → LocalSessionStorage + LocalArchiveStorage
- * - remote → RemoteSessionStorage + RemoteArchiveStorage
- * - memory → MemorySessionStorage + InMemoryArchiveStorage
- */
+ // StorageProvider — 统一的持久化策略工厂。 
+ // 确保 Session 和 Memory 使用一致的存储后端：
+ // - local → LocalSessionStorage + LocalArchiveStorage
+ // - remote → RemoteSessionStorage + RemoteArchiveStorage
+ // - memory → MemorySessionStorage + InMemoryArchiveStorage
 export interface StorageProvider {
   /** 存储类型标识 */
   readonly type: StorageType
@@ -226,14 +185,14 @@ export interface StorageProvider {
   createArchiveStorage(): ArchiveStorage
 }
 
-/** 本地存储配置 */
+// 本地存储配置
 export interface LocalStorageConfig {
   type: 'local'
   /** 覆盖根目录，默认 $VITAMIN_HOME */
   baseDir?: string
 }
 
-/** 远程存储配置 */
+// 远程存储配置
 export interface RemoteStorageConfig {
   type: 'remote'
   /** API 基础 URL */

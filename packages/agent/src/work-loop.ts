@@ -1,4 +1,3 @@
-// Agent 双层循环 — 外循环(FollowUp) + 内循环(工具+Steering)
 import { getToolCallsByAssistantMessage, hasToolCalls } from '@vitamin/ai'
 import { invariant } from '@vitamin/invariant'
 
@@ -62,7 +61,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
 
   try {
     invariant(() => {
-      devtools?.debugger.paused({
+      devtools?.debugger.pause({
         turn: turnIndex,
         point: 'loop_start',
         frameDepth: 0,
@@ -100,6 +99,18 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
         if (transformContext) {
           const transformed = await transformContext(contextMessages, signal)
           contextMessages = transformed
+
+          invariant(() => {
+            devtools?.debugger.pause({
+              turn: turnIndex,
+              point: 'context_transform',
+              frameDepth: 0,
+              messagesCount: contextMessages.length,
+              tokenUsage: lastTokenUsage,
+              metadata: { originalCount: messages.length, transformedCount: contextMessages.length },
+            })
+            return true
+          }, `Turn ${turnIndex} context transformed: ${messages.length} → ${contextMessages.length}`)
         }
 
         const llmMessages = await convertToLLM(contextMessages)
@@ -115,7 +126,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
         }
 
         invariant(() => {
-          devtools?.debugger.paused({
+          devtools?.debugger.pause({
             turn: turnIndex,
             point: 'model_before',
             frameDepth: 0,
@@ -142,7 +153,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
         }
 
         invariant(() => {
-          devtools?.debugger.paused({
+          devtools?.debugger.pause({
             turn: turnIndex,
             point: 'model_after',
             frameDepth: 0,
@@ -170,6 +181,20 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
             if (signal.aborted) throw new AbortError()
 
             const steeringMessages = (await getSteeringMessages?.()) ?? []
+
+            invariant(() => {
+              devtools?.debugger.pause({
+                turn: turnIndex,
+                point: 'steering_check',
+                frameDepth: 1,
+                messagesCount: messages.length,
+                lastToolName: toolCall.name,
+                tokenUsage: lastTokenUsage,
+                metadata: { hasSteeringMessages: steeringMessages.length > 0, steeringCount: steeringMessages.length },
+              })
+              return true
+            }, `Turn ${turnIndex} steering check: ${steeringMessages.length} messages`)
+
             if (steeringMessages.length > 0) {
               messages.push(...steeringMessages)
               emit({ type: 'steering_injected', messages: steeringMessages })
@@ -186,7 +211,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
             })
 
             invariant(() => {
-              devtools?.debugger.paused({
+              devtools?.debugger.pause({
                 turn: turnIndex,
                 point: 'tool_before',
                 frameDepth: 1,
@@ -219,7 +244,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
             })
 
             invariant(() => {
-              devtools?.debugger.paused({
+              devtools?.debugger.pause({
                 turn: turnIndex,
                 point: 'tool_after',
                 frameDepth: 1,
@@ -249,7 +274,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
       }
 
       invariant(() => {
-        devtools?.debugger.paused({
+        devtools?.debugger.pause({
           turn: turnIndex,
           point: 'loop_end',
           frameDepth: 0,
@@ -261,6 +286,19 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
       }, `Turn ${turnIndex} end of loop`)
 
       const followUpMessages = (await getFollowUpMessages?.()) ?? []
+
+      invariant(() => {
+        devtools?.debugger.pause({
+          turn: turnIndex,
+          point: 'follow_up_check',
+          frameDepth: 0,
+          messagesCount: messages.length,
+          tokenUsage: lastTokenUsage,
+          metadata: { hasFollowUp: followUpMessages.length > 0, followUpCount: followUpMessages.length },
+        })
+        return true
+      }, `Turn ${turnIndex} follow-up check: ${followUpMessages.length} messages`)
+
       if (followUpMessages.length > 0) {
         messages.push(...followUpMessages)
 
@@ -279,7 +317,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
     }
 
     invariant(() => {
-      devtools?.debugger.paused({
+      devtools?.debugger.pause({
         turn: turnIndex,
         point: 'agent_done',
         frameDepth: 0,
@@ -294,7 +332,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
   } catch (error) {
     if (error instanceof AbortError || signal.aborted) {
       invariant(() => {
-        devtools?.debugger.paused({
+        devtools?.debugger.pause({
           turn: turnIndex,
           point: 'agent_aborted',
           frameDepth: 0,
@@ -309,7 +347,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
     }
 
     invariant(() => {
-      devtools?.debugger.paused({
+      devtools?.debugger.pause({
         turn: turnIndex,
         point: 'agent_error',
         frameDepth: 0,
@@ -323,7 +361,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
     throw error
   } finally {
     invariant(() => {
-      devtools?.debugger.paused({
+      devtools?.debugger.pause({
         turn: turnIndex,
         point: 'loop_cleanup',
         frameDepth: 0,

@@ -35,11 +35,17 @@ export function createBackgroundOutputTool(
           content: [{ 
             type: 'text', 
             text: `Status: ${result.status}\nOutput:\n${result.output ?? '(no output)'}` 
-          }]
+          }],
+          details: {
+            status: result.status,
+          },
         }
       }
       
-      throw new Error(result.error ?? `Failed to get output for task ${params.id}`)
+      return {
+        content: [{ type: 'text', text: result.error ?? `Failed to get output for task ${params.id}` }],
+        isError: true,
+      }
     },
   }
 }

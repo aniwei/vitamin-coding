@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
-import { type DevtoolsService } from '../service'
+import { type ServiceWorkerServer } from '../service-worker'
 
-export const createLoggerRoute = (service: DevtoolsService) => {
+export const createLoggerRoute = (service: ServiceWorkerServer) => {
   const app = new Hono()
 
   app.post('/', async c => {

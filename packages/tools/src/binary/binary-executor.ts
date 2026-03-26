@@ -24,8 +24,8 @@ import {
   createLogger
 } from '@vitamin/shared'
 import { 
-  OFFLINE_MODE_ENABLED, 
-  TOOLS_BINARY_DOWNLOAD_TIMEOUT, 
+  SETTING_OFFLINE_MODE_ENABLED, 
+  TOOLS_BINARY_DOWNLOAD_TIMEOUT_MS, 
   VITAMIN_USER_AGENT 
 } from '@vitamin/env'
 
@@ -97,7 +97,7 @@ async function tryDownloadAndExtract(
   try {
     const response = await fetch(url, {
       headers: { 'User-Agent': VITAMIN_USER_AGENT },
-      signal: AbortSignal.timeout(TOOLS_BINARY_DOWNLOAD_TIMEOUT),
+      signal: AbortSignal.timeout(TOOLS_BINARY_DOWNLOAD_TIMEOUT_MS),
     })
 
     if (!response.ok || !response.body) {
@@ -170,6 +170,8 @@ function findBinaryRecursively(
       }
     }
   }
+
+  return undefined
 }
 
 export abstract class BinaryToolExecutor implements BinaryTool {
@@ -194,7 +196,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
     const existing = await tryResolveExecutablePath(this.name, this.cacheDir)
     if (existing) return existing
 
-    if (OFFLINE_MODE_ENABLED) {
+    if (SETTING_OFFLINE_MODE_ENABLED) {
       throw new Error(`${this.name} not found and offline mode is enabled`)
     }
 

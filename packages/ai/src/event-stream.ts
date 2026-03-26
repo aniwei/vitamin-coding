@@ -1,6 +1,3 @@
-// EventStream 异步可迭代流式结果
-// 同时支持 for-await-of 和 .result() 双模式
-
 // 流完成后的回调类型
 type Resolve<R> = (value: R) => void
 type Reject = (error: Error) => void

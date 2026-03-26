@@ -12,6 +12,7 @@ type TaskGetArgs = z.infer<typeof TaskGetArgsSchema>
 export type GetTask = (id: string) => Promise<{
   id: string
   status: string
+  prompt?: string
   output?: string
   error?: string
 }>
@@ -42,7 +43,23 @@ export function createTaskGet(
         return { content: [{ type: 'text', text: `Task ${params.id} not found` }], isError: true }
       }
 
-      throw new Error(task.error ?? `Task ${params.id} status: ${task.status}\nOutput: ${task.output ?? 'N/A'}`)  
+      const status = String(task.status).toLowerCase()
+      const isFailure = status === 'error' || status === 'failed' || Boolean(task.error)
+      const text = [
+        `Task: ${task.id}`,
+        `Status: ${task.status}`,
+        task.prompt ? `Prompt: ${task.prompt}` : undefined,
+        `Output: ${task.output ?? 'N/A'}`,
+        task.error ? `Error: ${task.error}` : undefined,
+      ].filter((line): line is string => Boolean(line)).join('\n')
+
+      return {
+        content: [{ type: 'text', text }],
+        isError: isFailure,
+        details: {
+          task,
+        },
+      }
     },
   }
 }

@@ -1,7 +1,14 @@
-import type { Session, SessionContext, SessionEntry, SessionMetadata } from './types'
+import type { 
+  Session, 
+  SessionContext, 
+  SessionEntry, 
+  SessionMetadata 
+} from './types'
 
 export class InMemorySession<T = unknown> implements Session<T> {
   private readonly sessionEntries: SessionEntry<T>[] = []
+  private readonly entryMap = new Map<string, SessionEntry<T>>()
+  private _leafId: string | undefined = undefined
   private readonly meta: SessionMetadata
 
   constructor(
@@ -21,31 +28,51 @@ export class InMemorySession<T = unknown> implements Session<T> {
     }
   }
 
+  get leafId(): string | undefined {
+    return this._leafId
+  }
+
   append(message: T): void {
-    this.sessionEntries.push({
+    const entry: SessionEntry<T> & { type: 'message' } = {
       type: 'message',
+      id: crypto.randomUUID(),
+      parentId: this._leafId,
       message,
       timestamp: Date.now(),
-    })
+    }
+    this.sessionEntries.push(entry)
+    this.entryMap.set(entry.id, entry)
+    this._leafId = entry.id
     this.meta.messageCount++
     this.meta.lastActiveAt = Date.now()
   }
 
   compact(summary: string, compactedCount: number): void {
-    // 找到最后一个压缩边界后的消息
-    const uncompactedMessages = this.getUncompactedMessageEntries()
-    if (compactedCount <= 0 || compactedCount > uncompactedMessages.length) {
+    const branchMessages = this.getBranchMessageEntries()
+    if (compactedCount <= 0 || compactedCount > branchMessages.length) {
       return
     }
 
-    // 在当前条目列表中追加压缩标记
-    this.sessionEntries.push({
+    const entry: SessionEntry<T> & { type: 'compaction' } = {
       type: 'compaction',
+      id: crypto.randomUUID(),
+      parentId: this._leafId,
       summary,
       compactedCount,
       timestamp: Date.now(),
-    })
+    }
+    this.sessionEntries.push(entry)
+    this.entryMap.set(entry.id, entry)
+    this._leafId = entry.id
     this.meta.compactionCount++
+    this.meta.lastActiveAt = Date.now()
+  }
+
+  branch(entryId: string): void {
+    if (!this.entryMap.has(entryId)) {
+      throw new Error(`Entry "${entryId}" not found in session "${this.id}"`)
+    }
+    this._leafId = entryId
     this.meta.lastActiveAt = Date.now()
   }
 
@@ -53,29 +80,33 @@ export class InMemorySession<T = unknown> implements Session<T> {
     return this.sessionEntries
   }
 
+  // 沿当前分支从 root 到 leaf 的有序条目
+  branchEntries(): ReadonlyArray<SessionEntry<T>> {
+    return this.walkBranch()
+  }
+
   buildContext(): SessionContext<T> {
-    // 从后往前找最后一个 compaction 标记
+    const branch = this.walkBranch()
+
+    // 从后往前找最后一个 compaction
     let lastCompactionIndex = -1
-    for (let i = this.sessionEntries.length - 1; i >= 0; i--) {
-      if (this.sessionEntries[i].type === 'compaction') {
+    for (let i = branch.length - 1; i >= 0; i--) {
+      if (branch[i]!.type === 'compaction') {
         lastCompactionIndex = i
         break
       }
     }
 
     if (lastCompactionIndex === -1) {
-      // 没有压缩 — 返回全部消息
       return {
-        messages: this.sessionEntries
+        messages: branch
           .filter((e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message')
           .map((e) => e.message),
       }
     }
 
-    const compactionEntry = this.sessionEntries[lastCompactionIndex] as SessionEntry<T> & { type: 'compaction' }
-
-    // 压缩边界之后的消息
-    const messagesAfter = this.sessionEntries
+    const compactionEntry = branch[lastCompactionIndex] as SessionEntry<T> & { type: 'compaction' }
+    const messagesAfter = branch
       .slice(lastCompactionIndex + 1)
       .filter((e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message')
       .map((e) => e.message)
@@ -87,7 +118,7 @@ export class InMemorySession<T = unknown> implements Session<T> {
   }
 
   messages(): ReadonlyArray<T> {
-    return this.sessionEntries
+    return this.walkBranch()
       .filter((e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message')
       .map((e) => e.message)
   }
@@ -96,52 +127,77 @@ export class InMemorySession<T = unknown> implements Session<T> {
     return { ...this.meta, tags: [...this.meta.tags] }
   }
 
-  // ── 内部方法供 Store / Manager 使用 ──
-
-  /** 设置标题 */
   setTitle(title: string): void {
     this.meta.title = title
     this.meta.lastActiveAt = Date.now()
   }
 
-  /** 设置标签 */
   setTags(tags: string[]): void {
     this.meta.tags = [...tags]
   }
 
-  /** 添加标签 */
   addTag(tag: string): void {
     if (!this.meta.tags.includes(tag)) {
       this.meta.tags.push(tag)
     }
   }
 
-  /** 从快照恢复 entries（用于持久化加载） */
-  restoreEntries(entries: SessionEntry<T>[], meta: SessionMetadata): void {
+  // 从快照恢复 entries（用于持久化加载）
+  restoreEntries(
+    entries: SessionEntry<T>[],
+    meta: SessionMetadata,
+    restoredLeafId?: string,
+  ): void {
     this.sessionEntries.length = 0
-    this.sessionEntries.push(...entries)
+    this.entryMap.clear()
+    for (const entry of entries) {
+      this.sessionEntries.push(entry)
+      this.entryMap.set(entry.id, entry)
+    }
     Object.assign(this.meta, meta)
+    // 恢复 leafId：优先用传入值，否则取最后一个条目
+    this._leafId = restoredLeafId
+      ?? (entries.length > 0 ? entries[entries.length - 1]!.id : undefined)
   }
 
-  /** 导出快照 */
-  toSnapshot(): { entries: SessionEntry<T>[]; metadata: SessionMetadata } {
+  // 导出快照
+  toSnapshot(): { entries: SessionEntry<T>[]; metadata: SessionMetadata; leafId?: string } {
     return {
       entries: [...this.sessionEntries],
       metadata: this.metadata(),
+      leafId: this._leafId,
     }
   }
 
-  // 内部: 获取最后一个压缩边界之后的 message 条目
-  private getUncompactedMessageEntries(): Array<SessionEntry<T> & { type: 'message' }> {
+  // 内部：从 leafId 沿 parentId 链回溯，返回 root → leaf 顺序
+  private walkBranch(): SessionEntry<T>[] {
+    if (!this._leafId) return []
+
+    const path: SessionEntry<T>[] = []
+    let current = this.entryMap.get(this._leafId)
+
+    while (current) {
+      path.push(current)
+      current = current.parentId ? this.entryMap.get(current.parentId) : undefined
+    }
+
+    path.reverse()
+    return path
+  }
+
+  // 内部: 获取当前分支上未压缩的 message 条目
+  private getBranchMessageEntries(): Array<SessionEntry<T> & { type: 'message' }> {
+    const branch = this.walkBranch()
+
     let lastCompactionIndex = -1
-    for (let i = this.sessionEntries.length - 1; i >= 0; i--) {
-      if (this.sessionEntries[i].type === 'compaction') {
+    for (let i = branch.length - 1; i >= 0; i--) {
+      if (branch[i]!.type === 'compaction') {
         lastCompactionIndex = i
         break
       }
     }
 
-    return this.sessionEntries
+    return branch
       .slice(lastCompactionIndex + 1)
       .filter((e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message')
   }

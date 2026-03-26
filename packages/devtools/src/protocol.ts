@@ -1,12 +1,35 @@
-export type BreakpointPoint =
-  | 'loop_start'
-  | 'model_before'
-  | 'model_after'
-  | 'tool_before'
-  | 'tool_after'
-  | 'loop_end'
-  | 'agent_error'
-  | 'agent_done'
+export const BREAKPOINT_POINTS = [
+  // ─── Agent work-loop ───
+  'loop_start',
+  'model_before',
+  'model_after',
+  'tool_before',
+  'tool_after',
+  'loop_end',
+  'loop_cleanup',
+  'agent_aborted',
+  'agent_error',
+  'agent_done',
+  // ─── Work-loop 注入点 ───
+  'steering_check',
+  'follow_up_check',
+  'context_transform',
+  // ─── Tool executor 内部 ───
+  'tool_resolve',
+  'tool_validate',
+  'tool_hook_before',
+  'tool_hook_after',
+  // ─── Prompt / Session 生命周期 ───
+  'prompt_before',
+  'prompt_after',
+  'context_build',
+  'messages_persist',
+  'session_create',
+  'session_fork',
+  'session_restore',
+] as const
+
+export type BreakpointPoint = (typeof BREAKPOINT_POINTS)[number]
 
 export interface DebugSnapshot {
   turn: number
@@ -58,22 +81,41 @@ export function isDebuggerEvent(input: unknown): input is DebuggerEvent {
   if (!input || typeof input !== 'object') return false
   const value = input as Record<string, unknown>
 
-  if (value.type === 'breakpoint-hit') {
-    return typeof value.seq === 'number' && typeof value.point === 'string' && typeof value.frameDepth === 'number'
+  if (value.type !== 'Agent.debugger.paused') {
+    return false
   }
 
-  if (value.type === 'agent-finished') {
-    if (typeof value.seq !== 'number' || !value.result || typeof value.result !== 'object') {
+  if (typeof value.seq !== 'number' || typeof value.point !== 'string' || typeof value.frameDepth !== 'number') {
+    return false
+  }
+
+  if (!value.snapshot || typeof value.snapshot !== 'object') {
+    return false
+  }
+
+  const snapshot = value.snapshot as Record<string, unknown>
+  if (typeof snapshot.turn !== 'number' || typeof snapshot.point !== 'string' || typeof snapshot.frameDepth !== 'number') {
+    return false
+  }
+
+  if (typeof snapshot.messagesCount !== 'number') {
+    return false
+  }
+
+  if (typeof snapshot.lastToolName !== 'undefined' && typeof snapshot.lastToolName !== 'string') {
+    return false
+  }
+
+  if (typeof snapshot.tokenUsage !== 'undefined') {
+    if (!snapshot.tokenUsage || typeof snapshot.tokenUsage !== 'object') {
       return false
     }
 
-    const result = value.result as Record<string, unknown>
-    if (result.status !== 'ok' && result.status !== 'error' && result.status !== 'aborted') {
+    const usage = snapshot.tokenUsage as Record<string, unknown>
+    if (typeof usage.input !== 'number' || typeof usage.output !== 'number') {
       return false
     }
-
-    return typeof result.reason === 'undefined' || typeof result.reason === 'string'
   }
 
-  return false
+  return true
 }

@@ -76,6 +76,7 @@ describe('full preset orchestration tools', () => {
         params: {
           agent: 'explore',
           prompt: 'inspect repository',
+          mode: 'sync' as const,
         },
         signal,
       })).rejects.toThrow('failed upstream')

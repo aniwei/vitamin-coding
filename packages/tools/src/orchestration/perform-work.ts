@@ -9,7 +9,12 @@ const PerformWorkArgsSchema = z.object({
 
 type PerformWorkArgs = z.infer<typeof PerformWorkArgsSchema>
 
-export type PerformWork = (name: string) => Promise<{ success: boolean; error: Error }>
+export type PerformWork = (name: string) => Promise<{
+  success: boolean
+  taskId?: string
+  message?: string
+  error?: Error | string
+}>
 
 
 export function createPerformWork(
@@ -31,13 +36,21 @@ export function createPerformWork(
       const result = await performWork(params.name)
 
       if (result.success) {
+        const suffix = result.taskId ? ` (task: ${result.taskId})` : ''
         return {
-          content: [{ type: 'text', text: 'Work started successfully' }],
+          content: [{ type: 'text', text: `Work started successfully${suffix}${result.message ? `\n${result.message}` : ''}` }],
+          details: {
+            taskId: result.taskId,
+          },
         }
       }
 
+      const errorMessage = typeof result.error === 'string'
+        ? result.error
+        : result.error?.message
+
       return {
-        content: [{ type: 'text', text: `Failed to start work: ${result.error?.message ?? 'unknown error'}` }],
+        content: [{ type: 'text', text: `Failed to start work: ${errorMessage ?? 'unknown error'}` }],
         isError: true,
         details: {
           error: result.error,

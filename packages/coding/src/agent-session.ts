@@ -1,13 +1,15 @@
-import type { Agent, AgentEventListener, AgentMessage } from '@vitamin/agent'
+import { TypedEventEmitter } from '@vitamin/shared'
+import { invariant } from '@vitamin/invariant'
+import { createToolHookExecutor } from './hooks'
+import type { Agent, AgentMessage } from '@vitamin/agent'
 import type { AgentTool } from '@vitamin/agent'
+import type { HookRegistry } from '@vitamin/hooks'
 import type { Session } from '@vitamin/session'
 import type { Message, Model, ThinkingLevel } from '@vitamin/ai'
-import type {
-  AgentSession as IAgentSession,
-  AgentSessionEvent,
-  AgentSessionEventListener,
-  PromptOptions,
-} from './types'
+import type { Devtools } from '@vitamin/devtools'
+import type { PromptOptions } from './types'
+import type { Events } from '@vitamin/shared'
+
 
 
 export interface AgentSessionConfig {
@@ -15,58 +17,72 @@ export interface AgentSessionConfig {
   systemPrompt: string
   tools?: AgentTool[]
   thinkingLevel?: ThinkingLevel
+  hooks: HookRegistry
+  agentName?: string
+  // 工作目录
+  workspaceDir?: string
+  // 开发工具
+  devtools?: Devtools
 }
 
-export class AgentSession implements IAgentSession {
+interface AgentSessionEvents extends Events {
+  session_start: (sessionId: string) => void
+  session_end: (sessionId: string) => void
+  prompt_start: (sessionId: string, prompt: string) => void
+  prompt_end: (sessionId: string) => void
+  error: (sessionId: string, error: Error) => void
+  // 可扩展更多事件，如 tool_call_start, tool_call_end 等
+}
+
+export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
   readonly id: string
   readonly session: Session<AgentMessage>
+  readonly workspaceDir?: string
 
   private agent: Agent
-  private agentUnsubscribe: (() => void) | null = null
-  private sessionEventListeners: AgentSessionEventListener[] = []
   private disposed = false
 
   // Session 级别的运行时配置
   private model: Model
-  private systemPrompt: string
   private tools: AgentTool[]
+  private systemPrompt: string
   private thinkingLevel?: ThinkingLevel
+  private hooks: HookRegistry
+  private agentName: string
+  private devtools?: Devtools
 
   constructor(
     session: Session<AgentMessage>,
     agent: Agent,
     config: AgentSessionConfig,
   ) {
+    super()
     this.id = session.id
     this.session = session
     this.agent = agent
 
     this.model = config.model
-    this.systemPrompt = config.systemPrompt
     this.tools = config.tools ?? []
+    this.systemPrompt = config.systemPrompt
     this.thinkingLevel = config.thinkingLevel
+    this.hooks = config.hooks
+    this.agentName = config.agentName ?? 'primary'
+    this.workspaceDir = config.workspaceDir
+    this.devtools = config.devtools
 
-    // 监听 Agent 事件
-    this.agentUnsubscribe = this.agent.on((event) => {
-      this.handleAgentEvent(event)
-    })
-
-    this.emitSessionEvent({ type: 'session_start', sessionId: this.id })
+    this.emit('session_start', this.id)
   }
 
   get status(): string {
     return this.agent.status
   }
 
-  /**
-   * 发起对话 — Session 是唯一的数据源。
-   *
-   * 流程:
-   * 1. 用户消息 → 追加到 Session
-   * 2. Session.buildContext() → 构建上下文（含压缩摘要）
-   * 3. agent.run(context) → workLoop 就地修改 messages 数组
-   * 4. 新产生的消息 → 追加回 Session
-   */
+  /// 发起对话 — Session 是唯一的数据源。
+  // 流程:
+  // 1. 用户消息 → 追加到 Session
+  // 2. Session.buildContext() → 构建上下文（含压缩摘要）
+  // 3. agent.run(context) → workLoop 就地修改 messages 数组
+  // 4. 新产生的消息 → 追加回 Session
   async prompt(
     text: string,
     options?: PromptOptions,
@@ -74,7 +90,10 @@ export class AgentSession implements IAgentSession {
     this.ensureNotDisposed()
 
     // 如果正在处理，按 streamingBehavior 排队
-    if (this.agent.status === 'streaming' || this.agent.status === 'tool_executing') {
+    if (
+      this.agent.status === 'streaming' || 
+      this.agent.status === 'tool_executing'
+    ) {
       if (options?.streamingBehavior === 'followUp') {
         this.followUp(text)
         return
@@ -86,14 +105,48 @@ export class AgentSession implements IAgentSession {
       }
     }
 
-    this.emitSessionEvent({ type: 'prompt_start', sessionId: this.id, text })
+    this.emit('prompt_start', this.id, text)
+
+    invariant(() => {
+      this.devtools?.debugger.pause({
+        turn: 0,
+        point: 'prompt_before',
+        frameDepth: 0,
+        messagesCount: this.session.messages().length,
+        metadata: { sessionId: this.id, isFirstMessage: this.session.messages().length === 0 },
+      })
+      return true
+    }, `Prompt before: ${this.id}`)
+
+    const isFirstMessage = this.session.messages().length === 0
+
+    const beforeInput = {
+      message: {
+        role: 'user' as const,
+        timestamp: Date.now(),
+        content: [{ type: 'text' as const, text }],
+      },
+      sessionId: this.id,
+      isFirstMessage,
+      metadata: {},
+    }
+
+    const beforeOutput = {
+      message: beforeInput.message,
+      cancelled: false,
+      metadata: {},
+    }
+
+    await this.hooks.execute('chat.message.before', beforeInput, beforeOutput)
+
+    if (beforeOutput.cancelled) {
+      this.emit('prompt_end', this.id)
+      return
+    }
 
     // 1. 构建用户消息 → 持久化到 Session
-    const userMessage: Message = {
-      role: 'user',
-      content: [{ type: 'text', text }],
-    }
-    this.session.append(userMessage)
+    const message = beforeOutput.message as Message
+    this.session.append(message)
 
     // 2. 从 Session 构建上下文
     const ctx = this.session.buildContext()
@@ -102,13 +155,49 @@ export class AgentSession implements IAgentSession {
     if (ctx.summary) {
       messages.push({
         role: 'user',
+        timestamp: Date.now(),
         content: [{ type: 'text', text: `[Previous conversation summary]\n${ctx.summary}` }],
       } as Message)
     }
 
     messages.push(...ctx.messages)
-
     const messagesBefore = messages.length
+
+    invariant(() => {
+      this.devtools?.debugger.pause({
+        turn: 0,
+        point: 'context_build',
+        frameDepth: 0,
+        messagesCount: messagesBefore,
+        metadata: { sessionId: this.id, hasSummary: !!ctx.summary },
+      })
+      return true
+    }, `Context built: ${messagesBefore} messages`)
+
+    const paramsOutput = {
+      temperature: undefined as number | undefined,
+      maxTokens: undefined as number | undefined,
+      thinkingLevel: this.thinkingLevel,
+      metadata: {},
+    }
+
+    await this.hooks.execute('chat.params', {
+      sessionId: this.id,
+      model: this.model.id,
+      provider: this.model.provider,
+      thinkingLevel: this.thinkingLevel,
+    }, paramsOutput)
+
+    // 订阅 Agent 流事件，桥接到 stream.start / stream.end hooks
+    const unsubStream = this.agent.on('stream_event', (...args: unknown[]) => {
+      const event = args[0] as { type: string; event: { type: string; reason?: string } }
+      const se = event.event
+      if (se.type === 'start') {
+        void this.hooks.emit('stream.start', { sessionId: this.id, model: this.model.id })
+      } else if (se.type === 'done') {
+        void this.hooks.emit('stream.end', { sessionId: this.id, model: this.model.id, stopReason: se.reason ?? 'end_turn' })
+      }
+    })
 
     try {
       // 3. agent.run() — workLoop 就地修改 messages
@@ -117,60 +206,119 @@ export class AgentSession implements IAgentSession {
         systemPrompt: this.systemPrompt,
         tools: this.tools,
         messages,
-        thinkingLevel: this.thinkingLevel,
+        thinkingLevel: paramsOutput.thinkingLevel as ThinkingLevel | undefined,
+        temperature: paramsOutput.temperature,
+        maxTokens: paramsOutput.maxTokens,
+        transformContext: async (contextMessages, signal) => {
+          if (signal?.aborted) {
+            return contextMessages
+          }
+
+          const output = { messages: contextMessages }
+          await this.hooks.execute('messages.transform', {
+            messages: contextMessages,
+            tools: this.tools,
+            agentName: this.agentName,
+            sessionId: this.id,
+          }, output)
+          return output.messages
+        },
+        toolHookExecutor: createToolHookExecutor({
+          hooks: this.hooks,
+          agentName: this.agentName,
+          sessionId: this.id,
+        }),
+        agentName: this.agentName,
+        sessionId: this.id,
+        devtools: this.devtools,
       })
 
       // 4. 将 workLoop 追加的新消息持久化回 Session
       this.persistNewMessages(messages, messagesBefore)
 
-      this.emitSessionEvent({ type: 'prompt_end', sessionId: this.id })
+      invariant(() => {
+        this.devtools?.debugger.pause({
+          turn: 0,
+          point: 'messages_persist',
+          frameDepth: 0,
+          messagesCount: messages.length,
+          metadata: { sessionId: this.id, newMessages: messages.length - messagesBefore },
+        })
+        return true
+      }, `Messages persisted: ${messages.length - messagesBefore} new`)
+
+      await this.hooks.execute('chat.message.after', beforeInput, {
+        message: beforeOutput.message,
+        cancelled: false,
+        metadata: {},
+      })
+
+      invariant(() => {
+        this.devtools?.debugger.pause({
+          turn: 0,
+          point: 'prompt_after',
+          frameDepth: 0,
+          messagesCount: messages.length,
+          metadata: { sessionId: this.id },
+        })
+        return true
+      }, `Prompt after: ${this.id}`)
+
+      this.emit('prompt_end', this.id)
     } catch (error) {
       // 即使出错也持久化中间消息
       this.persistNewMessages(messages, messagesBefore)
-
-      this.emitSessionEvent({
-        type: 'error',
+      const err = error instanceof Error ? error : new Error(String(error))
+      await this.hooks.emit('session.error', {
         sessionId: this.id,
-        error: error instanceof Error ? error : new Error(String(error)),
+        metadata: {},
+        error: err,
       })
+      this.emit('error', this.id, err)
       throw error
+    } finally {
+      unsubStream()
     }
   }
 
   steer(text: string): void {
     this.ensureNotDisposed()
+
     const message: Message = {
       role: 'user',
+      timestamp: Date.now(),
       content: [{ type: 'text', text }],
     }
+
     this.agent.steer(message)
   }
 
   followUp(text: string): void {
     this.ensureNotDisposed()
+
     const message: Message = {
       role: 'user',
+      timestamp: Date.now(),
       content: [{ type: 'text', text }],
     }
+
     this.agent.followUp(message)
-  }
-
-  onAgentEvent(listener: AgentEventListener): () => void {
-    return this.agent.on(listener)
-  }
-
-  onSessionEvent(listener: AgentSessionEventListener): () => void {
-    this.sessionEventListeners.push(listener)
-    return () => {
-      const index = this.sessionEventListeners.indexOf(listener)
-      if (index !== -1) {
-        this.sessionEventListeners.splice(index, 1)
-      }
-    }
   }
 
   abort(): void {
     this.agent.abort()
+  }
+
+  async compact(summary: string, compactedCount: number): Promise<void> {
+    this.ensureNotDisposed()
+
+    const messageCount = this.session.messages().length
+    await this.hooks.emit('compaction.before', { sessionId: this.id, messageCount })
+
+    this.session.compact(summary, compactedCount)
+
+    const retainedCount = this.session.messages().length
+    await this.hooks.emit('compaction.after', { sessionId: this.id, retainedCount })
   }
 
   dispose(): void {
@@ -178,30 +326,13 @@ export class AgentSession implements IAgentSession {
     this.disposed = true
 
     this.agent.abort()
-    if (this.agentUnsubscribe) {
-      this.agentUnsubscribe()
-      this.agentUnsubscribe = null
-    }
-    this.sessionEventListeners = []
-    this.emitSessionEvent({ type: 'session_end', sessionId: this.id })
+    this.emit('session_end', this.id)
   }
-
-  // ──── 内部方法 ────
 
   private persistNewMessages(messages: AgentMessage[], startIndex: number): void {
     const newMessages = messages.slice(startIndex)
     for (const msg of newMessages) {
       this.session.append(msg)
-    }
-  }
-
-  private handleAgentEvent(_event: import('@vitamin/agent').AgentEvent): void {
-    // 细粒度事件处理可在此扩展
-  }
-
-  private emitSessionEvent(event: AgentSessionEvent): void {
-    for (const listener of this.sessionEventListeners) {
-      listener(event)
     }
   }
 

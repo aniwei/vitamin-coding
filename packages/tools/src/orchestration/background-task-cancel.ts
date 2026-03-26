@@ -37,7 +37,10 @@ export function createBackgroundCancelTool(
         }
       } 
 
-      throw new Error(cancelled.error ?? `Failed to cancel task ${params.id}`)
+      return {
+        content: [{ type: 'text', text: cancelled.error ?? `Failed to cancel task ${params.id}` }],
+        isError: true,
+      }
     },
   }
 }

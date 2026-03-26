@@ -20,12 +20,13 @@ type CreateTaskArgs = {
 export type CreateTask = (args: CreateTaskArgs) => Promise<{
   id: string
   success: boolean
+  message?: string
   error?: string
 }>
 
 export function createTaskCreate(
   _projectRoot: string, 
-  create: CreateTask
+  create?: CreateTask
 ): AgentTool<TaskCreateArgs> {
 
   return {
@@ -36,7 +37,7 @@ export function createTaskCreate(
 
     async execute({ params }): Promise<ToolResult> {
       if (!create) {
-        throw new Error('create function is not provided in options')
+        return { content: [{ type: 'text', text: 'task_create not available' }], isError: true }
       }
 
       const result = await create({
@@ -47,11 +48,15 @@ export function createTaskCreate(
 
       if (result.success) {
         return {
-          content: [{ type: 'text', text: `Task created: ${result.id}` }],
+          content: [{ type: 'text', text: `Task created: ${result.id}${result.message ? `\n${result.message}` : ''}` }],
+          details: { taskId: result.id },
         }
       }
 
-      throw new Error(result.error ?? 'Unknown error creating task')
+      return {
+        content: [{ type: 'text', text: `Failed to create task: ${result.error ?? 'Unknown error creating task'}` }],
+        isError: true,
+      }
     },
   }
 }

@@ -3,7 +3,7 @@ import { createServer } from 'node:net'
 import { describe, expect, it } from 'vitest'
 import WebSocket from 'ws'
 
-import { DevtoolService } from '../src/service'
+import { DevtoolsService } from '../src/service'
 
 function getFreePort(): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -63,30 +63,64 @@ function waitForMessage(ws: WebSocket): Promise<string> {
 describe('DevtoolService', () => {
   it('starts service and closes connected websocket clients', async () => {
     const port = await getFreePort()
-    const service = new DevtoolService(port)
+    const service = new DevtoolsService(port)
 
     await service.start()
-    const ws = await connectWebSocket(`ws://localhost:${port}`)
+    const ws = await connectWebSocket(service.wsUrl)
 
     const closed = waitForClose(ws)
-    service.close()
+    await service.stop()
 
     await closed
   })
 
   it('broadcasts message to websocket clients', async () => {
     const port = await getFreePort()
-    const service = new DevtoolService(port)
+    const service = new DevtoolsService(port)
 
     await service.start()
-    const ws = await connectWebSocket(`ws://localhost:${port}`)
+    const ws = await connectWebSocket(service.wsUrl)
 
     const incoming = waitForMessage(ws)
     service.broadcast('vitamin-devtools-broadcast')
 
     await expect(incoming).resolves.toBe('vitamin-devtools-broadcast')
 
-    service.close()
-    await waitForClose(ws)
+    const closed = waitForClose(ws)
+    await service.stop()
+    await closed
   })
+
+  it('waits for a websocket command before resuming paused requests', async () => {
+    const port = await getFreePort()
+    const service = new DevtoolsService(port)
+
+    await service.start()
+    const ws = await connectWebSocket(service.wsUrl)
+
+    const pausedEvent = waitForMessage(ws)
+    const resumeResponse = fetch(service.debuggerPauseUrl, {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/json',
+      },
+      body: JSON.stringify({
+        turn: 1,
+        point: 'model_before',
+        frameDepth: 0,
+        messagesCount: 3,
+      }),
+    }).then((response) => response.text())
+
+    await expect(pausedEvent).resolves.toContain('Agent.debugger.paused')
+
+    ws.send(JSON.stringify({ type: 'continue' }))
+
+    await expect(resumeResponse).resolves.toBe('ok')
+
+    const closed = waitForClose(ws)
+    await service.stop()
+    await closed
+  })
+
 })

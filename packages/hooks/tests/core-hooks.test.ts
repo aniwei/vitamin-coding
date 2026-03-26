@@ -8,6 +8,7 @@ import { createFileGuardHook } from '../src/core/tool-guard/file-guard'
 import { createLabelTruncatorHook } from '../src/core/tool-guard/label-truncator'
 import { createOutputTruncationHook } from '../src/core/tool-guard/output-truncation'
 import { createAnthropicEffortHook } from '../src/core/transform/anthropic-effort'
+import { createTokenBudgetHook, clearTokenUsage, trackTokenUsage } from '../src/core/transform/token-budget'
 import { createCommentCheckerHook } from '../src/core/quality/comment-checker'
 import { createRalphLoopHook } from '../src/core/quality/ralph-loop'
 
@@ -240,6 +241,45 @@ describe('core hooks', () => {
         await engine.execute('chat.params', input as never, output as never)
 
         expect(output.thinkingLevel).toBeUndefined()
+      })
+    })
+  })
+
+  describe('token-budget', () => {
+    describe('#given token usage from another session on same model', () => {
+      it('#then does not leak warning across sessions', async () => {
+        const engine = createHookRegistry()
+        engine.register(createTokenBudgetHook({ inputTokenWarningThreshold: 1 }))
+
+        const sessionA = `s-a-${Date.now()}`
+        const sessionB = `s-b-${Date.now()}`
+
+        trackTokenUsage(sessionA, 'gpt-5.2', 2, 0)
+
+        const outputA = { metadata: {} as Record<string, unknown> }
+        await engine.execute('chat.params', {
+          sessionId: sessionA,
+          model: 'gpt-5.2',
+          provider: 'openai',
+        } as never, outputA as never)
+
+        const outputB = { metadata: {} as Record<string, unknown> }
+        await engine.execute('chat.params', {
+          sessionId: sessionB,
+          model: 'gpt-5.2',
+          provider: 'openai',
+        } as never, outputB as never)
+
+        expect(outputA.metadata.tokenBudgetWarning).toMatchObject({
+          sessionId: sessionA,
+          model: 'gpt-5.2',
+          totalInput: 2,
+          threshold: 1,
+        })
+        expect(outputB.metadata.tokenBudgetWarning).toBeUndefined()
+
+        clearTokenUsage(sessionA)
+        clearTokenUsage(sessionB)
       })
     })
   })

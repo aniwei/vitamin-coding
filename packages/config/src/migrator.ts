@@ -1,6 +1,3 @@
-// 配置版本迁移系统
-// 迁移链：v0 → v1 → v2 … 按顺序执行
-// 迁移仅单向前进（不支持回滚）
 import { compare } from 'semver'
 import { createLogger } from '@vitamin/shared'
 

@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { VITAMIN_CONFIG } from '../src/constant'
+import { VITAMIN_DEFAULT_CONFIG } from '../src/types'
 import { loadConfig } from '../src/loader'
 
 describe('loadConfig', () => {
@@ -13,7 +13,7 @@ describe('loadConfig', () => {
   it('returns defaults when no overrides are provided', async () => {
     const config = await loadConfig()
 
-    expect(config.config_version).toBe(VITAMIN_CONFIG.config_version)
+    expect(config.config_version).toBe(VITAMIN_DEFAULT_CONFIG.config_version)
     expect(config.log_level).toBe('info')
     expect(config.theme).toBe('auto')
     expect(config.tool_preset).toBe('standard')

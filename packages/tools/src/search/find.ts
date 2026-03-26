@@ -1,5 +1,4 @@
 import { z } from 'zod'
-
 import { 
   TOOLS_MAX_OUTPUT_BYTES, 
   TOOLS_MAX_OUTPUT_LINES 
@@ -112,7 +111,7 @@ async function find(
   limit: number,
   glob?: Glob,
   binaryExecutorRegistry?: BinaryToolExecutorRegistry
-) {
+): Promise<ToolResult> {
   if (typeof glob === 'function') {
     logger.debug('Using custom glob implementation for find tool')
 
@@ -123,7 +122,7 @@ async function find(
 
     if (results.length === 0) {
       return {
-        content: [{ type: 'text', text: 'No files found matching pattern' }],
+        content: [{ type: 'text' as const, text: 'No files found matching pattern' }],
       }
     }
 
@@ -159,7 +158,7 @@ async function find(
     }
 
     return {
-      content: [{ type: 'text', text: content }],
+      content: [{ type: 'text' as const, text: content }],
       details
     }
   } 

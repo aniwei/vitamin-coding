@@ -13,7 +13,7 @@ export type KnownApi =
 	| 'bedrock-converse-stream'
 	| 'google-generative-ai'
 	| 'google-gemini-cli'
-	| 'google-vertex"'
+	| 'google-vertex'
 
 export type Api = KnownApi | (string & {});
 
@@ -147,8 +147,8 @@ export type StreamEvent =
 	| { type: 'tool_call_start'; index: number; partial: AssistantMessage }
 	| { type: 'tool_call_delta'; index: number; delta: string; partial: AssistantMessage }
 	| { type: 'tool_call_end'; index: number; toolCall: ToolCall; partial: AssistantMessage }
-	| { type: 'done'; reason: Extract<StopReason, 'stop' | 'length' | 'tool_use'>; message: AssistantMessage }
-	| { type: 'error'; reason: Extract<StopReason, 'aborted' | 'error'>; error: AssistantMessage };
+	| { type: 'done'; reason: StopReason; message: AssistantMessage }
+	| { type: 'error'; error: Error };
 
 // Zod schema 类型占位（避免直接依赖 zod）
 export interface ZodType<T = unknown> {
@@ -208,27 +208,59 @@ export interface ProviderStream {
 // Provider 工厂函数类型
 export type ProviderFactory = () => ProviderStream
 
+// OAuth 凭据 — 与 pi-mono 对齐：refresh / access / expires + 可扩展字段
 export type OAuthCredentials = {
-  type: Api
-  refreshToken: string
-  accessToken: string
-  expires: number
+  refresh: string          // GitHub OAuth access_token / 其他 provider 的 refresh token
+  access: string           // Copilot token / 最终 API key
+  expires: number          // 毫秒时间戳，access 过期时间
+  [key: string]: unknown   // 扩展字段（如 enterpriseUrl）
 }
 
-// OAuth 适配器接口
-export interface OAuth {
-  // 唯一标识
-  readonly id: string
-  readonly displayName: string
-  credentials: OAuthCredentials | undefined
+export type OAuthProviderId = string
 
-  authorize(model: Model<Api>): Promise<OAuthCredentials>
-
-  refresh(): Promise<void>
-  resolve(): Promise<string>
+// OAuth 回调：用于 UI 层展示认证信息和收集输入
+export interface OAuthAuthInfo {
+  url: string
+  instructions?: string
 }
 
-export type OAuthFactory = () => OAuth
+export interface OAuthPrompt {
+  message: string
+  placeholder?: string
+  allowEmpty?: boolean
+}
+
+export interface OAuthLoginCallbacks {
+  onAuth: (info: OAuthAuthInfo) => void
+  onPrompt: (prompt: OAuthPrompt) => Promise<string>
+  onProgress?: (message: string) => void
+  /** 手动输入授权码（用于 callback server 类 OAuth 提供商的备用输入） */
+  onManualCodeInput?: () => Promise<string>
+  signal?: AbortSignal
+}
+
+// OAuth 提供商接口 — 无状态、纯函数式
+export interface OAuthProvider {
+  readonly id: OAuthProviderId
+  readonly name: string
+
+  /** 是否使用本地回调服务器登录（支持 onManualCodeInput 备用输入） */
+  usesCallbackServer?: boolean
+
+  /** 运行交互式登录流程，返回凭据 */
+  login(callbacks: OAuthLoginCallbacks): Promise<OAuthCredentials>
+
+  /** 刷新过期凭据 */
+  refreshToken(credentials: OAuthCredentials): Promise<OAuthCredentials>
+
+  /** 从凭据提取 API key */
+  getApiKey(credentials: OAuthCredentials): string
+
+  /** 可选：根据凭据修改模型配置（如更新 baseUrl） */
+  modifyModels?(models: Model<Api>[], credentials: OAuthCredentials): Model<Api>[]
+}
+
+export type OAuthProviderFactory = () => OAuthProvider
 
 // 用于辅助判断模型家族
 export function isGPTFamily(model: Model): boolean {
@@ -271,4 +303,12 @@ export function mergeUsage(a: Usage, b: Usage): Usage {
     cacheReadTokens: a.cacheReadTokens + b.cacheReadTokens,
     cacheWriteTokens: a.cacheWriteTokens + b.cacheWriteTokens,
   }
+}
+
+// 从 AssistantMessage.usage 获取精确 token 总数
+export function getTokensFromUsage(message: Message): number | null {
+  if (message.role !== 'assistant') return null
+  const usage = (message as AssistantMessage).usage
+  if (!usage) return null
+  return usage.inputTokens + usage.outputTokens
 }

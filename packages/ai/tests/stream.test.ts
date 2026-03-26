@@ -29,7 +29,7 @@ function makeContext(): StreamContext {
 function makeAssistantMessage(text: string): AssistantMessage {
   return {
     role: 'assistant',
-    content: [{ type: 'text', data: text }],
+    content: [{ type: 'text', text: text }],
     usage: {
       inputTokens: 10,
       outputTokens: 5,
@@ -51,12 +51,12 @@ describe('stream orchestrator', () => {
       async *converse(): AsyncIterable<StreamEvent> {
         const message = makeAssistantMessage('hello back')
         yield { type: 'start', partial: message }
-        yield { type: 'done', reason: 'stop', message }
+        yield { type: 'done', reason: 'end_turn', message }
       },
     }
 
     const result = await complete(makeModel(), provider, makeContext(), {})
-    expect(result.content[0]).toEqual({ type: 'text', data: 'hello back' })
+    expect(result.content[0]).toEqual({ type: 'text', text: 'hello back' })
   })
 
   it('stream result rejects when provider emits error event', async () => {
@@ -66,8 +66,7 @@ describe('stream orchestrator', () => {
       async *converse(): AsyncIterable<StreamEvent> {
         yield {
           type: 'error',
-          reason: 'error',
-          error: new Error('provider failed') as unknown as AssistantMessage,
+          error: new Error('provider failed'),
         }
       },
     }

@@ -20,12 +20,12 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
-  "dependencies": {
-    "@vitamin/shared": "workspace:*",
-    "@vitamin/ai": "workspace:*",
+  "dependencies": {},
+  "devDependencies": {
     "@vitamin/agent": "workspace:*",
     "@vitamin/hooks": "workspace:*",
-    "@vitamin/tools": "workspace:*"
+    "@vitamin/tools": "workspace:*",
+    "@vitamin/coding": "workspace:*"
   },
   "publishConfig": {
     "access": "public",

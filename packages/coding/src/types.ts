@@ -1,55 +1,78 @@
-import type { createLogger } from '@vitamin/shared'
-import type { loadConfig } from '@vitamin/config'
-import type { AgentEventListener, AgentMessage, AgentTool } from '@vitamin/agent'
+import type { AgentTool, ToolCallEvent } from '@vitamin/agent'
 import type { Model, ProviderRegistry, ThinkingLevel } from '@vitamin/ai'
-import type { Session } from '@vitamin/session'
-
-// ═══ AgentSession 配置 ═══
+import type { HookRegistry } from '@vitamin/hooks'
+import type { SessionStore } from '@vitamin/session'
+import type { AgentMessage } from '@vitamin/agent'
 
 export interface AgentSessionOptions {
-  /** 会话 ID（可选，默认自动生成） */
+  // 会话 ID（可选，默认自动生成）
   id?: string
-  /** LLM 模型 */
+  // LLM 模型 
   model?: Model
-  /** 系统提示词 */
+  // 系统提示词 
   systemPrompt?: string
-  /** 工具列表 */
+  // 工具列表 
   tools?: AgentTool[]
-  /** 思维级别 */
+  // 思维级别
   thinkingLevel?: ThinkingLevel
-  /** 工作目录 */
-  cwd?: string
-  /** Provider 注册表（用于自动构建 stream） */
+  // 工作目录 
+  workspaceDir?: string
+  // Provider 注册表（用于自动构建 stream）
   providerRegistry?: ProviderRegistry
+}
+
+export interface CreateAgentSessionOptions {
+  // LLM 模型（必填）
+  model: Model
+  // 系统提示词 
+  systemPrompt?: string
+  // 工具列表 
+  tools?: AgentTool[]
+  // 思维级别 
+  thinkingLevel?: ThinkingLevel
+  // Hook 注册表（默认 createHookRegistry({ preset: 'default' })） 
+  hooks?: HookRegistry
+  // Provider 注册表（用于自动构建 stream） 
+  providerRegistry?: ProviderRegistry
+  // 自定义 SessionStore（默认 InMemorySessionStore）
+  sessionStore?: SessionStore<AgentMessage>
+  // 会话 ID（可选，默认自动生成） 
+  id?: string
+  // 工作目录
+  workspaceDir?: string
 }
 
 // ═══ AgentSession 事件 ═══
 
-export type AgentSessionEventType =
-  | 'session_start'
-  | 'session_end'
-  | 'session_switch'
-  | 'prompt_start'
-  | 'prompt_end'
-  | 'message_persisted'
-  | 'compaction_start'
-  | 'compaction_end'
-  | 'error'
+export type AgentSessionEventType = AgentSessionEvent['type']
 
 export type AgentSessionEvent =
+  // 会话生命周期
   | { type: 'session_start'; sessionId: string }
   | { type: 'session_end'; sessionId: string }
-  | { type: 'session_switch'; fromId: string; toId: string }
+  // Prompt 生命周期
   | { type: 'prompt_start'; sessionId: string; text: string }
   | { type: 'prompt_end'; sessionId: string }
+  // 消息持久化
   | { type: 'message_persisted'; sessionId: string; role: string }
-  | { type: 'compaction_start'; sessionId: string }
-  | { type: 'compaction_end'; sessionId: string }
+  // Agent 状态变更
+  | { type: 'agent_status'; sessionId: string; from: string; to: string }
+  // 流式传输
+  | { type: 'streaming_start'; sessionId: string; model: string }
+  | { type: 'streaming_end'; sessionId: string; model: string; stopReason: string }
+  // Turn 追踪
+  | { type: 'turn_start'; sessionId: string; turnIndex: number }
+  | { type: 'turn_end'; sessionId: string; turnIndex: number }
+  // 工具调用
+  | { type: 'tool_call_start'; sessionId: string; toolCall: ToolCallEvent }
+  | { type: 'tool_call_end'; sessionId: string; toolCall: ToolCallEvent; isError: boolean }
+  // 压缩
+  | { type: 'compaction_start'; sessionId: string; messageCount: number }
+  | { type: 'compaction_end'; sessionId: string; retainedCount: number }
+  // 错误
   | { type: 'error'; sessionId: string; error: Error }
 
-export type AgentSessionEventListener = (event: AgentSessionEvent) => void
-
-// ═══ AgentSession 信息 ═══
+export type AgentSessionSubscriber = (event: AgentSessionEvent) => void
 
 export interface AgentSessionInfo {
   id: string
@@ -58,31 +81,6 @@ export interface AgentSessionInfo {
   model?: string
   status: string
 }
-
-
-export interface SystemContext {
-  logger: ReturnType<typeof createLogger>
-  config: Awaited<ReturnType<typeof loadConfig>>
-
-  createSession: (options?: AgentSessionOptions) => Promise<AgentSession>
-  getSession: (id: string) => AgentSession | undefined
-  listSessions: () => AgentSessionInfo[]
-  removeSession: (id: string) => boolean
-}
-
-export interface AgentSession {
-  readonly id: string
-  readonly session: Session<AgentMessage>
-  readonly status: string
-  prompt(text: string, options?: PromptOptions): Promise<void>
-  steer(text: string): void
-  followUp(text: string): void
-  onAgentEvent(listener: AgentEventListener): () => void
-  onSessionEvent(listener: AgentSessionEventListener): () => void
-  abort(): void
-  dispose(): void
-}
-
 
 export interface PromptOptions {
   images?: Array<{ type: 'image'; data: string; mediaType: string }>

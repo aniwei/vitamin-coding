@@ -24,7 +24,7 @@ describe('orchestration tools (additional coverage)', () => {
     })
 
     expect(result.isError).toBeUndefined()
-    expect(result.content[0]?.text).toContain('Task created: task-1')
+    expect((result.content[0] as { text: string })?.text).toContain('Task created: task-1')
   })
 
   it('task_create throws when callback returns failure', async () => {
@@ -34,11 +34,14 @@ describe('orchestration tools (additional coverage)', () => {
       error: 'create failed',
     }))
 
-    await expect(tool.execute({
+    const result = await tool.execute({
       id: 'tc2',
       params: { prompt: 'do something' },
       signal,
-    })).rejects.toThrow('create failed')
+    })
+
+    expect(result.isError).toBe(true)
+    expect((result.content[0] as { text: string })?.text).toContain('create failed')
   })
 
   it('task_get returns not found with isError when callback returns undefined task', async () => {
@@ -53,19 +56,24 @@ describe('orchestration tools (additional coverage)', () => {
     })
 
     expect(result.isError).toBe(true)
-    expect(result.content[0]?.text).toContain('Task missing not found')
+    expect((result.content[0] as { text: string })?.text).toContain('Task missing not found')
   })
 
-  it('task_get throws formatted status message on non-error task payload', async () => {
+  it('task_get returns formatted status message on non-error task payload', async () => {
     const tool = createTaskGet('/tmp', {
       get: async () => ({ id: 't1', status: 'running', output: 'halfway' }),
     })
 
-    await expect(tool.execute({
+    const result = await tool.execute({
       id: 'tg2',
       params: { id: 't1' },
       signal,
-    })).rejects.toThrow('Task t1 status: running')
+    })
+
+    expect(result.isError).toBe(false)
+    const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
+    expect(text).toContain('Task: t1')
+    expect(text).toContain('Status: running')
   })
 
   it('task_list returns list text when callback succeeds', async () => {
@@ -86,7 +94,7 @@ describe('orchestration tools (additional coverage)', () => {
     })
 
     expect(result.isError).toBeUndefined()
-    const text = result.content[0]?.text ?? ''
+    const text = (result.content[0] as { text: string })?.text ?? ''
     expect(text).toContain('[pending] a')
     expect(text).toContain('[running] b')
   })
@@ -101,19 +109,25 @@ describe('orchestration tools (additional coverage)', () => {
     })
 
     expect(result.isError).toBe(true)
-    expect(result.content[0]?.text).toContain('task_update not available')
+    expect((result.content[0] as { text: string })?.text).toContain('task_update not available')
   })
 
-  it('task_update throws when callback returns failed result', async () => {
+  it('task_update returns isError when callback returns failed result', async () => {
     const tool = createTaskUpdate('/tmp', {
       update: async () => ({ success: false, message: 'cannot update' }),
     })
 
-    await expect(tool.execute({
+    const result = await tool.execute({
       id: 'tu2',
       params: { id: 'x', action: 'retry' },
       signal,
-    })).rejects.toThrow('cannot update')
+    })
+
+    expect(result.isError).toBe(true)
+    expect(result.content[0]?.type).toBe('text')
+    if (result.content[0]?.type === 'text') {
+      expect(result.content[0].text).toContain('cannot update')
+    }
   })
 
   it('background_output returns formatted status and output', async () => {
@@ -130,21 +144,27 @@ describe('orchestration tools (additional coverage)', () => {
     })
 
     expect(result.isError).toBeUndefined()
-    expect(result.content[0]?.text).toContain('Status: running')
-    expect(result.content[0]?.text).toContain('line1')
+    expect((result.content[0] as { text: string })?.text).toContain('Status: running')
+    expect((result.content[0] as { text: string })?.text).toContain('line1')
   })
 
-  it('background_cancel throws when cancel fails', async () => {
+  it('background_cancel returns isError when cancel fails', async () => {
     const tool = createBackgroundCancelTool(async () => ({
       success: false,
       error: 'not found',
     }))
 
-    await expect(tool.execute({
+    const result = await tool.execute({
       id: 'bc1',
       params: { id: 'bg-2' },
       signal,
-    })).rejects.toThrow('not found')
+    })
+
+    expect(result.isError).toBe(true)
+    expect(result.content[0]?.type).toBe('text')
+    if (result.content[0]?.type === 'text') {
+      expect(result.content[0].text).toContain('not found')
+    }
   })
 
   it('agent_call throws when callback is missing', async () => {
@@ -152,7 +172,7 @@ describe('orchestration tools (additional coverage)', () => {
 
     await expect(tool.execute({
       id: 'ac3',
-      params: { agent: 'explore', prompt: 'hello' },
+      params: { agent: 'explore', prompt: 'hello', mode: 'sync' as const },
       signal,
     })).rejects.toThrow('call_agent function is not provided in options')
   })

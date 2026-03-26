@@ -1,5 +1,7 @@
 // 工具执行器 — 封装工具查找、参数验证、Hook 管线、执行、错误包装
+import { invariant } from '@vitamin/invariant'
 import type { ToolCall } from '@vitamin/ai'
+import type { Devtools } from '@vitamin/devtools'
 import type { AgentMessage, AgentTool, ToolResult } from './types'
 
 // Hook 执行接口 — 由外部注入（来自 @vitamin/hooks HookEngine）
@@ -49,6 +51,7 @@ export interface ToolExecutorOptions {
   hookExecutor?: ToolHookExecutor
   agentName?: string
   sessionId?: string
+  devtools?: Devtools
 }
 
 // 默认工具执行器实现
@@ -57,6 +60,7 @@ class DefaultToolExecutor implements ToolExecutor {
   private readonly hookExecutor: ToolHookExecutor | undefined
   private readonly agentName: string
   private readonly sessionId: string
+  private readonly devtools: Devtools | undefined
 
   constructor(options: ToolExecutorOptions) {
     this.tools = new Map()
@@ -66,6 +70,7 @@ class DefaultToolExecutor implements ToolExecutor {
     this.hookExecutor = options.hookExecutor
     this.agentName = options.agentName ?? ''
     this.sessionId = options.sessionId ?? ''
+    this.devtools = options.devtools
   }
 
   list(): AgentTool[] {
@@ -75,6 +80,18 @@ class DefaultToolExecutor implements ToolExecutor {
   async execute(toolCall: ToolCall, signal: AbortSignal): Promise<ToolResult> {
     const { id, name } = toolCall
     const tool = this.tools.get(name)
+
+    invariant(() => {
+      this.devtools?.debugger.pause({
+        turn: 0,
+        point: 'tool_resolve',
+        frameDepth: 2,
+        messagesCount: 0,
+        lastToolName: name,
+        metadata: { found: !!tool, toolCallId: id },
+      })
+      return true
+    }, `Tool resolve: ${name}`)
 
     if (!tool) {
       return {
@@ -88,6 +105,18 @@ class DefaultToolExecutor implements ToolExecutor {
 
     try {
       if (this.hookExecutor) {
+        invariant(() => {
+          this.devtools?.debugger.pause({
+            turn: 0,
+            point: 'tool_hook_before',
+            frameDepth: 2,
+            messagesCount: 0,
+            lastToolName: name,
+            metadata: { toolCallId: id },
+          })
+          return true
+        }, `Tool hook before: ${name}`)
+
         const beforeResult = await this.hookExecutor.executeBeforeHooks({
           toolName: name,
           toolCallId: id,
@@ -112,6 +141,19 @@ class DefaultToolExecutor implements ToolExecutor {
       // 参数验证
       const parsed = tool.parameters.safeParse(currentArgs)
       const { success, error } = parsed
+
+      invariant(() => {
+        this.devtools?.debugger.pause({
+          turn: 0,
+          point: 'tool_validate',
+          frameDepth: 2,
+          messagesCount: 0,
+          lastToolName: name,
+          metadata: { valid: success, toolCallId: id },
+        })
+        return true
+      }, `Tool validate: ${name} ${success ? 'passed' : 'failed'}`)
+
       if (!success) {
         return {
           content: [{ type: 'text', text: `Invalid arguments for tool ${name}: ${String(error)}` }],
@@ -153,6 +195,18 @@ class DefaultToolExecutor implements ToolExecutor {
         })
 
         result = afterResult.result
+
+        invariant(() => {
+          this.devtools?.debugger.pause({
+            turn: 0,
+            point: 'tool_hook_after',
+            frameDepth: 2,
+            messagesCount: 0,
+            lastToolName: name,
+            metadata: { toolCallId: id, durationMs: Date.now() - startTime },
+          })
+          return true
+        }, `Tool hook after: ${name}`)
       }
 
       if (signal.aborted) {
@@ -215,6 +269,6 @@ class DefaultToolExecutor implements ToolExecutor {
 }
 
 // 工厂函数
-export function createToolExecutor(tools: AgentTool[], options?: { hookExecutor?: ToolHookExecutor; agentName?: string; sessionId?: string }): ToolExecutor {
+export function createToolExecutor(tools: AgentTool[], options?: { hookExecutor?: ToolHookExecutor; agentName?: string; sessionId?: string; devtools?: Devtools }): ToolExecutor {
   return new DefaultToolExecutor({ tools, ...options })
 }

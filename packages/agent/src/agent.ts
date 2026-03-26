@@ -1,5 +1,7 @@
-// Agent 核心类 — 无状态执行引擎 + steering/followUp 队列
-import { createLogger, TypedEventEmitter } from '@vitamin/shared'
+import { 
+  createLogger, 
+  TypedEventEmitter 
+} from '@vitamin/shared'
 
 import { workLoop } from './work-loop'
 import { AbortError } from './errors'
@@ -10,7 +12,6 @@ import type { StreamFunction } from './work-loop'
 import type {
   AgentConfig,
   AgentEvent,
-  AgentEventListener,
   AgentLoopContext,
   AgentMessage,
   AgentRunContext,
@@ -18,12 +19,7 @@ import type {
   AgentStatus,
 } from './types'
 
-const log = createLogger('@vitamin/agent')
-
-// Agent 事件映射
-type AgentEvents = {
-  event: AgentEventListener
-}
+const logger = createLogger('@vitamin/agent')
 
 // Agent 状态合法转换表
 const VALID_TRANSITIONS: Record<AgentStatus, Set<AgentStatus>> = {
@@ -35,8 +31,12 @@ const VALID_TRANSITIONS: Record<AgentStatus, Set<AgentStatus>> = {
   aborted: new Set(['streaming', 'idle', 'error']),
 }
 
-export class Agent {
-  private readonly emitter = new TypedEventEmitter<AgentEvents>()
+// Agent 事件映射
+type AgentEvents = {
+  [key: string]: (...args: unknown[]) => void
+}
+
+export class Agent extends TypedEventEmitter<AgentEvents> {
   private state: AgentState
   private abortController: AbortController | null = null
   private steeringQueue: AgentMessage[] = []
@@ -52,6 +52,8 @@ export class Agent {
   }
 
   constructor(config: AgentConfig = {}) {
+    super()
+
     this.stream = config.stream as StreamFunction | undefined
     this.state = {
       status: 'idle',
@@ -69,15 +71,16 @@ export class Agent {
     return { ...this.state }
   }
 
-  /**
-   * 核心方法 — 执行 Agent 循环。
-   * 
-   * Agent 不持有 messages/model/tools，每次由调用方构建完整上下文传入。
-   * messages 数组会被 workLoop 就地修改（追加 assistant/tool_result 消息），
-   * 调用方负责将变更持久化到 Session。
-   */
+  ///
+  // 核心方法 — 执行 Agent 循环。
+  // messages 数组会被 workLoop 就地修改（追加 assistant/tool_result 消息），
+  // 调用方负责将变更持久化到 Session。
   async run(context: AgentRunContext): Promise<AssistantMessage> {
-    if (this.state.status !== 'idle' && this.state.status !== 'completed' && this.state.status !== 'aborted') {
+    if (
+      this.state.status !== 'idle' && 
+      this.state.status !== 'completed' && 
+      this.state.status !== 'aborted'
+    ) {
       throw new Error(`Cannot run in ${this.state.status} status`)
     }
 
@@ -101,7 +104,7 @@ export class Agent {
     }
 
     this.transitionTo('aborted')
-    this.emit({ type: 'abort' })
+    this.emit('aborted')
   }
 
   // 重置为 idle
@@ -119,16 +122,6 @@ export class Agent {
     this.state.pendingToolCalls = new Set()
     this.state.error = undefined
     this.state.status = 'idle'
-  }
-
-  // 订阅事件
-  on(listener: AgentEventListener): () => void {
-    return this.emitter.on('event', listener)
-  }
-
-  // 单次订阅
-  once(listener: AgentEventListener): () => void {
-    return this.emitter.once('event', listener)
   }
 
   // 内部: 运行 Agent 循环
@@ -151,7 +144,12 @@ export class Agent {
       devtools: context.devtools,
     }
 
-    const toolExecutor = createToolExecutor(context.tools)
+    const toolExecutor = createToolExecutor(context.tools, {
+      hookExecutor: context.toolHookExecutor,
+      agentName: context.agentName,
+      sessionId: context.sessionId,
+      devtools: context.devtools,
+    })
 
     // 构建 stream — 优先使用外部注入，否则使用默认
     const stream: StreamFunction = this.stream ?? createDefaultStream()
@@ -177,7 +175,7 @@ export class Agent {
 
       this.state.error = error instanceof Error ? error : new Error(String(error))
       this.transitionTo('error')
-      this.emit({ type: 'error', error: this.state.error })
+      this.emit('error', this.state.error)
       throw this.state.error
     } finally {
       this.abortController = null
@@ -212,7 +210,7 @@ export class Agent {
     }
 
     // 转发事件给外部订阅者
-    this.emit(event)
+    this.emit(event.type, event)
   }
 
   // 内部: 状态转换（含验证）
@@ -223,17 +221,12 @@ export class Agent {
     const allowed = VALID_TRANSITIONS[from]
     if (!allowed?.has(to)) {
       // 非法转换时记录警告但不抛出，避免中断循环
-      log.warn('Invalid state transition: %s → %s (ignored)', from, to)
+      logger.warn('Invalid state transition: %s → %s (ignored)', from, to)
       return
     }
 
     this.state.status = to
-    this.emit({ type: 'status_change', from, to })
-  }
-
-  // 内部: 发射事件
-  private emit(event: AgentEvent): void {
-    this.emitter.emit('event', event)
+    this.emit('status_change', { from, to })
   }
 
   // 内部: 排空 steering 队列

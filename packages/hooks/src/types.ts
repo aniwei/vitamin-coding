@@ -86,6 +86,7 @@ export interface MessagesTransformOutput {
 }
 
 export interface ChatParamsInput {
+  sessionId?: string
   model: string
   provider: string
   temperature?: number

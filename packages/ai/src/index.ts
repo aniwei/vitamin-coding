@@ -23,6 +23,12 @@ export type {
   ToolDefinition,
   StreamContext,
   StreamOptions,
+  OAuthCredentials,
+  OAuthProvider,
+  OAuthLoginCallbacks,
+  OAuthAuthInfo,
+  OAuthPrompt,
+  OAuthProviderId,
 } from './types'
 
 export {
@@ -33,6 +39,7 @@ export {
   hasToolCalls,
   emptyUsage,
   mergeUsage,
+  getTokensFromUsage,
 } from './types'
 
 // EventStream
@@ -43,11 +50,28 @@ export { ModelRegistry, createModelRegistry } from './model-registry'
 
 // Provider
 export { createCopilotProvider } from './provider/github-copilot'
-export { ProviderRegistry, createProviderRegistry } from './provider-registry'
+export type { CopilotCredentialResolver, CopilotProviderOptions } from './provider/github-copilot'
+export {
+  ProviderRegistry,
+  createProviderRegistry,
+  createDefaultProviderRegistry,
+} from './provider-registry'
 
 // OAuth
-export { GitHubCopilotOAuth } from './oauth/github-copilot'
-export { OAuthRegistry, createOAuthRegistry } from './oauth-registry'
+export {
+  githubCopilotOAuthProvider,
+  loginGitHubCopilot,
+  refreshGitHubCopilotToken,
+  getGitHubCopilotBaseUrl,
+  normalizeDomain,
+  enableGitHubCopilotModel,
+  enableAllGitHubCopilotModels,
+} from './oauth/github-copilot'
+export {
+  OAuthRegistry,
+  createOAuthRegistry,
+  createDefaultOAuthRegistry,
+} from './oauth-registry'
 
 // 流式入口
 export { stream, complete, simple } from './stream'

@@ -29,7 +29,7 @@ describe('search tools additional coverage', () => {
 
     const result = await tool.execute({
       id: 'ls-empty',
-      params: { path: '.' },
+      params: { path: '.', limit: 200 },
       signal,
     })
 
@@ -44,7 +44,7 @@ describe('search tools additional coverage', () => {
 
     await expect(tool.execute({
       id: 'find-no-exec',
-      params: { pattern: '*.ts' },
+      params: { pattern: '*.ts', limit: 100 },
       signal,
     })).rejects.toThrow('Find tool requires a glob implementation or fd binary available')
   })
@@ -71,7 +71,7 @@ describe('search tools additional coverage', () => {
 
     const result = await tool.execute({
       id: 'find-fd',
-      params: { pattern: '*.ts' },
+      params: { pattern: '*.ts', limit: 100 },
       signal,
     })
 
@@ -101,7 +101,7 @@ describe('search tools additional coverage', () => {
 
     await expect(tool.execute({
       id: 'grep-ni',
-      params: { pattern: 'hello', path: '.' },
+      params: { pattern: 'hello', path: '.', ignore: false, literal: false, context: 100 },
       signal,
     })).rejects.toThrow('grep tool is not fully implemented yet')
   })

@@ -1,13 +1,8 @@
-// @vitamin/memory — L2 Phase 2: Compaction (LLM 摘要)
-//
-// 借鉴 pi-mono 的精确切点算法 + opencode 的结构化摘要。
-// 当 Prune 后 token 仍超标，触发 LLM 生成结构化摘要。
-
 import { createLogger } from '@vitamin/shared'
 import {
-  estimateTokens as defaultEstimateTokens,
-  estimateMessagesTokens,
   messageToText,
+  estimateMessagesTokens,
+  estimateTokens as defaultEstimateTokens,
 } from './token-estimator'
 import { resolveContextSize, DEFAULT_COMPACTION_CONFIG } from './defaults'
 import { buildSummarizationPrompt, buildTurnPrefixPrompt } from './prompts'
@@ -20,14 +15,8 @@ import type {
   CutPoint,
 } from './types'
 
-const log = createLogger('@vitamin/memory:compaction')
+const logger = createLogger('@vitamin/memory:compaction')
 
-/**
- * 查找切点 — 决定消息列表中哪里开始保留。
- * 
- * 从尾部倒序累积 token，找到保留 keepRecent 的边界。
- * 切点必须在 user / assistant 消息边界（不在 tool_result 处切）。
- */
 export function findCutPoint(
   messages: readonly Message[],
   keepRecentTokens: number,
@@ -38,8 +27,8 @@ export function findCutPoint(
 
   // 从尾部倒序累积 token，找到保留 keepRecentTokens 的边界
   for (let i = messages.length - 1; i >= 0; i--) {
-    const msgTokens = estimator(messageToText(messages[i]!))
-    accumulatedTokens += msgTokens
+    const tokens = estimator(messageToText(messages[i]!))
+    accumulatedTokens += tokens
 
     if (accumulatedTokens >= keepRecentTokens) {
       rawCutIndex = i + 1
@@ -88,9 +77,6 @@ export function findCutPoint(
   }
 }
 
-/**
- * 检查是否需要 compaction。
- */
 export function needsCompaction(
   messages: readonly Message[],
   contextWindow: number,
@@ -106,9 +92,6 @@ export function needsCompaction(
   return currentTokens >= triggerTokens
 }
 
-/**
- * 手动压缩资格检查 — 达到自动阈值的 50% 时允许手动压缩。
- */
 export function isEligibleForManualCompact(
   messages: readonly Message[],
   contextWindow: number,
@@ -122,9 +105,6 @@ export function isEligibleForManualCompact(
   return currentTokens >= triggerTokens * 0.5
 }
 
-/**
- * 准备 compaction — 计算切点、分离消息、提取文件操作。
- */
 export function prepareCompaction(
   messages: readonly Message[],
   contextWindow: number,
@@ -137,14 +117,14 @@ export function prepareCompaction(
   const currentTokens = estimateMessagesTokens(messages, estimator)
 
   if (messages.length <= 2) {
-    log.debug('Too few messages to compact')
+    logger.debug('Too few messages to compact')
     return null
   }
 
   const cutPoint = findCutPoint(messages, keepRecentTokens, estimator)
 
   if (cutPoint.firstKeptIndex <= 0) {
-    log.debug('Cut point at beginning, nothing to compact')
+    logger.debug('Cut point at beginning, nothing to compact')
     return null
   }
 
@@ -182,7 +162,7 @@ export async function compact(
 ): Promise<CompactionResult> {
   const cfg = { ...DEFAULT_COMPACTION_CONFIG, ...config }
 
-  log.info(`Compacting ${preparation.messagesToSummarize.length} messages`)
+  logger.info(`Compacting ${preparation.messagesToSummarize.length} messages`)
 
   // 构建消息文本
   const messagesText = preparation.messagesToSummarize
@@ -221,7 +201,7 @@ export async function compact(
     summary = `${summary}\n\n---\n\n${prefixSummary}`
   }
 
-  log.info(`Compaction complete: summary ${summary.length} chars`)
+  logger.info(`Compaction complete: summary ${summary.length} chars`)
 
   return {
     summary,
@@ -230,21 +210,19 @@ export async function compact(
   }
 }
 
-// ══════════════════════════════════════════════════════
-// 内部辅助
-// ══════════════════════════════════════════════════════
-
-/** 格式化单条消息用于摘要 */
+// 格式化单条消息用于摘要
 function formatMessageForSummary(msg: Message): string {
-  const roleLabel = msg.role === 'user' ? 'Human'
-    : msg.role === 'assistant' ? 'Assistant'
-    : `Tool[${msg.toolName}]`
+  const roleLabel = msg.role === 'user' 
+    ? 'Human'
+      : msg.role === 'assistant' 
+        ? 'Assistant'
+        : `Tool[${msg.toolName}]`
 
   const content = messageToText(msg)
   return `${roleLabel}: ${content}`
 }
 
-/** 从消息中提取文件操作记录 */
+// 从消息中提取文件操作记录
 function extractFileOps(messages: readonly Message[]): { read: string[]; modified: string[] } {
   const read = new Set<string>()
   const modified = new Set<string>()
@@ -278,7 +256,7 @@ function extractFileOps(messages: readonly Message[]): { read: string[]; modifie
   }
 }
 
-/** 格式化文件操作记录 */
+// 格式化文件操作记录
 function formatFileOps(fileOps: { read: string[]; modified: string[] }): string {
   const parts: string[] = ['## File Operations']
 

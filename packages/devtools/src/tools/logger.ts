@@ -1,19 +1,17 @@
 
 
-export class DevtoolsLogger {
-  private serviceUrl: string
+import type { DevtoolsService } from '../service'
 
-  constructor(serviceUrl: string) {
-    this.serviceUrl = serviceUrl
+export class DevtoolsLogger {
+  public readonly serviceUrl: string
+  private readonly service: DevtoolsService
+
+  constructor(service: DevtoolsService) {
+    this.service = service
+    this.serviceUrl = service.loggerUrl
   }
 
   publish(message: unknown) {
-    fetch(this.serviceUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify(message),
-    })
+    this.service.publishLogger(message)
   }
 }

@@ -18,8 +18,18 @@ const PRESET_INCLUDES: Record<ToolPreset, Set<ToolPreset>> = {
   full: new Set(['minimal', 'standard', 'full']),
 }
 
-type AgentToolTuple<T extends readonly unknown[]> = T & {
-  [K in keyof T]: T[K] extends AgentTool<infer _Args> ? T[K] : never
+function isAgentTool(value: unknown): value is AgentTool<unknown> {
+  if (!value || typeof value !== 'object') {
+    return false
+  }
+
+  const candidate = value as Partial<AgentTool<unknown>>
+  return (
+    typeof candidate.name === 'string'
+    && typeof candidate.description === 'string'
+    && typeof candidate.execute === 'function'
+    && candidate.parameters !== undefined
+  )
 }
 
 export class ToolRegistry {
@@ -43,10 +53,10 @@ export class ToolRegistry {
   }
 
   // 注册工具
-  register<Args = unknown>(tool: AgentTool<Args>, options?: ToolRegistrationOptions): void;
-  register<Tools extends readonly unknown[]>(tools: AgentToolTuple<Tools>, options?: ToolRegistrationOptions): void;
+  register(tool: unknown, options?: ToolRegistrationOptions): void;
+  register(tools: unknown[], options?: ToolRegistrationOptions): void;
   register(
-    tools: AgentTool<unknown> | readonly unknown[],
+    tools: unknown | unknown[],
     options: ToolRegistrationOptions = {},
   ): void {
     const metadata: ToolMetadata = {
@@ -57,7 +67,11 @@ export class ToolRegistry {
 
     const toolList = Array.isArray(tools) ? tools : [tools]
     for (const tool of toolList) {
-      const typedTool = tool as AgentTool
+      if (!isAgentTool(tool)) {
+        throw new Error('Invalid tool registration input')
+      }
+
+      const typedTool = tool
       const registered: RegisteredTool = { ...typedTool, metadata }
       this.tools.set(typedTool.name, registered)
     }
@@ -65,6 +79,7 @@ export class ToolRegistry {
 
   // 注销工具
   unregister(name: string): boolean;
+  unregister(name: string[]): boolean;
   unregister(name: string | string[]): boolean {
     if (Array.isArray(name)) {
       let allDeleted = true
@@ -141,7 +156,7 @@ export const createToolRegistry = (
   options: RegisterBuiltinOptions
 ): ToolRegistry => {
   const registry = new ToolRegistry()
-  
+
   const binaryRegistry = createBinaryToolExecutorRegistry(projectRoot)
   registry.setBinaryToolExecutors(binaryRegistry)
   

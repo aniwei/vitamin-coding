@@ -40,11 +40,14 @@ export function createTaskUpdate(
       if (result.success) {
         return {
           content: [{ type: 'text', text: result.message }],
-          isError: !result.success,
+          isError: false,
         }
       }
 
-      throw new Error(result.message || 'Unknown error updating task')
+      return {
+        content: [{ type: 'text', text: result.message || 'Unknown error updating task' }],
+        isError: true,
+      }
     },
   }
 }

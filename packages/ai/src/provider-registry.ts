@@ -1,6 +1,9 @@
 // Provider 注册表 — 管理所有 LLM 提供商适配器
 import { ProviderError } from '@vitamin/shared'
 
+import { createCopilotProvider } from './provider/github-copilot'
+import type { CopilotCredentialResolver } from './provider/github-copilot'
+
 import type { Api } from './types'
 import type { ProviderStream, ProviderFactory } from './types'
 
@@ -62,4 +65,20 @@ export class ProviderRegistry {
 // 创建 Provider 注册表
 export function createProviderRegistry(): ProviderRegistry {
   return new ProviderRegistry()
+}
+
+export interface DefaultProviderRegistryOptions {
+  resolveOAuthKey?: CopilotCredentialResolver
+}
+
+export function createDefaultProviderRegistry(
+  options: DefaultProviderRegistryOptions = {},
+): ProviderRegistry {
+  const registry = createProviderRegistry()
+
+  registry.register('github-copilot', () => createCopilotProvider({
+    resolveOAuthKey: options.resolveOAuthKey,
+  }))
+
+  return registry
 }

@@ -72,14 +72,14 @@ async function readImage(
       text: `Read image file ${displayPath} (${buffer.length} bytes)`,
     }, {
       type: 'image',
-      mime,
-      source: `data:${mime};base64,${base64}`,
+      mime: mime || 'application/octet-stream',
+      source: `data:${mime || 'application/octet-stream'};base64,${base64}`,
     }],
     details: { 
       path: absolutePath, 
       type: 'image', 
       size: buffer.length, 
-      mime 
+      mime: mime || 'application/octet-stream'
     }
   }
 }
@@ -90,7 +90,7 @@ async function readTextWithRange(
   displayPath: string,
   offset: number = 1,
   limit: number = TOOLS_MAX_OUTPUT_LINES,
-  maxBytes: number = TOOLS_MAX_OUTPUT_LINES,
+  maxBytes: number = TOOLS_MAX_OUTPUT_BYTES,
 ): Promise<ToolResult> {
   const content = await readFile(absolutePath, 'utf-8')
   if (content === undefined) {
@@ -102,7 +102,7 @@ async function readTextWithRange(
   const start = offset ? Math.max(0, offset - 1) : 0
   const displayLine = start + 1
 
-  // Check if offset is out of bounds
+  // 检查偏移是否越界
   if (start >= lines.length) {
     return {
       content: [{ type: 'text', text: `Offset ${offset} is beyond end of file (${lines.length} lines total)` }],

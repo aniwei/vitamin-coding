@@ -1,19 +1,12 @@
-// @vitamin/memory — L3 Archive (历史归档与恢复)
-//
-// 被压缩的消息不是"丢弃"，而是"归档"。
-// Agent 可以通过 read_file 工具按需回溯完整历史。
-
+import { join } from 'node:path'
+import { writeFile, mkdir, readFile, readdir, stat } from 'node:fs/promises'
 import { createLogger } from '@vitamin/shared'
 import { messageToText } from './token-estimator'
 
 import type { Message } from '@vitamin/ai'
 import type { ArchiveStorage, ArchiveEntry, StorageType } from './types'
 
-const log = createLogger('@vitamin/memory:archive')
-
-// ══════════════════════════════════════════════════════
-// InMemoryArchiveStorage — 纯内存实现（测试用）
-// ══════════════════════════════════════════════════════
+const logger = createLogger('@vitamin/memory:archive')
 
 export class InMemoryArchiveStorage implements ArchiveStorage {
   readonly type: StorageType = 'memory'
@@ -21,7 +14,11 @@ export class InMemoryArchiveStorage implements ArchiveStorage {
   private archives = new Map<string, { content: string; entry: ArchiveEntry }>()
   private sessionIndex = new Map<string, string[]>()
 
-  async archive(sessionId: string, messages: Message[], summary: string): Promise<string> {
+  async archive(
+    sessionId: string, 
+    messages: Message[], 
+    summary: string
+  ): Promise<string> {
     const timestamp = Date.now()
     const path = `memory://archives/${sessionId}/compaction-${timestamp}.md`
     const content = formatArchive(messages, summary, timestamp)
@@ -40,7 +37,7 @@ export class InMemoryArchiveStorage implements ArchiveStorage {
     index.push(path)
     this.sessionIndex.set(sessionId, index)
 
-    log.info(`Archived ${messages.length} messages for session ${sessionId}`)
+    logger.info(`Archived ${messages.length} messages for session ${sessionId}`)
     return path
   }
 
@@ -52,15 +49,9 @@ export class InMemoryArchiveStorage implements ArchiveStorage {
 
   async list(sessionId: string): Promise<ArchiveEntry[]> {
     const paths = this.sessionIndex.get(sessionId) ?? []
-    return paths
-      .map((p) => this.archives.get(p)?.entry)
-      .filter((e): e is ArchiveEntry => e !== undefined)
+    return paths.map(p => this.archives.get(p)?.entry).filter((e): e is ArchiveEntry => e !== undefined)
   }
 }
-
-// ══════════════════════════════════════════════════════
-// LocalArchiveStorage — 本地文件系统实现
-// ══════════════════════════════════════════════════════
 
 export class LocalArchiveStorage implements ArchiveStorage {
   readonly type: StorageType = 'local'
@@ -68,9 +59,6 @@ export class LocalArchiveStorage implements ArchiveStorage {
   constructor(private readonly baseDir: string) {}
 
   async archive(sessionId: string, messages: Message[], summary: string): Promise<string> {
-    const { join } = await import('node:path')
-    const { writeFile, mkdir } = await import('node:fs/promises')
-
     const timestamp = Date.now()
     const dir = join(this.baseDir, sessionId)
     const filename = `compaction-${timestamp}.md`
@@ -79,19 +67,15 @@ export class LocalArchiveStorage implements ArchiveStorage {
     await mkdir(dir, { recursive: true })
     await writeFile(filePath, formatArchive(messages, summary, timestamp), 'utf-8')
 
-    log.info(`Archived ${messages.length} messages → ${filePath}`)
+    logger.info(`Archived ${messages.length} messages → ${filePath}`)
     return filePath
   }
 
   async read(archivePath: string): Promise<string> {
-    const { readFile } = await import('node:fs/promises')
     return readFile(archivePath, 'utf-8')
   }
 
   async list(sessionId: string): Promise<ArchiveEntry[]> {
-    const { join } = await import('node:path')
-    const { readdir, stat } = await import('node:fs/promises')
-
     const dir = join(this.baseDir, sessionId)
 
     let files: string[]
@@ -122,10 +106,6 @@ export class LocalArchiveStorage implements ArchiveStorage {
   }
 }
 
-// ══════════════════════════════════════════════════════
-// RemoteArchiveStorage — 远程 HTTP 实现
-// ══════════════════════════════════════════════════════
-
 export class RemoteArchiveStorage implements ArchiveStorage {
   readonly type: StorageType = 'remote'
 
@@ -136,7 +116,10 @@ export class RemoteArchiveStorage implements ArchiveStorage {
     fetch?: typeof globalThis.fetch
   }) {}
 
-  private async request(path: string, init?: RequestInit): Promise<Response> {
+  private async request(
+    path: string, 
+    init?: RequestInit
+  ): Promise<Response> {
     const fetchFn = this.options.fetch ?? globalThis.fetch
     const auth = await this.options.getAuth()
     const url = `${this.options.baseUrl}${path}`
@@ -170,7 +153,8 @@ export class RemoteArchiveStorage implements ArchiveStorage {
     })
 
     const { path } = await response.json() as { path: string }
-    log.info(`Archived ${messages.length} messages → ${path}`)
+    logger.info(`Archived ${messages.length} messages → ${path}`)
+
     return path
   }
 
@@ -193,6 +177,7 @@ export function createArchiveStorage(config: import('./types').StorageConfig): A
       const baseDir = config.baseDir ?? `${process.env['VITAMIN_HOME'] ?? `${process.env['HOME']}/.vitamin`}/agent/archives`
       return new LocalArchiveStorage(baseDir)
     }
+
     case 'remote':
       return new RemoteArchiveStorage({
         baseUrl: config.baseUrl,
@@ -217,14 +202,19 @@ function formatArchive(messages: Message[], summary: string, timestamp: number):
   ]
 
   for (const msg of messages) {
-    const role = msg.role === 'user' ? 'Human'
-      : msg.role === 'assistant' ? 'Assistant'
-      : `Tool[${msg.toolName}]`
+    const role = msg.role === 'user' 
+      ? 'Human'
+      : msg.role === 'assistant' 
+        ? 'Assistant'
+        : `Tool[${msg.toolName}]`
+
     const content = messageToText(msg)
+    
     // 限制单条消息在归档中的长度
     const truncated = content.length > 2000
       ? `${content.slice(0, 2000)}\n...(truncated, ${content.length} chars total)`
       : content
+      
     parts.push(`\n**${role}**: ${truncated}`)
   }
 

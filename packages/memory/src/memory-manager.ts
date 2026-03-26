@@ -1,7 +1,3 @@
-// @vitamin/memory — MemoryManager 统一入口
-//
-// 三层记忆管理器，协调 L1/L2/L3 子系统。
-
 import { createLogger } from '@vitamin/shared'
 
 import { PersistentMemory, FileSystemMemoryStore } from './persistent-memory'
@@ -53,9 +49,9 @@ export class MemoryManager {
     this.compactionConfig = { ...defaults.compaction, ...config.compaction }
     this.pruneConfig = { ...defaults.prune, ...config.prune }
     this.contextWindow = config.model?.contextWindow ?? 200_000
+    this.archiveStorage = config.archiveStorage ?? new InMemoryArchiveStorage()
     this.summarize = config.summarize
     this.estimateTokens = config.estimateTokens ?? defaultEstimateTokens
-    this.archiveStorage = config.archiveStorage ?? new InMemoryArchiveStorage()
 
     // L1 Persistent Memory
     const store = config.memoryStore ?? new FileSystemMemoryStore()
@@ -65,55 +61,49 @@ export class MemoryManager {
     )
   }
 
-  // ══════════ L1 Persistent Memory ══════════
-
-  /** 加载所有知识 sources 到内存 */
+  // 加载所有知识 sources 到内存
   async loadMemory(): Promise<void> {
     await this.persistent.load()
   }
 
-  /** 获取格式化的 memory 注入文本（用于 system prompt） */
+  // 获取格式化的 memory 注入文本（用于 system prompt）
   getMemoryPrompt(): string {
     return this.persistent.getInjection()
   }
 
-  /** 重新加载知识 sources */
+  // 重新加载知识 sources
   async reloadMemory(): Promise<void> {
     await this.persistent.reload()
   }
 
-  /** 获取原始记忆内容 */
+  // 获取原始记忆内容
   getMemories(): ReadonlyMap<string, string> {
     return this.persistent.getMemories()
   }
 
-  // ══════════ L2 Prune ══════════
-
-  /** 检查是否需要 prune */
+  // 检查是否需要 prune
   needsPrune(messages: readonly Message[]): boolean {
     const currentTokens = estimateMessagesTokens(messages, this.estimateTokens)
     const triggerTokens = resolveContextSize(this.pruneConfig.trigger, this.contextWindow)
     return currentTokens >= triggerTokens
   }
 
-  /** 执行 prune（无 LLM 裁剪旧 tool call 输出） */
+  // 执行 prune（无 LLM 裁剪旧 tool call 输出）
   prune(messages: readonly Message[]): PruneResult {
     return prune(messages, this.contextWindow, this.pruneConfig, this.estimateTokens)
   }
 
-  // ══════════ L2 Compaction ══════════
-
-  /** 检查是否需要 compaction */
+  // 检查是否需要 compaction
   needsCompaction(messages: readonly Message[]): boolean {
     return needsCompaction(messages, this.contextWindow, this.compactionConfig, this.estimateTokens)
   }
 
-  /** 手动压缩资格评估 */
+  // 手动压缩资格评估
   isEligibleForManualCompact(messages: readonly Message[]): boolean {
     return isEligibleForManualCompact(messages, this.contextWindow, this.compactionConfig, this.estimateTokens)
   }
 
-  /** 准备 compaction（计算切点、分离消息） */
+  // 准备 compaction（计算切点、分离消息）
   prepareCompaction(messages: readonly Message[]): CompactionPreparation | null {
     return prepareCompaction(
       messages,
@@ -124,7 +114,7 @@ export class MemoryManager {
     )
   }
 
-  /** 执行 compaction（生成摘要 + 可选归档） */
+  // 执行 compaction（生成摘要 + 可选归档）
   async compact(
     preparation: CompactionPreparation,
     sessionId?: string,
@@ -159,12 +149,10 @@ export class MemoryManager {
     return result
   }
 
-  /**
-   * 一键流程: prune → compaction → archive
-   * 
-   * 返回处理后的消息列表 + 摘要消息（如果发生压缩）。
-   * 调用方（AgentSession）负责将结果写入 session。
-   */
+  // 一键流程: prune → compaction → archive
+  // 
+  // 返回处理后的消息列表 + 摘要消息（如果发生压缩）。
+  // 调用方（AgentSession）负责将结果写入 session。
   async process(
     messages: readonly Message[],
     sessionId?: string,
@@ -222,26 +210,22 @@ export class MemoryManager {
     return { messages: current, summary, archivePath, pruned, compacted }
   }
 
-  // ══════════ L3 Archive ══════════
-
-  /** 获取 session 的归档列表 */
+  // 获取 session 的归档列表
   async listArchives(sessionId: string): Promise<ArchiveEntry[]> {
     return this.archiveStorage.list(sessionId)
   }
 
-  /** 读取归档内容 */
+  // 读取归档内容
   async readArchive(archivePath: string): Promise<string> {
     return this.archiveStorage.read(archivePath)
   }
-
-  // ══════════ Lifecycle ══════════
 
   dispose(): void {
     this.persistent.dispose()
   }
 }
 
-/** 工厂函数 */
+// 工厂函数 
 export function createMemoryManager(config: MemoryManagerConfig): MemoryManager {
   return new MemoryManager(config)
 }

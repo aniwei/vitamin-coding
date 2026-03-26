@@ -32,22 +32,32 @@ function readPackageVersion(): string {
   }
 }
 
+/// 环境变量和常量定义
 export const VITAMIN_USER_AGENT = `vitamin/${readPackageVersion()}`
 export const VITAMIN_ROOT = '.vitamin'
 export const VITAMIN_HOME = normalizePath(process.env['VITAMIN_HOME'] || `${homedir()}/${VITAMIN_ROOT}`)
 export const VITAMIN_USER_CONFIG_DIR = normalizePath(homedir() + '/.config/vitamin')
 export const VITAMIN_PROJECT_ROOT = normalizePath(process.env['VITAMIN_PROJECT_ROOT'] || `${process.cwd()}/${VITAMIN_ROOT}`)
+
 export const LOG_FILE = normalizePath(process.env['VITAMIN_LOG_FILE'] ?? '/tmp/vitamin.log')
 export const LOG_LEVEL = process.env['VITAMIN_LOG_LEVEL'] as ('info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal') || (process.env.NODE_ENV === 'production' ? 'info' : 'trace')
+
 export const TOOLS_SEARCH_MAX_OUTPUT_LINES = normalizeEnv(process.env['TOOLS_SEARCH_MAX_OUTPUT_LINES'], 500)
 export const TOOLS_LS_MAX_ENTRIES = normalizeEnv(process.env['TOOLS_LS_MAX_ENTRIES'], 500)
 export const TOOLS_MAX_OUTPUT_LINES = normalizeEnv(process.env['TOOLS_MAX_OUTPUT_LINES'], 2000)
 export const TOOLS_MAX_OUTPUT_BYTES = normalizeEnv(process.env['TOOLS_MAX_OUTPUT_BYTES'], 60 * 1024)
-export const TOOLS_EXECUTE_TIMEOUT = normalizeEnv(process.env['TOOLS_EXECUTE_TIMEOUT'], 30_000)
-export const TOOLS_BINARY_DOWNLOAD_TIMEOUT = normalizeEnv(process.env['TOOLS_BINARY_DOWNLOAD_TIMEOUT'], 1_200_000)
+export const TOOLS_EXECUTE_TIMEOUT_MS = normalizeEnv(process.env['TOOLS_EXECUTE_TIMEOUT_MS'], 30_000)
+export const TOOLS_BINARY_DOWNLOAD_TIMEOUT_MS = normalizeEnv(process.env['TOOLS_BINARY_DOWNLOAD_TIMEOUT_MS'], 1_200_000)
+
 export const AGENT_TOOLS_MAX_TURNS = normalizeEnv(process.env['AGENT_TOOLS_MAX_TURNS'], 25)
-export const OFFLINE_MODE_ENABLED = process.env['PI_OFFLINE'] === '1' || process.env['PI_OFFLINE']?.toLowerCase() === 'true' || process.env['VITAMIN_OFFLINE']?.toLowerCase() === 'yes'
 
-export const VITAMIN_SESSION_DIR = process.env['VITAMIN_SESSION_DIR'] ? normalizePath(process.env['VITAMIN_SESSION_DIR']) : undefined
-export const VITAMIN_SESSION_REMOTE_URL = process.env['VITAMIN_SESSION_REMOTE_URL'] || undefined
+export const SETTING_OFFLINE_MODE_ENABLED = process.env['VITAMIN_OFFLINE'] === '1' || process.env['VITAMIN_OFFLINE']?.toLowerCase() === 'true' || process.env['VITAMIN_OFFLINE']?.toLowerCase() === 'yes'
 
+export const SESSION_DIR = process.env['VITAMIN_SESSION_DIR'] ? normalizePath(process.env['VITAMIN_SESSION_DIR']) : undefined
+export const SESSION_REMOTE_URL = process.env['VITAMIN_SESSION_REMOTE_URL'] || undefined
+export const SESSION_IDLE_TIMEOUT_MS = normalizeEnv(process.env['VITAMIN_SESSION_IDLE_TIMEOUT_MS'], 30 * 60 * 1000)
+export const SESSION_MAX = normalizeEnv(process.env['VITAMIN_SESSION_MAX'], 50)
+export const SESSION_PAGE_SIZE = normalizeEnv(process.env['VITAMIN_SESSION_PAGE_SIZE'], 20)
+export const SESSION_SNAPSHOT_VERSION = normalizeEnv(process.env['VITAMIN_SESSION_SNAPSHOT_VERSION'], 1)
+
+export const OAUTH_PATH = normalizePath(`${VITAMIN_USER_CONFIG_DIR}/oauth.json`)

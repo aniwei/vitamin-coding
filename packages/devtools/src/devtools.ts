@@ -10,8 +10,8 @@ export class Devtools {
 
   constructor(port: number) {
     this.service = createDevtoolsService(port)
-    this.debugger = new DevtoolsDebugger(this.service.serviceUrl)
-    this.logger = new DevtoolsLogger(this.service.serviceUrl)
+    this.debugger = new DevtoolsDebugger(this.service)
+    this.logger = new DevtoolsLogger(this.service)
   }
 
   start() {

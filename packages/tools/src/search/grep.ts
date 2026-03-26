@@ -95,27 +95,17 @@ function prepareSearchArgs(
   return args
 }
 
-async function tryIsDirectory(path: string): Promise<boolean> {
-  try {
-    return await isDirectory(path)
-  } catch {
-    return false
-  }
-}
-
 async function grep(
   pattern: string,
   targetDir: string,
   glob: string,
   ignore: boolean,
   literal: boolean,
-  context: number,
-  limit: number,
+  _context: number,
+  _limit: number,
   binaryExecutorRegistry?: BinaryToolExecutorRegistry
 ): Promise<ToolResult> {
-  const isDir: boolean = await tryIsDirectory(targetDir)
-
-  const args = await prepareSearchArgs(
+  const args = prepareSearchArgs(
     pattern,
     targetDir,
     ignore,
@@ -124,7 +114,7 @@ async function grep(
   )
 
   const rg = await binaryExecutorRegistry?.ensure('rg')
-  const result = await rg?.execute(args, {})
+  await rg?.execute(args, {})
 
   throw new Error('grep tool is not fully implemented yet')
 }

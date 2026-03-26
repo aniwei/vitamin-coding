@@ -66,7 +66,7 @@ Create a brief summary in this format:
 
 Keep it concise — this will be prepended to the remaining messages of this turn.`
 
-/** 构建完整的摘要 prompt */
+// 构建完整的摘要 prompt
 export function buildSummarizationPrompt(
   messages: string,
   previousSummary?: string,
@@ -90,12 +90,12 @@ export function buildSummarizationPrompt(
   return parts.join('\n')
 }
 
-/** 构建 turn prefix 摘要 prompt */
+// 构建 turn prefix 摘要 prompt
 export function buildTurnPrefixPrompt(turnPrefixMessages: string): string {
   return `${TURN_PREFIX_SUMMARIZATION_PROMPT}\n\n<turn_prefix>\n${turnPrefixMessages}\n</turn_prefix>`
 }
 
-/** L1 Persistent Memory 的 system prompt 注入模板 */
+// L1 Persistent Memory 的 system prompt 注入模板
 export function buildMemoryInjection(memories: Map<string, string>): string {
   if (memories.size === 0) return ''
 
@@ -131,7 +131,7 @@ When you learn something from this interaction that should be remembered, use th
   return parts.join('\n')
 }
 
-/** 归档摘要消息模板 */
+// 归档摘要消息模板
 export function buildArchiveReference(archivePath: string, summary: string): string {
   return `This conversation has been summarized. Full history is archived at ${archivePath} and can be accessed via the read_file tool if you need detailed context.
 

@@ -106,7 +106,7 @@ describe('edit tool coverage branches', () => {
     })
 
     expect(result.isError).toBeUndefined()
-    expect(result.content[0]?.text).toContain('Successfully replaced text')
+    expect((result.content[0] as { text: string })?.text).toContain('Successfully replaced text')
     const content = await readFile(join(root, 'target.ts'), 'utf-8')
     expect(content).toContain('const x = 42')
   })
@@ -142,7 +142,7 @@ describe('edit tool coverage branches', () => {
     })
 
     expect(result.isError).toBeUndefined()
-    expect(result.content[0]?.text).toContain('Could not find the specified text')
+    expect((result.content[0] as { text: string })?.text).toContain('Could not find the specified text')
   })
 })
 
@@ -182,6 +182,7 @@ describe('find tool coverage branches', () => {
       id: 'f2',
       params: {
         pattern: '**/*.xyz',
+        limit: 100,
       },
       signal,
     })

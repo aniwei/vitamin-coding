@@ -14,7 +14,8 @@
     "dist"
   ],
   "scripts": {
-    "run:example": "tsx example/vitamin-app-example.ts",
+    "run:example": "tsx example/vitamin-app-example.tsx",
+    "run:example:smoke": "tsx example/vitamin-app-smoke.tsx",
     "build": "tsup",
     "typecheck:project": "tsc -p tsconfig.json --noEmit",
     "typecheck:file": "tsc src/index.ts --noEmit --target ES2024 --module ESNext --moduleResolution bundler --esModuleInterop --skipLibCheck",
@@ -26,11 +27,20 @@
     "@vitamin/ai": "workspace:*",
     "@vitamin/config": "workspace:*",
     "@vitamin/devtools": "workspace:*",
+    "@vitamin/env": "workspace:*",
     "@vitamin/hooks": "workspace:*",
+    "@vitamin/invariant": "workspace:*",
+    "@vitamin/memory": "workspace:*",
     "@vitamin/orchestrator": "workspace:*",
     "@vitamin/session": "workspace:*",
     "@vitamin/shared": "workspace:*",
-    "@vitamin/tools": "workspace:*"
+    "@vitamin/tools": "workspace:*",
+    "remark-frontmatter": "^5.0.0",
+    "remark-parse": "^11.0.0",
+    "unified": "^11.0.0",
+    "vfile": "^6.0.0",
+    "yaml": "^2.8.3",
+    "zod": "^4.0.0"
   },
   "publishConfig": {
     "access": "public",

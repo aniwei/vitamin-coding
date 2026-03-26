@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { createProviderRegistry } from '../src/provider-registry'
+import { createDefaultProviderRegistry, createProviderRegistry } from '../src/provider-registry'
 
 import type { Model, ProviderStream, StreamContext, StreamEvent, StreamOptions } from '../src/types'
 
@@ -65,6 +65,57 @@ describe('ProviderRegistry', () => {
         registry.clear()
         expect(registry.list()).toEqual([])
       })
+    })
+  })
+
+  describe('#given default registry factory', () => {
+    it('#then registers github-copilot provider by default', () => {
+      const registry = createDefaultProviderRegistry()
+
+      expect(registry.has('github-copilot')).toBe(true)
+      const provider = registry.get('github-copilot')
+      expect(provider.id).toBe('github-copilot')
+    })
+
+    it('#then can compose with resolveOAuthKey', async () => {
+      const registry = createDefaultProviderRegistry({
+        resolveOAuthKey: async () => 'oauth-token',
+      })
+      const provider = registry.get('github-copilot')
+
+      const oldCopilot = process.env['COPILOT_GITHUB_TOKEN']
+      const oldGh = process.env['GH_TOKEN']
+      const oldGithub = process.env['GITHUB_TOKEN']
+
+      delete process.env['COPILOT_GITHUB_TOKEN']
+      delete process.env['GH_TOKEN']
+      delete process.env['GITHUB_TOKEN']
+
+      try {
+        const key = await provider.resolveKey?.({
+          id: 'github-copilot/gpt-4.1',
+          name: 'gpt-4.1',
+          api: 'github-copilot',
+          provider: 'github-copilot',
+          baseUrl: 'https://api.githubcopilot.com',
+          reasoning: false,
+          input: ['text'],
+          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+          contextWindow: 128000,
+          maxOutputTokens: 4096,
+        })
+
+        expect(key).toBe('oauth-token')
+      } finally {
+        if (oldCopilot === undefined) delete process.env['COPILOT_GITHUB_TOKEN']
+        else process.env['COPILOT_GITHUB_TOKEN'] = oldCopilot
+
+        if (oldGh === undefined) delete process.env['GH_TOKEN']
+        else process.env['GH_TOKEN'] = oldGh
+
+        if (oldGithub === undefined) delete process.env['GITHUB_TOKEN']
+        else process.env['GITHUB_TOKEN'] = oldGithub
+      }
     })
   })
 })

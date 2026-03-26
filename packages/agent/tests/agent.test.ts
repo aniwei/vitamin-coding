@@ -1,8 +1,80 @@
 // @vitamin/agent Agent 状态机测试
 import { describe, expect, it } from 'vitest'
 import { Agent } from '../src/agent'
+import { createEventStream } from '../../ai/src/index'
 
 import type { AgentEvent } from '../src/types'
+import type { AssistantMessage, Model, StreamContext, StreamEvent, ToolCall } from '../../ai/src/index'
+import type { AgentTool, ToolHookExecutor } from '../src/types'
+
+function makeModel(): Model {
+  return {
+    id: 'openai/test-model',
+    name: 'test-model',
+    api: 'openai-completions',
+    provider: 'openai',
+    baseUrl: 'https://example.com',
+    reasoning: false,
+    input: ['text'],
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    contextWindow: 128000,
+    maxOutputTokens: 4096,
+  }
+}
+
+function makeAssistantMessage(
+  content: AssistantMessage['content'],
+  stopReason: AssistantMessage['stopReason'],
+): AssistantMessage {
+  return {
+    role: 'assistant',
+    content,
+    api: 'openai-completions',
+    provider: 'openai',
+    usage: {
+      inputTokens: 10,
+      outputTokens: 5,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+    },
+    stopReason,
+    model: 'openai/test-model',
+  }
+}
+
+function makeToolCall(name: string, id = 'tc_1', args: Record<string, unknown> = {}): ToolCall {
+  return {
+    type: 'tool_call',
+    id,
+    name,
+    arguments: args,
+  }
+}
+
+function createSchema<T>() {
+  return {
+    parse(input: unknown) {
+      return input as T
+    },
+    safeParse(input: unknown) {
+      return { success: true as const, data: input as T }
+    },
+  }
+}
+
+function makeStream(responses: AssistantMessage[]) {
+  let index = 0
+  return (_context: StreamContext, _signal: AbortSignal) => {
+    const eventStream = createEventStream<StreamEvent, AssistantMessage>()
+    const message = responses[index++]
+    setTimeout(() => {
+      if (!message) return
+      eventStream.push({ type: 'start', partial: message })
+      eventStream.complete(message)
+    }, 0)
+    return eventStream
+  }
+}
 
 describe('Agent', () => {
   describe('#given a freshly created agent', () => {
@@ -80,6 +152,94 @@ describe('Agent', () => {
         // unsub 后再触发 abort，events 不应增长
         agent.abort()
         expect(events).toHaveLength(countBefore)
+      })
+    })
+  })
+
+  describe('#given agent run with tool hook executor', () => {
+    describe('#when assistant calls a tool', () => {
+      it('#then forwards hookExecutor, agentName, and sessionId into tool execution', async () => {
+        const agent = new Agent({
+          stream: makeStream([
+            makeAssistantMessage([makeToolCall('echo', 'tc_echo', { value: 'from-model' })], 'tool_use'),
+            makeAssistantMessage([{ type: 'text', text: 'done' }], 'end_turn'),
+          ]),
+        })
+
+        const hookCalls: Array<{ phase: 'before' | 'after'; sessionId: string; agentName: string; args?: Record<string, unknown> }> = []
+        const hookExecutor: ToolHookExecutor = {
+          async executeBeforeHooks(input) {
+            hookCalls.push({
+              phase: 'before',
+              sessionId: input.sessionId,
+              agentName: input.agentName,
+              args: input.args,
+            })
+
+            return {
+              args: { ...input.args, value: 'from-hook' },
+              cancelled: false,
+            }
+          },
+          async executeAfterHooks(input) {
+            hookCalls.push({
+              phase: 'after',
+              sessionId: input.sessionId,
+              agentName: input.agentName,
+            })
+
+            return {
+              result: {
+                ...input.result,
+                content: [{ type: 'text', text: 'after-hook' }],
+              },
+              metadata: {},
+            }
+          },
+        }
+
+        const tool: AgentTool = {
+          name: 'echo',
+          description: 'echo tool',
+          parameters: createSchema<Record<string, unknown>>() as never,
+          async execute(ctx) {
+            return {
+              content: [{ type: 'text', text: String((ctx.params as Record<string, unknown>).value) }],
+            }
+          },
+        }
+
+        const messages = [{ role: 'user' as const, content: 'start', timestamp: Date.now() }]
+
+        await agent.run({
+          model: makeModel(),
+          systemPrompt: 'test',
+          tools: [tool],
+          messages,
+          toolHookExecutor: hookExecutor,
+          agentName: 'primary',
+          sessionId: 'session-1',
+        })
+
+        expect(hookCalls).toEqual([
+          {
+            phase: 'before',
+            sessionId: 'session-1',
+            agentName: 'primary',
+            args: { value: 'from-model' },
+          },
+          {
+            phase: 'after',
+            sessionId: 'session-1',
+            agentName: 'primary',
+          },
+        ])
+
+        const toolResultMessage = messages.find((message) => {
+          return typeof message === 'object' && message !== null && 'role' in message && message.role === 'tool_result'
+        }) as { role: 'tool_result'; content: Array<{ type: string; text?: string }> } | undefined
+
+        expect(toolResultMessage?.content[0]?.text).toBe('after-hook')
       })
     })
   })

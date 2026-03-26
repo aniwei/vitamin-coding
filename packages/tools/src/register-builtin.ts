@@ -17,6 +17,18 @@ import {
   createPerformWork, 
   type PerformWork 
 } from './orchestration/perform-work'
+import { createTaskCreate, type CreateTask } from './orchestration/task-create'
+import { createTaskGet, type GetTask } from './orchestration/task-get'
+import { createTaskList, type ListTasks } from './orchestration/task-list'
+import { createTaskUpdate, type UpdateTask } from './orchestration/task-update'
+import {
+  createBackgroundOutputTool,
+  type GetBackgroundOutput,
+} from './orchestration/background-task-output'
+import {
+  createBackgroundCancelTool,
+  type CancelBackground,
+} from './orchestration/background-task-cancel'
 import {
   createAgentCall,
   type CallAgent,
@@ -41,6 +53,12 @@ export interface RegisterBuiltinOptions {
   callAgent: CallAgent
   loadSkill: LoadSkill,
   executeSkill: ExecuteSkill,
+  createTask?: CreateTask
+  getTask?: GetTask
+  listTasks?: ListTasks
+  updateTask?: UpdateTask
+  getBackgroundOutput?: GetBackgroundOutput
+  cancelBackground?: CancelBackground
 }
 
 // 注册所有内置工具 (minimal + standard + full 预设)
@@ -93,6 +111,12 @@ export function registerBuiltinTools(
   registry.register([
     createAgentCall(projectRoot, options.callAgent),
     createPerformWork(projectRoot, options?.performWork),
+    createTaskCreate(projectRoot, options.createTask),
+    createTaskGet(projectRoot, { get: options.getTask }),
+    createTaskList(projectRoot, { list: options.listTasks }),
+    createTaskUpdate(projectRoot, { update: options.updateTask }),
+    createBackgroundOutputTool(options.getBackgroundOutput),
+    createBackgroundCancelTool(options.cancelBackground),
   ], { preset: 'full', category: 'orchestration', builtin: true })
 
   // Skill 工具

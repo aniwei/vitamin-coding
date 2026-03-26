@@ -26,7 +26,7 @@ export interface Subsystems {
   config: VitaminConfig
   providerRegistry: ProviderRegistry
   toolRegistry: ToolRegistry
-  hookEngine: HookRegistry
+  hookRegistry: HookRegistry
   agentRegistry: AgentRegistry
   taskDispatcher: Dispatcher
   backgroundManager: BackgroundManager

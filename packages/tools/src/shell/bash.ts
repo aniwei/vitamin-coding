@@ -4,7 +4,7 @@ import {
   truncateTail 
 } from '@vitamin/shared'
 import {
-  TOOLS_EXECUTE_TIMEOUT, 
+  TOOLS_EXECUTE_TIMEOUT_MS,
   TOOLS_MAX_OUTPUT_BYTES,
   TOOLS_MAX_OUTPUT_LINES,
 } from '@vitamin/env'
@@ -40,7 +40,7 @@ export function createBash(
 
     async execute({ params, signal }): Promise<ToolResult> {
       const targetDir = resolve(projectRoot, params.targetDir ?? '.')
-      const timeout = params.timeout ?? TOOLS_EXECUTE_TIMEOUT
+      const timeout = params.timeout ?? TOOLS_EXECUTE_TIMEOUT_MS
 
       return await bash(
         params.command, 
