@@ -3,6 +3,7 @@ import { Devtools } from '@vitamin/devtools'
 import { createLogger } from '@vitamin/shared'
 import { attachLogListener } from '@vitamin/shared'
 import { createHookRegistry } from '@vitamin/hooks'
+import { createDefaultProviderRegistry } from '@vitamin/ai'
 import { McpRuntime, createMcpRuntime } from './mcp-runtime'
 import { CodingSessionManager, createCodingSessionManager } from './coding-session-manager'
 import { SettingsManager } from './settings-manager'
@@ -12,7 +13,7 @@ import { AgentSession } from './agent-session'
 
 import type { SessionStore, SessionPersistence } from '@vitamin/session'
 import type { AgentMessage, AgentTool } from '@vitamin/agent'
-import type { Model, ProviderRegistry } from '@vitamin/ai'
+import type { AuthStore, Model, ProviderRegistry } from '@vitamin/ai'
 import type { HookRegistry } from '@vitamin/hooks'
 import type { ConfigStore, VitaminConfig } from '@vitamin/config'
 import type { ResourceLoader, ResourceLoaderOptions } from './resource-loader'
@@ -36,6 +37,8 @@ export interface VitaminAppOptions {
   model?: Model
   // 默认工具集 
   tools?: AgentTool[]
+  // 凭据存储（AuthStore），未提供时自动创建默认实例
+  auth?: AuthStore
   // Provider 注册表
   providerRegistry?: ProviderRegistry
   // 默认系统提示词
@@ -90,6 +93,11 @@ export class VitaminApp {
   public resourceLoader: ResourceLoader | null = null
   public extensionManager: ExtensionManager
 
+  // 凭据存储：可通过 auth.login() / auth.logout() 管理认证
+  public readonly auth: AuthStore
+  // Provider 注册表：已绑定 auth 作为主要凭据来源
+  public readonly providerRegistry: ProviderRegistry
+
   public readonly logger: ReturnType<typeof createLogger>
   public readonly hooks: HookRegistry
   public readonly workspaceDir: string
@@ -118,6 +126,15 @@ export class VitaminApp {
     this.hooks = options.hooks ?? createHookRegistry({ preset: 'default' })
 
     this.extensionManager = new ExtensionManager(this.hooks)
+
+    // 初始化凭据体系：auth 作为主要凭据来源，providerRegistry 绑定 auth
+    const providerRegistry = options.providerRegistry ?? createDefaultProviderRegistry({ auth: options.auth })
+    this.providerRegistry = providerRegistry
+    
+    this.auth = providerRegistry.getAuthStore()!
+    
+    // 确保 this.options 中的 providerRegistry 始终指向已解析的实例
+    this.options = { ...options, providerRegistry }
 
     // SessionManager 延迟到 start() 完整初始化，但先创建内存版本供 start 前使用
     this.codingSessionManager = this.buildSessionManager()

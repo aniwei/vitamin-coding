@@ -14,6 +14,7 @@
     "dist"
   ],
   "scripts": {
+    "run:example:auth": "tsx example/auth-store-example.ts",
     "run:example": "tsx example/vitamin-app-example.tsx",
     "run:example:smoke": "tsx example/vitamin-app-smoke.tsx",
     "build": "tsup",

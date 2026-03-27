@@ -292,7 +292,7 @@ class GitHubCopilotStream implements ProviderStream {
   readonly id = 'github-copilot'
   readonly displayName = 'GitHub Copilot'
 
-  constructor(private readonly resolveOAuthKey?: CopilotCredentialResolver) {}
+  constructor(private readonly resolveOAuthAccessKey?: CopilotCredentialResolver) {}
 
   async resolveKey(): Promise<string> {
     // 1. 环境变量优先（参照 pi-mono: COPILOT_GITHUB_TOKEN → GH_TOKEN → GITHUB_TOKEN）
@@ -302,8 +302,8 @@ class GitHubCopilotStream implements ProviderStream {
     if (envKey) return envKey
 
     // 2. 回退到注入的 OAuth 凭据解析器
-    if (this.resolveOAuthKey) {
-      const key = await this.resolveOAuthKey()
+    if (this.resolveOAuthAccessKey) {
+      const key = await this.resolveOAuthAccessKey()
       if (key) return key
     }
 
@@ -479,10 +479,10 @@ class GitHubCopilotStream implements ProviderStream {
 }
 
 export interface CopilotProviderOptions {
-  resolveOAuthKey?: CopilotCredentialResolver
+  resolveOAuthAccessKey?: CopilotCredentialResolver
 }
 
 // GitHub Copilot Provider 适配器工厂
 export function createCopilotProvider(options: CopilotProviderOptions = {}): ProviderStream {
-  return new GitHubCopilotStream(options.resolveOAuthKey)
+  return new GitHubCopilotStream(options.resolveOAuthAccessKey)
 }

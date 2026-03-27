@@ -59,21 +59,19 @@ export {
 } from './provider-registry'
 export type { DefaultProviderRegistryOptions } from './provider-registry'
 
-// Access Key Resolver
+// AuthStore — 统一凭据存储（取代 LocalFileAccessKeyResolver 的 OAuth 场景）
 export {
-  EnvAccessKeyResolver,
-  LocalFileAccessKeyResolver,
-  ChainedAccessKeyResolver,
-  createEnvKeyResolver,
-  createLocalFileKeyResolver,
-  createChainedKeyResolver,
-} from './access-key-resolver'
+  AuthStore,
+  createAuthStore,
+  createDefaultAuthStore,
+} from './auth-store'
 export type {
-  AccessKeyResolver,
-  EnvKeyMap,
-  LocalKeyFile,
-  LocalFileAccessKeyResolverOptions,
-} from './access-key-resolver'
+  AuthStoreOptions,
+  ApiKeyEntry,
+  OAuthEntry,
+  AuthEntry,
+  AuthFileData,
+} from './auth-store'
 
 // OAuth
 export { GitHubCopilotOAuthProvider } from './oauth/github-copilot'

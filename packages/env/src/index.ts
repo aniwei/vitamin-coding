@@ -62,7 +62,7 @@ export const SESSION_MAX = normalizeEnv(process.env['VITAMIN_SESSION_MAX'], 50)
 export const SESSION_PAGE_SIZE = normalizeEnv(process.env['VITAMIN_SESSION_PAGE_SIZE'], 20)
 export const SESSION_SNAPSHOT_VERSION = normalizeEnv(process.env['VITAMIN_SESSION_SNAPSHOT_VERSION'], 1)
 
-export const OAUTH_PATH = normalizePath(`${VITAMIN_USER_CONFIG_DIR}/oauth.json`)
+export const AUTH_PATH = normalizePath(`${VITAMIN_USER_CONFIG_DIR}/auth.json`)
 
 export const GITHUB_CLIENT_ID = decode(process.env['GITHUB_CLIENT_ID'] || 'SXYxLmI1MDdhMDhjODdlY2ZlOTg=')
 export const GITHUB_SCOPE = process.env['GITHUB_SCOPE'] || 'read:user'
