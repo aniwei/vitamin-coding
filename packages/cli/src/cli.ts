@@ -172,3 +172,30 @@ function printVersion(): void {
   const version = pkg.version ?? '0.0.0'
   process.stdout.write(`vitamin ${version}\n`)
 }
+
+export function runCli(): number {
+  const { options, subCommand } = parseCLI(process.argv)
+
+  if (subCommand === 'doctor') {
+    // TODO: implement doctor
+    return 0
+  }
+
+  if (subCommand === 'auth') {
+    // TODO: implement auth
+    return 0
+  }
+
+  if (subCommand === 'config') {
+    // TODO: implement config
+    return 0
+  }
+
+  if (!options.prompt && options.mode !== 'interactive' && options.mode !== 'rpc') {
+    printHelp()
+    return 1
+  }
+
+  // TODO: boot subsystems and start session
+  return 0
+}

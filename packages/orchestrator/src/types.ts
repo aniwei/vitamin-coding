@@ -181,6 +181,7 @@ export interface SkillAdapter {
 
 export interface SessionFactory {
   createSession(options?: {
+    id?: string
     model?: { provider: string; name: string; api?: string } | string
     systemPrompt?: string
     tools?: unknown[]
@@ -188,6 +189,12 @@ export interface SessionFactory {
   }): Promise<AgentSessionHandle>
 
   removeSession(id: string): Promise<boolean>
+
+  /**
+   * Phase 2: 按 id 获取已有会话，用于 sessionId 跨调用上下文复用。
+   * Phase 1 不要求实现。
+   */
+  getSession?(id: string): AgentSessionHandle | undefined
 }
 
 export interface AgentSessionHandle {

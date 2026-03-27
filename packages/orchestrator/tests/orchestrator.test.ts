@@ -868,3 +868,973 @@ describe('bootstrapOrchestrator', () => {
     expect(result.message).toContain('PlanEngine')
   })
 })
+
+// ═══ Context Isolation ═══
+
+describe('Context Isolation', () => {
+  it('child agent sessions should not inherit parent messages', async () => {
+    const createdSessions: Array<{ options: unknown; session: AgentSessionHandle }> = []
+    const promptCalls: Array<{ sessionId: string; text: string }> = []
+
+    const isolationFactory: SessionFactory = {
+      async createSession(options) {
+        const session: AgentSessionHandle = {
+          id: crypto.randomUUID(),
+          status: 'idle',
+          prompt: async (text: string) => {
+            promptCalls.push({ sessionId: session.id, text })
+          },
+          abort: () => {},
+          getLastAssistantText: () => 'child output',
+        }
+        createdSessions.push({ options, session })
+        return session
+      },
+      async removeSession() { return true },
+    }
+
+    const orchestrator = createOrchestrator({
+      sessionFactory: isolationFactory,
+      toolRegistry: createStubToolRegistry(),
+    })
+
+    orchestrator.agentRegistry.register(testAgent)
+    orchestrator.agentRegistry.register(explorerAgent)
+
+    // Dispatch two tasks sequentially
+    await orchestrator.dispatcher.dispatch({
+      prompt: 'first task prompt',
+      subagent: 'test-agent',
+      mode: 'sync',
+    })
+
+    await orchestrator.dispatcher.dispatch({
+      prompt: 'second task prompt',
+      subagent: 'explorer',
+      mode: 'sync',
+    })
+
+    // Each task should create its own session
+    expect(createdSessions).toHaveLength(2)
+    expect(createdSessions[0].session.id).not.toBe(createdSessions[1].session.id)
+
+    // Each session should only receive its own prompt, not the other's
+    expect(promptCalls).toHaveLength(2)
+    expect(promptCalls[0].text).toBe('first task prompt')
+    expect(promptCalls[1].text).toBe('second task prompt')
+
+    // Sessions should be isolated (different session ids for each prompt)
+    expect(promptCalls[0].sessionId).not.toBe(promptCalls[1].sessionId)
+  })
+
+  it('agent_call creates isolated session separate from dispatcher', async () => {
+    const sessionIds: string[] = []
+
+    const trackingFactory: SessionFactory = {
+      async createSession() {
+        const session: AgentSessionHandle = {
+          id: crypto.randomUUID(),
+          status: 'idle',
+          prompt: async () => {},
+          abort: () => {},
+          getLastAssistantText: () => 'result',
+        }
+        sessionIds.push(session.id)
+        return session
+      },
+      async removeSession() { return true },
+    }
+
+    const orchestrator = createOrchestrator({
+      sessionFactory: trackingFactory,
+      toolRegistry: createStubToolRegistry(),
+    })
+
+    orchestrator.agentRegistry.register(testAgent)
+
+    // Call via dispatcher
+    await orchestrator.dispatcher.dispatch({
+      prompt: 'dispatcher call',
+      subagent: 'test-agent',
+      mode: 'sync',
+    })
+
+    // Call via agent_call
+    await orchestrator.agentRegistry.call('test-agent', 'direct call')
+
+    // Both should create independent sessions
+    expect(sessionIds).toHaveLength(2)
+    expect(sessionIds[0]).not.toBe(sessionIds[1])
+  })
+
+  it('sessions are cleaned up after task completes', async () => {
+    const removedIds: string[] = []
+
+    const cleanupFactory: SessionFactory = {
+      async createSession() {
+        const session: AgentSessionHandle = {
+          id: crypto.randomUUID(),
+          status: 'idle',
+          prompt: async () => {},
+          abort: () => {},
+          getLastAssistantText: () => 'done',
+        }
+        return session
+      },
+      async removeSession(id: string) {
+        removedIds.push(id)
+        return true
+      },
+    }
+
+    const orchestrator = createOrchestrator({
+      sessionFactory: cleanupFactory,
+      toolRegistry: createStubToolRegistry(),
+    })
+    orchestrator.agentRegistry.register(testAgent)
+
+    await orchestrator.dispatcher.dispatch({
+      prompt: 'work',
+      subagent: 'test-agent',
+      mode: 'sync',
+    })
+
+    // Session should have been removed after completion
+    expect(removedIds).toHaveLength(1)
+  })
+
+  it('sessions are cleaned up even when task fails', async () => {
+    const removedIds: string[] = []
+
+    const failFactory: SessionFactory = {
+      async createSession() {
+        const session: AgentSessionHandle = {
+          id: crypto.randomUUID(),
+          status: 'idle',
+          prompt: async () => { throw new Error('session failed') },
+          abort: () => {},
+          getLastAssistantText: () => undefined,
+        }
+        return session
+      },
+      async removeSession(id: string) {
+        removedIds.push(id)
+        return true
+      },
+    }
+
+    const orchestrator = createOrchestrator({
+      sessionFactory: failFactory,
+      toolRegistry: createStubToolRegistry(),
+    })
+    orchestrator.agentRegistry.register(testAgent)
+
+    const result = await orchestrator.dispatcher.dispatch({
+      prompt: 'will fail',
+      subagent: 'test-agent',
+      mode: 'sync',
+    })
+
+    expect(result.success).toBe(false)
+    // Session should still be cleaned up via finally block
+    expect(removedIds).toHaveLength(1)
+  })
+})
+
+// ═══ Concurrent Limit Boundary ═══
+
+describe('Concurrent Limit Boundary', () => {
+  it('should allow exactly maxConcurrent tasks', async () => {
+    const eventBus = createEventBus()
+    const resolvers: (() => void)[] = []
+
+    const blockingFactory: SessionFactory = {
+      async createSession() {
+        return {
+          id: crypto.randomUUID(),
+          status: 'idle',
+          prompt: () => new Promise<void>((r) => { resolvers.push(r) }),
+          abort: () => {},
+          getLastAssistantText: () => 'done',
+        }
+      },
+      async removeSession() { return true },
+    }
+
+    const toolRegistry = createStubToolRegistry()
+    const agentRegistry = createAgentRegistry({ sessionFactory: blockingFactory, toolRegistry })
+    agentRegistry.register(testAgent)
+
+    const backgroundManager = createBackgroundManager({
+      eventBus,
+      sessionFactory: blockingFactory,
+      toolRegistry,
+    })
+
+    const dispatcher = createDispatcher({
+      agentRegistry,
+      backgroundManager,
+      sessionFactory: blockingFactory,
+      toolRegistry,
+      eventBus,
+      maxConcurrent: 2,
+    })
+
+    // Start 2 tasks (should both succeed to start)
+    const p1 = dispatcher.dispatch({ prompt: 'a', subagent: 'test-agent', mode: 'sync' })
+    const p2 = dispatcher.dispatch({ prompt: 'b', subagent: 'test-agent', mode: 'sync' })
+    await new Promise((r) => setTimeout(r, 30))
+
+    // Third should fail
+    const r3 = await dispatcher.dispatch({ prompt: 'c', subagent: 'test-agent', mode: 'sync' })
+    expect(r3.success).toBe(false)
+    expect(r3.error).toContain('Max concurrent')
+
+    // Release all and verify first two complete
+    resolvers.forEach((r) => r())
+    const [result1, result2] = await Promise.all([p1, p2])
+    expect(result1.success).toBe(true)
+    expect(result2.success).toBe(true)
+  })
+
+  it('should allow new tasks after running tasks complete', async () => {
+    const eventBus = createEventBus()
+    let resolver: (() => void) | undefined
+
+    const blockingFactory: SessionFactory = {
+      async createSession() {
+        return {
+          id: crypto.randomUUID(),
+          status: 'idle',
+          prompt: () => new Promise<void>((r) => { resolver = r }),
+          abort: () => {},
+          getLastAssistantText: () => 'done',
+        }
+      },
+      async removeSession() { return true },
+    }
+
+    const toolRegistry = createStubToolRegistry()
+    const agentRegistry = createAgentRegistry({ sessionFactory: blockingFactory, toolRegistry })
+    agentRegistry.register(testAgent)
+
+    const backgroundManager = createBackgroundManager({
+      eventBus,
+      sessionFactory: blockingFactory,
+      toolRegistry,
+    })
+
+    const dispatcher = createDispatcher({
+      agentRegistry,
+      backgroundManager,
+      sessionFactory: blockingFactory,
+      toolRegistry,
+      eventBus,
+      maxConcurrent: 1,
+    })
+
+    // First task blocks
+    const p1 = dispatcher.dispatch({ prompt: 'a', subagent: 'test-agent', mode: 'sync' })
+    await new Promise((r) => setTimeout(r, 20))
+
+    // Second should fail
+    const r2 = await dispatcher.dispatch({ prompt: 'b', subagent: 'test-agent', mode: 'sync' })
+    expect(r2.success).toBe(false)
+
+    // Release first task
+    resolver!()
+    await p1
+
+    // Now third task should succeed
+    const p3 = dispatcher.dispatch({ prompt: 'c', subagent: 'test-agent', mode: 'sync' })
+    await new Promise((r) => setTimeout(r, 20))
+    resolver!()
+    const r3 = await p3
+    expect(r3.success).toBe(true)
+  })
+
+  it('background tasks should not count against sync maxConcurrent', async () => {
+    const eventBus = createEventBus()
+    const sessionFactory = createStubSessionFactory('result')
+    const toolRegistry = createStubToolRegistry()
+
+    const agentRegistry = createAgentRegistry({ sessionFactory, toolRegistry })
+    agentRegistry.register(testAgent)
+
+    const backgroundManager = createBackgroundManager({
+      eventBus,
+      sessionFactory,
+      toolRegistry,
+    })
+
+    const dispatcher = createDispatcher({
+      agentRegistry,
+      backgroundManager,
+      sessionFactory,
+      toolRegistry,
+      eventBus,
+      maxConcurrent: 1,
+    })
+
+    // Background task goes through BackgroundManager, not sync path
+    const bgResult = await dispatcher.dispatch({
+      prompt: 'bg work',
+      subagent: 'test-agent',
+      mode: 'background',
+    })
+    expect(bgResult.success).toBe(true)
+
+    // Sync task should still be allowed
+    const syncResult = await dispatcher.dispatch({
+      prompt: 'sync work',
+      subagent: 'test-agent',
+      mode: 'sync',
+    })
+    expect(syncResult.success).toBe(true)
+  })
+})
+
+// ═══ End-to-End Callbacks Integration ═══
+
+describe('End-to-End Callbacks', () => {
+  it('should flow: bootstrap → callbacks → dispatch → agent execution → result', async () => {
+    const { callbacks, orchestrator } = bootstrapOrchestrator({
+      sessionFactory: createStubSessionFactory('agent did the work'),
+      toolRegistry: createStubToolRegistry(),
+      agents: [testAgent, explorerAgent],
+      fallbackAgent: { name: 'general', description: 'Fallback', model: 'gpt-4' },
+    })
+
+    // dispatchTask → sync
+    const dispatchResult = await callbacks.dispatchTask({
+      prompt: 'analyze code',
+      subagent: 'test-agent',
+      mode: 'sync',
+    })
+    expect(dispatchResult.success).toBe(true)
+    expect(dispatchResult.output).toBe('agent did the work')
+
+    // callAgent → sync
+    const callResult = await callbacks.callAgent('explorer', 'find bugs')
+    expect(callResult.success).toBe(true)
+    expect(callResult.output).toBe('agent did the work')
+
+    // createTask → background
+    const createResult = await callbacks.createTask({
+      prompt: 'background analysis',
+      subagent: 'test-agent',
+    })
+    expect(createResult.success).toBe(true)
+    expect(createResult.id).toBeDefined()
+
+    // Wait for background task to complete
+    await new Promise((r) => setTimeout(r, 50))
+
+    // getBackgroundOutput
+    const bgOutput = await callbacks.getBackgroundOutput(createResult.id)
+    expect(bgOutput.success).toBe(true)
+    expect(bgOutput.output).toBe('agent did the work')
+
+    // listTasks
+    const listed = await callbacks.listTasks()
+    expect(listed.success).toBe(true)
+    expect(listed.tasks.length).toBeGreaterThanOrEqual(2)
+
+    // getTask
+    const task = await callbacks.getTask(createResult.id)
+    expect(task.status).toBe('completed')
+    expect(task.output).toBe('agent did the work')
+  })
+
+  it('should handle callAgent with fallback when agent not found', async () => {
+    const { callbacks } = bootstrapOrchestrator({
+      sessionFactory: createStubSessionFactory('fallback response'),
+      toolRegistry: createStubToolRegistry(),
+      fallbackAgent: { name: 'general', description: 'Fallback', model: 'gpt-4' },
+    })
+
+    // No specific agents registered, should use fallback
+    const result = await callbacks.callAgent('unknown-agent', 'hello')
+    expect(result.success).toBe(true)
+    expect(result.output).toBe('fallback response')
+  })
+
+  it('should handle getTask for non-existent task', async () => {
+    const { callbacks } = bootstrapOrchestrator({
+      sessionFactory: createStubSessionFactory(),
+      toolRegistry: createStubToolRegistry(),
+    })
+
+    const result = await callbacks.getTask('nonexistent-id')
+    expect(result.status).toBe('not_found')
+    expect(result.error).toBe('Task not found')
+  })
+
+  it('should handle updateTask cancel + retry flow via callbacks', async () => {
+    const eventBus = createEventBus()
+    let resolvePrompt: (() => void) | undefined
+    let callCount = 0
+    const controlledFactory: SessionFactory = {
+      async createSession() {
+        callCount++
+        return {
+          id: crypto.randomUUID(),
+          status: 'idle',
+          prompt: () => new Promise<void>((resolve) => { resolvePrompt = resolve }),
+          abort: () => { resolvePrompt?.() },
+          getLastAssistantText: () => `result-${callCount}`,
+        }
+      },
+      async removeSession() { return true },
+    }
+
+    const { callbacks } = bootstrapOrchestrator({
+      sessionFactory: controlledFactory,
+      toolRegistry: createStubToolRegistry(),
+      agents: [testAgent],
+    })
+
+    // Create a background task
+    const created = await callbacks.createTask({
+      prompt: 'long running work',
+      subagent: 'test-agent',
+    })
+    expect(created.success).toBe(true)
+
+    await new Promise((r) => setTimeout(r, 20))
+
+    // Cancel it
+    const cancelResult = await callbacks.cancelBackground(created.id)
+    expect(cancelResult.success).toBe(true)
+
+    // Verify cancelled via getTask
+    const task = await callbacks.getTask(created.id)
+    expect(task.status).toBe('cancelled')
+
+    // Retry the task
+    const retryResult = await callbacks.updateTask(created.id, 'retry')
+    expect(retryResult.success).toBe(true)
+
+    // Wait for background retry to complete
+    await new Promise((r) => setTimeout(r, 50))
+    resolvePrompt?.()
+    await new Promise((r) => setTimeout(r, 50))
+
+    const afterRetry = await callbacks.getTask(created.id)
+    // Task should have been retried (status is completed or running)
+    expect(['completed', 'running']).toContain(afterRetry.status)
+  })
+
+  it('callbacks.performWork returns NOT_IMPLEMENTED', async () => {
+    const { callbacks } = bootstrapOrchestrator({
+      sessionFactory: createStubSessionFactory(),
+      toolRegistry: createStubToolRegistry(),
+    })
+
+    const result = await callbacks.performWork('my-plan')
+    expect(result.success).toBe(false)
+    expect(result.error).toBe('NOT_IMPLEMENTED')
+  })
+})
+
+// ═══ Event System Integration ═══
+
+describe('Event System Integration', () => {
+  it('should emit full lifecycle events for sync task', async () => {
+    const { orchestrator } = bootstrapOrchestrator({
+      sessionFactory: createStubSessionFactory('done'),
+      toolRegistry: createStubToolRegistry(),
+      agents: [testAgent],
+    })
+
+    const events: Array<{ type: string; payload: unknown }> = []
+    orchestrator.eventBus.on('task.created', (p) => events.push({ type: 'task.created', payload: p }))
+    orchestrator.eventBus.on('task.started', (p) => events.push({ type: 'task.started', payload: p }))
+    orchestrator.eventBus.on('task.completed', (p) => events.push({ type: 'task.completed', payload: p }))
+    orchestrator.eventBus.on('task.failed', (p) => events.push({ type: 'task.failed', payload: p }))
+
+    await orchestrator.dispatcher.dispatch({
+      prompt: 'work',
+      subagent: 'test-agent',
+      mode: 'sync',
+    })
+
+    expect(events.map((e) => e.type)).toEqual([
+      'task.created',
+      'task.started',
+      'task.completed',
+    ])
+
+    // Verify event payloads
+    const completedEvent = events[2].payload as { task: { id: string; status: string }; result: { text: string } }
+    expect(completedEvent.task.status).toBe('completed')
+    expect(completedEvent.result.text).toBe('done')
+  })
+
+  it('should emit task.failed event on execution error', async () => {
+    const failFactory: SessionFactory = {
+      async createSession() {
+        return {
+          id: crypto.randomUUID(),
+          status: 'idle',
+          prompt: async () => { throw new Error('execution boom') },
+          abort: () => {},
+          getLastAssistantText: () => undefined,
+        }
+      },
+      async removeSession() { return true },
+    }
+
+    const { orchestrator } = bootstrapOrchestrator({
+      sessionFactory: failFactory,
+      toolRegistry: createStubToolRegistry(),
+      agents: [testAgent],
+    })
+
+    const failedEvents: unknown[] = []
+    orchestrator.eventBus.on('task.failed', (p) => failedEvents.push(p))
+
+    await orchestrator.dispatcher.dispatch({
+      prompt: 'will fail',
+      subagent: 'test-agent',
+      mode: 'sync',
+    })
+
+    expect(failedEvents).toHaveLength(1)
+    const evt = failedEvents[0] as { task: { status: string }; error: { code: string; message: string } }
+    expect(evt.task.status).toBe('failed')
+    expect(evt.error.message).toContain('execution boom')
+  })
+
+  it('should emit task.cancelled event for background task cancellation', async () => {
+    let resolvePrompt: (() => void) | undefined
+    const blockingFactory: SessionFactory = {
+      async createSession() {
+        return {
+          id: crypto.randomUUID(),
+          status: 'idle',
+          prompt: () => new Promise<void>((r) => { resolvePrompt = r }),
+          abort: () => { resolvePrompt?.() },
+          getLastAssistantText: () => 'interrupted',
+        }
+      },
+      async removeSession() { return true },
+    }
+
+    const { orchestrator } = bootstrapOrchestrator({
+      sessionFactory: blockingFactory,
+      toolRegistry: createStubToolRegistry(),
+      agents: [testAgent],
+    })
+
+    const cancelledEvents: unknown[] = []
+    orchestrator.eventBus.on('task.cancelled', (p) => cancelledEvents.push(p))
+
+    const result = await orchestrator.dispatcher.dispatch({
+      prompt: 'long task',
+      subagent: 'test-agent',
+      mode: 'background',
+    })
+
+    await new Promise((r) => setTimeout(r, 20))
+    await orchestrator.backgroundManager.cancel(result.id!)
+
+    expect(cancelledEvents).toHaveLength(1)
+    expect((cancelledEvents[0] as { taskId: string }).taskId).toBe(result.id)
+  })
+
+  it('EventBus.off should remove specific handler', async () => {
+    const bus = createEventBus()
+    let count1 = 0
+    let count2 = 0
+
+    const handler1 = () => { count1++ }
+    const handler2 = () => { count2++ }
+
+    bus.on('task.cancelled', handler1)
+    bus.on('task.cancelled', handler2)
+
+    await bus.emit('task.cancelled', { taskId: 'x' })
+    expect(count1).toBe(1)
+    expect(count2).toBe(1)
+
+    bus.off('task.cancelled', handler1)
+
+    await bus.emit('task.cancelled', { taskId: 'y' })
+    expect(count1).toBe(1) // unchanged
+    expect(count2).toBe(2) // incremented
+  })
+})
+
+// ═══ Tool Registration Compatibility ═══
+
+describe('ToolCallbacks Type Compatibility', () => {
+  it('all 11 callback keys should be present', () => {
+    const { callbacks } = bootstrapOrchestrator({
+      sessionFactory: createStubSessionFactory(),
+      toolRegistry: createStubToolRegistry(),
+      skillAdapter: {
+        load: async () => ({ success: true }),
+        execute: async () => ({ success: true }),
+      },
+    })
+
+    const expectedKeys = [
+      'dispatchTask',
+      'callAgent',
+      'performWork',
+      'createTask',
+      'getTask',
+      'listTasks',
+      'updateTask',
+      'getBackgroundOutput',
+      'cancelBackground',
+      'loadSkill',
+      'executeSkill',
+    ]
+
+    for (const key of expectedKeys) {
+      expect(callbacks).toHaveProperty(key)
+      expect(typeof (callbacks as Record<string, unknown>)[key]).toBe('function')
+    }
+  })
+
+  it('dispatchTask callback should match TaskDispatch signature', async () => {
+    const { callbacks } = bootstrapOrchestrator({
+      sessionFactory: createStubSessionFactory('dispatch result'),
+      toolRegistry: createStubToolRegistry(),
+      agents: [testAgent],
+    })
+
+    // TaskDispatch = (args: { prompt, subagent?, category?, mode }) => Promise<{ success, output?, id?, status?, error? }>
+    const result = await callbacks.dispatchTask({
+      prompt: 'test',
+      subagent: 'test-agent',
+      mode: 'sync',
+    })
+
+    expect(result).toHaveProperty('success')
+    expect(typeof result.success).toBe('boolean')
+  })
+
+  it('callAgent callback should match CallAgent signature', async () => {
+    const { callbacks } = bootstrapOrchestrator({
+      sessionFactory: createStubSessionFactory('call result'),
+      toolRegistry: createStubToolRegistry(),
+      agents: [testAgent],
+    })
+
+    // CallAgent = (agent, prompt, options?) => Promise<{ success, output?, error? }>
+    const result = await callbacks.callAgent('test-agent', 'hello', { mode: 'sync' })
+    expect(result).toHaveProperty('success')
+  })
+
+  it('getTask callback should match GetTask return shape', async () => {
+    const { callbacks, orchestrator } = bootstrapOrchestrator({
+      sessionFactory: createStubSessionFactory('task output'),
+      toolRegistry: createStubToolRegistry(),
+      agents: [testAgent],
+    })
+
+    // Create and complete a task
+    await callbacks.dispatchTask({ prompt: 'work', subagent: 'test-agent', mode: 'sync' })
+    const listed = await callbacks.listTasks()
+    const taskId = listed.tasks[0].id
+
+    // GetTask = (id) => Promise<{ id, status, prompt?, output?, error? }>
+    const result = await callbacks.getTask(taskId)
+    expect(result).toHaveProperty('id')
+    expect(result).toHaveProperty('status')
+    expect(result.id).toBe(taskId)
+    expect(result.status).toBe('completed')
+    expect(result.output).toBe('task output')
+  })
+
+  it('listTasks callback should match ListTasks return shape', async () => {
+    const { callbacks } = bootstrapOrchestrator({
+      sessionFactory: createStubSessionFactory(),
+      toolRegistry: createStubToolRegistry(),
+    })
+
+    // ListTasks = (status?) => Promise<{ success, tasks: Array<{ id, prompt, status }>, error? }>
+    const result = await callbacks.listTasks()
+    expect(result).toHaveProperty('success')
+    expect(result).toHaveProperty('tasks')
+    expect(Array.isArray(result.tasks)).toBe(true)
+  })
+
+  it('updateTask callback should match UpdateTask return shape', async () => {
+    const { callbacks } = bootstrapOrchestrator({
+      sessionFactory: createStubSessionFactory(),
+      toolRegistry: createStubToolRegistry(),
+    })
+
+    // UpdateTask = (id, action) => Promise<{ success, message }>
+    const result = await callbacks.updateTask('nonexistent', 'cancel')
+    expect(result).toHaveProperty('success')
+    expect(result).toHaveProperty('message')
+  })
+})
+
+// ═══ Realistic SessionFactory Integration ═══
+
+describe('Realistic SessionFactory Integration', () => {
+  /**
+   * 模拟一个贴近真实 CodingSessionManager 行为的 SessionFactory：
+   * - 追踪消息历史
+   * - 校验 model/systemPrompt/tools 传入
+   * - 验证 removeSession 确实清除了状态
+   * - getSession (Phase 2 预留) 返回 undefined
+   */
+  function createRealisticSessionFactory() {
+    const sessions = new Map<string, {
+      handle: AgentSessionHandle
+      messages: string[]
+      model: unknown
+      systemPrompt: string | undefined
+      tools: unknown[]
+      aborted: boolean
+    }>()
+
+    const factory: SessionFactory = {
+      async createSession(options) {
+        const id = crypto.randomUUID()
+        const state = {
+          messages: [] as string[],
+          model: options?.model,
+          systemPrompt: options?.systemPrompt,
+          tools: options?.tools ?? [],
+          aborted: false,
+          handle: null as unknown as AgentSessionHandle,
+        }
+
+        const handle: AgentSessionHandle = {
+          id,
+          status: 'idle',
+          prompt: async (text: string) => {
+            if (state.aborted) throw new Error('Session aborted')
+            state.messages.push(`user: ${text}`)
+            // 模拟 LLM 响应
+            const response = `Response to "${text}" using ${
+              typeof state.model === 'string' ? state.model : 'default-model'
+            }`
+            state.messages.push(`assistant: ${response}`)
+          },
+          abort: () => { state.aborted = true },
+          getLastAssistantText: () => {
+            const last = state.messages.findLast(m => m.startsWith('assistant: '))
+            return last?.slice('assistant: '.length)
+          },
+        }
+
+        state.handle = handle
+        sessions.set(id, state)
+        return handle
+      },
+
+      async removeSession(id: string) {
+        return sessions.delete(id)
+      },
+
+      // Phase 2 预留
+      getSession(id: string) {
+        const s = sessions.get(id)
+        return s?.handle
+      },
+    }
+
+    return { factory, sessions }
+  }
+
+  function createRealisticToolRegistry(): ToolRegistryHandle {
+    const allTools = [
+      { name: 'file_read', mock: true },
+      { name: 'file_write', mock: true },
+      { name: 'bash', mock: true },
+      { name: 'grep', mock: true },
+    ]
+    return {
+      filterByNames: (names: string[]) =>
+        allTools.filter(t => names.includes(t.name)),
+      getAvailable: () => allTools,
+    }
+  }
+
+  it('should create session with correct model/systemPrompt/tools', async () => {
+    const { factory, sessions } = createRealisticSessionFactory()
+    const toolRegistry = createRealisticToolRegistry()
+
+    const agent: AgentSpec = {
+      name: 'coder',
+      description: 'Code agent',
+      model: 'claude-sonnet',
+      systemPrompt: 'You are a coding assistant.',
+      tools: ['file_read', 'file_write'],
+      capabilities: ['code'],
+    }
+
+    const orchestrator = createOrchestrator({
+      sessionFactory: factory,
+      toolRegistry,
+    })
+    orchestrator.agentRegistry.register(agent)
+
+    await orchestrator.dispatcher.dispatch({
+      prompt: 'fix the bug',
+      subagent: 'coder',
+      mode: 'sync',
+    })
+
+    // Session was created and then removed
+    expect(sessions.size).toBe(0) // cleaned up after completion
+
+    // Verify the output contains model info from the realistic factory
+    const result = await orchestrator.dispatcher.dispatch({
+      prompt: 'add tests',
+      subagent: 'coder',
+      mode: 'sync',
+    })
+    expect(result.success).toBe(true)
+    expect(result.output).toContain('claude-sonnet')
+  })
+
+  it('should pass tools whitelist to session via toolRegistry.filterByNames', async () => {
+    const { factory } = createRealisticSessionFactory()
+    const filteredTools: string[][] = []
+    const toolRegistry: ToolRegistryHandle = {
+      filterByNames: (names: string[]) => {
+        filteredTools.push(names)
+        return names.map(n => ({ name: n }))
+      },
+      getAvailable: () => [],
+    }
+
+    const agent: AgentSpec = {
+      name: 'limited',
+      description: 'Limited tools agent',
+      model: 'gpt-4',
+      tools: ['file_read', 'bash'],
+    }
+
+    const orchestrator = createOrchestrator({
+      sessionFactory: factory,
+      toolRegistry,
+    })
+    orchestrator.agentRegistry.register(agent)
+
+    await orchestrator.dispatcher.dispatch({
+      prompt: 'work',
+      subagent: 'limited',
+      mode: 'sync',
+    })
+
+    expect(filteredTools).toHaveLength(1)
+    expect(filteredTools[0]).toEqual(['file_read', 'bash'])
+  })
+
+  it('full lifecycle: dispatch → events → output → cleanup', async () => {
+    const { factory, sessions } = createRealisticSessionFactory()
+    const toolRegistry = createRealisticToolRegistry()
+
+    const { orchestrator, callbacks } = bootstrapOrchestrator({
+      sessionFactory: factory,
+      toolRegistry,
+      agents: [
+        { name: 'analyzer', description: 'Code analyzer', model: 'gpt-4', capabilities: ['analysis'] },
+        { name: 'fixer', description: 'Bug fixer', model: 'claude-sonnet', capabilities: ['fix'] },
+      ],
+      fallbackAgent: { name: 'general', description: 'General', model: 'gpt-3.5-turbo' },
+    })
+
+    // Track events
+    const events: string[] = []
+    orchestrator.eventBus.on('task.created', () => events.push('created'))
+    orchestrator.eventBus.on('task.started', () => events.push('started'))
+    orchestrator.eventBus.on('task.completed', () => events.push('completed'))
+    orchestrator.eventBus.on('task.failed', () => events.push('failed'))
+
+    // 1. Dispatch by name
+    const r1 = await callbacks.dispatchTask({
+      prompt: 'analyze this code',
+      subagent: 'analyzer',
+      mode: 'sync',
+    })
+    expect(r1.success).toBe(true)
+    expect(r1.output).toContain('gpt-4')
+
+    // 2. Dispatch by category
+    const r2 = await callbacks.dispatchTask({
+      prompt: 'fix the bug',
+      category: 'fix',
+      mode: 'sync',
+    })
+    expect(r2.success).toBe(true)
+    expect(r2.output).toContain('claude-sonnet')
+
+    // 3. Fallback agent
+    const r3 = await callbacks.callAgent('unknown', 'hello')
+    expect(r3.success).toBe(true)
+    expect(r3.output).toContain('gpt-3.5-turbo')
+
+    // 4. All sessions should be cleaned up
+    expect(sessions.size).toBe(0)
+
+    // 5. Events should be emitted in order
+    expect(events).toEqual([
+      'created', 'started', 'completed',  // r1
+      'created', 'started', 'completed',  // r2
+      // r3 goes through agentRegistry.call, not dispatcher — no dispatcher events
+    ])
+  })
+
+  it('background task with realistic factory', async () => {
+    const { factory, sessions } = createRealisticSessionFactory()
+
+    const { orchestrator, callbacks } = bootstrapOrchestrator({
+      sessionFactory: factory,
+      toolRegistry: createRealisticToolRegistry(),
+      agents: [{ name: 'bg-worker', description: 'Background', model: 'gpt-4' }],
+    })
+
+    // Track hooks integration
+    let hookStartCalled = false
+    let hookEndCalled = false
+
+    // Test with hooks (simulated HookRegistryHandle)
+    const hookAware = createOrchestrator({
+      sessionFactory: factory,
+      toolRegistry: createRealisticToolRegistry(),
+      hooks: {
+        emit: async (timing: string, _input: unknown) => {
+          if (timing === 'background.start') hookStartCalled = true
+          if (timing === 'background.end') hookEndCalled = true
+        },
+      },
+    })
+    hookAware.agentRegistry.register({ name: 'bg-worker', description: 'BG', model: 'gpt-4' })
+
+    const bgResult = await hookAware.dispatcher.dispatch({
+      prompt: 'background work',
+      subagent: 'bg-worker',
+      mode: 'background',
+    })
+    expect(bgResult.success).toBe(true)
+
+    // Wait for background completion
+    await new Promise(r => setTimeout(r, 100))
+
+    // Hooks should have been called
+    expect(hookStartCalled).toBe(true)
+    expect(hookEndCalled).toBe(true)
+
+    // Output should be available
+    const output = await hookAware.backgroundManager.getOutput(bgResult.id!)
+    expect(output.success).toBe(true)
+    expect(output.output).toContain('gpt-4')
+  })
+
+  it('getSession returns undefined in Phase 1', () => {
+    const { factory } = createRealisticSessionFactory()
+    expect(factory.getSession?.('nonexistent')).toBeUndefined()
+  })
+})

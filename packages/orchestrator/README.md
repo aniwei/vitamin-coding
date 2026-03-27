@@ -1340,7 +1340,7 @@ type OrchestratorHookEvents = {
 - `@vitamin/cli` typecheck 通过
 - `task_delegate`/`agent_call`/`task_*` 在真实会话可跑通
 - `background_output`/`background_cancel` 可用
-- 事件: task.created/started/completed/failed 可在 hooks 订阅
+- 事件: task.created/started/completed/failed 可通过 orchestrator eventBus 订阅；background.start/end 自动桥接 HookRegistry
 - `bootstrapOrchestrator` 返回的 callbacks 可直接传给 `registerBuiltinTools`
 
 > **Phase 1 限制**:

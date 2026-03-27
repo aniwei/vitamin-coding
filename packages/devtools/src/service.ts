@@ -5,8 +5,8 @@ import { Worker } from 'node:worker_threads'
 import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
 
 import type { DebugSnapshot } from './protocol'
-import type { Breakpoint } from './tools/breakpoints'
 import type { BreakpointPoint } from './protocol'
+import type { Breakpoints } from './tools/breakpoints'
 
 const logger = createLogger('@vitamin/devtools:service')
 
@@ -32,20 +32,12 @@ interface DevtoolsServiceEvents extends Events {
   'error': (error: Error) => void,
 }
 
-interface BreakpointManager {
-  list: () => Breakpoint[]
-  set: (point: BreakpointPoint, enabled: boolean) => Breakpoint
-  enableAll: () => void
-  disableAll: () => void
-}
-
 export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
   private readonly port: number
   private readonly id: string = randomUUID()
   private worker: Worker | null = null
   private started = false
-  private stopping = false
-  private breakpointManager: BreakpointManager
+  private breakpoints: Breakpoints
   private initializeTask: Promise<void> | null = null
 
   public get serviceUrl(): string {
@@ -72,10 +64,102 @@ export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
     return `${this.serviceUrl}/command/session`
   }
 
-  constructor(port: number, breakpointManager: BreakpointManager) {
+  constructor(port: number, breakpoints: Breakpoints) {
     super()
     this.port = port
-    this.breakpointManager = breakpointManager
+    this.breakpoints = breakpoints
+  }
+
+  broadcast(message: string): void {
+    this.worker?.postMessage({ type: 'broadcast', message })
+  }
+
+  async start(): Promise<void> {
+    if (this.started) {
+      return Promise.resolve()
+    }
+
+    if (this.initializeTask) {
+      return this.initializeTask
+    }
+
+    this.worker = new Worker(resolveWorkerPath(), {
+      workerData: {
+        host: SERVICE_HOST,
+        port: this.port,
+        serviceId: this.id,
+      }
+    })
+
+    this.worker.on('message', this.handleWorkerMessage)
+    this.worker.on('error', error => this.emit('error', error as Error))
+    this.worker.on('exit',  () => this.dispose())
+    
+    this.initializeTask = new Promise((resolve, reject) => {
+      this.once('Debugger.started', () => {
+        logger.info('Agent debug service started and debugger enabled')
+        this.started = true
+        resolve()
+      })
+
+      this.once('error', error => {
+        logger.error({ error }, 'Failed to start devtools service')
+        reject(error)
+      })
+    })
+
+    return this.initializeTask
+  }
+
+  async stop(): Promise<void> {
+    await new Promise<void>(async (resolve) => {
+      this.once('Debugger.stopped', async () => {
+        this.dispose()
+        resolve()
+      })
+
+      this.worker?.postMessage({ type: 'stop' })
+    })
+  }
+
+  dispose(): void {
+    this.worker?.terminate().then(() => {
+      this.worker = null
+      this.started = false
+      this.initializeTask = null
+
+      logger.info('Devtools worker terminated')
+    }).catch(error => {
+      logger.error({ error }, 'Failed to terminate devtools worker')
+    }) 
+  }
+
+  logger(message: unknown): void {
+    this.worker?.postMessage({ type: 'logger', message: JSON.stringify(message) })
+  }
+
+  session(message: unknown): void {
+    this.worker?.postMessage({ 
+      type: 'session', 
+      message: JSON.stringify(message) 
+    })
+  }
+
+  pause(snapshot: DebugSnapshot): void {
+    const sab = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT)
+    const state = new Int32Array(sab)
+
+    this.worker?.postMessage({
+      type: 'paused',
+      snapshot,
+      shared: sab,
+    })
+
+    Atomics.wait(state, 0, WAKE_PENDING)
+
+    if (Atomics.load(state, 0) !== WAKE_RESUMED) {
+      throw new Error('Devtools pause resumed with an unexpected state')
+    }
   }
 
   private handleBreakpointList(requestId: string): void {
@@ -83,12 +167,12 @@ export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
       type: 'Debugger.breakpoints.response',
       requestId,
       success: true,
-      payload: this.breakpointManager.list()
+      payload: this.breakpoints?.list()
     })
   }
 
   private handleBreakpointSet(requestId: string, payload: Record<string, unknown>): void {
-    this.breakpointManager.set(
+    this.breakpoints?.set(
       payload.point as BreakpointPoint, 
       payload.enabled as boolean
     )
@@ -102,8 +186,8 @@ export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
 
   private handleBreakpointSetAll(requestId: string, payload: Record<string, unknown>): void {
     payload.enabled as boolean 
-      ? this.breakpointManager.enableAll() 
-      : this.breakpointManager.disableAll()
+      ? this.breakpoints?.enableAll() 
+      : this.breakpoints?.disableAll()
     
     this.worker?.postMessage({
       type: 'Debugger.breakpoints.response',
@@ -142,108 +226,4 @@ export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
         logger.warn({ payload }, 'Received unknown message from devtools worker')
     }
   }
-
-  broadcast(message: string): void {
-    this.worker?.postMessage({ type: 'broadcast', message })
-  }
-
-  start(): Promise<void> {
-    if (this.started) {
-      return Promise.resolve()
-    }
-
-    if (this.initializeTask) {
-      return this.initializeTask
-    }
-
-    this.worker = new Worker(resolveWorkerPath(), {
-      workerData: {
-        host: SERVICE_HOST,
-        port: this.port,
-        serviceId: this.id,
-      }
-    })
-
-    this.worker.on('message', this.handleWorkerMessage)
-    this.worker.on('error', error => this.emit('error', error as Error))
-    this.worker.on('exit',  () => this.dispose())
-    
-    this.initializeTask = new Promise((resolve, reject) => {
-      this.once('Debugger.started', () => {
-        logger.info('Agent debug service started and debugger enabled')
-        this.started = true
-        resolve()
-      })
-
-      this.once('error', error => {
-        logger.error({ error }, 'Failed to start devtools service')
-        reject(error)
-      })
-    })
-
-    return this.initializeTask
-  }
-
-  dispose(): void {
-    this.worker?.terminate().then(() => {
-      this.worker = null
-      this.started = false
-      this.initializeTask = null
-
-      this.stopping = false
-
-      logger.info('Devtools worker terminated')
-    }).catch(error => {
-      logger.error({ error }, 'Failed to terminate devtools worker')
-    }) 
-  }
-
-  async stop(): Promise<void> {
-    this.stopping = true
-
-    await new Promise<void>(async (resolve) => {
-      this.once('Debugger.stopped', async () => {
-        this.dispose()
-        resolve()
-      })
-
-      this.worker?.postMessage({ type: 'stop' })
-    })
-  }
-
-  logger(message: unknown): void {
-    this.worker?.postMessage({ type: 'logger', message: JSON.stringify(message) })
-  }
-
-  session(message: unknown): void {
-    this.worker?.postMessage({ 
-      type: 'session', 
-      message: JSON.stringify(message) 
-    })
-  }
-
-  pause(snapshot: DebugSnapshot): void {
-    const sab = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT)
-    const state = new Int32Array(sab)
-
-    this.worker?.postMessage({
-      type: 'paused',
-      snapshot,
-      shared: sab,
-    })
-
-    Atomics.wait(state, 0, WAKE_PENDING)
-
-    if (Atomics.load(state, 0) !== WAKE_RESUMED) {
-      throw new Error('Devtools pause resumed with an unexpected state')
-    }
-  }
-}
-
-export const createDevtoolsService = (
-  port: number, 
-  breakpointManager: BreakpointManager
-) => {
-  const service = new DevtoolsService(port, breakpointManager)
-  return service
 }

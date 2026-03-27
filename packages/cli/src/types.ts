@@ -33,6 +33,14 @@ export interface Subsystems {
   server?: any // Optional inspector server, any typed to avoid circular dependency loop if not needed
 }
 
+// 会话摘要
+export interface SessionSummary {
+  id: string
+  createdAt: number
+  messageCount: number
+  lastModel: string
+}
+
 // AgentSession — 核心会话控制器
 export interface AgentSession {
   id: string

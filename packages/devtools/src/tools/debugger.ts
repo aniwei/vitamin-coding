@@ -10,19 +10,13 @@ export class DevtoolsDebugger {
   public readonly breakpoints: Breakpoints
   private readonly service: DevtoolsService
 
-  constructor(service: DevtoolsService) {
+  constructor(
+    service: DevtoolsService, 
+    breakpoints: Breakpoints
+  ) {
     this.service = service
     this.serviceUrl = service.debuggerPauseUrl
-    this.breakpoints = new Breakpoints()
-
-    if (typeof service.registerDebuggerBreakpoints === 'function') {
-      service.registerDebuggerBreakpoints({
-        list: () => this.breakpoints.list(),
-        set: (point, enabled) => this.breakpoints.set(point, enabled),
-        enableAll: () => this.breakpoints.enableAll(),
-        disableAll: () => this.breakpoints.disableAll(),
-      })
-    }
+    this.breakpoints = breakpoints
   }
 
   listBreakpoints(): Breakpoint[] {

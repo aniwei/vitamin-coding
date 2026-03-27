@@ -1,9 +1,7 @@
 import { createAgentWithRegistry } from '@vitamin/agent'
 import { createInMemorySessionStore } from '@vitamin/session'
 import { createHookRegistry } from '@vitamin/hooks'
-import {
-  createDefaultProviderRegistry,
-} from '@vitamin/ai'
+import { createDefaultProviderRegistry } from '@vitamin/ai'
 import { AgentSession } from './agent-session'
 import type { CreateAgentSessionOptions } from './types'
 
@@ -36,14 +34,13 @@ export function createAgentSession(options: CreateAgentSessionOptions): AgentSes
     providerRegistry: resolvedProviderRegistry,
   })
 
-  const hookRegistry = hooks ?? createHookRegistry({ preset: 'default' })
 
   return new AgentSession(session, agent, {
     model,
     systemPrompt,
     tools,
     thinkingLevel,
-    hooks: hookRegistry,
+    hooks: hooks ?? createHookRegistry({ preset: 'default' }),
     workspaceDir: options.workspaceDir,
   })
 }

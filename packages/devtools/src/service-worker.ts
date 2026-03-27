@@ -4,7 +4,9 @@ import { parentPort, workerData } from 'node:worker_threads'
 import { randomUUID } from 'node:crypto'
 import { Hono } from 'hono'
 import { WebSocketServer, type WebSocket } from 'ws'
-import { createLoggerRoute } from './routes'
+import { createLoggerRoute } from './routes/logger'
+import { createSessionRoute } from './routes/session'
+import { createDebuggerRoute } from './routes/debugger'
 import type { Socket } from 'node:net'
 
 interface WorkerData {
@@ -43,45 +45,9 @@ const workerPort = (() => {
 function createCommandRoutes(server: ServiceWorkerServer): Hono {
   const app = new Hono()
 
-  app.route('/logger', createLoggerRoute())
-
-  app.post(`/logger`, async (context) => {
-    const body = await context.req.text()
-    server.broadcast(body)
-    return context.text('ok')
-  })
-
-  app.post(`/session`, async (context) => {
-    const body = await context.req.text()
-    server.broadcast(body)
-    return context.text('ok')
-  })
-
-  app.post(`/debugger/command`, async (context) => {
-    let parsed: unknown = null
-
-    try {
-      parsed = await context.req.json()
-    } catch {
-      parsed = null
-    }
-
-    return context.text('ok')
-  })
-
-  app.get(`/debugger/breakpoints`, async (context) => {
-    try {
-      const payload = await server.breakpoints('Debugger.breakpoints.list')
-      return context.json({ breakpoints: payload })
-    } catch (error) {
-      return context.json({ error: error instanceof Error ? error.message : String(error) }, 500)
-    }
-  })
-
-  app.post(`/debugger/breakpoints`, async (context) => {
-    // TODO
-    return context.text('ok')
-  })
+  app.route('/logger', createLoggerRoute(server))
+  app.route(`/session`,createSessionRoute(server))
+  app.route(`/debugger`, createDebuggerRoute(server))
 
   app.notFound((context) => context.text('not found', 404))
 
@@ -114,45 +80,60 @@ export class ServiceWorkerServer {
 
     this.server = createServer()
     this.server.on('request', app.fetch)
-    this.server.on('upgrade', this.handleHttpUpgrade)
+    this.server.on('upgrade', this.handleUpgrade)
 
     this.wss = new WebSocketServer({ noServer: true })
-    this.wss.on('connection', this.handleWebSocketConnection)
+    this.wss.on('connection', this.handleConnection)
 
-    this.registerParentPortEvents()
+    workerPort.on('message', this.handleMessage)
   }
 
   start(): void {
     this.server.listen(this.port, this.host, () => workerPort.postMessage({ type: 'Debugger.started' }))
   }
 
-  private registerParentPortEvents(): void {
-    workerPort.on('message', (message: unknown) => {
-      if (!message || typeof message !== 'object') {
-        return
+  broadcast(message: string): void {
+    for (const client of this.clients) {
+      if (client.readyState === client.OPEN) {
+        client.send(message)
       }
+    }
+  }
 
-      const msg = message as Record<string, unknown>
-
-      switch (msg.type) {
-        case 'Debugger.breakpoints.response':
-          this.handleBreakpointResponse(msg)
-        break
-      case 'broadcast':
-      case 'logger':
-      case 'session':
-        this.handleBroadcastMessage(msg)
-        break
-      case 'paused':
-        this.handlePausedMessage(msg)
-        break
-      case 'stop':
-        this.handleStopMessage()
-        break
-      default:
-        break
-      }
+  breakpoints(type: 'Debugger.breakpoints.list'): Promise<unknown>
+  breakpoints(type: 'Debugger.breakpoints.set', payload: { point: string; enabled: boolean }): Promise<unknown>
+  breakpoints(type: 'Debugger.breakpoints.setAll', payload: { enabled: boolean }): Promise<unknown>
+  breakpoints(type: string, payload?: Record<string, unknown>): Promise<unknown> {
+    return new Promise((resolve, reject) => {
+      const requestId = randomUUID()
+      this.pendingRequests.set(requestId, { resolve, reject })
+      workerPort.postMessage({ type, requestId, ...(payload ?? {}) })
     })
+  }
+
+
+
+  private handleMessage(data: unknown): void {
+    const message = data as Record<string, unknown>
+
+    switch (message.type) {
+      case 'Debugger.breakpoints.response':
+        this.handleBreakpointResponse(message)
+      break
+    case 'broadcast':
+    case 'logger':
+    case 'session':
+      this.handleBroadcastMessage(message)
+      break
+    case 'paused':
+      this.handlePausedMessage(message)
+      break
+    case 'stop':
+      this.handleStopMessage()
+      break
+    default:
+      break
+    }
   }
 
   private handleBreakpointResponse(message: Record<string, unknown>): void {
@@ -197,14 +178,6 @@ export class ServiceWorkerServer {
     })
   }
 
-  broadcast(message: string): void {
-    for (const client of this.clients) {
-      if (client.readyState === client.OPEN) {
-        client.send(message)
-      }
-    }
-  }
-
   private normalizeCommand(input: unknown): DebugCommand | null {
     if (!input || typeof input !== 'object') {
       return null
@@ -241,18 +214,7 @@ export class ServiceWorkerServer {
     this.pauses.push(pause)
   }
 
-  breakpoints(type: 'Debugger.breakpoints.list'): Promise<unknown>
-  breakpoints(type: 'Debugger.breakpoints.set', payload: { point: string; enabled: boolean }): Promise<unknown>
-  breakpoints(type: 'Debugger.breakpoints.setAll', payload: { enabled: boolean }): Promise<unknown>
-  breakpoints(type: string, payload?: Record<string, unknown>): Promise<unknown> {
-    return new Promise((resolve, reject) => {
-      const requestId = randomUUID()
-      this.pendingRequests.set(requestId, { resolve, reject })
-      workerPort.postMessage({ type, requestId, ...(payload ?? {}) })
-    })
-  }
-
-  private handleWebSocketConnection = (ws: WebSocket) => {
+  private handleConnection = (ws: WebSocket) => {
     this.clients.add(ws)
 
     ws.on('close', () => this.clients.delete(ws))
@@ -274,26 +236,20 @@ export class ServiceWorkerServer {
     })
   }
 
-  private handleHttpUpgrade = (
+  private handleUpgrade = (
     request: IncomingMessage, 
     socket: Socket, 
     head: Buffer
   ): void => {
     try {
-      if (!request.url) {
-        socket.destroy()
-        return
-      }
-
-      const url = new URL(request.url, `http://${this.host}:${this.port}`)
+      const url = new URL(request.url as string, `http://${this.host}:${this.port}`)
       if (url.pathname !== `${this.base}/inspect`) {
         socket.destroy()
-        return
+      } else {
+        this.wss.handleUpgrade(request, socket, head, (ws) => {
+          this.wss.emit('connection', ws, request)
+        })
       }
-
-      this.wss.handleUpgrade(request, socket, head, (ws) => {
-        this.wss.emit('connection', ws, request)
-      })
     } catch {
       socket.destroy()
     }

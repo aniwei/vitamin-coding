@@ -1,6 +1,3 @@
-// @vitamin/ai 核心类型定义
-// 涵盖 Model, Message, StreamEvent, ToolDefinition, StreamContext 等
-
 type Timestamp = number // Unix 时间戳（毫秒）
 
 // 已知 API 协议类型
@@ -219,8 +216,9 @@ export type OAuthCredentials = {
 export type OAuthProviderId = string
 
 // OAuth 回调：用于 UI 层展示认证信息和收集输入
-export interface OAuthAuthInfo {
+export interface OAuthInfo {
   url: string
+  code?: string // 可选，某些 provider 可能不需要用户输入 code
   instructions?: string
 }
 
@@ -230,13 +228,17 @@ export interface OAuthPrompt {
   allowEmpty?: boolean
 }
 
-export interface OAuthLoginCallbacks {
-  onAuth: (info: OAuthAuthInfo) => void
+export interface OAuthLoginOptions {
+  onAuth: (info: OAuthInfo) => void
   onPrompt: (prompt: OAuthPrompt) => Promise<string>
   onProgress?: (message: string) => void
-  /** 手动输入授权码（用于 callback server 类 OAuth 提供商的备用输入） */
-  onManualCodeInput?: () => Promise<string>
+  // 手动输入授权码（用于 callback server 类 OAuth 提供商的备用输入）
+  onManualCode?: () => Promise<string>
   signal?: AbortSignal
+}
+
+export interface OAuthRefreshTokenOptions extends OAuthCredentials{
+  domain?: string
 }
 
 // OAuth 提供商接口 — 无状态、纯函数式
@@ -244,20 +246,17 @@ export interface OAuthProvider {
   readonly id: OAuthProviderId
   readonly name: string
 
-  /** 是否使用本地回调服务器登录（支持 onManualCodeInput 备用输入） */
+  // 是否使用本地回调服务器登录（支持 onManualCode 备用输入）
   usesCallbackServer?: boolean
 
-  /** 运行交互式登录流程，返回凭据 */
-  login(callbacks: OAuthLoginCallbacks): Promise<OAuthCredentials>
+  // 运行交互式登录流程，返回凭据
+  login(options: OAuthLoginOptions): Promise<OAuthCredentials>
 
-  /** 刷新过期凭据 */
-  refreshToken(credentials: OAuthCredentials): Promise<OAuthCredentials>
+  // 刷新过期凭据 
+  refreshToken(options: OAuthRefreshTokenOptions): Promise<OAuthCredentials>
 
-  /** 从凭据提取 API key */
-  getApiKey(credentials: OAuthCredentials): string
-
-  /** 可选：根据凭据修改模型配置（如更新 baseUrl） */
-  modifyModels?(models: Model<Api>[], credentials: OAuthCredentials): Model<Api>[]
+  // 从凭据提取 Access key
+  getAccessKey(credentials: OAuthCredentials): string
 }
 
 export type OAuthProviderFactory = () => OAuthProvider

@@ -67,8 +67,8 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     this.thinkingLevel = config.thinkingLevel
     this.hooks = config.hooks
     this.agentName = config.agentName ?? 'primary'
-    this.workspaceDir = config.workspaceDir
     this.devtools = config.devtools
+    this.workspaceDir = config.workspaceDir
 
     this.emit('session_start', this.id)
   }

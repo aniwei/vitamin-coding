@@ -31,6 +31,7 @@ async function start<T extends Api>(
   const combinedSignal = signal 
     ? AbortSignal.any([signal, controller.signal]) 
     : controller.signal
+    
   const streamOptions: StreamOptions = {
     ...options,
     signal: combinedSignal,

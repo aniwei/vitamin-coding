@@ -1,9 +1,7 @@
 import { createFileSessionManager, createRemoteSessionManager, SessionManager } from '@vitamin/session'
 import { createAgentWithRegistry } from '@vitamin/agent'
 import { createHookRegistry } from '@vitamin/hooks'
-import {
-  createDefaultProviderRegistry,
-} from '@vitamin/ai'
+import { createDefaultProviderRegistry } from '@vitamin/ai'
 import { invariant } from '@vitamin/invariant'
 import { AgentSession } from './agent-session'
 
@@ -73,6 +71,7 @@ export class CodingSessionManager {
       return explicit
     }
 
+    // TODO
     if (model.api !== 'github-copilot') {
       return undefined
     }

@@ -20,6 +20,8 @@ function normalizePath(path: string): string {
   return normalize(path).replaceAll(sep === '\\' ? '\\' : sep, '/')
 }
 
+const decode = (s: string) => atob(s)
+
 function readPackageVersion(): string {
   try {
     const __dirname = normalizePath(new URL('.', import.meta.url).pathname)
@@ -61,3 +63,7 @@ export const SESSION_PAGE_SIZE = normalizeEnv(process.env['VITAMIN_SESSION_PAGE_
 export const SESSION_SNAPSHOT_VERSION = normalizeEnv(process.env['VITAMIN_SESSION_SNAPSHOT_VERSION'], 1)
 
 export const OAUTH_PATH = normalizePath(`${VITAMIN_USER_CONFIG_DIR}/oauth.json`)
+
+export const GITHUB_CLIENT_ID = decode(process.env['GITHUB_CLIENT_ID'] || 'SXYxLmI1MDdhMDhjODdlY2ZlOTg=')
+export const GITHUB_SCOPE = process.env['GITHUB_SCOPE'] || 'read:user'
+export const GITHUB_COPILOT_USER_AGENT = process.env['GITHUB_COPILOT_USER_AGENT'] || 'GitHubCopilotChat/0.35.0'

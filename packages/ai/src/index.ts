@@ -25,8 +25,9 @@ export type {
   StreamOptions,
   OAuthCredentials,
   OAuthProvider,
-  OAuthLoginCallbacks,
-  OAuthAuthInfo,
+  OAuthLoginOptions,
+  OAuthRefreshTokenOptions,
+  OAuthInfo,
   OAuthPrompt,
   OAuthProviderId,
 } from './types'
@@ -56,17 +57,27 @@ export {
   createProviderRegistry,
   createDefaultProviderRegistry,
 } from './provider-registry'
+export type { DefaultProviderRegistryOptions } from './provider-registry'
+
+// Access Key Resolver
+export {
+  EnvAccessKeyResolver,
+  LocalFileAccessKeyResolver,
+  ChainedAccessKeyResolver,
+  createEnvKeyResolver,
+  createLocalFileKeyResolver,
+  createChainedKeyResolver,
+} from './access-key-resolver'
+export type {
+  AccessKeyResolver,
+  EnvKeyMap,
+  LocalKeyFile,
+  LocalFileAccessKeyResolverOptions,
+} from './access-key-resolver'
 
 // OAuth
-export {
-  githubCopilotOAuthProvider,
-  loginGitHubCopilot,
-  refreshGitHubCopilotToken,
-  getGitHubCopilotBaseUrl,
-  normalizeDomain,
-  enableGitHubCopilotModel,
-  enableAllGitHubCopilotModels,
-} from './oauth/github-copilot'
+export { GitHubCopilotOAuthProvider } from './oauth/github-copilot'
+
 export {
   OAuthRegistry,
   createOAuthRegistry,

@@ -1,120 +1,162 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  githubCopilotOAuthProvider,
-  getGitHubCopilotBaseUrl,
-  normalizeDomain,
-  enableGitHubCopilotModel,
-  enableAllGitHubCopilotModels,
-} from '../src/oauth/github-copilot'
+import { GitHubCopilotOAuthProvider } from '../src/oauth/github-copilot'
+import type { OAuthInfo } from '../src/types'
 
-describe('normalizeDomain', () => {
-  it('extracts hostname from full URL', () => {
-    expect(normalizeDomain('https://company.ghe.com/thing')).toBe('company.ghe.com')
-  })
-
-  it('handles bare hostname', () => {
-    expect(normalizeDomain('company.ghe.com')).toBe('company.ghe.com')
-  })
-
-  it('returns null for empty string', () => {
-    expect(normalizeDomain('')).toBeNull()
-    expect(normalizeDomain('   ')).toBeNull()
-  })
-})
-
-describe('getGitHubCopilotBaseUrl', () => {
-  it('returns default URL when no token/domain', () => {
-    expect(getGitHubCopilotBaseUrl()).toBe('https://api.individual.githubcopilot.com')
-  })
-
-  it('extracts base URL from proxy-ep in token', () => {
-    const token = 'tid=123;exp=9999;proxy-ep=proxy.individual.githubcopilot.com;foo=bar'
-    expect(getGitHubCopilotBaseUrl(token)).toBe('https://api.individual.githubcopilot.com')
-  })
-
-  it('uses enterprise domain when no token', () => {
-    expect(getGitHubCopilotBaseUrl(undefined, 'company.ghe.com')).toBe(
-      'https://copilot-api.company.ghe.com',
-    )
-  })
-
-  it('prefers token proxy-ep over enterprise domain', () => {
-    const token = 'tid=123;proxy-ep=proxy.business.githubcopilot.com;exp=9999'
-    expect(getGitHubCopilotBaseUrl(token, 'company.ghe.com')).toBe(
-      'https://api.business.githubcopilot.com',
-    )
-  })
-})
-
-describe('githubCopilotOAuthProvider', () => {
+describe('GitHubCopilotOAuthProvider', () => {
   it('has correct id and name', () => {
-    expect(githubCopilotOAuthProvider.id).toBe('github-copilot')
-    expect(githubCopilotOAuthProvider.name).toBe('GitHub Copilot')
+    const provider = new GitHubCopilotOAuthProvider()
+
+    expect(provider.id).toBe('github-copilot')
+    expect(provider.name).toBe('GitHub Copilot')
   })
 
-  it('does not use callback server (device code flow)', () => {
-    expect(githubCopilotOAuthProvider.usesCallbackServer).toBeUndefined()
-  })
-
-  it('getApiKey returns access field', () => {
+  it('getAccessKey returns access field', () => {
+    const provider = new GitHubCopilotOAuthProvider()
     const creds = { refresh: 'gh-token', access: 'copilot-token', expires: Date.now() + 60_000 }
-    expect(githubCopilotOAuthProvider.getApiKey(creds)).toBe('copilot-token')
-  })
 
-  it('modifyModels sets baseUrl on copilot models', () => {
-    const token = 'tid=1;proxy-ep=proxy.individual.githubcopilot.com;exp=9'
-    const creds = { refresh: 'gh', access: token, expires: Date.now() + 60_000 }
-
-    const models = [
-      {
-        id: 'github-copilot/gpt-4.1',
-        name: 'gpt-4.1',
-        api: 'github-copilot' as const,
-        provider: 'github-copilot' as const,
-        baseUrl: 'https://placeholder.com',
-        reasoning: false,
-        input: ['text'] as const,
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 128000,
-        maxOutputTokens: 4096,
-      },
-      {
-        id: 'openai/gpt-4o',
-        name: 'gpt-4o',
-        api: 'openai-completions' as const,
-        provider: 'openai' as const,
-        baseUrl: 'https://api.openai.com',
-        reasoning: false,
-        input: ['text'] as const,
-        cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-        contextWindow: 128000,
-        maxOutputTokens: 4096,
-      },
-    ]
-
-    const modified = githubCopilotOAuthProvider.modifyModels!(models, creds)
-
-    // copilot model 的 baseUrl 应被更新
-    expect(modified[0].baseUrl).toBe('https://api.individual.githubcopilot.com')
-    // 非 copilot model 不受影响
-    expect(modified[1].baseUrl).toBe('https://api.openai.com')
+    expect(provider.getAccessKey(creds)).toBe('copilot-token')
   })
 })
 
-describe('enableGitHubCopilotModel', () => {
-  it('returns false when network fails (no real API)', async () => {
-    // 使用无效 token 调用，预期 fetch 失败返回 false
-    const result = await enableGitHubCopilotModel('invalid-token', 'gpt-4.1')
-    expect(result).toBe(false)
+describe('GitHubCopilotOAuthProvider.refreshToken', () => {
+  it('returns refreshed credentials and keeps refresh token', async () => {
+    const provider = new GitHubCopilotOAuthProvider()
+    const originalFetch = globalThis.fetch
+    const expiresAt = Math.floor(Date.now() / 1000) + 3600
+
+    globalThis.fetch = async () => new Response(JSON.stringify({
+      token: 'copilot-token',
+      expires_at: expiresAt,
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    try {
+      const credentials = await provider.refreshToken({
+        refresh: 'gh-token',
+        access: 'old-access',
+        expires: 0,
+      })
+
+      expect(credentials.refresh).toBe('gh-token')
+      expect(credentials.access).toBe('copilot-token')
+      // refreshToken 直接返回 expires_at，不做毫秒换算
+      expect(credentials.expires).toBe(expiresAt)
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  it('throws when token response fields are invalid', async () => {
+    const provider = new GitHubCopilotOAuthProvider()
+    const originalFetch = globalThis.fetch
+
+    // 源码校验 !data.token，返回空对象触发错误
+    globalThis.fetch = async () => new Response(JSON.stringify({}), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    try {
+      await expect(provider.refreshToken({
+        refresh: 'gh-token',
+        access: 'old-access',
+        expires: 0,
+      })).rejects.toThrow('Invalid Copilot token response fields.')
+    } finally {
+      globalThis.fetch = originalFetch
+    }
   })
 })
 
-describe('enableAllGitHubCopilotModels', () => {
-  it('handles fetch failure gracefully (no crash)', async () => {
-    // 使用无效 token，models 列表获取失败后应静默返回
-    await expect(
-      enableAllGitHubCopilotModels('invalid-token'),
-    ).resolves.toBeUndefined()
+describe('GitHubCopilotOAuthProvider.login', () => {
+  it('completes login flow and emits auth/progress callbacks', async () => {
+    const provider = new GitHubCopilotOAuthProvider()
+    const authCalls: OAuthInfo[] = []
+    const progressCalls: string[] = []
+    const originalFetch = globalThis.fetch
+    const expiresAt = Math.floor(Date.now() / 1000) + 3600
+
+    // 按顺序模拟三次 fetch：device code → access token polling → copilot token refresh
+    let callCount = 0
+    globalThis.fetch = async () => {
+      callCount++
+      if (callCount === 1) {
+        return new Response(JSON.stringify({
+          device_code: 'dev-code',
+          user_code: 'ABCD-EFGH',
+          verification_uri: 'https://github.com/login/device',
+          interval: 1,
+          expires_in: 900,
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      } else if (callCount === 2) {
+        return new Response(JSON.stringify({
+          access_token: 'gh-access-token',
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      } else {
+        return new Response(JSON.stringify({
+          token: 'copilot-access-token',
+          expires_at: expiresAt,
+        }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      }
+    }
+
+    try {
+      const credentials = await provider.login({
+        onPrompt: async () => '',
+        onAuth: (info: OAuthInfo) => {
+          authCalls.push(info)
+        },
+        onProgress: (message: string) => {
+          progressCalls.push(message)
+        },
+      })
+
+      expect(authCalls).toHaveLength(1)
+      // onAuth 现在接收 OAuthInfo 对象
+      expect(authCalls[0]?.url).toBe('https://github.com/login/device')
+      expect(authCalls[0]?.code).toBe('ABCD-EFGH')
+      expect(progressCalls).toContain('...')
+      expect(credentials.access).toBe('copilot-access-token')
+      expect(typeof credentials.expires).toBe('number')
+    } finally {
+      globalThis.fetch = originalFetch
+    }
+  })
+
+  it('throws cancelled error when signal is already aborted', async () => {
+    const provider = new GitHubCopilotOAuthProvider()
+    const controller = new AbortController()
+    controller.abort()
+
+    await expect(provider.login({
+      onPrompt: async () => '',
+      onAuth: () => {},
+      signal: controller.signal,
+    })).rejects.toThrow('Login cancelled')
+  })
+
+  it('throws when device code response is invalid', async () => {
+    const provider = new GitHubCopilotOAuthProvider()
+    const originalFetch = globalThis.fetch
+
+    // 源码校验 !data.device_code，返回无该字段的响应触发错误
+    globalThis.fetch = async () => new Response(JSON.stringify({
+      error: 'bad_verification_code',
+    }), {
+      status: 200,
+      headers: { 'Content-Type': 'application/json' },
+    })
+
+    try {
+      await expect(provider.login({
+        onPrompt: async () => '',
+        onAuth: () => {},
+      })).rejects.toThrow('GitHub device authorization returned invalid response fields.')
+    } finally {
+      globalThis.fetch = originalFetch
+    }
   })
 })

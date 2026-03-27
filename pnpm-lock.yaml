@@ -59,18 +59,39 @@ importers:
 
   packages/ai:
     dependencies:
+      '@vitamin/env':
+        specifier: workspace:*
+        version: link:../env
       '@vitamin/shared':
         specifier: workspace:*
         version: link:../shared
       eventsource-parser:
         specifier: ^3.0.6
         version: 3.0.6
+      zod:
+        specifier: ^4.0.0
+        version: 4.3.6
 
   packages/cli:
     dependencies:
+      '@vitamin/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@vitamin/coding':
         specifier: workspace:*
         version: link:../coding
+      '@vitamin/config':
+        specifier: workspace:*
+        version: link:../config
+      '@vitamin/hooks':
+        specifier: workspace:*
+        version: link:../hooks
+      '@vitamin/orchestrator':
+        specifier: workspace:*
+        version: link:../orchestrator
+      '@vitamin/tools':
+        specifier: workspace:*
+        version: link:../tools
 
   packages/coding:
     dependencies:

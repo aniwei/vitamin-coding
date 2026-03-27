@@ -21,8 +21,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@vitamin/env": "workspace:*",
     "@vitamin/shared": "workspace:*",
-    "eventsource-parser": "^3.0.6"
+    "eventsource-parser": "^3.0.6",
+    "zod": "^4.0.0"
   },
   "publishConfig": {
     "access": "public",

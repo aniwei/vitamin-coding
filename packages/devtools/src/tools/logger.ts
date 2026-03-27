@@ -12,6 +12,6 @@ export class DevtoolsLogger {
   }
 
   publish(message: unknown) {
-    this.service.publishLogger(message)
+    this.service.logger(message)
   }
 }

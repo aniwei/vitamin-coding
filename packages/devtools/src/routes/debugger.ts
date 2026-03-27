@@ -1,17 +1,8 @@
 import { Hono } from 'hono'
-import type { DevtoolsService } from '../service'
+import type { ServiceWorkerServer } from '../service-worker'
 
-export const createDebuggerRoute = (service: DevtoolsService) => {
+export const createDebuggerRoute = (_server: ServiceWorkerServer) => {
   const app = new Hono()
-
-  app.get('/paused', async c => {
-    service.broadcast(await c.req.text())
-    return new Promise<Response>((resolve) => {
-      service.once('Debugger.stepOver', () => {
-        resolve(c.text('ok'))
-      })
-    })
-  })
 
   return app
 }

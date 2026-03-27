@@ -24,7 +24,12 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/coding": "workspace:*"
+    "@vitamin/ai": "workspace:*",
+    "@vitamin/coding": "workspace:*",
+    "@vitamin/config": "workspace:*",
+    "@vitamin/hooks": "workspace:*",
+    "@vitamin/orchestrator": "workspace:*",
+    "@vitamin/tools": "workspace:*"
   },
   "publishConfig": {
     "access": "public",

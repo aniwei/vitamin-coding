@@ -1,7 +1,3 @@
-// McpRuntime — 应用级 MCP 生命周期管理
-// 职责：读取配置、创建/持有 McpManager、将 MCP 工具注册到 ToolRegistry、处理工具列表变更
-// 属于 coding 层（应用编排），tools 层只负责协议运行时
-
 import { createLogger } from '@vitamin/shared'
 import {
   createMcpManager,
@@ -29,10 +25,11 @@ export class McpRuntime {
   private started = false
 
   constructor(options: McpRuntimeOptions) {
-    this.manager = createMcpManager(
-      { skipOnError: true, ...options.managerOptions },
-      options.disabledServers,
-    )
+    this.manager = createMcpManager({ 
+      skipOnError: true, 
+      ...options.managerOptions 
+    }, options.disabledServers)
+    
     this.toolRegistry = options.toolRegistry ?? null
 
     // 监听工具列表变更 → 重新注册

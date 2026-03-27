@@ -1,5 +1,4 @@
 import { stream, createLogger, ProviderError } from '@vitamin/shared'
-
 import type {
   AssistantMessage,
   Message,
@@ -14,45 +13,30 @@ import type {
 } from '../types'
 import type { ProviderStream } from '../types'
 
-const log = createLogger('@vitamin/ai:github-copilot')
+const logger = createLogger('@vitamin/ai:github-copilot')
 
-function resolveCopilotEnvKey(): string | undefined {
-  const candidates = ['COPILOT_GITHUB_TOKEN', 'GH_TOKEN', 'GITHUB_TOKEN'] as const
+const PROVIDER_VERSION = '1.0.0'
 
-  for (const key of candidates) {
-    const value = process.env[key]?.trim()
-    if (value) {
-      return value
-    }
-  }
-
-  return undefined
-}
-
-// 构建 Copilot 专用请求头
-function createCopilotHeaders(token: string, version: string): Record<string, string> {
+// 构建 Copilot 专用静态请求头
+function buildCopilotHeaders(token: string): Record<string, string> {
   return {
     'authorization': `Bearer ${token}`,
     'copilot-integration-id': 'vitamin-coding-agent',
-    'editor-version': `vitamin-coding/${version}`,
-    'editor-plugin-version': `vitamin-coding/${version}`,
+    'editor-version': `vitamin-coding/${PROVIDER_VERSION}`,
+    'editor-plugin-version': `vitamin-coding/${PROVIDER_VERSION}`,
     'openai-intent': 'conversation-panel',
   }
 }
 
-/**
- * 根据最后一条消息推断 Copilot X-Initiator 头。
- * Copilot 使用此头区分用户主动发起和 agent 跟进请求。
- */
+// 根据最后一条消息推断 Copilot X-Initiator 头。
+// Copilot 使用此头区分用户主动发起和 agent 跟进请求。
 export function inferCopilotInitiator(messages: Message[]): 'user' | 'agent' {
   const last = messages[messages.length - 1]
   return last && last.role !== 'user' ? 'agent' : 'user'
 }
 
-/**
- * 检查消息中是否包含图片输入。
- * Copilot 需要在包含图片时设置 Copilot-Vision-Request 头。
- */
+// 检查消息中是否包含图片输入。
+// Copilot 需要在包含图片时设置 Copilot-Vision-Request 头。
 export function hasCopilotVisionInput(messages: Message[]): boolean {
   return messages.some((msg) => {
     if (msg.role === 'user' && Array.isArray(msg.content)) {
@@ -65,10 +49,7 @@ export function hasCopilotVisionInput(messages: Message[]): boolean {
   })
 }
 
-/**
- * 构建请求时的动态 Copilot 头（X-Initiator、Vision 等）
- * 与 pi-mono 对齐：接受 { messages, hasImages } 参数
- */
+// 构建请求时的动态 Copilot 头（X-Initiator、Vision 等）
 export function buildCopilotDynamicHeaders(params: {
   messages: Message[]
   hasImages: boolean
@@ -83,20 +64,13 @@ export function buildCopilotDynamicHeaders(params: {
   return headers
 }
 
-/**
- * 清理 Unicode 代理对（surrogate pairs）以避免 JSON 序列化问题。
- * 参照 pi-mono sanitizeSurrogates 实现。
- */
+// 清理 Unicode 代理对（surrogate pairs）以避免 JSON 序列化问题
 function sanitizeSurrogates(text: string): string {
-  // 移除未配对的代理对字符 (\uD800-\uDFFF)
   return text.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '\uFFFD')
 }
 
-/**
- * 检查消息历史中是否包含工具调用或工具结果。
- * 参照 pi-mono hasToolHistory：部分 provider（如 Anthropic 代理）
- * 在消息中包含 tool_calls/tool_result 时要求 tools 参数存在。
- */
+// 检查消息历史中是否包含工具调用或工具结果
+// 部分 provider 在消息含 tool_calls/tool_result 时要求 tools 参数存在（参照 pi-mono）
 function hasToolHistory(messages: Message[]): boolean {
   for (const msg of messages) {
     if (msg.role === 'tool_result') return true
@@ -107,8 +81,8 @@ function hasToolHistory(messages: Message[]): boolean {
   return false
 }
 
-// 转换消息格式为 OpenAI Chat Completions 格式
-function convertMessages(context: StreamContext): unknown[] {
+// 将内部消息格式转换为 OpenAI Chat Completions 格式
+function buildOpenAIMessages(context: StreamContext): unknown[] {
   const result: unknown[] = []
 
   if (context.systemPrompt) {
@@ -154,9 +128,8 @@ function convertMessages(context: StreamContext): unknown[] {
         .map((c) => sanitizeSurrogates(c.text))
         .join('')
 
-      // 参照 pi-mono：跳过无内容且无 tool_calls 的 assistant 消息
-      const hasContent = textParts.length > 0
-      if (!hasContent && toolCalls.length === 0) continue
+      // 跳过无内容且无 tool_calls 的 assistant 消息（参照 pi-mono）
+      if (!textParts && toolCalls.length === 0) continue
 
       result.push({
         role: 'assistant',
@@ -178,16 +151,13 @@ function convertMessages(context: StreamContext): unknown[] {
 }
 
 
-function convertThinkingLevel(level: string): string {
+// 将 ThinkingLevel 映射为 OpenAI reasoning_effort 参数值
+function toReasoningEffort(level: string): string {
   switch (level) {
     case 'minimal':
-      return 'low'
     case 'low':
       return 'low'
-    case 'medium':
-      return 'medium'
     case 'high':
-      return 'high'
     case 'xhigh':
       return 'high'
     default:
@@ -196,18 +166,18 @@ function convertThinkingLevel(level: string): string {
 }
 
 // 将 ZodType 转为 JSON Schema
-function toToolJsonSchema(schema: { toJSONSchema?: () => unknown }): unknown {
+function toJsonSchema(schema: { toJSONSchema?: () => unknown }): unknown {
   return schema.toJSONSchema?.() ?? {}
 }
 
-// 构建请求 body
-function createStreamBody(model: Model, context: StreamContext): Record<string, unknown> {
+// 构建完整请求 body
+function buildRequestBody(model: Model, context: StreamContext): Record<string, unknown> {
   // Copilot 模型 ID 格式: "github-copilot/gpt-4.1" → 提取 "gpt-4.1"
   const modelId = model.id.includes('/') ? model.id.split('/')[1] : model.id
 
   const body: Record<string, unknown> = {
     model: modelId,
-    messages: convertMessages(context),
+    messages: buildOpenAIMessages(context),
     max_tokens: context.maxTokens ?? model.maxOutputTokens,
     stream: true,
     stream_options: { include_usage: true },
@@ -218,9 +188,9 @@ function createStreamBody(model: Model, context: StreamContext): Record<string, 
     body.temperature = context.temperature
   }
 
-  // reasoning 模型使用 reasoning_effort
+  // reasoning 模型使用 reasoning_effort（参照 pi-mono）
   if (model.reasoning && context.thinkingLevel) {
-    body.reasoning_effort = convertThinkingLevel(context.thinkingLevel)
+    body.reasoning_effort = toReasoningEffort(context.thinkingLevel)
   }
 
   // 工具定义
@@ -230,11 +200,11 @@ function createStreamBody(model: Model, context: StreamContext): Record<string, 
       function: {
         name: tool.name,
         description: tool.description,
-        parameters: toToolJsonSchema(tool.parameters),
+        parameters: toJsonSchema(tool.parameters),
       },
     }))
   } else if (hasToolHistory(context.messages)) {
-    // 参照 pi-mono：部分 provider 在消息含 tool_calls/tool_result 时要求 tools 参数存在
+    // 消息含 tool_calls/tool_result 时注入空 tools 数组（参照 pi-mono）
     body.tools = []
   }
 
@@ -252,7 +222,7 @@ interface CopilotStreamState {
   stopReason: 'end_turn' | 'max_tokens' | 'tool_use' | 'stop_sequence'
 }
 
-function createStreamState(model: string): CopilotStreamState {
+function initStreamState(model: string): CopilotStreamState {
   return {
     model,
     textContent: '',
@@ -264,7 +234,8 @@ function createStreamState(model: string): CopilotStreamState {
   }
 }
 
-function convertMessage(state: CopilotStreamState): AssistantMessage {
+// 将当前流状态组装为 AssistantMessage 快照
+function buildAssistantMessage(state: CopilotStreamState): AssistantMessage {
   const content: (TextContent | ThinkingContent | ToolCall)[] = []
 
   if (state.thinkingText) {
@@ -287,7 +258,7 @@ function convertMessage(state: CopilotStreamState): AssistantMessage {
     try {
       args = JSON.parse(tc.argumentsJson) as Record<string, unknown>
     } catch {
-      log.warn('Failed to parse tool call arguments for final message')
+      logger.warn('Failed to parse tool call arguments for final message')
     }
 
     content.push({
@@ -314,35 +285,31 @@ function convertMessage(state: CopilotStreamState): AssistantMessage {
   }
 }
 
-/**
- * 凭据解析器：给定 providerId，返回 apiKey + 更新后的凭据
- * 由上层（如 coding session）注入，负责：存储管理、过期刷新
- */
+// 凭据解析器：由上层（如 coding session）注入，负责存储管理与过期刷新
 export type CopilotCredentialResolver = () => Promise<string | undefined>
 
-class GithubCopilotStream implements ProviderStream {
-  id = 'github-copilot'
-  displayName = 'GitHub Copilot'
+class GitHubCopilotStream implements ProviderStream {
+  readonly id = 'github-copilot'
+  readonly displayName = 'GitHub Copilot'
 
   constructor(private readonly resolveOAuthKey?: CopilotCredentialResolver) {}
 
-  async resolveKey(_model: Model): Promise<string> {
-    const key = resolveCopilotEnvKey()
-    if (key) {
-      return key
-    }
+  async resolveKey(): Promise<string> {
+    // 1. 环境变量优先（参照 pi-mono: COPILOT_GITHUB_TOKEN → GH_TOKEN → GITHUB_TOKEN）
+    const envKey = process.env['COPILOT_GITHUB_TOKEN']
+      ?? process.env['GH_TOKEN']
+      ?? process.env['GITHUB_TOKEN']
+    if (envKey) return envKey
 
+    // 2. 回退到注入的 OAuth 凭据解析器
     if (this.resolveOAuthKey) {
-      const oauthKey = await this.resolveOAuthKey()
-      if (oauthKey) {
-        return oauthKey
-      }
+      const key = await this.resolveOAuthKey()
+      if (key) return key
     }
 
-    throw new ProviderError(
-      'Missing GitHub Copilot token. Set COPILOT_GITHUB_TOKEN, GH_TOKEN, or GITHUB_TOKEN, or configure OAuth.',
-      { code: 'PROVIDER_AUTH_MISSING' },
-    )
+    throw new ProviderError('Missing GitHub Copilot token.', { 
+      code: 'PROVIDER_AUTH_MISSING' 
+    })
   }
 
   async *converse(
@@ -351,22 +318,22 @@ class GithubCopilotStream implements ProviderStream {
     options: StreamOptions,
     signal: AbortSignal,
   ): AsyncIterable<StreamEvent> {
-    const key = await this.resolveKey(model)
+    const key = await this.resolveKey()
 
     const baseUrl = model.baseUrl ?? 'https://api.githubcopilot.com'
     const url = `${baseUrl}/chat/completions`
-    const body = createStreamBody(model, context)
+    const body = buildRequestBody(model, context)
 
-    log.debug({ model: model.id }, 'Starting Copilot stream with body: %o', body)
+    logger.debug({ model: model.id }, 'Starting Copilot stream with body: %o', body)
 
-    const state = createStreamState(model.id)
+    const state = initStreamState(model.id)
     let started = false
 
     const sse = stream({
       url,
       body,
       headers: {
-        ...createCopilotHeaders(key, '1.0.0'), // TODO
+        ...buildCopilotHeaders(key),
         ...buildCopilotDynamicHeaders({
           messages: context.messages,
           hasImages: hasCopilotVisionInput(context.messages),
@@ -405,10 +372,10 @@ class GithubCopilotStream implements ProviderStream {
         // 发送 start 事件
         if (!started) {
           started = true
-          yield { type: 'start', partial: convertMessage(state) }
+          yield { type: 'start', partial: buildAssistantMessage(state) }
         }
 
-        // finish_reason（参照 pi-mono：增加 content_filter / network_error / 未知原因映射）
+        // finish_reason 映射（参照 pi-mono：增加 content_filter / network_error 处理）
         if (choice.finish_reason) {
           const reason = choice.finish_reason as string
           let stopReason: StopReason = 'end_turn'
@@ -420,10 +387,10 @@ class GithubCopilotStream implements ProviderStream {
             stopReason = 'tool_use'
           } else if (reason === 'content_filter' || reason === 'network_error') {
             stopReason = 'end_turn'
-            log.warn(`Provider finish_reason: ${reason}`)
+            logger.warn(`Provider finish_reason: ${reason}`)
           } else {
             stopReason = 'end_turn'
-            log.warn(`Unknown finish_reason: ${reason}`)
+            logger.warn(`Unknown finish_reason: ${reason}`)
           }
 
           state.stopReason = stopReason
@@ -433,10 +400,10 @@ class GithubCopilotStream implements ProviderStream {
         if (delta.content) {
           const text = delta.content as string
           state.textContent += text
-          yield { type: 'text_delta', index: 0, delta: text, partial: convertMessage(state) }
+          yield { type: 'text_delta', index: 0, delta: text, partial: buildAssistantMessage(state) }
         }
 
-        // reasoning delta（参照 pi-mono：检查 reasoning_content / reasoning / reasoning_text 三个字段）
+        // reasoning delta（参照 pi-mono：检查三个字段 reasoning_content / reasoning / reasoning_text）
         const reasoningText =
           (delta.reasoning_content as string) ??
           (delta.reasoning as string) ??
@@ -444,7 +411,7 @@ class GithubCopilotStream implements ProviderStream {
           null
         if (reasoningText) {
           state.thinkingText += reasoningText
-          yield { type: 'thinking_delta', index: 0, delta: reasoningText, partial: convertMessage(state) }
+          yield { type: 'thinking_delta', index: 0, delta: reasoningText, partial: buildAssistantMessage(state) }
         }
 
         // 工具调用 delta
@@ -461,7 +428,7 @@ class GithubCopilotStream implements ProviderStream {
               yield {
                 type: 'tool_call_start',
                 index: idx,
-                partial: convertMessage(state),
+                partial: buildAssistantMessage(state),
               }
             }
 
@@ -469,12 +436,12 @@ class GithubCopilotStream implements ProviderStream {
             if (fn?.arguments) {
               const argDelta = fn.arguments as string
               tc.argumentsJson += argDelta
-              yield { type: 'tool_call_delta', index: idx, delta: argDelta, partial: convertMessage(state) }
+              yield { type: 'tool_call_delta', index: idx, delta: argDelta, partial: buildAssistantMessage(state) }
             }
           }
         }
       } catch (error) {
-        log.warn({ error }, '解析 Copilot SSE 事件失败')
+        logger.warn({ error }, '解析 Copilot SSE 事件失败')
       }
     }
 
@@ -484,24 +451,24 @@ class GithubCopilotStream implements ProviderStream {
       try {
         args = JSON.parse(tc.argumentsJson) as Record<string, unknown>
       } catch {
-        log.warn('无法解析工具调用参数')
+        logger.warn('无法解析工具调用参数')
       }
       yield {
         type: 'tool_call_end',
         index: idx,
         toolCall: { type: 'tool_call', id: tc.id, name: tc.name, arguments: args },
-        partial: convertMessage(state),
+        partial: buildAssistantMessage(state),
       }
     }
 
     // 发送完成事件
-    yield { type: 'done', reason: state.stopReason, message: convertMessage(state) }
+    yield { type: 'done', reason: state.stopReason, message: buildAssistantMessage(state) }
   }
 
-  async healthCheck(key: string, version?: string): Promise<boolean> {
+  async healthCheck(token: string): Promise<boolean> {
     try {
-      const response = await fetch(`https://api.githubcopilot.com/models`, {
-        headers: createCopilotHeaders(key, version ?? '1.0.0'), // TODO
+      const response = await fetch('https://api.githubcopilot.com/models', {
+        headers: buildCopilotHeaders(token),
       })
 
       return response.ok
@@ -509,14 +476,13 @@ class GithubCopilotStream implements ProviderStream {
       return false
     }
   }
-  
 }
 
 export interface CopilotProviderOptions {
   resolveOAuthKey?: CopilotCredentialResolver
 }
 
-// GitHub Copilot Provider 适配器
+// GitHub Copilot Provider 适配器工厂
 export function createCopilotProvider(options: CopilotProviderOptions = {}): ProviderStream {
-  return new GithubCopilotStream(options.resolveOAuthKey)
+  return new GitHubCopilotStream(options.resolveOAuthKey)
 }

@@ -1,8 +1,13 @@
-// Provider 注册表 — 管理所有 LLM 提供商适配器
 import { ProviderError } from '@vitamin/shared'
-
 import { createCopilotProvider } from './provider/github-copilot'
 import type { CopilotCredentialResolver } from './provider/github-copilot'
+
+import {
+  createEnvKeyResolver,
+  createLocalFileKeyResolver,
+  createChainedKeyResolver,
+} from './access-key-resolver'
+import type { AccessKeyResolver } from './access-key-resolver'
 
 import type { Api } from './types'
 import type { ProviderStream, ProviderFactory } from './types'
@@ -11,6 +16,7 @@ import type { ProviderStream, ProviderFactory } from './types'
 export class ProviderRegistry {
   private readonly factories = new Map<Api, ProviderFactory>()
   private readonly instances = new Map<Api, ProviderStream>()
+  private resolver?: AccessKeyResolver
 
   // 注册 Provider 工厂
   register(api: Api, factory: ProviderFactory): void {
@@ -60,6 +66,25 @@ export class ProviderRegistry {
     this.factories.clear()
     this.instances.clear()
   }
+
+  // ─── Access Key 解析 ──────────────────────────────────────────────────────
+
+  /**
+   * 设置 Access Key 解析器
+   * 替换当前解析器，不影响已缓存的 Provider 实例
+   */
+  setAccessKeyResolver(resolver: AccessKeyResolver): void {
+    this.resolver = resolver
+  }
+
+  /**
+   * 获取指定 api 的 Access Key
+   * 委托给已设置的 AccessKeyResolver；未设置解析器则返回 null
+   */
+  async resolveAccessKey(api: Api): Promise<string | null> {
+    if (!this.resolver) return null
+    return this.resolver.resolve(api)
+  }
 }
 
 // 创建 Provider 注册表
@@ -69,6 +94,10 @@ export function createProviderRegistry(): ProviderRegistry {
 
 export interface DefaultProviderRegistryOptions {
   resolveOAuthKey?: CopilotCredentialResolver
+  // Access Key 解析器
+  // 可传入 EnvAccessKeyResolver / LocalFileAccessKeyResolver / ChainedAccessKeyResolver
+  // 或任何实现 AccessKeyResolver 接口的自定义实现
+  accessKeyResolver?: AccessKeyResolver
 }
 
 export function createDefaultProviderRegistry(
@@ -80,5 +109,16 @@ export function createDefaultProviderRegistry(
     resolveOAuthKey: options.resolveOAuthKey,
   }))
 
+  if (options.accessKeyResolver) {
+    registry.setAccessKeyResolver(options.accessKeyResolver)
+  }
+
   return registry
 }
+
+export {
+  createEnvKeyResolver,
+  createLocalFileKeyResolver,
+  createChainedKeyResolver,
+}
+export type { AccessKeyResolver }

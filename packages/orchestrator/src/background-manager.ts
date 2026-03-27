@@ -48,6 +48,9 @@ class BackgroundManagerImpl implements BackgroundManager {
     // 异步执行，不阻塞调用方
     this.executeAsync(task, spec).then(
       (output) => {
+        // 如果任务已被取消，不要覆盖状态
+        if (task.status === 'cancelled') return
+
         task.status = 'completed'
         task.output = { text: output, summary: output.slice(0, 500) }
         task.endedAt = Date.now()
@@ -62,6 +65,9 @@ class BackgroundManagerImpl implements BackgroundManager {
         void this.deps.eventBus.emit('task.completed', { task, result: task.output })
       },
       (err) => {
+        // 如果任务已被取消，不要覆盖状态
+        if (task.status === 'cancelled') return
+
         task.status = 'failed'
         task.error = {
           code: 'BG_ERROR',

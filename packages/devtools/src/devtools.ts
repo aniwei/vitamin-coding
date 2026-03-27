@@ -1,16 +1,19 @@
-import { DevtoolsService, createDevtoolsService } from './service'
+import { DevtoolsService } from './service'
+import { Breakpoints } from './tools/breakpoints'
 import { DevtoolsDebugger } from './tools/debugger'
 import { DevtoolsLogger } from './tools/logger'
 
 export class Devtools {
   private service: DevtoolsService
+  private breakpoints: Breakpoints
   
   public debugger: DevtoolsDebugger
   public logger: DevtoolsLogger
 
   constructor(port: number) {
-    this.service = createDevtoolsService(port)
-    this.debugger = new DevtoolsDebugger(this.service)
+    this.breakpoints = new Breakpoints()
+    this.service = new DevtoolsService(port, this.breakpoints)
+    this.debugger = new DevtoolsDebugger(this.service, this.breakpoints)
     this.logger = new DevtoolsLogger(this.service)
   }
 
