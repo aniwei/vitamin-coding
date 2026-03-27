@@ -164,12 +164,13 @@ export function createOrchestrator(options: OrchestratorOptions): Orchestrator {
       return {
         dispatchTask: (args) => dispatcher.dispatch(args),
         callAgent: (agent, prompt, opts) => agentRegistry.call(agent, prompt, opts),
-        // Phase 2: performWork 将对接 PlanEngine (DAG 执行)。
+        // Phase 2: performWork 将加载 Markdown 计划文件，提取 task/chunk 上下文，
+        // 并在计划协议约束下驱动子任务派发与状态跟踪（参照 superpowers 模式）。
         // 当前返回显式 NOT_IMPLEMENTED 错误，不会静默吞掉调用。
         performWork: async (_name) => {
           return {
             success: false,
-            message: 'performWork requires PlanEngine (Phase 2). Use dispatchTask for task delegation.',
+            message: 'performWork requires plan protocol support (Phase 2). Use dispatchTask for task delegation.',
             error: 'NOT_IMPLEMENTED',
           }
         },

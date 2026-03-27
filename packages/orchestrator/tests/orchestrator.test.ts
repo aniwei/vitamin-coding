@@ -865,7 +865,7 @@ describe('bootstrapOrchestrator', () => {
     const result = await callbacks.performWork('some-plan')
     expect(result.success).toBe(false)
     expect(result.error).toBe('NOT_IMPLEMENTED')
-    expect(result.message).toContain('PlanEngine')
+    expect(result.message).toContain('plan protocol support')
   })
 })
 
@@ -1348,10 +1348,18 @@ describe('Event System Integration', () => {
     })
 
     const events: Array<{ type: string; payload: unknown }> = []
-    orchestrator.eventBus.on('task.created', (p) => events.push({ type: 'task.created', payload: p }))
-    orchestrator.eventBus.on('task.started', (p) => events.push({ type: 'task.started', payload: p }))
-    orchestrator.eventBus.on('task.completed', (p) => events.push({ type: 'task.completed', payload: p }))
-    orchestrator.eventBus.on('task.failed', (p) => events.push({ type: 'task.failed', payload: p }))
+    orchestrator.eventBus.on('task.created', (p) => {
+      events.push({ type: 'task.created', payload: p })
+    })
+    orchestrator.eventBus.on('task.started', (p) => {
+      events.push({ type: 'task.started', payload: p })
+    })
+    orchestrator.eventBus.on('task.completed', (p) => {
+      events.push({ type: 'task.completed', payload: p })
+    })
+    orchestrator.eventBus.on('task.failed', (p) => {
+      events.push({ type: 'task.failed', payload: p })
+    })
 
     await orchestrator.dispatcher.dispatch({
       prompt: 'work',
@@ -1392,7 +1400,9 @@ describe('Event System Integration', () => {
     })
 
     const failedEvents: unknown[] = []
-    orchestrator.eventBus.on('task.failed', (p) => failedEvents.push(p))
+    orchestrator.eventBus.on('task.failed', (p) => {
+      failedEvents.push(p)
+    })
 
     await orchestrator.dispatcher.dispatch({
       prompt: 'will fail',
@@ -1428,7 +1438,9 @@ describe('Event System Integration', () => {
     })
 
     const cancelledEvents: unknown[] = []
-    orchestrator.eventBus.on('task.cancelled', (p) => cancelledEvents.push(p))
+    orchestrator.eventBus.on('task.cancelled', (p) => {
+      cancelledEvents.push(p)
+    })
 
     const result = await orchestrator.dispatcher.dispatch({
       prompt: 'long task',
@@ -1495,7 +1507,7 @@ describe('ToolCallbacks Type Compatibility', () => {
 
     for (const key of expectedKeys) {
       expect(callbacks).toHaveProperty(key)
-      expect(typeof (callbacks as Record<string, unknown>)[key]).toBe('function')
+      expect(typeof (callbacks as unknown as Record<string, unknown>)[key]).toBe('function')
     }
   })
 
@@ -1748,10 +1760,18 @@ describe('Realistic SessionFactory Integration', () => {
 
     // Track events
     const events: string[] = []
-    orchestrator.eventBus.on('task.created', () => events.push('created'))
-    orchestrator.eventBus.on('task.started', () => events.push('started'))
-    orchestrator.eventBus.on('task.completed', () => events.push('completed'))
-    orchestrator.eventBus.on('task.failed', () => events.push('failed'))
+    orchestrator.eventBus.on('task.created', () => {
+      events.push('created')
+    })
+    orchestrator.eventBus.on('task.started', () => {
+      events.push('started')
+    })
+    orchestrator.eventBus.on('task.completed', () => {
+      events.push('completed')
+    })
+    orchestrator.eventBus.on('task.failed', () => {
+      events.push('failed')
+    })
 
     // 1. Dispatch by name
     const r1 = await callbacks.dispatchTask({

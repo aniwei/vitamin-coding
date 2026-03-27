@@ -24,7 +24,7 @@ export function createPerformWork(
 
   return {
     name: 'perform_work',
-    description: 'Start the execution of a generated plan. The Worker will execute plan steps in parallel according to the DAG topology.',
+    description: 'Start execution of a generated plan using the orchestrator plan protocol. Execution strategy is determined by the orchestrator implementation.',
     parameters: PerformWorkArgsSchema,
     visibility: 'always',
 

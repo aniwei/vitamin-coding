@@ -1,8 +1,3 @@
-// ═══════════════════════════════════════════════════════════
-// @vitamin/orchestrator — BackgroundManager 实现
-// ═══════════════════════════════════════════════════════════
-// 后台任务的提交、跟踪、取消、输出查询
-
 import type { OrchestratorEventBus } from './events'
 import type {
   AgentSpec,
