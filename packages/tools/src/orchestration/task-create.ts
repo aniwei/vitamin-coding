@@ -4,9 +4,9 @@ import { z } from 'zod'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const TaskCreateArgsSchema = z.object({
-  prompt: z.string().describe('任务描述'),
-  category: z.string().optional().describe('任务类别'),
-  subagent: z.string().optional().describe('指定执行 Agent'),
+  prompt: z.string().describe('Task description'),
+  category: z.string().optional().describe('Task category'),
+  subagent: z.string().optional().describe('Agent name to execute the task'),
 })
 
 type TaskCreateArgs = z.infer<typeof TaskCreateArgsSchema>
@@ -31,7 +31,7 @@ export function createTaskCreate(
 
   return {
     name: 'task_create',
-    description: '创建一个后台任务',
+    description: 'Create a new task and submit it to the orchestrator Dispatcher.',
     parameters: TaskCreateArgsSchema,
     visibility: 'always',
 

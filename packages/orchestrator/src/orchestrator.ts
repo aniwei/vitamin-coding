@@ -1,13 +1,10 @@
-// ═══════════════════════════════════════════════════════════
-// @vitamin/orchestrator — Orchestrator 组合根
-// ═══════════════════════════════════════════════════════════
-// 把 AgentRegistry, Dispatcher, BackgroundManager 组装成一体
-// 提供统一的创建入口 + callback 绑定辅助
-
-import { createEventBus } from './events'
+import { createEventBus, bridgeEventBusToHooks } from './events'
 import { createAgentRegistry } from './agent-registry'
 import { createBackgroundManager } from './background-manager'
 import { createDispatcher } from './dispatcher'
+import { createPlanLoader, buildStepPrompt } from './plan-loader'
+import { createMemoryCheckpointStore } from './checkpoint-store'
+import { createMemoryPlanRunStore, createPlanRun, updatePlanRunStep } from './plan-run'
 
 import type { OrchestratorEventBus } from './events'
 import type {
@@ -18,19 +15,24 @@ import type {
   OrchestratorOptions,
   SkillAdapter,
 } from './types'
+import type { PlanLoader } from './plan-loader'
+import type { CheckpointStore } from './checkpoint-store'
+import type { PlanRun, PlanRunStore } from './plan-run'
+import type { ClarifyChannel, ClarifyEscalation, ClarifyReason } from './clarify-channel'
+import type { ReviewGate, ReviewContext } from './review-gate'
 
-// ═══ Orchestrator 实例 ═══
 
 export interface Orchestrator {
   readonly agentRegistry: AgentRegistry
   readonly dispatcher: Dispatcher
   readonly backgroundManager: BackgroundManager
   readonly eventBus: OrchestratorEventBus
+  readonly planLoader: PlanLoader | undefined
+  readonly checkpointStore: CheckpointStore | undefined
+  readonly clarifyChannel: ClarifyChannel | undefined
+  readonly reviewGate: ReviewGate | undefined
+  readonly planRunStore: PlanRunStore | undefined
 
-  /**
-   * 生成 registerBuiltinTools 所需的 callbacks 对象，
-   * 对齐 @vitamin/tools RegisterBuiltinOptions 签名。
-   */
   toToolCallbacks(skillAdapter?: SkillAdapter): ToolCallbacks
 }
 
@@ -118,16 +120,33 @@ export interface ToolCallbacks {
     output?: string
     error?: string
   }>
+
+  clarifyRequest?: (args: {
+    taskId: string
+    question: string
+    reason?: ClarifyReason
+  }) => Promise<{
+    success: boolean
+    answer?: string
+    escalation?: ClarifyEscalation
+    error?: string
+  }>
 }
 
-// ═══ 创建 Orchestrator ═══
-
-export function createOrchestrator(options: OrchestratorOptions): Orchestrator {
+export function createOrchestrator(
+  options: OrchestratorOptions
+): Orchestrator {
   const eventBus = createEventBus()
+
+  // 桥接 eventBus → hooks（统一事件体系）
+  if (options.hooks) {
+    bridgeEventBusToHooks(eventBus, options.hooks)
+  }
 
   const agentRegistry = createAgentRegistry({
     sessionFactory: options.sessionFactory,
     toolRegistry: options.toolRegistry,
+    router: options.router,
   })
 
   const backgroundManager = createBackgroundManager({
@@ -148,13 +167,37 @@ export function createOrchestrator(options: OrchestratorOptions): Orchestrator {
     eventBus,
     hooks: options.hooks,
     maxConcurrent: options.maxConcurrent,
+    retryStrategy: options.retryStrategy,
+    circuitBreaker: options.circuitBreaker,
+    reviewGate: options.reviewGate,
+    modelSelector: options.modelSelector,
   })
+
+  // Phase 2: Plan Loader + Checkpoint Store
+  const planLoader = options.planFileStore
+    ? createPlanLoader(options.planFileStore)
+    : undefined
+  const checkpointStore = options.checkpointStore
+    ?? (options.planFileStore ? createMemoryCheckpointStore() : undefined)
+
+  // Phase 2: PlanRun Store
+  const planRunStore = options.planRunStore
+    ?? (options.planFileStore ? createMemoryPlanRunStore() : undefined)
+
+  // Phase 3: Clarify Channel + Review Gate
+  const clarifyChannel = options.clarifyChannel ?? undefined
+  const reviewGate = options.reviewGate ?? undefined
 
   return {
     agentRegistry,
     dispatcher,
     backgroundManager,
     eventBus,
+    planLoader,
+    checkpointStore,
+    clarifyChannel,
+    reviewGate,
+    planRunStore,
 
     toToolCallbacks(skillAdapter?: SkillAdapter): ToolCallbacks {
       const resolvedSkillAdapter = skillAdapter ?? options.skillAdapter
@@ -164,16 +207,188 @@ export function createOrchestrator(options: OrchestratorOptions): Orchestrator {
       return {
         dispatchTask: (args) => dispatcher.dispatch(args),
         callAgent: (agent, prompt, opts) => agentRegistry.call(agent, prompt, opts),
-        // Phase 2: performWork 将加载 Markdown 计划文件，提取 task/chunk 上下文，
-        // 并在计划协议约束下驱动子任务派发与状态跟踪（参照 superpowers 模式）。
-        // 当前返回显式 NOT_IMPLEMENTED 错误，不会静默吞掉调用。
-        performWork: async (_name) => {
-          return {
-            success: false,
-            message: 'performWork requires plan protocol support (Phase 2). Use dispatchTask for task delegation.',
-            error: 'NOT_IMPLEMENTED',
+
+        performWork: async (name: string) => {
+          if (!planLoader || !options.planFileStore) {
+            return {
+              success: false,
+              message: 'performWork requires a PlanFileStore. Provide planFileStore in OrchestratorOptions.',
+              error: 'NO_PLAN_STORE',
+            }
+          }
+
+          const sessionId = options.sessionId
+
+          try {
+            // Load the plan file
+            const plan = await planLoader.load(name)
+            const nextStep = planLoader.getNextStep(plan.id)
+
+            if (!nextStep) {
+              const completed = planLoader.isCompleted(plan.id)
+              return {
+                success: completed,
+                message: completed
+                  ? `Plan "${plan.name}" is already fully completed.`
+                  : `Plan "${plan.name}" has no pending steps.`,
+              }
+            }
+
+            // PlanRun: 获取或创建执行实例
+            let planRun: PlanRun | undefined
+            if (planRunStore) {
+              planRun = sessionId
+                ? await planRunStore.getActive(plan.id, sessionId)
+                : undefined
+              if (!planRun) {
+                planRun = createPlanRun({
+                  planId: plan.id,
+                  planPath: name,
+                  sessionId: sessionId ?? '',
+                  steps: plan.steps.map(s => ({ id: s.id, status: s.status })),
+                })
+                await planRunStore.save(planRun)
+              }
+            }
+
+            // Emit plan.started if this is the first step
+            const progress = plan.steps.filter(s => s.status === 'completed').length
+            if (progress === 0) {
+              await eventBus.emit('plan.started', {
+                planId: plan.id,
+                totalSteps: plan.steps.length,
+              })
+            }
+
+            // Mark step as in-progress
+            planLoader.updateStep(plan.id, nextStep.id, 'in_progress')
+            if (planRun && planRunStore) {
+              planRun = updatePlanRunStep(planRun, nextStep.id, { status: 'in_progress' })
+              planRun.currentStepId = nextStep.id
+              await planRunStore.save(planRun)
+            }
+
+            // Build the prompt and dispatch as a task
+            const prompt = buildStepPrompt(plan, nextStep)
+            const result = await dispatcher.dispatch({
+              prompt,
+              mode: 'sync',
+            })
+
+            if (result.success) {
+              // ReviewGate: 步骤产出物质量审查
+              if (reviewGate && result.output) {
+                const reviewContext: ReviewContext = {
+                  taskId: result.id ?? '',
+                  planId: plan.id,
+                  stepId: nextStep.id,
+                  output: result.output,
+                  prompt,
+                }
+                const review = await reviewGate.run(reviewContext)
+                if (!review.passed) {
+                  planLoader.updateStep(plan.id, nextStep.id, 'failed')
+                  if (planRun && planRunStore) {
+                    planRun = updatePlanRunStep(planRun, nextStep.id, {
+                      status: 'failed',
+                      taskId: result.id,
+                      reviewPassed: false,
+                    })
+                    planRun.currentStepId = undefined
+                    await planRunStore.save(planRun)
+                  }
+                  const blockerMessages = review.blockers.map(b => b.message).join('; ')
+                  return {
+                    success: false,
+                    message: `Step "${nextStep.title}" failed review: ${blockerMessages}`,
+                    error: `REVIEW_FAILED: ${blockerMessages}`,
+                  }
+                }
+              }
+
+              planLoader.updateStep(plan.id, nextStep.id, 'completed')
+              if (planRun && planRunStore) {
+                planRun = updatePlanRunStep(planRun, nextStep.id, {
+                  status: 'completed',
+                  taskId: result.id,
+                  output: result.output?.slice(0, 500),
+                  reviewPassed: reviewGate ? true : undefined,
+                })
+                planRun.currentStepId = undefined
+              }
+
+              const remaining = plan.steps.filter(s => s.status === 'pending').length - 1
+              await eventBus.emit('plan.step_completed', {
+                planId: plan.id,
+                stepId: nextStep.id,
+                remaining: Math.max(0, remaining),
+              })
+
+              // Save checkpoint (with sessionId)
+              if (checkpointStore) {
+                await checkpointStore.save({
+                  id: crypto.randomUUID(),
+                  taskId: result.id ?? crypto.randomUUID(),
+                  sessionId,
+                  planId: plan.id,
+                  stepId: nextStep.id,
+                  task: (await dispatcher.get(result.id ?? ''))!,
+                  metadata: { stepTitle: nextStep.title },
+                  createdAt: Date.now(),
+                })
+              }
+
+              // Check if all steps complete
+              const updatedPlan = planLoader.getPlan(plan.id)
+              if (updatedPlan && updatedPlan.steps.every(s => s.status === 'completed')) {
+                await eventBus.emit('plan.completed', { planId: plan.id })
+                if (planRun) {
+                  planRun.status = 'completed'
+                  planRun.completedAt = Date.now()
+                }
+              }
+
+              // Persist PlanRun
+              if (planRun && planRunStore) {
+                await planRunStore.save(planRun)
+              }
+
+              // Persist progress (markdown checkboxes)
+              const currentPlan = planLoader.getPlan(plan.id)
+              if (currentPlan) {
+                await planLoader.save(currentPlan)
+              }
+
+              return {
+                success: true,
+                taskId: result.id,
+                message: `Step "${nextStep.title}" completed. ${Math.max(0, remaining)} steps remaining.`,
+              }
+            } else {
+              planLoader.updateStep(plan.id, nextStep.id, 'failed')
+              if (planRun && planRunStore) {
+                planRun = updatePlanRunStep(planRun, nextStep.id, {
+                  status: 'failed',
+                  taskId: result.id,
+                })
+                planRun.currentStepId = undefined
+                await planRunStore.save(planRun)
+              }
+              return {
+                success: false,
+                message: `Step "${nextStep.title}" failed: ${result.error}`,
+                error: result.error,
+              }
+            }
+          } catch (err) {
+            return {
+              success: false,
+              message: `Failed to load or execute plan: ${String(err)}`,
+              error: String(err),
+            }
           }
         },
+
         createTask: (args) => dispatcher.create(args),
         getTask: async (id) => {
           const task = await dispatcher.get(id)
@@ -194,6 +409,9 @@ export function createOrchestrator(options: OrchestratorOptions): Orchestrator {
         cancelBackground: (id) => backgroundManager.cancel(id),
         loadSkill: resolvedSkillAdapter?.load ?? noSkill,
         executeSkill: resolvedSkillAdapter?.execute ?? noSkill,
+        clarifyRequest: clarifyChannel
+          ? (args) => clarifyChannel.request(args)
+          : undefined,
       }
     },
   }

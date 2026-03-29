@@ -24,7 +24,7 @@ export {
 } from './migrator'
 export type { Migration } from './migrator'
 
-export { loadConfig, ConfigLoader } from './loader'
+export { loadConfig, ConfigLoader } from './config'
 
 export { 
   createConfigWatcher, 

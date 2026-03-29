@@ -20,7 +20,10 @@
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
-  "dependencies": {},
+  "dependencies": {
+    "@vitamin/env": "workspace:*",
+    "@vitamin/shared": "workspace:*"
+  },
   "devDependencies": {
     "@vitamin/agent": "workspace:*",
     "@vitamin/hooks": "workspace:*",

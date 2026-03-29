@@ -20,7 +20,6 @@ const BashArgsSchema = z.object({
   command: z.string().describe('Shell command to execute'),
   targetDir: z.string().optional().describe('Working directory (relative to project root)'),
   timeout: z.number().int().min(1000).optional().describe('Timeout (ms), default 30000'),
-  onProgress: z.function().describe('Command execution progress callback, receives output chunk')
 })
 
 type BashArgs = z.infer<typeof BashArgsSchema>
@@ -74,6 +73,7 @@ async function bash(
     onProgress: (chunk) => {
       output.push(chunk)
       totalBytes += chunk.byteLength
+      outputBytes += chunk.byteLength
 
       const text = Buffer.concat(output).toString('utf-8')
       const truncation = truncateTail(text, { maxLines: TOOLS_MAX_OUTPUT_LINES, maxBytes: TOOLS_MAX_OUTPUT_BYTES })
@@ -82,17 +82,14 @@ async function bash(
         outputPath = createTempLoggerPath()
         outputStream = createWriteStream(outputPath)
         
-        for (const chunk of output) {
-          outputStream.write(chunk)
+        for (const buf of output) {
+          outputStream.write(buf)
         }
       }
 
       if (outputStream) {
         outputStream.write(chunk)
       }
-
-      output.push(chunk)
-      outputBytes += chunk.byteLength
 
       while (outputBytes > maxOutputBytes && output.length > 1) {
         const removed = output.shift()

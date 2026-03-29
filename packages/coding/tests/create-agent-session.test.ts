@@ -2,10 +2,11 @@ import { describe, expect, it } from 'vitest'
 import { Agent, type AgentMessage } from '@vitamin/agent'
 import { createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent, type ToolCall } from '@vitamin/ai'
 import { createHookRegistry } from '@vitamin/hooks'
+import { attachLogListener, createLogger } from '@vitamin/shared'
 import { createInMemorySessionStore } from '@vitamin/session'
 
-import { AgentSession } from '../src/agent-session'
-import { createAgentSession } from '../src/create-agent-session'
+import { AgentSession } from '../src/session/agent-session'
+import { createAgentSession } from '../src/session/create-agent-session'
 
 function makeModel(): Model {
   return {
@@ -91,6 +92,28 @@ function makeToolStream() {
   }
 }
 
+function createLogCollector(entries: string[]) {
+  const name = `create-agent-session-test-${crypto.randomUUID()}`
+  const detach = attachLogListener((log) => {
+    const entry = log as { name?: string; msg?: string }
+    if (entry.name === name && entry.msg) {
+      entries.push(entry.msg)
+    }
+  })
+
+  return {
+    logger: createLogger(name, {
+      level: 'debug',
+      destination: '/tmp/vitamin-coding-test.log',
+    }),
+    detach,
+  }
+}
+
+async function flushLogs(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 20))
+}
+
 // ═══ createAgentSession ═══
 
 describe('createAgentSession', () => {
@@ -154,5 +177,41 @@ describe('createAgentSession', () => {
     const messages = sessionData.messages()
     expect(messages.length).toBeGreaterThanOrEqual(2)
     expect(messages[0]).toMatchObject({ role: 'user' })
+  })
+
+  it('emits user-facing prompt, tool, and usage logs', async () => {
+    const entries: string[] = []
+    const collector = createLogCollector(entries)
+    const hooks = createHookRegistry({ preset: 'none' })
+    const store = createInMemorySessionStore<AgentMessage>()
+    const sessionData = store.createSession('log-e2e')
+    const agent = new Agent({ stream: makeToolStream() })
+
+    const tool = {
+      name: 'echo',
+      description: 'echo tool',
+      parameters: createSchema<Record<string, unknown>>() as never,
+      async execute() {
+        return {
+          content: [{ type: 'text' as const, text: 'echo-result' }],
+        }
+      },
+    }
+
+    const agentSession = new AgentSession(sessionData, agent, {
+      model: makeModel(),
+      systemPrompt: 'system',
+      hooks,
+      tools: [tool],
+      logger: collector.logger,
+    })
+
+    await agentSession.prompt('hello world')
+    await flushLogs()
+    collector.detach()
+
+    expect(entries.some((entry) => entry.includes('prompt started'))).toBe(true)
+    expect(entries.some((entry) => entry.includes('Executing tool'))).toBe(true)
+    expect(entries.some((entry) => entry.includes('usage input='))).toBe(true)
   })
 })

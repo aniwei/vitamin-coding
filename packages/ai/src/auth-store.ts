@@ -98,9 +98,9 @@ export class AuthStore {
     return !!(env && process.env[env])
   }
 
-  async setCredentialKey(provider: Provider, credentials: string): void
-  async setCredentialKey(provider: Provider, credentials: OAuthCredentials): void 
-  async setCredentialKey(provider: Provider, credentials: string | OAuthCredentials): void {
+  async setCredentialKey(provider: Provider, credentials: string): Promise<void>
+  async setCredentialKey(provider: Provider, credentials: OAuthCredentials): Promise<void>
+  async setCredentialKey(provider: Provider, credentials: string | OAuthCredentials): Promise<void> {
     await this.ensureInitialized()
 
     this.cache.set(provider, typeof credentials === 'string' 

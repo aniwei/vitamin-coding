@@ -68,5 +68,7 @@ export type {
   MessagesTransformOutput,
   ChatParamsInput,
   ChatParamsOutput,
+  SystemPromptTransformInput,
+  SystemPromptTransformOutput,
   SessionEventInput,
 } from './types'

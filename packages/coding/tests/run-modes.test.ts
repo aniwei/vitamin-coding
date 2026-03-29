@@ -4,14 +4,14 @@ import { createEventStream, type AssistantMessage, type Model, type StreamContex
 import { createHookRegistry } from '@vitamin/hooks'
 import { createInMemorySessionStore } from '@vitamin/session'
 
-import { AgentSession } from '../src/agent-session'
+import { AgentSession } from '../src/session/agent-session'
 import {
   InteractiveMode,
   getLastAssistantText,
   runJsonMode,
   runPrintMode,
   runRpcMode,
-} from '../src/run-modes'
+} from '../src/modes/run-modes'
 
 function makeModel(): Model {
   return {

@@ -1,59 +1,56 @@
 export { 
   createVitamin, 
   VitaminApp 
-} from './vitamin'
-export type { VitaminAppOptions } from './vitamin'
+} from './app/vitamin-app'
+export type { VitaminAppOptions } from './app/types'
 
-export { AgentSession } from './agent-session'
-export type { AgentSessionConfig } from './agent-session'
+export { AgentSession } from './session/agent-session'
+export type { AgentSessionConfig } from './session/agent-session'
 
-export { createAgentSession } from './create-agent-session'
-export { SettingsManager, createSettingsManager } from './settings-manager'
-export type { SettingsManagerOptions } from './settings-manager'
+export { createAgentSession } from './session/create-agent-session'
+export { Settings, createSettings } from './resources/settings-manager'
+export type { SettingsOptions } from './resources/settings-manager'
 
-export { CodingSessionManager, createCodingSessionManager } from './coding-session-manager'
-export type { SessionManagerOptions } from './coding-session-manager'
+export { CodingSessionManager, createSessionManager, createCodingSessionManager } from './session/coding-session-manager'
+export type { SessionManagerOptions } from './session/coding-session-manager'
 
+// Resources
 export {
-  DefaultResourceLoader,
-  createResourceLoader,
-  createInMemoryResourceLoader,
-} from './resource-loader'
+  DefaultResourceManager,
+  createResourceManager,
+  createInMemoryResourceManager,
+} from './resources/resource-manager'
+
 export type {
-  ResourceLoader,
-  ResourceLoaderOptions,
+  ResourceManager,
+  ResourceManagerOptions,
   LoadedResources,
   ResourceDiagnostic,
   PromptTemplate,
-} from './resource-loader'
+} from './resources/resource-manager'
 
-export {
-  ExtensionManager,
-  createExtensionManager,
-} from './extension-api'
-export type {
-  ExtensionAPI,
-  ExtensionModule,
-  ExtensionDescriptor,
-  ExtensionActivate,
-  LoadedExtension,
-} from './extension-api'
-
+// Modes
 export {
   InteractiveMode,
   getLastAssistantText,
   runJsonMode,
   runPrintMode,
   runRpcMode,
-} from './run-modes'
+} from './modes/run-modes'
 export type {
   InteractiveResult,
   JsonModeResult,
   RpcPromptParams,
   RpcRequest,
   RpcResponse,
-} from './run-modes'
+} from './modes/run-modes'
+export {
+  LeadInteractiveMode,
+  runLeadJsonMode,
+  runLeadPrintMode,
+} from './modes/lead-modes'
 
+// Types
 export type {
   AgentSessionOptions,
   AgentSessionInfo,
@@ -62,34 +59,23 @@ export type {
   AgentSessionSubscriber,
   CreateAgentSessionOptions,
   PromptOptions,
-} from './types'
+} from './session/types'
 
-// Skill 子系统
+// Lead
 export {
-  SkillRegistry,
-  loadSkills,
-  formatSkillsForPrompt,
-  parseSkillFile,
-  LocalSkillReader,
-  deriveSkillName,
-  RemoteSkillReader,
-} from './skill'
-export type {
-  Skill,
-  SkillSource,
-  SkillFrontmatter,
-  SkillDiagnostic,
-  LoadSkillsResult,
-  LoadSkillsOptions,
-  SkillReader,
-  SkillEntry,
-  SkillContent,
-  LocalSkillReaderOptions,
-  RemoteSkillReaderOptions,
-  RemoteSkillEntry,
-  ParseResult,
-} from './skill'
+  PromptManager,
+  createPromptManager,
+  LEAD_ROLE_INSTRUCTIONS,
+  SUBAGENT_ROLE_INSTRUCTIONS,
+} from './lead/prompt-manager'
 
-// MCP Runtime
-export { McpRuntime, createMcpRuntime } from './mcp-runtime'
-export type { McpRuntimeOptions } from './mcp-runtime'
+export type {
+  PromptManagerOptions,
+  PromptBuildOptions,
+  SubagentPromptOptions,
+  PromptAgentSummary,
+  PromptToolSummary,
+} from './lead/prompt-manager'
+
+export { LeadSession, createLeadSession, parseLeadResult } from './lead/lead-session'
+export type { LeadResult, LeadResultStatus, LeadRunOptions, TaskSummary } from './lead/lead-session'

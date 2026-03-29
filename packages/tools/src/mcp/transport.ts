@@ -135,6 +135,7 @@ export class SseTransport implements McpTransport {
   private messageHandler: ((msg: JsonRpcResponse | JsonRpcNotification) => void) | null = null
   private abortController: AbortController | null = null
   private sessionUrl: string | null = null
+  private sessionId: string | null = null
   private readonly baseUrl: string
 
   constructor(url: string) {
@@ -155,7 +156,11 @@ export class SseTransport implements McpTransport {
       throw new Error(`MCP SSE connection failed: ${response.status} ${response.statusText}`)
     }
 
-    // 从响应头中获取会话 endpoint
+    // 从响应头中获取 Mcp-Session-Id
+    const sessionId = response.headers.get('mcp-session-id')
+    if (sessionId) {
+      this.sessionId = sessionId
+    }
     this.sessionUrl = this.baseUrl
 
     // 异步处理 SSE 事件流
@@ -166,15 +171,26 @@ export class SseTransport implements McpTransport {
     const url = this.sessionUrl ?? this.baseUrl
 
     // 通过 POST 发送 JSON-RPC 请求
+    const headers: Record<string, string> = { 'Content-Type': 'application/json' }
+    if (this.sessionId) {
+      headers['Mcp-Session-Id'] = this.sessionId
+    }
+
     void fetch(url, {
       method: 'POST',
-      headers: { 'Content-Type': 'application/json' },
+      headers,
       body: JSON.stringify(message),
       signal: this.abortController?.signal,
     }).then(async (resp) => {
       if (!resp.ok) {
         logger.warn('MCP SSE POST failed: %s', resp.status)
         return
+      }
+
+      // POST 响应也可能携带 Mcp-Session-Id（如 initialize 响应）
+      const sid = resp.headers.get('mcp-session-id')
+      if (sid && !this.sessionId) {
+        this.sessionId = sid
       }
 
       // 有些实现在 POST 响应中直接返回 JSON-RPC 结果

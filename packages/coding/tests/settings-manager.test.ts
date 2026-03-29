@@ -1,11 +1,12 @@
 import { describe, expect, it } from 'vitest'
-import { SettingsManager, createSettingsManager } from '../src/settings-manager'
+import { SettingsManager, createSettingsManager } from '../src/resources/settings-manager'
 
 // ═══ SettingsManager ═══
 
 describe('SettingsManager', () => {
   it('creates with default config when no files provided', async () => {
-    const mgr = await SettingsManager.create()
+    const mgr = new SettingsManager()
+    await mgr.load()
 
     expect(mgr.config).toBeDefined()
     expect(mgr.config.log_level).toBe('info')
@@ -20,7 +21,7 @@ describe('SettingsManager', () => {
   })
 
   it('applies overrides to config', async () => {
-    const mgr = await SettingsManager.create({
+    const mgr = await createSettingsManager({
       overrides: { log_level: 'debug', model: 'test-model' },
     })
 
@@ -29,7 +30,7 @@ describe('SettingsManager', () => {
   })
 
   it('provides typed access via get()', async () => {
-    const mgr = await SettingsManager.create({
+    const mgr = await createSettingsManager({
       overrides: { model: 'claude-3' },
     })
 
@@ -38,7 +39,7 @@ describe('SettingsManager', () => {
   })
 
   it('provides convenience getters', async () => {
-    const mgr = await SettingsManager.create({
+    const mgr = await createSettingsManager({
       overrides: { model: 'gpt-4' },
     })
 
@@ -48,7 +49,7 @@ describe('SettingsManager', () => {
   })
 
   it('applies runtime overrides via update()', async () => {
-    const mgr = await SettingsManager.create({
+    const mgr = await createSettingsManager({
       overrides: { model: 'original' },
     })
 
@@ -60,10 +61,10 @@ describe('SettingsManager', () => {
   })
 
   it('notifies onChange listeners on update', async () => {
-    const mgr = await SettingsManager.create()
+    const mgr = await createSettingsManager()
 
     const changes: unknown[] = []
-    mgr.onChange((config) => changes.push(config.model))
+    mgr.on('change', (config) => changes.push(config.model))
 
     await mgr.update({ model: 'new-model' })
 
@@ -72,10 +73,10 @@ describe('SettingsManager', () => {
   })
 
   it('unsubscribes from onChange', async () => {
-    const mgr = await SettingsManager.create()
+    const mgr = await createSettingsManager()
 
     const changes: string[] = []
-    const unsub = mgr.onChange((config) => changes.push(config.model ?? ''))
+    const unsub = mgr.on('change', (config) => changes.push(config.model ?? ''))
 
     await mgr.update({ model: 'first' })
     unsub()
@@ -85,7 +86,7 @@ describe('SettingsManager', () => {
   })
 
   it('merges overrides cumulatively', async () => {
-    const mgr = await SettingsManager.create({
+    const mgr = await createSettingsManager({
       overrides: { model: 'base', log_level: 'warn' },
     })
 
@@ -100,7 +101,7 @@ describe('SettingsManager', () => {
     // When workspaceDir is provided but no explicit projectConfigPath,
     // it falls back to ${workspaceDir}/.vitamin/config.jsonc which won't exist
     // but loadConfig should still return defaults
-    const mgr = await SettingsManager.create({
+    const mgr = await createSettingsManager({
       workspaceDir: '/tmp/test-project',
     })
 
@@ -109,15 +110,10 @@ describe('SettingsManager', () => {
   })
 
   it('dispose cleans up resources', async () => {
-    const mgr = await SettingsManager.create()
-
-    const changes: unknown[] = []
-    mgr.onChange((config) => changes.push(config))
+    const mgr = await createSettingsManager()
 
     mgr.dispose()
 
-    // After dispose, callbacks are cleared
-    // (no way to easily trigger update after dispose, but at least it doesn't throw)
-    expect(changes).toHaveLength(0)
+    expect(() => mgr.dispose()).not.toThrow()
   })
 })

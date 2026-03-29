@@ -24,7 +24,7 @@ export function createPerformWork(
 
   return {
     name: 'perform_work',
-    description: 'Start execution of a generated plan using the orchestrator plan protocol. Execution strategy is determined by the orchestrator implementation.',
+    description: 'Execute the next pending step of a plan file. Each call advances one step; the caller should loop to complete all steps. Requires PlanFileStore in orchestrator options.',
     parameters: PerformWorkArgsSchema,
     visibility: 'always',
 

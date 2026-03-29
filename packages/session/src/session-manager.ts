@@ -27,27 +27,18 @@ export class SessionManager<T = unknown> {
   private readonly idleTimeoutMs: number
   private readonly maxSessions: number
   private gcTimer: ReturnType<typeof setInterval> | null = null
-  // 当前活跃会话 id（便捷方法的目标）
   private activeSessionId: string | undefined
 
   constructor(options: SessionManagerOptions<T>) {
-    this.store = options.store
-    this.persistence = options.persistence ?? null
-    this.idleTimeoutMs = options.idleTimeoutMs ?? SESSION_IDLE_TIMEOUT_MS
-    this.maxSessions = options.maxSessions ?? SESSION_MAX
+    const { store, persistence, idleTimeoutMs, maxSessions } = options
+
+    this.store = store
+    this.persistence = persistence ?? null
+    this.idleTimeoutMs = idleTimeoutMs ?? SESSION_IDLE_TIMEOUT_MS
+    this.maxSessions = maxSessions ?? SESSION_MAX
   }
 
-  // 纯内存模式（测试用）
-  static inMemory<T = unknown>(
-    options?: Partial<Omit<SessionManagerOptions<T>, 'store' | 'persistence'>>,
-  ): SessionManager<T> {
-    return new SessionManager<T>({
-      store: new InMemorySessionStore<T>(),
-      ...options,
-    })
-  }
 
-  // ── 活跃会话管理 ──
   // 设置活跃会话
   setActive(id: string): Session<T> | undefined {
     const session = this.store.getSession(id)
@@ -64,7 +55,6 @@ export class SessionManager<T = unknown> {
       : undefined
   }
 
-  // ── 活跃会话便捷方法（代理到 active session）──
   // 向活跃会话追加消息
   appendMessage(message: T): void {
     const session = this.requireActive()
@@ -333,6 +323,16 @@ export class SessionManager<T = unknown> {
   }
 }
 
+export function createInMemorySessionManager<T = unknown>(
+  options?: Partial<Omit<SessionManagerOptions<T>, 'store' | 'persistence'>>
+): SessionManager<T> {
+  const store = new InMemorySessionStore<T>()
+  return new SessionManager<T>({
+    store,
+    ...options,
+  })
+}
+
 // 基于本地文件持久化创建 SessionManager
 export function createFileSessionManager<T = unknown>(
   sessionDir: string,
@@ -353,7 +353,8 @@ export function createRemoteSessionManager<T = unknown>(
 ): SessionManager<T> {
   const store = new InMemorySessionStore<T>()
   const persistence = new RemoteSessionPersistence<T>({ 
-    baseUrl: endpoint
+    baseUrl: endpoint,
+    getAuth: async () => ({ token: '' }),
   })
   
   return new SessionManager<T>({

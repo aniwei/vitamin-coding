@@ -2,7 +2,15 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "src"
+    "rootDir": "..",
+    "baseUrl": ".",
+    "paths": {
+      "@vitamin/shared": ["../shared/src/index.ts"],
+      "@vitamin/agent": ["../agent/src/index.ts"],
+      "@vitamin/hooks": ["../hooks/src/index.ts"],
+      "@vitamin/tools": ["../tools/src/index.ts"],
+      "@vitamin/coding": ["../coding/src/index.ts"]
+    }
   },
   "include": ["src"]
 }

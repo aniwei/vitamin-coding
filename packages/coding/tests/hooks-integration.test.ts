@@ -4,8 +4,8 @@ import { createEventStream, type AssistantMessage, type Model, type StreamContex
 import { createHookRegistry } from '@vitamin/hooks'
 import { createInMemorySessionStore } from '@vitamin/session'
 
-import { AgentSession } from '../src/agent-session'
-import { createVitamin } from '../src/vitamin'
+import { AgentSession } from '../src/session/agent-session'
+import { createVitamin } from '../src/app/vitamin-app'
 import { createProviderRegistry } from '../../ai/src/provider-registry'
 
 function makeModel(): Model {

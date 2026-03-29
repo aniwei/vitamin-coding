@@ -1,19 +1,29 @@
-// ═══════════════════════════════════════════════════════════
-// @vitamin/orchestrator — 内部事件总线
-// ═══════════════════════════════════════════════════════════
-// Phase 1: 独立事件总线，不修改 @vitamin/hooks 基础包
-// Phase 2: 可考虑与 HookRegistry 统一
-
-import type { OrchestratorTask, TaskError, TaskOutput } from './types'
-
-// ═══ 事件类型定义 ═══
+// 基于 @vitamin/shared TypedEventEmitter，扩展异步 emit 能力
+// 通过 bridgeEventBusToHooks 统一桥接到 @vitamin/hooks
+import { TypedEventEmitter } from '@vitamin/shared'
+import type { OrchestratorTask, SubagentResult, TaskError, TaskOutput, HookRegistryHandle } from './types'
 
 export interface OrchestratorEventMap {
+  // 任务生命周期
   'task.created': { task: OrchestratorTask }
   'task.started': { task: OrchestratorTask; agent: string }
-  'task.completed': { task: OrchestratorTask; result: TaskOutput }
+  'task.completed': { task: OrchestratorTask; result: TaskOutput; subagentResult?: SubagentResult }
   'task.failed': { task: OrchestratorTask; error: TaskError }
   'task.cancelled': { taskId: string }
+  // checkpoint 恢复
+  'task.recovered': { task: OrchestratorTask; fromCheckpoint: string }
+  // 计划生命周期
+  'plan.started': { planId: string; totalSteps: number }
+  'plan.step_completed': { planId: string; stepId: string; remaining: number }
+  'plan.completed': { planId: string }
+  // review 门禁
+  'review.requested': { taskId: string; reviewType: string }
+  'review.passed': { taskId: string; reviewType: string }
+  'review.failed': { taskId: string; reviewType: string; issues: string[] }
+  // 澄清通道
+  'clarify.requested': { taskId: string; question: string; reason: string }
+  'clarify.responded': { taskId: string; answer: string; escalation?: string }
+  'clarify.rejected': { taskId: string; reason: string }
 }
 
 export type OrchestratorEventType = keyof OrchestratorEventMap
@@ -22,37 +32,25 @@ export type OrchestratorEventHandler<T extends OrchestratorEventType> = (
   payload: OrchestratorEventMap[T],
 ) => void | Promise<void>
 
-// ═══ EventBus 实现 ═══
+// 将 payload 类型映射为 TypedEventEmitter 所需的 handler 函数签名 
+type OrchestratorEvents = {
+  [K in OrchestratorEventType]: (payload: OrchestratorEventMap[K]) => void
+}
 
-export class OrchestratorEventBus {
-  private listeners = new Map<string, Set<OrchestratorEventHandler<never>>>()
-
-  on<T extends OrchestratorEventType>(
-    event: T,
-    handler: OrchestratorEventHandler<T>,
-  ): () => void {
-    if (!this.listeners.has(event)) {
-      this.listeners.set(event, new Set())
-    }
-
-    const handlers = this.listeners.get(event)!
-    handlers.add(handler as OrchestratorEventHandler<never>)
-
-    return () => {
-      handlers.delete(handler as OrchestratorEventHandler<never>)
-    }
-  }
-
-  async emit<T extends OrchestratorEventType>(
-    event: T,
-    payload: OrchestratorEventMap[T],
+export class OrchestratorEventBus extends TypedEventEmitter<OrchestratorEvents> {
+  // 异步 emit：触发事件并等待所有 handler 完成（包括返回 Promise 的 handler）。
+  // 覆盖父类的同步 emit，保证 await eventBus.emit(...) 能等待异步 handler。
+  override async emit<K extends OrchestratorEventType>(
+    event: K,
+    ...args: Parameters<OrchestratorEvents[K]>
   ): Promise<void> {
-    const handlers = this.listeners.get(event)
-    if (!handlers) return
+    // 访问父类 private listeners（运行时可达）
+    const set = (this as any).listeners[event] as Set<OrchestratorEvents[K]> | undefined
+    if (!set) return
 
     const promises: Promise<void>[] = []
-    for (const handler of handlers) {
-      const result = (handler as OrchestratorEventHandler<T>)(payload)
+    for (const handler of set) {
+      const result = (handler as OrchestratorEventHandler<K>)(args[0])
       if (result instanceof Promise) {
         promises.push(result)
       }
@@ -63,21 +61,54 @@ export class OrchestratorEventBus {
     }
   }
 
-  off<T extends OrchestratorEventType>(
-    event: T,
-    handler: OrchestratorEventHandler<T>,
-  ): void {
-    const handlers = this.listeners.get(event)
-    if (handlers) {
-      handlers.delete(handler as OrchestratorEventHandler<never>)
-    }
-  }
-
+  // 移除所有监听器（别名 removeAllListeners） 
   clear(): void {
-    this.listeners.clear()
+    this.removeAllListeners()
   }
 }
 
 export function createEventBus(): OrchestratorEventBus {
   return new OrchestratorEventBus()
+}
+
+// ═══ EventBus → Hooks 桥接 ═══
+const ORCHESTRATOR_EVENTS: OrchestratorEventType[] = [
+  'task.created', 
+  'task.started', 
+  'task.completed', 
+  'task.failed', 
+  'task.cancelled',
+  'task.recovered',
+  'plan.started', 
+  'plan.step_completed', 
+  'plan.completed',
+  'review.requested', 
+  'review.passed', 
+  'review.failed',
+  'clarify.requested', 
+  'clarify.responded', 
+  'clarify.rejected',
+]
+
+// 将 OrchestratorEventBus 的所有事件桥接到 HookRegistry。
+// 每当 eventBus 触发事件时，自动调用 hooks.emit(timing, payload)。
+//
+// @returns 清理函数，调用后取消所有订阅
+export function bridgeEventBusToHooks(
+  eventBus: OrchestratorEventBus,
+  hooks: HookRegistryHandle,
+): () => void {
+  const unsubs: Array<() => void> = []
+
+  for (const event of ORCHESTRATOR_EVENTS) {
+    unsubs.push(
+      eventBus.on(event, async (payload: OrchestratorEventMap[typeof event]) => {
+        await hooks.emit(event, payload)
+      }),
+    )
+  }
+
+  return () => {
+    for (const unsub of unsubs) unsub()
+  }
 }

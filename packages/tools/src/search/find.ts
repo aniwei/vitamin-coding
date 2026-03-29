@@ -21,7 +21,7 @@ const logger = createLogger('@vitamin/tools:find')
 const FindArgsSchema = z.object({
   pattern: z.string().describe('File name pattern with optional wildcards (*, ?), e.g. "*.ts", "data-??.json"'),
   path: z.string().optional().describe('Search starting path (default is project root)'),
-  limit: z.number().int().min(1).max(500).optional().default(100).describe('Maximum number of results to return'),
+  limit: z.number().int().min(1).max(1000).optional().default(1000).describe('Maximum number of results to return'),
 })
 
 type FindArgs = z.infer<typeof FindArgsSchema>

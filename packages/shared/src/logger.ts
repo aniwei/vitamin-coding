@@ -5,6 +5,8 @@ import { createRequire } from 'node:module'
 import { PassThrough } from 'node:stream'
 import { Subscription } from './subscrption'
 
+export type { Logger } from 'pino'
+
 const require = createRequire(import.meta.url)
 
 function isPrettyAvailable(): boolean {

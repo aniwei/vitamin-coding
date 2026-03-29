@@ -19,5 +19,5 @@
       "@vitamin/tools": ["../tools/src/index.ts"]
     }
   },
-  "include": ["src"]
+  "include": ["src", "tests"]
 }

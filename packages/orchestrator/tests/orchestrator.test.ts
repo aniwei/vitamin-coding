@@ -42,6 +42,25 @@ function createStubSessionFactory(output: string = 'test output'): SessionFactor
   }
 }
 
+function createCapturingSessionFactory(output: string = 'test output') {
+  const calls: Array<Record<string, unknown> | undefined> = []
+  const sessions = new Map<string, AgentSessionHandle>()
+
+  const factory: SessionFactory = {
+    async createSession(options) {
+      calls.push(options as Record<string, unknown> | undefined)
+      const session = createStubSession(output)
+      sessions.set(session.id, session)
+      return session
+    },
+    async removeSession(id: string) {
+      return sessions.delete(id)
+    },
+  }
+
+  return { factory, calls }
+}
+
 function createStubToolRegistry(): ToolRegistryHandle {
   return {
     filterByNames: (_names: string[]) => [],
@@ -198,6 +217,25 @@ describe('AgentRegistry', () => {
     expect(result.output).toBe('agent response')
   })
 
+  it('should preserve default tool fallback when agent has no explicit tool allowlist', async () => {
+    const { factory, calls } = createCapturingSessionFactory('agent response')
+    const registry = createAgentRegistry({
+      sessionFactory: factory,
+      toolRegistry: createStubToolRegistry(),
+    })
+
+    registry.register({
+      name: 'general',
+      description: 'General agent',
+      model: 'gpt-4',
+    })
+
+    const result = await registry.call('general', 'do something')
+
+    expect(result.success).toBe(true)
+    expect(calls[0]?.tools).toBeUndefined()
+  })
+
   it('should return error when calling nonexistent agent', async () => {
     const registry = createAgentRegistry({
       sessionFactory: createStubSessionFactory(),
@@ -278,6 +316,37 @@ describe('BackgroundManager', () => {
     expect(output.success).toBe(true)
     expect(output.status).toBe('completed')
     expect(output.output).toBe('bg result')
+  })
+
+  it('should preserve default tool fallback for background tasks without explicit tools', async () => {
+    const eventBus = createEventBus()
+    const { factory, calls } = createCapturingSessionFactory('done')
+    const bgm = createBackgroundManager({
+      eventBus,
+      sessionFactory: factory,
+      toolRegistry: createStubToolRegistry(),
+    })
+
+    const task = {
+      id: crypto.randomUUID(),
+      kind: 'delegate' as const,
+      status: 'pending' as const,
+      mode: 'background' as const,
+      input: { prompt: 'background work' },
+      attempts: 0,
+      maxAttempts: 3,
+      correlationId: crypto.randomUUID(),
+      createdAt: Date.now(),
+    }
+
+    await bgm.submit(task, {
+      name: 'general',
+      description: 'General agent',
+      model: 'gpt-4',
+    })
+    await new Promise((r) => setTimeout(r, 20))
+
+    expect(calls[0]?.tools).toBeUndefined()
   })
 
   it('should cancel running task', async () => {
@@ -541,6 +610,50 @@ describe('Dispatcher', () => {
     })
 
     expect(events).toEqual(['task.created', 'task.started', 'task.completed'])
+  })
+
+  it('should forward maxToolTurns and emit structured subagent results', async () => {
+    const eventBus = createEventBus()
+    const { factory, calls } = createCapturingSessionFactory('done_with_concerns\nNeed extra review')
+    let completedPayload: { subagentResult?: { status: string; concerns?: string } } | undefined
+
+    eventBus.on('task.completed', (payload) => {
+      completedPayload = payload as { subagentResult?: { status: string; concerns?: string } }
+    })
+
+    const toolRegistry = createStubToolRegistry()
+    const agentRegistry = createAgentRegistry({ sessionFactory: factory, toolRegistry })
+    agentRegistry.register({
+      name: 'reviewer',
+      description: 'Review agent',
+      model: 'gpt-4',
+      maxToolTurns: 7,
+    })
+
+    const backgroundManager = createBackgroundManager({
+      eventBus,
+      sessionFactory: factory,
+      toolRegistry,
+    })
+
+    const dispatcher = createDispatcher({
+      agentRegistry,
+      backgroundManager,
+      sessionFactory: factory,
+      toolRegistry,
+      eventBus,
+    })
+
+    const result = await dispatcher.dispatch({
+      prompt: 'review this',
+      subagent: 'reviewer',
+      mode: 'sync',
+    })
+
+    expect(result.success).toBe(true)
+    expect(calls[0]?.maxToolTurns).toBe(7)
+    expect(completedPayload?.subagentResult?.status).toBe('done_with_concerns')
+    expect(completedPayload?.subagentResult?.concerns).toBe('Need extra review')
   })
 
   it('should retry failed task and reuse same task id', async () => {
@@ -856,7 +969,7 @@ describe('bootstrapOrchestrator', () => {
     expect(loadResult.name).toBe('sk-/test')
   })
 
-  it('performWork returns explicit NOT_IMPLEMENTED', async () => {
+  it('performWork returns NO_PLAN_STORE when no planFileStore configured', async () => {
     const { callbacks } = bootstrapOrchestrator({
       sessionFactory: createStubSessionFactory(),
       toolRegistry: createStubToolRegistry(),
@@ -864,8 +977,8 @@ describe('bootstrapOrchestrator', () => {
 
     const result = await callbacks.performWork('some-plan')
     expect(result.success).toBe(false)
-    expect(result.error).toBe('NOT_IMPLEMENTED')
-    expect(result.message).toContain('plan protocol support')
+    expect(result.error).toBe('NO_PLAN_STORE')
+    expect(result.message).toContain('PlanFileStore')
   })
 })
 
@@ -1325,7 +1438,7 @@ describe('End-to-End Callbacks', () => {
     expect(['completed', 'running']).toContain(afterRetry.status)
   })
 
-  it('callbacks.performWork returns NOT_IMPLEMENTED', async () => {
+  it('callbacks.performWork returns NO_PLAN_STORE when no planFileStore', async () => {
     const { callbacks } = bootstrapOrchestrator({
       sessionFactory: createStubSessionFactory(),
       toolRegistry: createStubToolRegistry(),
@@ -1333,7 +1446,7 @@ describe('End-to-End Callbacks', () => {
 
     const result = await callbacks.performWork('my-plan')
     expect(result.success).toBe(false)
-    expect(result.error).toBe('NOT_IMPLEMENTED')
+    expect(result.error).toBe('NO_PLAN_STORE')
   })
 })
 
@@ -1856,5 +1969,68 @@ describe('Realistic SessionFactory Integration', () => {
   it('getSession returns undefined in Phase 1', () => {
     const { factory } = createRealisticSessionFactory()
     expect(factory.getSession?.('nonexistent')).toBeUndefined()
+  })
+})
+
+// ═══ bridgeEventBusToHooks ═══
+
+describe('bridgeEventBusToHooks', () => {
+  it('forwards all orchestrator eventBus events to hooks.emit', async () => {
+    const { bridgeEventBusToHooks } = await import('../src/events')
+    const eventBus = createEventBus()
+    const emitted: Array<{ timing: string; input: unknown }> = []
+
+    const hooks = {
+      emit: async (timing: string, input: unknown) => {
+        emitted.push({ timing, input })
+      },
+    }
+
+    const cleanup = bridgeEventBusToHooks(eventBus, hooks)
+
+    await eventBus.emit('task.created', { task: { id: 't1' } } as never)
+    await eventBus.emit('plan.started', { planId: 'p1', totalSteps: 3 })
+    await eventBus.emit('review.passed', { taskId: 't1', reviewType: 'spec' })
+
+    expect(emitted).toHaveLength(3)
+    expect(emitted[0]).toEqual({ timing: 'task.created', input: { task: { id: 't1' } } })
+    expect(emitted[1]).toEqual({ timing: 'plan.started', input: { planId: 'p1', totalSteps: 3 } })
+    expect(emitted[2]).toEqual({ timing: 'review.passed', input: { taskId: 't1', reviewType: 'spec' } })
+
+    cleanup()
+  })
+
+  it('cleanup stops forwarding events', async () => {
+    const { bridgeEventBusToHooks } = await import('../src/events')
+    const eventBus = createEventBus()
+    const emitted: string[] = []
+
+    const hooks = {
+      emit: async (timing: string) => { emitted.push(timing) },
+    }
+
+    const cleanup = bridgeEventBusToHooks(eventBus, hooks)
+    await eventBus.emit('task.cancelled', { taskId: 'x' })
+    expect(emitted).toHaveLength(1)
+
+    cleanup()
+    await eventBus.emit('task.cancelled', { taskId: 'y' })
+    expect(emitted).toHaveLength(1) // no new events after cleanup
+  })
+
+  it('is automatically wired when hooks provided to createOrchestrator', async () => {
+    const emitted: string[] = []
+    const hooks = {
+      emit: async (timing: string) => { emitted.push(timing) },
+    }
+
+    const orchestrator = createOrchestrator({
+      sessionFactory: createStubSessionFactory(),
+      toolRegistry: createStubToolRegistry(),
+      hooks,
+    })
+
+    await orchestrator.eventBus.emit('plan.completed', { planId: 'p1' })
+    expect(emitted).toContain('plan.completed')
   })
 })

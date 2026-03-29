@@ -7,6 +7,7 @@
 export type TaskStatus = 'pending' | 'running' | 'waiting_review' | 'completed' | 'failed' | 'cancelled'
 export type TaskKind = 'delegate' | 'agent_call' | 'plan' | 'adhoc'
 export type TaskMode = 'sync' | 'background'
+export type ChildSessionMode = 'ephemeral' | 'sticky'
 
 export interface TaskInput {
   prompt: string
@@ -14,6 +15,7 @@ export interface TaskInput {
   category?: string
   planRef?: string
   sessionId?: string
+  sessionMode?: ChildSessionMode
 }
 
 export interface TaskOutput {
@@ -67,6 +69,15 @@ export interface SubagentResult {
   concerns?: string
   missingContext?: string
   blockReason?: string
+  changedFiles?: string[]
+  verificationPerformed?: string
+  risksOrConcerns?: string
+}
+
+// ═══ Model Selector ═══
+
+export interface ModelSelector {
+  selectModel(task: OrchestratorTask, spec: AgentSpec): string | undefined
 }
 
 // ═══ Dispatch ═══
@@ -78,6 +89,8 @@ export interface DispatchArgs {
   subagent?: string
   category?: string
   mode: DispatchMode
+  sessionId?: string
+  sessionMode?: ChildSessionMode
 }
 
 export interface DispatchResult {
@@ -113,6 +126,8 @@ export interface Dispatcher {
     prompt: string
     category?: string
     subagent?: string
+    sessionId?: string
+    sessionMode?: ChildSessionMode
   }): Promise<{
     id: string
     success: boolean
@@ -185,6 +200,7 @@ export interface SessionFactory {
     model?: { provider: string; name: string; api?: string } | string
     systemPrompt?: string
     tools?: unknown[]
+    maxToolTurns?: number
     workspaceDir?: string
   }): Promise<AgentSessionHandle>
 
@@ -213,6 +229,26 @@ export interface OrchestratorOptions {
   hooks?: HookRegistryHandle
   maxConcurrent?: number
   skillAdapter?: SkillAdapter
+  /** Phase 2: 计划文件存储后端 (提供后 performWork 可用) */
+  planFileStore?: import('./plan-loader').PlanFileStore
+  /** Phase 2: Checkpoint 存储 (不提供时使用内存实现) */
+  checkpointStore?: import('./checkpoint-store').CheckpointStore
+  /** Phase 2: PlanRun 执行态存储 (不提供时使用内存实现) */
+  planRunStore?: import('./plan-run').PlanRunStore
+  /** 当前会话 ID（用于关联 PlanRun / Checkpoint） */
+  sessionId?: string
+  /** Phase 3: 澄清通道 (提供后 clarifyRequest 工具可用) */
+  clarifyChannel?: import('./clarify-channel').ClarifyChannel
+  /** Phase 3: 质量门禁 (提供后 performWork 步骤完成后自动执行 review) */
+  reviewGate?: import('./review-gate').ReviewGate
+  /** Phase 3: 重试策略 (不提供时使用默认 exponential backoff) */
+  retryStrategy?: import('./retry-strategy').RetryStrategy
+  /** Phase 3: 熔断器 (不提供时不启用熔断) */
+  circuitBreaker?: import('./retry-strategy').CircuitBreaker
+  /** Phase 3: 组合路由器 (提供后 AgentRegistry.resolve 使用策略路由) */
+  router?: import('./routing-strategy').CompositeRouter
+  /** 自适应模型选择器 (提供后 dispatcher 根据任务特征动态选择模型) */
+  modelSelector?: ModelSelector
 }
 
 export interface ToolRegistryHandle {

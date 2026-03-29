@@ -16,6 +16,8 @@
   "scripts": {
     "run:example:auth": "tsx example/auth-store-example.ts",
     "run:example": "tsx example/vitamin-app-example.tsx",
+    "run:example:agent-flow": "tsx example/agent-flow-no-breakpoints.ts",
+    "run:example:lead": "tsx example/lead-session-flow.ts",
     "run:example:smoke": "tsx example/vitamin-app-smoke.tsx",
     "build": "tsup",
     "typecheck:project": "tsc -p tsconfig.json --noEmit",
@@ -35,13 +37,7 @@
     "@vitamin/orchestrator": "workspace:*",
     "@vitamin/session": "workspace:*",
     "@vitamin/shared": "workspace:*",
-    "@vitamin/tools": "workspace:*",
-    "remark-frontmatter": "^5.0.0",
-    "remark-parse": "^11.0.0",
-    "unified": "^11.0.0",
-    "vfile": "^6.0.0",
-    "yaml": "^2.8.3",
-    "zod": "^4.0.0"
+    "@vitamin/tools": "workspace:*"
   },
   "publishConfig": {
     "access": "public",

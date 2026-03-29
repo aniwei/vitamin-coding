@@ -75,6 +75,13 @@ export interface Model<T = Api> {
   compat?: Compat
 }
 
+// 模型规格 — 用于模型解析入口
+// 支持三种形态：
+//   1. 字符串 id，如 "github-copilot/gpt-4.1"
+//   2. 轻量对象 { provider, name, api? }
+//   3. 完整 Model 对象
+export type ModelSpec = string | { provider: string; name: string; api?: Api } | Model
+
 // 统一内容部分类型
 export interface TextContent {
   type: 'text'

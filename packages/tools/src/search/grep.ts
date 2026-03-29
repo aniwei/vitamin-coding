@@ -1,18 +1,33 @@
 import { z } from 'zod'
-import { resolve } from 'node:path'
-import { TOOLS_MAX_OUTPUT_LINES } from '@vitamin/env'
-import { exists, isDirectory, normalizePath } from '@vitamin/shared'
+import { resolve, relative } from 'node:path'
+import { readFile } from 'node:fs/promises'
+import { spawn as nodeSpawn } from 'node:child_process'
+import { 
+  TOOLS_MAX_OUTPUT_BYTES, 
+  TOOLS_MAX_OUTPUT_LINES 
+} from '@vitamin/env'
+import { 
+  exists, 
+  formatBytes,
+  normalizePath, 
+  truncateHead,
+  truncateLine 
+} from '@vitamin/shared'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 import type { BinaryToolExecutorRegistry } from '../binary/binary-executor-registry'
+import { BinaryToolExecutor } from '../binary/binary-executor'
+
+const GREP_DEFAULT_LIMIT = 100
+const GREP_MAX_LINE_LENGTH = 500
 
 const GrepArgsSchema = z.object({
-  pattern: z.string().describe('Search pattern (regex or plain text)'),
-  path: z.string().optional().describe('Search path (default is project root)'),
+  pattern: z.string().describe('Search pattern (regex or literal string)'),
+  path: z.string().optional().describe('Directory or file to search (default: current directory)'),
   glob: z.string().optional().describe('Filter files by glob pattern, e.g. "*.ts" or "**/*.spec.ts"'),
-  ignore: z.boolean().optional().default(false).describe('Ignore case when matching'),
-  literal: z.boolean().optional().default(false).describe('Match pattern literally (case-sensitive)'),
-  context: z.number().int().min(1).max(1000).optional().default(100).describe('Number of context lines to include around matches'),
-  limit: z.number().optional().describe('Maximum number of results to return'),
+  ignoreCase: z.boolean().optional().describe('Case-insensitive search (default: false)'),
+  literal: z.boolean().optional().describe('Treat pattern as literal string instead of regex (default: false)'),
+  context: z.number().int().min(0).optional().describe('Number of lines to show before and after each match (default: 0)'),
+  limit: z.number().int().min(1).optional().describe(`Maximum number of matches to return (default: ${GREP_DEFAULT_LIMIT})`),
 })
 
 type GrepArgs = z.infer<typeof GrepArgsSchema>
@@ -21,6 +36,11 @@ interface GrepToolOptions {
   binaryToolExecutorRegistry?: BinaryToolExecutorRegistry
 }
 
+interface RgMatch {
+  path: string
+  lineNumber: number
+  text: string
+}
 
 export function createGrep(
   projectRoot: string,
@@ -29,47 +49,40 @@ export function createGrep(
   
   return {
     name: 'grep',
-    description: 'Search for text or regex patterns in the project. Returns matching file names, line numbers, and content.',
+    description: `Search file contents for pattern matches. Returns matching lines with file paths and line numbers. Respects .gitignore. Truncated to ${GREP_DEFAULT_LIMIT} matches or ${TOOLS_MAX_OUTPUT_BYTES / 1024}KB. Long lines truncated to ${GREP_MAX_LINE_LENGTH} chars.`,
     parameters: GrepArgsSchema,
     visibility: 'always',
 
     async execute({ params }): Promise<ToolResult> {
-      const searchDir = resolve(projectRoot, params.path ?? '.')
-      const normalizedSearchDir = normalizePath(searchDir)
+      const searchPath = resolve(projectRoot, params.path ?? '.')
+      const normalizedSearchPath = normalizePath(searchPath)
 
-      const rg = await options.binaryToolExecutorRegistry?.get('rg')
-      if (!rg) {
-        throw new Error('ripgrep (rg) executor is not available')
-      }
-
-      if (!await exists(normalizedSearchDir)) {
-        throw new Error(`Search path does not exist: ${params.path}`)
-      }
-
-      if (!await isDirectory(normalizedSearchDir)) {
-        throw new Error(`Search path is not a directory: ${params.path}`)
+      if (!await exists(normalizedSearchPath)) {
+        throw new Error(`Search path does not exist: ${params.path ?? '.'}`)
       }
 
       return await grep(
         params.pattern,
-        normalizedSearchDir,
-        params.glob ?? '',
+        normalizedSearchPath,
+        projectRoot,
+        params.glob,
         params.literal ?? false,
-        params.ignore ?? false,
-        params.context && params.context > 0 ? params.context : 0,
-        Math.max(1, params.limit ?? TOOLS_MAX_OUTPUT_LINES),
+        params.ignoreCase ?? false,
+        params.context ?? 0,
+        params.limit ?? GREP_DEFAULT_LIMIT,
         options.binaryToolExecutorRegistry,
       )
     }
   }
 }
 
-function prepareSearchArgs(
+function buildRgArgs(
   pattern: string,
   targetDir: string,
-  ignore: boolean,
+  ignoreCase: boolean,
   literal: boolean,
-  glob: string,
+  glob?: string,
+  limit?: number,
 ): string[] {
   const args: string[] = [
     '--json', 
@@ -78,7 +91,7 @@ function prepareSearchArgs(
     '--hidden'
   ]
 
-  if (ignore) {
+  if (ignoreCase) {
     args.push('--ignore-case')
   }
 
@@ -90,31 +103,243 @@ function prepareSearchArgs(
     args.push('--glob', glob)
   }
 
+  if (limit != null) {
+    args.push('--max-count', String(limit))
+  }
+
   args.push(pattern, targetDir)
 
   return args
 }
 
+function parseRgJsonOutput(stdout: string): RgMatch[] {
+  const matches: RgMatch[] = []
+
+  for (const line of stdout.split('\n')) {
+    if (!line.trim()) continue
+
+    try {
+      const parsed = JSON.parse(line)
+
+      if (parsed.type === 'match') {
+        const data = parsed.data
+        matches.push({
+          path: data.path?.text ?? '',
+          lineNumber: data.line_number ?? 0,
+          text: data.lines?.text?.replace(/\n$/, '') ?? '',
+        })
+      }
+    } catch {
+      // Skip malformed JSON lines
+    }
+  }
+
+  return matches
+}
+
+async function readContextLines(
+  filePath: string,
+  matchLineNumber: number,
+  contextSize: number,
+): Promise<{ before: { line: number; text: string }[]; after: { line: number; text: string }[] }> {
+  if (contextSize <= 0) {
+    return { before: [], after: [] }
+  }
+
+  try {
+    const content = await readFile(filePath, 'utf-8')
+    const lines = content.split('\n')
+    const idx = matchLineNumber - 1 // 0-based
+
+    const beforeStart = Math.max(0, idx - contextSize)
+    const afterEnd = Math.min(lines.length - 1, idx + contextSize)
+
+    const before: { line: number; text: string }[] = []
+    for (let i = beforeStart; i < idx; i++) {
+      before.push({ line: i + 1, text: lines[i] ?? '' })
+    }
+
+    const after: { line: number; text: string }[] = []
+    for (let i = idx + 1; i <= afterEnd; i++) {
+      after.push({ line: i + 1, text: lines[i] ?? '' })
+    }
+
+    return { before, after }
+  } catch {
+    return { before: [], after: [] }
+  }
+}
+
+function formatMatchWithContext(
+  match: RgMatch,
+  relativePath: string,
+  context: { before: { line: number; text: string }[]; after: { line: number; text: string }[] },
+): string {
+  const outputLines: string[] = []
+
+  for (const ctx of context.before) {
+    const { text: truncated } = truncateLine(ctx.text, GREP_MAX_LINE_LENGTH)
+    outputLines.push(`${relativePath}-${ctx.line}- ${truncated}`)
+  }
+
+  const { text: matchTruncated } = truncateLine(match.text, GREP_MAX_LINE_LENGTH)
+  outputLines.push(`${relativePath}:${match.lineNumber}: ${matchTruncated}`)
+
+  for (const ctx of context.after) {
+    const { text: truncated } = truncateLine(ctx.text, GREP_MAX_LINE_LENGTH)
+    outputLines.push(`${relativePath}-${ctx.line}- ${truncated}`)
+  }
+
+  return outputLines.join('\n')
+}
+
+async function executeRg(
+  rgPath: string, 
+  args: string[]
+): Promise<{ stdout: string; exitCode: number | null; error?: string }> {
+  return new Promise((resolve) => {
+    const ps = nodeSpawn(rgPath, args, { stdio: 'pipe' })
+    const stdout: Buffer[] = []
+
+    ps.stdout.on('data', (data) => stdout.push(data))
+    ps.stderr.on('data', () => {}) // drain stderr
+
+    ps.on('error', (err) => {
+      resolve({ stdout: '', exitCode: -999, error: err.message })
+    })
+
+    ps.on('close', (code) => {
+      // rg exits 0 for matches, 1 for no matches, 2 for errors
+      // all are valid outcomes
+      resolve({ 
+        stdout: Buffer.concat(stdout).toString('utf-8'), 
+        exitCode: code 
+      })
+    })
+  })
+}
+
 async function grep(
   pattern: string,
   targetDir: string,
-  glob: string,
-  ignore: boolean,
+  projectRoot: string,
+  glob: string | undefined,
   literal: boolean,
-  _context: number,
-  _limit: number,
+  ignoreCase: boolean,
+  contextSize: number,
+  limit: number,
   binaryExecutorRegistry?: BinaryToolExecutorRegistry
 ): Promise<ToolResult> {
-  const args = prepareSearchArgs(
-    pattern,
-    targetDir,
-    ignore,
-    literal,
-    glob
-  )
+  if (!binaryExecutorRegistry) {
+    throw new Error('Binary tool executor registry is not available')
+  }
 
-  const rg = await binaryExecutorRegistry?.ensure('rg')
-  await rg?.execute(args, {})
+  const rgTool = binaryExecutorRegistry.get('rg')
+  if (!rgTool) {
+    throw new Error('ripgrep (rg) executor is not available')
+  }
 
-  throw new Error('grep tool is not fully implemented yet')
+  // Ensure rg is downloaded and available
+  let rgPath: string
+  if (rgTool instanceof BinaryToolExecutor) {
+    rgPath = await rgTool.ensure()
+  } else {
+    rgPath = 'rg'
+  }
+
+  const args = buildRgArgs(pattern, targetDir, ignoreCase, literal, glob, limit)
+
+  // Execute rg directly — we handle non-zero exit codes ourselves
+  // because rg exit code 1 = no matches (valid)
+  const result = await executeRg(rgPath, args)
+
+  // Spawn failure (binary not found, permission denied, etc.)
+  if (result.exitCode === -999) {
+    throw new Error(`Failed to execute ripgrep: ${result.error ?? 'unknown error'}`)
+  }
+
+  // rg exit code 2 means error
+  if (result.exitCode === 2) {
+    throw new Error(`ripgrep error while searching for "${pattern}"`)
+  }
+
+  // Parse JSON output
+  const allMatches = parseRgJsonOutput(result.stdout)
+
+  if (allMatches.length === 0) {
+    return {
+      content: [{ type: 'text', text: 'No matches found.' }],
+    }
+  }
+
+  // Apply limit
+  const matchLimitReached = allMatches.length > limit
+  const matches = allMatches.slice(0, limit)
+
+  // Format output with context lines
+  const outputBlocks: string[] = []
+  let linesTruncated = 0
+
+  // Group matches by file for efficient context reading
+  const matchesByFile = new Map<string, RgMatch[]>()
+  for (const match of matches) {
+    const existing = matchesByFile.get(match.path)
+    if (existing) {
+      existing.push(match)
+    } else {
+      matchesByFile.set(match.path, [match])
+    }
+  }
+
+  for (const [filePath, fileMatches] of matchesByFile) {
+    const relativePath = filePath.startsWith(projectRoot)
+      ? relative(projectRoot, filePath)
+      : relative(targetDir, filePath)
+
+    for (const match of fileMatches) {
+      const context = await readContextLines(filePath, match.lineNumber, contextSize)
+      const block = formatMatchWithContext(match, relativePath, context)
+      outputBlocks.push(block)
+
+      // Track truncated lines
+      if (match.text.length > GREP_MAX_LINE_LENGTH) linesTruncated++
+      for (const ctx of [...context.before, ...context.after]) {
+        if (ctx.text.length > GREP_MAX_LINE_LENGTH) linesTruncated++
+      }
+    }
+  }
+
+  const raw = outputBlocks.join('\n--\n')
+
+  const truncation = truncateHead(raw, {
+    maxLines: TOOLS_MAX_OUTPUT_LINES,
+    maxBytes: TOOLS_MAX_OUTPUT_BYTES,
+  })
+
+  let output = truncation.content
+  const details: Record<string, unknown> = { truncation }
+  const notices: string[] = []
+
+  if (matchLimitReached) {
+    notices.push(`${limit} match limit reached — use a more specific pattern or increase limit`)
+    details.matchLimitReached = limit
+  }
+
+  if (truncation.truncated) {
+    notices.push(`Output truncated (${formatBytes(TOOLS_MAX_OUTPUT_BYTES)} limit)`)
+  }
+
+  if (linesTruncated > 0) {
+    notices.push(`${linesTruncated} long lines truncated to ${GREP_MAX_LINE_LENGTH} chars`)
+    details.linesTruncated = linesTruncated
+  }
+
+  if (notices.length > 0) {
+    output += '\n\n(' + notices.join('. ') + ')'
+  }
+
+  return {
+    content: [{ type: 'text', text: output }],
+    details,
+  }
 }

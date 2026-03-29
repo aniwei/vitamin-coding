@@ -2,9 +2,10 @@ import { describe, expect, it } from 'vitest'
 import { Agent } from '@vitamin/agent'
 import { createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent } from '@vitamin/ai'
 import { createHookRegistry } from '@vitamin/hooks'
+import { attachLogListener, createLogger } from '@vitamin/shared'
 
-import { CodingSessionManager as SessionManager } from '../src/coding-session-manager'
-import { AgentSession } from '../src/agent-session'
+import { CodingSessionManager as SessionManager } from '../src/session/coding-session-manager'
+import { AgentSession } from '../src/session/agent-session'
 
 function makeModel(): Model {
   return {
@@ -45,6 +46,28 @@ function makeStream() {
   }
 }
 
+function createLogCollector(entries: string[]) {
+  const name = `coding-session-manager-test-${crypto.randomUUID()}`
+  const detach = attachLogListener((log) => {
+    const entry = log as { name?: string; msg?: string }
+    if (entry.name === name && entry.msg) {
+      entries.push(entry.msg)
+    }
+  })
+
+  return {
+    logger: createLogger(name, {
+      level: 'debug',
+      destination: '/tmp/vitamin-coding-test.log',
+    }),
+    detach,
+  }
+}
+
+async function flushLogs(): Promise<void> {
+  await new Promise((resolve) => setTimeout(resolve, 20))
+}
+
 // ═══ SessionManager ═══
 
 describe('SessionManager', () => {
@@ -70,6 +93,24 @@ describe('SessionManager', () => {
       expect(session).toBeInstanceOf(AgentSession)
       expect(session.id).toBe('test-1')
       expect(mgr.listSessions()).toHaveLength(1)
+    })
+
+    it('emits user-facing lifecycle logs', async () => {
+      const entries: string[] = []
+      const collector = createLogCollector(entries)
+      const mgr = SessionManager.inMemory({
+        model: makeModel(),
+        hooks: createHookRegistry({ preset: 'none' }),
+        logger: collector.logger,
+      })
+
+      await mgr.createSession({ id: 'log-session' })
+      await mgr.removeSession('log-session')
+      await flushLogs()
+      collector.detach()
+
+      expect(entries.some((entry) => entry.includes('created'))).toBe(true)
+      expect(entries.some((entry) => entry.includes('removed'))).toBe(true)
     })
 
     it('retrieves sessions by ID', async () => {

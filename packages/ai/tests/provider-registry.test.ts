@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { createDefaultProviderRegistry, createProviderRegistry } from '../src/provider-registry'
+import { createAuthStore } from '../src/auth-store'
 
 import type { Model, ProviderStream, StreamContext, StreamEvent, StreamOptions } from '../src/types'
 
@@ -77,10 +78,10 @@ describe('ProviderRegistry', () => {
       expect(provider.id).toBe('github-copilot')
     })
 
-    it('#then can compose with resolveOAuthKey', async () => {
-      const registry = createDefaultProviderRegistry({
-        resolveOAuthKey: async () => 'oauth-token',
-      })
+    it('#then can compose with custom auth store', async () => {
+      const auth = createAuthStore()
+      await auth.setCredentialKey('github-copilot', 'oauth-token')
+      const registry = createDefaultProviderRegistry({ auth })
       const provider = registry.get('github-copilot')
 
       const oldCopilot = process.env['COPILOT_GITHUB_TOKEN']

@@ -11,6 +11,7 @@ import type {
 } from '@vitamin/ai'
 
 import type { Devtools, BreakpointPoint } from '@vitamin/devtools'
+import type pino from 'pino'
 import type { ToolHookExecutor } from './tool-executor'
 
 // Agent 运行状态
@@ -86,6 +87,7 @@ export interface AgentRunContext {
   systemPrompt: string
   messages: AgentMessage[]
   tools: AgentTool[]
+  logger?: pino.Logger
   toolHookExecutor?: ToolHookExecutor
   agentName?: string
   sessionId?: string
@@ -109,6 +111,7 @@ export interface AgentRunContext {
 export interface AgentLoopContext {
   model: Model
   systemPrompt: string
+  logger?: pino.Logger
   // AgentMessage[] → LLM Message[] 转换
   convertToLLM: (messages: AgentMessage[]) => Message[] | Promise<Message[]>
   

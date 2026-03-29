@@ -24,6 +24,27 @@ describe('HookRegistry', () => {
         expect(registered[0]?.name).toBe('test-hook')
       })
 
+      it('#then system-prompt timing participates in registry enumeration and clear', () => {
+        const engine = createHookRegistry()
+        const hook: HookRegistration<'system-prompt.transform'> = {
+          name: 'system-prompt-hook',
+          timing: 'system-prompt.transform',
+          priority: 10,
+          enabled: true,
+          handler() {},
+        }
+
+        engine.register(hook)
+
+        expect(engine.getRegistered('system-prompt.transform')).toHaveLength(1)
+        expect(engine.getRegistered().some((item) => item.name === 'system-prompt-hook')).toBe(true)
+
+        engine.clear()
+
+        expect(engine.getRegistered('system-prompt.transform')).toHaveLength(0)
+        expect(engine.getRegistered().some((item) => item.name === 'system-prompt-hook')).toBe(false)
+      })
+
       it('#then getRegistered without timing returns all hooks', () => {
         const engine = createHookRegistry()
         engine.register({

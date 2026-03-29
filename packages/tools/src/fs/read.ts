@@ -3,8 +3,8 @@ import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
 import { isFile, exists, mime } from '@vitamin/shared'
 import { truncateHead, formatBytes, normalizePath } from '@vitamin/shared'
-import type { AgentTool, ToolResult } from '@vitamin/agent'
 import { TOOLS_MAX_OUTPUT_BYTES, TOOLS_MAX_OUTPUT_LINES } from '@vitamin/env'
+import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 // 参数 schema
 const ReadArgsSchema = z.object({
@@ -50,8 +50,8 @@ export function createRead(
       return readTextWithRange(
         normalizedPath, 
         params.path, 
-        params.limit, 
-        params.offset
+        params.offset, 
+        params.limit
       )
     }
   }

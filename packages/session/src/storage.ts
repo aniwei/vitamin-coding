@@ -4,17 +4,17 @@ import type { SessionPersistence, StorageOptions } from './types'
 
  // 根据选项创建 SessionPersistence 实例。
  // @example
- // const storage = createSessionStorage({ type: 'local', sessionDir: '/path/to/sessions' })
- // const storage = createSessionStorage({ type: 'remote', remoteUrl: 'https://api.vitamin.dev/v1/sessions', getAuth: async () => ({ token: 'xxx' }) })
+ // const storage = createSessionStorage({ type: 'local', baseDir: '/path/to/sessions' })
+ // const storage = createSessionStorage({ type: 'remote', baseUrl: 'https://api.vitamin.dev/v1/sessions', getAuth: async () => ({ token: 'xxx' }) })
 export function createSessionStorage<T = unknown>(
   options: StorageOptions,
 ): SessionPersistence<T> {
   switch (options.type) {
     case 'local':
-      return new FileSessionPersistence<T>({ directory: options.sessionDir })
+      return new FileSessionPersistence<T>({ directory: options.baseDir! })
     case 'remote':
       return new RemoteSessionPersistence<T>({
-        baseUrl: options.remoteUrl,
+        baseUrl: options.baseUrl,
         getAuth: options.getAuth,
         fetch: options.fetch,
         timeoutMs: options.timeoutMs,

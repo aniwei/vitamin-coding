@@ -26,12 +26,20 @@ export class BinaryToolExecutorRegistry {
 		}
 	}
 
-	// TODO: Configure tools
+	// 为已注册的二进制工具更新配置选项
 	registerWithOptions(
-		_name: string, 
-		_options?: { preset?: string; category?: string; builtin?: boolean }
+		name: string, 
+		options?: { preset?: string; category?: string; builtin?: boolean }
 	): void {
-
+		const tool = this.binaries.get(name)
+		if (!tool) {
+			logger.warn(`Tool ${name} is not registered, cannot apply options`)
+			return
+		}
+		// 选项记录在 metadata 中，供工具注册表查询
+		if (options) {
+			;(tool as unknown as Record<string, unknown>).__metadata = options
+		}
 	}
 
 	unregister(tool: string): void {

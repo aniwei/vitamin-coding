@@ -37,6 +37,20 @@ const HOOK_TIMINGS: HookTiming[] = [
   'background.end',
   'extension.loaded',
   'extension.error',
+  // orchestrator
+  'task.created',
+  'task.started',
+  'task.completed',
+  'task.failed',
+  'task.cancelled',
+  'task.recovered',
+  'plan.started',
+  'plan.step_completed',
+  'plan.completed',
+  'review.requested',
+  'review.passed',
+  'review.failed',
+  'system-prompt.transform',
 ]
 
 interface RuntimeHook {
@@ -75,6 +89,20 @@ function createHookBuckets(): Record<HookTiming, RuntimeHook[]> {
     'background.end': [],
     'extension.loaded': [],
     'extension.error': [],
+    // orchestrator
+    'task.created': [],
+    'task.started': [],
+    'task.completed': [],
+    'task.failed': [],
+    'task.cancelled': [],
+    'task.recovered': [],
+    'plan.started': [],
+    'plan.step_completed': [],
+    'plan.completed': [],
+    'review.requested': [],
+    'review.passed': [],
+    'review.failed': [],
+    'system-prompt.transform': [],
   }
 }
 

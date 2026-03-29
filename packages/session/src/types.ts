@@ -97,23 +97,23 @@ export interface SessionFilter {
 }
 
 // ── Storage 选项 ──
+// 统一使用 @vitamin/env 的 StorageConfig 类型
 
-export interface LocalStorageOptions {
-  type: 'local'
-  sessionDir: string
-}
+import type {
+  LocalStorageConfig,
+  RemoteStorageConfig,
+  MemoryStorageConfig,
+  StorageConfig,
+} from '@vitamin/env'
 
-export interface RemoteStorageOptions {
-  type: 'remote'
-  remoteUrl: string
-  getAuth: () => Promise<{ token: string }>
-  /** 自定义 fetch 实现 */
-  fetch?: typeof globalThis.fetch
-  /** 请求超时 ms */
-  timeoutMs?: number
-}
+export type StorageOptions = StorageConfig
 
-export type StorageOptions = LocalStorageOptions | RemoteStorageOptions
+/** @deprecated 使用 LocalStorageConfig */
+export type LocalStorageOptions = LocalStorageConfig
+/** @deprecated 使用 RemoteStorageConfig */
+export type RemoteStorageOptions = RemoteStorageConfig
+
+export type { LocalStorageConfig, RemoteStorageConfig, MemoryStorageConfig, StorageConfig }
 
 // ── 分页 ──
 

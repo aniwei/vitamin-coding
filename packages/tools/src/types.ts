@@ -12,6 +12,10 @@ export interface ToolMetadata {
   category?: string
   // 是否为内置工具
   builtin: boolean
+  // 使用示例（注入 system prompt，帮助 agent 理解调用方式）
+  snippet?: string
+  // 行为指南（注入 system prompt，约束工具使用规范）
+  guideline?: string
 }
 
 // 注册的工具（AgentTool + 元数据）
@@ -24,6 +28,8 @@ export interface ToolRegistrationOptions {
   preset?: ToolPreset
   category?: string
   builtin?: boolean
+  snippet?: string
+  guideline?: string
 }
 
 // 工具工厂函数类型

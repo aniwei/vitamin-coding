@@ -46,4 +46,8 @@ export type {
   StorageOptions,
   LocalStorageOptions,
   RemoteStorageOptions,
+  StorageConfig,
+  LocalStorageConfig,
+  RemoteStorageConfig,
+  MemoryStorageConfig,
 } from './types'

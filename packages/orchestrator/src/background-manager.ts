@@ -2,12 +2,13 @@ import type { OrchestratorEventBus } from './events'
 import type {
   AgentSpec,
   AgentSessionHandle,
-  BackgroundManager,
+  BackgroundManager as IBackgroundManager,
   OrchestratorTask,
   SessionFactory,
   ToolRegistryHandle,
   HookRegistryHandle,
 } from './types'
+import { parseSubagentResult, resolveAgentTools } from './session-utils'
 
 interface BackgroundManagerDeps {
   eventBus: OrchestratorEventBus
@@ -16,7 +17,7 @@ interface BackgroundManagerDeps {
   hooks?: HookRegistryHandle
 }
 
-class BackgroundManagerImpl implements BackgroundManager {
+class BackgroundManager implements IBackgroundManager {
   private runningTasks = new Map<string, OrchestratorTask>()
   private completedTasks = new Map<string, OrchestratorTask>()
   private runningSessions = new Map<string, AgentSessionHandle>()
@@ -41,57 +42,57 @@ class BackgroundManagerImpl implements BackgroundManager {
     await this.deps.eventBus.emit('task.started', { task, agent: spec.name })
 
     // 异步执行，不阻塞调用方
-    this.executeAsync(task, spec).then(
-      (output) => {
-        // 如果任务已被取消，不要覆盖状态
-        if (task.status === 'cancelled') return
+    this.executeAsync(task, spec).then((output) => {
+      // 如果任务已被取消，不要覆盖状态
+      if (task.status === 'cancelled') return
 
-        task.status = 'completed'
-        task.output = { text: output, summary: output.slice(0, 500) }
-        task.endedAt = Date.now()
-        this.runningTasks.delete(task.id)
-        this.completedTasks.set(task.id, task)
+      task.status = 'completed'
+      task.output = { text: output, summary: output.slice(0, 500) }
+      task.endedAt = Date.now()
+      this.runningTasks.delete(task.id)
+      this.completedTasks.set(task.id, task)
 
-        void this.deps.hooks?.emit('background.end', {
-          taskId: task.id,
-          agentName: spec.name,
-          success: true,
-        })
-        void this.deps.eventBus.emit('task.completed', { task, result: task.output })
-      },
-      (err) => {
-        // 如果任务已被取消，不要覆盖状态
-        if (task.status === 'cancelled') return
+      const subagentResult = parseSubagentResult(output)
 
-        task.status = 'failed'
-        task.error = {
-          code: 'BG_ERROR',
-          message: String(err),
-          retriable: true,
-        }
-        task.endedAt = Date.now()
-        this.runningTasks.delete(task.id)
-        this.completedTasks.set(task.id, task)
+      void this.deps.hooks?.emit('background.end', {
+        taskId: task.id,
+        agentName: spec.name,
+        success: true,
+      })
+      void this.deps.eventBus.emit('task.completed', { task, result: task.output, subagentResult })
+    }, (err) => {
+      // 如果任务已被取消，不要覆盖状态
+      if (task.status === 'cancelled') return
 
-        void this.deps.hooks?.emit('background.end', {
-          taskId: task.id,
-          agentName: spec.name,
-          success: false,
-        })
-        void this.deps.eventBus.emit('task.failed', { task, error: task.error })
-      },
-    )
+      task.status = 'failed'
+      task.error = {
+        code: 'BG_ERROR',
+        message: String(err),
+        retriable: true,
+      }
+      task.endedAt = Date.now()
+      this.runningTasks.delete(task.id)
+      this.completedTasks.set(task.id, task)
+
+      void this.deps.hooks?.emit('background.end', {
+        taskId: task.id,
+        agentName: spec.name,
+        success: false,
+      })
+      void this.deps.eventBus.emit('task.failed', { task, error: task.error })
+    })
 
     return task.id
   }
 
   private async executeAsync(task: OrchestratorTask, spec: AgentSpec): Promise<string> {
-    const tools = this.deps.toolRegistry.filterByNames(spec.tools ?? [])
+    const tools = resolveAgentTools(spec, this.deps.toolRegistry)
 
     const session = await this.deps.sessionFactory.createSession({
       model: spec.model as never,
       systemPrompt: spec.systemPrompt,
       tools,
+      maxToolTurns: spec.maxToolTurns,
     })
 
     this.runningSessions.set(task.id, session)
@@ -164,6 +165,6 @@ class BackgroundManagerImpl implements BackgroundManager {
   }
 }
 
-export function createBackgroundManager(deps: BackgroundManagerDeps): BackgroundManager {
-  return new BackgroundManagerImpl(deps)
+export function createBackgroundManager(deps: BackgroundManagerDeps): IBackgroundManager {
+  return new BackgroundManager(deps)
 }

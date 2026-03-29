@@ -45,6 +45,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
   const { 
     messages, 
     signal, 
+    logger,
     maxTokens,
     temperature,
     devtools,
@@ -60,6 +61,8 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
   } = context
 
   try {
+    logger?.info('Agent loop started for model %s with %d messages', context.model.id, messages.length)
+
     invariant(() => {
       devtools?.debugger.pause({
         turn: turnIndex,
@@ -95,10 +98,21 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
           turnIndex 
         })
 
+        logger?.info('Turn %d started', turnIndex + 1)
+
         let contextMessages = [...messages]
         if (transformContext) {
           const transformed = await transformContext(contextMessages, signal)
           contextMessages = transformed
+
+          if (contextMessages.length !== messages.length) {
+            logger?.info(
+              'Context transformed for turn %d: %d -> %d messages',
+              turnIndex + 1,
+              messages.length,
+              contextMessages.length,
+            )
+          }
 
           invariant(() => {
             devtools?.debugger.pause({
@@ -151,6 +165,14 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
           input: assistantMessage.usage.inputTokens,
           output: assistantMessage.usage.outputTokens,
         }
+
+        logger?.info(
+          'Turn %d completed with stop reason %s (input=%d, output=%d)',
+          turnIndex + 1,
+          assistantMessage.stopReason,
+          assistantMessage.usage.inputTokens,
+          assistantMessage.usage.outputTokens,
+        )
 
         invariant(() => {
           devtools?.debugger.pause({
@@ -210,6 +232,8 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
               },
             })
 
+            logger?.info('Executing tool %s', toolCall.name)
+
             invariant(() => {
               devtools?.debugger.pause({
                 turn: turnIndex,
@@ -242,6 +266,12 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
               },
               result,
             })
+
+            logger?.info(
+              'Tool %s completed%s',
+              toolCall.name,
+              result.isError ? ' with error' : '',
+            )
 
             invariant(() => {
               devtools?.debugger.pause({
@@ -302,6 +332,8 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
       if (followUpMessages.length > 0) {
         messages.push(...followUpMessages)
 
+        logger?.info('Queued %d follow-up message(s)', followUpMessages.length)
+
         emit({ 
           type: 'follow_up_start', 
           messages: followUpMessages 
@@ -328,9 +360,13 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
       return true
     }, `Agent done at turn ${turnIndex}`)
 
+    logger?.info('Agent loop finished after %d turn(s)', turnIndex)
+
     return lastAssistantMessage
   } catch (error) {
     if (error instanceof AbortError || signal.aborted) {
+      logger?.warn('Agent loop aborted at turn %d', turnIndex + 1)
+
       invariant(() => {
         devtools?.debugger.pause({
           turn: turnIndex,
@@ -345,6 +381,12 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
 
       throw error
     }
+
+    logger?.error(
+      'Agent loop failed at turn %d: %s',
+      turnIndex + 1,
+      error instanceof Error ? error.message : String(error),
+    )
 
     invariant(() => {
       devtools?.debugger.pause({

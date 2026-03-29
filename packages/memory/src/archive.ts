@@ -182,7 +182,7 @@ export function createArchiveStorage(config: import('./types').StorageConfig): A
       return new RemoteArchiveStorage({
         baseUrl: config.baseUrl,
         getAuth: config.getAuth,
-        timeout: config.timeout,
+        timeout: config.timeoutMs,
         fetch: config.fetch,
       })
     case 'memory':

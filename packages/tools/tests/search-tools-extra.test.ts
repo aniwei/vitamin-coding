@@ -80,29 +80,51 @@ describe('search tools additional coverage', () => {
     expect(text).toContain('src/')
   })
 
-  it('grep reaches not-implemented branch when rg executor is present', async () => {
+  it('grep throws when binary tool executor registry is not available', async () => {
     const dir = await setup()
     await writeFile(join(dir, 'a.txt'), 'hello')
 
-    const fakeRg = {
-      execute: async () => ({
-        stdout: '',
-        stderr: '',
-        exitCode: 0,
-      }),
-    }
+    const tool = createGrep(dir, {})
+
+    await expect(tool.execute({
+      id: 'grep-no-registry',
+      params: { pattern: 'hello' },
+      signal,
+    })).rejects.toThrow('Binary tool executor registry is not available')
+  })
+
+  it('grep throws when rg executor is not registered', async () => {
+    const dir = await setup()
+    await writeFile(join(dir, 'a.txt'), 'hello')
+
+    const { BinaryToolExecutorRegistry } = await import('../src/binary/binary-executor-registry')
+    const emptyRegistry = new BinaryToolExecutorRegistry()
 
     const tool = createGrep(dir, {
-      binaryToolExecutorRegistry: {
-        get: async () => fakeRg,
-        ensure: async () => fakeRg,
-      } as never,
+      binaryToolExecutorRegistry: emptyRegistry,
     })
 
     await expect(tool.execute({
-      id: 'grep-ni',
-      params: { pattern: 'hello', path: '.', ignore: false, literal: false, context: 100 },
+      id: 'grep-no-rg',
+      params: { pattern: 'hello' },
       signal,
-    })).rejects.toThrow('grep tool is not fully implemented yet')
+    })).rejects.toThrow('ripgrep (rg) executor is not available')
+  })
+
+  it('grep throws for non-existent search path', async () => {
+    const dir = await setup()
+
+    const { BinaryToolExecutorRegistry } = await import('../src/binary/binary-executor-registry')
+    const registry = new BinaryToolExecutorRegistry()
+
+    const tool = createGrep(dir, {
+      binaryToolExecutorRegistry: registry,
+    })
+
+    await expect(tool.execute({
+      id: 'grep-no-path',
+      params: { pattern: 'hello', path: 'nonexistent' },
+      signal,
+    })).rejects.toThrow()
   })
 })

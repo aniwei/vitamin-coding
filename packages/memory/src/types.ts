@@ -185,29 +185,12 @@ export interface StorageProvider {
   createArchiveStorage(): ArchiveStorage
 }
 
-// 本地存储配置
-export interface LocalStorageConfig {
-  type: 'local'
-  /** 覆盖根目录，默认 $VITAMIN_HOME */
-  baseDir?: string
-}
+// 统一使用 @vitamin/env 的 StorageConfig 类型
+import type {
+  LocalStorageConfig,
+  RemoteStorageConfig,
+  MemoryStorageConfig,
+  StorageConfig,
+} from '@vitamin/env'
 
-// 远程存储配置
-export interface RemoteStorageConfig {
-  type: 'remote'
-  /** API 基础 URL */
-  baseUrl: string
-  /** 认证信息获取函数 */
-  getAuth: () => Promise<{ token: string }>
-  /** 请求超时 (ms) */
-  timeout?: number
-  /** 自定义 fetch */
-  fetch?: typeof globalThis.fetch
-}
-
-/** 内存存储配置 */
-export interface MemoryStorageConfig {
-  type: 'memory'
-}
-
-export type StorageConfig = LocalStorageConfig | RemoteStorageConfig | MemoryStorageConfig
+export type { LocalStorageConfig, RemoteStorageConfig, MemoryStorageConfig, StorageConfig }

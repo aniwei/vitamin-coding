@@ -36,6 +36,7 @@ export {
   getRootLogger, 
   attachLogListener, 
 } from './logger'
+export type { Logger } from './logger'
 
 export {
   mkdirp,
@@ -73,4 +74,23 @@ export type { HttpRequestOptions, HttpResponse, SseEvent } from './http'
 
 export { Subscription } from './subscrption'
 export { BusSubscription } from './bus-subscrption'
+
+export {
+  createMarkdownProcessor,
+  createGfmProcessor,
+  createFrontmatterProcessor,
+  getNodeText,
+  extractBoldLabels,
+  extractInlineCodes,
+  countChecks,
+  extractFrontmatter,
+  extractBodyFromAst,
+} from './markdown'
+export type {
+  MarkdownProcessor,
+  MdastPosition,
+  MdastNode,
+  YamlNode,
+  RootNode,
+} from './markdown'
 

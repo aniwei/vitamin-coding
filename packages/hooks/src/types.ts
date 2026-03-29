@@ -1,7 +1,7 @@
 // @vitamin/hooks 核心类型
 import type { AgentMessage, AgentTool, ToolResult } from '@vitamin/agent'
 
-// ═══ 18 种 Hook 时机 ═══
+// ═══ 31 种 Hook 时机 ═══
 
 export type HookTiming =
   // 会话类 (chat.message 生命周期)
@@ -31,6 +31,21 @@ export type HookTiming =
   // 扩展事件
   | 'extension.loaded'
   | 'extension.error'
+  // 编排器事件 (orchestrator)
+  | 'task.created'
+  | 'task.started'
+  | 'task.completed'
+  | 'task.failed'
+  | 'task.cancelled'
+  | 'task.recovered'
+  | 'plan.started'
+  | 'plan.step_completed'
+  | 'plan.completed'
+  | 'review.requested'
+  | 'review.passed'
+  | 'review.failed'
+  // System-prompt 变换
+  | 'system-prompt.transform'
 
 export interface ChatMessageInput {
   message: AgentMessage
@@ -101,6 +116,16 @@ export interface ChatParamsOutput {
   metadata: Record<string, unknown>
 }
 
+export interface SystemPromptTransformInput {
+  systemPrompt: string
+  sessionId: string
+  tools: AgentTool[]
+}
+
+export interface SystemPromptTransformOutput {
+  systemPrompt: string
+}
+
 export interface SessionEventInput {
   sessionId: string
   metadata: Record<string, unknown>
@@ -126,6 +151,20 @@ export interface HookPayloadMap {
   'background.end': { input: { taskId: string; agentName: string; success: boolean }; output: void }
   'extension.loaded': { input: { extensionName: string }; output: void }
   'extension.error': { input: { extensionName: string; error: Error }; output: void }
+  // 编排器事件 (orchestrator)
+  'task.created': { input: { task: Record<string, unknown> }; output: void }
+  'task.started': { input: { task: Record<string, unknown>; agent: string }; output: void }
+  'task.completed': { input: { task: Record<string, unknown>; result: Record<string, unknown>; subagentResult?: Record<string, unknown> }; output: void }
+  'task.failed': { input: { task: Record<string, unknown>; error: Record<string, unknown> }; output: void }
+  'task.cancelled': { input: { taskId: string }; output: void }
+  'task.recovered': { input: { task: Record<string, unknown>; fromCheckpoint: string }; output: void }
+  'plan.started': { input: { planId: string; totalSteps: number }; output: void }
+  'plan.step_completed': { input: { planId: string; stepId: string; remaining: number }; output: void }
+  'plan.completed': { input: { planId: string }; output: void }
+  'review.requested': { input: { taskId: string; reviewType: string }; output: void }
+  'review.passed': { input: { taskId: string; reviewType: string }; output: void }
+  'review.failed': { input: { taskId: string; reviewType: string; issues: string[] }; output: void }
+  'system-prompt.transform': { input: SystemPromptTransformInput; output: SystemPromptTransformOutput }
 }
 
 // Hook 输入/输出泛型提取

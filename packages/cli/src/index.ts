@@ -1,8 +1,12 @@
 import { runCli } from './cli'
 
-const code = runCli()
-if (code !== 0) {
-  process.exitCode = code
-}
+runCli().then((code) => {
+  if (code !== 0) {
+    process.exitCode = code
+  }
+}).catch((err) => {
+  process.stderr.write(`vitamin: ${err instanceof Error ? err.message : String(err)}\n`)
+  process.exitCode = 1
+})
 
 export { runCli }

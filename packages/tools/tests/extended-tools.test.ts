@@ -97,9 +97,9 @@ describe('extended tools', () => {
       const tool = createGrep(testDir, {})
       await expect(tool.execute({
         id: 'grep1',
-        params: { pattern: 'hello', ignore: false, literal: false, context: 100 },
+        params: { pattern: 'hello' },
         signal,
-      })).rejects.toThrow('ripgrep (rg) executor is not available')
+      })).rejects.toThrow('Binary tool executor registry is not available')
     })
   })
 

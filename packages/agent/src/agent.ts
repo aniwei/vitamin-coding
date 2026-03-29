@@ -133,6 +133,7 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
     const runtime: AgentLoopContext = {
       model: context.model,
       systemPrompt: context.systemPrompt,
+      logger: context.logger,
       convertToLLM: context.convertToLLM ?? defaultConvertToLLM,
       transformContext: context.transformContext,
       getSteeringMessages: () => this.drainSteeringQueue(),

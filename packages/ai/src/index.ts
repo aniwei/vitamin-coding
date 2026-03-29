@@ -4,6 +4,7 @@ export type {
   Provider,
   ProviderStream,
   Model,
+  ModelSpec,
   Cost,
   ThinkingLevel,
   Compat,
@@ -47,7 +48,7 @@ export {
 export { EventStream, createEventStream } from './event-stream'
 
 // 模型注册表
-export { ModelRegistry, createModelRegistry } from './model-registry'
+export { ModelRegistry, createModelRegistry, createDefaultModelRegistry } from './model-registry'
 
 // Provider
 export { createCopilotProvider } from './provider/github-copilot'

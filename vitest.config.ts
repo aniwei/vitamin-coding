@@ -12,6 +12,7 @@ export default defineConfig({
       '@vitamin/hooks': resolve(__dirname, 'packages/hooks/src/index.ts'),
       '@vitamin/session': resolve(__dirname, 'packages/session/src/index.ts'),
       '@vitamin/orchestrator': resolve(__dirname, 'packages/orchestrator/src/index.ts'),
+      '@vitamin/coding': resolve(__dirname, 'packages/coding/src/index.ts'),
       '@vitamin/extension': resolve(__dirname, 'packages/extension/src/index.ts'),
       '@vitamin/mcp': resolve(__dirname, 'packages/mcp/src/index.ts'),
       '@vitamin/tui': resolve(__dirname, 'packages/tui/src/index.ts'),

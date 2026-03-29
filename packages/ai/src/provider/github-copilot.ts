@@ -16,12 +16,15 @@ import type { ProviderStream } from '../types'
 const logger = createLogger('@vitamin/ai:github-copilot')
 
 const PROVIDER_VERSION = '1.0.0'
+const DEFAULT_COPILOT_INTEGRATION_ID = 'vscode-chat'
 
 // 构建 Copilot 专用静态请求头
 function buildCopilotHeaders(token: string): Record<string, string> {
+  const integrationId = process.env['VITAMIN_COPILOT_INTEGRATION_ID'] || DEFAULT_COPILOT_INTEGRATION_ID
+
   return {
     'authorization': `Bearer ${token}`,
-    'copilot-integration-id': 'vitamin-coding-agent',
+    'copilot-integration-id': integrationId,
     'editor-version': `vitamin-coding/${PROVIDER_VERSION}`,
     'editor-plugin-version': `vitamin-coding/${PROVIDER_VERSION}`,
     'openai-intent': 'conversation-panel',
@@ -258,7 +261,7 @@ function buildAssistantMessage(state: CopilotStreamState): AssistantMessage {
     try {
       args = JSON.parse(tc.argumentsJson) as Record<string, unknown>
     } catch {
-      logger.warn('Failed to parse tool call arguments for final message')
+      // Tool arguments arrive incrementally during streaming; partial JSON is expected.
     }
 
     content.push({
@@ -295,13 +298,6 @@ class GitHubCopilotStream implements ProviderStream {
   constructor(private readonly resolveOAuthAccessKey?: CopilotCredentialResolver) {}
 
   async resolveKey(): Promise<string> {
-    // 1. 环境变量优先（参照 pi-mono: COPILOT_GITHUB_TOKEN → GH_TOKEN → GITHUB_TOKEN）
-    const envKey = process.env['COPILOT_GITHUB_TOKEN']
-      ?? process.env['GH_TOKEN']
-      ?? process.env['GITHUB_TOKEN']
-    if (envKey) return envKey
-
-    // 2. 回退到注入的 OAuth 凭据解析器
     if (this.resolveOAuthAccessKey) {
       const key = await this.resolveOAuthAccessKey()
       if (key) return key

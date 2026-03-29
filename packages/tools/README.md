@@ -13,6 +13,8 @@ Tool 注册与执行系统，包含 Skill 工具入口。
   - [ToolRegistry 注册表](#toolregistry-注册表)
   - [预设分层](#预设分层)
   - [内置工具一览](#内置工具一览)
+  - [当前限制](#当前限制)
+  - [与 @vitamin/orchestrator 的关系](#与-vitaminorchestrator-的关系)
   - [工具参数验证](#工具参数验证)
   - [二进制工具管理](#二进制工具管理)
 - [Skill 系统](#skill-系统)
@@ -38,9 +40,10 @@ Tool 注册与执行系统，包含 Skill 工具入口。
 
 1. **统一的工具注册表** — 管理 Agent 可调用的所有工具，支持分层预设（minimal / standard / full）
 2. **内置工具集** — 文件系统、Shell、搜索、编排，以及 Skill 相关工具入口
-3. **Skill 工具入口** — 提供 `skill_load` / `skill_execute` 两个工具，实际加载与执行逻辑通过回调注入
-4. **Extension 扩展机制**（规划中）— 支持第三方通过 TypeScript 模块注册自定义工具、命令、事件钩子
-5. **二进制工具管理** — 自动下载并缓存外部 CLI 二进制（fd、rg 等），跨平台支持
+3. **编排工具回调注入** — 9 个编排 + 2 个 Skill 工具本身是纯壳，实际逻辑由 `@vitamin/orchestrator` 通过 `toToolCallbacks()` 注入（见 [与 @vitamin/orchestrator 的关系](#与-vitaminorchestrator-的关系)）
+4. **Skill 工具入口** — 提供 `skill_load` / `skill_execute` 两个工具，实际加载与执行逻辑通过回调注入
+5. **Extension 扩展机制**（规划中）— 支持第三方通过 TypeScript 模块注册自定义工具、命令、事件钩子
+6. **二进制工具管理** — 自动下载并缓存外部 CLI 二进制（fd、rg 等），跨平台支持
 
 以下文档中：
 
@@ -63,38 +66,49 @@ Tool 注册与执行系统，包含 Skill 工具入口。
 ## 架构总览
 
 ```
-┌─────────────────────────────────────────────────────────────────────┐
-│                          VitaminApp                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐              │
-│  │ AgentSession  │  │ AgentSession  │  │ AgentSession  │  ...       │
-│  │  ┌────────┐  │  │              │  │              │              │
-│  │  │ Agent  │  │  │              │  │              │              │
-│  │  │workLoop│  │  │              │  │              │              │
-│  │  └───┬────┘  │  │              │  │              │              │
-│  └──────┼───────┘  └──────────────┘  └──────────────┘              │
-│         │                                                           │
-│         ▼                                                           │
-│  ┌──────────────────────────────────────────────────────────────┐   │
-│  │                      ToolExecutor                            │   │
-│  │  1. beforeHooks → 2. validate(Zod) → 3. execute → 4. after  │   │
-│  └──────────────────────────┬───────────────────────────────────┘   │
-│                             │                                       │
-│         ┌───────────────────┼───────────────────────┐               │
-│         ▼                   ▼                       ▼               │
-│  ┌──────────────┐  ┌────────────────────────┐  ┌──────────────────┐ │
-│  │ ToolRegistry  │  │ Skill Runtime          │  │ ExtensionRunner  │ │
-│  │  minimal      │  │ loadSkills()           │  │     (规划)       │ │
-│  │  standard     │  │ formatSkillsForPrompt()│  │ loadExtensions() │ │
-│  │  full         │  │ SkillRegistry          │  │ registerTool()   │ │
-│  └──────────────┘  └────────────────────────┘  └──────────────────┘ │
-│         │                   │                                       │
-│         ▼                   ▼                                       │
-│  ┌──────────────┐  ┌──────────────┐                                │
-│  │BinaryExecutor│  │ SKILL.md     │                                │
-│  │ Registry     │  │ 文件系统扫描  │                                │
-│  │ fd / rg      │  │              │                                │
-│  └──────────────┘  └──────────────┘                                │
-└─────────────────────────────────────────────────────────────────────┘
+┌──────────────────────────────────────────────────────────────────────┐
+│                          VitaminApp                                  │
+│  ┌──────────────┐  ┌──────────────┐  ┌──────────────┐               │
+│  │ AgentSession  │  │ AgentSession  │  │ AgentSession  │  ...        │
+│  │  ┌────────┐  │  │              │  │              │               │
+│  │  │ Agent  │  │  │              │  │              │               │
+│  │  │workLoop│  │  │              │  │              │               │
+│  │  └───┬────┘  │  │              │  │              │               │
+│  └──────┼───────┘  └──────────────┘  └──────────────┘               │
+│         │                                                            │
+│         ▼                                                            │
+│  ┌──────────────────────────────────────────────────────────────┐    │
+│  │                      ToolExecutor                            │    │
+│  │  1. beforeHooks → 2. validate(Zod) → 3. execute → 4. after  │    │
+│  └──────────────────────────────┬───────────────────────────────┘    │
+│                                 │                                    │
+│      ┌──────────────────────────┼──────────────────────┐             │
+│      ▼                          ▼                      ▼             │
+│  ┌──────────────┐  ┌─────────────────────┐  ┌──────────────────┐    │
+│  │ ToolRegistry  │  │ Skill Runtime       │  │ ExtensionRunner  │    │
+│  │  minimal (4)  │  │ loadSkills()        │  │     (规划)       │    │
+│  │  standard (8) │  │ SkillRegistry       │  │ loadExtensions() │    │
+│  │  full (18)    │  │                     │  │ registerTool()   │    │
+│  └──┬──────┬────┘  └─────────────────────┘  └──────────────────┘    │
+│     │      │                                                         │
+│     │      │  回调注入 (registerBuiltinTools)                         │
+│     │      │  ┌──────────────────────────────────────────────┐       │
+│     │      └──┤ @vitamin/orchestrator                        │       │
+│     │         │   toToolCallbacks() 提供 11 个回调:           │       │
+│     │         │   AgentRegistry ──── callAgent               │       │
+│     │         │   Dispatcher ─────── dispatchTask / create /  │       │
+│     │         │                      get / list / update      │       │
+│     │         │   BackgroundManager  getOutput / cancel       │       │
+│     │         │   PlanLoader ──────── performWork             │       │
+│     │         │   SkillAdapter ────── loadSkill / executeSkill│       │
+│     │         └──────────────────────────────────────────────┘       │
+│     ▼                                                                │
+│  ┌──────────────┐  ┌──────────────┐                                  │
+│  │BinaryExecutor│  │ SKILL.md     │                                  │
+│  │ Registry     │  │ 文件系统扫描  │                                  │
+│  │ fd / rg      │  │              │                                  │
+│  └──────────────┘  └──────────────┘                                  │
+└──────────────────────────────────────────────────────────────────────┘
 ```
 
 ---
@@ -178,8 +192,8 @@ minimal ⊂ standard ⊂ full
 | 预设 | 工具数量 | 描述 |
 |------|---------|------|
 | `minimal` | 4 | 核心文件操作 + Shell，适合受限环境 |
-| `standard` | 8 | + 搜索/导航 + 任务委派，日常开发 |
-| `full` | 18 | + 多 Agent 编排 + 任务管理 + 后台控制 + Skill 系统，完整能力 |
+| `standard` | 8+6 | + 搜索/导航 + 任务委派 (+ 6 LSP 可选)，日常开发 |
+| `full` | 21+7 | + 多 Agent 编排 + 任务管理 + 后台控制 + 澄清通道 + Skill 系统 (+ LSP + Session Manager 可选)，完整能力 |
 
 ### 内置工具一览
 
@@ -194,34 +208,96 @@ minimal ⊂ standard ⊂ full
 | `edit` | fs | 基于 oldContent/newContent 的精确文本替换，含 fuzzy 匹配和 Unicode 归一化 |
 | `bash` | shell | 执行 shell 命令，30 秒超时，60KB 输出截断，支持 AbortSignal |
 
-#### Standard (+4)
+#### Standard (+4, +6 LSP 可选)
 
 | 工具 | 分类 | 描述 |
 |------|------|------|
 | `ls` | search | 列出目录内容，支持递归模式 |
-| `find` | search | 按 glob 模式查找文件，优先使用 fd 二进制 |
-| `grep` | search | 文本检索，优先使用 rg 二进制，支持正则/忽略大小写 |
+| `find` | search | 按 glob 模式查找文件，优先使用 fd 二进制，默认返回上限 1000 条 |
+| `grep` | search | 文本/正则检索，使用 rg 二进制，支持正则/忽略大小写/上下文行/glob 过滤，默认 100 条匹配上限，长行截断 500 字符 |
 | `task_delegate` | orchestration | 将任务委派给子 Agent 执行（同步/后台） |
+| `lsp_definition` | lsp | 跳转到定义（需 `enableLsp: true`） |
+| `lsp_references` | lsp | 查找引用（需 `enableLsp: true`） |
+| `lsp_symbols` | lsp | 文档/工作区符号搜索（需 `enableLsp: true`） |
+| `lsp_diagnostics` | lsp | 获取文件诊断信息（需 `enableLsp: true`） |
+| `lsp_prepare_rename` | lsp | 验证重命名是否可行（需 `enableLsp: true`） |
+| `lsp_rename` | lsp | 执行符号重命名（需 `enableLsp: true`） |
 
-#### Full (+10)
+#### Full (+11, +1 Session Manager 可选)
 
 | 工具 | 分类 | 描述 |
 |------|------|------|
-| `agent_call` | orchestration | 调用指定 Agent 并返回结果 |
-| `perform_work` | orchestration | 启动计划执行（DAG 并行） |
-| `task_create` | orchestration | 创建新任务，通过注入的回调委托给 orchestrator |
-| `task_get` | orchestration | 查询任务状态及详情 |
-| `task_list` | orchestration | 列出所有任务及状态摘要 |
-| `task_update` | orchestration | 更新任务状态或属性 |
-| `background_output` | orchestration | 获取后台任务的输出 |
+| `agent_call` | orchestration | 调用指定 Agent，支持 sync（等待结果）/ async（后台执行）模式，可通过 sessionId 复用会话 |
+| `perform_work` | orchestration | 执行计划文件的下一个待定步骤（单次调用执行一步，调用方应循环推进），需配合 PlanFileStore |
+| `clarify_request` | orchestration | 向父任务/主代理请求补充说明，每个任务有次数限制（默认 3 次），需配合 ClarifyChannel |
+| `task_create` | orchestration | 创建任务并提交到 Dispatcher，返回 taskId |
+| `task_get` | orchestration | 按 ID 查询任务状态、输出和错误信息 |
+| `task_list` | orchestration | 列出任务列表，支持按状态筛选（all / pending / running / completed / error） |
+| `task_update` | orchestration | 更新任务：取消（cancel）或重试（retry） |
+| `background_output` | orchestration | 获取后台任务的当前状态和输出 |
 | `background_cancel` | orchestration | 取消正在运行的后台任务 |
 | `skill_load` | skill | 调用外部注入的 Skill 加载回调 |
 | `skill_execute` | skill | 调用外部注入的 Skill 执行回调 |
+| `session_manager` | session | 会话管理（列出/创建/删除/压缩），需注入 `sessionManager` 回调 |
 
 ### 当前限制
 
-- LSP 工具源码已存在，但默认未注册到内置工具集
+- LSP 工具源码已存在（12 个文件），通过 `enableLsp: true` opt-in 注册到 `standard` 预设
+- Session Manager 工具已实现（`session-manager.ts`），通过 `sessionManager` 回调 opt-in 注册到 `full` 预设
+- MCP 系统已完整实现（Client、Manager、ToolAdapter、Stdio/SSE Transport），按需通过 `MCP Manager` 动态注册
 - Skill 运行时已实现（发现、解析、注册、Prompt 注入），但尚未与 `AgentSession` 自动集成 — 需要调用方手动调用 `loadSkills()` + `formatSkillsForPrompt()` 并拼入 systemPrompt
+
+### 与 @vitamin/orchestrator 的关系
+
+编排工具（10 个）和 Skill 工具（2 个）和澄清工具（1 个）本身是纯壳，实际逻辑通过 `RegisterBuiltinOptions` 的回调注入。`@vitamin/orchestrator` 提供了这些回调的完整实现：
+
+**回调注入映射：**
+
+| 回调 | 必填 | orchestrator 来源 | 说明 |
+|------|------|------------------|------|
+| `dispatchTask` | ✅ | `Dispatcher.dispatch()` | 任务委派，sync/background 两种模式 |
+| `callAgent` | ✅ | `AgentRegistry.call()` | 调用指定 Agent，支持 sessionId 复用 |
+| `performWork` | ✅ | `PlanLoader` + `Dispatcher` | 按 Markdown 计划文件逐步执行，需 `planFileStore` |
+| `loadSkill` | ✅ | `SkillAdapter.load()` | 依赖外部 `SkillAdapter`；未提供时返回错误 |
+| `executeSkill` | ✅ | `SkillAdapter.execute()` | 同上 |
+| `createTask` | ❌ | `Dispatcher.create()` | 可选；未注入时工具返回 "not available" |
+| `getTask` | ❌ | `Dispatcher.get()` → 映射 | 返回 tool-friendly 扁平结构 |
+| `listTasks` | ❌ | `Dispatcher.list()` | 支持按状态筛选 |
+| `updateTask` | ❌ | `Dispatcher.update()` | cancel / retry 两种操作 |
+| `getBackgroundOutput` | ❌ | `BackgroundManager.getOutput()` | 后台任务轮询 |
+| `cancelBackground` | ❌ | `BackgroundManager.cancel()` | 协作式取消 |
+| `clarifyRequest` | ❌ | `ClarifyChannel.request()` | 可选；需在 OrchestratorOptions 中注入 `clarifyChannel` |
+
+**典型接线方式：**
+
+```typescript
+import { createOrchestrator } from '@vitamin/orchestrator'
+import { createClarifyChannel } from '@vitamin/orchestrator'
+import { registerBuiltinTools } from '@vitamin/tools'
+
+const orchestrator = createOrchestrator({
+  sessionFactory,
+  toolRegistry,
+  hooks,
+  planFileStore,     // 可选，performWork 需要
+  skillAdapter,      // 可选，skill 工具需要
+  clarifyChannel: createClarifyChannel({
+    handler: async (req) => {
+      // 实现澄清逻辑：转发给 lead agent / 用户 / planner
+      return { answer: '...' }
+    },
+  }),  // 可选，clarify_request 工具需要
+})
+
+// orchestrator.toToolCallbacks() 返回全部 12 个回调
+registerBuiltinTools(toolRegistry, projectRoot, {
+  ...orchestrator.toToolCallbacks(),
+  enableLsp: true,                   // opt-in: 注册 6 个 LSP 工具
+  sessionManager: mySessionManager,  // opt-in: 注册 session_manager 工具
+})
+```
+
+详见 `@vitamin/orchestrator` README §6.2（推荐装配方式）和 §12.1（与 @vitamin/tools 的契约）。
 
 ### 工具参数验证
 
@@ -720,7 +796,7 @@ AgentSession.persistNewMessages()
 - `maxToolTurns`（默认 25）— 防止无限循环
 - `AbortSignal` — 全链路取消支持
 - 参数验证 — Zod schema 强制校验
-- 输出截断 — 60KB / 1000 行上限
+- 输出截断 — 60KB / 2000 行上限
 - 进程超时 — Shell 命令 30 秒超时
 
 ---

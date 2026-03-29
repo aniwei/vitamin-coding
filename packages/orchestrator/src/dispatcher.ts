@@ -1,8 +1,3 @@
-// ═══════════════════════════════════════════════════════════
-// @vitamin/orchestrator — Dispatcher 实现
-// ═══════════════════════════════════════════════════════════
-// 中枢调度：任务创建、路由、同步/异步执行、生命周期管理
-
 import type { OrchestratorEventBus } from './events'
 import type {
   AgentRegistry,
@@ -10,14 +5,21 @@ import type {
   BackgroundManager,
   DispatchArgs,
   DispatchResult,
-  Dispatcher,
+  Dispatcher as IDispatcher,
+  ModelSelector,
   OrchestratorTask,
   SessionFactory,
   ToolRegistryHandle,
   HookRegistryHandle,
 } from './types'
+import type { RetryStrategy } from './retry-strategy'
+import type { CircuitBreaker } from './retry-strategy'
+import type { ReviewGate, ReviewContext } from './review-gate'
+import { parseSubagentResult, resolveAgentTools } from './session-utils'
 
-interface DispatcherDeps {
+import type { AgentSessionHandle, ChildSessionMode } from './types'
+
+interface DispatcherContext {
   agentRegistry: AgentRegistry
   backgroundManager: BackgroundManager
   sessionFactory: SessionFactory
@@ -25,27 +27,47 @@ interface DispatcherDeps {
   eventBus: OrchestratorEventBus
   hooks?: HookRegistryHandle
   maxConcurrent?: number
+  retryStrategy?: RetryStrategy
+  circuitBreaker?: CircuitBreaker
+  reviewGate?: ReviewGate
+  modelSelector?: ModelSelector
 }
 
-class DispatcherImpl implements Dispatcher {
+class Dispatcher implements IDispatcher {
   private tasks = new Map<string, OrchestratorTask>()
   private runningCount = 0
-  private deps: DispatcherDeps
+  private agentRegistry: AgentRegistry
+  private backgroundManager: BackgroundManager
+  private sessionFactory: SessionFactory
+  private toolRegistry: ToolRegistryHandle
+  private eventBus: OrchestratorEventBus
   private maxConcurrent: number
+  private retryStrategy?: RetryStrategy
+  private circuitBreaker?: CircuitBreaker
+  private reviewGate?: ReviewGate
+  private modelSelector?: ModelSelector
 
-  constructor(deps: DispatcherDeps) {
-    this.deps = deps
-    this.maxConcurrent = deps.maxConcurrent ?? 5
+  constructor(context: DispatcherContext) {
+    this.agentRegistry = context.agentRegistry
+    this.backgroundManager = context.backgroundManager
+    this.sessionFactory = context.sessionFactory
+    this.toolRegistry = context.toolRegistry
+    this.eventBus = context.eventBus
+    this.maxConcurrent = context.maxConcurrent ?? 5
+    this.retryStrategy = context.retryStrategy
+    this.circuitBreaker = context.circuitBreaker
+    this.reviewGate = context.reviewGate
+    this.modelSelector = context.modelSelector
   }
 
   async dispatch(args: DispatchArgs): Promise<DispatchResult> {
     // 1. 创建任务记录
-    const task = this.createTaskRecord(args)
+    const task = this.createTask(args)
     this.tasks.set(task.id, task)
-    await this.deps.eventBus.emit('task.created', { task })
+    await this.eventBus.emit('task.created', { task })
 
     // 2. 解析目标 agent
-    const spec = this.deps.agentRegistry.resolve({
+    const spec = this.agentRegistry.resolve({
       name: args.subagent,
       category: args.category,
     })
@@ -57,13 +79,13 @@ class DispatcherImpl implements Dispatcher {
         retriable: false,
       }
       task.endedAt = Date.now()
-      await this.deps.eventBus.emit('task.failed', { task, error: task.error })
+      await this.eventBus.emit('task.failed', { task, error: task.error })
       return { success: false, error: task.error.message }
     }
 
     // 3. 后台模式 → 交给 BackgroundManager
     if (args.mode === 'background') {
-      const taskId = await this.deps.backgroundManager.submit(task, spec)
+      const taskId = await this.backgroundManager.submit(task, spec)
       return { success: true, id: taskId, status: 'running' }
     }
 
@@ -75,6 +97,8 @@ class DispatcherImpl implements Dispatcher {
     prompt: string
     category?: string
     subagent?: string
+    sessionId?: string
+    sessionMode?: ChildSessionMode
   }): Promise<{
     id: string
     success: boolean
@@ -138,7 +162,7 @@ class DispatcherImpl implements Dispatcher {
 
     if (action === 'cancel') {
       if (task.mode === 'background') {
-        const result = await this.deps.backgroundManager.cancel(id)
+        const result = await this.backgroundManager.cancel(id)
         if (result.success) {
           task.status = 'cancelled'
           task.endedAt = Date.now()
@@ -153,8 +177,22 @@ class DispatcherImpl implements Dispatcher {
       if (task.status !== 'failed' && task.status !== 'cancelled') {
         return { success: false, message: `Task ${id} is ${task.status}, cannot retry` }
       }
-      if (task.attempts >= task.maxAttempts) {
+
+      // 使用 RetryStrategy 判断是否可重试
+      if (this.retryStrategy && task.error) {
+        if (!this.retryStrategy.shouldRetry(task.error, task.attempts)) {
+          return { success: false, message: `RetryStrategy rejected retry for task ${id} (attempt ${task.attempts})` }
+        }
+      } else if (task.attempts >= task.maxAttempts) {
         return { success: false, message: `Task ${id} exceeded max attempts (${task.maxAttempts})` }
+      }
+
+      // 应用退避延迟
+      if (this.retryStrategy) {
+        const delay = this.retryStrategy.getDelay(task.attempts)
+        if (delay > 0) {
+          await new Promise(resolve => setTimeout(resolve, delay))
+        }
       }
 
       // 复用同一个 task 对象（保持 id 和 correlationId 的连续性）
@@ -166,7 +204,7 @@ class DispatcherImpl implements Dispatcher {
       task.attempts += 1
 
       // 重新解析 agent
-      const spec = this.deps.agentRegistry.resolve({
+      const spec = this.agentRegistry.resolve({
         name: task.input.subagent,
         category: task.input.category,
       })
@@ -179,7 +217,7 @@ class DispatcherImpl implements Dispatcher {
 
       // 根据模式直接重新执行（不经过 dispatch 创建新任务）
       if (task.mode === 'background') {
-        await this.deps.backgroundManager.submit(task, spec)
+        await this.backgroundManager.submit(task, spec)
         return { success: true, message: `Task ${id} retried (background)` }
       }
 
@@ -199,6 +237,18 @@ class DispatcherImpl implements Dispatcher {
     task: OrchestratorTask,
     spec: AgentSpec,
   ): Promise<DispatchResult> {
+    // 熔断器检查
+    if (this.circuitBreaker && !this.circuitBreaker.canExecute()) {
+      task.status = 'failed'
+      task.error = {
+        code: 'CIRCUIT_OPEN',
+        message: 'Circuit breaker is open, rejecting execution',
+        retriable: true,
+      }
+      task.endedAt = Date.now()
+      return { success: false, error: task.error.message }
+    }
+
     if (this.runningCount >= this.maxConcurrent) {
       task.status = 'failed'
       task.error = {
@@ -214,18 +264,35 @@ class DispatcherImpl implements Dispatcher {
     task.status = 'running'
     task.startedAt = Date.now()
 
-    await this.deps.eventBus.emit('task.started', { task, agent: spec.name })
+    await this.eventBus.emit('task.started', { task, agent: spec.name })
 
     try {
-      // 获取工具白名单
-      const tools = this.deps.toolRegistry.filterByNames(spec.tools ?? [])
+      const tools = resolveAgentTools(spec, this.toolRegistry)
+      const stickySession = task.input.sessionMode === 'sticky' && Boolean(task.input.sessionId)
+
+      // 自适应模型选择：允许 ModelSelector 根据任务特征覆盖默认模型
+      const selectedModel = this.modelSelector?.selectModel(task, spec)
+      const effectiveModel = selectedModel ?? spec.model
+
+      let session: AgentSessionHandle | undefined
+      let keepSession = false
+
+      if (stickySession && task.input.sessionId && this.sessionFactory.getSession) {
+        session = this.sessionFactory.getSession(task.input.sessionId)
+        keepSession = Boolean(session)
+      }
 
       // 创建隔离的子会话（context isolation: deepagents 模式）
-      const session = await this.deps.sessionFactory.createSession({
-        model: spec.model as never,
-        systemPrompt: spec.systemPrompt,
-        tools,
-      })
+      if (!session) {
+        session = await this.sessionFactory.createSession({
+          id: stickySession ? task.input.sessionId : undefined,
+          model: effectiveModel as never,
+          systemPrompt: spec.systemPrompt,
+          tools,
+          maxToolTurns: spec.maxToolTurns,
+        })
+        keepSession = stickySession
+      }
 
       try {
         // 只传任务 prompt，不继承父会话历史
@@ -233,6 +300,30 @@ class DispatcherImpl implements Dispatcher {
 
         // 提取最后一条助手消息
         const output = session.getLastAssistantText() ?? ''
+        const subagentResult = parseSubagentResult(output)
+
+        // ReviewGate：对子代理产出执行自动化质量审查
+        if (this.reviewGate && output) {
+          const reviewContext: ReviewContext = {
+            taskId: task.id,
+            output,
+            prompt: task.input.prompt,
+          }
+          const review = await this.reviewGate.run(reviewContext)
+          if (!review.passed) {
+            task.status = 'failed'
+            const blockerMessages = review.blockers.map(b => b.message).join('; ')
+            task.error = {
+              code: 'REVIEW_FAILED',
+              message: blockerMessages,
+              retriable: true,
+            }
+            task.endedAt = Date.now()
+            this.circuitBreaker?.recordFailure()
+            await this.eventBus.emit('task.failed', { task, error: task.error })
+            return { success: false, error: `Review failed: ${blockerMessages}` }
+          }
+        }
 
         task.status = 'completed'
         task.output = {
@@ -241,12 +332,15 @@ class DispatcherImpl implements Dispatcher {
         }
         task.endedAt = Date.now()
 
-        await this.deps.eventBus.emit('task.completed', { task, result: task.output })
+        this.circuitBreaker?.recordSuccess()
+  await this.eventBus.emit('task.completed', { task, result: task.output, subagentResult })
 
         return { success: true, output, status: 'completed' }
       } finally {
-        // 临时会话，用完销毁
-        await this.deps.sessionFactory.removeSession(session.id)
+        // 默认使用临时子会话；只有显式 sticky 才保留上下文以供后续复用。
+        if (!keepSession) {
+          await this.sessionFactory.removeSession(session.id)
+        }
       }
     } catch (err) {
       task.status = 'failed'
@@ -257,7 +351,8 @@ class DispatcherImpl implements Dispatcher {
       }
       task.endedAt = Date.now()
 
-      await this.deps.eventBus.emit('task.failed', { task, error: task.error })
+      this.circuitBreaker?.recordFailure()
+      await this.eventBus.emit('task.failed', { task, error: task.error })
 
       return { success: false, error: String(err) }
     } finally {
@@ -265,7 +360,7 @@ class DispatcherImpl implements Dispatcher {
     }
   }
 
-  private createTaskRecord(args: DispatchArgs): OrchestratorTask {
+  private createTask(args: DispatchArgs): OrchestratorTask {
     return {
       id: crypto.randomUUID(),
       kind: 'delegate',
@@ -275,6 +370,8 @@ class DispatcherImpl implements Dispatcher {
         prompt: args.prompt,
         subagent: args.subagent,
         category: args.category,
+        sessionId: args.sessionId,
+        sessionMode: args.sessionMode,
       },
       attempts: 0,
       maxAttempts: 3,
@@ -284,6 +381,6 @@ class DispatcherImpl implements Dispatcher {
   }
 }
 
-export function createDispatcher(deps: DispatcherDeps): Dispatcher {
-  return new DispatcherImpl(deps)
+export function createDispatcher(context: DispatcherContext): IDispatcher {
+  return new Dispatcher(context)
 }

@@ -7,7 +7,8 @@ import {
 } from './auth-store'
 import type { AuthStore } from './auth-store'
 
-import type { Api, Provider } from './types'
+import { ModelRegistry, createDefaultModelRegistry } from './model-registry'
+import type { Api, Provider, Model, ModelSpec } from './types'
 import type { ProviderStream, ProviderFactory } from './types'
 
 // Provider 注册表
@@ -16,6 +17,7 @@ export class ProviderRegistry {
   private readonly instances = new Map<Api, ProviderStream>()
 
   private oauth?: AuthStore
+  private modelRegistry?: ModelRegistry
 
   // 注册 Provider 工厂
   register(api: Api, factory: ProviderFactory): void {
@@ -98,6 +100,30 @@ export class ProviderRegistry {
     this.oauth.setCredentialKey(api, key)
     await this.oauth.save()
   }
+
+  // 设置 ModelRegistry
+  setModelRegistry(registry: ModelRegistry): void {
+    this.modelRegistry = registry
+  }
+
+  // 获取 ModelRegistry
+  getModelRegistry(): ModelRegistry | undefined {
+    return this.modelRegistry
+  }
+
+  // 解析模型规格为完整 Model
+  resolveModel(spec: ModelSpec): Model {
+    if (this.modelRegistry) {
+      return this.modelRegistry.resolve(spec)
+    }
+    // 无 ModelRegistry 时，仅接受完整 Model
+    if (typeof spec === 'object' && 'api' in spec && 'baseUrl' in spec) {
+      return spec as Model
+    }
+    throw new ProviderError('No ModelRegistry configured; cannot resolve model spec', {
+      code: 'PROVIDER_MODEL_NOT_FOUND',
+    })
+  }
 }
 
 // 创建空的 Provider 注册表
@@ -108,6 +134,8 @@ export function createProviderRegistry(): ProviderRegistry {
 export interface DefaultProviderRegistryOptions {
   // 统一凭据存储
   auth?: AuthStore
+  // 模型注册表
+  modelRegistry?: ModelRegistry
 }
 
 // 创建带默认 provider 的注册表。
@@ -129,6 +157,10 @@ export function createDefaultProviderRegistry(
 
   const oauth = options.auth ?? createDefaultAuthStore()
   registry.setAuthStore(oauth)
+
+  // 默认使用带预置模型集的 ModelRegistry
+  const modelRegistry = options.modelRegistry ?? createDefaultModelRegistry()
+  registry.setModelRegistry(modelRegistry)
 
   return registry
 }

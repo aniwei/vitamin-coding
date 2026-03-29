@@ -16,7 +16,7 @@ describe('createSessionStorage', () => {
   })
 
   it('#then creates local storage from options', async () => {
-    const storage = createSessionStorage<string>({ type: 'local', sessionDir: tempDir })
+    const storage = createSessionStorage<string>({ type: 'local', baseDir: tempDir })
     await storage.save({
       version: 1,
       id: 'storage-test',
@@ -29,6 +29,6 @@ describe('createSessionStorage', () => {
   })
 
   it('#then throws for unknown storage type', () => {
-    expect(() => createSessionStorage({ type: 'unknown' as any, sessionDir: '/' })).toThrow('Unsupported storage type')
+    expect(() => createSessionStorage({ type: 'unknown' as any, baseDir: '/' })).toThrow('Unsupported storage type')
   })
 })

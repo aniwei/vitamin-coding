@@ -1,5 +1,8 @@
 import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
+import { createInterface } from 'node:readline'
+
+import { createVitamin, LeadInteractiveMode, runLeadJsonMode, runLeadPrintMode } from '@vitamin/coding'
 
 import type { CLIOptions, RunMode } from './types'
 
@@ -21,7 +24,7 @@ export function parseCLI(argv: string[]): ParsedCLI {
 
   let prompt: string | undefined
   let model: string | undefined
-  let mode: RunMode = 'print'
+  let mode: RunMode = 'interactive'
   let configPath: string | undefined
   let projectDir = process.cwd()
   let verbose = false
@@ -54,6 +57,10 @@ export function parseCLI(argv: string[]): ParsedCLI {
     const arg = args[i]
 
     switch (arg) {
+      case '--print':
+      case '-p':
+        mode = 'print'
+        break
       case '--interactive':
       case '-i':
         mode = 'interactive'
@@ -173,7 +180,7 @@ function printVersion(): void {
   process.stdout.write(`vitamin ${version}\n`)
 }
 
-export function runCli(): number {
+export async function runCli(): Promise<number> {
   const { options, subCommand } = parseCLI(process.argv)
 
   if (subCommand === 'doctor') {
@@ -196,6 +203,66 @@ export function runCli(): number {
     return 1
   }
 
-  // TODO: boot subsystems and start session
-  return 0
+  // 创建并启动 VitaminApp
+  const app = createVitamin({
+    port: typeof options.inspect === 'number' ? options.inspect : 9229,
+    inspect: options.inspect !== undefined,
+    logger: {
+      name: 'vitamin-cli',
+      level: options.verbose ? 'debug' : 'info',
+      destination: 'stderr',
+    },
+    workspaceDir: options.projectDir,
+    projectConfigPath: options.configPath,
+    modelId: options.model,
+  })
+
+  await app.start()
+
+  try {
+    switch (options.mode) {
+      case 'print': {
+        if (options.prompt) {
+          await runLeadPrintMode(app, options.prompt)
+        }
+        break
+      }
+      case 'json': {
+        if (options.prompt) {
+          const result = await runLeadJsonMode(app, options.prompt)
+          process.stdout.write(JSON.stringify(result, null, 2) + '\n')
+        }
+        break
+      }
+      case 'interactive': {
+        const interactive = new LeadInteractiveMode(app)
+        const rl = createInterface({ input: process.stdin, output: process.stdout })
+        const prompt = () => rl.question('vitamin> ', async (input) => {
+          const result = await interactive.handleInput(input)
+          if (result.type === 'exit') {
+            rl.close()
+            return
+          }
+          if (result.type === 'response' || result.type === 'system') {
+            process.stdout.write(result.text + '\n')
+          }
+          prompt()
+        })
+        await new Promise<void>((resolve) => {
+          rl.on('close', resolve)
+          prompt()
+        })
+        break
+      }
+      case 'rpc': {
+        await app.createSession()
+        // TODO: implement RPC mode (stdin/stdout JSON-RPC)
+        break
+      }
+    }
+
+    return 0
+  } finally {
+    await app.stop()
+  }
 }

@@ -35,6 +35,12 @@ function isAgentTool(value: unknown): value is AgentTool<unknown> {
 export class ToolRegistry {
   private readonly tools = new Map<string, RegisteredTool>()
   private binaryToolExecutors: BinaryToolExecutorRegistry | null = null
+  private _version = 0
+
+  /** 每次 register/unregister 递增，用于检测工具集变化 */
+  get version(): number {
+    return this._version
+  }
 
   // 工具数量
   get size(): number {
@@ -63,6 +69,8 @@ export class ToolRegistry {
       preset: options.preset ?? 'full',
       category: options.category,
       builtin: options.builtin ?? false,
+      snippet: options.snippet,
+      guideline: options.guideline,
     }
 
     const toolList = Array.isArray(tools) ? tools : [tools]
@@ -75,6 +83,7 @@ export class ToolRegistry {
       const registered: RegisteredTool = { ...typedTool, metadata }
       this.tools.set(typedTool.name, registered)
     }
+    this._version++
   }
 
   // 注销工具
@@ -90,10 +99,13 @@ export class ToolRegistry {
         }
       }
 
+      if (allDeleted) this._version++
       return allDeleted
     } 
 
-    return this.tools.delete(name)
+    const deleted = this.tools.delete(name)
+    if (deleted) this._version++
+    return deleted
   }
   
   // 按名称列表获取工具
@@ -147,7 +159,10 @@ export class ToolRegistry {
 
   // 清空所有工具
   clear(): void {
-    this.tools.clear()
+    if (this.tools.size > 0) {
+      this.tools.clear()
+      this._version++
+    }
   }
 }
 

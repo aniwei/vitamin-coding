@@ -8,6 +8,8 @@ const DelegateTaskArgsSchema = z.object({
   subagent: z.string().optional().describe('Agent name to delegate the task to (e.g. "explore")'),
   category: z.string().optional().describe('Task category (e.g. "quick", "deep", "search")'),
   mode: z.enum(['sync', 'background']).optional().default('sync').describe('Execution mode'),
+  sessionId: z.string().optional().describe('Optional child session ID. When used with sticky mode, later calls can reuse the same child context.'),
+  sessionMode: z.enum(['ephemeral', 'sticky']).optional().default('ephemeral').describe('Child session lifecycle. ephemeral deletes the child session after the task; sticky keeps it for later reuse.'),
 }).refine(
   (data) => data.subagent !== undefined || data.category !== undefined,
   { message: 'Must specify either subagent or category' },
@@ -29,6 +31,8 @@ export type TaskDispatch = (args: {
   subagent?: string
   category?: string
   mode: 'sync' | 'background'
+  sessionId?: string
+  sessionMode?: 'ephemeral' | 'sticky'
 }) => Promise<TaskDispatchResult>
 
 
@@ -52,6 +56,8 @@ export function createTaskDelegate(
         subagent: params.subagent,
         category: params.category,
         mode: params.mode,
+        sessionId: params.sessionId,
+        sessionMode: params.sessionMode,
       })
 
       if (result.success) {
@@ -66,6 +72,8 @@ export function createTaskDelegate(
             mode: params.mode,
             taskId: result.id,
             status: result.status,
+            sessionId: params.sessionId,
+            sessionMode: params.sessionMode,
           },
         }
       }

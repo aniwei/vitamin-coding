@@ -33,32 +33,45 @@ import {
   createAgentCall,
   type CallAgent,
 } from './orchestration/agent-call'
-
+import {
+  createClarifyRequest,
+  type ClarifyRequest,
+} from './orchestration/clarify-request'
 
 // LSP
-// import { createLspDefinition } from './lsp/definition'
-// import { createLspReferences } from './lsp/references'
-// import { createLspSymbols } from './lsp/symbols'
-// import { createLspDiagnostics } from './lsp/diagnostics'
-// import { createLspPrepareRename, createLspRename } from './lsp/rename'
+import { createLspDefinition } from './lsp/definition'
+import { createLspReferences } from './lsp/references'
+import { createLspSymbols } from './lsp/symbols'
+import { createLspDiagnostics } from './lsp/diagnostics'
+import { createLspPrepareRename, createLspRename } from './lsp/rename'
 
+// Session
+import { createSessionManager, type SessionManager } from './session/session-manager'
+
+// Skill
 import { createSkillLoad, type LoadSkill  } from './skill/skill-load'
 import { createSkillExecute, type ExecuteSkill } from './skill/skill-execute'
 
 import type { ToolRegistry } from './tool-registry'
 
 export interface RegisterBuiltinOptions {
+  // 必填回调
   dispatchTask: TaskDispatch
   performWork: PerformWork
   callAgent: CallAgent
-  loadSkill: LoadSkill,
-  executeSkill: ExecuteSkill,
+  loadSkill: LoadSkill
+  executeSkill: ExecuteSkill
+  // 可选回调
   createTask?: CreateTask
   getTask?: GetTask
   listTasks?: ListTasks
   updateTask?: UpdateTask
   getBackgroundOutput?: GetBackgroundOutput
   cancelBackground?: CancelBackground
+  clarifyRequest?: ClarifyRequest
+  sessionManager?: SessionManager
+  // 功能开关
+  enableLsp?: boolean
 }
 
 // 注册所有内置工具 (minimal + standard + full 预设)
@@ -67,7 +80,7 @@ export function registerBuiltinTools(
   projectRoot: string,
   options: RegisterBuiltinOptions,
 ): void {
-  /// minial
+  /// minimal
   // 基础文件系统
   registry.register([  
     createRead(projectRoot),
@@ -75,7 +88,7 @@ export function registerBuiltinTools(
     createEdit(projectRoot),
   ], { preset: 'minimal', category: 'fs', builtin: true })
 
-  // 基础shell
+  // 基础 shell
   registry.register([
     createBash(projectRoot)
   ], { preset: 'minimal', category: 'shell', builtin: true })
@@ -96,18 +109,20 @@ export function registerBuiltinTools(
     createTaskDelegate(projectRoot, options.dispatchTask),
   ], { preset: 'standard', category: 'orchestration', builtin: true })
 
-  // LSP 工具
-  // registry.register([
-  //   createLspDefinition(projectRoot),
-  //   createLspReferences(projectRoot),
-  //   createLspSymbols(projectRoot),
-  //   createLspDiagnostics(projectRoot),
-  //   createLspPrepareRename(projectRoot),
-  //   createLspRename(projectRoot),
-  // ], { preset: 'standard', category: 'lsp', builtin: true })
+  // LSP 工具（opt-in，需要 enableLsp: true）
+  if (options.enableLsp) {
+    registry.register([
+      createLspDefinition(projectRoot),
+      createLspReferences(projectRoot),
+      createLspSymbols(projectRoot),
+      createLspDiagnostics(projectRoot),
+      createLspPrepareRename(projectRoot),
+      createLspRename(projectRoot),
+    ], { preset: 'standard', category: 'lsp', builtin: true })
+  }
 
   /// full
-  // 任务执行工具
+  // 编排工具
   registry.register([
     createAgentCall(projectRoot, options.callAgent),
     createPerformWork(projectRoot, options?.performWork),
@@ -117,7 +132,15 @@ export function registerBuiltinTools(
     createTaskUpdate(projectRoot, { update: options.updateTask }),
     createBackgroundOutputTool(options.getBackgroundOutput),
     createBackgroundCancelTool(options.cancelBackground),
+    createClarifyRequest(projectRoot, options.clarifyRequest),
   ], { preset: 'full', category: 'orchestration', builtin: true })
+
+  // 会话管理工具（需注入 sessionManager 回调）
+  if (options.sessionManager) {
+    registry.register([
+      createSessionManager({ projectRoot, sessionManager: options.sessionManager }),
+    ], { preset: 'full', category: 'session', builtin: true })
+  }
 
   // Skill 工具
   registry.register([
