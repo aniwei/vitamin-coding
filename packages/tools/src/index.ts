@@ -25,7 +25,6 @@ export type { ValidationResult } from './tool-validator'
 
 // 编排回调类型
 export type { TaskDispatch } from './orchestration/task-delegate'
-export type { PerformWork } from './orchestration/perform-work'
 export type { GetBackgroundOutput } from './orchestration/background-task-output'
 export type { CancelBackground } from './orchestration/background-task-cancel'
 export type { CallAgent } from './orchestration/agent-call'
@@ -34,6 +33,12 @@ export type { GetTask } from './orchestration/task-get'
 export type { ListTasks } from './orchestration/task-list'
 export type { UpdateTask } from './orchestration/task-update'
 export type { ClarifyRequest } from './orchestration/clarify-request'
+
+// Plan 回调类型
+export type { PlanCreate } from './orchestration/plan-create'
+export type { PlanGet } from './orchestration/plan-get'
+export type { PlanList } from './orchestration/plan-list'
+export type { PlanUpdate } from './orchestration/plan-update'
 
 // 会话管理
 export { createSessionManager } from './session/session-manager'

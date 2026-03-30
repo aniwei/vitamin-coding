@@ -1,13 +1,12 @@
-import { PromptManager } from '../lead/prompt-manager'
 import { getLastAssistantText } from '../modes/run-modes'
 
 import type { AgentTool } from '@vitamin/agent'
 import type { Model, ModelSpec, ModelRegistry } from '@vitamin/ai'
 import type { SessionFactory, AgentSessionHandle } from '@vitamin/orchestrator'
 import type { AgentSession } from '../session/agent-session'
-import type { CodingSessionManager } from '../session/coding-session-manager'
 import type { RegisteredTool, ToolRegistry } from '@vitamin/tools'
 import type { PromptToolSummary } from '../lead/prompt-manager'
+import type { VitaminRuntime } from './types'
 
 export function resolveModel(
   specModel: unknown,
@@ -27,21 +26,22 @@ export function resolveModel(
   }
 }
 
+export function createSessionFactoryAdapter(runtime: VitaminRuntime): SessionFactory {
+  const {
+    sessionManager: csm,
+    promptManager,
+    defaultTools,
+    modelRegistry,
+    toolsRegistry,
+  } = runtime
 
-export function createSessionFactoryAdapter(params: {
-  codingSessionManager: CodingSessionManager
-  getToolRegistry: () => ToolRegistry | null
-  promptManager: PromptManager
-  defaultTools?: AgentTool[]
-  modelRegistry: ModelRegistry
-}): SessionFactory {
-  const { codingSessionManager: csm, getToolRegistry, promptManager, defaultTools, modelRegistry } = params
+  const getToolRegistry = (): ToolRegistry => toolsRegistry
 
   const summarizeTools = (tools: AgentTool[] | undefined): PromptToolSummary[] => {
     if (!tools || tools.length === 0) return []
 
     return tools.map((tool) => {
-      const registered = getToolRegistry()?.get(tool.name) as RegisteredTool | undefined
+      const registered = getToolRegistry().get(tool.name) as RegisteredTool | undefined
       return {
         name: tool.name,
         description: tool.description,
@@ -66,7 +66,7 @@ export function createSessionFactoryAdapter(params: {
       const model = resolveModel(options?.model, modelRegistry)
 
       const tools = (options?.tools as AgentTool[] | undefined)
-        ?? getToolRegistry()?.getAvailable('full') as AgentTool[] | undefined
+        ?? getToolRegistry().getAvailable('full') as AgentTool[] | undefined
         ?? defaultTools
 
       const systemPrompt = promptManager.buildSubagentPrompt({

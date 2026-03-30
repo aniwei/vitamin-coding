@@ -812,7 +812,6 @@ describe('createOrchestrator', () => {
 
     expect(callbacks.dispatchTask).toBeTypeOf('function')
     expect(callbacks.callAgent).toBeTypeOf('function')
-    expect(callbacks.performWork).toBeTypeOf('function')
     expect(callbacks.createTask).toBeTypeOf('function')
     expect(callbacks.getTask).toBeTypeOf('function')
     expect(callbacks.listTasks).toBeTypeOf('function')
@@ -967,18 +966,6 @@ describe('bootstrapOrchestrator', () => {
     const loadResult = await callbacks.loadSkill('/test')
     expect(loadResult.success).toBe(true)
     expect(loadResult.name).toBe('sk-/test')
-  })
-
-  it('performWork returns NO_PLAN_STORE when no planFileStore configured', async () => {
-    const { callbacks } = bootstrapOrchestrator({
-      sessionFactory: createStubSessionFactory(),
-      toolRegistry: createStubToolRegistry(),
-    })
-
-    const result = await callbacks.performWork('some-plan')
-    expect(result.success).toBe(false)
-    expect(result.error).toBe('NO_PLAN_STORE')
-    expect(result.message).toContain('PlanFileStore')
   })
 })
 
@@ -1437,17 +1424,6 @@ describe('End-to-End Callbacks', () => {
     // Task should have been retried (status is completed or running)
     expect(['completed', 'running']).toContain(afterRetry.status)
   })
-
-  it('callbacks.performWork returns NO_PLAN_STORE when no planFileStore', async () => {
-    const { callbacks } = bootstrapOrchestrator({
-      sessionFactory: createStubSessionFactory(),
-      toolRegistry: createStubToolRegistry(),
-    })
-
-    const result = await callbacks.performWork('my-plan')
-    expect(result.success).toBe(false)
-    expect(result.error).toBe('NO_PLAN_STORE')
-  })
 })
 
 // ═══ Event System Integration ═══
@@ -1607,7 +1583,6 @@ describe('ToolCallbacks Type Compatibility', () => {
     const expectedKeys = [
       'dispatchTask',
       'callAgent',
-      'performWork',
       'createTask',
       'getTask',
       'listTasks',
@@ -1631,11 +1606,14 @@ describe('ToolCallbacks Type Compatibility', () => {
       agents: [testAgent],
     })
 
-    // TaskDispatch = (args: { prompt, subagent?, category?, mode }) => Promise<{ success, output?, id?, status?, error? }>
+    // TaskDispatch = (args: { prompt, subagent?, category?, mode, sessionId?, sessionMode?, workflowSlot? }) => Promise<{ success, output?, id?, status?, error? }>
     const result = await callbacks.dispatchTask({
       prompt: 'test',
       subagent: 'test-agent',
       mode: 'sync',
+      sessionId: 'child-1',
+      sessionMode: 'sticky',
+      workflowSlot: 'execution',
     })
 
     expect(result).toHaveProperty('success')
@@ -1989,12 +1967,12 @@ describe('bridgeEventBusToHooks', () => {
     const cleanup = bridgeEventBusToHooks(eventBus, hooks)
 
     await eventBus.emit('task.created', { task: { id: 't1' } } as never)
-    await eventBus.emit('plan.started', { planId: 'p1', totalSteps: 3 })
+    await eventBus.emit('task.cancelled', { taskId: 'x' })
     await eventBus.emit('review.passed', { taskId: 't1', reviewType: 'spec' })
 
     expect(emitted).toHaveLength(3)
     expect(emitted[0]).toEqual({ timing: 'task.created', input: { task: { id: 't1' } } })
-    expect(emitted[1]).toEqual({ timing: 'plan.started', input: { planId: 'p1', totalSteps: 3 } })
+    expect(emitted[1]).toEqual({ timing: 'task.cancelled', input: { taskId: 'x' } })
     expect(emitted[2]).toEqual({ timing: 'review.passed', input: { taskId: 't1', reviewType: 'spec' } })
 
     cleanup()
@@ -2030,7 +2008,7 @@ describe('bridgeEventBusToHooks', () => {
       hooks,
     })
 
-    await orchestrator.eventBus.emit('plan.completed', { planId: 'p1' })
-    expect(emitted).toContain('plan.completed')
+    await orchestrator.eventBus.emit('review.passed', { taskId: 'p1', reviewType: 'spec' })
+    expect(emitted).toContain('review.passed')
   })
 })

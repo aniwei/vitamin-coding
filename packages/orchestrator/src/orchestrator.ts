@@ -2,9 +2,8 @@ import { createEventBus, bridgeEventBusToHooks } from './events'
 import { createAgentRegistry } from './agent-registry'
 import { createBackgroundManager } from './background-manager'
 import { createDispatcher } from './dispatcher'
-import { createPlanLoader, buildStepPrompt } from './plan-loader'
-import { createMemoryCheckpointStore } from './checkpoint-store'
-import { createMemoryPlanRunStore, createPlanRun, updatePlanRunStep } from './plan-run'
+import { resolveAgentProfileForTask } from './task-type-router'
+import { prepareAgentSpec } from './agent-spec-factory'
 
 import type { OrchestratorEventBus } from './events'
 import type {
@@ -13,13 +12,17 @@ import type {
   BackgroundManager,
   Dispatcher,
   OrchestratorOptions,
+  PlanStore,
+  PlanStatus,
+  PlanTask,
+  PlanTaskStatus,
+  AgentProfileRegistry,
   SkillAdapter,
+  TaskType,
 } from './types'
-import type { PlanLoader } from './plan-loader'
 import type { CheckpointStore } from './checkpoint-store'
-import type { PlanRun, PlanRunStore } from './plan-run'
 import type { ClarifyChannel, ClarifyEscalation, ClarifyReason } from './clarify-channel'
-import type { ReviewGate, ReviewContext } from './review-gate'
+import type { ReviewGate } from './review-gate'
 
 
 export interface Orchestrator {
@@ -27,21 +30,26 @@ export interface Orchestrator {
   readonly dispatcher: Dispatcher
   readonly backgroundManager: BackgroundManager
   readonly eventBus: OrchestratorEventBus
-  readonly planLoader: PlanLoader | undefined
   readonly checkpointStore: CheckpointStore | undefined
   readonly clarifyChannel: ClarifyChannel | undefined
   readonly reviewGate: ReviewGate | undefined
-  readonly planRunStore: PlanRunStore | undefined
+  readonly planStore: PlanStore | undefined
+  readonly agentProfileRegistry: AgentProfileRegistry | undefined
 
   toToolCallbacks(skillAdapter?: SkillAdapter): ToolCallbacks
 }
 
 export interface ToolCallbacks {
   dispatchTask: (args: {
-    prompt: string
+    prompt?: string
+    planId?: string
+    taskId?: string
     subagent?: string
     category?: string
     mode: 'sync' | 'background'
+    sessionId?: string
+    sessionMode?: 'ephemeral' | 'sticky'
+    workflowSlot?: string
   }) => Promise<{
     success: boolean
     output?: string
@@ -56,12 +64,7 @@ export interface ToolCallbacks {
     options?: { mode?: 'sync' | 'async'; sessionId?: string },
   ) => Promise<{ success: boolean; output?: string; error?: string }>
 
-  performWork: (name: string) => Promise<{
-    success: boolean
-    taskId?: string
-    message?: string
-    error?: Error | string
-  }>
+
 
   createTask: (args: {
     prompt: string
@@ -131,6 +134,45 @@ export interface ToolCallbacks {
     escalation?: ClarifyEscalation
     error?: string
   }>
+
+  // ═══ Plan 回调 ═══
+  planCreate?: (args: {
+    name: string
+    goal: string
+    architecture?: string
+    constraints?: string[]
+    tasks: Array<{
+      title: string
+      description: string
+      type: string
+      dependencies?: string[]
+      files?: string[]
+      estimatedComplexity?: 'low' | 'medium' | 'high'
+    }>
+    sessionId: string
+  }) => Promise<{ planId: string; taskCount: number; status: string; error?: string }>
+
+  planGet?: (args: {
+    planId?: string
+    detail: 'summary' | 'full'
+    sessionId: string
+  }) => Promise<{ found: boolean; text: string; error?: string }>
+
+  planList?: (args: {
+    status?: string
+    sessionId: string
+  }) => Promise<{
+    plans: Array<{ id: string; name: string; status: string; taskCount: number; completedCount: number }>
+    error?: string
+  }>
+
+  planUpdate?: (args: {
+    planId: string
+    action: string
+    tasks?: Array<{ title: string; description: string; type: string; dependencies?: string[]; files?: string[]; estimatedComplexity?: 'low' | 'medium' | 'high' }>
+    taskId?: string
+    taskPatch?: Record<string, unknown>
+  }) => Promise<{ success: boolean; text: string; error?: string }>
 }
 
 export function createOrchestrator(
@@ -173,31 +215,26 @@ export function createOrchestrator(
     modelSelector: options.modelSelector,
   })
 
-  // Phase 2: Plan Loader + Checkpoint Store
-  const planLoader = options.planFileStore
-    ? createPlanLoader(options.planFileStore)
-    : undefined
-  const checkpointStore = options.checkpointStore
-    ?? (options.planFileStore ? createMemoryCheckpointStore() : undefined)
-
-  // Phase 2: PlanRun Store
-  const planRunStore = options.planRunStore
-    ?? (options.planFileStore ? createMemoryPlanRunStore() : undefined)
+  const checkpointStore = options.checkpointStore ?? undefined
 
   // Phase 3: Clarify Channel + Review Gate
   const clarifyChannel = options.clarifyChannel ?? undefined
   const reviewGate = options.reviewGate ?? undefined
+
+  // Plan system
+  const planStore = options.planStore ?? undefined
+  const agentProfileRegistry = options.agentProfileRegistry ?? undefined
 
   return {
     agentRegistry,
     dispatcher,
     backgroundManager,
     eventBus,
-    planLoader,
     checkpointStore,
     clarifyChannel,
     reviewGate,
-    planRunStore,
+    planStore,
+    agentProfileRegistry,
 
     toToolCallbacks(skillAdapter?: SkillAdapter): ToolCallbacks {
       const resolvedSkillAdapter = skillAdapter ?? options.skillAdapter
@@ -205,189 +242,31 @@ export function createOrchestrator(
         Promise.resolve({ success: false, error: 'SkillAdapter not provided' } as never)
 
       return {
-        dispatchTask: (args) => dispatcher.dispatch(args),
-        callAgent: (agent, prompt, opts) => agentRegistry.call(agent, prompt, opts),
-
-        performWork: async (name: string) => {
-          if (!planLoader || !options.planFileStore) {
-            return {
-              success: false,
-              message: 'performWork requires a PlanFileStore. Provide planFileStore in OrchestratorOptions.',
-              error: 'NO_PLAN_STORE',
-            }
+        dispatchTask: async (args) => {
+          // Plan-based dispatch: 从 PlanStore 加载 task → 解析 profile → 组装 AgentSpec → dispatch
+          if (args.planId && planStore && agentProfileRegistry) {
+            return handlePlanDispatch(
+              { planId: args.planId, taskId: args.taskId, mode: args.mode, sessionId: args.sessionId, sessionMode: args.sessionMode, workflowSlot: args.workflowSlot },
+              planStore,
+              agentProfileRegistry,
+              dispatcher,
+              eventBus,
+              agentRegistry,
+              resolvedSkillAdapter,
+            )
           }
-
-          const sessionId = options.sessionId
-
-          try {
-            // Load the plan file
-            const plan = await planLoader.load(name)
-            const nextStep = planLoader.getNextStep(plan.id)
-
-            if (!nextStep) {
-              const completed = planLoader.isCompleted(plan.id)
-              return {
-                success: completed,
-                message: completed
-                  ? `Plan "${plan.name}" is already fully completed.`
-                  : `Plan "${plan.name}" has no pending steps.`,
-              }
-            }
-
-            // PlanRun: 获取或创建执行实例
-            let planRun: PlanRun | undefined
-            if (planRunStore) {
-              planRun = sessionId
-                ? await planRunStore.getActive(plan.id, sessionId)
-                : undefined
-              if (!planRun) {
-                planRun = createPlanRun({
-                  planId: plan.id,
-                  planPath: name,
-                  sessionId: sessionId ?? '',
-                  steps: plan.steps.map(s => ({ id: s.id, status: s.status })),
-                })
-                await planRunStore.save(planRun)
-              }
-            }
-
-            // Emit plan.started if this is the first step
-            const progress = plan.steps.filter(s => s.status === 'completed').length
-            if (progress === 0) {
-              await eventBus.emit('plan.started', {
-                planId: plan.id,
-                totalSteps: plan.steps.length,
-              })
-            }
-
-            // Mark step as in-progress
-            planLoader.updateStep(plan.id, nextStep.id, 'in_progress')
-            if (planRun && planRunStore) {
-              planRun = updatePlanRunStep(planRun, nextStep.id, { status: 'in_progress' })
-              planRun.currentStepId = nextStep.id
-              await planRunStore.save(planRun)
-            }
-
-            // Build the prompt and dispatch as a task
-            const prompt = buildStepPrompt(plan, nextStep)
-            const result = await dispatcher.dispatch({
-              prompt,
-              mode: 'sync',
-            })
-
-            if (result.success) {
-              // ReviewGate: 步骤产出物质量审查
-              if (reviewGate && result.output) {
-                const reviewContext: ReviewContext = {
-                  taskId: result.id ?? '',
-                  planId: plan.id,
-                  stepId: nextStep.id,
-                  output: result.output,
-                  prompt,
-                }
-                const review = await reviewGate.run(reviewContext)
-                if (!review.passed) {
-                  planLoader.updateStep(plan.id, nextStep.id, 'failed')
-                  if (planRun && planRunStore) {
-                    planRun = updatePlanRunStep(planRun, nextStep.id, {
-                      status: 'failed',
-                      taskId: result.id,
-                      reviewPassed: false,
-                    })
-                    planRun.currentStepId = undefined
-                    await planRunStore.save(planRun)
-                  }
-                  const blockerMessages = review.blockers.map(b => b.message).join('; ')
-                  return {
-                    success: false,
-                    message: `Step "${nextStep.title}" failed review: ${blockerMessages}`,
-                    error: `REVIEW_FAILED: ${blockerMessages}`,
-                  }
-                }
-              }
-
-              planLoader.updateStep(plan.id, nextStep.id, 'completed')
-              if (planRun && planRunStore) {
-                planRun = updatePlanRunStep(planRun, nextStep.id, {
-                  status: 'completed',
-                  taskId: result.id,
-                  output: result.output?.slice(0, 500),
-                  reviewPassed: reviewGate ? true : undefined,
-                })
-                planRun.currentStepId = undefined
-              }
-
-              const remaining = plan.steps.filter(s => s.status === 'pending').length - 1
-              await eventBus.emit('plan.step_completed', {
-                planId: plan.id,
-                stepId: nextStep.id,
-                remaining: Math.max(0, remaining),
-              })
-
-              // Save checkpoint (with sessionId)
-              if (checkpointStore) {
-                await checkpointStore.save({
-                  id: crypto.randomUUID(),
-                  taskId: result.id ?? crypto.randomUUID(),
-                  sessionId,
-                  planId: plan.id,
-                  stepId: nextStep.id,
-                  task: (await dispatcher.get(result.id ?? ''))!,
-                  metadata: { stepTitle: nextStep.title },
-                  createdAt: Date.now(),
-                })
-              }
-
-              // Check if all steps complete
-              const updatedPlan = planLoader.getPlan(plan.id)
-              if (updatedPlan && updatedPlan.steps.every(s => s.status === 'completed')) {
-                await eventBus.emit('plan.completed', { planId: plan.id })
-                if (planRun) {
-                  planRun.status = 'completed'
-                  planRun.completedAt = Date.now()
-                }
-              }
-
-              // Persist PlanRun
-              if (planRun && planRunStore) {
-                await planRunStore.save(planRun)
-              }
-
-              // Persist progress (markdown checkboxes)
-              const currentPlan = planLoader.getPlan(plan.id)
-              if (currentPlan) {
-                await planLoader.save(currentPlan)
-              }
-
-              return {
-                success: true,
-                taskId: result.id,
-                message: `Step "${nextStep.title}" completed. ${Math.max(0, remaining)} steps remaining.`,
-              }
-            } else {
-              planLoader.updateStep(plan.id, nextStep.id, 'failed')
-              if (planRun && planRunStore) {
-                planRun = updatePlanRunStep(planRun, nextStep.id, {
-                  status: 'failed',
-                  taskId: result.id,
-                })
-                planRun.currentStepId = undefined
-                await planRunStore.save(planRun)
-              }
-              return {
-                success: false,
-                message: `Step "${nextStep.title}" failed: ${result.error}`,
-                error: result.error,
-              }
-            }
-          } catch (err) {
-            return {
-              success: false,
-              message: `Failed to load or execute plan: ${String(err)}`,
-              error: String(err),
-            }
-          }
+          // Standalone dispatch (backward compatible) — prompt is required here
+          return dispatcher.dispatch({
+            prompt: args.prompt ?? '',
+            subagent: args.subagent,
+            category: args.category,
+            mode: args.mode,
+            sessionId: args.sessionId,
+            sessionMode: args.sessionMode,
+            workflowSlot: args.workflowSlot,
+          })
         },
+        callAgent: (agent, prompt, opts) => agentRegistry.call(agent, prompt, opts),
 
         createTask: (args) => dispatcher.create(args),
         getTask: async (id) => {
@@ -412,9 +291,284 @@ export function createOrchestrator(
         clarifyRequest: clarifyChannel
           ? (args) => clarifyChannel.request(args)
           : undefined,
+
+        // Plan callbacks
+        planCreate: planStore
+          ? async (args) => {
+              try {
+                const plan = await planStore.create({
+                  id: '',
+                  version: 0,
+                  name: args.name,
+                  goal: args.goal,
+                  architecture: args.architecture,
+                  constraints: args.constraints,
+                  tasks: args.tasks.map((t, i) => ({
+                    id: t.dependencies?.length ? `task-${i + 1}` : `task-${i + 1}`,
+                    title: t.title,
+                    description: t.description,
+                    type: t.type as TaskType,
+                    status: 'pending' as PlanTaskStatus,
+                    dependencies: t.dependencies,
+                    files: t.files,
+                    estimatedComplexity: t.estimatedComplexity,
+                    attempts: 0,
+                  })),
+                  status: 'active',
+                  sessionId: args.sessionId,
+                  createdAt: 0,
+                  updatedAt: 0,
+                })
+                await eventBus.emit('plan.created', { planId: plan.id, name: plan.name, taskCount: plan.tasks.length })
+                return { planId: plan.id, taskCount: plan.tasks.length, status: plan.status }
+              } catch (err) {
+                return { planId: '', taskCount: 0, status: 'failed', error: String(err) }
+              }
+            }
+          : undefined,
+
+        planGet: planStore
+          ? async (args) => {
+              try {
+                const planId = args.planId
+                  ?? (await planStore.getActive(args.sessionId))?.id
+                if (!planId) return { found: false, text: '', error: 'No plan found' }
+
+                if (args.detail === 'full') {
+                  // 返回原始 Markdown——供 LLM 直接分析
+                  const md = await planStore.getMarkdown(planId)
+                  if (!md) return { found: false, text: '', error: 'No plan found' }
+                  return { found: true, text: md }
+                }
+
+                // summary: 使用结构化数据生成简要摘要
+                const plan = await planStore.get(planId)
+                if (!plan) return { found: false, text: '', error: 'No plan found' }
+                return { found: true, text: formatPlanSummary(plan) }
+              } catch (err) {
+                return { found: false, text: '', error: String(err) }
+              }
+            }
+          : undefined,
+
+        planList: planStore
+          ? async (args) => {
+              try {
+                const summaries = args.status
+                  ? await planStore.listByStatus(args.status as PlanStatus)
+                  : await planStore.listBySession(args.sessionId)
+                return {
+                  plans: summaries.map(s => ({
+                    id: s.id,
+                    name: s.name,
+                    status: s.status,
+                    taskCount: s.taskCount,
+                    completedCount: s.completedCount,
+                  })),
+                }
+              } catch (err) {
+                return { plans: [], error: String(err) }
+              }
+            }
+          : undefined,
+
+        planUpdate: planStore
+          ? async (args) => {
+              try {
+                const plan = await planStore.get(args.planId)
+                if (!plan) return { success: false, text: '', error: `Plan ${args.planId} not found` }
+
+                switch (args.action) {
+                  case 'pause':
+                    await planStore.update(args.planId, { status: 'paused' })
+                    await eventBus.emit('plan.updated', { planId: args.planId, action: 'pause' })
+                    return { success: true, text: `Plan ${args.planId} paused` }
+                  case 'resume':
+                    await planStore.update(args.planId, { status: 'active' })
+                    await eventBus.emit('plan.updated', { planId: args.planId, action: 'resume' })
+                    return { success: true, text: `Plan ${args.planId} resumed` }
+                  case 'complete':
+                    await planStore.update(args.planId, { status: 'completed' })
+                    await eventBus.emit('plan.completed', { planId: args.planId, name: plan.name })
+                    return { success: true, text: `Plan ${args.planId} completed` }
+                  case 'cancel':
+                    await planStore.update(args.planId, { status: 'cancelled' })
+                    await eventBus.emit('plan.updated', { planId: args.planId, action: 'cancel' })
+                    return { success: true, text: `Plan ${args.planId} cancelled` }
+                  case 'add_tasks': {
+                    if (!args.tasks?.length) return { success: false, text: '', error: 'No tasks provided' }
+                    const startIdx = plan.tasks.length + 1
+                    const newTasks: PlanTask[] = args.tasks.map((t, i) => ({
+                      id: `task-${startIdx + i}`,
+                      title: t.title,
+                      description: t.description,
+                      type: t.type as TaskType,
+                      status: 'pending' as PlanTaskStatus,
+                      dependencies: t.dependencies,
+                      files: t.files,
+                      estimatedComplexity: t.estimatedComplexity,
+                      attempts: 0,
+                    }))
+                    await planStore.update(args.planId, { tasks: [...plan.tasks, ...newTasks] })
+                    await eventBus.emit('plan.updated', { planId: args.planId, action: 'add_tasks' })
+                    return { success: true, text: `Added ${newTasks.length} tasks to plan ${args.planId}` }
+                  }
+                  case 'remove_task': {
+                    if (!args.taskId) return { success: false, text: '', error: 'taskId required' }
+                    const filtered = plan.tasks.filter(t => t.id !== args.taskId)
+                    if (filtered.length === plan.tasks.length) return { success: false, text: '', error: `Task ${args.taskId} not found` }
+                    await planStore.update(args.planId, { tasks: filtered })
+                    await eventBus.emit('plan.updated', { planId: args.planId, action: 'remove_task' })
+                    return { success: true, text: `Removed task ${args.taskId} from plan ${args.planId}` }
+                  }
+                  case 'update_task': {
+                    if (!args.taskId || !args.taskPatch) return { success: false, text: '', error: 'taskId and taskPatch required' }
+                    await planStore.updateTask(args.planId, args.taskId, args.taskPatch as Partial<PlanTask>)
+                    await eventBus.emit('plan.updated', { planId: args.planId, action: 'update_task' })
+                    return { success: true, text: `Updated task ${args.taskId} in plan ${args.planId}` }
+                  }
+                  default:
+                    return { success: false, text: '', error: `Unknown action: ${args.action}` }
+                }
+              } catch (err) {
+                return { success: false, text: '', error: String(err) }
+              }
+            }
+          : undefined,
       }
     },
   }
+}
+
+// ═══ Plan-based dispatch helper ═══
+
+import type { DispatchResult, Plan, AgentProfileRegistry as IAgentProfileRegistry } from './types'
+
+async function handlePlanDispatch(
+  args: { planId: string; taskId?: string; mode: 'sync' | 'background'; sessionId?: string; sessionMode?: 'ephemeral' | 'sticky'; workflowSlot?: string },
+  planStore: PlanStore,
+  profileRegistry: IAgentProfileRegistry,
+  dispatcher: Dispatcher,
+  eventBus: OrchestratorEventBus,
+  agentRegistry: AgentRegistry,
+  skillAdapter?: SkillAdapter,
+): Promise<DispatchResult> {
+  const plan = await planStore.get(args.planId)
+  if (!plan) {
+    return { success: false, error: `Plan ${args.planId} not found` }
+  }
+
+  // 文档优先：必须由上层 LLM 基于完整 plan Markdown 显式选定 taskId。
+  // 不在宿主侧做“next ready task”调度。
+  if (!args.taskId) {
+    return {
+      success: false,
+      error: 'taskId is required for plan-based dispatch. Load full plan Markdown via plan_get(detail="full"), analyze task dependencies, then pass the selected taskId.',
+    }
+  }
+  const task = plan.tasks.find(t => t.id === args.taskId)
+  if (!task) return { success: false, error: `Task ${args.taskId} not found in plan ${args.planId}` }
+
+  // 解析 agent profile
+  const profile = resolveAgentProfileForTask(task, profileRegistry)
+  let delegatedSubagent = ''
+  let delegatedWorkflowSlot = args.workflowSlot
+
+  if (!profile) {
+    // 回落到 agentRegistry 中的 fallback
+    const fallbackSpec = agentRegistry.resolve({ category: task.type })
+    if (fallbackSpec) {
+      delegatedSubagent = fallbackSpec.name
+      delegatedWorkflowSlot = args.workflowSlot
+    } else {
+      return { success: false, error: `No agent profile found for task type: ${task.type}` }
+    }
+  } else {
+    // 组装 AgentSpec
+    const spec = await prepareAgentSpec(profile, plan, task, skillAdapter)
+
+    // 注册临时 agent spec
+    agentRegistry.register(spec)
+    delegatedSubagent = spec.name
+    delegatedWorkflowSlot = args.workflowSlot ?? task.execution?.workflowSlot ?? profile.preferredModelTier
+  }
+
+  // 仅做分发事件与实际 dispatch；task 状态由上层 LLM 通过 plan_update 显式维护。
+  await eventBus.emit('plan.task_dispatched', {
+    planId: args.planId,
+    taskId: task.id,
+    agentProfile: profile?.name ?? delegatedSubagent,
+  })
+
+  // Dispatch
+  const result = await dispatcher.dispatch({
+    prompt: buildPlanTaskPrompt(plan, task),
+    subagent: delegatedSubagent,
+    mode: args.mode,
+    sessionId: args.sessionId,
+    sessionMode: args.sessionMode,
+    workflowSlot: delegatedWorkflowSlot,
+  })
+
+  await eventBus.emit('plan.task_completed', {
+    planId: args.planId,
+    taskId: task.id,
+    status: result.success ? 'dispatched' : 'dispatch_failed',
+  })
+
+  return result
+}
+
+function buildPlanTaskPrompt(plan: Plan, task: PlanTask): string {
+  const constraints = plan.constraints?.length
+    ? plan.constraints.map(c => `- ${c}`).join('\n')
+    : '- None'
+
+  return [
+    `## Plan Task: ${task.id} - ${task.title}`,
+    '',
+    '### Plan Context',
+    `- Plan ID: ${plan.id}`,
+    `- Plan Name: ${plan.name}`,
+    `- Goal: ${plan.goal}`,
+    `- Architecture: ${plan.architecture ?? 'N/A'}`,
+    '',
+    '### Constraints',
+    constraints,
+    '',
+    '### Task Metadata',
+    `- Type: ${task.type}`,
+    `- Dependencies: ${task.dependencies?.length ? task.dependencies.join(', ') : 'none'}`,
+    `- Files: ${task.files?.length ? task.files.join(', ') : 'N/A'}`,
+    '',
+    '### Task Description',
+    task.description,
+  ].join('\n')
+}
+
+function formatPlanSummary(plan: Plan): string {
+  const completed = plan.tasks.filter(t => t.status === 'completed' || t.status === 'skipped').length
+  const lines = [
+    `## Plan: ${plan.name}`,
+    `ID: ${plan.id} | Status: ${plan.status} | Progress: ${completed}/${plan.tasks.length}`,
+    `Goal: ${plan.goal}`,
+    '',
+    'Tasks:',
+  ]
+  for (const t of plan.tasks) {
+    const icon = t.status === 'completed' || t.status === 'skipped' ? '[x]'
+      : t.status === 'running' ? '[~]'
+      : t.status === 'failed' ? '[!]'
+      : '[ ]'
+    const suffix = t.status === 'ready' ? ' (READY)'
+      : t.status === 'running' ? ' (RUNNING)'
+      : t.status === 'failed' ? ' (FAILED)'
+      : t.status === 'blocked' ? ' (BLOCKED)'
+      : ''
+    lines.push(`- ${icon} ${t.id}: ${t.title}${suffix}`)
+  }
+  lines.push('', 'Use plan_get with detail="full" to load the complete plan Markdown for analysis.')
+  return lines.join('\n')
 }
 
 // ═══ 辅助：批量注册 agent specs ═══

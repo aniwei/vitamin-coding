@@ -4,13 +4,36 @@ import type { AuthStore, Model, ProviderRegistry } from '@vitamin/ai'
 import type { ModelRegistry } from '@vitamin/ai'
 import type { HookRegistry } from '@vitamin/hooks'
 import type { ConfigStore, VitaminConfig } from '@vitamin/config'
-import type { PlanFileStore } from '@vitamin/orchestrator'
 import type { ReviewGate, RetryStrategy, CircuitBreaker, CompositeRouter } from '@vitamin/orchestrator'
 import type { ResourceManager, ResourceManagerOptions } from '../resources/resource-manager'
+import type { PromptManager } from '../lead/prompt-manager'
+import type { CodingSessionManager } from '../session/coding-session-manager'
+import type { SettingsManager } from '../resources/settings-manager'
+import type { ToolRegistry } from '@vitamin/tools'
+
+
+export interface VitaminRuntime {
+  readonly locale: boolean
+  readonly workspaceDir: string
+  readonly modelRegistry: ModelRegistry
+  readonly providerRegistry: ProviderRegistry
+  readonly hookRegistry: HookRegistry
+  readonly settingsManager: SettingsManager
+  readonly resourceManager: ResourceManager
+  readonly promptManager: PromptManager
+  readonly toolRegistry: ToolRegistry
+  readonly toolsRegistry: ToolRegistry
+  readonly sessionManager: CodingSessionManager
+  readonly codingSessionManager: CodingSessionManager
+  readonly defaultTools: AgentTool[] | undefined
+}
+
 
 export interface VitaminAppOptions {
   port: number
   inspect: boolean
+  locale: boolean,
+  
   logger: {
     name: string
     level: 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal'
@@ -33,7 +56,7 @@ export interface VitaminAppOptions {
   // 默认系统提示词
   systemPrompt?: string
   // 全局 Hook 注册表
-  hooks?: HookRegistry
+  hookRegistry?: HookRegistry
   // 工作目录
   workspaceDir?: string
   // 全局配置文件路径
@@ -60,8 +83,6 @@ export interface VitaminAppOptions {
   resourceManager?: ResourceManager
   // 资源加载选项（当 resourceManager 未提供时使用）
   resourceOptions?: ResourceManagerOptions
-  // 计划文件存储后端（提供后 performWork 工具可用）
-  planFileStore?: PlanFileStore
   // 澄清请求处理器（提供后 clarifyRequest 工具可用）
   clarifyHandler?: (request: { question: string }) => Promise<{ answer: string }>
   // Orchestrator 质量门禁

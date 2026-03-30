@@ -6,7 +6,6 @@ describe('builtin orchestration registration', () => {
   it('full preset includes task/background orchestration tools', () => {
     const registry = createToolRegistry('/tmp', {
       dispatchTask: async () => ({ success: true, output: 'ok', id: 't-1' }),
-      performWork: async () => ({ success: true }),
       callAgent: async () => ({ success: true, output: 'ok' }),
       loadSkill: async () => ({ success: true, content: '' }),
       executeSkill: async () => ({ success: true, output: '' }),
@@ -15,7 +14,6 @@ describe('builtin orchestration registration', () => {
     const fullNames = new Set(registry.getAvailable('full').map((t) => t.name))
 
     expect(fullNames.has('task_delegate')).toBe(true)
-    expect(fullNames.has('perform_work')).toBe(true)
     expect(fullNames.has('task_create')).toBe(true)
     expect(fullNames.has('task_get')).toBe(true)
     expect(fullNames.has('task_list')).toBe(true)
@@ -27,7 +25,6 @@ describe('builtin orchestration registration', () => {
   it('task/background tools return not available when callbacks are not injected', async () => {
     const registry = createToolRegistry('/tmp', {
       dispatchTask: async () => ({ success: true, output: 'ok', id: 't-1' }),
-      performWork: async () => ({ success: true }),
       callAgent: async () => ({ success: true, output: 'ok' }),
       loadSkill: async () => ({ success: true, content: '' }),
       executeSkill: async () => ({ success: true, output: '' }),

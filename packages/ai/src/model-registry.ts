@@ -134,6 +134,32 @@ export class ModelRegistry {
   get size(): number {
     return this.models.size
   }
+
+  // ═══ Workflow Slot 解析 ═══
+
+  /**
+   * 根据 workflow slot 映射表解析模型。
+   *
+   * 优先级:
+   * 1. agentSlots[slot] — agent 级别覆盖
+   * 2. globalSlots[slot] — 全局 slot 映射
+   * 3. fallbackModelId — 无 slot 命中时的兜底模型
+   *
+   * 解析到的 model ID 最终通过 this.resolve() 解析为完整 Model。
+   */
+  resolveSlot(
+    slot: string,
+    options: {
+      agentSlots?: Record<string, string>
+      globalSlots?: Record<string, string>
+      fallbackModelId?: string
+    },
+  ): Model | undefined {
+    const { agentSlots, globalSlots, fallbackModelId } = options
+    const modelId = agentSlots?.[slot] ?? globalSlots?.[slot] ?? fallbackModelId
+    if (!modelId) return undefined
+    return this.tryResolve(modelId)
+  }
 }
 
 // 创建模型注册表

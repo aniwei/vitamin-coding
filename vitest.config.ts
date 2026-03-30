@@ -11,6 +11,7 @@ export default defineConfig({
       '@vitamin/tools': resolve(__dirname, 'packages/tools/src/index.ts'),
       '@vitamin/hooks': resolve(__dirname, 'packages/hooks/src/index.ts'),
       '@vitamin/session': resolve(__dirname, 'packages/session/src/index.ts'),
+      '@vitamin/memory': resolve(__dirname, 'packages/memory/src/index.ts'),
       '@vitamin/orchestrator': resolve(__dirname, 'packages/orchestrator/src/index.ts'),
       '@vitamin/coding': resolve(__dirname, 'packages/coding/src/index.ts'),
       '@vitamin/extension': resolve(__dirname, 'packages/extension/src/index.ts'),

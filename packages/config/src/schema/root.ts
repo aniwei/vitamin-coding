@@ -10,6 +10,8 @@ import { SkillsConfigSchema } from './skills'
 import { ToolPresetSchema } from './tools'
 import { McpConfigSchema } from './mcp'
 import { BackgroundTaskConfigSchema, ExperimentalConfigSchema } from './experimental'
+import { WorkflowConfigSchema } from './workflow'
+import { ModelSlotsSchema } from './model-slots'
 
 export const LogLevelSchema = z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
 
@@ -19,6 +21,8 @@ export const VitaminConfigStrictSchema = z.object({
   log_level: LogLevelSchema.optional(),
   model: z.string().optional(),
   model_fallback: z.array(z.string()).optional(),
+  /** 全局 workflow slot → 模型映射 */
+  model_slots: ModelSlotsSchema,
   theme: z.string().optional(),
   agents: AgentsConfigSchema.optional(),
   categories: CategoriesConfigSchema.optional(),
@@ -29,6 +33,7 @@ export const VitaminConfigStrictSchema = z.object({
   skills: SkillsConfigSchema.optional(),
   compaction: CompactionConfigSchema.optional(),
   notification: NotificationConfigSchema.optional(),
+  workflow: WorkflowConfigSchema.optional(),
   background_task: BackgroundTaskConfigSchema.optional(),
   experimental: ExperimentalConfigSchema.optional(),
   disabled_agents: z.array(z.string()).optional(),

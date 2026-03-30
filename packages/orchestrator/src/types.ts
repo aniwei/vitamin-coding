@@ -16,6 +16,8 @@ export interface TaskInput {
   planRef?: string
   sessionId?: string
   sessionMode?: ChildSessionMode
+  /** Workflow slot — 用于 ModelSelector 确定该任务的模型 */
+  workflowSlot?: string
 }
 
 export interface TaskOutput {
@@ -57,6 +59,8 @@ export interface AgentSpec {
   tools?: string[]
   capabilities?: string[]
   maxToolTurns?: number
+  /** 可选：agent 级别的 workflow slot → 模型映射 */
+  modelSlots?: Record<string, string>
 }
 
 // ═══ Subagent Result ═══
@@ -91,6 +95,8 @@ export interface DispatchArgs {
   mode: DispatchMode
   sessionId?: string
   sessionMode?: ChildSessionMode
+  /** Workflow slot — 传递给 ModelSelector */
+  workflowSlot?: string
 }
 
 export interface DispatchResult {
@@ -190,6 +196,136 @@ export interface SkillAdapter {
     output?: string
     error?: string
   }>
+
+  /** 获取已加载 skill 的上下文文本（instructions + checklist），用于注入 AgentSpec system prompt */
+  getContext?(name: string): Promise<string | undefined>
+}
+
+// ═══ Plan 数据模型（v2） ═══
+
+export type PlanStatus = 'draft' | 'active' | 'paused' | 'completed' | 'failed' | 'cancelled'
+export type PlanTaskStatus = 'pending' | 'ready' | 'running' | 'completed' | 'failed' | 'skipped' | 'blocked'
+
+export type TaskType =
+  | 'code_generation'
+  | 'code_modification'
+  | 'refactoring'
+  | 'testing'
+  | 'debugging'
+  | 'research'
+  | 'documentation'
+  | 'review'
+  | 'infrastructure'
+  | 'custom'
+
+export interface PlanTaskOutput {
+  summary: string
+  text?: string
+  artifacts?: Record<string, unknown>
+  subagentResultStatus?: SubagentResultStatus
+}
+
+export interface PlanTaskError {
+  code: string
+  message: string
+  retriable?: boolean
+}
+
+export interface TaskExecutionSpec {
+  agentProfile?: string
+  requiredSkills?: string[]
+  tools?: string[]
+  workflowSlot?: string
+  modelTier?: 'fast' | 'standard' | 'powerful'
+  maxToolTurns?: number
+  systemPromptAddendum?: string
+  generatedAt?: number
+}
+
+export interface PlanTask {
+  id: string
+  title: string
+  description: string
+  type: TaskType
+  status: PlanTaskStatus
+  dependencies?: string[]
+  files?: string[]
+  estimatedComplexity?: 'low' | 'medium' | 'high'
+  execution?: TaskExecutionSpec
+  output?: PlanTaskOutput
+  error?: PlanTaskError
+  attempts: number
+  startedAt?: number
+  completedAt?: number
+}
+
+export interface Plan {
+  id: string
+  version: number
+  name: string
+  goal: string
+  constraints?: string[]
+  architecture?: string
+  tasks: PlanTask[]
+  status: PlanStatus
+  sessionId: string
+  createdAt: number
+  updatedAt: number
+  completedAt?: number
+  metadata?: Record<string, unknown>
+}
+
+export interface PlanSummary {
+  id: string
+  name: string
+  status: PlanStatus
+  taskCount: number
+  completedCount: number
+  createdAt: number
+  updatedAt: number
+}
+
+// ═══ PlanStore 接口 ═══
+
+export interface PlanStore {
+  create(plan: Plan): Promise<Plan>
+  get(planId: string): Promise<Plan | undefined>
+  update(planId: string, patch: Partial<Plan>): Promise<Plan>
+  delete(planId: string): Promise<boolean>
+
+  listBySession(sessionId: string): Promise<PlanSummary[]>
+  listByStatus(status: PlanStatus): Promise<PlanSummary[]>
+  getActive(sessionId: string): Promise<Plan | undefined>
+
+  updateTask(planId: string, taskId: string, patch: Partial<PlanTask>): Promise<Plan>
+  getReadyTasks(planId: string): Promise<PlanTask[]>
+
+  getVersion(planId: string): Promise<number>
+
+  /** 获取原始 Markdown 文本——供恢复时直接注入 LLM 上下文 */
+  getMarkdown(planId: string): Promise<string | undefined>
+}
+
+// ═══ RegisteredAgentProfile（静态注册模板） ═══
+
+export interface RegisteredAgentProfile {
+  name: string
+  taskTypes: TaskType[]
+  capabilities: string[]
+  systemPromptTemplate: string
+  defaultTools?: string[]
+  preferredModelTier: 'fast' | 'standard' | 'powerful'
+  defaultMaxToolTurns: number
+  thinkingLevel?: 'low' | 'medium' | 'high'
+}
+
+// ═══ AgentProfileRegistry 接口 ═══
+
+export interface AgentProfileRegistry {
+  register(profile: RegisteredAgentProfile): void
+  get(name: string): RegisteredAgentProfile | undefined
+  resolve(query: { name?: string; category?: string }): RegisteredAgentProfile | undefined
+  list(): RegisteredAgentProfile[]
 }
 
 // ═══ 依赖注入接口 (不直接依赖 @vitamin/coding) ═══
@@ -229,17 +365,11 @@ export interface OrchestratorOptions {
   hooks?: HookRegistryHandle
   maxConcurrent?: number
   skillAdapter?: SkillAdapter
-  /** Phase 2: 计划文件存储后端 (提供后 performWork 可用) */
-  planFileStore?: import('./plan-loader').PlanFileStore
-  /** Phase 2: Checkpoint 存储 (不提供时使用内存实现) */
+  /** Checkpoint 存储 (不提供时不启用) */
   checkpointStore?: import('./checkpoint-store').CheckpointStore
-  /** Phase 2: PlanRun 执行态存储 (不提供时使用内存实现) */
-  planRunStore?: import('./plan-run').PlanRunStore
-  /** 当前会话 ID（用于关联 PlanRun / Checkpoint） */
-  sessionId?: string
   /** Phase 3: 澄清通道 (提供后 clarifyRequest 工具可用) */
   clarifyChannel?: import('./clarify-channel').ClarifyChannel
-  /** Phase 3: 质量门禁 (提供后 performWork 步骤完成后自动执行 review) */
+  /** Phase 3: 质量门禁 */
   reviewGate?: import('./review-gate').ReviewGate
   /** Phase 3: 重试策略 (不提供时使用默认 exponential backoff) */
   retryStrategy?: import('./retry-strategy').RetryStrategy
@@ -249,6 +379,10 @@ export interface OrchestratorOptions {
   router?: import('./routing-strategy').CompositeRouter
   /** 自适应模型选择器 (提供后 dispatcher 根据任务特征动态选择模型) */
   modelSelector?: ModelSelector
+  /** Plan 持久化存储 (提供后 plan_* 工具可用) */
+  planStore?: PlanStore
+  /** Agent Profile 注册表 (提供后 plan dispatch 使用 profile 路由) */
+  agentProfileRegistry?: AgentProfileRegistry
 }
 
 export interface ToolRegistryHandle {

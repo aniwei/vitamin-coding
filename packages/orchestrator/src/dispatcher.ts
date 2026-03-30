@@ -372,6 +372,7 @@ class Dispatcher implements IDispatcher {
         category: args.category,
         sessionId: args.sessionId,
         sessionMode: args.sessionMode,
+        workflowSlot: args.workflowSlot,
       },
       attempts: 0,
       maxAttempts: 3,

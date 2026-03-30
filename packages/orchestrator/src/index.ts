@@ -22,6 +22,20 @@ export type {
   ToolRegistryHandle,
   HookRegistryHandle,
   ModelSelector,
+  // Plan types
+  Plan,
+  PlanTask,
+  PlanStatus,
+  PlanTaskStatus,
+  PlanTaskOutput,
+  PlanTaskError,
+  PlanSummary,
+  PlanStore,
+  TaskType,
+  TaskExecutionSpec,
+  // AgentProfile types
+  RegisteredAgentProfile,
+  AgentProfileRegistry,
 } from './types'
 
 // 事件系统 
@@ -44,44 +58,6 @@ export { createDispatcher } from './dispatcher'
 // 组合根 
 export { createOrchestrator, registerAgents, bootstrapOrchestrator } from './orchestrator'
 export type { Orchestrator, ToolCallbacks, BootstrapOptions, BootstrapResult } from './orchestrator'
-
-// Plan
-export {
-  createPlanLoader,
-  parsePlanFile,
-  buildStepPrompt,
-  updateStepStatus,
-  getNextPendingStep,
-  isPlanCompleted,
-} from './plan-loader'
-export type {
-  PlanStep,
-  PlanFile,
-  PlanFileStore,
-  PlanLoader,
-} from './plan-loader'
-
-// Plan File Store (文件系统实现)
-export { createFileSystemPlanFileStore } from './plan-file-store'
-export type { FileSystemPlanFileStoreOptions } from './plan-file-store'
-
-// Plan Run (执行态)
-export {
-  createMemoryPlanRunStore,
-  createFilePlanRunStore,
-  createPlanRun,
-  updatePlanRunStep,
-  isPlanRunCompleted,
-  getNextPlanRunStep,
-} from './plan-run'
-export type {
-  PlanRunStatus,
-  PlanRunStepState,
-  PlanRun,
-  PlanRunSnapshot,
-  PlanRunStore,
-  FilePlanRunStoreOptions,
-} from './plan-run'
 
 // 检查点
 export { createMemoryCheckpointStore, createFileCheckpointStore } from './checkpoint-store'
@@ -143,3 +119,17 @@ export type {
   CircuitBreaker,
   CircuitBreakerOptions,
 } from './retry-strategy'
+
+// Plan 持久化
+export { LocalPlanStore, createLocalPlanStore } from './plan-store'
+export { planToMarkdown, markdownToPlan } from './plan-markdown'
+
+// Agent Profile
+export { createAgentProfileRegistry } from './agent-profile-registry'
+export { BUILTIN_AGENT_PROFILES } from './agent-profiles'
+
+// TaskType 路由
+export { TASK_TYPE_PROFILE_MAP, resolveAgentProfileForTask } from './task-type-router'
+
+// AgentSpec 工厂
+export { ensureTaskExecutionSpec, buildAgentSpec, prepareAgentSpec } from './agent-spec-factory'

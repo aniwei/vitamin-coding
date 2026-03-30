@@ -2,7 +2,7 @@ export {
   createVitamin, 
   VitaminApp 
 } from './app/vitamin-app'
-export type { VitaminAppOptions } from './app/types'
+export type { VitaminAppOptions, VitaminRuntime } from './app/types'
 
 export { AgentSession } from './session/agent-session'
 export type { AgentSessionConfig } from './session/agent-session'
@@ -49,6 +49,7 @@ export {
   runLeadJsonMode,
   runLeadPrintMode,
 } from './modes/lead-modes'
+export type { LeadRuntime } from './modes/lead-modes'
 
 // Types
 export type {

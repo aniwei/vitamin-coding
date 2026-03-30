@@ -40,6 +40,7 @@ export interface ResourceManagerOptions {
 export interface ResourceManager {
   load(): Promise<LoadedResources>
   reload(): Promise<LoadedResources>
+  setPromptDirs(promptDirs: string[]): void
   readonly resources: LoadedResources | null
   onChange(callback: (resources: LoadedResources) => void): () => void
   dispose(): void
@@ -48,11 +49,13 @@ export interface ResourceManager {
 export class DefaultResourceManager implements ResourceManager {
   private readonly persistentMemory: PersistentMemory
   private readonly options: ResourceManagerOptions
+  private dynamicPromptDirs: string[]
   private loadedResources: LoadedResources | null = null
   private readonly changeCallbacks = new Set<(resources: LoadedResources) => void>()
 
   constructor(options: ResourceManagerOptions = {}) {
     this.options = options
+    this.dynamicPromptDirs = [...(options.promptDirs ?? [])]
 
     const workspaceDir = options.workspaceDir ?? process.cwd()
     const memoryStore = options.memoryStore ?? new FileSystemMemoryStore(workspaceDir)
@@ -63,6 +66,10 @@ export class DefaultResourceManager implements ResourceManager {
 
   get resources(): LoadedResources | null {
     return this.loadedResources
+  }
+
+  setPromptDirs(promptDirs: string[]): void {
+    this.dynamicPromptDirs = [...promptDirs]
   }
 
   async load(): Promise<LoadedResources> {
@@ -135,10 +142,8 @@ export class DefaultResourceManager implements ResourceManager {
       { path: `${workspaceDir}/.vitamin/prompts`, source: 'project' },
     ]
 
-    if (this.options.promptDirs) {
-      for (const dir of this.options.promptDirs) {
+    for (const dir of this.dynamicPromptDirs) {
         dirs.push({ path: dir, source: 'project' })
-      }
     }
 
     for (const dir of dirs) {
@@ -247,6 +252,10 @@ class InMemoryResourceManager implements ResourceManager {
 
   get resources(): LoadedResources | null {
     return this.loadedResources
+  }
+
+  setPromptDirs(_promptDirs: string[]): void {
+    // In-memory resource manager ignores filesystem prompt dirs by design.
   }
 
   async load(): Promise<LoadedResources> {

@@ -7,80 +7,205 @@
 // - 独立的 Agent 实例（状态机 + 工具调用循环）
 // - 独立的 Session 存储（消息历史）
 // - 独立的事件流
+import { join } from 'node:path'
 import { Devtools } from '@vitamin/devtools'
-import { createLogger, attachLogListener } from '@vitamin/shared'
-import { createHookRegistry } from '@vitamin/hooks'
-import { createDefaultProviderRegistry, ModelRegistry, createDefaultModelRegistry } from '@vitamin/ai'
-import { CodingSessionManager, createCodingSessionManager } from '../session/coding-session-manager'
-import { AgentSession } from '../session/agent-session'
-import { LeadSession, createLeadSession } from '../lead/lead-session'
-import { PromptManager } from '../lead/prompt-manager'
-import { createSessionFactoryAdapter } from './session-factory-adapter'
 import {
-  buildLeadSystemPrompt,
-  bootstrapToolsAndOrchestrator,
-  createAppToolRegistry,
-} from './vitamin-bootstrap'
+  createDefaultModelRegistry,
+  createDefaultProviderRegistry,
+  ModelRegistry,
+} from '@vitamin/ai'
+import { createHookRegistry } from '@vitamin/hooks'
+import {
+  createCapabilityStrategy,
+  createCircuitBreaker,
+  createClarifyChannel,
+  createCompositeRouter,
+  createOrchestrator,
+  createModelTierStrategy,
+  createRetryStrategy,
+  createReviewGate,
+  registerAgents,
+  createLocalPlanStore,
+  createAgentProfileRegistry,
+  BUILTIN_AGENT_PROFILES,
+} from '@vitamin/orchestrator'
+import {
+  createBinaryToolExecutorRegistry,
+  registerBuiltinTools,
+  ToolRegistry,
+} from '@vitamin/tools'
+import { attachLogListener, createLogger } from '@vitamin/shared'
+import {
+  LeadSession,
+  createLeadSession,
+} from '../lead/lead-session'
+import {
+  LEAD_ROLE_INSTRUCTIONS,
+  PromptManager,
+} from '../lead/prompt-manager'
+import {
+  DefaultResourceManager,
+  type ResourceManager,
+} from '../resources/resource-manager'
+import {
+  Settings,
+  type SettingsManager,
+} from '../resources/settings-manager'
+import { AgentSession } from '../session/agent-session'
+import {
+  CodingSessionManager,
+  createCodingSessionManager,
+} from '../session/coding-session-manager'
+import { createSessionFactoryAdapter } from './session-factory-adapter'
 
-import type { ToolRegistry } from '@vitamin/tools'
+import type { AgentTool } from '@vitamin/agent'
 import type { AuthStore, ProviderRegistry } from '@vitamin/ai'
-import type { HookRegistry } from '@vitamin/hooks'
 import type { VitaminConfig } from '@vitamin/config'
-import type { Orchestrator } from '@vitamin/orchestrator'
-import { Settings, type SettingsManager, type SettingsOptions } from '../resources/settings-manager'
-import { DefaultResourceManager, type ResourceManager, type ResourceManagerOptions } from '../resources/resource-manager'
-import type { LeadResult, LeadRunOptions } from '../lead/lead-session'
-import type { AgentSessionOptions, AgentSessionInfo } from '../session/types'
-import type { VitaminAppOptions } from './types'
+import type { HookRegistry } from '@vitamin/hooks'
+import type {
+  AgentSpec,
+  ModelSelector,
+  Orchestrator,
+  OrchestratorTask,
+  SessionFactory,
+} from '@vitamin/orchestrator'
+import type { RegisteredTool } from '@vitamin/tools'
+import type {
+  LeadResult,
+  LeadRunOptions,
+} from '../lead/lead-session'
+import type {
+  PromptAgentSummary,
+  PromptToolSummary,
+} from '../lead/prompt-manager'
+import type {
+  AgentSessionInfo,
+  AgentSessionOptions,
+} from '../session/types'
 
-export { type VitaminAppOptions } from './types'
+import type { VitaminAppOptions, VitaminRuntime } from './types'
+export { type VitaminAppOptions, type VitaminRuntime } from './types'
 
-export class VitaminApp {
-  private readonly options: VitaminAppOptions
+interface ResolvedWorkflowDefaults {
+  reviewGate?: ReturnType<typeof createReviewGate>
+  retryStrategy?: ReturnType<typeof createRetryStrategy>
+  circuitBreaker?: ReturnType<typeof createCircuitBreaker>
+  router?: ReturnType<typeof createCompositeRouter>
+}
+
+interface DeferredInitConfig {
+  clarifyHandler: VitaminAppOptions['clarifyHandler']
+  reviewGate: VitaminAppOptions['reviewGate']
+  retryStrategy: VitaminAppOptions['retryStrategy']
+  circuitBreaker: VitaminAppOptions['circuitBreaker']
+  router: VitaminAppOptions['router']
+  fallbackModelId: string | undefined
+}
+
+export class VitaminApp implements VitaminRuntime {
+  private readonly customSystemPrompt: string | undefined
+  private readonly customTools: AgentTool[] | undefined
+  private _initBag: DeferredInitConfig | null
   private devtools: Devtools | null = null
-  private leadSession: LeadSession | null = null
+  private _leadSession: LeadSession | null = null
   private leadSystemPrompt: string | null = null
-  private codingSessionManager!: CodingSessionManager
-  
-  public settings: SettingsManager | null = null
-  public toolRegistry: ToolRegistry | null = null
-  public orchestrator: Orchestrator | null = null
-  public resourceManager: ResourceManager | null = null
-  public promptManager: PromptManager | null = null
+  private hasStopped = false
+  public readonly codingSessionManager: CodingSessionManager
 
-  public readonly workspaceDir: string
-  public readonly auth: AuthStore
-  public readonly hooks: HookRegistry
+  private _orchestrator: Orchestrator | null = null
+  public readonly settings: SettingsManager
+  public readonly tools: ToolRegistry
+  public readonly resource: ResourceManager
+  public readonly prompt: PromptManager
+  public readonly hookRegistry: HookRegistry
   public readonly modelRegistry: ModelRegistry
   public readonly providerRegistry: ProviderRegistry
+  public readonly authStore: AuthStore
+  public readonly workspaceDir: string
   public readonly logger: ReturnType<typeof createLogger>
 
   private globalLogSubscription: ReturnType<typeof attachLogListener> | null = null
 
-  constructor(options: VitaminAppOptions) {
-    this.options = options
+  public get orchestrator(): Orchestrator {
+    if (!this._orchestrator) {
+      throw new Error('VitaminApp.start() must be called before accessing orchestrator')
+    }
+    return this._orchestrator
+  }
 
-    const { auth, logger, hooks, model, modelId, modelRegistry, providerRegistry, workspaceDir } = options
+  constructor(options: VitaminAppOptions) {
+    const {
+      auth,
+      circuitBreaker,
+      clarifyHandler,
+      configOverrides,
+      configStore,
+      globalConfigPath,
+      inspect,
+      logger,
+      maxSessions,
+      maxToolTurns,
+      model,
+      modelId,
+      port,
+      projectConfigPath,
+      resourceManager,
+      resourceOptions,
+      retryStrategy,
+      reviewGate,
+      router,
+      systemPrompt,
+      tools,
+      watchConfig,
+      workspaceDir,
+    } = options
+
     this.workspaceDir = workspaceDir ?? process.cwd()
     this.logger = createLogger(logger.name, {
       level: logger.level,
       destination: logger.destination,
     })
 
-    this.hooks = hooks ?? createHookRegistry({ preset: 'default' })
+    this.customTools = tools
+    this.customSystemPrompt = systemPrompt
+    this._initBag = {
+      clarifyHandler,
+      reviewGate,
+      retryStrategy,
+      circuitBreaker,
+      router,
+      fallbackModelId: modelId ?? (model ? `${model.provider}/${model.name}` : undefined),
+    }
+    
+    const { hookRegistry, modelRegistry, providerRegistry } = options
+    this.hookRegistry = hookRegistry ?? createHookRegistry({ preset: 'default' })
+    
     this.providerRegistry = providerRegistry ?? createDefaultProviderRegistry({ auth })
-    this.auth = this.providerRegistry.getAuthStore()!
+    this.authStore = this.providerRegistry.getAuthStore()!
 
-    this.modelRegistry = modelRegistry ?? this.providerRegistry.getModelRegistry() ?? createDefaultModelRegistry()
+    this.modelRegistry = modelRegistry
+      ?? this.providerRegistry.getModelRegistry()
+      ?? createDefaultModelRegistry()
     this.providerRegistry.setModelRegistry(this.modelRegistry)
 
-    const resolvedModel = model ?? (modelId ? this.providerRegistry.resolveModel(modelId) : undefined)
+    if (inspect) {
+      this.devtools = new Devtools(port)
+      this.globalLogSubscription = attachLogListener((data) => {
+        const log = data as { name: string; level: string; msg: string }
+        if (log.name === logger.name) {
+          this.devtools?.logger.publish(log)
+        }
+      })
+    }
 
+    const resolvedModel = model
+      ?? (modelId ? this.providerRegistry.resolveModel(modelId) : undefined)
     if (resolvedModel) {
       this.modelRegistry.setDefault(resolvedModel)
-    } 
+    }
 
-    const { sessionUrl, sessionDir, tools, systemPrompt, maxSessions, maxToolTurns } = options
+    const { sessionDir, sessionUrl } = options
+
 
     this.codingSessionManager = createCodingSessionManager({
       sessionDir,
@@ -89,73 +214,63 @@ export class VitaminApp {
       tools,
       systemPrompt,
       providerRegistry: this.providerRegistry,
-      hooks: this.hooks,
+      hookRegistry: this.hookRegistry,
       workspaceDir: this.workspaceDir,
       maxSessions,
       maxToolTurns,
       devtools: this.devtools ?? undefined,
-      logger: this.logger
+      logger: this.logger,
     })
 
-    this.settings = new Settings(this.createSettingsOptions())
-    this.resourceManager = options.resourceManager
-      ?? new DefaultResourceManager(this.createResourceOptions())
-    this.toolRegistry = createAppToolRegistry(this.workspaceDir)
-    this.promptManager = new PromptManager()
+    this.settings = new Settings({
+      workspaceDir: this.workspaceDir,
+      globalConfigPath,
+      projectConfigPath,
+      overrides: configOverrides,
+      store: configStore,
+      watch: watchConfig,
+    })
 
-    const { inspect } = options
-    if (inspect) {
-      this.devtools = new Devtools(options.port)
-      this.globalLogSubscription = attachLogListener((data) => {
-        const log = data as { name: string; level: string; msg: string }
-        if (log.name === 'vitamin-app') {
-          this.devtools?.logger.publish(log)
-        }
-      })
-    }
+    this.prompt = new PromptManager()
+    this.tools = new ToolRegistry()
+    this.tools.setBinaryToolExecutors(createBinaryToolExecutorRegistry(this.workspaceDir))
+    this.resource = resourceManager ?? new DefaultResourceManager({
+      workspaceDir: this.workspaceDir,
+      watch: watchConfig,
+      ...resourceOptions,
+    })
   }
 
   async start() {
-    await this.settings?.load()
-    await this.resourceManager?.load()
+    if (this._orchestrator) return
+    if (this.hasStopped) {
+      throw new Error('VitaminApp cannot be restarted after stop(); create a new instance instead.')
+    }
 
-    this.promptManager!.setResources(this.resourceManager?.resources ?? null)
+    await this.settings.load()
+    await this.resource.load()
 
-    const sessionFactory = createSessionFactoryAdapter({
-      codingSessionManager: this.codingSessionManager,
-      getToolRegistry: () => this.toolRegistry,
-      promptManager: this.promptManager!,
-      defaultTools: this.options.tools,
-      modelRegistry: this.modelRegistry,
-    })
+    this.prompt.setResources(this.resource.resources ?? null)
 
-    const initialLeadSystemPrompt = buildLeadSystemPrompt({
-      options: this.options,
-      resources: this.resourceManager,
-      promptManager: this.promptManager!,
-    })
+    const initBag = this._initBag!
+    this._initBag = null
 
-    const { agentSpecs, orchestrator } = bootstrapToolsAndOrchestrator({
-      options: this.options,
-      workspaceDir: this.workspaceDir,
-      settings: this.settings,
-      toolRegistry: this.toolRegistry!,
+    const sessionFactory = this.createSessionFactory()
+    const initialLeadSystemPrompt = this.buildLeadSystemPrompt()
+    const { orchestrator } = this.createOrchestratorRuntime(
       sessionFactory,
-      hooks: this.hooks,
-      leadSystemPrompt: initialLeadSystemPrompt,
-    })
-    this.orchestrator = orchestrator
+      initialLeadSystemPrompt,
+      initBag,
+    )
+    this._orchestrator = orchestrator
 
-    this.leadSystemPrompt = buildLeadSystemPrompt({
-      options: this.options,
-      resources: this.resourceManager,
-      promptManager: this.promptManager!,
-      agentSpecs,
-      toolRegistry: this.toolRegistry,
-    })
+
+    this.leadSystemPrompt = this.buildLeadSystemPrompt(
+      this._orchestrator.agentRegistry.list(),
+    )
     this.codingSessionManager.updateDefaults({
       systemPrompt: this.leadSystemPrompt,
-      tools: this.toolRegistry?.getAvailable('full') as never,
+      tools: this.tools.getAvailable('full') as never,
     })
 
     if (this.devtools) {
@@ -166,43 +281,31 @@ export class VitaminApp {
   }
 
   async stop() {
-    if (this.leadSession) {
-      this.leadSession.dispose()
-      this.leadSession = null
+    if (this.hasStopped) return
+
+    if (this._leadSession) {
+      this._leadSession.dispose()
+      this._leadSession = null
     }
+
 
     this.leadSystemPrompt = null
-
-    this.orchestrator = null
-    if (this.toolRegistry) {
-      this.toolRegistry.clear()
-      this.toolRegistry = null
-    }
-
+    this._orchestrator = null
+    this.tools.clear()
     this.codingSessionManager.dispose()
-
-    if (this.resourceManager) {
-      this.resourceManager.dispose()
-      this.resourceManager = null
-    }
-
-    if (this.promptManager) {
-      this.promptManager = null
-    }
-    
-    if (this.settings) {
-      this.settings.dispose()
-      this.settings = null
-    }
+    this.resource.dispose()
+    this.prompt.setResources(null)
+    this.settings.dispose()
 
     if (this.devtools) {
       await this.devtools.stop()
-      if (this.globalLogSubscription) {
-        this.globalLogSubscription()
-        this.globalLogSubscription = null
-      }
+    }
+    if (this.globalLogSubscription) {
+      this.globalLogSubscription()
+      this.globalLogSubscription = null
     }
 
+    this.hasStopped = true
     this.logger.info('Vitamin app stopped')
   }
 
@@ -210,34 +313,63 @@ export class VitaminApp {
     return this.devtools
   }
 
+  get runtime(): VitaminRuntime {
+    return this
+  }
+
+  get toolRegistry(): ToolRegistry {
+    return this.tools
+  }
+
+  get toolsRegistry(): ToolRegistry {
+    return this.tools
+  }
+
+  get hooksRegistry(): HookRegistry {
+    return this.hooks
+  }
+
+  get settingsManager(): SettingsManager {
+    return this.settings
+  }
+
+  get resourceManager(): ResourceManager {
+    return this.resource
+  }
+
+  get promptManager(): PromptManager {
+    return this.prompt
+  }
+
   get config(): Readonly<VitaminConfig> | null {
-    return this.settings?.snapshot ?? null
+    return this.settings.snapshot ?? null
   }
 
   get resources() {
-    return this.resourceManager?.resources ?? null
+    return this.resource.resources ?? null
   }
 
   get sessionManager(): CodingSessionManager {
     return this.codingSessionManager
   }
 
+  get defaultTools(): AgentTool[] | undefined {
+    return this.customTools
+  }
+
   async createSession(options?: AgentSessionOptions): Promise<AgentSession> {
     const mergedOptions = { ...options }
 
-    // Attach version-based prompt refresh if not explicitly provided
-    if (!mergedOptions.promptRefreshFn && this.toolRegistry) {
-      let lastVersion = this.toolRegistry.version
+    if (!mergedOptions.promptRefreshFn) {
+      let lastVersion = this.tools.version
       mergedOptions.promptRefreshFn = () => {
-        const currentVersion = this.toolRegistry?.version ?? lastVersion
+        const currentVersion = this.tools.version
         if (currentVersion === lastVersion) return undefined
+
         lastVersion = currentVersion
-        this.leadSystemPrompt = buildLeadSystemPrompt({
-          options: this.options,
-          resources: this.resourceManager,
-          promptManager: this.promptManager!,
-          toolRegistry: this.toolRegistry,
-        })
+        this.leadSystemPrompt = this.buildLeadSystemPrompt(
+          this._orchestrator?.agentRegistry.list() ?? [],
+        )
         return this.leadSystemPrompt
       }
     }
@@ -268,23 +400,26 @@ export class VitaminApp {
   }
 
   async lead(userPrompt: string, options?: LeadRunOptions): Promise<LeadResult> {
-    if (!this.leadSession) {
+    if (!this._orchestrator || !this.leadSystemPrompt) {
+      throw new Error('VitaminApp.start() must be called before lead()')
+    }
+
+    if (!this._leadSession) {
       const session = await this.createSession()
       this.codingSessionManager.setActive(session.id)
-      this.leadSession = createLeadSession(session, this.orchestrator)
+      this._leadSession = createLeadSession(session, this._orchestrator)
     }
-    return this.leadSession.run(userPrompt, options)
+
+    return this._leadSession.run(userPrompt, options)
   }
 
   getLeadSession(): LeadSession | null {
-    return this.leadSession
+    return this._leadSession
   }
 
   getLeadSystemPrompt(): string | null {
     return this.leadSystemPrompt
   }
-
-  // ═══ Background Events ═══
 
   async emitBackgroundStart(taskId: string, agentName: string): Promise<void> {
     await this.hooks.emit('background.start', { taskId, agentName })
@@ -294,23 +429,201 @@ export class VitaminApp {
     await this.hooks.emit('background.end', { taskId, agentName, success })
   }
 
-  private createSettingsOptions(): SettingsOptions {
+  private createSessionFactory(): SessionFactory {
+    return createSessionFactoryAdapter(this)
+  }
+
+  private buildLeadSystemPrompt(agentSpecs: AgentSpec[] = []): string {
+    return this.prompt.buildLeadPrompt({
+      customSystemPrompt: this.customSystemPrompt,
+      resources: this.resource.resources ?? null,
+      roleInstructions: LEAD_ROLE_INSTRUCTIONS,
+      agentCatalog: this.summarizeAgentCatalog(agentSpecs),
+      toolCatalog: this.summarizeToolCatalog(),
+    })
+  }
+
+  private summarizeToolCatalog(): PromptToolSummary[] {
+    return (this.tools.getAvailable('full') as RegisteredTool[])
+      .map((tool) => this.toPromptToolSummary(tool))
+  }
+
+  private summarizeAgentCatalog(agentSpecs: AgentSpec[]): PromptAgentSummary[] {
+    return agentSpecs
+      .filter((spec) => spec.name !== '__fallback__')
+      .map((spec) => ({
+        name: spec.name,
+        description: spec.description,
+        capabilities: spec.capabilities,
+      }))
+  }
+
+  private toPromptToolSummary(tool: {
+    name: string
+    description: string
+    metadata?: {
+      category?: string
+      builtin?: boolean
+      snippet?: string
+      guideline?: string
+    }
+  }): PromptToolSummary {
     return {
-      workspaceDir: this.workspaceDir,
-      globalConfigPath: this.options.globalConfigPath,
-      projectConfigPath: this.options.projectConfigPath,
-      overrides: this.options.configOverrides,
-      store: this.options.configStore,
-      watch: this.options.watchConfig,
+      name: tool.name,
+      description: tool.description,
+      category: tool.metadata?.category,
+      source: tool.metadata?.builtin ? 'builtin' : 'custom',
+      snippet: tool.metadata?.snippet,
+      guideline: tool.metadata?.guideline,
     }
   }
 
-  private createResourceOptions(): ResourceManagerOptions {
-    return {
-      workspaceDir: this.workspaceDir,
-      watch: this.options.watchConfig,
-      ...this.options.resourceOptions,
+  private createOrchestratorRuntime(
+    sessionFactory: SessionFactory,
+    leadSystemPrompt: string,
+    initBag: DeferredInitConfig,
+  ): {
+    agentSpecs: AgentSpec[]
+    fallbackAgent: AgentSpec | undefined
+    orchestrator: Orchestrator
+  } {
+    const config = this.settings.snapshot ?? null
+    const agentSpecs = this.compileAgentSpecs(config)
+    const fallbackAgent = this.buildFallbackAgentSpec(leadSystemPrompt, initBag.fallbackModelId)
+    const workflowDefaults = this.resolveWorkflowDefaults(config)
+    const clarifyChannel = initBag.clarifyHandler
+      ? createClarifyChannel({
+        handler: async (req) => {
+          const result = await initBag.clarifyHandler!(req)
+          return { answer: result.answer }
+        },
+      })
+      : undefined
+
+    const orchestrator = createOrchestrator({
+      sessionFactory,
+      toolRegistry: this.tools,
+      hooks: this.hooks,
+      clarifyChannel,
+      reviewGate: initBag.reviewGate ?? workflowDefaults.reviewGate,
+      retryStrategy: initBag.retryStrategy ?? workflowDefaults.retryStrategy,
+      circuitBreaker: initBag.circuitBreaker ?? workflowDefaults.circuitBreaker,
+      router: initBag.router ?? workflowDefaults.router,
+      modelSelector: this.createWorkflowSlotModelSelector(config),
+      planStore: createLocalPlanStore({ baseDir: join(this.workspaceDir, '.vitamin', 'plans') }),
+      agentProfileRegistry: this.createAgentProfileRegistry(),
+    })
+
+    registerAgents(orchestrator.agentRegistry, agentSpecs, fallbackAgent)
+    const callbacks = orchestrator.toToolCallbacks()
+
+    registerBuiltinTools(this.tools, this.workspaceDir, callbacks)
+    if (this.customTools) {
+      for (const tool of this.customTools) {
+        this.tools.register(tool, { preset: 'full', category: 'custom' })
+      }
     }
+
+    return { agentSpecs, fallbackAgent, orchestrator }
+  }
+
+  private compileAgentSpecs(config: VitaminConfig | null): AgentSpec[] {
+    const agentsConfig = (config as Record<string, unknown> | null)?.agents as Record<string, Record<string, unknown>> | undefined
+    const disabledAgents = new Set(
+      ((config as Record<string, unknown> | null)?.disabled_agents as string[]) ?? [],
+    )
+    if (!agentsConfig) return []
+
+    const specs: AgentSpec[] = []
+    for (const [name, cfg] of Object.entries(agentsConfig)) {
+      if (cfg.disabled || disabledAgents.has(name)) continue
+      if (!cfg.model) continue
+
+      specs.push({
+        name,
+        description: cfg.description as string ?? `Agent "${name}" from config`,
+        model: cfg.model as string,
+        systemPrompt: cfg.system_prompt as string | undefined,
+        tools: cfg.tools as string[] | undefined,
+        capabilities: cfg.capabilities as string[] | undefined,
+        maxToolTurns: cfg.max_tool_turns as number | undefined,
+        modelSlots: cfg.model_slots as Record<string, string> | undefined,
+      })
+    }
+
+    return specs
+  }
+
+  private buildFallbackAgentSpec(leadSystemPrompt: string, fallbackModelId: string | undefined): AgentSpec | undefined {
+    const resolvedModel = this.settings.snapshot?.model ?? fallbackModelId
+
+    return resolvedModel
+      ? {
+        name: '__fallback__',
+        description: 'Default fallback agent — handles all tasks when no specialized agent matches.',
+        model: resolvedModel,
+        systemPrompt: leadSystemPrompt || undefined,
+        capabilities: ['code', 'file', 'shell'],
+      }
+      : undefined
+  }
+
+  private resolveWorkflowDefaults(config: VitaminConfig | null): ResolvedWorkflowDefaults {
+    const workflow = (config as Record<string, unknown> | null)?.workflow as Record<string, unknown> | undefined
+    if (workflow?.enabled === false) return {}
+
+    const result: ResolvedWorkflowDefaults = {}
+    const review = workflow?.review as Record<string, unknown> | undefined
+    if (review?.enabled !== false) {
+      result.reviewGate = createReviewGate()
+    }
+
+    const retry = workflow?.retry as Record<string, unknown> | undefined
+    if (retry?.enabled !== false) {
+      result.retryStrategy = createRetryStrategy({
+        maxAttempts: (retry?.max_attempts as number) ?? 3,
+      })
+    }
+
+    const circuitBreaker = workflow?.circuit_breaker as Record<string, unknown> | undefined
+    if (circuitBreaker?.enabled !== false) {
+      result.circuitBreaker = createCircuitBreaker({
+        failureThreshold: (circuitBreaker?.failure_threshold as number) ?? 5,
+        resetTimeoutMs: (circuitBreaker?.reset_timeout_ms as number) ?? 60_000,
+      })
+    }
+
+    const routing = workflow?.routing as Record<string, unknown> | undefined
+    if (routing?.enabled !== false) {
+      const router = createCompositeRouter()
+      router.addStrategy(createCapabilityStrategy())
+      router.addStrategy(createModelTierStrategy())
+      result.router = router
+    }
+
+    return result
+  }
+
+  private createWorkflowSlotModelSelector(config: VitaminConfig | null): ModelSelector {
+    const globalModelSlots = (config as Record<string, unknown> | null)?.model_slots as Record<string, string> | undefined
+    return {
+      selectModel(task: OrchestratorTask, spec: AgentSpec): string | undefined {
+        const slot = task.input.workflowSlot
+        if (!slot) return undefined
+        return spec.modelSlots?.[slot] ?? globalModelSlots?.[slot] ?? undefined
+      },
+    }
+  }
+
+
+  private createAgentProfileRegistry() {
+    const registry = createAgentProfileRegistry()
+    // 注册 builtin profiles
+    for (const profile of BUILTIN_AGENT_PROFILES) {
+      registry.register(profile)
+    }
+    // 用户配置的 profiles 可在此覆盖 builtin defaults（Phase B）
+    return registry
   }
 }
 

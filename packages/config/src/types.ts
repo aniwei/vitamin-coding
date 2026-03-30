@@ -48,6 +48,7 @@ export const VITAMIN_DEFAULT_CONFIG: VitaminConfig = {
   session: {},
   skills: {},
   compaction: {},
+  workflow: {},
   background_task: {},
   experimental: {},
   disabled_agents: [],

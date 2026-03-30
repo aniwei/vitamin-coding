@@ -1,4 +1,5 @@
 import { z } from 'zod'
+import { ModelSlotsSchema } from './model-slots'
 
 export const AgentConfigSchema = z.looseObject({
   model: z.string().optional(), // 模型名称
@@ -11,6 +12,8 @@ export const AgentConfigSchema = z.looseObject({
   max_tokens: z.number().int().positive().optional(), // 最大生成长度
   thinking_budget: z.number().int().positive().optional(),
   disabled: z.boolean().optional(),
+  /** 可选：该 agent 的 workflow slot 模型覆盖 */
+  model_slots: ModelSlotsSchema,
 })
 
 export const AgentsConfigSchema = z.record(z.string(), AgentConfigSchema)

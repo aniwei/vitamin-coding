@@ -62,8 +62,6 @@ export const SESSION_MAX = normalizeEnv(process.env['VITAMIN_SESSION_MAX'], 50)
 export const SESSION_PAGE_SIZE = normalizeEnv(process.env['VITAMIN_SESSION_PAGE_SIZE'], 20)
 export const SESSION_SNAPSHOT_VERSION = normalizeEnv(process.env['VITAMIN_SESSION_SNAPSHOT_VERSION'], 1)
 
-export const PLAN_DIR = process.env['VITAMIN_PLAN_DIR'] ? normalizePath(process.env['VITAMIN_PLAN_DIR']) : undefined
-export const PLAN_RUN_SNAPSHOT_VERSION = normalizeEnv(process.env['VITAMIN_PLAN_RUN_SNAPSHOT_VERSION'], 1)
 export const CHECKPOINT_DIR = process.env['VITAMIN_CHECKPOINT_DIR'] ? normalizePath(process.env['VITAMIN_CHECKPOINT_DIR']) : undefined
 export const CHECKPOINT_SNAPSHOT_VERSION = normalizeEnv(process.env['VITAMIN_CHECKPOINT_SNAPSHOT_VERSION'], 1)
 

@@ -38,9 +38,6 @@ export type HookTiming =
   | 'task.failed'
   | 'task.cancelled'
   | 'task.recovered'
-  | 'plan.started'
-  | 'plan.step_completed'
-  | 'plan.completed'
   | 'review.requested'
   | 'review.passed'
   | 'review.failed'
@@ -158,9 +155,6 @@ export interface HookPayloadMap {
   'task.failed': { input: { task: Record<string, unknown>; error: Record<string, unknown> }; output: void }
   'task.cancelled': { input: { taskId: string }; output: void }
   'task.recovered': { input: { task: Record<string, unknown>; fromCheckpoint: string }; output: void }
-  'plan.started': { input: { planId: string; totalSteps: number }; output: void }
-  'plan.step_completed': { input: { planId: string; stepId: string; remaining: number }; output: void }
-  'plan.completed': { input: { planId: string }; output: void }
   'review.requested': { input: { taskId: string; reviewType: string }; output: void }
   'review.passed': { input: { taskId: string; reviewType: string }; output: void }
   'review.failed': { input: { taskId: string; reviewType: string; issues: string[] }; output: void }

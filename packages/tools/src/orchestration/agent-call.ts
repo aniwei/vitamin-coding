@@ -32,7 +32,7 @@ export function createAgentCall(
 
   return {
     name: 'agent_call',
-    description: 'Call a specific Agent with a prompt and wait for the result. Useful for leveraging capabilities of other Agents.',
+    description: 'Call a specific agent as an isolated collaborator for exploration, planning, or review. Use task_delegate for plan task execution and state updates.',
     parameters: CallAgentArgsSchema,
     visibility: 'always',
 

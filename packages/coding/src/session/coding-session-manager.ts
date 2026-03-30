@@ -1,5 +1,6 @@
 import { 
   createFileSessionManager, 
+  createInMemorySessionManager,
   createRemoteSessionManager, 
   SessionManager 
 } from '@vitamin/session'
@@ -18,7 +19,6 @@ import type {
   AgentSessionOptions,
   AgentSessionInfo,
 } from './types'
-import { createInMemorySessionManager } from 'node_modules/@vitamin/session/src/session-manager'
 
 export interface SessionManagerOptions {
   // 默认模型

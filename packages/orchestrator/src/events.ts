@@ -12,10 +12,6 @@ export interface OrchestratorEventMap {
   'task.cancelled': { taskId: string }
   // checkpoint 恢复
   'task.recovered': { task: OrchestratorTask; fromCheckpoint: string }
-  // 计划生命周期
-  'plan.started': { planId: string; totalSteps: number }
-  'plan.step_completed': { planId: string; stepId: string; remaining: number }
-  'plan.completed': { planId: string }
   // review 门禁
   'review.requested': { taskId: string; reviewType: string }
   'review.passed': { taskId: string; reviewType: string }
@@ -24,6 +20,12 @@ export interface OrchestratorEventMap {
   'clarify.requested': { taskId: string; question: string; reason: string }
   'clarify.responded': { taskId: string; answer: string; escalation?: string }
   'clarify.rejected': { taskId: string; reason: string }
+  // Plan 生命周期
+  'plan.created': { planId: string; name: string; taskCount: number }
+  'plan.updated': { planId: string; action: string }
+  'plan.task_dispatched': { planId: string; taskId: string; agentProfile: string }
+  'plan.task_completed': { planId: string; taskId: string; status: string }
+  'plan.completed': { planId: string; name: string }
 }
 
 export type OrchestratorEventType = keyof OrchestratorEventMap
@@ -79,15 +81,17 @@ const ORCHESTRATOR_EVENTS: OrchestratorEventType[] = [
   'task.failed', 
   'task.cancelled',
   'task.recovered',
-  'plan.started', 
-  'plan.step_completed', 
-  'plan.completed',
   'review.requested', 
   'review.passed', 
   'review.failed',
   'clarify.requested', 
   'clarify.responded', 
   'clarify.rejected',
+  'plan.created',
+  'plan.updated',
+  'plan.task_dispatched',
+  'plan.task_completed',
+  'plan.completed',
 ]
 
 // 将 OrchestratorEventBus 的所有事件桥接到 HookRegistry。

@@ -4,15 +4,26 @@ import { z } from 'zod'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const DelegateTaskArgsSchema = z.object({
-  prompt: z.string().describe('Task description to delegate'),
+  // 方式 A: 从 plan 分发
+  planId: z.string().optional().describe('Plan ID — dispatch a task from a plan'),
+  taskId: z.string().optional().describe('Task ID within the plan. Required when using planId.'),
+  // 方式 B: 独立分发（向后兼容）
+  prompt: z.string().optional().describe('Task description to delegate (required when not using planId)'),
   subagent: z.string().optional().describe('Agent name to delegate the task to (e.g. "explore")'),
   category: z.string().optional().describe('Task category (e.g. "quick", "deep", "search")'),
+  // 通用
   mode: z.enum(['sync', 'background']).optional().default('sync').describe('Execution mode'),
   sessionId: z.string().optional().describe('Optional child session ID. When used with sticky mode, later calls can reuse the same child context.'),
   sessionMode: z.enum(['ephemeral', 'sticky']).optional().default('ephemeral').describe('Child session lifecycle. ephemeral deletes the child session after the task; sticky keeps it for later reuse.'),
+  workflowSlot: z.string().optional().describe('Optional workflow slot for model selection (e.g. "planning", "execution", "review").'),
 }).refine(
-  (data) => data.subagent !== undefined || data.category !== undefined,
-  { message: 'Must specify either subagent or category' },
+  (data) => {
+    if (data.planId !== undefined) {
+      return data.taskId !== undefined
+    }
+    return data.prompt !== undefined && (data.subagent !== undefined || data.category !== undefined)
+  },
+  { message: 'Must provide either planId + taskId (plan-based dispatch) or prompt + subagent/category (standalone dispatch)' },
 )
 
 type DelegateTaskArgs = z.infer<typeof DelegateTaskArgsSchema>
@@ -27,12 +38,15 @@ interface TaskDispatchResult {
 
 // 任务委派函数类型（由 orchestrator 注入）
 export type TaskDispatch = (args: {
-  prompt: string
+  prompt?: string
+  planId?: string
+  taskId?: string
   subagent?: string
   category?: string
   mode: 'sync' | 'background'
   sessionId?: string
   sessionMode?: 'ephemeral' | 'sticky'
+  workflowSlot?: string
 }) => Promise<TaskDispatchResult>
 
 
@@ -42,7 +56,7 @@ export function createTaskDelegate(
 ): AgentTool<DelegateTaskArgs> {
   return {
     name: 'task_delegate',
-    description: 'Delegate a task to a sub-agent for execution. You can specify the sub-agent by name or by category.',
+    description: 'Delegate a task to a sub-agent for execution. For plan execution, you must provide both planId and taskId selected by the controller model after reading the plan markdown.',
     parameters: DelegateTaskArgsSchema,
     visibility: 'always',
 
@@ -53,11 +67,14 @@ export function createTaskDelegate(
 
       const result = await dispatch({
         prompt: params.prompt,
+        planId: params.planId,
+        taskId: params.taskId,
         subagent: params.subagent,
         category: params.category,
         mode: params.mode,
         sessionId: params.sessionId,
         sessionMode: params.sessionMode,
+        workflowSlot: params.workflowSlot,
       })
 
       if (result.success) {
@@ -70,10 +87,12 @@ export function createTaskDelegate(
           content: [{ type: 'text', text }],
           details: {
             mode: params.mode,
-            taskId: result.id,
+            planId: params.planId,
+            taskId: params.taskId,
             status: result.status,
             sessionId: params.sessionId,
             sessionMode: params.sessionMode,
+            workflowSlot: params.workflowSlot,
           },
         }
       }

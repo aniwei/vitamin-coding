@@ -28,12 +28,10 @@
 
 ## 当前未作为稳定公共 API 暴露的能力
 
-- `ExtensionManager`
-- `McpRuntime`
-- `@vitamin/coding/extension`、`@vitamin/coding/mcp` 这类子路径导出
-- 面向本包的稳定扩展包 manifest / 自动激活机制
+- 稳定的子路径导出
+- 默认接入的 MCP runtime 公共 API
 
-补充说明：仓库里仍能看到 `extension/`、`skill/` 等目录占位，但当前 [package.json](package.json) 只导出根入口 `.`，因此不应把这些路径写成已发布的稳定 API。
+补充说明：当前 [package.json](package.json) 只导出根入口 `.`，因此 README 不应把其他目录或概念写成已发布的稳定 API。
 
 ## 安装
 
@@ -323,7 +321,7 @@ await vitamin.stop()
 ## 当前边界
 
 - 当前公共包导出只有根入口，没有稳定子路径导出
-- 当前 README 不再把扩展系统 / MCP runtime 写成已发布公共 API
+- 当前 README 不再把未接入根导出的能力写成已发布公共 API
 - 当前 CLI 默认用户入口已经统一到 `vitamin.lead()`，但 `rpc` 与其他子命令仍不是完整产品壳
 - 当前 `ResourceManager` 不负责 skills 加载
 - 当前文档中的“默认用户入口”与“内部 session 级路径”仍需要严格区分

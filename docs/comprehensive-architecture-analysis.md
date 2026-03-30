@@ -15,7 +15,7 @@
 | Stars | 121k | 18k | 28.7k | 441 | — |
 | 定位 | 技能/方法论插件 | SDK + CLI agent harness | Agent toolkit + coding CLI | 高性能终端 compound agent | 分层 AI agent SDK |
 | 架构核心 | Skill 驱动提示词注入 | LangGraph 图状态机 | 极简有状态核心 + 扩展生态 | 多 workflow slot × Agent Fleet | 注册表驱动 + 钩子注入 |
-| Agent 状态模型 | 宿主 agent 管理 | LangGraph 图节点 | Agent 有状态(持有 messages) | 有状态 + workflow 分发 | Agent 无状态(消息外置) |
+| Agent 状态模型 | 宿主 agent 管理 | LangGraph 图节点 | Agent 有状态(持有 messages) | 有状态 + workflow 分发 | 消息历史外置，执行状态内置 |
 | 模块数 | ~15 skills (文件集合) | ~8 libs | 7 packages | 20+ crates | 14 packages |
 
 ### 1.2 架构模式对比图
@@ -222,7 +222,7 @@ agent.prompt("Hello")
 
 | 维度 | Pi-mono | Vitamin |
 |---|---|---|
-| Agent 状态模型 | **有状态**: Agent 持有 messages | **消息外置**: Agent 不持有消息，由调用方注入 |
+| Agent 状态模型 | **有状态**: Agent 持有 messages | **消息历史外置**: Agent 不持有 messages，但保留执行状态 |
 | 工具钩子 | `beforeToolCall`/`afterToolCall` (2 个) | 31 个 HookTiming 全生命周期 |
 | 编排层 | 无内置 orchestrator | Dispatcher + AgentRegistry + BackgroundManager |
 | Schema | TypeBox | Zod |
@@ -289,8 +289,9 @@ opendev-plugins     → 插件系统
  Layer 8 │ CLI 入口
 ─────────┼──────────────────────────────────────────────────────
          │ @vitamin/cli
-         │ 命令行 REPL → 解析参数 → 路由到 run/doctor/config/auth
-         │ 默认走 vitamin.lead() 路径
+         │ 命令行入口；run/print/json/interactive 已接线
+         │ doctor/config/auth/rpc 仍有占位分支
+         │ 默认用户路径走 vitamin.lead()
 ════════════════════════════════════════════════════════════════
  Layer 7 │ 应用容器
 ─────────┼──────────────────────────────────────────────────────
@@ -380,7 +381,8 @@ opendev-plugins     → 插件系统
 - `Session<T>`: 泛型消息存储，底层 DAG 树结构
 - `SessionStore`: 多后端（file/remote/memory）
 - `buildContext()`: 构建 LLM 上下文（messages + summary）
-- `branchAt(messageId)`: 在任意消息点创建分支
+- `Session.branch(entryId)`: 切换到指定条目所在分支
+- `SessionManager.branchAt(entryId)`: 对活跃会话的便捷分支入口
 - 分支不可变: 原路径保留，新分支独立演进
 - 分页查询: 支持大会话的增量加载
 
@@ -392,9 +394,9 @@ opendev-plugins     → 插件系统
 
 **@vitamin/devtools** — 断点调试与开发工具
 - `Atomics.wait()` 同步暂停: 真正阻塞 Agent 执行
-- `BreakpointManager`: 断点注册与管理
-- `DebugProtocol`: WebSocket 调试服务
-- Worker 控制平面: ServiceWorker 生命周期管理
+- `Breakpoints`: 断点注册、启停与 shouldPause 判定
+- `protocol.ts`: step/over/continue/stop 等调试命令协议类型
+- `DevtoolsService` + `ServiceWorkerServer`: Worker 控制平面与调试服务
 - 命令协议通道: step/over/stop 已进入协议层
 
 #### Layer 4: 执行引擎
@@ -404,7 +406,7 @@ opendev-plugins     → 插件系统
 **核心设计: 消息外置**
 ```
 Agent 不持有消息历史 → 由调用方通过 AgentRunContext 注入
-Agent 持有 AgentState → { turnCount, tokenUsage, status }
+Agent 持有运行态 → AgentState + AbortController + steering/followUp 队列
 需要 reset() 清零 AgentState
 ```
 
@@ -496,7 +498,10 @@ ToolCallbacks = {
 | L2 | Compaction | 调用模型摘要旧消息 → 释放 token 空间 |
 | L3 | Archive | 被压缩消息归档 → 支持后续恢复查询 |
 
-触发条件: token 使用 > 80% 或 turn 数 > 阈值
+当前边界:
+- memory 包提供默认阈值与能力模型，但默认 lead 主链不会自动创建 MemoryManager
+- memory 包默认阈值是 prune 70%、compaction 85%
+- 当前实现里，压缩要么通过显式 `session.compact()` 触发，要么由调用方在 `messages.transform` 中接入
 
 #### Layer 6: 编排层
 
@@ -548,7 +553,7 @@ VitaminApp.start()
 - 懒创建: 首次 `vitamin.lead()` 时实例化
 - 单实例复用: 生命周期内不重建
 - 订阅 orchestrator eventBus: task.created/completed/failed
-- 解析返回状态: done / done_with_concerns / needs_context / blocked
+- 最终通过独立的 `parseLeadResult()` 助手解析状态: done / done_with_concerns / needs_context / blocked
 
 #### Layer 8: CLI 入口
 
@@ -557,8 +562,11 @@ VitaminApp.start()
 vitamin [prompt]           → runPrintMode → vitamin.lead(prompt)
 vitamin --json [prompt]    → runJsonMode → vitamin.lead(prompt)
 vitamin --interactive      → runInteractiveMode → REPL 循环
-vitamin --rpc              → runRpcMode → session 级路径
+vitamin --rpc              → 预留分支；当前仅 createSession，未实现 JSON-RPC
 ```
+
+补充说明:
+- `doctor` / `auth` / `config` 子命令已完成参数解析，但当前仍为 TODO 占位
 
 ---
 
@@ -582,7 +590,8 @@ vitamin --rpc              → runRpcMode → session 级路径
 │      ┌─ Hook: chat.message.before ─── cancelled? → 中止                │
 │      ├─ Session.append(userMessage) → 消息写入 DAG 树                   │
 │      ├─ Session.buildContext() → {messages, summary?}                   │
-│      │  └─ token 超限? → Memory.compact() → 摘要替换                   │
+│      │  └─ 默认仅返回 summary + messages                                │
+│      │     若调用方额外接入 memory/messages.transform，才会做 prune/compact│
 │      ├─ Hook: chat.params → 自定义 temperature/maxTokens/thinkingLevel │
 │      └─ Hook: messages.transform → 修改最终消息数组                     │
 │                                                                         │
@@ -628,8 +637,9 @@ vitamin --rpc              → runRpcMode → session 级路径
 │  ──────────                                                             │
 │  workLoop 退出 → 返回最终 AssistantMessage                              │
 │    → Hook: chat.message.after                                           │
-│    → Session.persist() → 持久化                                         │
-│    → LeadSession.parseLeadResult()                                      │
+│    → 当前 Session 内消息已更新                                           │
+│    → 如需落盘，由外层 SessionManager.save()/saveAll() 负责              │
+│    → parseLeadResult()                                                  │
 │      → 提取状态: done / done_with_concerns / needs_context / blocked    │
 │    → 输出给用户                                                         │
 │                                                                         │
@@ -675,33 +685,24 @@ vitamin --rpc              → runRpcMode → session 级路径
 ### 3.3 上下文压缩流程
 
 ```
-AgentSession.prompt()
-  → Session.buildContext()
-  → 计算消息 token 总量
-         │
-   token > 阈值 (如 80%)?
-    │ No → 返回完整消息
-    │ Yes ↓
-    ▼
-┌─────────────────────────────────────┐
-│ Hook: compaction.before              │
-│                                      │
-│ 选择压缩策略:                        │
-│                                      │
-│ A. Prune (简单裁剪)                  │
-│   → 删除最旧的 toolResult 消息      │
-│   → 保留 user/assistant 消息        │
-│   → 释放空间，无 LLM 调用          │
-│                                      │
-│ B. Compact (LLM 摘要)               │
-│   → 计算分割点:                      │
-│     保留最近 5-10 条，压缩其余      │
-│   → 调用模型: summarize(old msgs)   │
-│   → 替换: 100 条 → 摘要 + 15 条    │
-│   → 归档: 旧消息存入 L3 Archive    │
-│                                      │
-│ Hook: compaction.after               │
-└─────────────────────────────────────┘
+当前默认主链:
+  AgentSession.prompt()
+    → Session.buildContext()
+    → 交给 messages.transform hooks 做可选上下文改写
+
+memory 包可提供的能力模型:
+  ┌─────────────────────────────────────┐
+  │ Prune: 触发阈值默认 70%            │
+  │ Compact: 触发阈值默认 85%          │
+  │ Archive: 保存被压缩历史            │
+  └─────────────────────────────────────┘
+
+接入方式:
+  1. 显式调用 session.compact(summary, compactedCount)
+  2. 在 messages.transform 中挂接 MemoryManager / prune / compact 逻辑
+
+结论:
+  这部分是已实现的能力层，不是当前默认 lead 路径中的自动行为。
 ```
 
 ### 3.4 会话分支流程
@@ -721,11 +722,13 @@ Session 消息 DAG 树:
    │      ├─ user: "换个方案"
    │      └─ assistant: "方案 2..."
 
-Session.branchAt(messageId)
-  → 从指定消息后创建新分支
+Session.branch(entryId)
+  → 将当前 leaf 切换到指定条目所在分支
   → 原路径不可变
   → 新分支独立演进
   → 后续 prompt() 在新分支上执行
+
+如果从管理器视角操作，则使用 SessionManager.branchAt(entryId)
 ```
 
 ### 3.5 Hook 拦截流程
@@ -778,11 +781,11 @@ HookEngine.execute(timing, input, output)
 
 | 能力维度 | Superpowers | Deep Agents | Pi-mono | OpenDev | Vitamin |
 |---|---|---|---|---|---|
-| **Agent 状态** | 宿主决定 | 图管理 | **有状态**(持有msg) | 有状态 | **消息外置**(不持有msg) |
+| **Agent 状态** | 宿主决定 | 图管理 | **有状态**(持有msg) | 有状态 | **消息历史外置，执行状态内置** |
 | **多模型支持** | 宿主决定 | init_chat_model | 20+ providers | workflow slot 多模型 | ModelRegistry + ProviderRegistry |
 | **流式推理** | 宿主提供 | LangGraph streaming | stream()/complete() | 内置 | EventStream 统一协议 |
 | **工具验证** | 无 | Pydantic | TypeBox + AJV | 内置 | Zod schema |
-| **上下文压缩** | 新 agent 隔离 | auto-summarize | session compaction | Compact workflow | Memory 三层 + Hook |
+| **上下文压缩** | 新 agent 隔离 | auto-summarize | session compaction | Compact workflow | Memory 三层 + 可选 Hook 接入 |
 | **子 Agent 隔离** | 每 task 新 agent | task() 隔离窗口 | 无内置 | Fleet 独立上下文 | Child Session (ephemeral/sticky) |
 | **计划执行** | writing-plans | write_todos | 无内置 | — | PlanLoader + performWork |
 | **质量评审** | 两阶段 review | — | — | Critique workflow | ReviewGate (可选) |
@@ -805,9 +808,9 @@ HookEngine.execute(timing, input, output)
 |---|---|---|
 | **Atomics 断点调试** | 同步暂停 + Worker 控制平面 + 调试协议 | 四个框架均无 |
 | **31 timing Hook** | 全生命周期细粒度拦截，覆盖消息/工具/流/编排/计划/评审 | Deep Agents 有 middleware 但粗粒度; Pi-mono 仅 2 个工具钩子 |
-| **消息外置 Agent** | Agent 不持有消息，天然支持多会话/子会话/状态重放 | Pi-mono 接近但 Agent 持有 messages |
+| **消息历史外置 Agent** | Agent 不持有消息历史，天然支持多会话/子会话/状态重放；但仍保留执行状态与控制队列 | Pi-mono 接近但 Agent 持有 messages |
 | **ToolCallbacks 注入** | 编排能力通过回调注入工具，不硬编码依赖 | Deep Agents 工具自包含; Superpowers 依赖宿主 |
-| **三层 Memory** | L1 持久知识 + L2 压缩 + L3 归档，分层清晰 | Deep Agents 有 auto-summarize; Pi-mono 有 compaction |
+| **三层 Memory** | L1 持久知识 + L2 压缩 + L3 归档，分层清晰；当前默认主链仍需显式接线 | Deep Agents 有 auto-summarize; Pi-mono 有 compaction |
 | **14 包精细分层** | 每层职责明确，可独立使用或组合 | OpenDev 20+ crates 最多; 其余较粗 |
 | **ReviewGate + RetryStrategy + CircuitBreaker** | 完整质量门禁套件 | 其余框架均无等价物 |
 | **Plan 执行 + Checkpoint** | Markdown plan 解析 → 步骤执行 → 进度回写 | Superpowers 概念类似但依赖宿主 |
@@ -858,12 +861,12 @@ HookEngine.execute(timing, input, output)
 │   (按需)│              │ → child session → 子 Agent 执行     │ session  │
 │        │              │ → ReviewGate → 结果收集              │ agent    │
 ├────────┼──────────────┼─────────────────────────────────────┼──────────┤
-│  ⑥     │ 上下文压缩   │ token 超限 → Memory.compact()       │ memory   │
-│   (自动)│              │ → 摘要替换 → 归档                   │ session  │
-│        │              │ → 释放空间                           │ ai       │
+│  ⑥     │ 上下文变换   │ 默认走 messages.transform；若接入   │ hooks    │
+│   (可选)│              │ memory/prune/compact 才执行压缩      │ memory   │
+│        │              │ 或显式 session.compact()             │ session  │
 ├────────┼──────────────┼─────────────────────────────────────┼──────────┤
-│  ⑦     │ 输出         │ 最终消息 → 解析状态 → 持久化        │ coding   │
-│        │              │ → Hook 通知 → 返回用户               │ session  │
+│  ⑦     │ 输出         │ 最终消息 → 解析状态 → 返回用户      │ coding   │
+│        │              │ → 如需持久化，由 SessionManager 保存 │ session  │
 │        │              │                                      │ hooks    │
 └────────┴──────────────┴─────────────────────────────────────┴──────────┘
 ```
@@ -880,10 +883,19 @@ HookEngine.execute(timing, input, output)
 Session.append() → 消息 DAG 树
   │
   ▼
-buildContext() ── token 超限? ── Yes → Memory.compact() → 摘要替换
-  │                                          │
-  ▼                                          ▼
-Agent.workLoop()                        归档到 L3
+buildContext()
+  │
+  ▼
+messages.transform hooks
+  │
+  ├─ 未接入 memory → 原样进入 Agent.workLoop()
+  └─ 已接入 memory → 可执行 prune/compact/archive
+             │
+             ▼
+        归档到 L3
+  │
+  ▼
+Agent.workLoop()
   │
   │  ┌──────────────────────────────────────────────────┐
   │  │                LLM 推理循环                      │
@@ -929,10 +941,13 @@ Agent.workLoop()                        归档到 L3
 [Hook: chat.message.after]
   │
   ▼
-Session.persist() → 持久化
+当前 Session 内状态已更新
   │
   ▼
-LeadSession.parseLeadResult() → { status, tasks }
+如需持久化: SessionManager.save()/saveAll()
+  │
+  ▼
+parseLeadResult() → { status, tasks }
   │
   ▼
 输出给用户
@@ -1049,7 +1064,7 @@ Vitamin 是一个 **注册表驱动的分层 AI Agent SDK**，14 个包覆盖从
 
 ### 核心竞争力
 
-1. **消息外置 Agent 设计** — 天然支持多会话、子会话、状态重放
+1. **消息历史外置 Agent 设计** — 天然支持多会话、子会话、状态重放，同时保留 Agent 自身执行状态与控制队列
 2. **31 Timing Hook 系统** — 全生命周期细粒度拦截，业内粒度最细
 3. **Atomics 断点调试** — 业内独有的 Agent 调试能力
 4. **14 包精细分层** — 每层可独立使用，组合灵活

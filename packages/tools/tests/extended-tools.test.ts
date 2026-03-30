@@ -6,6 +6,7 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createFind } from '../src/search/find'
 import { createGrep } from '../src/search/grep'
 import { createLs } from '../src/search/ls'
+import { createPlanUpdate } from '../src/orchestration/plan-update'
 import { createTaskDelegate } from '../src/orchestration/task-delegate'
 
 let testDir = ''
@@ -124,6 +125,102 @@ describe('extended tools', () => {
       expect(result.isError).toBeUndefined()
       expect(text).toContain('Task delegated successfully')
       expect(text).toContain('Processed: Find auth code')
+    })
+
+    it('passes session and workflow routing hints through to dispatch', async () => {
+      let received:
+        | {
+            sessionId?: string
+            sessionMode?: 'ephemeral' | 'sticky'
+            workflowSlot?: string
+          }
+        | undefined
+
+      const tool = createTaskDelegate(testDir, async (args) => {
+        received = {
+          sessionId: args.sessionId,
+          sessionMode: args.sessionMode,
+          workflowSlot: args.workflowSlot,
+        }
+
+        return {
+          success: true,
+          output: 'ok',
+        }
+      })
+
+      const result = await tool.execute({
+        id: 'td2',
+        params: {
+          prompt: 'Review auth flow',
+          subagent: 'reviewer',
+          mode: 'sync',
+          sessionId: 'child-1',
+          sessionMode: 'sticky',
+          workflowSlot: 'review',
+        },
+        signal,
+      })
+
+      expect(result.isError).toBeUndefined()
+      expect(received).toEqual({
+        sessionId: 'child-1',
+        sessionMode: 'sticky',
+        workflowSlot: 'review',
+      })
+    })
+    it('requires taskId when using planId mode', () => {
+      const tool = createTaskDelegate(testDir, async () => ({ success: true }))
+
+      const invalid = tool.parameters.safeParse({
+        planId: 'plan-1',
+        mode: 'sync',
+      })
+      expect(invalid.success).toBe(false)
+
+      const valid = tool.parameters.safeParse({
+        planId: 'plan-1',
+        taskId: 'task-2',
+        mode: 'sync',
+      })
+      expect(valid.success).toBe(true)
+    })
+  })
+
+  describe('plan_update', () => {
+    it('accepts explicit lifecycle and output patch for update_task', async () => {
+      let receivedStatus = ''
+      let receivedSummary = ''
+
+      const tool = createPlanUpdate(testDir, async (args) => {
+        receivedStatus = args.taskPatch?.status ?? ''
+        receivedSummary = args.taskPatch?.output?.summary ?? ''
+        return {
+          success: true,
+          text: 'updated',
+        }
+      })
+
+      const result = await tool.execute({
+        id: 'pu1',
+        params: {
+          planId: 'plan-1',
+          action: 'update_task',
+          taskId: 'task-1',
+          taskPatch: {
+            status: 'completed',
+            completedAt: Date.now(),
+            output: {
+              summary: 'Implemented and verified',
+            },
+          },
+        },
+        signal,
+      })
+
+      expect(result.isError).toBeUndefined()
+      expect(receivedStatus).toBe('completed')
+      expect(receivedSummary).toBe('Implemented and verified')
     })
   })
 })

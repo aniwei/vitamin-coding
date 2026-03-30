@@ -6,12 +6,6 @@ import { createVitamin, type VitaminAppOptions } from '../src/app/vitamin-app'
 import { createInMemoryResourceManager } from '../src/resources/resource-manager'
 import { createReviewGate } from '../../orchestrator/src'
 
-interface PlanFileStoreLike {
-  read(path: string): Promise<string>
-  write(path: string, content: string): Promise<void>
-  exists(path: string): Promise<boolean>
-}
-
 function makeModel(): Model {
   return {
     id: 'openai/test-model',
@@ -193,25 +187,6 @@ describe('Lead Agent wiring', () => {
     expect(app.orchestrator!.agentRegistry.get('planner')).toBeUndefined()
   })
 
-  it('wires planFileStore when provided', async () => {
-    const files = new Map<string, string>()
-    const planFileStore: PlanFileStoreLike = {
-      read: async (path) => files.get(path) ?? '',
-      write: async (path, content) => { files.set(path, content) },
-      exists: async (path) => files.has(path),
-    }
-
-    app = createVitamin(makeBaseOptions({
-      resourceManager: createInMemoryResourceManager(),
-      planFileStore,
-    }))
-
-    await app.start()
-
-    // planLoader 应存在
-    expect((app.orchestrator as any).planLoader).toBeDefined()
-  })
-
   it('wires clarifyChannel when clarifyHandler provided', async () => {
     app = createVitamin(makeBaseOptions({
       resourceManager: createInMemoryResourceManager(),
@@ -221,16 +196,6 @@ describe('Lead Agent wiring', () => {
     await app.start()
 
     expect((app.orchestrator as any).clarifyChannel).toBeDefined()
-  })
-
-  it('omits planLoader when no planFileStore', async () => {
-    app = createVitamin(makeBaseOptions({
-      resourceManager: createInMemoryResourceManager(),
-    }))
-
-    await app.start()
-
-    expect((app.orchestrator as any).planLoader).toBeUndefined()
   })
 
   it('user-configured lead agent is not overwritten by fallback', async () => {

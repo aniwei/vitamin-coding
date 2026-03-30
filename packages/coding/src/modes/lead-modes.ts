@@ -1,9 +1,13 @@
 import type { InteractiveResult } from './run-modes'
-import type { VitaminApp } from '../app/vitamin-app'
-import type { LeadResult } from '../lead/lead-session'
+import type { LeadResult, LeadRunOptions, LeadSession } from '../lead/lead-session'
+
+export interface LeadRuntime {
+  lead(userPrompt: string, options?: LeadRunOptions): Promise<LeadResult>
+  getLeadSession(): LeadSession | null
+}
 
 export async function runLeadPrintMode(
-  app: VitaminApp,
+  app: LeadRuntime,
   prompt: string,
   writer: (text: string) => void = (text) => process.stdout.write(`${text}\n`),
 ): Promise<LeadResult> {
@@ -13,14 +17,14 @@ export async function runLeadPrintMode(
 }
 
 export async function runLeadJsonMode(
-  app: VitaminApp,
+  app: LeadRuntime,
   prompt: string,
 ): Promise<LeadResult> {
   return app.lead(prompt)
 }
 
 export class LeadInteractiveMode {
-  constructor(private readonly app: VitaminApp) {}
+  constructor(private readonly app: LeadRuntime) {}
 
   async handleInput(input: string): Promise<InteractiveResult> {
     const text = input.trim()

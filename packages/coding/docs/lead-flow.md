@@ -9,7 +9,6 @@
 - prompt 当前是两阶段运行时装配：
   - 第一阶段：资源就绪后构建初始 prompt
   - 第二阶段：tools 和 orchestrator 就绪后构建最终 prompt
-- 当前 `start()` 主链没有显式 `ExtensionManager` 或 `McpRuntime` bootstrap。
 - 当前 CLI 默认用户入口也已经对齐到 `vitamin.lead()`；只有 `rpc` 仍保留 session 级路径。
 
 ## Runtime Sequence
@@ -68,7 +67,7 @@ sequenceDiagram
 - 调 `createVitamin()` 构造应用容器
 - 调 `vitamin.start()` 和 `vitamin.lead()` 触发运行时
 
-真正的 prompt build 发生在 [vitamin-app.ts](../src/app/vitamin-app.ts) 和 [vitamin-bootstrap.ts](../src/app/vitamin-bootstrap.ts) 内部，所以只看入口示例会误以为没有 lead prompt 装配。
+真正的 prompt build 发生在 [vitamin-app.ts](../src/app/vitamin-app.ts) 内部，所以只看入口示例会误以为没有 lead prompt 装配。
 
 ## Prompt Assembly Boundaries
 
@@ -100,21 +99,19 @@ sequenceDiagram
 4. agent catalog
 5. tool catalog
 
-### 3. vitamin-bootstrap
+### 3. VitaminApp Runtime Helpers
 
-[vitamin-bootstrap.ts](../src/app/vitamin-bootstrap.ts) 当前提供：
+[vitamin-app.ts](../src/app/vitamin-app.ts) 当前在类内部提供：
 
 - `buildLeadSystemPrompt()`
 - `summarizeAgentCatalog()`
 - `summarizeToolCatalog()`
-- `bootstrapToolsAndOrchestrator()`
+- `createOrchestratorRuntime()`
 
 当前源码里已经直接验证到的 runtime catalog 只有：
 
 - agent catalog
 - tool catalog
-
-当前不应把 MCP catalog 写成默认已接入的启动链事实。
 
 ## 推荐入口与当前 CLI 的关系
 
@@ -136,7 +133,6 @@ sequenceDiagram
 
 ### 当前还不该写满的部分
 
-- 不应把 README 中的目标态扩展系统写成已进入默认 runtime。
 - 不应把 MCP 叙事写成当前 `start()` 已验证步骤。
 - 不应把当前 CLI 默认路径写成已经 lead 产品化。
 

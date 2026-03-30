@@ -46,7 +46,7 @@ class AgentRegistry implements IAgentRegistry {
     }
 
     // 2. 使用策略路由器（如果配置）
-    if (this.router) {
+    if (this.router && query.category) {
       const agents = Array.from(this.agents.values())
       const context: RoutingContext = {
         prompt: '',

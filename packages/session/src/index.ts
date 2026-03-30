@@ -21,6 +21,7 @@ export type { RemoteSessionPersistenceOptions } from './remote-persistence'
 
 export {
   SessionManager,
+  createInMemorySessionManager,
   createFileSessionManager,
   createRemoteSessionManager,
   createSessionManager,

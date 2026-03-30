@@ -13,10 +13,6 @@ import {
   createTaskDelegate, 
   type TaskDispatch 
 } from './orchestration/task-delegate'
-import { 
-  createPerformWork, 
-  type PerformWork 
-} from './orchestration/perform-work'
 import { createTaskCreate, type CreateTask } from './orchestration/task-create'
 import { createTaskGet, type GetTask } from './orchestration/task-get'
 import { createTaskList, type ListTasks } from './orchestration/task-list'
@@ -38,6 +34,12 @@ import {
   type ClarifyRequest,
 } from './orchestration/clarify-request'
 
+// Plan
+import { createPlanCreate, type PlanCreate } from './orchestration/plan-create'
+import { createPlanGet, type PlanGet } from './orchestration/plan-get'
+import { createPlanList, type PlanList } from './orchestration/plan-list'
+import { createPlanUpdate, type PlanUpdate } from './orchestration/plan-update'
+
 // LSP
 import { createLspDefinition } from './lsp/definition'
 import { createLspReferences } from './lsp/references'
@@ -57,7 +59,6 @@ import type { ToolRegistry } from './tool-registry'
 export interface RegisterBuiltinOptions {
   // 必填回调
   dispatchTask: TaskDispatch
-  performWork: PerformWork
   callAgent: CallAgent
   loadSkill: LoadSkill
   executeSkill: ExecuteSkill
@@ -70,6 +71,11 @@ export interface RegisterBuiltinOptions {
   cancelBackground?: CancelBackground
   clarifyRequest?: ClarifyRequest
   sessionManager?: SessionManager
+  // Plan 回调
+  planCreate?: PlanCreate
+  planGet?: PlanGet
+  planList?: PlanList
+  planUpdate?: PlanUpdate
   // 功能开关
   enableLsp?: boolean
 }
@@ -109,6 +115,16 @@ export function registerBuiltinTools(
     createTaskDelegate(projectRoot, options.dispatchTask),
   ], { preset: 'standard', category: 'orchestration', builtin: true })
 
+  // Plan 工具（需注入 plan 回调）
+  if (options.planCreate && options.planGet && options.planList && options.planUpdate) {
+    registry.register([
+      createPlanCreate(projectRoot, options.planCreate),
+      createPlanGet(projectRoot, options.planGet),
+      createPlanList(projectRoot, options.planList),
+      createPlanUpdate(projectRoot, options.planUpdate),
+    ], { preset: 'standard', category: 'orchestration', builtin: true })
+  }
+
   // LSP 工具（opt-in，需要 enableLsp: true）
   if (options.enableLsp) {
     registry.register([
@@ -125,7 +141,6 @@ export function registerBuiltinTools(
   // 编排工具
   registry.register([
     createAgentCall(projectRoot, options.callAgent),
-    createPerformWork(projectRoot, options?.performWork),
     createTaskCreate(projectRoot, options.createTask),
     createTaskGet(projectRoot, { get: options.getTask }),
     createTaskList(projectRoot, { list: options.listTasks }),

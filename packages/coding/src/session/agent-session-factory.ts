@@ -1,5 +1,4 @@
 import { createAgentWithRegistry } from '@vitamin/agent'
-import { createDefaultProviderRegistry } from '@vitamin/ai'
 import { createHookRegistry } from '@vitamin/hooks'
 import { AgentSession } from './agent-session'
 
@@ -28,11 +27,7 @@ interface BuildAgentSessionOptions {
 export function resolveAgentProviderRegistry(
   explicit?: ProviderRegistry,
 ): ProviderRegistry | undefined {
-  if (explicit) {
-    return explicit
-  }
-
-  return createDefaultProviderRegistry()
+  return explicit
 }
 
 export function buildAgentSession(options: BuildAgentSessionOptions): AgentSession {
