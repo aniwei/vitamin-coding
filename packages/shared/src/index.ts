@@ -56,11 +56,11 @@ export {
 
 export { 
   normalizePath, 
-  createTempLoggerPath,
-  getVitaminHomePath,
-  getVitaminProjectRootPath,
-  getThirdPartyToolPath,
-  getThirdPartyToolBinaryPath
+  createTempLoggerDir,
+  getVitaminHomeDir,
+  getVitaminProjectDir,
+  getThirdPartyToolDir,
+  getThirdPartyToolBinaryDir
 } from './path'
 
 export {

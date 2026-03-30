@@ -3,57 +3,34 @@ import type { Model, ProviderRegistry, ThinkingLevel } from '@vitamin/ai'
 import type { HookRegistry } from '@vitamin/hooks'
 import type { SessionStore } from '@vitamin/session'
 import type { AgentMessage } from '@vitamin/agent'
-import type { createLogger } from '@vitamin/shared'
+import type { Logger } from '@vitamin/shared'
 
 export interface AgentSessionOptions {
-  // 会话 ID（可选，默认自动生成）
-  id?: string
-  // LLM 模型 
-  model?: Model
-  // 系统提示词 
-  systemPrompt?: string
-  // 工具列表 
-  tools?: AgentTool[]
-  // 思维级别
-  thinkingLevel?: ThinkingLevel
-  // 最大连续工具轮次
-  maxToolTurns?: number
-  // 工作目录 
-  workspaceDir?: string
-  // Provider 注册表（用于自动构建 stream）
-  providerRegistry?: ProviderRegistry
-  // 用户视角日志
-  logger?: ReturnType<typeof createLogger>
-  // 可选的 prompt 刷新回调
-  promptRefreshFn?: () => string | undefined
+  id: string
+  model: Model
+  systemPrompt: string
+  tools: AgentTool[]
+  thinkingLevel: ThinkingLevel
+  maxToolTurns: number
+  workspaceDir: string
+  providerRegistry: ProviderRegistry
+  logger: Logger
+  promptRefresh: () => string | undefined
 }
 
 export interface CreateAgentSessionOptions {
-  // LLM 模型（必填）
   model: Model
-  // 系统提示词 
-  systemPrompt?: string
-  // 工具列表 
-  tools?: AgentTool[]
-  // 思维级别 
-  thinkingLevel?: ThinkingLevel
-  // 最大连续工具轮次
-  maxToolTurns?: number
-  // Hook 注册表（默认 createHookRegistry({ preset: 'default' })） 
-  hooks?: HookRegistry
-  // Provider 注册表（用于自动构建 stream） 
-  providerRegistry?: ProviderRegistry
-  // 自定义 SessionStore（默认 InMemorySessionStore）
+  systemPrompt: string
+  tools: AgentTool[]
+  thinkingLevel: ThinkingLevel
+  maxToolTurns: number
+  hookRegistry: HookRegistry
+  providerRegistry: ProviderRegistry
   sessionStore?: SessionStore<AgentMessage>
-  // 会话 ID（可选，默认自动生成） 
-  id?: string
-  // 工作目录
-  workspaceDir?: string
-  // 用户视角日志
-  logger?: ReturnType<typeof createLogger>
+  id: string
+  workspaceDir: string
+  logger: Logger
 }
-
-// ═══ AgentSession 事件 ═══
 
 export type AgentSessionEventType = AgentSessionEvent['type']
 

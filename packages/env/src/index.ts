@@ -39,7 +39,7 @@ export const VITAMIN_USER_AGENT = `vitamin/${readPackageVersion()}`
 export const VITAMIN_ROOT = '.vitamin'
 export const VITAMIN_HOME = normalizePath(process.env['VITAMIN_HOME'] || `${homedir()}/${VITAMIN_ROOT}`)
 export const VITAMIN_USER_CONFIG_DIR = normalizePath(homedir() + '/.config/vitamin')
-export const VITAMIN_PROJECT_ROOT = normalizePath(process.env['VITAMIN_PROJECT_ROOT'] || `${process.cwd()}/${VITAMIN_ROOT}`)
+export const VITAMIN_PROJECT_DIR = normalizePath(`${process.cwd()}/${VITAMIN_ROOT}`)
 
 export const LOG_FILE = normalizePath(process.env['VITAMIN_LOG_FILE'] ?? '/tmp/vitamin.log')
 export const LOG_LEVEL = process.env['VITAMIN_LOG_LEVEL'] as ('info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal') || (process.env.NODE_ENV === 'production' ? 'info' : 'trace')
@@ -70,29 +70,3 @@ export const AUTH_PATH = normalizePath(`${VITAMIN_USER_CONFIG_DIR}/auth.json`)
 export const GITHUB_CLIENT_ID = decode(process.env['GITHUB_CLIENT_ID'] || 'SXYxLmI1MDdhMDhjODdlY2ZlOTg=')
 export const GITHUB_SCOPE = process.env['GITHUB_SCOPE'] || 'read:user'
 export const GITHUB_COPILOT_USER_AGENT = process.env['GITHUB_COPILOT_USER_AGENT'] || 'GitHubCopilotChat/0.35.0'
-
-// ── 统一 Storage 配置 ──
-
-export interface LocalStorageConfig {
-  type: 'local'
-  /** 存储根目录，默认 $VITAMIN_HOME 下对应子目录 */
-  baseDir?: string
-}
-
-export interface RemoteStorageConfig {
-  type: 'remote'
-  /** API 基础 URL */
-  baseUrl: string
-  /** 认证信息获取函数 */
-  getAuth: () => Promise<{ token: string }>
-  /** 请求超时 (ms) */
-  timeoutMs?: number
-  /** 自定义 fetch */
-  fetch?: typeof globalThis.fetch
-}
-
-export interface MemoryStorageConfig {
-  type: 'memory'
-}
-
-export type StorageConfig = LocalStorageConfig | RemoteStorageConfig | MemoryStorageConfig

@@ -14,18 +14,18 @@ import type { PromptOptions } from './types'
 
 
 
-export interface AgentSessionConfig {
+export interface AgentSessionOptions {
   model: Model
   systemPrompt: string
-  hooks: HookRegistry
-  tools?: AgentTool[]
-  thinkingLevel?: ThinkingLevel
-  maxToolTurns?: number
-  agentName?: string
-  workspaceDir?: string
-  logger?: Logger
+  hookRegistry: HookRegistry
+  tools: AgentTool[]
+  thinkingLevel: ThinkingLevel
+  maxToolTurns: number
+  // agentName: string // TODO
+  workspaceDir: string
+  logger: Logger
   devtools?: Devtools
-  promptRefreshFn?: () => string | undefined
+  promptRefresh: () => string | undefined
 }
 
 interface AgentSessionEvents extends Events {
@@ -48,38 +48,51 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
   private model: Model
   private tools: AgentTool[]
   private systemPrompt: string
-  private hooks: HookRegistry
+  private hookRegistry: HookRegistry
   private agentName: string
-  private logger: Logger | undefined
   private maxToolTurns: number
   private thinkingLevel: ThinkingLevel
+  private promptRefresh: () => string | undefined
+  private logger: Logger
   private devtools?: Devtools
-  private promptRefreshFn?: () => string | undefined
 
   constructor(
     session: Session<AgentMessage>,
     agent: Agent,
-    config: AgentSessionConfig,
+    options: AgentSessionOptions,
   ) {
     super()
     this.id = session.id
     this.session = session
     this.agent = agent
 
-    this.model = config.model
-    this.tools = config.tools ?? []
-    this.systemPrompt = config.systemPrompt
-    this.thinkingLevel = config.thinkingLevel ?? 'medium'
-    this.maxToolTurns = config.maxToolTurns ?? 25
-    this.hooks = config.hooks
-    this.agentName = config.agentName ?? 'primary'
-    this.devtools = config.devtools
-    this.logger = config.logger
-    this.workspaceDir = config.workspaceDir
-    this.promptRefreshFn = config.promptRefreshFn
+    const {
+      model,
+      systemPrompt,
+      tools,
+      thinkingLevel,
+      maxToolTurns,
+      hookRegistry,
+      workspaceDir,
+      devtools,
+      logger,
+      promptRefresh
+    } = options
+
+    this.model = model
+    this.tools = tools ?? []
+    this.systemPrompt = systemPrompt
+    this.thinkingLevel = thinkingLevel ?? 'medium'
+    this.maxToolTurns = maxToolTurns ?? 25
+    this.hookRegistry = hookRegistry
+    this.agentName = 'TODO' // TODO: agentName 应该从 options 传入，目前先 hardcode
+    this.devtools = devtools
+    this.logger = logger
+    this.workspaceDir = workspaceDir
+    this.promptRefresh = promptRefresh
 
     this.emit('session_start', this.id)
-    this.logger?.info('Session %s initialized with model %s', this.id, this.model.id)
+    this.logger.info('Session %s initialized with model %s', this.id, this.model.id)
   }
 
   get status(): string {
@@ -108,11 +121,11 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     }
 
     this.emit('prompt_start', this.id, text)
-    this.logger?.info('Session %s prompt started', this.id)
+    this.logger.info('Session %s prompt started', this.id)
 
     // 如果工具/agent 集变化，按需刷新 system prompt
-    if (this.promptRefreshFn) {
-      const refreshed = this.promptRefreshFn()
+    if (this.promptRefresh) {
+      const refreshed = this.promptRefresh()
       if (refreshed !== undefined) {
         this.systemPrompt = refreshed
       }
@@ -148,7 +161,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
       metadata: {},
     }
 
-    await this.hooks.execute('chat.message.before', beforeInput, beforeOutput)
+    await this.hookRegistry.execute('chat.message.before', beforeInput, beforeOutput)
 
     if (beforeOutput.cancelled) {
       this.emit('prompt_end', this.id)
@@ -199,7 +212,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
       metadata: {},
     }
 
-    await this.hooks.execute('chat.params', {
+    await this.hookRegistry.execute('chat.params', {
       sessionId: this.id,
       model: this.model.id,
       provider: this.model.provider,
@@ -211,20 +224,22 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
       const event = args[0] as { type: string; event: { type: string; reason?: string } }
       const se = event.event
       if (se.type === 'start') {
-        void this.hooks.emit('stream.start', { sessionId: this.id, model: this.model.id })
+        void this.hookRegistry.emit('stream.start', { sessionId: this.id, model: this.model.id })
       } else if (se.type === 'done') {
-        void this.hooks.emit('stream.end', { sessionId: this.id, model: this.model.id, stopReason: se.reason ?? 'end_turn' })
+        void this.hookRegistry.emit('stream.end', { sessionId: this.id, model: this.model.id, stopReason: se.reason ?? 'end_turn' })
       }
     })
 
     try {
       // system-prompt.transform hook: 允许 hook 链式修改 systemPrompt
       const promptTransformOutput = { systemPrompt: this.systemPrompt }
-      await this.hooks.execute('system-prompt.transform', {
+
+      await this.hookRegistry.execute('system-prompt.transform', {
         systemPrompt: this.systemPrompt,
         sessionId: this.id,
         tools: this.tools,
       }, promptTransformOutput)
+
       const effectiveSystemPrompt = promptTransformOutput.systemPrompt
 
       // 3. agent.run() — workLoop 就地修改 messages
@@ -244,16 +259,18 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
           }
 
           const output = { messages: contextMessages }
-          await this.hooks.execute('messages.transform', {
+
+          await this.hookRegistry.execute('messages.transform', {
             messages: contextMessages,
             tools: this.tools,
             agentName: this.agentName,
             sessionId: this.id,
           }, output)
+
           return output.messages
         },
         toolHookExecutor: createToolHookExecutor({
-          hooks: this.hooks,
+          hookRegistry: this.hookRegistry,
           agentName: this.agentName,
           sessionId: this.id,
         }),
@@ -277,7 +294,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
         return true
       }, `Messages persisted: ${messages.length - messagesBefore} new`)
 
-      await this.hooks.execute('chat.message.after', beforeInput, {
+      await this.hookRegistry.execute('chat.message.after', beforeInput, {
         message: beforeOutput.message,
         cancelled: false,
         metadata: {},
@@ -297,14 +314,15 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
       this.emit('prompt_end', this.id)
       this.logger?.info('Session %s prompt finished', this.id)
     } catch (error) {
-      // 即使出错也持久化中间消息
       this.persistNewMessages(messages, messagesBefore)
       const err = error instanceof Error ? error : new Error(String(error))
-      await this.hooks.emit('session.error', {
+
+      await this.hookRegistry.emit('session.error', {
         sessionId: this.id,
         metadata: {},
         error: err,
       })
+
       this.emit('error', this.id, err)
       this.logger?.error('Session %s prompt failed: %s', this.id, err.message)
       throw error
@@ -345,23 +363,32 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     this.ensureNotDisposed()
 
     const messageCount = this.session.messages().length
-    await this.hooks.emit('compaction.before', { sessionId: this.id, messageCount })
-    this.logger?.info('Session %s compacting %d message(s)', this.id, compactedCount)
+
+    await this.hookRegistry.emit('compaction.before', { 
+      sessionId: this.id, 
+      messageCount 
+    })
+
+    this.logger.info('Session %s compacting %d message(s)', this.id, compactedCount)
 
     this.session.compact(summary, compactedCount)
 
     const retainedCount = this.session.messages().length
-    await this.hooks.emit('compaction.after', { sessionId: this.id, retainedCount })
-    this.logger?.info('Session %s compaction finished, retained %d message(s)', this.id, retainedCount)
+    await this.hookRegistry.emit('compaction.after', { 
+      sessionId: this.id, 
+      retainedCount 
+    })
+
+    this.logger.info('Session %s compaction finished, retained %d message(s)', this.id, retainedCount)
   }
 
   dispose(): void {
     if (this.disposed) return
     this.disposed = true
-
     this.agent.abort()
+
     this.emit('session_end', this.id)
-    this.logger?.info('Session %s disposed', this.id)
+    this.logger.info('Session %s disposed', this.id)
   }
 
   private persistNewMessages(messages: AgentMessage[], startIndex: number): void {
@@ -371,6 +398,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     }
   }
 
+  // TODO
   private logPromptUsage(newMessages: AgentMessage[]): void {
     const usage = this.collectUsage(newMessages)
     if (!usage) {
@@ -378,7 +406,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     }
 
     const cost = calculate(this.model, usage)
-    this.logger?.info(
+    this.logger.info(
       'Session %s usage input=%d output=%d cacheRead=%d cacheWrite=%d estimatedCost=$%s',
       this.id,
       usage.inputTokens,

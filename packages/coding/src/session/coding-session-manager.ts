@@ -9,123 +9,130 @@ import { invariant } from '@vitamin/invariant'
 import { buildAgentSession } from './agent-session-factory'
 import { AgentSession } from './agent-session'
 
-import type { AgentMessage, AgentTool } from '@vitamin/agent'
+import { createAgentWithRegistry, type AgentMessage, type AgentTool } from '@vitamin/agent'
 import type { Model, ProviderRegistry, ThinkingLevel } from '@vitamin/ai'
 import type { HookRegistry } from '@vitamin/hooks'
 import type { Session, SessionPersistence } from '@vitamin/session'
 import type { Devtools } from '@vitamin/devtools'
-import type { createLogger, Logger } from '@vitamin/shared'
+import type { Logger } from '@vitamin/shared'
 import type {
   AgentSessionOptions,
   AgentSessionInfo,
 } from './types'
 
 export interface SessionManagerOptions {
-  // 默认模型
-  model?: Model
-  // 默认系统提示词
-  systemPrompt?: string
-  // 默认工具列表
-  tools?: AgentTool[]
-  // 默认思维级别
-  thinkingLevel?: ThinkingLevel
-  // 默认最大连续工具轮次
-  maxToolTurns?: number
-  // Hook 注册表
-  hooks?: HookRegistry
-  // Provider 注册表
-  providerRegistry?: ProviderRegistry
-  // 工作目录
-  workspaceDir?: string
-  // 最大并发会话数
-  maxSessions?: number
-  // 空闲超时（毫秒）
-  idleTimeoutMs?: number
+  model: Model
+  systemPrompt: string
+  tools: AgentTool[]
+  thinkingLevel: ThinkingLevel
+  maxToolTurns: number
+  hookRegistry: HookRegistry
+  providerRegistry: ProviderRegistry
+  workspaceDir: string
+  maxSessions: number
+  idleTimeoutMs: number
   // 会话持久化后端
-  persistence?: SessionPersistence<AgentMessage>
+  persistence: SessionPersistence<AgentMessage>
   // 会话文件存储目录（传入后自动使用文件持久化）
   sessionDir?: string
   // 会话远程存储 URL（传入后自动使用远程持久化）
   sessionUrl?: string
   // 开发工具 
   devtools?: Devtools
-  // 用户视角日志
-  logger?: ReturnType<typeof createLogger>
+  logger: Logger
 }
 
 export class CodingSessionManager {
   private sessionManager: SessionManager<AgentMessage>
   private agentSessions = new Map<string, AgentSession>()
   private options: SessionManagerOptions
-  private hooks: HookRegistry
+  private hookRegistry: HookRegistry
+  private logger: Logger
+  private model: Model
+  private systemPrompt: string
+  private devtools?: Devtools
 
   constructor(
     sessionManager: SessionManager<AgentMessage>,
     options: SessionManagerOptions,
   ) {
-    this.sessionManager = sessionManager
+    const { hookRegistry, logger, devtools, model, systemPrompt } = options
     this.options = options
-    this.hooks = options.hooks ?? createHookRegistry({ preset: 'default' })
+    this.model = model
+    this.hookRegistry = hookRegistry
+    this.sessionManager = sessionManager
+    this.systemPrompt = systemPrompt
+    
+    this.logger = logger
+    this.devtools = devtools
+  }
+
+  get active(): AgentSession | undefined {
+    const rawActive = this.sessionManager.active
+    if (!rawActive) return undefined
+
+    return this.agentSessions.get(rawActive.id)
   }
 
   private createManagedAgentSession(
     session: Session<AgentMessage>,
-    options: {
-      model: Model
-      systemPrompt?: string
-      tools?: AgentTool[]
-      thinkingLevel?: ThinkingLevel
-      maxToolTurns?: number
-      workspaceDir?: string
-      providerRegistry?: ProviderRegistry
-      logger?: Logger
-      promptRefreshFn?: () => string | undefined
-    },
+    model: Model,
+    systemPrompt: string,
+    tools: AgentTool[],
+    thinkingLevel: ThinkingLevel,
+    maxToolTurns: number,
+    workspaceDir: string,
+    providerRegistry: ProviderRegistry,
+    promptRefresh: () => string | undefined
   ): AgentSession {
-    return buildAgentSession({
-      session,
-      model: options.model,
-      systemPrompt: options.systemPrompt,
-      tools: options.tools,
-      thinkingLevel: options.thinkingLevel,
-      maxToolTurns: options.maxToolTurns,
-      hooks: this.hooks,
-      providerRegistry: options.providerRegistry,
-      workspaceDir: options.workspaceDir,
-      devtools: this.options.devtools,
-      logger: options.logger ?? this.options.logger,
-      promptRefreshFn: options.promptRefreshFn,
+    const agent = createAgentWithRegistry({
+      model,
+      providerRegistry,
+    })
+
+    return new AgentSession(session, agent, {
+      model,
+      systemPrompt,
+      tools,
+      thinkingLevel,
+      maxToolTurns,
+      hookRegistry: this.hookRegistry,
+      workspaceDir: workspaceDir,
+      devtools: this.devtools,
+      logger: this.logger,
+      promptRefresh
     })
   }
 
   // 创建新的 AgentSession 并设为活跃
-  async createSession(options?: AgentSessionOptions): Promise<AgentSession> {
-    const model = options?.model ?? this.options.model
+  async createSession(options: AgentSessionOptions): Promise<AgentSession> {
+    const model = options.model ?? this.model
     if (!model) {
       throw new Error('No model specified. Provide model in createSession options or CodingSessionManager options.')
     }
 
-    const sessionId = options?.id ?? crypto.randomUUID()
+    const sessionId = options.id
     const rawSession = await this.sessionManager.create(sessionId)
 
     const agentSession = this.createManagedAgentSession(rawSession, {
       model,
-      systemPrompt: options?.systemPrompt ?? this.options.systemPrompt,
+      systemPrompt: options.systemPrompt ?? this.systemPrompt,
       tools: options?.tools ?? this.options.tools,
       thinkingLevel: options?.thinkingLevel ?? this.options.thinkingLevel,
       maxToolTurns: options?.maxToolTurns ?? this.options.maxToolTurns,
       workspaceDir: options?.workspaceDir ?? this.options.workspaceDir,
       providerRegistry: options?.providerRegistry ?? this.options.providerRegistry,
       logger: options?.logger ?? this.options.logger,
-      promptRefreshFn: options?.promptRefreshFn,
+      promptRefresh: options?.promptRefresh,
     })
 
     this.agentSessions.set(sessionId, agentSession)
-    await this.hooks.emit('session.created', { sessionId, metadata: {} })
-    this.options.logger?.info('Session %s created', sessionId)
+
+    await this.hookRegistry.emit('session.created', { sessionId, metadata: {} })
+    this.logger.info('Session %s created', sessionId)
 
     invariant(() => {
-      this.options.devtools?.debugger.pause({
+      this.devtools?.debugger.pause({
         turn: 0,
         point: 'session_create',
         frameDepth: 0,
@@ -165,7 +172,7 @@ export class CodingSessionManager {
     agentSession.dispose()
     this.agentSessions.delete(id)
     await this.sessionManager.delete(id)
-    await this.hooks.emit('session.deleted', { sessionId: id, metadata: {} })
+    await this.hookRegistry.emit('session.deleted', { sessionId: id, metadata: {} })
     this.options.logger?.info('Session %s removed', id)
 
     return true
@@ -174,15 +181,19 @@ export class CodingSessionManager {
   // Fork 一个 AgentSession，创建分支副本
   async forkSession(
     sourceId: string,
-    newId?: string,
-  ): Promise<AgentSession | undefined> {
+    id?: string,
+  ): Promise<AgentSession> {
     const source = this.agentSessions.get(sourceId)
-    if (!source) return undefined
+    if (!source) {
+      throw new Error(`Source session ${sourceId} not found for forking.`)
+    }
 
-    const forked = this.sessionManager.fork(sourceId, newId)
-    if (!forked) return undefined
+    const forked = this.sessionManager.fork(sourceId, id)
+    if (!forked) {
+      throw new Error(`Failed to fork session ${sourceId}.`)
+    }
 
-    const model = this.options.model
+    const model = this.model
     if (!model) {
       throw new Error('No model available to create agent for forked session.')
     }
@@ -199,10 +210,10 @@ export class CodingSessionManager {
     })
 
     this.agentSessions.set(forked.id, agentSession)
-    this.options.logger?.info('Session %s forked from %s', forked.id, sourceId)
+    this.logger.info('Session %s forked from %s', forked.id, sourceId)
 
     invariant(() => {
-      this.options.devtools?.debugger.pause({
+      this.devtools?.debugger.pause({
         turn: 0,
         point: 'session_fork',
         frameDepth: 0,
@@ -219,13 +230,6 @@ export class CodingSessionManager {
   setActive(id: string): AgentSession | undefined {
     this.sessionManager.setActive(id)
     return this.agentSessions.get(id)
-  }
-
-  // 获取当前活跃会话 
-  get active(): AgentSession | undefined {
-    const rawActive = this.sessionManager.active
-    if (!rawActive) return undefined
-    return this.agentSessions.get(rawActive.id)
   }
 
   updateDefaults(options: Partial<SessionManagerOptions>): void {
@@ -281,12 +285,10 @@ export class CodingSessionManager {
     return agentSession
   }
 
-  // 保存所有会话 
   async saveAll(): Promise<void> {
     await this.sessionManager.saveAll()
   }
 
-  // 恢复所有持久化会话 
   async restoreAll(): Promise<number> {
     const count = await this.sessionManager.restoreAll()
     // 为恢复的 raw session 创建 AgentSession
@@ -323,14 +325,13 @@ export class CodingSessionManager {
 }
 
 export function createDiskCodingSessionManager(options: SessionManagerOptions): CodingSessionManager {
-  
-  const sm = createDiskSessionManager<AgentMessage>(options.sessionDir, {
+  const { sessionDir } = options
+  const sm = createDiskSessionManager<AgentMessage>(sessionDir, {
     maxSessions: options.maxSessions,
     idleTimeoutMs: options.idleTimeoutMs,
   })
 
-    return new CodingSessionManager(sm, { ...options, sessionDir })
-  return CodingSessionManager.create(sessionDir, { sessionDir })
+  return new CodingSessionManager(sm, { ...options, sessionDir })
 }
 
 export function createRemoteCodingSessionManager(options: SessionManagerOptions): CodingSessionManager {

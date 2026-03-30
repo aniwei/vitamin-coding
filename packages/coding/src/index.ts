@@ -11,7 +11,7 @@ export { createAgentSession } from './session/create-agent-session'
 export { Settings, createSettings } from './resources/settings-manager'
 export type { SettingsOptions } from './resources/settings-manager'
 
-export { CodingSessionManager, createSessionManager, createCodingSessionManager } from './session/coding-session-manager'
+export { CodingSessionManager } from './session/coding-session-manager'
 export type { SessionManagerOptions } from './session/coding-session-manager'
 
 // Resources

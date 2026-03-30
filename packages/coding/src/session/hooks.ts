@@ -2,13 +2,13 @@ import type { ToolHookExecutor, ToolResult } from '@vitamin/agent'
 import type { HookRegistry } from '@vitamin/hooks'
 
 interface ToolHookOptions {
-  hooks: HookRegistry
+  hookRegistry: HookRegistry
   agentName: string
   sessionId: string
 }
 
 export function createToolHookExecutor(options: ToolHookOptions): ToolHookExecutor {
-  const { hooks, agentName, sessionId } = options
+  const { hookRegistry, agentName, sessionId } = options
 
   return {
     async executeBeforeHooks(input) {
@@ -18,7 +18,7 @@ export function createToolHookExecutor(options: ToolHookOptions): ToolHookExecut
         cancelReason: undefined as string | undefined,
       }
 
-      await hooks.execute('tool.execute.before', {
+      await hookRegistry.execute('tool.execute.before', {
         ...input,
         agentName,
         sessionId,
@@ -33,7 +33,7 @@ export function createToolHookExecutor(options: ToolHookOptions): ToolHookExecut
         metadata: {},
       }
 
-      await hooks.execute('tool.execute.after', {
+      await hookRegistry.execute('tool.execute.after', {
         ...input,
         agentName,
         sessionId,

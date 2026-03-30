@@ -54,7 +54,9 @@ import {
 import { AgentSession } from '../session/agent-session'
 import {
   CodingSessionManager,
-  createCodingSessionManager,
+  createDiskCodingSessionManager,
+  createRemoteCodingSessionManager,
+  createInMemoryCodingSessionManager,
 } from '../session/coding-session-manager'
 import { createSessionFactoryAdapter } from './session-factory-adapter'
 
@@ -167,7 +169,7 @@ export class VitaminApp implements VitaminRuntime {
       const { sessionUrl } = options
       this.codingSessionManager = createRemoteCodingSessionManager({ sessionUrl })
     } else {
-      this.codingSessionManager = createCodingSessionManager({
+      this.codingSessionManager = createInMemoryCodingSessionManager()
     }
 
 
