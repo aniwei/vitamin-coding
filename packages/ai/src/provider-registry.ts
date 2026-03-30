@@ -11,13 +11,23 @@ import { ModelRegistry, createDefaultModelRegistry } from './model-registry'
 import type { Api, Provider, Model, ModelSpec } from './types'
 import type { ProviderStream, ProviderFactory } from './types'
 
+interface ProviderRegistryOptions {
+  authStore?: AuthStore
+  modelRegistry?: ModelRegistry
+}
+
 // Provider 注册表
 export class ProviderRegistry {
   private readonly factories = new Map<Api, ProviderFactory>()
   private readonly instances = new Map<Api, ProviderStream>()
 
-  private oauth?: AuthStore
-  private modelRegistry?: ModelRegistry
+  private authStore: AuthStore
+  private modelRegistry: ModelRegistry
+
+  constructor({ authStore, modelRegistry }: ProviderRegistryOptions = {}) {
+    this.authStore = authStore ?? createDefaultAuthStore()
+    this.modelRegistry = modelRegistry ?? createDefaultModelRegistry()
+  }
 
   // 注册 Provider 工厂
   register(api: Api, factory: ProviderFactory): void {
@@ -71,34 +81,34 @@ export class ProviderRegistry {
   // 设置统一凭据存储。
   // AuthStore 的解析优先级高于旧版 AccessKeyResolver。
   setAuthStore(store: AuthStore): void {
-    this.oauth = store
+    this.authStore = store
   }
 
 
   // 获取当前 AuthStore 实例（若未设置则返回 undefined）。
   // CLI / VitaminApp 可通过此方法调用 login() / logout() 等操作。
-  getAuthStore(): AuthStore | undefined {
-    return this.oauth
+  getAuthStore(): AuthStore {
+    return this.authStore
   }
 
   // 检查指定 provider 是否有可用凭据（快速，不触发刷新）。
   // 用于启动时过滤无凭据的模型，实现 "no key → 触发 login" 流程。
   async hasCredential(provider: Provider): Promise<boolean> {
-    if (!this.oauth) return false
-    return this.oauth.hasCredential(provider)
+    if (!this.authStore) return false
+    return this.authStore.hasCredential(provider)
   }
 
   // 解析指定 api/provider 的 access key（AuthStore 优先级链：runtime key → auth.json → env var）
   async resolveAccessKey(api: Api): Promise<string | null> {
-    if (!this.oauth) return null
-    return this.oauth.getCredentialKey(api)
+    if (!this.authStore) return null
+    return this.authStore.getCredentialKey(api)
   }
 
   // 存储并持久化 access key
   async storeAccessKey(api: Api, key: string): Promise<void> {
-    if (!this.oauth) return
-    this.oauth.setCredentialKey(api, key)
-    await this.oauth.save()
+    if (!this.authStore) return
+    this.authStore.setCredentialKey(api, key)
+    await this.authStore.save()
   }
 
   // 设置 ModelRegistry
@@ -107,7 +117,7 @@ export class ProviderRegistry {
   }
 
   // 获取 ModelRegistry
-  getModelRegistry(): ModelRegistry | undefined {
+  getModelRegistry(): ModelRegistry {
     return this.modelRegistry
   }
 
@@ -120,6 +130,7 @@ export class ProviderRegistry {
     if (typeof spec === 'object' && 'api' in spec && 'baseUrl' in spec) {
       return spec as Model
     }
+
     throw new ProviderError('No ModelRegistry configured; cannot resolve model spec', {
       code: 'PROVIDER_MODEL_NOT_FOUND',
     })
@@ -127,40 +138,20 @@ export class ProviderRegistry {
 }
 
 // 创建空的 Provider 注册表
-export function createProviderRegistry(): ProviderRegistry {
-  return new ProviderRegistry()
+export function createProviderRegistry(options: ProviderRegistryOptions = {}): ProviderRegistry {
+  return new ProviderRegistry(options)
 }
 
-export interface DefaultProviderRegistryOptions {
-  // 统一凭据存储
-  auth?: AuthStore
-  // 模型注册表
-  modelRegistry?: ModelRegistry
-}
 
-// 创建带默认 provider 的注册表。
-// 无 key 时的流程：
-//   1. createDefaultProviderRegistry({ oauth }) 初始化
-//   2. registry.hasCredential('github-copilot') → false
-//   3. CLI/UI 调用 oauth.login('github-copilot', callbacks)
-//   4. AuthStore 自动持久化凭据
-//   5. 后续 resolveAccessKey('github-copilot') 正常返回 token
 export function createDefaultProviderRegistry(
-  options: DefaultProviderRegistryOptions = {},
+  options: ProviderRegistryOptions
 ): ProviderRegistry {
-  const registry = createProviderRegistry()
+  const registry = createProviderRegistry(options)
 
   registry.register('github-copilot', () => {
     const resolveOAuthAccessKey: CopilotCredentialResolver = () => registry.resolveAccessKey('github-copilot').then(k => k ?? undefined)
     return createCopilotProvider({ resolveOAuthAccessKey })
   })
-
-  const oauth = options.auth ?? createDefaultAuthStore()
-  registry.setAuthStore(oauth)
-
-  // 默认使用带预置模型集的 ModelRegistry
-  const modelRegistry = options.modelRegistry ?? createDefaultModelRegistry()
-  registry.setModelRegistry(modelRegistry)
 
   return registry
 }

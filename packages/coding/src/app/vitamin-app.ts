@@ -87,76 +87,49 @@ import type { VitaminAppOptions, VitaminRuntime } from './types'
 export { type VitaminAppOptions, type VitaminRuntime } from './types'
 
 interface ResolvedWorkflowDefaults {
-  reviewGate?: ReturnType<typeof createReviewGate>
+  approver?: ReturnType<typeof createReviewGate>
   retryStrategy?: ReturnType<typeof createRetryStrategy>
   circuitBreaker?: ReturnType<typeof createCircuitBreaker>
   router?: ReturnType<typeof createCompositeRouter>
 }
 
-interface DeferredInitConfig {
-  clarifyHandler: VitaminAppOptions['clarifyHandler']
-  reviewGate: VitaminAppOptions['reviewGate']
-  retryStrategy: VitaminAppOptions['retryStrategy']
-  circuitBreaker: VitaminAppOptions['circuitBreaker']
-  router: VitaminAppOptions['router']
-  fallbackModelId: string | undefined
-}
 
 export class VitaminApp implements VitaminRuntime {
-  private readonly customSystemPrompt: string | undefined
-  private readonly customTools: AgentTool[] | undefined
-  private _initBag: DeferredInitConfig | null
-  private devtools: Devtools | null = null
-  private _leadSession: LeadSession | null = null
-  private leadSystemPrompt: string | null = null
-  private hasStopped = false
   public readonly codingSessionManager: CodingSessionManager
-
-  private _orchestrator: Orchestrator | null = null
+  
   public readonly settings: SettingsManager
   public readonly tools: ToolRegistry
   public readonly resource: ResourceManager
   public readonly prompt: PromptManager
   public readonly hookRegistry: HookRegistry
-  public readonly modelRegistry: ModelRegistry
   public readonly providerRegistry: ProviderRegistry
-  public readonly authStore: AuthStore
   public readonly workspaceDir: string
   public readonly logger: ReturnType<typeof createLogger>
+  
+  private devtools: Devtools | null = null
+
+  public get modelRegistry(): ModelRegistry {
+    return this.providerRegistry.getModelRegistry()
+  }
+  public get authStore(): AuthStore {
+    return this.providerRegistry.getAuthStore()
+  }
 
   private globalLogSubscription: ReturnType<typeof attachLogListener> | null = null
 
-  public get orchestrator(): Orchestrator {
-    if (!this._orchestrator) {
-      throw new Error('VitaminApp.start() must be called before accessing orchestrator')
-    }
-    return this._orchestrator
-  }
-
   constructor(options: VitaminAppOptions) {
     const {
-      auth,
-      circuitBreaker,
-      clarifyHandler,
-      configOverrides,
-      configStore,
-      globalConfigPath,
       inspect,
       logger,
       maxSessions,
       maxToolTurns,
       model,
-      modelId,
       port,
-      projectConfigPath,
       resourceManager,
-      resourceOptions,
       retryStrategy,
-      reviewGate,
-      router,
+      review,
       systemPrompt,
       tools,
-      watchConfig,
       workspaceDir,
     } = options
 
@@ -166,28 +139,16 @@ export class VitaminApp implements VitaminRuntime {
       destination: logger.destination,
     })
 
-    this.customTools = tools
-    this.customSystemPrompt = systemPrompt
-    this._initBag = {
-      clarifyHandler,
-      reviewGate,
-      retryStrategy,
-      circuitBreaker,
-      router,
-      fallbackModelId: modelId ?? (model ? `${model.provider}/${model.name}` : undefined),
-    }
+    const { 
+      authStore,
+      hookRegistry, 
+      modelRegistry, 
+      providerRegistry 
+    } = options
     
-    const { hookRegistry, modelRegistry, providerRegistry } = options
     this.hookRegistry = hookRegistry ?? createHookRegistry({ preset: 'default' })
+    this.providerRegistry = providerRegistry ?? createDefaultProviderRegistry({ authStore, modelRegistry })
     
-    this.providerRegistry = providerRegistry ?? createDefaultProviderRegistry({ auth })
-    this.authStore = this.providerRegistry.getAuthStore()!
-
-    this.modelRegistry = modelRegistry
-      ?? this.providerRegistry.getModelRegistry()
-      ?? createDefaultModelRegistry()
-    this.providerRegistry.setModelRegistry(this.modelRegistry)
-
     if (inspect) {
       this.devtools = new Devtools(port)
       this.globalLogSubscription = attachLogListener((data) => {
@@ -198,13 +159,17 @@ export class VitaminApp implements VitaminRuntime {
       })
     }
 
-    const resolvedModel = model
-      ?? (modelId ? this.providerRegistry.resolveModel(modelId) : undefined)
-    if (resolvedModel) {
-      this.modelRegistry.setDefault(resolvedModel)
+    const { persistenceMode } = options
+    if (persistenceMode === 'disk') {
+      const { sessionDir } = options
+      this.codingSessionManager = createDiskCodingSessionManager(sessionDir )
+    } else if (persistenceMode === 'remote') {
+      const { sessionUrl } = options
+      this.codingSessionManager = createRemoteCodingSessionManager({ sessionUrl })
+    } else {
+      this.codingSessionManager = createCodingSessionManager({
     }
 
-    const { sessionDir, sessionUrl } = options
 
 
     this.codingSessionManager = createCodingSessionManager({
@@ -505,7 +470,7 @@ export class VitaminApp implements VitaminRuntime {
       toolRegistry: this.tools,
       hooks: this.hooks,
       clarifyChannel,
-      reviewGate: initBag.reviewGate ?? workflowDefaults.reviewGate,
+      reviewGate: initBag.approver ?? initBag.reviewGate ?? workflowDefaults.approver,
       retryStrategy: initBag.retryStrategy ?? workflowDefaults.retryStrategy,
       circuitBreaker: initBag.circuitBreaker ?? workflowDefaults.circuitBreaker,
       router: initBag.router ?? workflowDefaults.router,
@@ -575,7 +540,7 @@ export class VitaminApp implements VitaminRuntime {
     const result: ResolvedWorkflowDefaults = {}
     const review = workflow?.review as Record<string, unknown> | undefined
     if (review?.enabled !== false) {
-      result.reviewGate = createReviewGate()
+      result.approver = createReviewGate()
     }
 
     const retry = workflow?.retry as Record<string, unknown> | undefined

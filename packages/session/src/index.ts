@@ -10,8 +10,8 @@ export {
 export {
   FileSessionPersistence,
   createFileSessionPersistence,
-} from './file-persistence'
-export type { FileSessionPersistenceOptions } from './file-persistence'
+} from './disk-persistence'
+export type { FileSessionPersistenceOptions } from './disk-persistence'
 
 export {
   RemoteSessionPersistence,

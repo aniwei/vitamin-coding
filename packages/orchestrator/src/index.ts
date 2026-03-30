@@ -81,8 +81,9 @@ export type {
 } from './clarify-channel'
 
 // 评审关卡
-export { createReviewGate } from './review-gate'
+export { createReviewGate, createApprover } from './review-gate'
 export type {
+  Approver,
   ReviewType,
   ReviewVerdict,
   ReviewIssue,

@@ -68,37 +68,6 @@ export class CodingSessionManager {
     this.hooks = options.hooks ?? createHookRegistry({ preset: 'default' })
   }
 
-  static create(
-    sessionDir: string,
-    options: Omit<SessionManagerOptions, 'sessionDir'> = {},
-  ): CodingSessionManager {
-    const sm = createFileSessionManager<AgentMessage>(sessionDir, {
-      maxSessions: options.maxSessions,
-      idleTimeoutMs: options.idleTimeoutMs,
-    })
-
-    return new CodingSessionManager(sm, { ...options, sessionDir })
-  }
-
-  static remote(
-    sessionUrl: string,
-    options: Omit<SessionManagerOptions, 'sessionUrl'> = {},
-  ): CodingSessionManager {
-    const sm = createRemoteSessionManager<AgentMessage>(sessionUrl, {
-      maxSessions: options.maxSessions,
-      idleTimeoutMs: options.idleTimeoutMs,
-    })
-
-    return new CodingSessionManager(sm, { ...options, sessionUrl })
-  }
-
-  static inMemory(
-    options: Omit<SessionManagerOptions, 'sessionDir' | 'sessionUrl' | 'persistence'> = {},
-  ): CodingSessionManager {
-    const sm = createInMemorySessionManager<AgentMessage>(options)
-    return new CodingSessionManager(sm, options)
-  }
-
   private createManagedAgentSession(
     session: Session<AgentMessage>,
     options: {
@@ -353,35 +322,29 @@ export class CodingSessionManager {
   }
 }
 
-function createFileCodingSessionManager(options: SessionManagerOptions): CodingSessionManager {
-  if (!options.sessionDir) {
-    throw new Error('sessionDir is required for file-based session manager.')
-  }
-  return CodingSessionManager.create(options.sessionDir, options)
+export function createDiskCodingSessionManager(options: SessionManagerOptions): CodingSessionManager {
+  
+  const sm = createDiskSessionManager<AgentMessage>(options.sessionDir, {
+    maxSessions: options.maxSessions,
+    idleTimeoutMs: options.idleTimeoutMs,
+  })
+
+    return new CodingSessionManager(sm, { ...options, sessionDir })
+  return CodingSessionManager.create(sessionDir, { sessionDir })
 }
 
-function createRemoteCodingSessionManager(options: SessionManagerOptions): CodingSessionManager {
+export function createRemoteCodingSessionManager(options: SessionManagerOptions): CodingSessionManager {
   if (!options.sessionUrl) {
     throw new Error('sessionUrl is required for remote session manager.')
   }
+
   return CodingSessionManager.remote(options.sessionUrl, options)
 }
 
-// 纯内存模式（测试 / 嵌入式）
-function createInMemoryCodingSessionManager(
+export function createInMemoryCodingSessionManager(
   options: Omit<SessionManagerOptions, 'sessionDir' | 'persistence'> = {},
 ): CodingSessionManager {
   return CodingSessionManager.inMemory(options)
 }
 
-export function createSessionManager(options: SessionManagerOptions): CodingSessionManager {
-  if (options.sessionDir) {
-    return createFileCodingSessionManager(options)
-  } else if (options.sessionUrl) {
-    return createRemoteCodingSessionManager(options)
-  } 
 
-  return createInMemoryCodingSessionManager(options)
-}
-
-export const createCodingSessionManager = createSessionManager

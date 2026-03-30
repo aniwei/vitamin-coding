@@ -15,16 +15,16 @@ import type {
   SessionSnapshot 
 } from './types'
 
-export interface FileSessionPersistenceOptions {
-  directory: string
+export interface DiskSessionPersistenceOptions {
+  path: string
 }
 
-export class FileSessionPersistence<T = unknown> implements SessionPersistence<T> {
-  private readonly dir: string
+export class DiskSessionPersistence<T = unknown> implements SessionPersistence<T> {
+  private readonly path: string
   private initialized = false
 
-  constructor(options: FileSessionPersistenceOptions) {
-    this.dir = options.directory
+  constructor(options: DiskSessionPersistenceOptions) {
+    this.path = options.path
   }
 
   async save(snapshot: SessionSnapshot<T>): Promise<void> {
@@ -58,7 +58,7 @@ export class FileSessionPersistence<T = unknown> implements SessionPersistence<T
   async list(): Promise<string[]> {
     await this.ensureDir()
     try {
-      const files = await readdir(this.dir)
+      const files = await readdir(this.path)
       return files.filter(f => f.endsWith('.session.json')).map(f => f.replace('.session.json', ''))
     } catch {
       return []
@@ -71,13 +71,13 @@ export class FileSessionPersistence<T = unknown> implements SessionPersistence<T
     const pageSize = options.pageSize ?? SESSION_PAGE_SIZE
 
     try {
-      const files = await readdir(this.dir)
+      const files = await readdir(this.path)
       const sessionFiles = files.filter(f => f.endsWith('.session.json'))
 
       // 获取文件修改时间用于排序
       const withStats = await Promise.all(
         sessionFiles.map(async (f) => {
-          const filePath = join(this.dir, f)
+          const filePath = join(this.path, f)
           const s = await stat(filePath)
           return { id: f.replace('.session.json', ''), mtime: s.mtimeMs }
         }),
@@ -117,18 +117,18 @@ export class FileSessionPersistence<T = unknown> implements SessionPersistence<T
   private sessionPath(id: string): string {
     // 防止路径遍历：移除任何路径分隔符
     const safeId = id.replace(/[/\\:]/g, '_')
-    return join(this.dir, `${safeId}.session.json`)
+    return join(this.path, `${safeId}.session.json`)
   }
 
   private async ensureDir(): Promise<void> {
     if (this.initialized) return
-    await mkdir(this.dir, { recursive: true })
+    await mkdir(this.path, { recursive: true })
     this.initialized = true
   }
 }
 
-export function createFileSessionPersistence<T = unknown>(
-  options: FileSessionPersistenceOptions,
+export function createDiskSessionPersistence<T = unknown>(
+  options: DiskSessionPersistenceOptions,
 ): SessionPersistence<T> {
-  return new FileSessionPersistence<T>(options)
+  return new DiskSessionPersistence<T>(options)
 }

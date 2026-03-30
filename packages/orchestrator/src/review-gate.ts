@@ -59,6 +59,8 @@ export interface ReviewGate {
   }>
 }
 
+export type Approver = ReviewGate
+
 const REVIEW_ORDER: ReviewType[] = ['spec', 'quality', 'test', 'custom']
 
 export function createReviewGate(eventBus?: OrchestratorEventBus): ReviewGate {
@@ -119,3 +121,5 @@ export function createReviewGate(eventBus?: OrchestratorEventBus): ReviewGate {
     },
   }
 }
+
+export const createApprover = createReviewGate

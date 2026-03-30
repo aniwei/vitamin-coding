@@ -1,6 +1,6 @@
 import { InMemorySession } from './in-memory-session'
 import { InMemorySessionStore } from './store'
-import { FileSessionPersistence } from './file-persistence'
+import { DiskSessionPersistence } from './disk-persistence'
 import { 
   SESSION_MAX,
   SESSION_IDLE_TIMEOUT_MS, 
@@ -333,13 +333,13 @@ export function createInMemorySessionManager<T = unknown>(
   })
 }
 
-// 基于本地文件持久化创建 SessionManager
-export function createFileSessionManager<T = unknown>(
+export function createDiskSessionManager<T = unknown>(
   sessionDir: string,
   options?: Partial<Omit<SessionManagerOptions<T>, 'store' | 'persistence'>>,
 ): SessionManager<T> {
   const store = new InMemorySessionStore<T>()
-  const persistence = new FileSessionPersistence<T>({ directory: sessionDir })
+  const persistence = new DiskSessionPersistence<T>({ path: sessionDir })
+
   return new SessionManager<T>({
     store,
     persistence,

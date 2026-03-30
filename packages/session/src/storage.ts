@@ -1,4 +1,4 @@
-import { FileSessionPersistence } from './file-persistence'
+import { FileSessionPersistence } from './disk-persistence'
 import { RemoteSessionPersistence } from './remote-persistence'
 import type { SessionPersistence, StorageOptions } from './types'
 
