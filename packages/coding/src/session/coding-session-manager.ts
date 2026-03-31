@@ -1,5 +1,5 @@
 import { 
-  createFileSessionManager, 
+  createDiskSessionManager, 
   createInMemorySessionManager,
   createRemoteSessionManager, 
   SessionManager 

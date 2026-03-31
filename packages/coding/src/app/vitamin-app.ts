@@ -1,13 +1,5 @@
-// VitaminApp — 多会话 Agent 应用容器。
-// 核心职责:
-// 1. 管理多个并发 AgentSession（创建、检索、列举、销毁）
-// 2. 共享基础设施（config、logger、devtools、providerRegistry）
-// 3. 提供统一 SystemContext 接口
-// 每个 AgentSession 拥有:
-// - 独立的 Agent 实例（状态机 + 工具调用循环）
-// - 独立的 Session 存储（消息历史）
-// - 独立的事件流
 import { join } from 'node:path'
+import { Server } from 'node:http'
 import { Devtools } from '@vitamin/devtools'
 import {
   createDefaultModelRegistry,
@@ -100,15 +92,17 @@ export class VitaminApp implements VitaminRuntime {
   public readonly codingSessionManager: CodingSessionManager
   
   public readonly settings: SettingsManager
-  public readonly tools: ToolRegistry
-  public readonly resource: ResourceManager
-  public readonly prompt: PromptManager
+  public readonly toolRegistry: ToolRegistry
+  public readonly resourceManager: ResourceManager
+  public readonly promptManager: PromptManager
   public readonly hookRegistry: HookRegistry
   public readonly providerRegistry: ProviderRegistry
   public readonly workspaceDir: string
+  public readonly server: Server
   public readonly logger: ReturnType<typeof createLogger>
   
   private devtools: Devtools | null = null
+  private stopped: boolean = false
 
   public get modelRegistry(): ModelRegistry {
     return this.providerRegistry.getModelRegistry()
@@ -135,6 +129,8 @@ export class VitaminApp implements VitaminRuntime {
       workspaceDir,
     } = options
 
+    this.server = new Server()
+
     this.workspaceDir = workspaceDir ?? process.cwd()
     this.logger = createLogger(logger.name, {
       level: logger.level,
@@ -149,7 +145,10 @@ export class VitaminApp implements VitaminRuntime {
     } = options
     
     this.hookRegistry = hookRegistry ?? createHookRegistry({ preset: 'default' })
-    this.providerRegistry = providerRegistry ?? createDefaultProviderRegistry({ authStore, modelRegistry })
+    this.providerRegistry = providerRegistry ?? createDefaultProviderRegistry({ 
+      authStore, 
+      modelRegistry 
+    })
     
     if (inspect) {
       this.devtools = new Devtools(port)
@@ -173,35 +172,19 @@ export class VitaminApp implements VitaminRuntime {
     }
 
 
-
-    this.codingSessionManager = createCodingSessionManager({
-      sessionDir,
-      sessionUrl,
-      model: resolvedModel,
-      tools,
-      systemPrompt,
-      providerRegistry: this.providerRegistry,
-      hookRegistry: this.hookRegistry,
-      workspaceDir: this.workspaceDir,
-      maxSessions,
-      maxToolTurns,
-      devtools: this.devtools ?? undefined,
-      logger: this.logger,
-    })
-
     this.settings = new Settings({
       workspaceDir: this.workspaceDir,
-      globalConfigPath,
-      projectConfigPath,
-      overrides: configOverrides,
-      store: configStore,
-      watch: watchConfig,
     })
 
-    this.prompt = new PromptManager()
-    this.tools = new ToolRegistry()
-    this.tools.setBinaryToolExecutors(createBinaryToolExecutorRegistry(this.workspaceDir))
-    this.resource = resourceManager ?? new DefaultResourceManager({
+    if (persistenceMode === 'disk') {
+
+    }
+
+    this.promptManager = new PromptManager()
+    this.toolRegistry = new ToolRegistry()
+    this.toolRegistry.setBinaryToolExecutors(createBinaryToolExecutorRegistry(this.workspaceDir))
+
+    this.resourceManager = resourceManager ?? new DefaultResourceManager({
       workspaceDir: this.workspaceDir,
       watch: watchConfig,
       ...resourceOptions,
@@ -209,26 +192,14 @@ export class VitaminApp implements VitaminRuntime {
   }
 
   async start() {
-    if (this._orchestrator) return
-    if (this.hasStopped) {
-      throw new Error('VitaminApp cannot be restarted after stop(); create a new instance instead.')
-    }
-
     await this.settings.load()
-    await this.resource.load()
+    await this.resourceManager.load()
 
-    this.prompt.setResources(this.resource.resources ?? null)
-
-    const initBag = this._initBag!
-    this._initBag = null
+    this.promptManager.setResources(this.resourceManager.resources ?? null)
 
     const sessionFactory = this.createSessionFactory()
     const initialLeadSystemPrompt = this.buildLeadSystemPrompt()
-    const { orchestrator } = this.createOrchestratorRuntime(
-      sessionFactory,
-      initialLeadSystemPrompt,
-      initBag,
-    )
+   
     this._orchestrator = orchestrator
 
 

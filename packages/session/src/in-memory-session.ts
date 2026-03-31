@@ -8,7 +8,7 @@ import type {
 export class InMemorySession<T = unknown> implements Session<T> {
   private readonly sessionEntries: SessionEntry<T>[] = []
   private readonly entryMap = new Map<string, SessionEntry<T>>()
-  private _leafId: string | undefined = undefined
+  
   private readonly meta: SessionMetadata
 
   constructor(
@@ -28,6 +28,7 @@ export class InMemorySession<T = unknown> implements Session<T> {
     }
   }
 
+  private _leafId: string | undefined = undefined
   get leafId(): string | undefined {
     return this._leafId
   }
@@ -88,7 +89,6 @@ export class InMemorySession<T = unknown> implements Session<T> {
   buildContext(): SessionContext<T> {
     const branch = this.walkBranch()
 
-    // 从后往前找最后一个 compaction
     let lastCompactionIndex = -1
     for (let i = branch.length - 1; i >= 0; i--) {
       if (branch[i]!.type === 'compaction') {
@@ -142,7 +142,6 @@ export class InMemorySession<T = unknown> implements Session<T> {
     }
   }
 
-  // 从快照恢复 entries（用于持久化加载）
   restoreEntries(
     entries: SessionEntry<T>[],
     meta: SessionMetadata,
@@ -155,9 +154,8 @@ export class InMemorySession<T = unknown> implements Session<T> {
       this.entryMap.set(entry.id, entry)
     }
     Object.assign(this.meta, meta)
-    // 恢复 leafId：优先用传入值，否则取最后一个条目
-    this._leafId = restoredLeafId
-      ?? (entries.length > 0 ? entries[entries.length - 1]!.id : undefined)
+
+    this._leafId = restoredLeafId ?? (entries.length > 0 ? entries[entries.length - 1]!.id : undefined)
   }
 
   // 导出快照

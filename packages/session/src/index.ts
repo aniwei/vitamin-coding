@@ -8,10 +8,10 @@ export {
 } from './store'
 
 export {
-  FileSessionPersistence,
-  createFileSessionPersistence,
+  DiskSessionPersistence,
+  createDiskSessionPersistence,
 } from './disk-persistence'
-export type { FileSessionPersistenceOptions } from './disk-persistence'
+export type { DiskSessionPersistenceOptions } from './disk-persistence'
 
 export {
   RemoteSessionPersistence,
@@ -22,7 +22,7 @@ export type { RemoteSessionPersistenceOptions } from './remote-persistence'
 export {
   SessionManager,
   createInMemorySessionManager,
-  createFileSessionManager,
+  createDiskSessionManager,
   createRemoteSessionManager,
   createSessionManager,
 } from './session-manager'
@@ -45,10 +45,5 @@ export type {
   PaginationOptions,
   PaginatedResult,
   StorageOptions,
-  LocalStorageOptions,
-  RemoteStorageOptions,
-  StorageConfig,
-  LocalStorageConfig,
-  RemoteStorageConfig,
-  MemoryStorageConfig,
+  RemoteStorageOptions
 } from './types'

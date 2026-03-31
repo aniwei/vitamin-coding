@@ -1,4 +1,4 @@
-import { FileSessionPersistence } from './disk-persistence'
+import { DiskSessionPersistence } from './disk-persistence'
 import { RemoteSessionPersistence } from './remote-persistence'
 import type { SessionPersistence, StorageOptions } from './types'
 
@@ -11,7 +11,7 @@ export function createSessionStorage<T = unknown>(
 ): SessionPersistence<T> {
   switch (options.type) {
     case 'local':
-      return new FileSessionPersistence<T>({ directory: options.baseDir! })
+      return new DiskSessionPersistence<T>({ path: options.baseDir })
     case 'remote':
       return new RemoteSessionPersistence<T>({
         baseUrl: options.baseUrl,

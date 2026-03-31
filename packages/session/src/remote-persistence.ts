@@ -3,13 +3,9 @@ import type { PaginatedResult, PaginationOptions, SessionPersistence, SessionSna
 const DEFAULT_PAGE_SIZE = 50
 
 export interface RemoteSessionPersistenceOptions {
-  /** 远程 API 基础 URL，如 https://api.vitamin.dev/v1/sessions */
   baseUrl: string
-  /** 获取认证信息（每次请求前调用，支持 token 刷新） */
   getAuth: () => Promise<{ token: string }>
-  /** 自定义 fetch 实现（默认使用 globalThis.fetch） */
-  fetch?: typeof globalThis.fetch
-  /** 请求超时 ms（默认 30s） */
+  fetch: typeof globalThis.fetch
   timeoutMs?: number
 }
 
@@ -23,7 +19,7 @@ export class RemoteSessionPersistence<T = unknown> implements SessionPersistence
     // 移除尾部斜杠
     this.baseUrl = options.baseUrl.replace(/\/+$/, '')
     this.getAuth = options.getAuth
-    this.fetch = options.fetch ?? globalThis.fetch.bind(globalThis)
+    this.fetch = options.fetch
     this.timeoutMs = options.timeoutMs ?? 30_000
   }
 
@@ -58,14 +54,14 @@ export class RemoteSessionPersistence<T = unknown> implements SessionPersistence
   }
 
   async listPaginated(options: PaginationOptions): Promise<PaginatedResult<string>> {
-    const { page, sortOrder = 'desc', sortBy = 'lastActiveAt' } = options
+    const { page, order = 'desc', sortBy = 'lastActiveAt' } = options
     const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE
 
     const params = new URLSearchParams({
       page: String(page),
       pageSize: String(pageSize),
       sortBy,
-      sortOrder,
+      order,
     })
 
     const response = await this.request(`?${params.toString()}`, { method: 'GET' })

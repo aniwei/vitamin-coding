@@ -96,36 +96,26 @@ export interface SessionFilter {
   titleContains?: string
 }
 
-// ── Storage 选项 ──
-// 统一使用 @vitamin/env 的 StorageConfig 类型
+export interface DiskStorageOptions {
+  type: 'local'
+  baseDir: string
+} 
 
-import type {
-  LocalStorageConfig,
-  RemoteStorageConfig,
-  MemoryStorageConfig,
-  StorageConfig,
-} from '@vitamin/env'
+export interface RemoteStorageOptions {
+  type: 'remote'
+  baseUrl: string
+  getAuth: () => Promise<{ token: string }>
+  fetch: typeof fetch
+  timeoutMs?: number
+}
 
-export type StorageOptions = StorageConfig
-
-/** @deprecated 使用 LocalStorageConfig */
-export type LocalStorageOptions = LocalStorageConfig
-/** @deprecated 使用 RemoteStorageConfig */
-export type RemoteStorageOptions = RemoteStorageConfig
-
-export type { LocalStorageConfig, RemoteStorageConfig, MemoryStorageConfig, StorageConfig }
-
-// ── 分页 ──
+export type StorageOptions = DiskStorageOptions | RemoteStorageOptions
 
 export interface PaginationOptions {
-  // 页码 (从 0 开始)
   page: number
-  // 每页条数 (默认 50)
   pageSize?: number
-  // 排序字段
   sortBy?: 'lastActiveAt' | 'createdAt'
-  // 排序方向
-  sortOrder?: 'asc' | 'desc'
+  order?: 'asc' | 'desc'
 }
 
 export interface PaginatedResult<T> {

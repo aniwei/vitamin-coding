@@ -166,7 +166,11 @@ export class SessionManager<T = unknown> {
     criteria: SessionFilter,
     options: PaginationOptions,
   ): PaginatedResult<Session<T>> {
-    const { page, sortBy = 'lastActiveAt', sortOrder = 'desc' } = options
+    const { 
+      page, 
+      sortBy = 'lastActiveAt', 
+      order = 'desc' 
+    } = options
     const pageSize = options.pageSize ?? 50
 
     const filtered = this.filter(criteria)
@@ -177,7 +181,7 @@ export class SessionManager<T = unknown> {
       const metaB = b.metadata()
       const valA = sortBy === 'createdAt' ? metaA.createdAt : metaA.lastActiveAt
       const valB = sortBy === 'createdAt' ? metaB.createdAt : metaB.lastActiveAt
-      return sortOrder === 'asc' ? valA - valB : valB - valA
+      return order === 'asc' ? valA - valB : valB - valA
     })
 
     const total = filtered.length
@@ -221,21 +225,20 @@ export class SessionManager<T = unknown> {
     if (!source) return undefined
 
     const target = this.store.createSession(newId)
-    const ctx = source.buildContext()
+    const context = source.buildContext()
 
-    // 只复制 context 级别（摘要 + 活跃消息），不复制全量历史
-    for (const msg of ctx.messages) {
+    for (const msg of context.messages) {
       target.append(msg)
     }
 
     return target
   }
 
-  // ── 持久化 ──
   // 持久化指定会话
   async save(id: string): Promise<void> {
     if (!this.persistence) return
     const session = this.store.getSession(id)
+
     if (!session) return
 
     if (session instanceof InMemorySession) {
@@ -248,9 +251,9 @@ export class SessionManager<T = unknown> {
     }
   }
 
-  // 从持久化存储恢复会话
   async restore(id: string): Promise<Session<T> | null> {
     if (!this.persistence) return null
+
     const snapshot = await this.persistence.load(id)
     if (!snapshot) return null
 
@@ -261,25 +264,27 @@ export class SessionManager<T = unknown> {
     return session
   }
 
-  // 持久化所有会话
   async saveAll(): Promise<void> {
     if (!this.persistence) return
+
     for (const session of this.store.listSessions()) {
       await this.save(session.id)
     }
   }
 
-  // 从持久化存储恢复所有会话 
-  async restoreAll(): Promise<number> {
-    if (!this.persistence) return 0
+  async restoreAll(): Promise<boolean> {
+    if (!this.persistence) return false
+
     const ids = await this.persistence.list()
+    
     let restored = 0
     for (const id of ids) {
       if (restored >= this.maxSessions) break
       const session = await this.restore(id)
       if (session) restored++
     }
-    return restored
+
+    return restored > 0
   }
 
   // ── GC (空闲回收) ──
@@ -354,6 +359,9 @@ export function createRemoteSessionManager<T = unknown>(
   const store = new InMemorySessionStore<T>()
   const persistence = new RemoteSessionPersistence<T>({ 
     baseUrl: endpoint,
+    fetch () {
+      throw new Error('Fetch implementation is required for RemoteSessionPersistence')
+    },
     getAuth: async () => ({ token: '' }),
   })
   

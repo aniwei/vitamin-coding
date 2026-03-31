@@ -67,24 +67,20 @@ export class DiskSessionPersistence<T = unknown> implements SessionPersistence<T
 
   async listPaginated(options: PaginationOptions): Promise<PaginatedResult<string>> {
     await this.ensureDir()
-    const { page, sortOrder = 'desc' } = options
+    const { page, order = 'desc' } = options
     const pageSize = options.pageSize ?? SESSION_PAGE_SIZE
 
     try {
       const files = await readdir(this.path)
       const sessionFiles = files.filter(f => f.endsWith('.session.json'))
 
-      // 获取文件修改时间用于排序
-      const withStats = await Promise.all(
-        sessionFiles.map(async (f) => {
-          const filePath = join(this.path, f)
-          const s = await stat(filePath)
-          return { id: f.replace('.session.json', ''), mtime: s.mtimeMs }
-        }),
-      )
+      const withStats = await Promise.all(sessionFiles.map(async (f) => {
+        const filePath = join(this.path, f)
+        const s = await stat(filePath)
+        return { id: f.replace('.session.json', ''), mtime: s.mtimeMs }
+      }))
 
-      // 排序（文件系统层面只能按 mtime）
-      withStats.sort((a, b) => sortOrder === 'asc' ? a.mtime - b.mtime : b.mtime - a.mtime)
+      withStats.sort((a, b) => order === 'asc' ? a.mtime - b.mtime : b.mtime - a.mtime)
 
       const total = withStats.length
       const totalPages = Math.max(1, Math.ceil(total / pageSize))
@@ -115,7 +111,6 @@ export class DiskSessionPersistence<T = unknown> implements SessionPersistence<T
   }
 
   private sessionPath(id: string): string {
-    // 防止路径遍历：移除任何路径分隔符
     const safeId = id.replace(/[/\\:]/g, '_')
     return join(this.path, `${safeId}.session.json`)
   }
