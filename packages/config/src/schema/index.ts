@@ -15,8 +15,6 @@ export { McpConfigSchema, McpServerSchema } from './mcp'
 export { SkillsConfigSchema } from './skills'
 export { CompactionConfigSchema, CompactionStrategySchema } from './compaction'
 export { NotificationConfigSchema } from './notification'
-export { WorkflowSlotSchema, ModelSlotsSchema } from './model-slots'
-export type { WorkflowSlot } from './model-slots'
 export {
   WorkflowConfigSchema,
   WorkflowReviewSchema,

@@ -1,10 +1,8 @@
 import { describe, expect, it, beforeEach } from 'vitest'
 import { RemoteSessionPersistence, RemotePersistenceError } from '../src/remote-persistence'
-import { createSessionStorage } from '../src/storage'
+import { createSessionStorage } from '../src/storage-factory'
 import type { SessionSnapshot, PaginatedResult } from '../src/types'
 
-// 构造一个内存级 fake fetch：根据请求路径/方法返回预设响应。
-// 测试 RemoteSessionPersistence 的请求组装和响应处理逻辑。
 function createFakeServer() {
   const store = new Map<string, SessionSnapshot<string>>()
 
@@ -13,33 +11,28 @@ function createFakeServer() {
     const method = init?.method ?? 'GET'
     const path = new URL(url).pathname
 
-    // PUT /sessions/:id → save
     if (method === 'PUT') {
       const body = JSON.parse(init?.body as string) as SessionSnapshot<string>
       store.set(body.id, body)
       return new Response(null, { status: 204 })
     }
 
-    // DELETE /sessions/:id
     if (method === 'DELETE') {
-      const id = decodeURIComponent(path.split('/').pop()!)
+      const id = decodeURIComponent(path.split('/').pop() ?? '')
       const deleted = store.delete(id)
       return new Response(null, { status: deleted ? 200 : 404 })
     }
 
-    // GET /sessions/:id  or  GET /sessions  or  GET /sessions?page=...
     if (method === 'GET') {
-      // 带 query param 或路径只到 /sessions → list
-      const urlObj = new URL(url)
+      const urlObject = new URL(url)
       const segments = path.replace(/^\/sessions\/?/, '').split('/').filter(Boolean)
 
       if (segments.length === 0) {
-        // list 或 listPaginated
-        const pageParam = urlObj.searchParams.get('page')
+        const pageParam = urlObject.searchParams.get('page')
 
         if (pageParam !== null) {
           const page = Number(pageParam)
-          const pageSize = Number(urlObj.searchParams.get('pageSize') ?? 50)
+          const pageSize = Number(urlObject.searchParams.get('pageSize') ?? 50)
           const ids = Array.from(store.keys())
           const total = ids.length
           const totalPages = Math.max(1, Math.ceil(total / pageSize))
@@ -54,20 +47,29 @@ function createFakeServer() {
             hasNext: safePage < totalPages - 1,
             hasPrevious: safePage > 0,
           }
-          return new Response(JSON.stringify(result), { status: 200, headers: { 'Content-Type': 'application/json' } })
+
+          return new Response(JSON.stringify(result), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
         }
 
-        return new Response(
-          JSON.stringify({ ids: Array.from(store.keys()) }),
-          { status: 200, headers: { 'Content-Type': 'application/json' } },
-        )
+        return new Response(JSON.stringify({ ids: Array.from(store.keys()) }), {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        })
       }
 
-      // GET single session
-      const id = decodeURIComponent(segments[0])
+      const id = decodeURIComponent(segments[0] ?? '')
       const snapshot = store.get(id)
-      if (!snapshot) return new Response(null, { status: 404 })
-      return new Response(JSON.stringify(snapshot), { status: 200, headers: { 'Content-Type': 'application/json' } })
+      if (!snapshot) {
+        return new Response(null, { status: 404 })
+      }
+
+      return new Response(JSON.stringify(snapshot), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
     }
 
     return new Response(null, { status: 405 })
@@ -86,6 +88,7 @@ describe('RemoteSessionPersistence', () => {
       baseUrl: 'https://api.test.dev/sessions',
       getAuth: async () => ({ token: 'test-token' }),
       fetch: server.fakeFetch,
+      timeoutMs: 1_000,
     })
   })
 
@@ -94,9 +97,7 @@ describe('RemoteSessionPersistence', () => {
       const snap: SessionSnapshot<string> = {
         version: 1,
         id: 'remote-1',
-        entries: [
-          { type: 'message', id: 'e1', message: 'hello', timestamp: 1000 },
-        ],
+        entries: [{ type: 'message', id: 'e1', message: 'hello', timestamp: 1000 }],
         metadata: {
           createdAt: 1000,
           lastActiveAt: 1000,
@@ -111,16 +112,15 @@ describe('RemoteSessionPersistence', () => {
       const loaded = await persistence.load('remote-1')
 
       expect(loaded).not.toBeNull()
-      expect(loaded!.id).toBe('remote-1')
-      expect(loaded!.entries).toHaveLength(1)
-      expect(loaded!.leafId).toBe('e1')
+      expect(loaded?.id).toBe('remote-1')
+      expect(loaded?.entries).toHaveLength(1)
+      expect(loaded?.leafId).toBe('e1')
     })
   })
 
   describe('#when loading nonexistent', () => {
     it('#then returns null', async () => {
-      const result = await persistence.load('nonexistent')
-      expect(result).toBeNull()
+      expect(await persistence.load('nonexistent')).toBeNull()
     })
   })
 
@@ -158,16 +158,12 @@ describe('RemoteSessionPersistence', () => {
     it('#then removes snapshot', async () => {
       await persistence.save({ version: 1, id: 'del', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
 
-      const deleted = await persistence.delete('del')
-      expect(deleted).toBe(true)
-
-      const loaded = await persistence.load('del')
-      expect(loaded).toBeNull()
+      expect(await persistence.delete('del')).toBe(true)
+      expect(await persistence.load('del')).toBeNull()
     })
 
     it('#then returns false for nonexistent', async () => {
-      const deleted = await persistence.delete('nope')
-      expect(deleted).toBe(false)
+      expect(await persistence.delete('nope')).toBe(false)
     })
   })
 
@@ -177,6 +173,7 @@ describe('RemoteSessionPersistence', () => {
         baseUrl: 'https://api.test.dev/sessions',
         getAuth: async () => ({ token: 'test' }),
         fetch: async () => new Response(null, { status: 500, statusText: 'Internal Server Error' }),
+        timeoutMs: 1_000,
       })
 
       await expect(errorPersistence.list()).rejects.toThrow(RemotePersistenceError)
@@ -188,14 +185,13 @@ describe('RemoteSessionPersistence', () => {
     it('#then creates RemoteSessionPersistence', async () => {
       const storage = createSessionStorage<string>({
         type: 'remote',
-        remoteUrl: 'https://api.test.dev/sessions',
+        baseUrl: 'https://api.test.dev/sessions',
         getAuth: async () => ({ token: 'tok' }),
         fetch: server.fakeFetch,
       })
 
       await storage.save({ version: 1, id: 'factory-remote', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
-      const ids = await storage.list()
-      expect(ids).toContain('factory-remote')
+      expect(await storage.list()).toContain('factory-remote')
     })
   })
 
@@ -206,58 +202,74 @@ describe('RemoteSessionPersistence', () => {
         baseUrl: 'https://api.test.dev/sessions',
         getAuth: async () => ({ token: 'my-secret-token' }),
         fetch: async (_input, init) => {
-          const hdrs = init?.headers as Record<string, string> | undefined
-          if (hdrs) capturedHeaders.push({ ...hdrs })
-          // 返回有效响应
-          return new Response(JSON.stringify({ ids: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+          const headers = init?.headers as Record<string, string> | undefined
+          if (headers) {
+            capturedHeaders.push({ ...headers })
+          }
+
+          return new Response(JSON.stringify({ ids: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
         },
+        timeoutMs: 1_000,
       })
 
       await headerPersistence.list()
+
       expect(capturedHeaders).toHaveLength(1)
-      expect(capturedHeaders[0]['Authorization']).toBe('Bearer my-secret-token')
-      expect(capturedHeaders[0]['Accept']).toBe('application/json')
+      expect(capturedHeaders[0]?.Authorization).toBe('Bearer my-secret-token')
+      expect(capturedHeaders[0]?.Accept).toBe('application/json')
     })
 
-    it('#then sends Content-Type only on PUT (save)', async () => {
+    it('#then sends Content-Type only on PUT', async () => {
       const capturedHeaders: Record<string, string>[] = []
       const headerPersistence = new RemoteSessionPersistence<string>({
         baseUrl: 'https://api.test.dev/sessions',
         getAuth: async () => ({ token: 'tok' }),
         fetch: async (_input, init) => {
-          const hdrs = init?.headers as Record<string, string> | undefined
-          if (hdrs) capturedHeaders.push({ ...hdrs })
-          if (init?.method === 'GET') {
-            return new Response(JSON.stringify({ ids: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+          const headers = init?.headers as Record<string, string> | undefined
+          if (headers) {
+            capturedHeaders.push({ ...headers })
           }
+
+          if (init?.method === 'GET') {
+            return new Response(JSON.stringify({ ids: [] }), {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            })
+          }
+
           return new Response(null, { status: 204 })
         },
+        timeoutMs: 1_000,
       })
 
-      // GET 请求不应有 Content-Type
       await headerPersistence.list()
-      expect(capturedHeaders[0]['Content-Type']).toBeUndefined()
+      expect(capturedHeaders[0]?.['Content-Type']).toBeUndefined()
 
-      // PUT 请求应有 Content-Type
       await headerPersistence.save({ version: 1, id: 'x', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
-      expect(capturedHeaders[1]['Content-Type']).toBe('application/json')
+      expect(capturedHeaders[1]?.['Content-Type']).toBe('application/json')
     })
   })
 
   describe('#when baseUrl has trailing slash', () => {
     it('#then removes trailing slash before building URL', async () => {
       let capturedUrl = ''
-      const p = new RemoteSessionPersistence<string>({
+      const persistenceWithSlash = new RemoteSessionPersistence<string>({
         baseUrl: 'https://api.test.dev/sessions/',
         getAuth: async () => ({ token: 'tok' }),
-        fetch: async (input, _init) => {
+        fetch: async (input) => {
           capturedUrl = typeof input === 'string' ? input : (input as Request).url
-          return new Response(JSON.stringify({ ids: [] }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+          return new Response(JSON.stringify({ ids: [] }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
         },
+        timeoutMs: 1_000,
       })
 
-      await p.list()
-      // 不应有双斜杠
+      await persistenceWithSlash.list()
       expect(capturedUrl).toBe('https://api.test.dev/sessions')
     })
   })
@@ -265,50 +277,59 @@ describe('RemoteSessionPersistence', () => {
   describe('#when id contains special characters', () => {
     it('#then URL-encodes the id', async () => {
       let capturedUrl = ''
-      const p = new RemoteSessionPersistence<string>({
+      const persistenceWithEncodedId = new RemoteSessionPersistence<string>({
         baseUrl: 'https://api.test.dev/sessions',
         getAuth: async () => ({ token: 'tok' }),
-        fetch: async (input, _init) => {
+        fetch: async (input) => {
           capturedUrl = typeof input === 'string' ? input : (input as Request).url
-          return new Response(JSON.stringify({ id: 'a/b', entries: [], metadata: {} }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+          return new Response(JSON.stringify({
+            version: 1,
+            id: 'a/b',
+            entries: [],
+            metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] },
+          }), {
+            status: 200,
+            headers: { 'Content-Type': 'application/json' },
+          })
         },
+        timeoutMs: 1_000,
       })
 
-      await p.load('a/b')
+      await persistenceWithEncodedId.load('a/b')
       expect(capturedUrl).toContain(encodeURIComponent('a/b'))
       expect(capturedUrl).not.toContain('/a/b')
     })
   })
 
-  describe('#when RemotePersistenceError', () => {
+  describe('#when RemotePersistenceError is thrown', () => {
     it('#then exposes statusCode property', async () => {
-      const p = new RemoteSessionPersistence<string>({
+      const unavailablePersistence = new RemoteSessionPersistence<string>({
         baseUrl: 'https://api.test.dev/sessions',
         getAuth: async () => ({ token: 'tok' }),
         fetch: async () => new Response(null, { status: 503, statusText: 'Service Unavailable' }),
+        timeoutMs: 1_000,
       })
 
       try {
-        await p.list()
+        await unavailablePersistence.list()
         expect.unreachable('should have thrown')
-      } catch (err) {
-        expect(err).toBeInstanceOf(RemotePersistenceError)
-        expect((err as RemotePersistenceError).statusCode).toBe(503)
+      } catch (error) {
+        expect(error).toBeInstanceOf(RemotePersistenceError)
+        expect((error as RemotePersistenceError).statusCode).toBe(503)
       }
     })
   })
 
   describe('#when delete returns 404', () => {
-    it('#then returns false (not ok)', async () => {
-      const p = new RemoteSessionPersistence<string>({
+    it('#then returns false', async () => {
+      const missingDeletePersistence = new RemoteSessionPersistence<string>({
         baseUrl: 'https://api.test.dev/sessions',
         getAuth: async () => ({ token: 'tok' }),
         fetch: async () => new Response(null, { status: 404 }),
+        timeoutMs: 1_000,
       })
 
-      // delete 检查 response.ok，404 不是 ok → false
-      const result = await p.delete('nonexistent')
-      expect(result).toBe(false)
+      expect(await missingDeletePersistence.delete('nonexistent')).toBe(false)
     })
   })
 })

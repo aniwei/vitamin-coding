@@ -53,6 +53,35 @@ export const TOOLS_BINARY_DOWNLOAD_TIMEOUT_MS = normalizeEnv(process.env['TOOLS_
 
 export const AGENT_TOOLS_MAX_TURNS = normalizeEnv(process.env['AGENT_TOOLS_MAX_TURNS'], 25)
 
+// @vitamin/memory 默认阈值与工具分类常量
+export const MEMORY_COMPACTION_TRIGGER_FRACTION = 0.85
+export const MEMORY_COMPACTION_KEEP_RECENT_FRACTION = 0.10
+export const MEMORY_COMPACTION_RESERVE_TOKENS = 16384
+
+export const MEMORY_PRUNE_TRIGGER_FRACTION = 0.70
+export const MEMORY_PRUNE_PROTECT_FRACTION = 0.15
+export const MEMORY_PRUNE_MINIMUM_TOKENS = 20000
+export const MEMORY_PRUNE_TRUNCATE_MAX_LENGTH = 2000
+
+export const MEMORY_TOOL_WRITE = 'write'
+export const MEMORY_TOOL_EDIT = 'edit'
+export const MEMORY_TOOL_APPLY_PATCH = 'apply_patch'
+export const MEMORY_TOOL_CREATE_FILE = 'create_file'
+export const MEMORY_TOOL_EDIT_NOTEBOOK_FILE = 'edit_notebook_file'
+
+export const MEMORY_TOOL_READ = 'read'
+export const MEMORY_TOOL_GREP = 'grep'
+export const MEMORY_TOOL_FIND = 'find'
+export const MEMORY_TOOL_LS = 'ls'
+
+export const MEMORY_LEGACY_TOOL_READ_FILE = 'read_file'
+export const MEMORY_LEGACY_TOOL_GREP_SEARCH = 'grep_search'
+export const MEMORY_LEGACY_TOOL_FILE_SEARCH = 'file_search'
+
+export const MEMORY_LEGACY_TOOL_WRITE_FILE = 'write_file'
+export const MEMORY_LEGACY_TOOL_EDIT_FILE = 'edit_file'
+export const MEMORY_LEGACY_TOOL_REPLACE_STRING_IN_FILE = 'replace_string_in_file'
+
 export const SETTING_OFFLINE_MODE_ENABLED = process.env['VITAMIN_OFFLINE'] === '1' || process.env['VITAMIN_OFFLINE']?.toLowerCase() === 'true' || process.env['VITAMIN_OFFLINE']?.toLowerCase() === 'yes'
 
 export const SESSION_DIR = process.env['VITAMIN_SESSION_DIR'] ? normalizePath(process.env['VITAMIN_SESSION_DIR']) : undefined

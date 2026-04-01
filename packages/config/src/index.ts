@@ -45,3 +45,6 @@ export type {
 export { LocalConfigStore } from './local-store'
 export { RemoteConfigStore } from './remote-store'
 export { InMemoryConfigStore } from './memory-store'
+
+// Presets (JSON data)
+export { BUILTIN_AGENT_PROFILES, COPILOT_MODELS, TASK_TYPE_PROFILE_MAP } from './presets'

@@ -1,6 +1,7 @@
 import { randomUUID } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
+import { Server } from 'node:http'
 import { Worker } from 'node:worker_threads'
 import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
 
@@ -32,6 +33,11 @@ interface DevtoolsServiceEvents extends Events {
   'error': (error: Error) => void,
 }
 
+interface DevtoolsServiceOptions {
+  port: number
+  server?: Server
+  noServer: boolean
+}
 export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
   private readonly port: number
   private readonly id: string = randomUUID()
@@ -64,9 +70,13 @@ export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
     return `${this.serviceUrl}/command/session`
   }
 
-  constructor(port: number, breakpoints: Breakpoints) {
+  constructor(options: DevtoolsServiceOptions, breakpoints: Breakpoints) {
     super()
-    this.port = port
+    if (options.noServer && options.port) {
+      throw new Error('Cannot specify a port when noServer is true')
+    }
+
+    this.port = options.port
     this.breakpoints = breakpoints
   }
 

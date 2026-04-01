@@ -2,12 +2,10 @@ export {
   createVitamin, 
   VitaminApp 
 } from './app/vitamin-app'
-export type { VitaminAppOptions, VitaminRuntime } from './app/types'
+export type { VitaminAppOptions, VitaminContext } from './app/types'
 
 export { AgentSession } from './session/agent-session'
-export type { AgentSessionConfig } from './session/agent-session'
 
-export { createAgentSession } from './session/create-agent-session'
 export { Settings, createSettings } from './resources/settings-manager'
 export type { SettingsOptions } from './resources/settings-manager'
 

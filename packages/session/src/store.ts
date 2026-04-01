@@ -6,7 +6,7 @@ const DEFAULT_PAGE_SIZE = 50
 export class InMemorySessionStore<T = unknown> implements SessionStore<T> {
   private readonly sessions = new Map<string, InMemorySession<T>>()
 
-  createSession(id: string = crypto.randomUUID()): Session<T> {
+  async createSession(id: string = crypto.randomUUID()): Promise<Session<T>> {
     const session = new InMemorySession<T>(id)
     this.sessions.set(id, session)
     return session
@@ -21,7 +21,7 @@ export class InMemorySessionStore<T = unknown> implements SessionStore<T> {
   }
 
   listSessionsPaginated(options: PaginationOptions): PaginatedResult<Session<T>> {
-    const { page, sortBy = 'lastActiveAt', sortOrder = 'desc' } = options
+    const { page, sortBy = 'lastActiveAt', order = 'desc' } = options
     const pageSize = options.pageSize ?? DEFAULT_PAGE_SIZE
 
     const all = Array.from(this.sessions.values()) as Session<T>[]
@@ -32,7 +32,7 @@ export class InMemorySessionStore<T = unknown> implements SessionStore<T> {
       const metaB = b.metadata()
       const valA = sortBy === 'createdAt' ? metaA.createdAt : metaA.lastActiveAt
       const valB = sortBy === 'createdAt' ? metaB.createdAt : metaB.lastActiveAt
-      return sortOrder === 'asc' ? valA - valB : valB - valA
+      return order === 'asc' ? valA - valB : valB - valA
     })
 
     const total = all.length
@@ -52,14 +52,14 @@ export class InMemorySessionStore<T = unknown> implements SessionStore<T> {
     }
   }
 
-  deleteSession(id: string): boolean {
+  async deleteSession(id: string): Promise<boolean> {
     return this.sessions.delete(id)
   }
 
-  forkSession(
+  async forkSession(
     sourceId: string, 
     newId: string = crypto.randomUUID()
-  ): Session<T> | undefined {
+  ): Promise<Session<T> | undefined> {
     const source = this.sessions.get(sourceId)
     if (!source) return undefined
 

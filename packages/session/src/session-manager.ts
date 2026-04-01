@@ -1,6 +1,6 @@
 import { InMemorySession } from './in-memory-session'
 import { InMemorySessionStore } from './store'
-import { DiskSessionPersistence } from './disk-persistence'
+import { FileSessionPersistence } from './file-persistence'
 import { 
   SESSION_MAX,
   SESSION_IDLE_TIMEOUT_MS, 
@@ -16,9 +16,9 @@ import type {
   SessionFilter,
   SessionManagerOptions,
   SessionPersistence,
+  SessionSnapshot,
   SessionStore,
 } from './types'
-
 
 
 export class SessionManager<T = unknown> {
@@ -26,18 +26,31 @@ export class SessionManager<T = unknown> {
   private readonly persistence: SessionPersistence<T> | null
   private readonly idleTimeoutMs: number
   private readonly maxSessions: number
-  private gcTimer: ReturnType<typeof setInterval> | null = null
+  private readonly threshold: number
   private activeSessionId: string | undefined
 
   constructor(options: SessionManagerOptions<T>) {
-    const { store, persistence, idleTimeoutMs, maxSessions } = options
+    const { 
+      store, 
+      persistence, 
+      idleTimeoutMs, 
+      maxSessions 
+    } = options
+
+    const resolvedMaxSessions = maxSessions ?? SESSION_MAX
 
     this.store = store
     this.persistence = persistence ?? null
     this.idleTimeoutMs = idleTimeoutMs ?? SESSION_IDLE_TIMEOUT_MS
-    this.maxSessions = maxSessions ?? SESSION_MAX
+    this.maxSessions = resolvedMaxSessions
+    this.threshold = Math.max(0, Math.min(options.threshold ?? resolvedMaxSessions, resolvedMaxSessions))
   }
 
+  get active(): Session<T> | undefined {
+    return this.activeSessionId
+      ? this.store.getSession(this.activeSessionId)
+      : undefined
+  }
 
   // 设置活跃会话
   setActive(id: string): Session<T> | undefined {
@@ -48,30 +61,19 @@ export class SessionManager<T = unknown> {
     return session
   }
 
-  // 获取当前活跃会话 
-  get active(): Session<T> | undefined {
-    return this.activeSessionId
-      ? this.store.getSession(this.activeSessionId)
-      : undefined
-  }
-
-  // 向活跃会话追加消息
   appendMessage(message: T): void {
     const session = this.requireActive()
     session.append(message)
   }
 
-  // 构建活跃会话 LLM 上下文
   buildSessionContext(): SessionContext<T> {
     return this.requireActive().buildContext()
   }
 
-  // 获取活跃会话当前分支条目 
   getEntries(): ReadonlyArray<SessionEntry<T>> {
     return this.requireActive().branchEntries()
   }
 
-  // 在活跃会话中切换分支
   branchAt(entryId: string): void {
     this.requireActive().branch(entryId)
   }
@@ -86,18 +88,13 @@ export class SessionManager<T = unknown> {
     return session
   }
 
-  // 创建新会话（并设为活跃）
   async create(
     id?: string, 
     title?: string
   ): Promise<Session<T>> {
-    // 检查容量
-    const sessions = this.store.listSessions()
-    if (sessions.length >= this.maxSessions) {
-      throw new Error(`Max sessions (${this.maxSessions}) reached. Remove idle sessions first.`)
-    }
+    this.prepareForNewSession(id)
 
-    const session = this.store.createSession(id)
+    const session = await this.store.createSession(id)
 
     if (title && session instanceof InMemorySession) {
       session.setTitle(title)
@@ -107,24 +104,24 @@ export class SessionManager<T = unknown> {
     return session
   }
 
-  // 获取会话
   get(id: string): Session<T> | undefined {
     return this.store.getSession(id)
   }
 
-  // 列出所有会话
   list(): ReadonlyArray<Session<T>> {
     return this.store.listSessions()
   }
 
-  // 分页列出会话
   listPaginated(options: PaginationOptions): PaginatedResult<Session<T>> {
     return this.store.listSessionsPaginated(options)
   }
 
-  // 删除会话
   async delete(id: string): Promise<boolean> {
-    const deleted = this.store.deleteSession(id)
+    const deleted = await this.store.deleteSession(id)
+
+    if (deleted && this.activeSessionId === id) {
+      this.activeSessionId = undefined
+    }
 
     if (deleted && this.persistence) {
       await this.persistence.delete(id)
@@ -133,7 +130,6 @@ export class SessionManager<T = unknown> {
     return deleted
   }
 
-  // 按条件过滤会话
   filter(criteria: SessionFilter): Session<T>[] {
     const all = this.store.listSessions()
 
@@ -201,30 +197,31 @@ export class SessionManager<T = unknown> {
     }
   }
 
-  /// ── 分支
-  // 从源 session fork 出独立副本
-  fork(
+  async fork(
     sourceId: string, 
     newId?: string
-  ): Session<T> | undefined {
+  ): Promise<Session<T> | undefined> {
+    const source = this.store.getSession(sourceId)
+    if (!source) {
+      return undefined
+    }
+
+    this.prepareForNewSession(newId)
+
     const store = this.store
 
     if (store instanceof InMemorySessionStore) {
       return store.forkSession(sourceId, newId)
     }
 
-    // 泛型 store 回退：通用 fork 通过复制 entries 实现
-    return this.genericFork(sourceId, newId)
+    return this.genericFork(source, newId)
   }
 
-  private genericFork(
-    sourceId: string, 
+  private async genericFork(
+    source: Session<T>, 
     newId: string = crypto.randomUUID() as string
-  ): Session<T> | undefined {
-    const source = this.store.getSession(sourceId)
-    if (!source) return undefined
-
-    const target = this.store.createSession(newId)
+  ): Promise<Session<T> | undefined> {
+    const target = await this.store.createSession(newId)
     const context = source.buildContext()
 
     for (const msg of context.messages) {
@@ -234,7 +231,6 @@ export class SessionManager<T = unknown> {
     return target
   }
 
-  // 持久化指定会话
   async save(id: string): Promise<void> {
     if (!this.persistence) return
     const session = this.store.getSession(id)
@@ -257,11 +253,8 @@ export class SessionManager<T = unknown> {
     const snapshot = await this.persistence.load(id)
     if (!snapshot) return null
 
-    const session = this.store.createSession(snapshot.id) as InMemorySession<T>
-    if (session instanceof InMemorySession) {
-      session.restoreEntries(snapshot.entries, snapshot.metadata, snapshot.leafId)
-    }
-    return session
+    this.ensureCapacity(this.requiredCapacityFor(snapshot.id))
+    return this.restoreWithSnapshot(snapshot)
   }
 
   async saveAll(): Promise<void> {
@@ -272,38 +265,30 @@ export class SessionManager<T = unknown> {
     }
   }
 
-  async restoreAll(): Promise<boolean> {
-    if (!this.persistence) return false
+  async restoreAll(): Promise<number> {
+    if (!this.persistence) return 0
 
     const ids = await this.persistence.list()
     
     let restored = 0
     for (const id of ids) {
-      if (restored >= this.maxSessions) break
-      const session = await this.restore(id)
-      if (session) restored++
+      const snapshot = await this.persistence.load(id)
+      if (!snapshot) {
+        continue
+      }
+
+      const requiredCapacity = this.requiredCapacityFor(snapshot.id)
+      if (!this.canAccommodate(requiredCapacity)) {
+        break
+      }
+
+      await this.restoreWithSnapshot(snapshot)
+      if (requiredCapacity > 0) {
+        restored++
+      }
     }
 
-    return restored > 0
-  }
-
-  // ── GC (空闲回收) ──
-  // 启动定期 GC
-  startGC(intervalMs = 60_000): void {
-    this.stopGC()
-    this.gcTimer = setInterval(() => { this.collectIdle() }, intervalMs)
-    // 允许进程退出
-    if (this.gcTimer && typeof this.gcTimer === 'object' && 'unref' in this.gcTimer) {
-      this.gcTimer.unref()
-    }
-  }
-
-  // 停止 GC
-  stopGC(): void {
-    if (this.gcTimer !== null) {
-      clearInterval(this.gcTimer)
-      this.gcTimer = null
-    }
+    return restored
   }
 
   // 手动回收空闲会话
@@ -315,6 +300,9 @@ export class SessionManager<T = unknown> {
       const meta = session.metadata()
       if (now - meta.lastActiveAt > this.idleTimeoutMs) {
         this.store.deleteSession(session.id)
+        if (this.activeSessionId === session.id) {
+          this.activeSessionId = undefined
+        }
         removed.push(session.id)
       }
     }
@@ -324,12 +312,75 @@ export class SessionManager<T = unknown> {
 
   // 清理资源 
   dispose(): void {
-    this.stopGC()
+    
+  }
+
+  private prepareForNewSession(id?: string): void {
+    this.collectIdleIfNeeded(1)
+    this.assertSessionIdAvailable(id)
+
+    if (!this.hasCapacity(1)) {
+      throw new Error(`Max sessions (${this.maxSessions}) reached after idle collection.`)
+    }
+  }
+
+  private ensureCapacity(requiredCapacity: number): void {
+    this.collectIdleIfNeeded(requiredCapacity)
+
+    if (!this.hasCapacity(requiredCapacity)) {
+      throw new Error(`Max sessions (${this.maxSessions}) reached after idle collection.`)
+    }
+  }
+
+  private canAccommodate(requiredCapacity: number): boolean {
+    this.collectIdleIfNeeded(requiredCapacity)
+    return this.hasCapacity(requiredCapacity)
+  }
+
+  private hasCapacity(requiredCapacity: number): boolean {
+    return this.sessionCount() + requiredCapacity <= this.maxSessions
+  }
+
+  private collectIdleIfNeeded(requiredCapacity: number): string[] {
+    if (requiredCapacity <= 0) {
+      return []
+    }
+
+    if (this.sessionCount() + requiredCapacity <= this.threshold) {
+      return []
+    }
+
+    return this.collectIdle()
+  }
+
+  private requiredCapacityFor(id: string): number {
+    return this.store.getSession(id) ? 0 : 1
+  }
+
+  private assertSessionIdAvailable(id?: string): void {
+    if (id && this.store.getSession(id)) {
+      throw new Error(`Session "${id}" already exists.`)
+    }
+  }
+
+  private async restoreWithSnapshot(snapshot: SessionSnapshot<T>): Promise<Session<T>> {
+    const session = await this.store.createSession(snapshot.id) as InMemorySession<T>
+    if (session instanceof InMemorySession) {
+      session.restoreEntries(snapshot.entries, snapshot.metadata, snapshot.leafId)
+    }
+
+    return session
+  }
+
+  private sessionCount(): number {
+    return this.store.listSessions().length
   }
 }
 
+export interface CreateSessionManagerOptions<T> extends Partial<Omit<SessionManagerOptions<T>, 'store' | 'persistence'>> { }
+
 export function createInMemorySessionManager<T = unknown>(
-  options?: Partial<Omit<SessionManagerOptions<T>, 'store' | 'persistence'>>
+  options?: CreateSessionManagerOptions<T>,
 ): SessionManager<T> {
   const store = new InMemorySessionStore<T>()
   return new SessionManager<T>({
@@ -340,10 +391,10 @@ export function createInMemorySessionManager<T = unknown>(
 
 export function createDiskSessionManager<T = unknown>(
   sessionDir: string,
-  options?: Partial<Omit<SessionManagerOptions<T>, 'store' | 'persistence'>>,
+  options?: CreateSessionManagerOptions<T>,
 ): SessionManager<T> {
   const store = new InMemorySessionStore<T>()
-  const persistence = new DiskSessionPersistence<T>({ path: sessionDir })
+  const persistence = new FileSessionPersistence<T>({ baseDir: sessionDir })
 
   return new SessionManager<T>({
     store,
@@ -354,7 +405,7 @@ export function createDiskSessionManager<T = unknown>(
 
 export function createRemoteSessionManager<T = unknown>(
   endpoint: string,
-  options?: Partial<Omit<SessionManagerOptions<T>, 'store' | 'persistence'>>,
+  options?: CreateSessionManagerOptions<T>,
 ): SessionManager<T> {
   const store = new InMemorySessionStore<T>()
   const persistence = new RemoteSessionPersistence<T>({ 
@@ -363,6 +414,7 @@ export function createRemoteSessionManager<T = unknown>(
       throw new Error('Fetch implementation is required for RemoteSessionPersistence')
     },
     getAuth: async () => ({ token: '' }),
+    timeoutMs: 30_000,
   })
   
   return new SessionManager<T>({
@@ -372,8 +424,3 @@ export function createRemoteSessionManager<T = unknown>(
   })
 }
 
-export function createSessionManager<T = unknown>(
-  options: SessionManagerOptions<T>,
-): SessionManager<T> {
-  return new SessionManager<T>(options)
-}

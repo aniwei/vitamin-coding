@@ -8,6 +8,9 @@ import type { AgentTool } from '../src/types'
 // 简单 Zod-like schema stub
 function createSchema<T>() {
   return {
+    parse(input: unknown) {
+      return input as T
+    },
     safeParse(input: unknown) {
       return { success: true as const, data: input as T }
     },
@@ -28,7 +31,7 @@ function createFailSchema(message: string) {
 // 工具工厂
 function makeTool(
   name: string,
-  handler?: (id: string, args: unknown) => Promise<unknown>,
+  handler?: (id: string, params: unknown) => Promise<unknown>,
 ): AgentTool {
   return {
     name,
@@ -36,10 +39,10 @@ function makeTool(
     parameters: createSchema() as never,
     execute: async (ctx) => {
       if (handler) {
-        const result = await handler(ctx.id, ctx.args)
-        return result as { content: { type: 'text'; data: string }[]; isError?: boolean }
+        const result = await handler(ctx.id, ctx.params)
+        return result as { content: { type: 'text'; text: string }[]; isError?: boolean }
       }
-      return { content: [{ type: 'text' as const, data: `${name} executed` }] }
+      return { content: [{ type: 'text' as const, text: `${name} executed` }] }
     },
   }
 }
@@ -60,7 +63,7 @@ describe('ToolExecutor', () => {
         const executor = createToolExecutor([makeTool('read')])
         const result = await executor.execute(makeToolCall('read'), new AbortController().signal)
         expect(result.isError).toBeUndefined()
-        expect(result.content[0]?.data).toBe('read executed')
+        expect(result.content[0]?.text).toBe('read executed')
       })
     })
 
@@ -82,7 +85,7 @@ describe('ToolExecutor', () => {
           name: 'strict',
           description: 'Strict tool',
           parameters: createFailSchema('path is required') as never,
-          execute: async () => ({ content: [{ type: 'text' as const, data: 'ok' }] }),
+          execute: async () => ({ content: [{ type: 'text' as const, text: 'ok' }] }),
         }
         const executor = createToolExecutor([tool])
         const result = await executor.execute(makeToolCall('strict'), new AbortController().signal)
@@ -119,8 +122,8 @@ describe('ToolExecutor', () => {
         new AbortController().signal,
       )
       expect(results.size).toBe(2)
-      expect(results.get('c1')?.content[0]?.data).toBe('a executed')
-      expect(results.get('c2')?.content[0]?.data).toBe('b executed')
+      expect(results.get('c1')?.content[0]?.text).toBe('a executed')
+      expect(results.get('c2')?.content[0]?.text).toBe('b executed')
     })
   })
 

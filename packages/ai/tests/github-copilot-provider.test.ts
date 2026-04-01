@@ -7,7 +7,13 @@ import {
   buildCopilotDynamicHeaders,
 } from '../src/provider/github-copilot'
 
-import type { Message, Model } from '../src/types'
+import type {
+  AssistantMessage,
+  Message,
+  Model,
+  ToolResultMessage,
+  UserMessage,
+} from '../src/types'
 
 function makeModel(): Model {
   return {
@@ -24,55 +30,51 @@ function makeModel(): Model {
   }
 }
 
+function makeUserMessage(content: UserMessage['content']): UserMessage {
+  return {
+    role: 'user',
+    content,
+    timestamp: Date.now(),
+  }
+}
+
+function makeAssistantMessage(content: AssistantMessage['content']): AssistantMessage {
+  return {
+    role: 'assistant',
+    content,
+    api: 'github-copilot',
+    provider: 'github-copilot',
+    model: 'github-copilot/gpt-4.1',
+    usage: {
+      inputTokens: 1,
+      outputTokens: 1,
+      cacheReadTokens: 0,
+      cacheWriteTokens: 0,
+    },
+    stopReason: 'end_turn',
+  }
+}
+
+function makeToolResultMessage(content: ToolResultMessage['content']): ToolResultMessage {
+  return {
+    role: 'tool_result',
+    toolCallId: 'tc1',
+    toolName: 'read_file',
+    content,
+    details: null,
+    isError: false,
+    timestamp: Date.now(),
+  }
+}
+
 describe('GitHub Copilot Provider', () => {
-  it('resolveKey reads COPILOT_GITHUB_TOKEN from env', async () => {
-    const provider = createCopilotProvider()
-    const oldCopilot = process.env['COPILOT_GITHUB_TOKEN']
-    const oldGh = process.env['GH_TOKEN']
-    const oldGithub = process.env['GITHUB_TOKEN']
+  it('resolveKey uses resolveOAuthAccessKey when provided', async () => {
+    const provider = createCopilotProvider({
+      resolveOAuthAccessKey: async () => 'oauth-token',
+    })
 
-    process.env['COPILOT_GITHUB_TOKEN'] = 'copilot-token'
-    delete process.env['GH_TOKEN']
-    delete process.env['GITHUB_TOKEN']
-
-    try {
-      const key = await provider.resolveKey?.(makeModel())
-      expect(key).toBe('copilot-token')
-    } finally {
-      if (oldCopilot === undefined) delete process.env['COPILOT_GITHUB_TOKEN']
-      else process.env['COPILOT_GITHUB_TOKEN'] = oldCopilot
-
-      if (oldGh === undefined) delete process.env['GH_TOKEN']
-      else process.env['GH_TOKEN'] = oldGh
-
-      if (oldGithub === undefined) delete process.env['GITHUB_TOKEN']
-      else process.env['GITHUB_TOKEN'] = oldGithub
-    }
-  })
-
-  it('resolveKey falls back from COPILOT_GITHUB_TOKEN to GH_TOKEN to GITHUB_TOKEN', async () => {
-    const provider = createCopilotProvider()
-    const oldCopilot = process.env['COPILOT_GITHUB_TOKEN']
-    const oldGh = process.env['GH_TOKEN']
-    const oldGithub = process.env['GITHUB_TOKEN']
-
-    delete process.env['COPILOT_GITHUB_TOKEN']
-    process.env['GH_TOKEN'] = 'gh-token'
-    process.env['GITHUB_TOKEN'] = 'github-token'
-
-    try {
-      const key = await provider.resolveKey?.(makeModel())
-      expect(key).toBe('gh-token')
-    } finally {
-      if (oldCopilot === undefined) delete process.env['COPILOT_GITHUB_TOKEN']
-      else process.env['COPILOT_GITHUB_TOKEN'] = oldCopilot
-
-      if (oldGh === undefined) delete process.env['GH_TOKEN']
-      else process.env['GH_TOKEN'] = oldGh
-
-      if (oldGithub === undefined) delete process.env['GITHUB_TOKEN']
-      else process.env['GITHUB_TOKEN'] = oldGithub
-    }
+    const key = await provider.resolveKey?.(makeModel())
+    expect(key).toBe('oauth-token')
   })
 
   it('exposes provider identity and converse function', () => {
@@ -87,79 +89,36 @@ describe('GitHub Copilot Provider', () => {
     expect(typeof provider.resolveKey).toBe('function')
   })
 
-  it('resolveKey falls back to resolveOAuthKey when env token is missing', async () => {
-    const oldCopilot = process.env['COPILOT_GITHUB_TOKEN']
-    const oldGh = process.env['GH_TOKEN']
-    const oldGithub = process.env['GITHUB_TOKEN']
-
-    delete process.env['COPILOT_GITHUB_TOKEN']
-    delete process.env['GH_TOKEN']
-    delete process.env['GITHUB_TOKEN']
-
+  it('resolveKey throws when resolver returns undefined', async () => {
     const provider = createCopilotProvider({
-      resolveOAuthKey: async () => 'oauth-token',
+      resolveOAuthAccessKey: async () => undefined,
     })
 
-    try {
-      const key = await provider.resolveKey?.(makeModel())
-      expect(key).toBe('oauth-token')
-    } finally {
-      if (oldCopilot === undefined) delete process.env['COPILOT_GITHUB_TOKEN']
-      else process.env['COPILOT_GITHUB_TOKEN'] = oldCopilot
-
-      if (oldGh === undefined) delete process.env['GH_TOKEN']
-      else process.env['GH_TOKEN'] = oldGh
-
-      if (oldGithub === undefined) delete process.env['GITHUB_TOKEN']
-      else process.env['GITHUB_TOKEN'] = oldGithub
-    }
+    await expect(provider.resolveKey?.(makeModel())).rejects.toThrow('Missing GitHub Copilot token')
   })
 
   it('resolveKey throws when env and oauth are both unavailable', async () => {
-    const oldCopilot = process.env['COPILOT_GITHUB_TOKEN']
-    const oldGh = process.env['GH_TOKEN']
-    const oldGithub = process.env['GITHUB_TOKEN']
-
-    delete process.env['COPILOT_GITHUB_TOKEN']
-    delete process.env['GH_TOKEN']
-    delete process.env['GITHUB_TOKEN']
-
-    try {
-      const provider = createCopilotProvider()
-      await expect(provider.resolveKey?.(makeModel())).rejects.toThrow('Missing GitHub Copilot token')
-    } finally {
-      if (oldCopilot === undefined) delete process.env['COPILOT_GITHUB_TOKEN']
-      else process.env['COPILOT_GITHUB_TOKEN'] = oldCopilot
-
-      if (oldGh === undefined) delete process.env['GH_TOKEN']
-      else process.env['GH_TOKEN'] = oldGh
-
-      if (oldGithub === undefined) delete process.env['GITHUB_TOKEN']
-      else process.env['GITHUB_TOKEN'] = oldGithub
-    }
+    const provider = createCopilotProvider()
+    await expect(provider.resolveKey?.(makeModel())).rejects.toThrow('Missing GitHub Copilot token')
   })
 })
 
 describe('inferCopilotInitiator', () => {
   it('returns "user" when last message is from user', () => {
-    const messages: Message[] = [
-      { role: 'user', content: 'hello' },
-    ]
+    const messages: Message[] = [makeUserMessage('hello')]
     expect(inferCopilotInitiator(messages)).toBe('user')
   })
 
   it('returns "agent" when last message is from assistant', () => {
     const messages: Message[] = [
-      { role: 'user', content: 'hello' },
-      { role: 'assistant', content: [{ type: 'text', text: 'hi' }] },
+      makeUserMessage('hello'),
+      makeAssistantMessage([{ type: 'text', text: 'hi' }]),
     ]
     expect(inferCopilotInitiator(messages)).toBe('agent')
   })
 
   it('returns "agent" when last message is tool_result', () => {
-    const messages: Message[] = [
-      { role: 'tool_result', toolCallId: 'tc1', content: [{ type: 'text', text: 'result' }] },
-    ]
+    const messages: Message[] = [makeToolResultMessage([{ type: 'text', text: 'result' }])]
     expect(inferCopilotInitiator(messages)).toBe('agent')
   })
 
@@ -170,34 +129,23 @@ describe('inferCopilotInitiator', () => {
 
 describe('hasCopilotVisionInput', () => {
   it('returns false when no images', () => {
-    const messages: Message[] = [
-      { role: 'user', content: 'hello' },
-    ]
+    const messages: Message[] = [makeUserMessage('hello')]
     expect(hasCopilotVisionInput(messages)).toBe(false)
   })
 
   it('returns true when user message has image content', () => {
     const messages: Message[] = [
-      {
-        role: 'user',
-        content: [
-          { type: 'text', text: 'describe this' },
-          { type: 'image', source: 'base64data', mime: 'image/png' },
-        ],
-      },
+      makeUserMessage([
+        { type: 'text', text: 'describe this' },
+        { type: 'image', source: 'base64data', mime: 'image/png' },
+      ]),
     ]
     expect(hasCopilotVisionInput(messages)).toBe(true)
   })
 
   it('returns true when tool_result has image content', () => {
     const messages: Message[] = [
-      {
-        role: 'tool_result',
-        toolCallId: 'tc1',
-        content: [
-          { type: 'image', source: 'base64data', mime: 'image/png' },
-        ],
-      },
+      makeToolResultMessage([{ type: 'image', source: 'base64data', mime: 'image/png' }]),
     ]
     expect(hasCopilotVisionInput(messages)).toBe(true)
   })
@@ -205,9 +153,7 @@ describe('hasCopilotVisionInput', () => {
 
 describe('buildCopilotDynamicHeaders', () => {
   it('sets X-Initiator and Openai-Intent', () => {
-    const messages: Message[] = [
-      { role: 'user', content: 'hello' },
-    ]
+    const messages: Message[] = [makeUserMessage('hello')]
     const headers = buildCopilotDynamicHeaders({ messages, hasImages: false })
     expect(headers['X-Initiator']).toBe('user')
     expect(headers['Openai-Intent']).toBe('conversation-edits')
@@ -216,12 +162,7 @@ describe('buildCopilotDynamicHeaders', () => {
 
   it('includes Copilot-Vision-Request when hasImages is true', () => {
     const messages: Message[] = [
-      {
-        role: 'user',
-        content: [
-          { type: 'image', source: 'base64data', mime: 'image/png' },
-        ],
-      },
+      makeUserMessage([{ type: 'image', source: 'base64data', mime: 'image/png' }]),
     ]
     const headers = buildCopilotDynamicHeaders({ messages, hasImages: true })
     expect(headers['Copilot-Vision-Request']).toBe('true')
@@ -230,12 +171,7 @@ describe('buildCopilotDynamicHeaders', () => {
 
   it('does not include Copilot-Vision-Request when hasImages is false even with image content', () => {
     const messages: Message[] = [
-      {
-        role: 'user',
-        content: [
-          { type: 'image', source: 'base64data', mime: 'image/png' },
-        ],
-      },
+      makeUserMessage([{ type: 'image', source: 'base64data', mime: 'image/png' }]),
     ]
     const headers = buildCopilotDynamicHeaders({ messages, hasImages: false })
     expect(headers['Copilot-Vision-Request']).toBeUndefined()

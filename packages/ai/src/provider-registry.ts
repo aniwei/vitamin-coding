@@ -11,10 +11,12 @@ import { ModelRegistry, createDefaultModelRegistry } from './model-registry'
 import type { Api, Provider, Model, ModelSpec } from './types'
 import type { ProviderStream, ProviderFactory } from './types'
 
-interface ProviderRegistryOptions {
+export interface ProviderRegistryOptions {
   authStore?: AuthStore
   modelRegistry?: ModelRegistry
 }
+
+export type DefaultProviderRegistryOptions = ProviderRegistryOptions
 
 // Provider 注册表
 export class ProviderRegistry {
@@ -29,17 +31,14 @@ export class ProviderRegistry {
     this.modelRegistry = modelRegistry ?? createDefaultModelRegistry()
   }
 
-  // 注册 Provider 工厂
   register(api: Api, factory: ProviderFactory): void {
     this.factories.set(api, factory)
 
-    // 如果有则清除缓存实例
     if (this.instances.has(api)) {
       this.instances.delete(api)
     }
   }
 
-  // 惰性创建 Provider 实例
   get(api: Api): ProviderStream {
     const cached = this.instances.get(api)
     if (cached) return cached
@@ -56,77 +55,62 @@ export class ProviderRegistry {
     return instance
   }
 
-  // 检查 Provider 是否已注册
   has(api: Api): boolean {
     return this.factories.has(api)
   }
 
-  // 列出所有已注册的 API 类型
   list(): Api[] {
     return [...this.factories.keys()]
   }
 
-  // 移除 Provider 注册
   unregister(api: Api): void {
     this.factories.delete(api)
     this.instances.delete(api)
   }
 
-  // 清除所有注册
   clear(): void {
     this.factories.clear()
     this.instances.clear()
   }
 
-  // 设置统一凭据存储。
-  // AuthStore 的解析优先级高于旧版 AccessKeyResolver。
   setAuthStore(store: AuthStore): void {
     this.authStore = store
   }
 
 
-  // 获取当前 AuthStore 实例（若未设置则返回 undefined）。
-  // CLI / VitaminApp 可通过此方法调用 login() / logout() 等操作。
   getAuthStore(): AuthStore {
     return this.authStore
   }
 
-  // 检查指定 provider 是否有可用凭据（快速，不触发刷新）。
-  // 用于启动时过滤无凭据的模型，实现 "no key → 触发 login" 流程。
   async hasCredential(provider: Provider): Promise<boolean> {
     if (!this.authStore) return false
     return this.authStore.hasCredential(provider)
   }
 
-  // 解析指定 api/provider 的 access key（AuthStore 优先级链：runtime key → auth.json → env var）
   async resolveAccessKey(api: Api): Promise<string | null> {
     if (!this.authStore) return null
     return this.authStore.getCredentialKey(api)
   }
 
-  // 存储并持久化 access key
   async storeAccessKey(api: Api, key: string): Promise<void> {
     if (!this.authStore) return
     this.authStore.setCredentialKey(api, key)
     await this.authStore.save()
   }
 
-  // 设置 ModelRegistry
   setModelRegistry(registry: ModelRegistry): void {
     this.modelRegistry = registry
   }
 
-  // 获取 ModelRegistry
   getModelRegistry(): ModelRegistry {
     return this.modelRegistry
   }
 
-  // 解析模型规格为完整 Model
   resolveModel(spec: ModelSpec): Model {
     if (this.modelRegistry) {
       return this.modelRegistry.resolve(spec)
     }
-    // 无 ModelRegistry 时，仅接受完整 Model
+
     if (typeof spec === 'object' && 'api' in spec && 'baseUrl' in spec) {
       return spec as Model
     }
@@ -144,7 +128,7 @@ export function createProviderRegistry(options: ProviderRegistryOptions = {}): P
 
 
 export function createDefaultProviderRegistry(
-  options: ProviderRegistryOptions
+  options: DefaultProviderRegistryOptions = {}
 ): ProviderRegistry {
   const registry = createProviderRegistry(options)
 

@@ -4,12 +4,10 @@ import type { ContextTokenEstimate } from './types'
 
 export { getTokensFromUsage }
 
-// 简单 token 估算：每 4 字符约 1 token（偏保守）
 export function estimateTokens(text: string): number {
   return Math.ceil(text.length / 4)
 }
 
-// 将单条消息转为文本用于 token 估算
 export function messageToText(message: Message): string {
   if (typeof message.content === 'string') {
     return message.content
@@ -34,14 +32,11 @@ export function messageToText(message: Message): string {
   return JSON.stringify(message)
 }
 
-// 估算单条消息的 token 数
 export function estimateMessageTokens(message: Message, estimator = estimateTokens): number {
-  // role 本身约占 4 token
   const roleOverhead = 4
   return roleOverhead + estimator(messageToText(message))
 }
 
-// 估算消息列表的总 token 数
 export function estimateMessagesTokens(messages: readonly Message[], estimator = estimateTokens): number {
   let total = 0
   for (const msg of messages) {
@@ -50,13 +45,11 @@ export function estimateMessagesTokens(messages: readonly Message[], estimator =
   return total
 }
 
-// 判断消息是否为 AssistantMessage（类型守卫）
 function isAssistantMessage(msg: Message): msg is AssistantMessage {
   return msg.role === 'assistant'
 }
 
 // 估算上下文总 token。
-// 
 // 策略:
 // 1. 找到最后一条带 usage 的 assistant 消息
 // 2. 使用 usage.inputTokens 作为基准（代表了到该消息为止的全部输入 token）

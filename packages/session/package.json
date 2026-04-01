@@ -21,7 +21,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/env": "workspace:*"
+    "@vitamin/env": "workspace:*",
+    "@vitamin/persistence": "workspace:*"
   },
   "publishConfig": {
     "access": "public",

@@ -1,7 +1,14 @@
+import { Server } from 'node:http'
 import { DevtoolsService } from './service'
 import { Breakpoints } from './tools/breakpoints'
 import { DevtoolsDebugger } from './tools/debugger'
 import { DevtoolsLogger } from './tools/logger'
+
+interface DevtoolsOptions {
+  port?: number
+  server?: Server
+  noServer: boolean
+}
 
 export class Devtools {
   private service: DevtoolsService
@@ -10,9 +17,16 @@ export class Devtools {
   public debugger: DevtoolsDebugger
   public logger: DevtoolsLogger
 
-  constructor(port: number) {
+  constructor(options: DevtoolsOptions) {
+    const { port, server, noServer } = options
     this.breakpoints = new Breakpoints()
-    this.service = new DevtoolsService(port, this.breakpoints)
+
+    this.service = new DevtoolsService({
+      port: port || 0,
+      server,
+      noServer: !!noServer,
+    }, this.breakpoints)
+
     this.debugger = new DevtoolsDebugger(this.service, this.breakpoints)
     this.logger = new DevtoolsLogger(this.service)
   }
@@ -26,7 +40,7 @@ export class Devtools {
   }
 }
 
-export const createDevtools = (port: number) => {
-  const devtools = new Devtools(port)
+export const createDevtools = (options: DevtoolsOptions) => {
+  const devtools = new Devtools(options)
   return devtools
 }

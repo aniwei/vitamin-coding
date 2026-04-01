@@ -1,9 +1,36 @@
+import { rm } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
 import { describe, expect, it } from 'vitest'
 
 import { createDefaultProviderRegistry, createProviderRegistry } from '../src/provider-registry'
 import { createAuthStore } from '../src/auth-store'
+import { createModelRegistry } from '../src/model-registry'
 
 import type { Model, ProviderStream, StreamContext, StreamEvent, StreamOptions } from '../src/types'
+
+function makeTempPath(prefix: string): string {
+  return join(
+    tmpdir(),
+    `${prefix}-${process.pid}-${Date.now()}-${Math.random().toString(36).slice(2)}.json`,
+  )
+}
+
+function makeModel(id: string = 'github-copilot/gpt-4.1'): Model {
+  return {
+    id,
+    name: id.split('/')[1] ?? id,
+    api: 'github-copilot',
+    provider: 'github-copilot',
+    baseUrl: 'https://api.githubcopilot.com',
+    reasoning: false,
+    input: ['text'],
+    cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
+    contextWindow: 128000,
+    maxOutputTokens: 4096,
+  }
+}
 
 function createNoopProvider(id: string): ProviderStream {
   return {
@@ -79,44 +106,28 @@ describe('ProviderRegistry', () => {
     })
 
     it('#then can compose with custom auth store', async () => {
-      const auth = createAuthStore()
-      await auth.setCredentialKey('github-copilot', 'oauth-token')
-      const registry = createDefaultProviderRegistry({ auth })
-      const provider = registry.get('github-copilot')
-
-      const oldCopilot = process.env['COPILOT_GITHUB_TOKEN']
-      const oldGh = process.env['GH_TOKEN']
-      const oldGithub = process.env['GITHUB_TOKEN']
-
-      delete process.env['COPILOT_GITHUB_TOKEN']
-      delete process.env['GH_TOKEN']
-      delete process.env['GITHUB_TOKEN']
-
+      const path = makeTempPath('provider-registry-auth')
+      const authStore = createAuthStore({ path })
       try {
-        const key = await provider.resolveKey?.({
-          id: 'github-copilot/gpt-4.1',
-          name: 'gpt-4.1',
-          api: 'github-copilot',
-          provider: 'github-copilot',
-          baseUrl: 'https://api.githubcopilot.com',
-          reasoning: false,
-          input: ['text'],
-          cost: { input: 0, output: 0, cacheRead: 0, cacheWrite: 0 },
-          contextWindow: 128000,
-          maxOutputTokens: 4096,
-        })
+        await authStore.setCredentialKey('github-copilot', 'oauth-token')
+
+        const registry = createDefaultProviderRegistry({ authStore })
+        const provider = registry.get('github-copilot')
+        const key = await provider.resolveKey?.(makeModel())
 
         expect(key).toBe('oauth-token')
       } finally {
-        if (oldCopilot === undefined) delete process.env['COPILOT_GITHUB_TOKEN']
-        else process.env['COPILOT_GITHUB_TOKEN'] = oldCopilot
-
-        if (oldGh === undefined) delete process.env['GH_TOKEN']
-        else process.env['GH_TOKEN'] = oldGh
-
-        if (oldGithub === undefined) delete process.env['GITHUB_TOKEN']
-        else process.env['GITHUB_TOKEN'] = oldGithub
+        await rm(path, { force: true })
       }
+    })
+
+    it('#then resolveModel delegates to the configured model registry', () => {
+      const model = makeModel('github-copilot/test-model')
+      const registry = createProviderRegistry({
+        modelRegistry: createModelRegistry([model]),
+      })
+
+      expect(registry.resolveModel('github-copilot/test-model')).toBe(model)
     })
   })
 })

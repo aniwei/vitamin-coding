@@ -2,7 +2,6 @@ import { join } from 'node:path'
 import { Server } from 'node:http'
 import { Devtools } from '@vitamin/devtools'
 import {
-  createDefaultModelRegistry,
   createDefaultProviderRegistry,
   ModelRegistry,
 } from '@vitamin/ai'
@@ -50,7 +49,6 @@ import {
   createRemoteCodingSessionManager,
   createInMemoryCodingSessionManager,
 } from '../session/coding-session-manager'
-import { createSessionFactoryAdapter } from './session-factory-adapter'
 
 import type { AgentTool } from '@vitamin/agent'
 import type { AuthStore, ProviderRegistry } from '@vitamin/ai'
@@ -58,10 +56,8 @@ import type { VitaminConfig } from '@vitamin/config'
 import type { HookRegistry } from '@vitamin/hooks'
 import type {
   AgentSpec,
-  ModelSelector,
   Orchestrator,
-  OrchestratorTask,
-  SessionFactory,
+  SessionManagerHandle,
 } from '@vitamin/orchestrator'
 import type { RegisteredTool } from '@vitamin/tools'
 import type {
@@ -77,8 +73,9 @@ import type {
   AgentSessionOptions,
 } from '../session/types'
 
-import type { VitaminAppOptions, VitaminRuntime } from './types'
-export { type VitaminAppOptions, type VitaminRuntime } from './types'
+import type { VitaminAppOptions, VitaminContext } from './types'
+import { getLastAssistantText } from 'src/modes'
+export { type VitaminAppOptions, type VitaminContext } from './types'
 
 interface ResolvedWorkflowDefaults {
   approver?: ReturnType<typeof createReviewGate>
@@ -88,21 +85,26 @@ interface ResolvedWorkflowDefaults {
 }
 
 
-export class VitaminApp implements VitaminRuntime {
-  public readonly codingSessionManager: CodingSessionManager
-  
+export class VitaminApp implements VitaminContext {
   public readonly settings: SettingsManager
   public readonly toolRegistry: ToolRegistry
   public readonly resourceManager: ResourceManager
   public readonly promptManager: PromptManager
   public readonly hookRegistry: HookRegistry
   public readonly providerRegistry: ProviderRegistry
+  public readonly codingSessionManager: CodingSessionManager
+  public readonly orchestrator: Orchestrator
+  public readonly logger: ReturnType<typeof createLogger>
   public readonly workspaceDir: string
   public readonly server: Server
-  public readonly logger: ReturnType<typeof createLogger>
   
-  private devtools: Devtools | null = null
+  public readonly maxSessions: number = 5
+  public readonly maxToolTurns: number = 25
+  public readonly maxConcurrentTasks: number = 5
+  public readonly defaultTools: AgentTool[] = []
+  
   private stopped: boolean = false
+  private devtools: Devtools | null = null
 
   public get modelRegistry(): ModelRegistry {
     return this.providerRegistry.getModelRegistry()
@@ -117,21 +119,29 @@ export class VitaminApp implements VitaminRuntime {
     const {
       inspect,
       logger,
-      maxSessions,
+      sessionUrl,
+      sessionDir, 
+      maxSessions, 
+      persistenceMode,
+      idleTimeoutMs, 
+      threshold,
       maxToolTurns,
-      model,
+      maxConcurrentTasks,
       port,
       resourceManager,
       retryStrategy,
-      review,
-      systemPrompt,
+      reviewGate,
       tools,
-      workspaceDir,
+      workspaceDir
     } = options
 
     this.server = new Server()
-
+    this.defaultTools = tools ?? []
+    this.maxSessions = maxSessions ?? 5
+    this.maxToolTurns = maxToolTurns ?? 25
+    this.maxConcurrentTasks = maxConcurrentTasks ?? 5
     this.workspaceDir = workspaceDir ?? process.cwd()
+
     this.logger = createLogger(logger.name, {
       level: logger.level,
       destination: logger.destination,
@@ -151,7 +161,10 @@ export class VitaminApp implements VitaminRuntime {
     })
     
     if (inspect) {
-      this.devtools = new Devtools(port)
+      this.devtools = new Devtools({ 
+        port: port ?? 0,
+        noServer: true,
+      })
       this.globalLogSubscription = attachLogListener((data) => {
         const log = data as { name: string; level: string; msg: string }
         if (log.name === logger.name) {
@@ -160,34 +173,69 @@ export class VitaminApp implements VitaminRuntime {
       })
     }
 
-    const { persistenceMode } = options
-    if (persistenceMode === 'disk') {
-      const { sessionDir } = options
-      this.codingSessionManager = createDiskCodingSessionManager(sessionDir )
-    } else if (persistenceMode === 'remote') {
-      const { sessionUrl } = options
-      this.codingSessionManager = createRemoteCodingSessionManager({ sessionUrl })
-    } else {
-      this.codingSessionManager = createInMemoryCodingSessionManager()
-    }
-
-
     this.settings = new Settings({
       workspaceDir: this.workspaceDir,
     })
-
-    if (persistenceMode === 'disk') {
-
-    }
 
     this.promptManager = new PromptManager()
     this.toolRegistry = new ToolRegistry()
     this.toolRegistry.setBinaryToolExecutors(createBinaryToolExecutorRegistry(this.workspaceDir))
 
     this.resourceManager = resourceManager ?? new DefaultResourceManager({
-      workspaceDir: this.workspaceDir,
-      watch: watchConfig,
-      ...resourceOptions,
+      workspaceDir: this.workspaceDir
+    })
+
+    if (persistenceMode === 'disk') {
+      this.codingSessionManager = createDiskCodingSessionManager({
+        sessionDir: sessionDir ?? '',
+        maxSessions,
+        idleTimeoutMs,
+        threshold,
+      })
+    } else if (persistenceMode === 'remote') {
+
+      this.codingSessionManager = createRemoteCodingSessionManager({ 
+        sessionUrl,
+
+      })
+    } else {
+      this.codingSessionManager = createInMemoryCodingSessionManager()
+    }
+
+
+    this.orchestrator = createOrchestrator({
+      toolRegistry: this.toolRegistry,
+      hookRegistry: this.hookRegistry,
+      logger: this.logger,
+      maxConcurrentTasks: this.maxConcurrentTasks,
+      retryStrategy: retryStrategy ?? createRetryStrategy(retryStrategy),
+      reviewGate: reviewGate ? createReviewGate(reviewGate) : undefined,
+      sessionManager: {
+        createSession: async (options: AgentSessionOptions) => {
+          const agentSession = await this.createSession(options)
+
+          return {
+            id: agentSession.id,
+            get status() { return agentSession.status },
+            prompt: (text: string) => agentSession.prompt(text),
+            abort: () => agentSession.abort(),
+            getLastAssistantText: () => getLastAssistantText(agentSession.session.messages()),
+          }
+        },
+        removeSession: async (id) => this.removeSession(id),
+        getSession: (id) => {
+          const session = this.getSession(id)
+          if (!session) return undefined
+
+          return {
+            id: session.id,
+            get status() { return session.status },
+            prompt: (text: string) => session.prompt(text),
+            abort: () => session.abort(),
+            getLastAssistantText: () => getLastAssistantText(session.session.messages()),
+          }
+        }
+      }
     })
   }
 
@@ -197,20 +245,6 @@ export class VitaminApp implements VitaminRuntime {
 
     this.promptManager.setResources(this.resourceManager.resources ?? null)
 
-    const sessionFactory = this.createSessionFactory()
-    const initialLeadSystemPrompt = this.buildLeadSystemPrompt()
-   
-    this._orchestrator = orchestrator
-
-
-    this.leadSystemPrompt = this.buildLeadSystemPrompt(
-      this._orchestrator.agentRegistry.list(),
-    )
-    this.codingSessionManager.updateDefaults({
-      systemPrompt: this.leadSystemPrompt,
-      tools: this.tools.getAvailable('full') as never,
-    })
-
     if (this.devtools) {
       await this.devtools.start()
     }
@@ -219,21 +253,11 @@ export class VitaminApp implements VitaminRuntime {
   }
 
   async stop() {
-    if (this.hasStopped) return
-
-    if (this._leadSession) {
-      this._leadSession.dispose()
-      this._leadSession = null
-    }
-
-
-    this.leadSystemPrompt = null
-    this._orchestrator = null
-    this.tools.clear()
-    this.codingSessionManager.dispose()
-    this.resource.dispose()
-    this.prompt.setResources(null)
+   
     this.settings.dispose()
+    this.toolRegistry.dispose()
+    this.orchestrator.dispose()
+    this.codingSessionManager.dispose()
 
     if (this.devtools) {
       await this.devtools.stop()
@@ -243,40 +267,7 @@ export class VitaminApp implements VitaminRuntime {
       this.globalLogSubscription = null
     }
 
-    this.hasStopped = true
     this.logger.info('Vitamin app stopped')
-  }
-
-  getDevtools(): Devtools | null {
-    return this.devtools
-  }
-
-  get runtime(): VitaminRuntime {
-    return this
-  }
-
-  get toolRegistry(): ToolRegistry {
-    return this.tools
-  }
-
-  get toolsRegistry(): ToolRegistry {
-    return this.tools
-  }
-
-  get hooksRegistry(): HookRegistry {
-    return this.hooks
-  }
-
-  get settingsManager(): SettingsManager {
-    return this.settings
-  }
-
-  get resourceManager(): ResourceManager {
-    return this.resource
-  }
-
-  get promptManager(): PromptManager {
-    return this.prompt
   }
 
   get config(): Readonly<VitaminConfig> | null {
@@ -284,36 +275,19 @@ export class VitaminApp implements VitaminRuntime {
   }
 
   get resources() {
-    return this.resource.resources ?? null
+    return this.resourceManager.resources ?? null
   }
 
   get sessionManager(): CodingSessionManager {
     return this.codingSessionManager
   }
 
-  get defaultTools(): AgentTool[] | undefined {
-    return this.customTools
-  }
-
-  async createSession(options?: AgentSessionOptions): Promise<AgentSession> {
+  async createSession(options: AgentSessionOptions): Promise<AgentSession> {
     const mergedOptions = { ...options }
-
-    if (!mergedOptions.promptRefreshFn) {
-      let lastVersion = this.tools.version
-      mergedOptions.promptRefreshFn = () => {
-        const currentVersion = this.tools.version
-        if (currentVersion === lastVersion) return undefined
-
-        lastVersion = currentVersion
-        this.leadSystemPrompt = this.buildLeadSystemPrompt(
-          this._orchestrator?.agentRegistry.list() ?? [],
-        )
-        return this.leadSystemPrompt
-      }
-    }
-
     const agentSession = await this.codingSessionManager.createSession(mergedOptions)
+
     this.logger.info('Session created: %s', agentSession.id)
+
     return agentSession
   }
 
@@ -337,10 +311,11 @@ export class VitaminApp implements VitaminRuntime {
     return this.codingSessionManager.forkSession(sourceId, newId)
   }
 
-  async lead(userPrompt: string, options?: LeadRunOptions): Promise<LeadResult> {
-    if (!this._orchestrator || !this.leadSystemPrompt) {
-      throw new Error('VitaminApp.start() must be called before lead()')
-    }
+  async lead(
+    userPrompt: string, 
+    options?: LeadRunOptions
+  ): Promise<LeadResult> {
+    
 
     if (!this._leadSession) {
       const session = await this.createSession()
@@ -348,7 +323,7 @@ export class VitaminApp implements VitaminRuntime {
       this._leadSession = createLeadSession(session, this._orchestrator)
     }
 
-    return this._leadSession.run(userPrompt, options)
+    return this.leadSession.run(userPrompt, options)
   }
 
   getLeadSession(): LeadSession | null {
@@ -357,18 +332,6 @@ export class VitaminApp implements VitaminRuntime {
 
   getLeadSystemPrompt(): string | null {
     return this.leadSystemPrompt
-  }
-
-  async emitBackgroundStart(taskId: string, agentName: string): Promise<void> {
-    await this.hooks.emit('background.start', { taskId, agentName })
-  }
-
-  async emitBackgroundEnd(taskId: string, agentName: string, success: boolean): Promise<void> {
-    await this.hooks.emit('background.end', { taskId, agentName, success })
-  }
-
-  private createSessionFactory(): SessionFactory {
-    return createSessionFactoryAdapter(this)
   }
 
   private buildLeadSystemPrompt(agentSpecs: AgentSpec[] = []): string {
@@ -416,10 +379,9 @@ export class VitaminApp implements VitaminRuntime {
     }
   }
 
-  private createOrchestratorRuntime(
+  private createOrchestrator(
     sessionFactory: SessionFactory,
-    leadSystemPrompt: string,
-    initBag: DeferredInitConfig,
+    leadSystemPrompt: string
   ): {
     agentSpecs: AgentSpec[]
     fallbackAgent: AgentSpec | undefined
@@ -440,17 +402,28 @@ export class VitaminApp implements VitaminRuntime {
 
     const orchestrator = createOrchestrator({
       sessionFactory,
-      toolRegistry: this.tools,
-      hooks: this.hooks,
+      toolRegistry: this.toolRegistry,
+      hookRegistry: this.hookRegistry,
       clarifyChannel,
-      reviewGate: initBag.approver ?? initBag.reviewGate ?? workflowDefaults.approver,
-      retryStrategy: initBag.retryStrategy ?? workflowDefaults.retryStrategy,
+      retryStrategy: this.retryStrategy ?? workflowDefaults.retryStrategy,
       circuitBreaker: initBag.circuitBreaker ?? workflowDefaults.circuitBreaker,
       router: initBag.router ?? workflowDefaults.router,
-      modelSelector: this.createWorkflowSlotModelSelector(config),
       planStore: createLocalPlanStore({ baseDir: join(this.workspaceDir, '.vitamin', 'plans') }),
       agentProfileRegistry: this.createAgentProfileRegistry(),
     })
+
+    // const orchestrator = createOrchestrator({
+    //   sessionFactory,
+    //   toolRegistry: this.tools,
+    //   hooks: this.hooks,
+    //   clarifyChannel,
+    //   reviewGate: initBag.approver ?? initBag.reviewGate ?? workflowDefaults.approver,
+    //   retryStrategy: initBag.retryStrategy ?? workflowDefaults.retryStrategy,
+    //   circuitBreaker: initBag.circuitBreaker ?? workflowDefaults.circuitBreaker,
+    //   router: initBag.router ?? workflowDefaults.router,
+    //   planStore: createLocalPlanStore({ baseDir: join(this.workspaceDir, '.vitamin', 'plans') }),
+    //   agentProfileRegistry: this.createAgentProfileRegistry(),
+    // })
 
     registerAgents(orchestrator.agentRegistry, agentSpecs, fallbackAgent)
     const callbacks = orchestrator.toToolCallbacks()
@@ -467,9 +440,7 @@ export class VitaminApp implements VitaminRuntime {
 
   private compileAgentSpecs(config: VitaminConfig | null): AgentSpec[] {
     const agentsConfig = (config as Record<string, unknown> | null)?.agents as Record<string, Record<string, unknown>> | undefined
-    const disabledAgents = new Set(
-      ((config as Record<string, unknown> | null)?.disabled_agents as string[]) ?? [],
-    )
+    const disabledAgents = new Set(((config as Record<string, unknown> | null)?.disabled_agents as string[]) ?? [])
     if (!agentsConfig) return []
 
     const specs: AgentSpec[] = []
@@ -485,7 +456,6 @@ export class VitaminApp implements VitaminRuntime {
         tools: cfg.tools as string[] | undefined,
         capabilities: cfg.capabilities as string[] | undefined,
         maxToolTurns: cfg.max_tool_turns as number | undefined,
-        modelSlots: cfg.model_slots as Record<string, string> | undefined,
       })
     }
 
@@ -542,21 +512,10 @@ export class VitaminApp implements VitaminRuntime {
     return result
   }
 
-  private createWorkflowSlotModelSelector(config: VitaminConfig | null): ModelSelector {
-    const globalModelSlots = (config as Record<string, unknown> | null)?.model_slots as Record<string, string> | undefined
-    return {
-      selectModel(task: OrchestratorTask, spec: AgentSpec): string | undefined {
-        const slot = task.input.workflowSlot
-        if (!slot) return undefined
-        return spec.modelSlots?.[slot] ?? globalModelSlots?.[slot] ?? undefined
-      },
-    }
-  }
-
 
   private createAgentProfileRegistry() {
     const registry = createAgentProfileRegistry()
-    // 注册 builtin profiles
+
     for (const profile of BUILTIN_AGENT_PROFILES) {
       registry.register(profile)
     }

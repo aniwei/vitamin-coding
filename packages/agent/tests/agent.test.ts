@@ -3,7 +3,6 @@ import { describe, expect, it } from 'vitest'
 import { Agent } from '../src/agent'
 import { createEventStream } from '../../ai/src/index'
 
-import type { AgentEvent } from '../src/types'
 import type { AssistantMessage, Model, StreamContext, StreamEvent, ToolCall } from '../../ai/src/index'
 import type { AgentTool, ToolHookExecutor } from '../src/types'
 
@@ -110,15 +109,23 @@ describe('Agent', () => {
 
   describe('#given an idle agent', () => {
     describe('#when abort() is called from idle', () => {
-      it('#then emits abort event and transitions to aborted', () => {
+      it('#then emits aborted notification and transitions to aborted', () => {
         const agent = new Agent()
 
-        const events: AgentEvent[] = []
-        agent.on((e) => events.push(e))
+        const statusChanges: Array<{ from: string; to: string }> = []
+        let abortedCount = 0
+
+        agent.on('status_change', (event) => {
+          statusChanges.push(event as { from: string; to: string })
+        })
+        agent.on('aborted', () => {
+          abortedCount++
+        })
 
         agent.abort()
-        expect(events.some((e) => e.type === 'abort')).toBe(true)
-        expect(events.some((e) => e.type === 'status_change')).toBe(true)
+
+        expect(abortedCount).toBe(1)
+        expect(statusChanges).toContainEqual({ from: 'idle', to: 'aborted' })
         expect(agent.status).toBe('aborted')
       })
     })
@@ -141,17 +148,43 @@ describe('Agent', () => {
     describe('#when on() unsubscribe is called', () => {
       it('#then listener no longer receives events', () => {
         const agent = new Agent()
-        const events: AgentEvent[] = []
-        const unsub = agent.on((e) => events.push(e))
+        let abortedCount = 0
+        const unsub = agent.on('aborted', () => {
+          abortedCount++
+        })
 
         agent.abort()
-        const countBefore = events.length
-        expect(countBefore).toBeGreaterThan(0)
+        expect(abortedCount).toBe(1)
 
         unsub()
-        // unsub 后再触发 abort，events 不应增长
         agent.abort()
-        expect(events).toHaveLength(countBefore)
+        expect(abortedCount).toBe(1)
+      })
+    })
+  })
+
+  describe('#given a successful run', () => {
+    describe('#when the stream returns a final assistant message', () => {
+      it('#then tracks status, turn count, and token usage from the loop', async () => {
+        const agent = new Agent({
+          stream: makeStream([
+            makeAssistantMessage([{ type: 'text', text: 'done' }], 'end_turn'),
+          ]),
+        })
+
+        const messages = [{ role: 'user' as const, content: 'start', timestamp: Date.now() }]
+
+        const result = await agent.run({
+          model: makeModel(),
+          systemPrompt: 'test',
+          tools: [],
+          messages,
+        })
+
+        expect(result.content[0]).toEqual({ type: 'text', text: 'done' })
+        expect(agent.status).toBe('completed')
+        expect(agent.turnCount).toBe(1)
+        expect(agent.getState().tokenUsage).toEqual({ input: 10, output: 5, cacheRead: 0 })
       })
     })
   })

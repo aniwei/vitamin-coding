@@ -22,6 +22,7 @@
     "generate:models": "tsx scripts/generate-models.ts"
   },
   "dependencies": {
+    "@vitamin/config": "workspace:*",
     "@vitamin/env": "workspace:*",
     "@vitamin/shared": "workspace:*",
     "eventsource-parser": "^3.0.6",

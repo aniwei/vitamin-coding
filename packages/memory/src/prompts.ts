@@ -90,12 +90,10 @@ export function buildSummarizationPrompt(
   return parts.join('\n')
 }
 
-// 构建 turn prefix 摘要 prompt
 export function buildTurnPrefixPrompt(turnPrefixMessages: string): string {
   return `${TURN_PREFIX_SUMMARIZATION_PROMPT}\n\n<turn_prefix>\n${turnPrefixMessages}\n</turn_prefix>`
 }
 
-// L1 Persistent Memory 的 system prompt 注入模板
 export function buildMemoryInjection(memories: Map<string, string>): string {
   if (memories.size === 0) return ''
 
@@ -113,7 +111,7 @@ export function buildMemoryInjection(memories: Map<string, string>): string {
 
   parts.push('')
   parts.push(`<memory_guidelines>
-When you learn something from this interaction that should be remembered, use the edit_file tool to write it back to the appropriate AGENTS.md file.
+When you learn something from this interaction that should be remembered, use the edit or write tool to save it back to the appropriate AGENTS.md file.
 
 **Should remember**:
 - User-specified preferences and constraints
@@ -133,7 +131,7 @@ When you learn something from this interaction that should be remembered, use th
 
 // 归档摘要消息模板
 export function buildArchiveReference(archivePath: string, summary: string): string {
-  return `This conversation has been summarized. Full history is archived at ${archivePath} and can be accessed via the read_file tool if you need detailed context.
+  return `This conversation has been summarized. Full history is archived at ${archivePath} and can be accessed via the read tool if you need detailed context.
 
 <summary>
 ${summary}

@@ -70,6 +70,10 @@ export class BinaryToolExecutorRegistry {
 
 		return binary
 	}
+
+	dispose(): void {
+		this.binaries.clear()
+	}
 }
 
 export const createBinaryToolExecutorRegistry = (projectRoot: string): BinaryToolExecutorRegistry => {

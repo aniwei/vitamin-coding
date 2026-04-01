@@ -41,9 +41,9 @@ export class InMemorySession<T = unknown> implements Session<T> {
       message,
       timestamp: Date.now(),
     }
+    this._leafId = entry.id
     this.sessionEntries.push(entry)
     this.entryMap.set(entry.id, entry)
-    this._leafId = entry.id
     this.meta.messageCount++
     this.meta.lastActiveAt = Date.now()
   }
@@ -62,11 +62,12 @@ export class InMemorySession<T = unknown> implements Session<T> {
       compactedCount,
       timestamp: Date.now(),
     }
+
     this.sessionEntries.push(entry)
     this.entryMap.set(entry.id, entry)
-    this._leafId = entry.id
     this.meta.compactionCount++
     this.meta.lastActiveAt = Date.now()
+    this._leafId = entry.id
   }
 
   branch(entryId: string): void {
@@ -99,9 +100,7 @@ export class InMemorySession<T = unknown> implements Session<T> {
 
     if (lastCompactionIndex === -1) {
       return {
-        messages: branch
-          .filter((e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message')
-          .map((e) => e.message),
+        messages: branch.filter((e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message').map((e) => e.message),
       }
     }
 
@@ -154,8 +153,11 @@ export class InMemorySession<T = unknown> implements Session<T> {
       this.entryMap.set(entry.id, entry)
     }
     Object.assign(this.meta, meta)
-
-    this._leafId = restoredLeafId ?? (entries.length > 0 ? entries[entries.length - 1]!.id : undefined)
+    this._leafId = restoredLeafId ?? (
+      entries.length > 0 
+        ? entries[entries.length - 1]!.id 
+        : undefined
+    )
   }
 
   // 导出快照

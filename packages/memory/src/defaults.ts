@@ -1,15 +1,31 @@
-// @vitamin/memory — Model-Aware 默认配置
+import type { 
+  MemoryDefaults, 
+  CompactionConfig, 
+  PruneConfig 
+} from './types'
+import {
+  MEMORY_COMPACTION_TRIGGER_FRACTION,
+  MEMORY_COMPACTION_KEEP_RECENT_FRACTION,
+  MEMORY_COMPACTION_RESERVE_TOKENS,
+  MEMORY_PRUNE_TRIGGER_FRACTION,
+  MEMORY_PRUNE_PROTECT_FRACTION,
+  MEMORY_PRUNE_MINIMUM_TOKENS,
+  MEMORY_PRUNE_TRUNCATE_MAX_LENGTH,
+  MEMORY_TOOL_WRITE,
+  MEMORY_TOOL_EDIT,
+  MEMORY_TOOL_APPLY_PATCH,
+  MEMORY_TOOL_CREATE_FILE,
+  MEMORY_TOOL_EDIT_NOTEBOOK_FILE,
+} from '@vitamin/env'
 
-import type { MemoryDefaults, CompactionConfig, PruneConfig } from './types'
+const defaultTruncateTools = [
+  MEMORY_TOOL_WRITE,
+  MEMORY_TOOL_EDIT,
+  MEMORY_TOOL_APPLY_PATCH,
+  MEMORY_TOOL_CREATE_FILE,
+  MEMORY_TOOL_EDIT_NOTEBOOK_FILE,
+] as const
 
-/**
- * 根据模型参数计算合理的默认配置。
- * 
- * 设计原则:
- * - prune 先于 compaction 触发（70% vs 85%），prune 是无 LLM 成本的轻量操作
- * - keepRecent 保留 10% 最近消息，protect 保护 15% 近期 tool 输出
- * - reserveTokens 不超过模型 maxOutput（为生成回复预留空间）
- */
 export function computeMemoryDefaults(model: {
   contextWindow: number
   maxOutput: number
@@ -17,45 +33,37 @@ export function computeMemoryDefaults(model: {
   return {
     compaction: {
       enabled: true,
-      trigger: ['fraction', 0.85],
-      keepRecent: ['fraction', 0.10],
-      reserveTokens: Math.min(16384, model.maxOutput),
+      trigger: ['fraction', MEMORY_COMPACTION_TRIGGER_FRACTION],
+      keepRecent: ['fraction', MEMORY_COMPACTION_KEEP_RECENT_FRACTION],
+      reserveTokens: Math.min(MEMORY_COMPACTION_RESERVE_TOKENS, model.maxOutput),
     },
     prune: {
-      trigger: ['fraction', 0.70],
-      protect: ['fraction', 0.15],
-      minimum: 20000,
+      trigger: ['fraction', MEMORY_PRUNE_TRIGGER_FRACTION],
+      protect: ['fraction', MEMORY_PRUNE_PROTECT_FRACTION],
+      minimum: MEMORY_PRUNE_MINIMUM_TOKENS,
       protectedTools: [],
-      truncateTools: ['write_file', 'edit_file', 'create_file', 'replace_string_in_file'],
-      truncateMaxLength: 2000,
+      truncateTools: [...defaultTruncateTools],
+      truncateMaxLength: MEMORY_PRUNE_TRUNCATE_MAX_LENGTH,
     },
   }
 }
 
-/** 默认配置（200k 上下文窗口, 16k 输出） */
 export const DEFAULT_COMPACTION_CONFIG: CompactionConfig = {
   enabled: true,
-  trigger: ['fraction', 0.85],
-  keepRecent: ['fraction', 0.10],
-  reserveTokens: 16384,
+  trigger: ['fraction', MEMORY_COMPACTION_TRIGGER_FRACTION],
+  keepRecent: ['fraction', MEMORY_COMPACTION_KEEP_RECENT_FRACTION],
+  reserveTokens: MEMORY_COMPACTION_RESERVE_TOKENS,
 }
 
 export const DEFAULT_PRUNE_CONFIG: PruneConfig = {
-  trigger: ['fraction', 0.70],
-  protect: ['fraction', 0.15],
-  minimum: 20000,
+  trigger: ['fraction', MEMORY_PRUNE_TRIGGER_FRACTION],
+  protect: ['fraction', MEMORY_PRUNE_PROTECT_FRACTION],
+  minimum: MEMORY_PRUNE_MINIMUM_TOKENS,
   protectedTools: [],
-  truncateTools: ['write_file', 'edit_file', 'create_file', 'replace_string_in_file'],
-  truncateMaxLength: 2000,
+  truncateTools: [...defaultTruncateTools],
+  truncateMaxLength: MEMORY_PRUNE_TRUNCATE_MAX_LENGTH,
 }
 
-/**
- * 将 ContextSize 解析为绝对 token 数。
- * 
- * @param size - ContextSize 配置
- * @param contextWindow - 模型上下文窗口总量
- * @param messages - 当前消息列表（用于 'messages' 模式）
- */
 export function resolveContextSize(
   size: import('./types').ContextSize,
   contextWindow: number,
@@ -67,6 +75,6 @@ export function resolveContextSize(
     case 'fraction':
       return Math.floor(contextWindow * value)
     case 'messages':
-      return value // 由调用方按消息数处理
+      return value 
   }
 }

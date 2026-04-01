@@ -4,7 +4,12 @@ import { createLogger } from '@vitamin/shared'
 import { messageToText } from './token-estimator'
 
 import type { Message } from '@vitamin/ai'
-import type { ArchiveStorage, ArchiveEntry, StorageType } from './types'
+import type { 
+  ArchiveStorage, 
+  ArchiveEntry, 
+  StorageType, 
+  StorageOptions
+} from './types'
 
 const logger = createLogger('@vitamin/memory:archive')
 
@@ -28,8 +33,8 @@ export class InMemoryArchiveStorage implements ArchiveStorage {
       entry: {
         path,
         timestamp,
-        messageCount: messages.length,
         summary: summary.slice(0, 200),
+        messageCount: messages.length,
       },
     })
 
@@ -54,21 +59,25 @@ export class InMemoryArchiveStorage implements ArchiveStorage {
 }
 
 export class LocalArchiveStorage implements ArchiveStorage {
-  readonly type: StorageType = 'local'
+  readonly type: StorageType = 'file'
 
   constructor(private readonly baseDir: string) {}
 
-  async archive(sessionId: string, messages: Message[], summary: string): Promise<string> {
+  async archive(
+    sessionId: string, 
+    messages: Message[], 
+    summary: string
+  ): Promise<string> {
     const timestamp = Date.now()
     const dir = join(this.baseDir, sessionId)
     const filename = `compaction-${timestamp}.md`
-    const filePath = join(dir, filename)
+    const path = join(dir, filename)
 
     await mkdir(dir, { recursive: true })
-    await writeFile(filePath, formatArchive(messages, summary, timestamp), 'utf-8')
+    await writeFile(path, formatArchive(messages, summary, timestamp), 'utf-8')
 
-    logger.info(`Archived ${messages.length} messages → ${filePath}`)
-    return filePath
+    logger.info(`Archived ${messages.length} messages → ${path}`)
+    return path
   }
 
   async read(archivePath: string): Promise<string> {
@@ -89,13 +98,13 @@ export class LocalArchiveStorage implements ArchiveStorage {
     for (const file of files) {
       if (!file.startsWith('compaction-') || !file.endsWith('.md')) continue
 
-      const filePath = join(dir, file)
-      const fileStat = await stat(filePath)
+      const path = join(dir, file)
+      const fileStat = await stat(path)
       const timestampMatch = file.match(/compaction-(\d+)\.md/)
       const timestamp = timestampMatch ? Number(timestampMatch[1]) : fileStat.mtimeMs
 
       entries.push({
-        path: filePath,
+        path,
         timestamp,
         messageCount: 0, // 需要读取文件才能知道
         summary: '',
@@ -106,8 +115,8 @@ export class LocalArchiveStorage implements ArchiveStorage {
   }
 }
 
-export class RemoteArchiveStorage implements ArchiveStorage {
-  readonly type: StorageType = 'remote'
+export class HttpArchiveStorage implements ArchiveStorage {
+  readonly type: StorageType = 'http'
 
   constructor(private readonly options: {
     baseUrl: string
@@ -171,26 +180,28 @@ export class RemoteArchiveStorage implements ArchiveStorage {
   }
 }
 
-export function createArchiveStorage(config: import('./types').StorageConfig): ArchiveStorage {
-  switch (config.type) {
-    case 'local': {
-      const baseDir = config.baseDir ?? `${process.env['VITAMIN_HOME'] ?? `${process.env['HOME']}/.vitamin`}/agent/archives`
+export function createArchiveStorage(options: StorageOptions): ArchiveStorage {
+  switch (options.type) {
+    case 'file': {
+      const baseDir = options.baseDir ?? `${process.env['VITAMIN_HOME'] ?? `${process.env['HOME']}/.vitamin`}/agent/archives`
       return new LocalArchiveStorage(baseDir)
     }
 
-    case 'remote':
-      return new RemoteArchiveStorage({
-        baseUrl: config.baseUrl,
-        getAuth: config.getAuth,
-        timeout: config.timeoutMs,
-        fetch: config.fetch,
+    case 'http':
+      return new HttpArchiveStorage({
+        baseUrl: options.baseUrl,
+        getAuth: options.getAuth,
+        timeout: options.timeoutMs,
+        fetch: options.fetch,
       })
     case 'memory':
       return new InMemoryArchiveStorage()
+    default:
+      throw new Error(`Unsupported archive storage type: ${String((options as { type: string }).type)}`)
   }
 }
 
-function formatArchive(messages: Message[], summary: string, timestamp: number): string {
+export function formatArchive(messages: Message[], summary: string, timestamp: number): string {
   const date = new Date(timestamp).toISOString()
   const parts: string[] = [
     `## Compacted at ${date}`,

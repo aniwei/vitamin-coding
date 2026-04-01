@@ -1,9 +1,5 @@
-// @vitamin/memory — 多层记忆管理系统
-
-// ── MemoryManager（统一入口）──
 export { MemoryManager, createMemoryManager } from './memory-manager'
 
-// ── L1 Persistent Memory ──
 export {
   PersistentMemory,
   FileSystemMemoryStore,
@@ -11,10 +7,8 @@ export {
   DEFAULT_MEMORY_SOURCES,
 } from './persistent-memory'
 
-// ── L2 Prune ──
 export { prune } from './prune'
 
-// ── L2 Compaction ──
 export {
   findCutPoint,
   needsCompaction,
@@ -23,15 +17,21 @@ export {
   compact,
 } from './compaction'
 
-// ── L3 Archive ──
+
 export {
   InMemoryArchiveStorage,
   LocalArchiveStorage,
-  RemoteArchiveStorage,
+  HttpArchiveStorage,
   createArchiveStorage,
+  formatArchive,
 } from './archive'
 
-// ── Defaults ──
+export {
+  PersistenceBackedArchiveStorage,
+  createPersistenceArchiveStorage,
+} from './persistence-archive-storage'
+export type { ArchiveRecord } from './persistence-archive-storage'
+
 export {
   computeMemoryDefaults,
   resolveContextSize,
@@ -39,7 +39,6 @@ export {
   DEFAULT_PRUNE_CONFIG,
 } from './defaults'
 
-// ── Token 估算 ──
 export {
   estimateTokens,
   estimateMessageTokens,
@@ -49,7 +48,6 @@ export {
   messageToText,
 } from './token-estimator'
 
-// ── Prompts ──
 export {
   SUMMARIZATION_PROMPT,
   UPDATE_SUMMARIZATION_PROMPT,
@@ -60,7 +58,6 @@ export {
   buildArchiveReference,
 } from './prompts'
 
-// ── Types ──
 export type {
   ContextSize,
   StorageType,
@@ -78,8 +75,8 @@ export type {
   MemoryManagerConfig,
   MemoryDefaults,
   StorageProvider,
-  StorageConfig,
-  LocalStorageConfig,
-  RemoteStorageConfig,
-  MemoryStorageConfig,
+  StorageOptions,
+  FileStorageOptions,
+  HttpStorageOptions,
+  MemoryStorageOptions,
 } from './types'

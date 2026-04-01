@@ -34,18 +34,12 @@ import {
   type ClarifyRequest,
 } from './orchestration/clarify-request'
 
-// Plan
-import { createPlanCreate, type PlanCreate } from './orchestration/plan-create'
-import { createPlanGet, type PlanGet } from './orchestration/plan-get'
-import { createPlanList, type PlanList } from './orchestration/plan-list'
-import { createPlanUpdate, type PlanUpdate } from './orchestration/plan-update'
-
 // LSP
-import { createLspDefinition } from './lsp/definition'
-import { createLspReferences } from './lsp/references'
-import { createLspSymbols } from './lsp/symbols'
-import { createLspDiagnostics } from './lsp/diagnostics'
-import { createLspPrepareRename, createLspRename } from './lsp/rename'
+// import { createLspDefinition } from './lsp/definition'
+// import { createLspReferences } from './lsp/references'
+// import { createLspSymbols } from './lsp/symbols'
+// import { createLspDiagnostics } from './lsp/diagnostics'
+// import { createLspPrepareRename, createLspRename } from './lsp/rename'
 
 // Session
 import { createSessionManager, type SessionManager } from './session/session-manager'
@@ -57,27 +51,21 @@ import { createSkillExecute, type ExecuteSkill } from './skill/skill-execute'
 import type { ToolRegistry } from './tool-registry'
 
 export interface RegisterBuiltinOptions {
-  // 必填回调
-  dispatchTask: TaskDispatch
   callAgent: CallAgent
+
   loadSkill: LoadSkill
   executeSkill: ExecuteSkill
-  // 可选回调
+  
+  dispatchTask: TaskDispatch
   createTask?: CreateTask
   getTask?: GetTask
   listTasks?: ListTasks
   updateTask?: UpdateTask
+
   getBackgroundOutput?: GetBackgroundOutput
   cancelBackground?: CancelBackground
   clarifyRequest?: ClarifyRequest
   sessionManager?: SessionManager
-  // Plan 回调
-  planCreate?: PlanCreate
-  planGet?: PlanGet
-  planList?: PlanList
-  planUpdate?: PlanUpdate
-  // 功能开关
-  enableLsp?: boolean
 }
 
 // 注册所有内置工具 (minimal + standard + full 预设)
@@ -115,27 +103,19 @@ export function registerBuiltinTools(
     createTaskDelegate(projectRoot, options.dispatchTask),
   ], { preset: 'standard', category: 'orchestration', builtin: true })
 
-  // Plan 工具（需注入 plan 回调）
-  if (options.planCreate && options.planGet && options.planList && options.planUpdate) {
-    registry.register([
-      createPlanCreate(projectRoot, options.planCreate),
-      createPlanGet(projectRoot, options.planGet),
-      createPlanList(projectRoot, options.planList),
-      createPlanUpdate(projectRoot, options.planUpdate),
-    ], { preset: 'standard', category: 'orchestration', builtin: true })
-  }
+
 
   // LSP 工具（opt-in，需要 enableLsp: true）
-  if (options.enableLsp) {
-    registry.register([
-      createLspDefinition(projectRoot),
-      createLspReferences(projectRoot),
-      createLspSymbols(projectRoot),
-      createLspDiagnostics(projectRoot),
-      createLspPrepareRename(projectRoot),
-      createLspRename(projectRoot),
-    ], { preset: 'standard', category: 'lsp', builtin: true })
-  }
+  // if (options.enableLsp) {
+  //   registry.register([
+  //     createLspDefinition(projectRoot),
+  //     createLspReferences(projectRoot),
+  //     createLspSymbols(projectRoot),
+  //     createLspDiagnostics(projectRoot),
+  //     createLspPrepareRename(projectRoot),
+  //     createLspRename(projectRoot),
+  //   ], { preset: 'standard', category: 'lsp', builtin: true })
+  // }
 
   /// full
   // 编排工具

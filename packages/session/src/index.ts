@@ -8,14 +8,24 @@ export {
 } from './store'
 
 export {
+  FileSessionPersistence,
+  createFileSessionPersistence,
   DiskSessionPersistence,
   createDiskSessionPersistence,
-} from './disk-persistence'
-export type { DiskSessionPersistenceOptions } from './disk-persistence'
+} from './file-persistence'
+export type {
+  FileSessionPersistenceOptions,
+  DiskSessionPersistenceOptions,
+} from './file-persistence'
+
+export {
+  HttpSessionPersistence,
+  RemotePersistenceError,
+} from './http-persistence'
+export type { HttpSessionPersistenceOptions } from './http-persistence'
 
 export {
   RemoteSessionPersistence,
-  RemotePersistenceError,
 } from './remote-persistence'
 export type { RemoteSessionPersistenceOptions } from './remote-persistence'
 
@@ -24,13 +34,12 @@ export {
   createInMemorySessionManager,
   createDiskSessionManager,
   createRemoteSessionManager,
-  createSessionManager,
 } from './session-manager'
+export type { CreateSessionManagerOptions } from './session-manager'
 
 export { 
-  
   createSessionStorage 
-} from './storage'
+} from './storage-factory'
 
 export type { 
   Session,

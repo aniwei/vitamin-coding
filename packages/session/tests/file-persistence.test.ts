@@ -2,15 +2,15 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { FileSessionPersistence, createFileSessionPersistence } from '../src/file-persistence'
+import { DiskSessionPersistence, createDiskSessionPersistence } from '../src/disk-persistence'
 
-describe('FileSessionPersistence', () => {
+describe('DiskSessionPersistence', () => {
   let tempDir: string
-  let persistence: FileSessionPersistence<string>
+  let persistence: DiskSessionPersistence<string>
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'vitamin-session-test-'))
-    persistence = new FileSessionPersistence<string>({ directory: tempDir })
+    persistence = new DiskSessionPersistence<string>({ baseDir: tempDir })
   })
 
   afterEach(async () => {
@@ -38,9 +38,9 @@ describe('FileSessionPersistence', () => {
 
       const loaded = await persistence.load('test-session')
       expect(loaded).not.toBeNull()
-      expect(loaded!.id).toBe('test-session')
-      expect(loaded!.entries).toHaveLength(2)
-      expect(loaded!.metadata.tags).toEqual(['test'])
+      expect(loaded?.id).toBe('test-session')
+      expect(loaded?.entries).toHaveLength(2)
+      expect(loaded?.metadata.tags).toEqual(['test'])
     })
   })
 
@@ -66,10 +66,10 @@ describe('FileSessionPersistence', () => {
   describe('#when deleting', () => {
     it('#then removes the persisted session', async () => {
       await persistence.save({ version: 1, id: 'del-me', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
-      
+
       const deleted = await persistence.delete('del-me')
       expect(deleted).toBe(true)
-      
+
       const loaded = await persistence.load('del-me')
       expect(loaded).toBeNull()
     })
@@ -80,17 +80,20 @@ describe('FileSessionPersistence', () => {
   })
 
   describe('#when id contains path traversal characters', () => {
-    it('#then sanitizes the filename', async () => {
+    it('#then round-trips the id safely', async () => {
       await persistence.save({ version: 1, id: '../evil', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
-      // Should save to safe filename, not traverse
+
       const ids = await persistence.list()
       expect(ids).toHaveLength(1)
-      expect(ids[0]).not.toContain('/')
+      expect(ids[0]).toBe('../evil')
+
+      const loaded = await persistence.load('../evil')
+      expect(loaded?.id).toBe('../evil')
     })
   })
 
   describe('#when loading preserves all snapshot fields', () => {
-    it('#then version, leafId, entry id/parentId are preserved', async () => {
+    it('#then version, leafId, entry id and parentId are preserved', async () => {
       await persistence.save({
         version: 1,
         id: 'full-snap',
@@ -105,34 +108,35 @@ describe('FileSessionPersistence', () => {
 
       const loaded = await persistence.load('full-snap')
       expect(loaded).not.toBeNull()
-      expect(loaded!.version).toBe(1)
-      expect(loaded!.leafId).toBe('e3')
-      expect(loaded!.entries[0].id).toBe('e1')
-      expect(loaded!.entries[0].parentId).toBeUndefined()
-      expect(loaded!.entries[1].id).toBe('e2')
-      expect(loaded!.entries[1].parentId).toBe('e1')
-      expect(loaded!.entries[2].type).toBe('compaction')
-      expect(loaded!.entries[2].id).toBe('e3')
+      expect(loaded?.version).toBe(1)
+      expect(loaded?.leafId).toBe('e3')
+      expect(loaded?.entries[0]?.id).toBe('e1')
+      expect(loaded?.entries[0]?.parentId).toBeUndefined()
+      expect(loaded?.entries[1]?.id).toBe('e2')
+      expect(loaded?.entries[1]?.parentId).toBe('e1')
+      expect(loaded?.entries[2]?.type).toBe('compaction')
+      expect(loaded?.entries[2]?.id).toBe('e3')
     })
   })
 
-  describe('#createFileSessionPersistence factory', () => {
+  describe('#createDiskSessionPersistence factory', () => {
     it('#then returns working persistence', async () => {
-      const p = createFileSessionPersistence<string>({ directory: tempDir })
-      await p.save({ version: 1, id: 'factory-test', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
-      const ids = await p.list()
+      const persistenceFromFactory = createDiskSessionPersistence<string>({ baseDir: tempDir })
+      await persistenceFromFactory.save({ version: 1, id: 'factory-test', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
+
+      const ids = await persistenceFromFactory.list()
       expect(ids).toContain('factory-test')
     })
   })
 })
 
-describe('FileSessionPersistence#listPaginated', () => {
+describe('DiskSessionPersistence#listPaginated', () => {
   let tempDir: string
-  let persistence: FileSessionPersistence<string>
+  let persistence: DiskSessionPersistence<string>
 
   beforeEach(async () => {
     tempDir = await mkdtemp(join(tmpdir(), 'vitamin-session-page-'))
-    persistence = new FileSessionPersistence<string>({ directory: tempDir })
+    persistence = new DiskSessionPersistence<string>({ baseDir: tempDir })
   })
 
   afterEach(async () => {
@@ -140,7 +144,6 @@ describe('FileSessionPersistence#listPaginated', () => {
   })
 
   it('#then paginates file-based session list', async () => {
-    // 创建 5 个 session 文件
     for (let i = 0; i < 5; i++) {
       await persistence.save({
         version: 1,
@@ -154,8 +157,8 @@ describe('FileSessionPersistence#listPaginated', () => {
           tags: [],
         },
       })
-      // 微小延迟确保不同的 mtime
-      await new Promise(r => setTimeout(r, 10))
+
+      await new Promise((resolve) => setTimeout(resolve, 10))
     }
 
     const page0 = await persistence.listPaginated({ page: 0, pageSize: 2 })

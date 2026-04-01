@@ -164,6 +164,14 @@ export class ToolRegistry {
       this._version++
     }
   }
+
+  dispose(): void {
+    this.clear()
+    if (this.binaryToolExecutors) {
+      this.binaryToolExecutors.dispose()
+      this.binaryToolExecutors = null
+    }
+  }
 }
 
 export const createToolRegistry = (

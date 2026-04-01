@@ -10,23 +10,12 @@ import type { Message, Model, ThinkingLevel, Usage } from '@vitamin/ai'
 import type { Devtools } from '@vitamin/devtools'
 import type { Events } from '@vitamin/shared'
 import type { Logger } from '@vitamin/shared'
-import type { PromptOptions } from './types'
+import type { 
+  AgentSessionOptions, 
+  PromptRefresh, 
+  PromptOptions 
+} from './types'
 
-
-
-export interface AgentSessionOptions {
-  model: Model
-  systemPrompt: string
-  hookRegistry: HookRegistry
-  tools: AgentTool[]
-  thinkingLevel: ThinkingLevel
-  maxToolTurns: number
-  // agentName: string // TODO
-  workspaceDir: string
-  logger: Logger
-  devtools?: Devtools
-  promptRefresh: () => string | undefined
-}
 
 interface AgentSessionEvents extends Events {
   session_start: (sessionId: string) => void
@@ -37,24 +26,35 @@ interface AgentSessionEvents extends Events {
 }
 
 export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
-  readonly id: string
   readonly session: Session<AgentMessage>
-  readonly workspaceDir?: string
+  readonly workspaceDir: string
 
   private agent: Agent
   private disposed = false
 
-  // Session 级别的运行时配置
-  private model: Model
-  private tools: AgentTool[]
-  private systemPrompt: string
-  private hookRegistry: HookRegistry
-  private agentName: string
-  private maxToolTurns: number
-  private thinkingLevel: ThinkingLevel
-  private promptRefresh: () => string | undefined
+  public model: Model
+  public tools: AgentTool[]
+  public systemPrompt: string
+  public agentName: string
+  public maxToolTurns: number
+  public thinkingLevel: ThinkingLevel
+  public promptRefresh: PromptRefresh
+
   private logger: Logger
   private devtools?: Devtools
+  private hookRegistry: HookRegistry
+
+  public get id(): string {
+    return this.session.id
+  }
+
+  get status(): string {
+    return this.agent.status
+  }
+
+  get isExecuting(): boolean {
+    return this.agent.status === 'streaming' || this.agent.status === 'tool_executing'
+  }
 
   constructor(
     session: Session<AgentMessage>,
@@ -62,7 +62,6 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     options: AgentSessionOptions,
   ) {
     super()
-    this.id = session.id
     this.session = session
     this.agent = agent
 
@@ -95,39 +94,30 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     this.logger.info('Session %s initialized with model %s', this.id, this.model.id)
   }
 
-  get status(): string {
-    return this.agent.status
-  }
-
   async prompt(
     text: string,
     options?: PromptOptions,
   ): Promise<void> {
     this.ensureNotDisposed()
-
-    if (
-      this.agent.status === 'streaming' || 
-      this.agent.status === 'tool_executing'
-    ) {
-      if (options?.streamingBehavior === 'followUp') {
+    
+    if (this.isExecuting) {
+      const { streamingBehavior } = options ?? {}
+      if (streamingBehavior === 'followUp') {
         this.followUp(text)
-        return
-      } else if (options?.streamingBehavior === 'steer') {
+      } else if (streamingBehavior === 'steer') {
         this.steer(text)
-        return
       } else {
         throw new Error('Agent is processing. Specify streamingBehavior ("steer" or "followUp") to queue the message.')
       }
-    }
+    } else {
+      this.emit('prompt_start', this.id, text)
+      this.logger.info('Session %s prompt started', this.id)
 
-    this.emit('prompt_start', this.id, text)
-    this.logger.info('Session %s prompt started', this.id)
-
-    // 如果工具/agent 集变化，按需刷新 system prompt
-    if (this.promptRefresh) {
-      const refreshed = this.promptRefresh()
-      if (refreshed !== undefined) {
-        this.systemPrompt = refreshed
+      if (this.promptRefresh) {
+        const refreshed = await this.promptRefresh()
+        if (refreshed !== undefined) {
+          this.systemPrompt = refreshed
+        }
       }
     }
 
@@ -176,7 +166,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     const ctx = this.session.buildContext()
     const messages: AgentMessage[] = []
 
-    this.logger?.info(
+    this.logger.info(
       'Session %s context built with %d message(s)%s',
       this.id,
       ctx.messages.length,
@@ -281,7 +271,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
 
       // 4. 将 workLoop 追加的新消息持久化回 Session
       this.persistNewMessages(messages, messagesBefore)
-      this.logPromptUsage(messages.slice(messagesBefore))
+      this.promptUsage(messages.slice(messagesBefore))
 
       invariant(() => {
         this.devtools?.debugger.pause({
@@ -312,7 +302,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
       }, `Prompt after: ${this.id}`)
 
       this.emit('prompt_end', this.id)
-      this.logger?.info('Session %s prompt finished', this.id)
+      this.logger.info('Session %s prompt finished', this.id)
     } catch (error) {
       this.persistNewMessages(messages, messagesBefore)
       const err = error instanceof Error ? error : new Error(String(error))
@@ -324,7 +314,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
       })
 
       this.emit('error', this.id, err)
-      this.logger?.error('Session %s prompt failed: %s', this.id, err.message)
+      this.logger.error('Session %s prompt failed: %s', this.id, err.message)
       throw error
     } finally {
       unsubStream()
@@ -346,13 +336,11 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
   followUp(text: string): void {
     this.ensureNotDisposed()
 
-    const message: Message = {
+    this.agent.followUp({
       role: 'user',
       timestamp: Date.now(),
       content: [{ type: 'text', text }],
-    }
-
-    this.agent.followUp(message)
+    })
   }
 
   abort(): void {
@@ -374,21 +362,13 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     this.session.compact(summary, compactedCount)
 
     const retainedCount = this.session.messages().length
+
     await this.hookRegistry.emit('compaction.after', { 
       sessionId: this.id, 
       retainedCount 
     })
 
     this.logger.info('Session %s compaction finished, retained %d message(s)', this.id, retainedCount)
-  }
-
-  dispose(): void {
-    if (this.disposed) return
-    this.disposed = true
-    this.agent.abort()
-
-    this.emit('session_end', this.id)
-    this.logger.info('Session %s disposed', this.id)
   }
 
   private persistNewMessages(messages: AgentMessage[], startIndex: number): void {
@@ -398,8 +378,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     }
   }
 
-  // TODO
-  private logPromptUsage(newMessages: AgentMessage[]): void {
+  private promptUsage(newMessages: AgentMessage[]): void {
     const usage = this.collectUsage(newMessages)
     if (!usage) {
       return
@@ -449,5 +428,14 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     if (this.disposed) {
       throw new Error(`AgentSession ${this.id} has been disposed`)
     }
+  }
+
+  dispose(): void {
+    if (this.disposed) return
+    this.disposed = true
+    this.agent.abort()
+
+    this.emit('session_end', this.id)
+    this.logger.info('Session %s disposed', this.id)
   }
 }

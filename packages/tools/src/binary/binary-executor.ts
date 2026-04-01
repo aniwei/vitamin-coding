@@ -19,8 +19,8 @@ import {
   type SpawnOptionsWithoutStdio 
 } from 'node:child_process'
 import { 
-  getThirdPartyToolPath,
-  getThirdPartyToolBinaryPath,
+  getThirdPartyToolDir,
+  getThirdPartyToolBinaryDir,
   createLogger
 } from '@vitamin/shared'
 import { 
@@ -64,7 +64,7 @@ async function tryResolveExecutablePath(
   target: string = toolName
 ): Promise<string | null> {
   const ext = os.platform() === 'win32' ? '.exe' : ''
-  const toolPath = getThirdPartyToolBinaryPath(target, toolName) + ext
+  const toolPath = getThirdPartyToolBinaryDir(target, toolName) + ext
 
   try {
     if (existsSync((toolPath))) return toolPath
@@ -85,7 +85,7 @@ async function tryDownloadAndExtract(
   url: string
 ) {
   const platform = os.platform()
-  const toolsDir = getThirdPartyToolPath()
+  const toolsDir = getThirdPartyToolDir()
   const archivePath = resolve(toolsDir, `${cacheDir}.download`)
 
   const filename = name + (platform === 'win32' ? '.exe' : '')

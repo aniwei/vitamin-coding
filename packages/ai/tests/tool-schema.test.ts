@@ -24,7 +24,7 @@ function makeAssistantMessage(content: AssistantMessage['content']): AssistantMe
 describe('tool call helpers', () => {
   it('detects tool calls', () => {
     const message = makeAssistantMessage([
-      { type: 'text', data: 'hello' },
+      { type: 'text', text: 'hello' },
       { type: 'tool_call', id: 't1', name: 'read_file', arguments: { path: 'a' } },
     ])
 
@@ -34,7 +34,7 @@ describe('tool call helpers', () => {
   })
 
   it('returns false/empty when no tool calls exist', () => {
-    const message = makeAssistantMessage([{ type: 'text', data: 'only text' }])
+    const message = makeAssistantMessage([{ type: 'text', text: 'only text' }])
     expect(hasToolCalls(message)).toBe(false)
     expect(getToolCallsByAssistantMessage(message)).toEqual([])
   })

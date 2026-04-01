@@ -75,24 +75,18 @@ export interface Model<T = Api> {
   compat?: Compat
 }
 
-// 模型规格 — 用于模型解析入口
-// 支持三种形态：
-//   1. 字符串 id，如 "github-copilot/gpt-4.1"
-//   2. 轻量对象 { provider, name, api? }
-//   3. 完整 Model 对象
 export type ModelSpec = string | { provider: string; name: string; api?: Api } | Model
 
-// 统一内容部分类型
 export interface TextContent {
   type: 'text'
   text: string
-  signature?: string // 可选签名，用于内容验证或追踪
+  signature?: string 
 }
 
 export interface ImageContent {
   type: 'image'
   mime: string
-  source: string // Base64 编码的图像数据
+  source: string 
 }
 
 export interface ThinkingContent {
@@ -103,7 +97,7 @@ export interface ThinkingContent {
 
 export interface ToolCall {
   type: 'tool_call'
-  id: string // 唯一 ID，便于流式更新
+  id: string 
   name: string
   arguments: Record<string, unknown>
 }
@@ -154,23 +148,19 @@ export type StreamEvent =
 	| { type: 'done'; reason: StopReason; message: AssistantMessage }
 	| { type: 'error'; error: Error };
 
-// Zod schema 类型占位（避免直接依赖 zod）
 export interface ZodType<T = unknown> {
   parse(data: unknown): T
   safeParse(data: unknown): { success: boolean; data?: T; error?: unknown }
   toJSONSchema?: () => unknown
 }
 
-// 工具定义 — 使用 Zod schema
 export interface ToolDefinition<TArgs = unknown> {
   name: string
   description: string
   parameters: ZodType<TArgs>
-  // 工具可见性控制
   visibility?: 'always' | 'when-enabled' | 'when-requested'
 }
 
-// 流式上下文
 export interface StreamContext {
   systemPrompt: string
   messages: Message[]
@@ -181,7 +171,6 @@ export interface StreamContext {
   cacheRetention?: 'none' | 'short' | 'long'
 }
 
-// 流式选项
 export interface StreamOptions {
   signal?: AbortSignal
   maxRetries?: number
@@ -189,15 +178,12 @@ export interface StreamOptions {
   proxy?: string
 }
 
-// Provider 适配器接口
 export interface ProviderStream {
-  // 唯一标识
   readonly id: string
   readonly displayName: string
   
   resolveKey?(model: Model): Promise<string>
 
-  // 流式调用（核心方法）
   converse(
     model: Model<Api>,
     context: StreamContext,
@@ -205,27 +191,23 @@ export interface ProviderStream {
     signal: AbortSignal,
   ): AsyncIterable<StreamEvent>
 
-  // 平台健康检查
   healthCheck?(token: string): Promise<boolean>
 }
 
-// Provider 工厂函数类型
 export type ProviderFactory = () => ProviderStream
 
-// OAuth 凭据 — 与 pi-mono 对齐：refresh / access / expires + 可扩展字段
 export type OAuthCredentials = {
-  refresh: string          // GitHub OAuth access_token / 其他 provider 的 refresh token
-  access: string           // Copilot token / 最终 API key
-  expires: number          // 毫秒时间戳，access 过期时间
-  [key: string]: unknown   // 扩展字段（如 enterpriseUrl）
+  refresh: string          
+  access: string           
+  expires: number          
+  [key: string]: unknown   
 }
 
 export type OAuthProviderId = string
 
-// OAuth 回调：用于 UI 层展示认证信息和收集输入
 export interface OAuthInfo {
   url: string
-  code?: string // 可选，某些 provider 可能不需要用户输入 code
+  code?: string 
   instructions?: string
 }
 
@@ -239,7 +221,6 @@ export interface OAuthLoginOptions {
   onAuth: (info: OAuthInfo) => void
   onPrompt: (prompt: OAuthPrompt) => Promise<string>
   onProgress?: (message: string) => void
-  // 手动输入授权码（用于 callback server 类 OAuth 提供商的备用输入）
   onManualCode?: () => Promise<string>
   signal?: AbortSignal
 }
@@ -248,27 +229,19 @@ export interface OAuthRefreshTokenOptions extends OAuthCredentials{
   domain?: string
 }
 
-// OAuth 提供商接口 — 无状态、纯函数式
 export interface OAuthProvider {
   readonly id: OAuthProviderId
   readonly name: string
 
-  // 是否使用本地回调服务器登录（支持 onManualCode 备用输入）
   usesCallbackServer?: boolean
 
-  // 运行交互式登录流程，返回凭据
   login(options: OAuthLoginOptions): Promise<OAuthCredentials>
-
-  // 刷新过期凭据 
   refreshToken(options: OAuthRefreshTokenOptions): Promise<OAuthCredentials>
-
-  // 从凭据提取 Access key
   getAccessKey(credentials: OAuthCredentials): string
 }
 
 export type OAuthProviderFactory = () => OAuthProvider
 
-// 用于辅助判断模型家族
 export function isGPTFamily(model: Model): boolean {
   return (
     model.provider === 'openai' ||
@@ -285,23 +258,18 @@ export function isGeminiFamily(model: Model): boolean {
   return model.provider === 'google' || model.api === 'google-generative-ai'
 }
 
-// 从 AssistantMessage 提取工具调用
 export function getToolCallsByAssistantMessage(message: AssistantMessage): ToolCall[] {
   return message.content.filter((c): c is ToolCall => c.type === 'tool_call')
 }
 
-// 检查 AssistantMessage 是否包含工具调用
 export function hasToolCalls(message: AssistantMessage): boolean {
   return message.content.some(c => c.type === 'tool_call')
 }
 
-
-// 创建空的 Usage
 export function emptyUsage(): Usage {
   return { inputTokens: 0, outputTokens: 0, cacheReadTokens: 0, cacheWriteTokens: 0 }
 }
 
-// 合并两个 Usage
 export function mergeUsage(a: Usage, b: Usage): Usage {
   return {
     inputTokens: a.inputTokens + b.inputTokens,
@@ -311,7 +279,6 @@ export function mergeUsage(a: Usage, b: Usage): Usage {
   }
 }
 
-// 从 AssistantMessage.usage 获取精确 token 总数
 export function getTokensFromUsage(message: Message): number | null {
   if (message.role !== 'assistant') return null
   const usage = (message as AssistantMessage).usage

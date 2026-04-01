@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { getVitaminHomePath, parseJsonc } from '@vitamin/shared'
-import { VITAMIN_PROJECT_ROOT } from '@vitamin/env'
+import { getVitaminHomeDir, parseJsonc } from '@vitamin/shared'
+import { VITAMIN_PROJECT_DIR } from '@vitamin/env'
 import { BUILTIN_SERVERS, EXT_TO_LANG, LSP_INSTALL_HINTS } from './constants'
 import type { ResolvedServer, ServerLookupResult } from './types'
 
@@ -72,9 +72,9 @@ export function isServerInstalled(command: string[]): boolean {
   }
 
   // Check local project node_modules, vitamin home bin
-  const vitaminHome = getVitaminHomePath()
+  const vitaminHome = getVitaminHomeDir()
   const additionalBases = [
-    join(VITAMIN_PROJECT_ROOT, 'node_modules', '.bin'),
+    join(VITAMIN_PROJECT_DIR, 'node_modules', '.bin'),
     join(vitaminHome, 'bin'),
     join(vitaminHome, 'node_modules', '.bin'),
   ]
@@ -111,9 +111,9 @@ function detectConfigFilePath(base: string): string {
 }
 
 export function getConfigPaths(): { project: string; user: string } {
-  const vitaminHome = getVitaminHomePath()
+  const vitaminHome = getVitaminHomeDir()
   return {
-    project: detectConfigFilePath(join(VITAMIN_PROJECT_ROOT, '.vitamin', 'vitamin')),
+    project: detectConfigFilePath(join(VITAMIN_PROJECT_DIR, 'vitamin')),
     user: detectConfigFilePath(join(vitaminHome, 'vitamin')),
   }
 }

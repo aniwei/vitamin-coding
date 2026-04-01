@@ -80,7 +80,7 @@ function makeTool(name: string, executeText: string): AgentTool {
     description: `tool:${name}`,
     parameters: createSchema<Record<string, unknown>>(),
     async execute(_ctx) {
-      return { content: [{ type: 'text' as const, data: executeText }] }
+      return { content: [{ type: 'text' as const, text: executeText }] }
     },
   }
 }
@@ -122,7 +122,7 @@ describe('workLoop', () => {
             [makeToolCall('alpha', 'tc_1', { q: 1 }), makeToolCall('alpha', 'tc_2', { q: 2 })],
             'tool_use',
           ),
-          makeAssistantMessage([{ type: 'text', data: 'done' }], 'end_turn'),
+          makeAssistantMessage([{ type: 'text', text: 'done' }], 'end_turn'),
         ]
         let steeringReturned = false
 
@@ -175,14 +175,14 @@ describe('workLoop', () => {
             const responseText = streamCount === 0 ? 'first' : 'second'
             streamCount++
             return makeStream([
-              makeAssistantMessage([{ type: 'text', data: responseText }], 'end_turn'),
+              makeAssistantMessage([{ type: 'text', text: responseText }], 'end_turn'),
             ])(_context, _signal)
           },
           signal: new AbortController().signal,
           emit: (event) => events.push(event),
         })
 
-        expect(result.content[0]).toEqual({ type: 'text', data: 'second' })
+        expect(result.content[0]).toEqual({ type: 'text', text: 'second' })
         expect(streamCount).toBe(2)
         expect(events.some((e) => e.type === 'follow_up_start')).toBe(true)
       })
@@ -233,7 +233,7 @@ describe('workLoop', () => {
           toolExecutor: createToolExecutor([brokenTool]),
           stream: makeStream([
             makeAssistantMessage([makeToolCall('broken', 'tc_err')], 'tool_use'),
-            makeAssistantMessage([{ type: 'text', data: 'recovered' }], 'end_turn'),
+            makeAssistantMessage([{ type: 'text', text: 'recovered' }], 'end_turn'),
           ]),
           signal: new AbortController().signal,
           emit: (event) => events.push(event),
@@ -249,10 +249,10 @@ describe('workLoop', () => {
             message.toolCallId === 'tc_err'
           )
         }) as
-          | { role: 'tool_result'; toolCallId: string; content: Array<{ type: string; data?: string }>; isError?: boolean }
+          | { role: 'tool_result'; toolCallId: string; content: Array<{ type: string; text?: string }>; isError?: boolean }
           | undefined
 
-        expect(result.content[0]).toEqual({ type: 'text', data: 'recovered' })
+        expect(result.content[0]).toEqual({ type: 'text', text: 'recovered' })
         expect(toolResultMessage).toBeDefined()
         expect(toolResultMessage?.isError).toBe(true)
         expect(
@@ -295,7 +295,7 @@ describe('workLoop', () => {
             ...createRuntime(),
             messages: [makeUserMessage('start')],
             toolExecutor: createToolExecutor([]),
-            stream: makeStream([makeAssistantMessage([{ type: 'text', data: 'n/a' }], 'end_turn')]),
+            stream: makeStream([makeAssistantMessage([{ type: 'text', text: 'n/a' }], 'end_turn')]),
             signal: ac.signal,
             emit: () => undefined,
           }),
@@ -313,7 +313,7 @@ describe('workLoop', () => {
           ...createRuntime(),
           messages: [makeUserMessage('start')],
           toolExecutor: createToolExecutor([]),
-          stream: makeStream([makeAssistantMessage([{ type: 'text', data: 'ok' }], 'end_turn')]),
+          stream: makeStream([makeAssistantMessage([{ type: 'text', text: 'ok' }], 'end_turn')]),
           signal: new AbortController().signal,
           initialStatus: 'completed',
           emit: (event) => events.push(event),

@@ -18,8 +18,6 @@ export const DEFAULT_MEMORY_SOURCES: MemorySource[] = [
 // 1. 全局用户偏好 (~/.vitamin/AGENTS.md)
 // 2. 项目级知识 (./.vitamin/AGENTS.md)
 // 3. 社区 AGENTS.md (./AGENTS.md, 只读)
-// 
-// Agent 可通过 edit_file 工具写回 writable source，实现主动学习。
 export class PersistentMemory {
   private memories = new Map<string, string>()
   private unwatch?: () => void

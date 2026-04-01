@@ -2,7 +2,12 @@ import { createLogger } from '@vitamin/shared'
 
 import { PersistentMemory, FileSystemMemoryStore } from './persistent-memory'
 import { prune } from './prune'
-import { needsCompaction, isEligibleForManualCompact, prepareCompaction, compact } from './compaction'
+import { 
+  needsCompaction, 
+  isEligibleForManualCompact, 
+  prepareCompaction, 
+  compact 
+} from './compaction'
 import { InMemoryArchiveStorage } from './archive'
 import {
   estimateTokens as defaultEstimateTokens,
@@ -16,7 +21,6 @@ import {
 } from './defaults'
 import { buildArchiveReference } from './prompts'
 
-import type { Message } from '@vitamin/ai'
 import type {
   MemoryManagerConfig,
   CompactionConfig,
@@ -27,8 +31,9 @@ import type {
   ArchiveEntry,
   ArchiveStorage,
 } from './types'
+import type { Message } from '@vitamin/ai'
 
-const log = createLogger('@vitamin/memory')
+const logger = createLogger('@vitamin/memory')
 
 export class MemoryManager {
   private readonly persistent: PersistentMemory
@@ -41,7 +46,6 @@ export class MemoryManager {
   private previousSummary?: string
 
   constructor(config: MemoryManagerConfig) {
-    // Model-aware defaults
     const defaults = config.model
       ? computeMemoryDefaults(config.model)
       : { compaction: DEFAULT_COMPACTION_CONFIG, prune: DEFAULT_PRUNE_CONFIG }
@@ -136,9 +140,9 @@ export class MemoryManager {
           result.summary,
         )
         result.archivePath = archivePath
-        log.info(`Messages archived to ${archivePath}`)
+        logger.info(`Messages archived to ${archivePath}`)
       } catch (err) {
-        log.warn({ error: err }, 'Failed to archive messages')
+        logger.warn({ error: err }, 'Failed to archive messages')
         // 归档失败不影响压缩结果
       }
     }
@@ -150,7 +154,6 @@ export class MemoryManager {
   }
 
   // 一键流程: prune → compaction → archive
-  // 
   // 返回处理后的消息列表 + 摘要消息（如果发生压缩）。
   // 调用方（AgentSession）负责将结果写入 session。
   async process(
@@ -176,7 +179,7 @@ export class MemoryManager {
       if (pruneResult.changed) {
         current = pruneResult.messages
         pruned = true
-        log.info(`Prune: removed ${pruneResult.prunedCount} tool outputs, saved ~${pruneResult.tokensSaved} tokens`)
+        logger.info(`Prune: removed ${pruneResult.prunedCount} tool outputs, saved ~${pruneResult.tokensSaved} tokens`)
       }
     }
 
@@ -203,19 +206,17 @@ export class MemoryManager {
 
         current = [summaryMessage, ...preparation.preservedMessages]
 
-        log.info(`Compaction: ${preparation.messagesToSummarize.length} messages → summary, kept ${preparation.preservedMessages.length}`)
+        logger.info(`Compaction: ${preparation.messagesToSummarize.length} messages → summary, kept ${preparation.preservedMessages.length}`)
       }
     }
 
     return { messages: current, summary, archivePath, pruned, compacted }
   }
 
-  // 获取 session 的归档列表
   async listArchives(sessionId: string): Promise<ArchiveEntry[]> {
     return this.archiveStorage.list(sessionId)
   }
 
-  // 读取归档内容
   async readArchive(archivePath: string): Promise<string> {
     return this.archiveStorage.read(archivePath)
   }
@@ -225,7 +226,6 @@ export class MemoryManager {
   }
 }
 
-// 工厂函数 
 export function createMemoryManager(config: MemoryManagerConfig): MemoryManager {
   return new MemoryManager(config)
 }

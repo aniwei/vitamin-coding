@@ -39,9 +39,9 @@ type AgentEvents = {
 export class Agent extends TypedEventEmitter<AgentEvents> {
   private state: AgentState
   private abortController: AbortController | null = null
+  private readonly stream: StreamFunction | undefined
   private steeringQueue: AgentMessage[] = []
   private followUpQueue: AgentMessage[] = []
-  private readonly stream: StreamFunction | undefined
 
   get status(): AgentStatus {
     return this.state.status
@@ -71,7 +71,6 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
     return { ...this.state }
   }
 
-  ///
   // 核心方法 — 执行 Agent 循环。
   // messages 数组会被 workLoop 就地修改（追加 assistant/tool_result 消息），
   // 调用方负责将变更持久化到 Session。
@@ -87,17 +86,14 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
     return this.runLoop(context)
   }
 
-  // Steering 注入（工具间隙检查）
   steer(message: AgentMessage): void {
     this.steeringQueue.push(message)
   }
 
-  // FollowUp 注入（外循环检查）
   followUp(message: AgentMessage): void {
     this.followUpQueue.push(message)
   }
 
-  // 中止运行
   abort(): void {
     if (this.abortController) {
       this.abortController.abort()
@@ -107,7 +103,6 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
     this.emit('aborted')
   }
 
-  // 重置为 idle
   reset(): void {
     if (this.abortController) {
       this.abortController.abort()
@@ -124,7 +119,6 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
     this.state.status = 'idle'
   }
 
-  // 内部: 运行 Agent 循环
   private async runLoop(context: AgentRunContext): Promise<AssistantMessage> {
     this.abortController = new AbortController()
     const signal = this.abortController.signal
@@ -152,7 +146,6 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
       devtools: context.devtools,
     })
 
-    // 构建 stream — 优先使用外部注入，否则使用默认
     const stream: StreamFunction = this.stream ?? createDefaultStream()
 
     try {
@@ -214,7 +207,6 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
     this.emit(event.type, event)
   }
 
-  // 内部: 状态转换（含验证）
   private transitionTo(to: AgentStatus): void {
     const from = this.state.status
     if (from === to) return

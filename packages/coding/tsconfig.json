@@ -14,6 +14,7 @@
       "@vitamin/invariant": ["../invariant/src/index.ts"],
       "@vitamin/memory": ["../memory/src/index.ts"],
       "@vitamin/orchestrator": ["../orchestrator/src/index.ts"],
+      "@vitamin/resources": ["../resources/src/index.ts"],
       "@vitamin/session": ["../session/src/index.ts"],
       "@vitamin/shared": ["../shared/src/index.ts"],
       "@vitamin/tools": ["../tools/src/index.ts"]

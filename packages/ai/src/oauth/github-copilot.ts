@@ -3,7 +3,10 @@ import {
   GITHUB_COPILOT_USER_AGENT, 
   GITHUB_SCOPE, 
 } from '@vitamin/env'
-import { createLogger, OAuthError } from '@vitamin/shared'
+import { 
+  createLogger, 
+  OAuthError 
+} from '@vitamin/shared'
 import type { 
   OAuthLoginOptions,
   OAuthCredentials, 
@@ -12,7 +15,6 @@ import type {
 } from '../types'
 
 const logger = createLogger('@vitamin/ai:oauth:github-copilot')
-
 
 type DeviceResponse = {
   device_code: string

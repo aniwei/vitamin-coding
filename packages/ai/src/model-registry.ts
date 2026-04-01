@@ -1,4 +1,5 @@
 import { ProviderError } from '@vitamin/shared'
+import { COPILOT_MODELS as _copilotModels } from '@vitamin/config'
 import type { Provider, Model, ModelSpec, Api } from './types'
 
 // 将 ModelSpec 规范化为字符串 id
@@ -134,32 +135,6 @@ export class ModelRegistry {
   get size(): number {
     return this.models.size
   }
-
-  // ═══ Workflow Slot 解析 ═══
-
-  /**
-   * 根据 workflow slot 映射表解析模型。
-   *
-   * 优先级:
-   * 1. agentSlots[slot] — agent 级别覆盖
-   * 2. globalSlots[slot] — 全局 slot 映射
-   * 3. fallbackModelId — 无 slot 命中时的兜底模型
-   *
-   * 解析到的 model ID 最终通过 this.resolve() 解析为完整 Model。
-   */
-  resolveSlot(
-    slot: string,
-    options: {
-      agentSlots?: Record<string, string>
-      globalSlots?: Record<string, string>
-      fallbackModelId?: string
-    },
-  ): Model | undefined {
-    const { agentSlots, globalSlots, fallbackModelId } = options
-    const modelId = agentSlots?.[slot] ?? globalSlots?.[slot] ?? fallbackModelId
-    if (!modelId) return undefined
-    return this.tryResolve(modelId)
-  }
 }
 
 // 创建模型注册表
@@ -169,126 +144,7 @@ export function createModelRegistry(models?: Model[]): ModelRegistry {
 
 // ═══ 默认模型集 ═══
 
-const COPILOT_BASE = 'https://api.githubcopilot.com'
-
-// GitHub Copilot 可用模型（通过 Copilot API 代理的主流模型）
-const COPILOT_MODELS: Model[] = [
-  // ── GPT 系列 ──
-  {
-    id: 'github-copilot/gpt-4.1',
-    name: 'gpt-4.1',
-    api: 'github-copilot',
-    provider: 'github-copilot',
-    baseUrl: COPILOT_BASE,
-    reasoning: false,
-    input: ['text', 'image'],
-    cost: { input: 3, output: 12, cacheRead: 1.5, cacheWrite: 3 },
-    contextWindow: 1048576,
-    maxOutputTokens: 32768,
-  },
-  {
-    id: 'github-copilot/gpt-4.1-mini',
-    name: 'gpt-4.1-mini',
-    api: 'github-copilot',
-    provider: 'github-copilot',
-    baseUrl: COPILOT_BASE,
-    reasoning: false,
-    input: ['text', 'image'],
-    cost: { input: 0.4, output: 1.6, cacheRead: 0.1, cacheWrite: 0.4 },
-    contextWindow: 1048576,
-    maxOutputTokens: 32768,
-  },
-  {
-    id: 'github-copilot/gpt-4o',
-    name: 'gpt-4o',
-    api: 'github-copilot',
-    provider: 'github-copilot',
-    baseUrl: COPILOT_BASE,
-    reasoning: false,
-    input: ['text', 'image'],
-    cost: { input: 2.5, output: 10, cacheRead: 1.25, cacheWrite: 2.5 },
-    contextWindow: 128000,
-    maxOutputTokens: 16384,
-  },
-  {
-    id: 'github-copilot/o3-mini',
-    name: 'o3-mini',
-    api: 'github-copilot',
-    provider: 'github-copilot',
-    baseUrl: COPILOT_BASE,
-    reasoning: true,
-    input: ['text'],
-    cost: { input: 1.1, output: 4.4, cacheRead: 0.55, cacheWrite: 1.1 },
-    contextWindow: 200000,
-    maxOutputTokens: 100000,
-    thinkingLevels: ['low', 'medium', 'high'],
-  },
-  {
-    id: 'github-copilot/o4-mini',
-    name: 'o4-mini',
-    api: 'github-copilot',
-    provider: 'github-copilot',
-    baseUrl: COPILOT_BASE,
-    reasoning: true,
-    input: ['text', 'image'],
-    cost: { input: 1.1, output: 4.4, cacheRead: 0.275, cacheWrite: 1.1 },
-    contextWindow: 200000,
-    maxOutputTokens: 100000,
-    thinkingLevels: ['low', 'medium', 'high'],
-  },
-  // ── Claude 系列 ──
-  {
-    id: 'github-copilot/claude-sonnet-4-20250514',
-    name: 'claude-sonnet-4-20250514',
-    api: 'github-copilot',
-    provider: 'github-copilot',
-    baseUrl: COPILOT_BASE,
-    reasoning: true,
-    input: ['text', 'image'],
-    cost: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
-    contextWindow: 200000,
-    maxOutputTokens: 16000,
-    thinkingLevels: ['low', 'medium', 'high'],
-  },
-  {
-    id: 'github-copilot/claude-3.5-sonnet',
-    name: 'claude-3.5-sonnet',
-    api: 'github-copilot',
-    provider: 'github-copilot',
-    baseUrl: COPILOT_BASE,
-    reasoning: false,
-    input: ['text', 'image'],
-    cost: { input: 3, output: 15, cacheRead: 0.3, cacheWrite: 3.75 },
-    contextWindow: 200000,
-    maxOutputTokens: 8192,
-  },
-  // ── Gemini 系列 ──
-  {
-    id: 'github-copilot/gemini-2.0-flash',
-    name: 'gemini-2.0-flash',
-    api: 'github-copilot',
-    provider: 'github-copilot',
-    baseUrl: COPILOT_BASE,
-    reasoning: false,
-    input: ['text', 'image'],
-    cost: { input: 0.1, output: 0.4, cacheRead: 0.025, cacheWrite: 0.1 },
-    contextWindow: 1048576,
-    maxOutputTokens: 8192,
-  },
-  {
-    id: 'github-copilot/gemini-2.5-pro',
-    name: 'gemini-2.5-pro',
-    api: 'github-copilot',
-    provider: 'github-copilot',
-    baseUrl: COPILOT_BASE,
-    reasoning: true,
-    input: ['text', 'image'],
-    cost: { input: 1.25, output: 10, cacheRead: 0.3125, cacheWrite: 1.25 },
-    contextWindow: 1048576,
-    maxOutputTokens: 65536,
-    thinkingLevels: ['low', 'medium', 'high'],
-  },
-]
+const COPILOT_MODELS: Model[] = _copilotModels as Model[]
 
 // 创建带默认模型集的注册表
 export function createDefaultModelRegistry(extraModels?: Model[]): ModelRegistry {

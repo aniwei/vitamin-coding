@@ -1,11 +1,33 @@
 import { createLogger } from '@vitamin/shared'
 import {
+  MEMORY_TOOL_READ,
+  MEMORY_TOOL_GREP,
+  MEMORY_TOOL_FIND,
+  MEMORY_TOOL_LS,
+  MEMORY_TOOL_WRITE,
+  MEMORY_TOOL_EDIT,
+  MEMORY_TOOL_APPLY_PATCH,
+  MEMORY_TOOL_CREATE_FILE,
+  MEMORY_TOOL_EDIT_NOTEBOOK_FILE,
+  MEMORY_LEGACY_TOOL_READ_FILE,
+  MEMORY_LEGACY_TOOL_GREP_SEARCH,
+  MEMORY_LEGACY_TOOL_FILE_SEARCH,
+  MEMORY_LEGACY_TOOL_WRITE_FILE,
+  MEMORY_LEGACY_TOOL_EDIT_FILE,
+  MEMORY_LEGACY_TOOL_REPLACE_STRING_IN_FILE,
+} from '@vitamin/env'
+import {
   messageToText,
   estimateMessagesTokens,
   estimateTokens as defaultEstimateTokens,
 } from './token-estimator'
-import { resolveContextSize, DEFAULT_COMPACTION_CONFIG } from './defaults'
-import { buildSummarizationPrompt, buildTurnPrefixPrompt } from './prompts'
+import { 
+  resolveContextSize, 
+  DEFAULT_COMPACTION_CONFIG } from './defaults'
+import { 
+  buildSummarizationPrompt, 
+  buildTurnPrefixPrompt 
+} from './prompts'
 
 import type { Message } from '@vitamin/ai'
 import type {
@@ -16,6 +38,27 @@ import type {
 } from './types'
 
 const logger = createLogger('@vitamin/memory:compaction')
+
+const fileReadToolSet = new Set<string>([
+  MEMORY_TOOL_READ,
+  MEMORY_TOOL_GREP,
+  MEMORY_TOOL_FIND,
+  MEMORY_TOOL_LS,
+  MEMORY_LEGACY_TOOL_READ_FILE,
+  MEMORY_LEGACY_TOOL_GREP_SEARCH,
+  MEMORY_LEGACY_TOOL_FILE_SEARCH,
+])
+
+const fileModifyToolSet = new Set<string>([
+  MEMORY_TOOL_WRITE,
+  MEMORY_TOOL_EDIT,
+  MEMORY_TOOL_APPLY_PATCH,
+  MEMORY_TOOL_CREATE_FILE,
+  MEMORY_TOOL_EDIT_NOTEBOOK_FILE,
+  MEMORY_LEGACY_TOOL_WRITE_FILE,
+  MEMORY_LEGACY_TOOL_EDIT_FILE,
+  MEMORY_LEGACY_TOOL_REPLACE_STRING_IN_FILE,
+])
 
 export function findCutPoint(
   messages: readonly Message[],
@@ -233,20 +276,15 @@ function extractFileOps(messages: readonly Message[]): { read: string[]; modifie
     const toolMsg = msg
     const toolName = toolMsg.toolName
     const content = messageToText(msg)
+    const pathMatch = content.match(/(?:^|\s)(\/[^\s]+\.[a-z]+)/i)
+
+    if (!pathMatch?.[1]) continue
 
     // 根据 tool 名称分类
-    if (toolName === 'read_file' || toolName === 'grep_search' || toolName === 'file_search') {
-      // 尝试从 content 提取文件路径
-      const pathMatch = content.match(/(?:^|\s)(\/[^\s]+\.[a-z]+)/i)
-      if (pathMatch?.[1]) read.add(pathMatch[1])
-    } else if (
-      toolName === 'write_file' ||
-      toolName === 'edit_file' ||
-      toolName === 'create_file' ||
-      toolName === 'replace_string_in_file'
-    ) {
-      const pathMatch = content.match(/(?:^|\s)(\/[^\s]+\.[a-z]+)/i)
-      if (pathMatch?.[1]) modified.add(pathMatch[1])
+    if (fileReadToolSet.has(toolName)) {
+      read.add(pathMatch[1])
+    } else if (fileModifyToolSet.has(toolName)) {
+      modified.add(pathMatch[1])
     }
   }
 

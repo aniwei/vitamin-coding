@@ -1,0 +1,12 @@
+{
+  "code_generation": "coder",
+  "code_modification": "coder",
+  "refactoring": "refactorer",
+  "testing": "tester",
+  "debugging": "debugger",
+  "research": "researcher",
+  "documentation": "documenter",
+  "review": "reviewer",
+  "infrastructure": "infra",
+  "custom": "__fallback__"
+}

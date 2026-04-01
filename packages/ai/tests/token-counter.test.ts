@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { emptyUsage, mergeUsage } from '../src/types'
+import { emptyUsage, getTokensFromUsage, mergeUsage } from '../src/types'
 
 describe('usage helpers', () => {
   it('emptyUsage returns all zeros', () => {
@@ -24,5 +24,34 @@ describe('usage helpers', () => {
       cacheReadTokens: 33,
       cacheWriteTokens: 44,
     })
+  })
+
+  it('getTokensFromUsage returns assistant total tokens', () => {
+    expect(
+      getTokensFromUsage({
+        role: 'assistant',
+        content: [{ type: 'text', text: 'done' }],
+        api: 'openai-responses',
+        provider: 'openai',
+        model: 'openai/gpt-4.1',
+        usage: {
+          inputTokens: 3,
+          outputTokens: 4,
+          cacheReadTokens: 0,
+          cacheWriteTokens: 0,
+        },
+        stopReason: 'end_turn',
+      }),
+    ).toBe(7)
+  })
+
+  it('getTokensFromUsage returns null for non-assistant messages', () => {
+    expect(
+      getTokensFromUsage({
+        role: 'user',
+        content: 'hello',
+        timestamp: Date.now(),
+      }),
+    ).toBeNull()
   })
 })

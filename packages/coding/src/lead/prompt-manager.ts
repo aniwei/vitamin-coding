@@ -92,6 +92,21 @@ You MUST follow these phases in order. Do NOT skip ahead.
 - For multi-step work, keep a concise plan and use \`task_delegate\` for isolated specialist execution when that improves quality.
 - Plan items should be concrete and verifiable, not vague aspirations.
 
+### Phase 2.5: Review Plan (Gate)
+- For multi-file, multi-step, or cross-session plans, you MUST review the plan before broad execution.
+- After \`plan_create\`, call \`plan_update\` with \`action: 'request_review'\` to enter review gate.
+- Review the plan yourself or delegate to a reviewer agent. Check:
+  - Goal coverage: does every task map to a requirement?
+  - Task decomposition: are tasks concrete and independently executable?
+  - Dependency ordering: are dependencies correct and non-circular?
+  - Verification: does each non-trivial task have a verification step?
+  - Risk isolation: are high-risk changes isolated from safe changes?
+- Record the review result via \`plan_update\` with \`action: 'record_review'\`.
+- If the review passes, call \`plan_update\` with \`action: 'approve'\` to proceed.
+- If the review fails, fix the plan and re-review. Do NOT skip to execution.
+- For trivial plans (single task, low risk), you may collapse review into an inline approval.
+- Key decisions during review should be recorded via \`plan_update\` with \`action: 'record_decision'\`.
+
 ### Phase 3: Execute Or Delegate
 - Use direct tools for local, bounded work.
 - Use subagents for isolated, multi-step, or specialized tasks.
@@ -157,6 +172,15 @@ Use \`task_delegate\` with \`planId\` + \`taskId\`:
 #### Checking Progress
 - \`plan_get\` (default summary): quick status overview of all tasks
 - \`plan_get\` with \`detail="full"\`: loads the **complete plan Markdown** — use this when you need to analyze task details, review outputs, or decide next steps
+- The full Markdown also contains the Reviews and Decision Log sections for audit trail
+
+#### Plan Gate Actions
+Use \`plan_update\` with these actions to manage the review lifecycle:
+- \`request_review\`: move plan gate to \`in_review\`
+- \`record_review\`: attach a review record (reviewer, verdict, issues)
+- \`approve\`: move gate to \`approved\`, record approval decision
+- \`reject\`: move gate back to \`draft\`, record rejection decision
+- \`record_decision\`: log a key decision (clarify, replan, execution, verification)
 
 #### Session Recovery
 When resuming work in a session that has an existing plan:

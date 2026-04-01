@@ -127,12 +127,11 @@ describe('extended tools', () => {
       expect(text).toContain('Processed: Find auth code')
     })
 
-    it('passes session and workflow routing hints through to dispatch', async () => {
+    it('passes session hints through to dispatch', async () => {
       let received:
         | {
             sessionId?: string
             sessionMode?: 'ephemeral' | 'sticky'
-            workflowSlot?: string
           }
         | undefined
 
@@ -140,7 +139,6 @@ describe('extended tools', () => {
         received = {
           sessionId: args.sessionId,
           sessionMode: args.sessionMode,
-          workflowSlot: args.workflowSlot,
         }
 
         return {
@@ -157,7 +155,6 @@ describe('extended tools', () => {
           mode: 'sync',
           sessionId: 'child-1',
           sessionMode: 'sticky',
-          workflowSlot: 'review',
         },
         signal,
       })
@@ -166,7 +163,6 @@ describe('extended tools', () => {
       expect(received).toEqual({
         sessionId: 'child-1',
         sessionMode: 'sticky',
-        workflowSlot: 'review',
       })
     })
     it('requires taskId when using planId mode', () => {

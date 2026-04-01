@@ -1,4 +1,3 @@
-// 流式编排入口 — stream() / complete() / streamSimple()
 import { ProviderError } from '@vitamin/shared'
 import { type EventStream, createEventStream } from './event-stream'
 
@@ -13,7 +12,6 @@ import type {
   ThinkingLevel,
 } from './types'
 
-// 内部: 启动流式调用
 async function start<T extends Api>(
   model: Model<T>,
   provider: ProviderStream,
@@ -23,11 +21,9 @@ async function start<T extends Api>(
 ): Promise<void> {
   const { signal } = options
 
-  // 创建 abort 控制器
   const controller = new AbortController()
   stream.setAbortController(controller)
 
-  // 合并外部 signal
   const combinedSignal = signal 
     ? AbortSignal.any([signal, controller.signal]) 
     : controller.signal
@@ -40,7 +36,6 @@ async function start<T extends Api>(
   let lastMessage: AssistantMessage | undefined
 
   try {
-    // 遍历 Provider 返回的事件
     for await (const event of provider.converse(
       model, 
       context, 
@@ -59,7 +54,6 @@ async function start<T extends Api>(
       }
     }
 
-    // 流完成
     if (lastMessage) {
       stream.complete(lastMessage)
     } else {
@@ -80,7 +74,6 @@ async function start<T extends Api>(
 }
 
 
-// 底层流式 API — 返回 EventStream
 export function stream(
   model: Model,
   provider: ProviderStream,
@@ -89,7 +82,6 @@ export function stream(
 ): EventStream<StreamEvent, AssistantMessage> {
   const stream = createEventStream<StreamEvent, AssistantMessage>()
 
-  // 异步启动流
   start(model, provider, context, options, stream).catch((error: unknown) => {
     const err = error instanceof Error ? error : new Error(String(error))
     stream.fail(err)
@@ -98,7 +90,6 @@ export function stream(
   return stream
 }
 
-// 一次性完成 — await 直接拿到结果
 export async function complete(
   model: Model,
   provider: ProviderStream,
@@ -109,7 +100,6 @@ export async function complete(
   return s.result()
 }
 
-// 简化版流式 — 额外接受 thinkingLevel 参数
 export function simple(
   model: Model,
   provider: ProviderStream,

@@ -59,6 +59,9 @@ importers:
 
   packages/ai:
     dependencies:
+      '@vitamin/config':
+        specifier: workspace:*
+        version: link:../config
       '@vitamin/env':
         specifier: workspace:*
         version: link:../env
@@ -122,6 +125,9 @@ importers:
       '@vitamin/orchestrator':
         specifier: workspace:*
         version: link:../orchestrator
+      '@vitamin/resources':
+        specifier: workspace:*
+        version: link:../resources
       '@vitamin/session':
         specifier: workspace:*
         version: link:../session
@@ -177,6 +183,8 @@ importers:
         specifier: ^8.18.1
         version: 8.18.1
 
+  packages/dispatcher: {}
+
   packages/env:
     devDependencies:
       '@types/node':
@@ -206,15 +214,27 @@ importers:
       '@vitamin/env':
         specifier: workspace:*
         version: link:../env
+      '@vitamin/persistence':
+        specifier: workspace:*
+        version: link:../persistence
       '@vitamin/shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/orchestrator:
     dependencies:
+      '@vitamin/config':
+        specifier: workspace:*
+        version: link:../config
+      '@vitamin/dispatcher':
+        specifier: workspace:*
+        version: link:../dispatcher
       '@vitamin/env':
         specifier: workspace:*
         version: link:../env
+      '@vitamin/plan':
+        specifier: workspace:*
+        version: link:../plan
       '@vitamin/shared':
         specifier: workspace:*
         version: link:../shared
@@ -232,11 +252,41 @@ importers:
         specifier: workspace:*
         version: link:../tools
 
+  packages/persistence:
+    dependencies:
+      '@vitamin/env':
+        specifier: workspace:*
+        version: link:../env
+
+  packages/plan:
+    dependencies:
+      '@vitamin/persistence':
+        specifier: workspace:*
+        version: link:../persistence
+
+  packages/resources:
+    dependencies:
+      '@vitamin/config':
+        specifier: workspace:*
+        version: link:../config
+      '@vitamin/env':
+        specifier: workspace:*
+        version: link:../env
+      '@vitamin/memory':
+        specifier: workspace:*
+        version: link:../memory
+      '@vitamin/shared':
+        specifier: workspace:*
+        version: link:../shared
+
   packages/session:
     dependencies:
       '@vitamin/env':
         specifier: workspace:*
         version: link:../env
+      '@vitamin/persistence':
+        specifier: workspace:*
+        version: link:../persistence
 
   packages/shared:
     dependencies:

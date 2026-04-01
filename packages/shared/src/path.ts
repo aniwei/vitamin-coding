@@ -20,6 +20,10 @@ export function getVitaminHomeDir(): string {
   return VITAMIN_HOME
 }
 
+export function getVitaminSessionDir(): string {
+  return resolve(getVitaminHomeDir(), 'sessions')
+}
+
 export function getThirdPartyToolDir(): string {
   return resolve(getVitaminHomeDir(), 'tools')
 }

@@ -100,7 +100,7 @@ Tool 注册与执行系统，包含 Skill 工具入口。
 │     │         │                      get / list / update      │       │
 │     │         │   BackgroundManager  getOutput / cancel       │       │
 │     │         │   PlanLoader ──────── performWork             │       │
-│     │         │   SkillAdapter ────── loadSkill / executeSkill│       │
+│     │         │   compatibility ───── loadSkill / executeSkill│       │
 │     │         └──────────────────────────────────────────────┘       │
 │     ▼                                                                │
 │  ┌──────────────┐  ┌──────────────┐                                  │
@@ -258,8 +258,8 @@ minimal ⊂ standard ⊂ full
 | `dispatchTask` | ✅ | `Dispatcher.dispatch()` | 任务委派，sync/background 两种模式 |
 | `callAgent` | ✅ | `AgentRegistry.call()` | 调用指定 Agent，支持 sessionId 复用 |
 | `performWork` | ✅ | `PlanLoader` + `Dispatcher` | 按 Markdown 计划文件逐步执行，需 `planFileStore` |
-| `loadSkill` | ✅ | `SkillAdapter.load()` | 依赖外部 `SkillAdapter`；未提供时返回错误 |
-| `executeSkill` | ✅ | `SkillAdapter.execute()` | 同上 |
+| `loadSkill` | ✅ | `toToolCallbacks().loadSkill()` | orchestrator 默认仅返回兼容占位错误 |
+| `executeSkill` | ✅ | `toToolCallbacks().executeSkill()` | 同上 |
 | `createTask` | ❌ | `Dispatcher.create()` | 可选；未注入时工具返回 "not available" |
 | `getTask` | ❌ | `Dispatcher.get()` → 映射 | 返回 tool-friendly 扁平结构 |
 | `listTasks` | ❌ | `Dispatcher.list()` | 支持按状态筛选 |
@@ -280,7 +280,6 @@ const orchestrator = createOrchestrator({
   toolRegistry,
   hooks,
   planFileStore,     // 可选，performWork 需要
-  skillAdapter,      // 可选，skill 工具需要
   clarifyChannel: createClarifyChannel({
     handler: async (req) => {
       // 实现澄清逻辑：转发给 lead agent / 用户 / planner

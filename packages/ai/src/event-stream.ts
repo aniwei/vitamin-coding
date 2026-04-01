@@ -1,4 +1,3 @@
-// 流完成后的回调类型
 type Resolve<R> = (value: R) => void
 type Reject = (error: Error) => void
 
@@ -7,7 +6,6 @@ type Waiter<E> = {
   reject: Reject
 }
 
-// EventStream 流式事件迭代器 + 最终结果 Promise
 export class EventStream<E, R> implements AsyncIterable<E> {
   private readonly events: E[] = []
   private waiters: Waiter<E>[] = []
@@ -21,6 +19,14 @@ export class EventStream<E, R> implements AsyncIterable<E> {
   private readonly promise: Promise<R>
   private abortController: AbortController | undefined
 
+  get isComplete(): boolean {
+    return this.done
+  }
+
+  get lastResult(): R | undefined {
+    return this.cachedResult
+  }
+
   constructor() {
     this.promise = new Promise<R>((resolve, reject) => {
       this.resolve = resolve
@@ -28,7 +34,6 @@ export class EventStream<E, R> implements AsyncIterable<E> {
     })
   }
 
-  // 推送一个事件到流
   push(event: E): void {
     if (this.done) return
     
@@ -44,7 +49,6 @@ export class EventStream<E, R> implements AsyncIterable<E> {
     }
   }
 
-  // 标记流完成，传入最终结果
   complete(result: R): void {
     if (this.done) return
 
@@ -52,7 +56,6 @@ export class EventStream<E, R> implements AsyncIterable<E> {
     this.cachedResult = result
     this.resolve?.(result)
     
-    // 唤醒所有等待中的消费者
     for (const waiter of this.waiters) {
       waiter.resolve({ value: undefined as never, done: true })
     }
@@ -60,7 +63,6 @@ export class EventStream<E, R> implements AsyncIterable<E> {
     this.waiters = []
   }
 
-  // 标记流失败
   fail(error: Error): void {
     if (this.done) return
     this.done = true
@@ -74,33 +76,19 @@ export class EventStream<E, R> implements AsyncIterable<E> {
     this.waiters = []
   }
 
-  // 取消流
   abort(): void {
     this.abortController?.abort()
     this.fail(new Error('EventStream aborted'))
   }
 
-  // 设置外部 AbortController（用于关联 signal）
   setAbortController(controller: AbortController): void {
     this.abortController = controller
   }
 
-  // 等待完整结果
   result(): Promise<R> {
     return this.promise
   }
 
-  // 是否已结束
-  get isComplete(): boolean {
-    return this.done
-  }
-
-  // 同步获取缓存结果（仅在 isComplete 后可用）
-  get lastResult(): R | undefined {
-    return this.cachedResult
-  }
-
-  // AsyncIterable 实现
   [Symbol.asyncIterator](): AsyncIterator<E> {
     let index = 0
     return {
@@ -124,7 +112,6 @@ export class EventStream<E, R> implements AsyncIterable<E> {
   }
 }
 
-// 创建 EventStream 的工厂函数
 export function createEventStream<E, R>(): EventStream<E, R> {
   return new EventStream<E, R>()
 }

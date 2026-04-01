@@ -1,8 +1,8 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom';
-import { ChatPage } from './pages/ChatPage';
-import { CodeWikiPage } from './pages/CodeWikiPage';
-import { TraceAnalysisPage } from './pages/TraceAnalysisPage';
-import { RepositoryDetailPage } from './components/CodeWiki/RepositoryDetailPage';
+import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { ChatPage } from './pages/ChatPage'
+import { CodeWikiPage } from './pages/CodeWikiPage'
+import { TraceAnalysisPage } from './pages/TraceAnalysisPage'
+import { RepositoryDetailPage } from './components/CodeWiki/RepositoryDetailPage'
 
 function App() {
   return (

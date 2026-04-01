@@ -4,15 +4,21 @@ import { resolve } from 'node:path'
 export default defineConfig({
   resolve: {
     alias: {
+      '@vitamin/env': resolve(__dirname, 'packages/env/src/index.ts'),
+      '@vitamin/invariant': resolve(__dirname, 'packages/invariant/src/index.ts'),
       '@vitamin/shared': resolve(__dirname, 'packages/shared/src/index.ts'),
+      '@vitamin/dispatcher': resolve(__dirname, 'packages/dispatcher/src/index.ts'),
       '@vitamin/ai': resolve(__dirname, 'packages/ai/src/index.ts'),
       '@vitamin/config': resolve(__dirname, 'packages/config/src/index.ts'),
       '@vitamin/agent': resolve(__dirname, 'packages/agent/src/index.ts'),
       '@vitamin/tools': resolve(__dirname, 'packages/tools/src/index.ts'),
       '@vitamin/hooks': resolve(__dirname, 'packages/hooks/src/index.ts'),
       '@vitamin/session': resolve(__dirname, 'packages/session/src/index.ts'),
+      '@vitamin/persistence': resolve(__dirname, 'packages/persistence/src/index.ts'),
       '@vitamin/memory': resolve(__dirname, 'packages/memory/src/index.ts'),
       '@vitamin/orchestrator': resolve(__dirname, 'packages/orchestrator/src/index.ts'),
+      '@vitamin/plan': resolve(__dirname, 'packages/plan/src/index.ts'),
+      '@vitamin/resources': resolve(__dirname, 'packages/resources/src/index.ts'),
       '@vitamin/coding': resolve(__dirname, 'packages/coding/src/index.ts'),
       '@vitamin/extension': resolve(__dirname, 'packages/extension/src/index.ts'),
       '@vitamin/mcp': resolve(__dirname, 'packages/mcp/src/index.ts'),
