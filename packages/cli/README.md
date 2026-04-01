@@ -2,7 +2,7 @@
 
 Vitamin 命令行入口，基于 `@vitamin/coding` 的 `VitaminApp` 运行。
 
-当前源码里，默认用户主路径已经对齐到 lead：`vitamin [prompt]`、`vitamin --json [prompt]`、`vitamin --interactive` 最终都会调用 `app.lead()`。只有 `--rpc` 仍保留 `app.createSession()` 的 session 级占位路径。
+当前源码里，CLI 已经回到纯 session runtime：`vitamin [prompt]`、`vitamin --json [prompt]`、`vitamin --interactive` 都会先创建一个 `AgentSession`，然后调用 session 级运行模式辅助函数。`--rpc` 仍然只是创建会话后的占位入口。
 
 ## Installation
 
@@ -25,9 +25,9 @@ vitamin --config .vitamin/config.jsonc --project . "summarize the architecture"
 ## Source-Verified Commands
 
 - `vitamin`：无 prompt 时进入交互模式
-- `vitamin [prompt]`：默认 print 模式，内部走 `app.lead(prompt)`
-- `vitamin --json [prompt]`：输出 `LeadResult` JSON
-- `vitamin --interactive`：进入 lead-driven 交互模式
+- `vitamin [prompt]`：默认 print 模式，内部走 `runPrintMode(session, prompt)`
+- `vitamin --json [prompt]`：输出 `runJsonMode(session, prompt)` 结果
+- `vitamin --interactive`：进入基于单个 `AgentSession` 的交互模式
 - `vitamin run <prompt>`：一次性执行任务，等价于 print 模式
 - `vitamin doctor`：环境检查占位命令，当前直接返回
 - `vitamin auth`：认证管理占位命令，当前直接返回
@@ -51,5 +51,5 @@ vitamin --config .vitamin/config.jsonc --project . "summarize the architecture"
 
 ## Notes
 
-- 这份 README 只描述 [src/cli.ts](src/cli.ts) 和 [src/lead-modes.ts](src/lead-modes.ts) 当前能直接验证的行为。
-- 当前 README 不把 planning、review、clarify、recovery 写成 CLI 默认闭环能力。
+- 这份 README 只描述 [src/cli.ts](src/cli.ts) 当前能直接验证的行为。
+- CLI 当前不再承担 lead / orchestrator 级编排能力；若需要复杂任务调度，需要在更高层自行组合 runtime。

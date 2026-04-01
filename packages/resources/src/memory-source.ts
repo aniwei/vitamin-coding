@@ -9,7 +9,7 @@ import type { MemoryInjectionSource, MemoryInjectionResult } from './types'
 
 export interface PersistentMemorySourceOptions {
   workspaceDir?: string
-  memorySources?: MemorySource[]
+  memorySource?: MemorySource[]
   memoryStore?: MemoryStore
 }
 
@@ -17,11 +17,12 @@ export class PersistentMemorySource implements MemoryInjectionSource {
   private readonly persistentMemory: PersistentMemory
 
   constructor(options: PersistentMemorySourceOptions = {}) {
-    const workspaceDir = options.workspaceDir ?? process.cwd()
-    const memoryStore = options.memoryStore ?? new FileSystemMemoryStore(workspaceDir)
-    const memorySources = options.memorySources ?? DEFAULT_MEMORY_SOURCES
-
-    this.persistentMemory = new PersistentMemory(memoryStore, memorySources)
+    const { workspaceDir, memorySource, memoryStore } = options
+    
+    this.persistentMemory = new PersistentMemory(
+      memoryStore ?? new FileSystemMemoryStore(workspaceDir), 
+      memorySource ?? DEFAULT_MEMORY_SOURCES
+    )
   }
 
   async load(): Promise<MemoryInjectionResult> {
@@ -33,8 +34,8 @@ export class PersistentMemorySource implements MemoryInjectionSource {
     }
   }
 
-  startWatching(): void {
-    this.persistentMemory.startWatching()
+  watching(): void {
+    this.persistentMemory.watching()
   }
 
   dispose(): void {

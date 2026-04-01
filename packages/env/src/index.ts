@@ -40,6 +40,7 @@ export const VITAMIN_ROOT = '.vitamin'
 export const VITAMIN_HOME = normalizePath(process.env['VITAMIN_HOME'] || `${homedir()}/${VITAMIN_ROOT}`)
 export const VITAMIN_USER_CONFIG_DIR = normalizePath(homedir() + '/.config/vitamin')
 export const VITAMIN_PROJECT_DIR = normalizePath(`${process.cwd()}/${VITAMIN_ROOT}`)
+export const VITAMIN_PROJECT_ROOT = VITAMIN_PROJECT_DIR
 
 export const LOG_FILE = normalizePath(process.env['VITAMIN_LOG_FILE'] ?? '/tmp/vitamin.log')
 export const LOG_LEVEL = process.env['VITAMIN_LOG_LEVEL'] as ('info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal') || (process.env.NODE_ENV === 'production' ? 'info' : 'trace')

@@ -20,7 +20,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/config": "workspace:*",
+    "@vitamin/setting": "workspace:*",
     "@vitamin/env": "workspace:*",
     "@vitamin/memory": "workspace:*",
     "@vitamin/shared": "workspace:*"

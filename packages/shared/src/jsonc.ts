@@ -1,8 +1,6 @@
-// JSONC 解析（支持注释和尾逗号）以及安全 JSON 序列化
 import { parse, printParseErrorCode, type ParseError } from 'jsonc-parser'
 import stringify from 'safe-stable-stringify'
 
-// 解析 JSONC 字符串（带注释的 JSON）
 export function parseJsonc<T = unknown>(input: string): T {
   const errors: ParseError[] = []
   const parsed = parse(input, errors, {
@@ -20,7 +18,6 @@ export function parseJsonc<T = unknown>(input: string): T {
   return parsed as T
 }
 
-// 安全地将值序列化为 JSON，处理循环引用且保持稳定 key 顺序
 export function safeStringify(value: unknown, indent?: number): string {
   return stringify(value, undefined, indent) ?? 'null'
 }

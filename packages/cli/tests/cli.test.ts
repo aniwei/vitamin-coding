@@ -1,7 +1,7 @@
 import { afterEach, describe, expect, it } from 'vitest'
 import { createDefaultProviderRegistry, createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent } from '@vitamin/ai'
 import { createHookRegistry } from '@vitamin/hooks'
-import { LeadInteractiveMode, runLeadJsonMode, runLeadPrintMode } from '@vitamin/coding'
+import { InteractiveMode, runJsonMode, runPrintMode } from '@vitamin/coding'
 
 import { createVitamin, type VitaminAppOptions } from '../../coding/src/app/vitamin-app'
 import { createInMemoryResourceManager } from '../../coding/src/resources/resource-manager'
@@ -66,7 +66,7 @@ function makeBaseOptions(overrides: Partial<VitaminAppOptions> = {}): VitaminApp
   }
 }
 
-describe('CLI lead modes', () => {
+describe('CLI session modes', () => {
   let app: ReturnType<typeof createVitamin> | null = null
 
   afterEach(async () => {
@@ -76,45 +76,47 @@ describe('CLI lead modes', () => {
     }
   })
 
-  it('runLeadPrintMode uses vitamin.lead() output', async () => {
+  it('runPrintMode writes final assistant output', async () => {
     const writes: string[] = []
     app = createVitamin(makeBaseOptions({
       providerRegistry: makeProviderRegistry('done\nLead output.'),
     }))
     await app.start()
 
-    const result = await runLeadPrintMode(app, 'Explain', (text) => writes.push(text))
+    const session = await app.createSession()
+    const result = await runPrintMode(session, 'Explain', (text) => writes.push(text))
 
-    expect(result.status).toBe('done')
-    expect(result.output).toBe('done\nLead output.')
+    expect(result).toBe('done\nLead output.')
     expect(writes).toEqual(['done\nLead output.'])
   })
 
-  it('runLeadJsonMode returns structured LeadResult', async () => {
+  it('runJsonMode returns structured session output', async () => {
     app = createVitamin(makeBaseOptions({
       providerRegistry: makeProviderRegistry('done_with_concerns\nTests need rerun.'),
     }))
     await app.start()
 
-    const result = await runLeadJsonMode(app, 'Review this change')
+    const session = await app.createSession()
+    const result = await runJsonMode(session, 'Review this change')
 
-    expect(result.status).toBe('done_with_concerns')
-    expect(result.concerns).toBe('Tests need rerun.')
+    expect(result.status).toBe('idle')
+    expect(result.response).toBe('done_with_concerns\nTests need rerun.')
     expect(result.sessionId).toBeTruthy()
   })
 
-  it('LeadInteractiveMode reuses the same lead session across prompts', async () => {
+  it('InteractiveMode reuses the same session across prompts', async () => {
     app = createVitamin(makeBaseOptions({
       providerRegistry: makeProviderRegistry('done\nInteractive result.'),
     }))
     await app.start()
 
-    const interactive = new LeadInteractiveMode(app)
+    const session = await app.createSession()
+    const interactive = new InteractiveMode(session)
 
     const first = await interactive.handleInput('First prompt')
-    const firstSessionId = app.getLeadSession()?.id
+    const firstSessionId = session.id
     const second = await interactive.handleInput('Second prompt')
-    const secondSessionId = app.getLeadSession()?.id
+    const secondSessionId = session.id
 
     expect(first.type).toBe('response')
     expect(second.type).toBe('response')
@@ -122,14 +124,15 @@ describe('CLI lead modes', () => {
     expect(secondSessionId).toBe(firstSessionId)
   })
 
-  it('LeadInteractiveMode reports missing lead session for compact before first prompt', async () => {
+  it('InteractiveMode can compact the current session before first prompt', async () => {
     app = createVitamin(makeBaseOptions())
     await app.start()
 
-    const interactive = new LeadInteractiveMode(app)
+    const session = await app.createSession()
+    const interactive = new InteractiveMode(session)
     const result = await interactive.handleInput('/compact 1 summary')
 
-    expect(result).toEqual({ type: 'system', text: 'No active lead session.' })
+    expect(result).toEqual({ type: 'system', text: 'Compaction complete.' })
   })
 })
 

@@ -1,5 +1,9 @@
 # Lead Agent Flow
 
+相关文档：
+
+- [packages/orchestrator/DESIGN.md](../../orchestrator/DESIGN.md) 记录了当前 orchestrator 的源码审校结论与目标任务调度器设计。
+
 这份文档只描述当前源码里已经验证的 lead 装配链，不把 README 里的目标态或占位目录写成默认 runtime 事实。
 
 ## 核心结论

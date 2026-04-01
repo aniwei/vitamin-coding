@@ -95,7 +95,7 @@
 | 包 | 职责 | 与 `@vitamin/ai` 的关系 |
 |----|------|-------------------------|
 | `@vitamin/shared` | 错误类型、日志、HTTP/SSE、通用事件工具 | `@vitamin/ai` 直接复用，不重复实现底层传输 |
-| `@vitamin/config` | 静态配置加载与 schema 校验 | 负责 `model`/`temperature`/`max_tokens` 等配置来源，运行时再映射到 `StreamContext` |
+| `@vitamin/setting` | 静态配置加载与 schema 校验 | 负责 `model`/`temperature`/`max_tokens` 等配置来源，运行时再映射到 `StreamContext` |
 | `@vitamin/hooks` | 运行期参数改写、预算控制、质量策略 | 可在 `chat.params` 阶段调整 `maxTokens`/`thinkingLevel`，但不负责 Provider 协议适配 |
 | `@vitamin/session` | 会话生命周期、分支、持久化 | 管理多轮消息状态，`@vitamin/ai` 只消费调用时的消息切片 |
 | `@vitamin/memory` | 剪枝、压缩、归档、token 估算 | 提供上下文管理与近似 token 估算，不承担精确计费 |

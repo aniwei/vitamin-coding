@@ -1,22 +1,28 @@
-import type { AgentTool, ToolCallEvent } from '@vitamin/agent'
+import type { AgentMessage, AgentTool, ToolCallEvent } from '@vitamin/agent'
 import type { Model, ProviderRegistry, ThinkingLevel } from '@vitamin/ai'
 import type { HookRegistry } from '@vitamin/hooks'
 import type { Logger } from '@vitamin/shared'
 import type { Devtools } from '@vitamin/devtools'
+import type { SessionStore } from '@vitamin/session'
 
 export interface AgentSessionOptions {
   id?: string
   model: Model
-  systemPrompt: string
-  tools: AgentTool[]
-  thinkingLevel: ThinkingLevel
-  maxToolTurns: number
-  workspaceDir: string
-  hookRegistry: HookRegistry
-  providerRegistry: ProviderRegistry
-  logger: Logger
+  systemPrompt?: string
+  tools?: AgentTool[]
+  thinkingLevel?: ThinkingLevel
+  maxToolTurns?: number
+  workspaceDir?: string
+  hooks?: HookRegistry
+  hookRegistry?: HookRegistry
+  providerRegistry?: ProviderRegistry
+  logger?: Logger
   devtools?: Devtools
-  promptRefresh: PromptRefresh
+  promptRefresh?: PromptRefresh
+}
+
+export interface CreateAgentSessionOptions extends AgentSessionOptions {
+  sessionStore?: SessionStore<AgentMessage>
 }
 
 export type AgentSessionEventType = AgentSessionEvent['type']

@@ -21,7 +21,7 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/config": "workspace:*",
+    "@vitamin/setting": "workspace:*",
     "@vitamin/dispatcher": "workspace:*",
     "@vitamin/env": "workspace:*",
     "@vitamin/plan": "workspace:*",

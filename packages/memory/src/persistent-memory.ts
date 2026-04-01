@@ -1,5 +1,3 @@
-// @vitamin/memory — L1 Persistent Memory (持久化知识)
-
 import { createLogger } from '@vitamin/shared'
 import { buildMemoryInjection } from './prompts'
 
@@ -49,7 +47,7 @@ export class PersistentMemory {
   }
 
   // 启动文件监听（热重载）
-  startWatching(): void {
+  watching(): void {
     if (this.unwatch || !this.store.watch) return
     this.unwatch = this.store.watch(this.sources, (path) => {
       log.info(`Memory source changed: ${path}, reloading...`)
@@ -58,13 +56,13 @@ export class PersistentMemory {
   }
 
   // 停止文件监听
-  stopWatching(): void {
+  stop(): void {
     this.unwatch?.()
     this.unwatch = undefined
   }
 
   dispose(): void {
-    this.stopWatching()
+    this.stop()
     this.memories.clear()
   }
 }

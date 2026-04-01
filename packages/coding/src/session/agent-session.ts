@@ -2,6 +2,7 @@ import { TypedEventEmitter } from '@vitamin/shared'
 import { invariant } from '@vitamin/invariant'
 import { createToolHookExecutor } from './hooks'
 import { calculate, type AssistantMessage } from '@vitamin/ai'
+import { createHookRegistry } from '@vitamin/hooks'
 import type { Agent, AgentMessage } from '@vitamin/agent'
 import type { AgentTool } from '@vitamin/agent'
 import type { HookRegistry } from '@vitamin/hooks'
@@ -9,7 +10,7 @@ import type { Session } from '@vitamin/session'
 import type { Message, Model, ThinkingLevel, Usage } from '@vitamin/ai'
 import type { Devtools } from '@vitamin/devtools'
 import type { Events } from '@vitamin/shared'
-import type { Logger } from '@vitamin/shared'
+import { createLogger, type Logger } from '@vitamin/shared'
 import type { 
   AgentSessionOptions, 
   PromptRefresh, 
@@ -38,7 +39,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
   public agentName: string
   public maxToolTurns: number
   public thinkingLevel: ThinkingLevel
-  public promptRefresh: PromptRefresh
+  public promptRefresh?: PromptRefresh
 
   private logger: Logger
   private devtools?: Devtools
@@ -65,24 +66,24 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     this.session = session
     this.agent = agent
 
-    const {
-      model,
-      systemPrompt,
-      tools,
-      thinkingLevel,
-      maxToolTurns,
-      hookRegistry,
-      workspaceDir,
-      devtools,
-      logger,
-      promptRefresh
-    } = options
+    const hookRegistry = options.hookRegistry ??createHookRegistry({ preset: 'default' })
+    const logger = options.logger ?? createLogger(`agent-session:${session.id}`, {
+      level: 'info',
+      destination: 'stdout',
+    })
+    const promptRefresh = options.promptRefresh
+    const systemPrompt = options.systemPrompt ?? ''
+    const tools = options.tools ?? []
+    const thinkingLevel = options.thinkingLevel ?? 'medium'
+    const maxToolTurns = options.maxToolTurns ?? 25
+    const workspaceDir = options.workspaceDir ?? process.cwd()
+    const { model, devtools } = options
 
     this.model = model
-    this.tools = tools ?? []
+    this.tools = tools
     this.systemPrompt = systemPrompt
-    this.thinkingLevel = thinkingLevel ?? 'medium'
-    this.maxToolTurns = maxToolTurns ?? 25
+    this.thinkingLevel = thinkingLevel
+    this.maxToolTurns = maxToolTurns
     this.hookRegistry = hookRegistry
     this.agentName = 'TODO' // TODO: agentName 应该从 options 传入，目前先 hardcode
     this.devtools = devtools

@@ -1,4 +1,4 @@
-export { SettingsManager, createSettingsManager, Settings, createSettings } from './settings-manager'
+export { SettingsManager, createSettingsManager } from './settings-manager'
 export type { SettingsOptions, SettingsManagerOptions } from './settings-manager'
 
 export {

@@ -1,5 +1,5 @@
 import { ProviderError } from '@vitamin/shared'
-import { COPILOT_MODELS as _copilotModels } from '@vitamin/config'
+import { COPILOT_MODELS as _copilotModels } from '@vitamin/setting'
 import type { Provider, Model, ModelSpec, Api } from './types'
 
 // 将 ModelSpec 规范化为字符串 id

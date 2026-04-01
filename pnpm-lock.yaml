@@ -44,9 +44,9 @@ importers:
       '@vitamin/ai':
         specifier: workspace:*
         version: link:../ai
-      '@vitamin/config':
+      '@vitamin/setting':
         specifier: workspace:*
-        version: link:../config
+        version: link:../setting
       '@vitamin/devtools':
         specifier: workspace:*
         version: link:../devtools
@@ -59,9 +59,9 @@ importers:
 
   packages/ai:
     dependencies:
-      '@vitamin/config':
+      '@vitamin/setting':
         specifier: workspace:*
-        version: link:../config
+        version: link:../setting
       '@vitamin/env':
         specifier: workspace:*
         version: link:../env
@@ -83,9 +83,9 @@ importers:
       '@vitamin/coding':
         specifier: workspace:*
         version: link:../coding
-      '@vitamin/config':
+      '@vitamin/setting':
         specifier: workspace:*
-        version: link:../config
+        version: link:../setting
       '@vitamin/hooks':
         specifier: workspace:*
         version: link:../hooks
@@ -104,9 +104,9 @@ importers:
       '@vitamin/ai':
         specifier: workspace:*
         version: link:../ai
-      '@vitamin/config':
+      '@vitamin/setting':
         specifier: workspace:*
-        version: link:../config
+        version: link:../setting
       '@vitamin/devtools':
         specifier: workspace:*
         version: link:../devtools
@@ -142,7 +142,7 @@ importers:
         specifier: ^4.19.2
         version: 4.21.0
 
-  packages/config:
+  packages/setting:
     dependencies:
       '@vitamin/shared':
         specifier: workspace:*
@@ -223,9 +223,9 @@ importers:
 
   packages/orchestrator:
     dependencies:
-      '@vitamin/config':
+      '@vitamin/setting':
         specifier: workspace:*
-        version: link:../config
+        version: link:../setting
       '@vitamin/dispatcher':
         specifier: workspace:*
         version: link:../dispatcher
@@ -266,9 +266,9 @@ importers:
 
   packages/resources:
     dependencies:
-      '@vitamin/config':
+      '@vitamin/setting':
         specifier: workspace:*
-        version: link:../config
+        version: link:../setting
       '@vitamin/env':
         specifier: workspace:*
         version: link:../env

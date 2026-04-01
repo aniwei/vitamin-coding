@@ -9,7 +9,7 @@ export default defineConfig({
       '@vitamin/shared': resolve(__dirname, 'packages/shared/src/index.ts'),
       '@vitamin/dispatcher': resolve(__dirname, 'packages/dispatcher/src/index.ts'),
       '@vitamin/ai': resolve(__dirname, 'packages/ai/src/index.ts'),
-      '@vitamin/config': resolve(__dirname, 'packages/config/src/index.ts'),
+      '@vitamin/setting': resolve(__dirname, 'packages/setting/src/index.ts'),
       '@vitamin/agent': resolve(__dirname, 'packages/agent/src/index.ts'),
       '@vitamin/tools': resolve(__dirname, 'packages/tools/src/index.ts'),
       '@vitamin/hooks': resolve(__dirname, 'packages/hooks/src/index.ts'),

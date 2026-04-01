@@ -1,8 +1,6 @@
-// HTTP 客户端封装 — 代理支持 + 超时 + 重试
 import { createParser } from 'eventsource-parser'
 import { NetworkError } from './error'
 
-// HTTP 请求选项
 export interface HttpRequestOptions {
   url: string
   method?: 'GET' | 'POST' | 'PUT' | 'DELETE'
@@ -13,7 +11,6 @@ export interface HttpRequestOptions {
   proxy?: string
 }
 
-// HTTP 响应
 export interface HttpResponse {
   status: number
   headers: Headers
@@ -21,14 +18,12 @@ export interface HttpResponse {
   ok: boolean
 }
 
-// SSE 事件
 export interface SseEvent {
   event?: string
   data: string
   id?: string
 }
 
-// 执行 HTTP 请求
 export async function request(options: HttpRequestOptions): Promise<HttpResponse> {
   const { url, method = 'POST', headers = {}, body, timeout = 60000, signal } = options
 
@@ -79,7 +74,6 @@ export async function request(options: HttpRequestOptions): Promise<HttpResponse
   }
 }
 
-// 执行流式 HTTP 请求，返回 SSE 事件异步迭代器
 export async function* stream(options: HttpRequestOptions): AsyncIterable<SseEvent> {
   const { url, method = 'POST', headers = {}, body, timeout = 300000, signal } = options
 
@@ -123,7 +117,6 @@ export async function* stream(options: HttpRequestOptions): AsyncIterable<SseEve
       })
     }
 
-    // 使用成熟 SSE 解析器处理 chunk 边界与多行 data
     const reader = response.body.getReader()
     const decoder = new TextDecoder()
     const queue: SseEvent[] = []
@@ -149,7 +142,6 @@ export async function* stream(options: HttpRequestOptions): AsyncIterable<SseEve
       }
     }
 
-    // flush 解码器缓冲
     parser.feed(decoder.decode())
 
     while (queue.length > 0) {

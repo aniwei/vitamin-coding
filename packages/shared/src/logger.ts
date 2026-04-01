@@ -64,7 +64,6 @@ export function attachLogListener(callback: (log: unknown) => void) {
 }
 
 
-// 根日志器，同时写入文件（JSON）、控制台（美化格式）以及内存监听器
 let root: pino.Logger | null = null
 
 export function ensureLogger(
@@ -84,7 +83,6 @@ interface LoggerOptions {
   destination: string
 }
 
-// 创建带有命名上下文的子日志器
 export function createLogger(
   name: string, 
   options?: LoggerOptions
@@ -100,7 +98,6 @@ export function createLogger(
   })
 }
 
-// 获取根日志器实例
 export function getRootLogger(): pino.Logger {
   invariant(root, `Root logger is not initialized`) 
   return root

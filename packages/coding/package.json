@@ -16,8 +16,6 @@
   "scripts": {
     "run:example:auth": "tsx example/auth-store-example.ts",
     "run:example": "tsx example/vitamin-app-example.tsx",
-    "run:example:agent-flow": "tsx example/agent-flow-no-breakpoints.ts",
-    "run:example:lead": "tsx example/lead-session-flow.ts",
     "run:example:smoke": "tsx example/vitamin-app-smoke.tsx",
     "build": "tsup",
     "typecheck:project": "tsc -p tsconfig.json --noEmit",
@@ -28,13 +26,12 @@
   "dependencies": {
     "@vitamin/agent": "workspace:*",
     "@vitamin/ai": "workspace:*",
-    "@vitamin/config": "workspace:*",
+    "@vitamin/setting": "workspace:*",
     "@vitamin/devtools": "workspace:*",
     "@vitamin/env": "workspace:*",
     "@vitamin/hooks": "workspace:*",
     "@vitamin/invariant": "workspace:*",
     "@vitamin/memory": "workspace:*",
-    "@vitamin/orchestrator": "workspace:*",
     "@vitamin/resources": "workspace:*",
     "@vitamin/session": "workspace:*",
     "@vitamin/shared": "workspace:*",

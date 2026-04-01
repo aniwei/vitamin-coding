@@ -1,4 +1,3 @@
-// 工具注册表 — 注册、查询、预设过滤
 import { createBinaryToolExecutorRegistry, type BinaryToolExecutorRegistry } from './binary/binary-executor-registry'
 import { registerBuiltinTools, type RegisterBuiltinOptions } from './register-builtin'
 import type { AgentTool } from '@vitamin/agent'
@@ -10,8 +9,6 @@ import type {
 } from './types'
 
 
-
-// 预设包含关系 minimal ⊂ standard ⊂ full
 const PRESET_INCLUDES: Record<ToolPreset, Set<ToolPreset>> = {
   minimal: new Set(['minimal']),
   standard: new Set(['minimal', 'standard']),
@@ -25,24 +22,18 @@ function isAgentTool(value: unknown): value is AgentTool<unknown> {
 
   const candidate = value as Partial<AgentTool<unknown>>
   return (
-    typeof candidate.name === 'string'
-    && typeof candidate.description === 'string'
-    && typeof candidate.execute === 'function'
-    && candidate.parameters !== undefined
+    typeof candidate.name === 'string' && 
+    typeof candidate.description === 'string' && 
+    typeof candidate.execute === 'function' && 
+    candidate.parameters !== undefined
   )
 }
 
 export class ToolRegistry {
   private readonly tools = new Map<string, RegisteredTool>()
   private binaryToolExecutors: BinaryToolExecutorRegistry | null = null
-  private _version = 0
+  private version = 0
 
-  /** 每次 register/unregister 递增，用于检测工具集变化 */
-  get version(): number {
-    return this._version
-  }
-
-  // 工具数量
   get size(): number {
     return this.tools.size
   }
@@ -58,9 +49,8 @@ export class ToolRegistry {
     return this.binaryToolExecutors
   }
 
-  // 注册工具
-  register(tool: unknown, options?: ToolRegistrationOptions): void;
-  register(tools: unknown[], options?: ToolRegistrationOptions): void;
+  register(tool: unknown, options?: ToolRegistrationOptions): void
+  register(tools: unknown[], options?: ToolRegistrationOptions): void
   register(
     tools: unknown | unknown[],
     options: ToolRegistrationOptions = {},
@@ -83,12 +73,12 @@ export class ToolRegistry {
       const registered: RegisteredTool = { ...typedTool, metadata }
       this.tools.set(typedTool.name, registered)
     }
-    this._version++
+
+    this.version++
   }
 
-  // 注销工具
-  unregister(name: string): boolean;
-  unregister(name: string[]): boolean;
+  unregister(name: string): boolean
+  unregister(name: string[]): boolean
   unregister(name: string | string[]): boolean {
     if (Array.isArray(name)) {
       let allDeleted = true
@@ -99,69 +89,59 @@ export class ToolRegistry {
         }
       }
 
-      if (allDeleted) this._version++
+      if (allDeleted) this.version++
       return allDeleted
     } 
 
     const deleted = this.tools.delete(name)
-    if (deleted) this._version++
+    if (deleted) this.version++
     return deleted
   }
   
-  // 按名称列表获取工具
   getByNames(names: string[]): RegisteredTool[] {
     const set = new Set(names)
     return this.getAll().filter((tool) => set.has(tool.name))
   }
 
-  // 按名称获取工具
   get(name: string): RegisteredTool | undefined {
     return this.tools.get(name)
   }
 
-  // 检查工具是否存在
   has(name: string): boolean {
     return this.tools.has(name)
   }
 
-  // 获取所有注册的工具
   getAll(): RegisteredTool[] {
     return [...this.tools.values()]
   }
 
-  // 按预设获取可用工具
   getAvailable(preset: ToolPreset = 'standard'): RegisteredTool[] {
     const includes = PRESET_INCLUDES[preset]
     return this.getAll().filter((tool) => includes.has(tool.metadata.preset))
   }
 
-  // 按分类获取工具
   getByCategory(category: string): RegisteredTool[] {
     return this.getAll().filter((tool) => tool.metadata.category === category)
   }
 
-  // 获取内置工具
   getBuiltin(): RegisteredTool[] {
     return this.getAll().filter((tool) => tool.metadata.builtin)
   }
 
-  // 按名称列表过滤工具（白名单）
   filterByNames(names: string[]): RegisteredTool[] {
     const nameSet = new Set(names)
     return this.getAll().filter((tool) => nameSet.has(tool.name))
   }
 
-  // 排除指定名称的工具（黑名单）
   excludeByNames(names: string[]): RegisteredTool[] {
     const nameSet = new Set(names)
     return this.getAll().filter((tool) => !nameSet.has(tool.name))
   }
 
-  // 清空所有工具
   clear(): void {
     if (this.tools.size > 0) {
       this.tools.clear()
-      this._version++
+      this.version++
     }
   }
 
@@ -175,17 +155,17 @@ export class ToolRegistry {
 }
 
 export const createToolRegistry = (
-  projectRoot: string,
+  workspaceDir: string,
   options: RegisterBuiltinOptions
 ): ToolRegistry => {
   const registry = new ToolRegistry()
 
-  const binaryRegistry = createBinaryToolExecutorRegistry(projectRoot)
+  const binaryRegistry = createBinaryToolExecutorRegistry(workspaceDir)
   registry.setBinaryToolExecutors(binaryRegistry)
   
   registerBuiltinTools(
     registry, 
-    projectRoot, 
+    workspaceDir, 
     options
   )
 

@@ -2,7 +2,7 @@ import { createRequire } from 'node:module'
 import { resolve } from 'node:path'
 import { createInterface } from 'node:readline'
 
-import { createVitamin, LeadInteractiveMode, runLeadJsonMode, runLeadPrintMode } from '@vitamin/coding'
+import { createVitamin, InteractiveMode, runJsonMode, runPrintMode } from '@vitamin/coding'
 
 import type { CLIOptions, RunMode } from './types'
 
@@ -223,19 +223,22 @@ export async function runCli(): Promise<number> {
     switch (options.mode) {
       case 'print': {
         if (options.prompt) {
-          await runLeadPrintMode(app, options.prompt)
+          const session = await app.createSession()
+          await runPrintMode(session, options.prompt)
         }
         break
       }
       case 'json': {
         if (options.prompt) {
-          const result = await runLeadJsonMode(app, options.prompt)
+          const session = await app.createSession()
+          const result = await runJsonMode(session, options.prompt)
           process.stdout.write(JSON.stringify(result, null, 2) + '\n')
         }
         break
       }
       case 'interactive': {
-        const interactive = new LeadInteractiveMode(app)
+        const session = await app.createSession()
+        const interactive = new InteractiveMode(session)
         const rl = createInterface({ input: process.stdin, output: process.stdout })
         const prompt = () => rl.question('vitamin> ', async (input) => {
           const result = await interactive.handleInput(input)
