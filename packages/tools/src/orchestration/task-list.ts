@@ -35,6 +35,7 @@ export function createTaskList(
     description: 'List all tasks and their status',
     parameters: TaskListArgsSchema,
     visibility: 'always',
+    readonly: true,
 
     async execute({ params }): Promise<ToolResult> {
       if (!list) {

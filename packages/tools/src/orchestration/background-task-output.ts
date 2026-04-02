@@ -23,6 +23,7 @@ export function createBackgroundOutputTool(
     description: 'Get the current status and output of a background task by its ID.',
     parameters: BackgroundOutputArgsSchema,
     visibility: 'always',
+    readonly: true,
 
     async execute({ params }): Promise<ToolResult> {
       if (!output) {

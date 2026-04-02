@@ -80,3 +80,9 @@ export type {
   HttpStorageOptions,
   MemoryStorageOptions,
 } from './types'
+
+export { FileStateManager } from './file-state-snapshot'
+export type { FileStateSnapshot, FileStateCapture } from './file-state-snapshot'
+
+export { OperationalLearningStore } from './operational-learning'
+export type { Lesson, LessonInput, LessonFilter } from './operational-learning'

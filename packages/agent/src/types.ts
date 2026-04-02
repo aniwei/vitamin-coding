@@ -154,6 +154,8 @@ export interface AgentTool<Params = unknown> {
   description: string
   parameters: ZodType<Params>
   visibility?: 'always' | 'when-enabled' | 'when-requested'
+  /** 标记为只读工具，可与其他只读工具并发执行 */
+  readonly?: boolean
   execute: (ctx: ToolCallContext<Params>) => Promise<ToolResult>
 }
 

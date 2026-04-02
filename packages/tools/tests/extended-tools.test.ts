@@ -6,7 +6,6 @@ import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { createFind } from '../src/search/find'
 import { createGrep } from '../src/search/grep'
 import { createLs } from '../src/search/ls'
-import { createPlanUpdate } from '../src/orchestration/plan-update'
 import { createTaskDelegate } from '../src/orchestration/task-delegate'
 
 let testDir = ''
@@ -183,40 +182,4 @@ describe('extended tools', () => {
     })
   })
 
-  describe('plan_update', () => {
-    it('accepts explicit lifecycle and output patch for update_task', async () => {
-      let receivedStatus = ''
-      let receivedSummary = ''
-
-      const tool = createPlanUpdate(testDir, async (args) => {
-        receivedStatus = args.taskPatch?.status ?? ''
-        receivedSummary = args.taskPatch?.output?.summary ?? ''
-        return {
-          success: true,
-          text: 'updated',
-        }
-      })
-
-      const result = await tool.execute({
-        id: 'pu1',
-        params: {
-          planId: 'plan-1',
-          action: 'update_task',
-          taskId: 'task-1',
-          taskPatch: {
-            status: 'completed',
-            completedAt: Date.now(),
-            output: {
-              summary: 'Implemented and verified',
-            },
-          },
-        },
-        signal,
-      })
-
-      expect(result.isError).toBeUndefined()
-      expect(receivedStatus).toBe('completed')
-      expect(receivedSummary).toBe('Implemented and verified')
-    })
-  })
 })

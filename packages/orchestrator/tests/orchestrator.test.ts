@@ -1,0 +1,251 @@
+import { describe, expect, it } from 'vitest'
+import { HookRegistry } from '@vitamin/hooks'
+import { Orchestrator } from '../src/orchestrator'
+import type { RunSessionOptions, RunSessionResult } from '../src/executor'
+
+function makeRunSession(
+  impl?: (opts: RunSessionOptions) => RunSessionResult | Promise<RunSessionResult>,
+): (opts: RunSessionOptions) => Promise<RunSessionResult> {
+  const fn = impl ?? (() => ({ text: 'ok', sessionId: 's1', durationMs: 50 }))
+  return async (opts) => fn(opts)
+}
+
+describe('Orchestrator', () => {
+  it('creates orchestrator with all callbacks', () => {
+    const orch = new Orchestrator({
+      hookRegistry: new HookRegistry(),
+      runSession: makeRunSession(),
+    })
+
+    expect(orch.dispatchTask).toBeTypeOf('function')
+    expect(orch.callAgent).toBeTypeOf('function')
+    expect(orch.createTask).toBeTypeOf('function')
+    expect(orch.getTask).toBeTypeOf('function')
+    expect(orch.listTasks).toBeTypeOf('function')
+    expect(orch.updateTask).toBeTypeOf('function')
+    expect(orch.getBackgroundOutput).toBeTypeOf('function')
+    expect(orch.cancelBackground).toBeTypeOf('function')
+    expect(orch.clarifyRequest).toBeTypeOf('function')
+    expect(orch.taskStore).toBeDefined()
+    expect(orch.dispose).toBeTypeOf('function')
+  })
+
+  describe('createTask', () => {
+    it('creates a task and returns its id', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      const result = await orch.createTask({ prompt: 'do something', category: 'coding' })
+      expect(result.success).toBe(true)
+      expect(result.id).toBeDefined()
+
+      const task = await orch.taskStore.get(result.id!)
+      expect(task).toBeDefined()
+      expect(task!.input.prompt).toBe('do something')
+      expect(task!.input.category).toBe('coding')
+    })
+  })
+
+  describe('getTask', () => {
+    it('returns not_found for unknown id', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      const result = await orch.getTask('unknown-id')
+      expect(result.status).toBe('not_found')
+    })
+
+    it('returns task details', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      const { id } = await orch.createTask({ prompt: 'test task' })
+      const result = await orch.getTask(id!)
+      expect(result.id).toBe(id)
+      expect(result.status).toBe('pending')
+      expect(result.prompt).toBe('test task')
+    })
+
+    it('maps failed status to error', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      const { id } = await orch.createTask({ prompt: 'fail task' })
+      await orch.taskStore.update(id!, {
+        status: 'failed',
+        error: { code: 'FAIL', message: 'broke', retriable: false },
+      })
+
+      const result = await orch.getTask(id!)
+      expect(result.status).toBe('error')
+      expect(result.error).toBe('broke')
+    })
+  })
+
+  describe('listTasks', () => {
+    it('lists all tasks', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      await orch.createTask({ prompt: 'task 1' })
+      await orch.createTask({ prompt: 'task 2' })
+
+      const result = await orch.listTasks()
+      expect(result.success).toBe(true)
+      expect(result.tasks.length).toBe(2)
+    })
+
+    it('filters by status', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      const { id: id1 } = await orch.createTask({ prompt: 'task 1' })
+      await orch.createTask({ prompt: 'task 2' })
+      await orch.taskStore.update(id1!, { status: 'completed' })
+
+      const result = await orch.listTasks('pending')
+      expect(result.tasks.length).toBe(1)
+      expect(result.tasks[0].status).toBe('pending')
+    })
+
+    it('maps error filter to failed', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      const { id } = await orch.createTask({ prompt: 'fail' })
+      await orch.taskStore.update(id!, { status: 'failed' })
+
+      const result = await orch.listTasks('error')
+      expect(result.tasks.length).toBe(1)
+      expect(result.tasks[0].status).toBe('error')
+    })
+  })
+
+  describe('updateTask', () => {
+    it('cancels a pending task', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      const { id } = await orch.createTask({ prompt: 'cancel me' })
+      const result = await orch.updateTask(id!, 'cancel')
+      expect(result.success).toBe(true)
+
+      const task = await orch.taskStore.get(id!)
+      expect(task!.status).toBe('cancelled')
+    })
+
+    it('rejects cancel for completed task', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      const { id } = await orch.createTask({ prompt: 'done' })
+      await orch.taskStore.update(id!, { status: 'completed' })
+
+      const result = await orch.updateTask(id!, 'cancel')
+      expect(result.success).toBe(false)
+    })
+
+    it('retries a failed task', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(() => ({
+          text: 'retry success',
+          sessionId: 's2',
+          durationMs: 10,
+        })),
+      }, { workflowConfig: { retry: { enabled: false } } })
+
+      const { id } = await orch.createTask({ prompt: 'retry me' })
+      await orch.taskStore.update(id!, {
+        status: 'failed',
+        error: { code: 'FAIL', message: 'first fail', retriable: true },
+      })
+
+      const result = await orch.updateTask(id!, 'retry')
+      expect(result.success).toBe(true)
+    })
+
+    it('rejects retry for non-failed task', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      const { id } = await orch.createTask({ prompt: 'pending' })
+      const result = await orch.updateTask(id!, 'retry')
+      expect(result.success).toBe(false)
+    })
+
+    it('returns error for unknown task', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      const result = await orch.updateTask('no-such-id', 'cancel')
+      expect(result.success).toBe(false)
+    })
+  })
+
+  describe('clarifyRequest', () => {
+    it('returns stub escalation', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      const result = await orch.clarifyRequest({ question: 'what color?' })
+      expect(result.success).toBe(false)
+      expect(result.escalation).toBe('lead_agent')
+    })
+  })
+
+  describe('dispatchTask (integration)', () => {
+    it('dispatches sync task through full pipeline', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession((opts) => ({
+          text: `executed: ${opts.prompt}`,
+          sessionId: 'sess-int',
+          durationMs: 10,
+        })),
+      }, { workflowConfig: { retry: { enabled: false } } })
+
+      const result = await orch.dispatchTask({
+        prompt: 'integration test',
+        mode: 'sync',
+      })
+
+      expect(result.success).toBe(true)
+      expect(result.output).toBe('executed: integration test')
+    })
+  })
+
+  describe('dispose', () => {
+    it('can be called without error', () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+      expect(() => orch.dispose()).not.toThrow()
+    })
+  })
+})

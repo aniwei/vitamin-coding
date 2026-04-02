@@ -26,6 +26,7 @@ export function createSkillLoad(
     description: 'Load Skill definitions from a SKILL.md file. After loading, the skills can be executed via skill-executor.',
     parameters: SkillLoaderArgsSchema,
     visibility: 'always',
+    readonly: true,
 
     async execute({ params }): Promise<ToolResult> {
       if (!load) {

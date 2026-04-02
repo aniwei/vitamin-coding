@@ -24,6 +24,7 @@ export function createRead(
     description: 'Read file content. For text files, can specify line range with limit and offset.',
     parameters: ReadArgsSchema,
     visibility: 'always',
+    readonly: true,
 
     async execute({ params }): Promise<ToolResult> {
       const resolvedPath = resolve(projectRoot, params.path)

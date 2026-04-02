@@ -21,17 +21,11 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/setting": "workspace:*",
-    "@vitamin/dispatcher": "workspace:*",
-    "@vitamin/env": "workspace:*",
-    "@vitamin/plan": "workspace:*",
-    "@vitamin/shared": "workspace:*"
-  },
-  "devDependencies": {
     "@vitamin/agent": "workspace:*",
     "@vitamin/hooks": "workspace:*",
-    "@vitamin/tools": "workspace:*",
-    "@vitamin/coding": "workspace:*"
+    "@vitamin/setting": "workspace:*",
+    "@vitamin/shared": "workspace:*",
+    "@vitamin/tools": "workspace:*"
   },
   "publishConfig": {
     "access": "public",

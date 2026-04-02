@@ -199,29 +199,17 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
 
           const toolCalls = getToolCallsByAssistantMessage(assistantMessage)
 
-          for (const toolCall of toolCalls) {
+          // Build readonly lookup from tool definitions
+          const toolDefs = toolExecutor.list()
+          const readonlySet = new Set(toolDefs.filter(t => t.readonly).map(t => t.name))
+
+          // Split into readonly and mutation batches
+          const readOnlyCalls = toolCalls.filter(tc => readonlySet.has(tc.name))
+          const mutationCalls = toolCalls.filter(tc => !readonlySet.has(tc.name))
+
+          // Helper: execute a single tool call with full event lifecycle
+          const executeSingleTool = async (toolCall: typeof toolCalls[number]) => {
             if (signal.aborted) throw new AbortError()
-
-            const steeringMessages = (await getSteeringMessages?.()) ?? []
-
-            invariant(() => {
-              devtools?.debugger.pause({
-                turn: turnIndex,
-                point: 'steering_check',
-                frameDepth: 1,
-                messagesCount: messages.length,
-                lastToolName: toolCall.name,
-                tokenUsage: lastTokenUsage,
-                metadata: { hasSteeringMessages: steeringMessages.length > 0, steeringCount: steeringMessages.length },
-              })
-              return true
-            }, `Turn ${turnIndex} steering check: ${steeringMessages.length} messages`)
-
-            if (steeringMessages.length > 0) {
-              messages.push(...steeringMessages)
-              emit({ type: 'steering_injected', messages: steeringMessages })
-              break
-            }
 
             emit({
               type: 'tool_call_start',
@@ -285,6 +273,46 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
 
               return true
             }, `Turn ${turnIndex} after tool call ${toolCall.name}`)
+          }
+
+          // Check steering before executing any tools
+          const steeringMessages = (await getSteeringMessages?.()) ?? []
+
+          invariant(() => {
+            devtools?.debugger.pause({
+              turn: turnIndex,
+              point: 'steering_check',
+              frameDepth: 1,
+              messagesCount: messages.length,
+              tokenUsage: lastTokenUsage,
+              metadata: { hasSteeringMessages: steeringMessages.length > 0, steeringCount: steeringMessages.length },
+            })
+            return true
+          }, `Turn ${turnIndex} steering check: ${steeringMessages.length} messages`)
+
+          if (steeringMessages.length > 0) {
+            messages.push(...steeringMessages)
+            emit({ type: 'steering_injected', messages: steeringMessages })
+          } else {
+            // Read-only tools: execute in parallel
+            if (readOnlyCalls.length > 0) {
+              logger?.info('Executing %d read-only tools in parallel', readOnlyCalls.length)
+              await Promise.all(readOnlyCalls.map(executeSingleTool))
+            }
+
+            // Mutation tools: execute sequentially with steering checks
+            for (const toolCall of mutationCalls) {
+              if (signal.aborted) throw new AbortError()
+
+              const steering = (await getSteeringMessages?.()) ?? []
+              if (steering.length > 0) {
+                messages.push(...steering)
+                emit({ type: 'steering_injected', messages: steering })
+                break
+              }
+
+              await executeSingleTool(toolCall)
+            }
           }
 
           toolTurnCount++

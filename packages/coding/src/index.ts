@@ -42,3 +42,19 @@ export type {
   CreateAgentSessionOptions,
   PromptOptions,
 } from './session/types'
+
+// Prompt
+export { PromptCache } from './prompt/prompt-cache'
+export type { PromptSection } from './prompt/prompt-cache'
+export { injectPhaseContext, extractPhaseFromMessage } from './prompt/phase-context'
+export type { PhaseAnnotation } from './prompt/phase-context'
+export {
+  PHASE_DISCIPLINE,
+  COMPLEXITY_ROUTING,
+  REVIEW_GUIDANCE,
+  WORKFLOW_OVERVIEW,
+  FILE_STATE_GUIDANCE,
+  MODEL_SLOT_GUIDANCE,
+  assembleLeadPrompt,
+} from './prompt/lead-guidance'
+export { buildLessonInjection, SESSION_END_LEARNING_PROMPT } from './prompt/lesson-injection'

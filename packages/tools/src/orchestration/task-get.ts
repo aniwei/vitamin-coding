@@ -32,6 +32,7 @@ export function createTaskGet(
     description: 'Get the current status and result of a task by its ID.',
     parameters: TaskGetArgsSchema,
     visibility: 'always',
+    readonly: true,
 
     async execute({ params }): Promise<ToolResult> {
       if (!get) {

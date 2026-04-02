@@ -34,6 +34,21 @@ import {
   type ClarifyRequest,
 } from './orchestration/clarify-request'
 
+import {
+  createWriteTodos,
+  type WriteTodos,
+} from './orchestration/write-todos'
+
+import {
+  createCaptureFileState,
+  type CaptureFileState,
+} from './orchestration/capture-file-state'
+
+import {
+  createLearn,
+  type LearnCallback,
+} from './orchestration/learn'
+
 // LSP
 // import { createLspDefinition } from './lsp/definition'
 // import { createLspReferences } from './lsp/references'
@@ -66,6 +81,10 @@ export interface RegisterBuiltinOptions {
   cancelBackground?: CancelBackground
   clarifyRequest?: ClarifyRequest
   sessionManager?: SessionManager
+  writeTodos?: WriteTodos
+  captureFileState?: CaptureFileState
+  learn?: LearnCallback
+  sessionId?: string
 }
 
 // 注册所有内置工具 (minimal + standard + full 预设)
@@ -101,6 +120,7 @@ export function registerBuiltinTools(
   // 任务调度工具
   registry.register([
     createTaskDelegate(projectRoot, options.dispatchTask),
+    createWriteTodos(options.writeTodos),
   ], { preset: 'standard', category: 'orchestration', builtin: true })
 
 
@@ -128,6 +148,8 @@ export function registerBuiltinTools(
     createBackgroundOutputTool(options.getBackgroundOutput),
     createBackgroundCancelTool(options.cancelBackground),
     createClarifyRequest(projectRoot, options.clarifyRequest),
+    createCaptureFileState(options.captureFileState),
+    createLearn(options.sessionId ?? '', options.learn),
   ], { preset: 'full', category: 'orchestration', builtin: true })
 
   // 会话管理工具（需注入 sessionManager 回调）

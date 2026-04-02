@@ -32,6 +32,7 @@
     "@vitamin/hooks": "workspace:*",
     "@vitamin/invariant": "workspace:*",
     "@vitamin/memory": "workspace:*",
+    "@vitamin/orchestrator": "workspace:*",
     "@vitamin/resources": "workspace:*",
     "@vitamin/session": "workspace:*",
     "@vitamin/shared": "workspace:*",

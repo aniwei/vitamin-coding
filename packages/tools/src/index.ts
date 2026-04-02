@@ -33,12 +33,12 @@ export type { GetTask } from './orchestration/task-get'
 export type { ListTasks } from './orchestration/task-list'
 export type { UpdateTask } from './orchestration/task-update'
 export type { ClarifyRequest } from './orchestration/clarify-request'
-
-// Plan 回调类型
-export type { PlanCreate } from './orchestration/plan-create'
-export type { PlanGet } from './orchestration/plan-get'
-export type { PlanList } from './orchestration/plan-list'
-export type { PlanUpdate } from './orchestration/plan-update'
+export { createWriteTodos } from './orchestration/write-todos'
+export type { WriteTodos, TodoItem } from './orchestration/write-todos'
+export { createCaptureFileState } from './orchestration/capture-file-state'
+export type { CaptureFileState } from './orchestration/capture-file-state'
+export { createLearn } from './orchestration/learn'
+export type { LearnCallback } from './orchestration/learn'
 
 // 会话管理
 export { createSessionManager } from './session/session-manager'

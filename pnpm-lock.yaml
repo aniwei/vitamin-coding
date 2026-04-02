@@ -44,27 +44,27 @@ importers:
       '@vitamin/ai':
         specifier: workspace:*
         version: link:../ai
-      '@vitamin/setting':
-        specifier: workspace:*
-        version: link:../setting
       '@vitamin/devtools':
         specifier: workspace:*
         version: link:../devtools
       '@vitamin/invariant':
         specifier: workspace:*
         version: link:../invariant
+      '@vitamin/setting':
+        specifier: workspace:*
+        version: link:../setting
       '@vitamin/shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/ai:
     dependencies:
-      '@vitamin/setting':
-        specifier: workspace:*
-        version: link:../setting
       '@vitamin/env':
         specifier: workspace:*
         version: link:../env
+      '@vitamin/setting':
+        specifier: workspace:*
+        version: link:../setting
       '@vitamin/shared':
         specifier: workspace:*
         version: link:../shared
@@ -83,15 +83,12 @@ importers:
       '@vitamin/coding':
         specifier: workspace:*
         version: link:../coding
-      '@vitamin/setting':
-        specifier: workspace:*
-        version: link:../setting
       '@vitamin/hooks':
         specifier: workspace:*
         version: link:../hooks
-      '@vitamin/orchestrator':
+      '@vitamin/setting':
         specifier: workspace:*
-        version: link:../orchestrator
+        version: link:../setting
       '@vitamin/tools':
         specifier: workspace:*
         version: link:../tools
@@ -104,9 +101,6 @@ importers:
       '@vitamin/ai':
         specifier: workspace:*
         version: link:../ai
-      '@vitamin/setting':
-        specifier: workspace:*
-        version: link:../setting
       '@vitamin/devtools':
         specifier: workspace:*
         version: link:../devtools
@@ -131,6 +125,9 @@ importers:
       '@vitamin/session':
         specifier: workspace:*
         version: link:../session
+      '@vitamin/setting':
+        specifier: workspace:*
+        version: link:../setting
       '@vitamin/shared':
         specifier: workspace:*
         version: link:../shared
@@ -141,22 +138,6 @@ importers:
       tsx:
         specifier: ^4.19.2
         version: 4.21.0
-
-  packages/setting:
-    dependencies:
-      '@vitamin/shared':
-        specifier: workspace:*
-        version: link:../shared
-      semver:
-        specifier: ^7.7.4
-        version: 7.7.4
-      zod:
-        specifier: ^4.0.0
-        version: 4.3.6
-    devDependencies:
-      '@types/semver':
-        specifier: ^7.7.1
-        version: 7.7.1
 
   packages/devtools:
     dependencies:
@@ -182,8 +163,6 @@ importers:
       '@types/ws':
         specifier: ^8.18.1
         version: 8.18.1
-
-  packages/dispatcher: {}
 
   packages/env:
     devDependencies:
@@ -223,31 +202,18 @@ importers:
 
   packages/orchestrator:
     dependencies:
-      '@vitamin/setting':
-        specifier: workspace:*
-        version: link:../setting
-      '@vitamin/dispatcher':
-        specifier: workspace:*
-        version: link:../dispatcher
-      '@vitamin/env':
-        specifier: workspace:*
-        version: link:../env
-      '@vitamin/plan':
-        specifier: workspace:*
-        version: link:../plan
-      '@vitamin/shared':
-        specifier: workspace:*
-        version: link:../shared
-    devDependencies:
       '@vitamin/agent':
         specifier: workspace:*
         version: link:../agent
-      '@vitamin/coding':
-        specifier: workspace:*
-        version: link:../coding
       '@vitamin/hooks':
         specifier: workspace:*
         version: link:../hooks
+      '@vitamin/setting':
+        specifier: workspace:*
+        version: link:../setting
+      '@vitamin/shared':
+        specifier: workspace:*
+        version: link:../shared
       '@vitamin/tools':
         specifier: workspace:*
         version: link:../tools
@@ -258,23 +224,17 @@ importers:
         specifier: workspace:*
         version: link:../env
 
-  packages/plan:
-    dependencies:
-      '@vitamin/persistence':
-        specifier: workspace:*
-        version: link:../persistence
-
   packages/resources:
     dependencies:
-      '@vitamin/setting':
-        specifier: workspace:*
-        version: link:../setting
       '@vitamin/env':
         specifier: workspace:*
         version: link:../env
       '@vitamin/memory':
         specifier: workspace:*
         version: link:../memory
+      '@vitamin/setting':
+        specifier: workspace:*
+        version: link:../setting
       '@vitamin/shared':
         specifier: workspace:*
         version: link:../shared
@@ -287,6 +247,25 @@ importers:
       '@vitamin/persistence':
         specifier: workspace:*
         version: link:../persistence
+
+  packages/setting:
+    dependencies:
+      '@vitamin/persistence':
+        specifier: workspace:*
+        version: link:../persistence
+      '@vitamin/shared':
+        specifier: workspace:*
+        version: link:../shared
+      semver:
+        specifier: ^7.7.4
+        version: 7.7.4
+      zod:
+        specifier: ^4.0.0
+        version: 4.3.6
+    devDependencies:
+      '@types/semver':
+        specifier: ^7.7.1
+        version: 7.7.1
 
   packages/shared:
     dependencies:

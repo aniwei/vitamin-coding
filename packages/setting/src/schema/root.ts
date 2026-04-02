@@ -11,6 +11,7 @@ import { ToolPresetSchema } from './tools'
 import { McpConfigSchema } from './mcp'
 import { BackgroundTaskConfigSchema, ExperimentalConfigSchema } from './experimental'
 import { WorkflowConfigSchema } from './workflow'
+import { ModelSlotConfigSchema } from './model-slots'
 
 export const LogLevelSchema = z.enum(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
 
@@ -31,6 +32,7 @@ export const VitaminSettingStrictSchema = z.object({
   compaction: CompactionConfigSchema.optional(),
   notification: NotificationConfigSchema.optional(),
   workflow: WorkflowConfigSchema.optional(),
+  model_slots: ModelSlotConfigSchema.optional(),
   background_task: BackgroundTaskConfigSchema.optional(),
   experimental: ExperimentalConfigSchema.optional(),
   disabled_agents: z.array(z.string()).optional(),

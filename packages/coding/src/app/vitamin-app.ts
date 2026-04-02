@@ -7,16 +7,16 @@ import { createHookRegistry } from '@vitamin/hooks'
 import {
   createToolRegistry,
   ToolRegistry,
-  type CallAgent,
   type ExecuteSkill,
   type LoadSkill,
-  type TaskDispatch,
 } from '@vitamin/tools'
 import { SESSION_MAX } from '@vitamin/env'
 import { createResourceManager, SettingsManager } from '@vitamin/resources'
+import { Orchestrator } from '@vitamin/orchestrator'
 
 import { attachLogListener, createLogger } from '@vitamin/shared'
 import { AgentSession } from '../session/agent-session'
+import { getLastAssistantText } from '../modes/run-modes'
 import {
   CodingSessionManager,
   createDiskCodingSessionManager,
@@ -51,8 +51,8 @@ export class VitaminApp implements VitaminContext {
   public readonly maxToolTurns: number
 
   private readonly defaultTools: AgentTool[] = []
-  private readonly explicitSystemPrompt?: string
   private readonly devtools: Devtools | null = null
+  private orchestrator!: Orchestrator
   private disposed = false
   private defaultToolPreset: 'minimal' | 'standard' | 'full' = 'standard'
 
@@ -96,14 +96,12 @@ export class VitaminApp implements VitaminContext {
       resourceManager,
       tools,
       workspaceDir,
-      systemPrompt,
     } = options
 
     this.defaultTools = tools ?? []
     this.maxSessions = maxSessions ?? SESSION_MAX
     this.maxToolTurns = maxToolTurns ?? 10
     this.workspaceDir = workspaceDir ?? process.cwd()
-    this.explicitSystemPrompt = systemPrompt
     
     this.logger = createLogger(logger.name, {
       level: logger.level,
@@ -111,7 +109,7 @@ export class VitaminApp implements VitaminContext {
     })
 
     const {
-      model,
+      model: _model,
       authStore,
       hookRegistry,
       modelRegistry,
@@ -177,6 +175,39 @@ export class VitaminApp implements VitaminContext {
     this.toolRegistry = this.buildToolRegistry()
   }
 
+  private buildRunSession() {
+    return async (options: { prompt: string; sessionId?: string; sessionMode: 'ephemeral' | 'sticky' }) => {
+      const startTime = Date.now()
+
+      // sticky 模式：复用已有 session
+      let session: AgentSession
+      if (options.sessionMode === 'sticky' && options.sessionId) {
+        const existing = this.getSession(options.sessionId)
+        if (existing) {
+          session = existing
+        } else {
+          session = await this.createSession({ id: options.sessionId })
+        }
+      } else {
+        session = await this.createSession()
+      }
+
+      await session.prompt(options.prompt)
+      const text = getLastAssistantText(session.session.messages())
+
+      // ephemeral 模式：执行完后清理
+      if (options.sessionMode === 'ephemeral') {
+        await this.removeSession(session.id)
+      }
+
+      return {
+        text,
+        sessionId: session.id,
+        durationMs: Date.now() - startTime,
+      }
+    }
+  }
+
   async start(): Promise<void> {
     this.ensureNotDisposed()
 
@@ -195,6 +226,7 @@ export class VitaminApp implements VitaminContext {
     this.settings.dispose()
     this.resourceManager.dispose()
     this.toolRegistry.dispose()
+    this.orchestrator.dispose()
     this.codingSessionManager.dispose()
 
     if (this.devtools) {
@@ -253,14 +285,10 @@ export class VitaminApp implements VitaminContext {
   }
 
   private buildToolRegistry(): ToolRegistry {
-    const taskDispatch: TaskDispatch = async () => ({
-      success: false,
-      error: `Task dispatching is not available in this environment.`,
-    })
-
-    const callAgent: CallAgent = async () => ({
-      success: false,
-      error: `Calling agents is not available in this environment.`,
+    // 创建 orchestrator — 注入真实回调
+    this.orchestrator = new Orchestrator({
+      hookRegistry: this.hookRegistry,
+      runSession: this.buildRunSession(),
     })
 
     const loadSkill: LoadSkill = async () => ({
@@ -274,10 +302,17 @@ export class VitaminApp implements VitaminContext {
     })
 
     const registry = createToolRegistry(this.workspaceDir, {
-      callAgent,
+      callAgent: this.orchestrator.callAgent,
       loadSkill,
       executeSkill,
-      dispatchTask: taskDispatch,
+      dispatchTask: this.orchestrator.dispatchTask,
+      createTask: this.orchestrator.createTask,
+      getTask: this.orchestrator.getTask,
+      listTasks: this.orchestrator.listTasks,
+      updateTask: this.orchestrator.updateTask,
+      getBackgroundOutput: this.orchestrator.getBackgroundOutput,
+      cancelBackground: this.orchestrator.cancelBackground,
+      clarifyRequest: this.orchestrator.clarifyRequest,
       sessionManager: {
         list: async () => this.listSessions().map((session) => ({
           id: session.id,
@@ -298,12 +333,10 @@ export class VitaminApp implements VitaminContext {
       },
     })
 
-    const removeCategories = ['orchestration', 'skill'] as const
-    for (const category of removeCategories) {
-      const names = registry.getByCategory(category).map((tool) => tool.name)
-      if (names.length > 0) {
-        registry.unregister(names)
-      }
+    // 仅移除 skill 类别工具（orchestration 工具现在有真实回调，保留）
+    const skillTools = registry.getByCategory('skill').map((tool) => tool.name)
+    if (skillTools.length > 0) {
+      registry.unregister(skillTools)
     }
 
     return registry

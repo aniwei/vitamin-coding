@@ -5,13 +5,11 @@
     "rootDir": "..",
     "baseUrl": ".",
     "paths": {
-      "@vitamin/shared": ["../shared/src/index.ts"],
-      "@vitamin/dispatcher": ["../dispatcher/src/index.ts"],
-      "@vitamin/plan": ["../plan/src/index.ts"],
       "@vitamin/agent": ["../agent/src/index.ts"],
       "@vitamin/hooks": ["../hooks/src/index.ts"],
-      "@vitamin/tools": ["../tools/src/index.ts"],
-      "@vitamin/coding": ["../coding/src/index.ts"]
+      "@vitamin/setting": ["../setting/src/index.ts"],
+      "@vitamin/shared": ["../shared/src/index.ts"],
+      "@vitamin/tools": ["../tools/src/index.ts"]
     }
   },
   "include": ["src"]

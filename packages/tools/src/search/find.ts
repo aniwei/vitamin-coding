@@ -43,6 +43,7 @@ export function createFind(
     description: `Search for files by glob pattern. Returns matching file paths relative to the search directory. Respects .gitignore. Output is truncated to ${TOOLS_MAX_OUTPUT_LINES} results or ${TOOLS_MAX_OUTPUT_BYTES / 1024}KB (whichever is hit first).`,
     parameters: FindArgsSchema,
     visibility: 'always',
+    readonly: true,
 
     async execute({ params }): Promise<ToolResult> {
       const searchDir = resolve(projectRoot, params.path ?? '.')

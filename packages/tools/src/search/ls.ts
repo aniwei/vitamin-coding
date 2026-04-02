@@ -30,6 +30,7 @@ export function createLs(projectRoot: string): AgentTool<LsArgs> {
     description: 'List directory contents. Can optionally show subdirectory structure recursively.',
     parameters: LsArgsSchema,
     visibility: 'always',
+    readonly: true,
 
     async execute({ params }): Promise<ToolResult> {
       const targetDir = resolve(projectRoot, params.path)

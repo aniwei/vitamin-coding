@@ -52,6 +52,7 @@ export function createGrep(
     description: `Search file contents for pattern matches. Returns matching lines with file paths and line numbers. Respects .gitignore. Truncated to ${GREP_DEFAULT_LIMIT} matches or ${TOOLS_MAX_OUTPUT_BYTES / 1024}KB. Long lines truncated to ${GREP_MAX_LINE_LENGTH} chars.`,
     parameters: GrepArgsSchema,
     visibility: 'always',
+    readonly: true,
 
     async execute({ params }): Promise<ToolResult> {
       const searchPath = resolve(projectRoot, params.path ?? '.')

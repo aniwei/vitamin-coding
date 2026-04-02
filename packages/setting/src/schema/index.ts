@@ -5,7 +5,7 @@ export {
 } from './root'
 export type { VitaminSettingFromSchema } from './root'
 
-export { AgentConfigSchema, AgentsConfigSchema } from './agents'
+export { AgentConfigSchema, AgentsConfigSchema, WorkflowSlotSchema, BUILTIN_REVIEWER_AGENTS } from './agents'
 export { CategoryConfigSchema, CategoriesConfigSchema } from './categories'
 export { ToolPresetSchema, ToolsConfigSchema } from './tools'
 export { ExtensionsConfigSchema, ExtensionConfigSchema, ExtensionOptionsSchema, ExtensionSourceSchema } from './extensions'
@@ -22,3 +22,4 @@ export {
   WorkflowCircuitBreakerSchema,
   WorkflowRoutingSchema,
 } from './workflow'
+export { ModelSlotConfigSchema } from './model-slots'
