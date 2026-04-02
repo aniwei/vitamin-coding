@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { getThirdPartyToolBinaryPath, getThirdPartyToolPath } from '@vitamin/shared'
+import { getThirdPartyToolBinaryDir, getThirdPartyToolDir } from '@vitamin/shared'
 
 import {
   BinaryToolExecutor,
@@ -66,12 +66,12 @@ describe('binary tools', () => {
 
   afterEach(() => {
     const ext = process.platform === 'win32' ? '.exe' : ''
-    rmSync(getThirdPartyToolBinaryPath('fd') + ext, { force: true })
-    rmSync(getThirdPartyToolBinaryPath('ripgrep') + ext, { force: true })
-    rmSync(getThirdPartyToolBinaryPath('vitamin_ensure_local_bin') + ext, { force: true })
-    rmSync(join(getThirdPartyToolPath(), 'fd-10.4.2'), { recursive: true, force: true })
-    rmSync(join(getThirdPartyToolPath(), 'rg-15.1.0'), { recursive: true, force: true })
-    rmSync(join(getThirdPartyToolPath(), 'vitamin_ensure_local_bin-1.0.0'), { recursive: true, force: true })
+    rmSync(getThirdPartyToolBinaryDir('fd') + ext, { force: true })
+    rmSync(getThirdPartyToolBinaryDir('ripgrep') + ext, { force: true })
+    rmSync(getThirdPartyToolBinaryDir('vitamin_ensure_local_bin') + ext, { force: true })
+    rmSync(join(getThirdPartyToolDir(), 'fd-10.4.2'), { recursive: true, force: true })
+    rmSync(join(getThirdPartyToolDir(), 'rg-15.1.0'), { recursive: true, force: true })
+    rmSync(join(getThirdPartyToolDir(), 'vitamin_ensure_local_bin-1.0.0'), { recursive: true, force: true })
     process.env.PATH = originalPath
   })
 
@@ -140,7 +140,7 @@ describe('binary tools', () => {
   it('ensure returns third-party tool path when binary exists locally', async () => {
     const ext = process.platform === 'win32' ? '.exe' : ''
     const localPath =
-      getThirdPartyToolBinaryPath('vitamin_ensure_local_bin-1.0.0', 'vitamin_ensure_local_bin') + ext
+      getThirdPartyToolBinaryDir('vitamin_ensure_local_bin-1.0.0', 'vitamin_ensure_local_bin') + ext
 
     mkdirSync(dirname(localPath), { recursive: true })
     writeFileSync(localPath, 'placeholder', 'utf8')

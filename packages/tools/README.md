@@ -40,7 +40,7 @@ Tool 注册与执行系统，包含 Skill 工具入口。
 
 1. **统一的工具注册表** — 管理 Agent 可调用的所有工具，支持分层预设（minimal / standard / full）
 2. **内置工具集** — 文件系统、Shell、搜索、编排，以及 Skill 相关工具入口
-3. **编排与方法论回调注入** — `task_delegate`、`agent_call`、`task_*`、`background_*`、`clarify_request`、`write_todos`、`capture_file_state`、`learn`、`skill_*` 本身都是壳层，实际逻辑通过 `RegisterBuiltinOptions` 注入；其中 `@vitamin/orchestrator` 负责核心 task callbacks（见 [与 @vitamin/orchestrator 的关系](#与-vitaminorchestrator-的关系)）
+3. **编排与方法论回调注入** — `task_delegate`、`agent_task`、`review_call`、`agent_call`、`task_*`、`background_*`、`clarify_request`、`write_todos`、`capture_file_state`、`learn`、`skill_*` 本身都是壳层，实际逻辑通过 `RegisterBuiltinOptions` 注入；其中 `@vitamin/orchestrator` 负责核心 task callbacks（见 [与 @vitamin/orchestrator 的关系](#与-vitaminorchestrator-的关系)）
 4. **Skill 工具入口** — 提供 `skill_load` / `skill_execute` 两个工具，实际加载与执行逻辑通过回调注入
 5. **Extension 扩展机制**（规划中）— 支持第三方通过 TypeScript 模块注册自定义工具、命令、事件钩子
 6. **二进制工具管理** — 自动下载并缓存外部 CLI 二进制（fd、rg 等），跨平台支持
@@ -223,11 +223,13 @@ minimal ⊂ standard ⊂ full
 | `lsp_prepare_rename` | lsp | 验证重命名是否可行（需 `enableLsp: true`） |
 | `lsp_rename` | lsp | 执行符号重命名（需 `enableLsp: true`） |
 
-#### Full (+12, +1 Session Manager 可选)
+#### Full（扩展编排工具，+1 Session Manager 可选）
 
 | 工具 | 分类 | 描述 |
 |------|------|------|
-| `agent_call` | orchestration | 同步调用指定 Agent 作为隔离协作者，适合探索、规划或 review；长任务或需状态管理时应使用 `task_delegate` |
+| `review_call` | orchestration | 同步调用 reviewer/collaborator agent，适合 review、二次确认、探索性咨询 |
+| `agent_call` | orchestration | `review_call` 的兼容别名，保留给旧调用方 |
+| `agent_task` | orchestration | 通过任务运行时执行指定 Agent，支持后台执行与 sticky session 复用 |
 | `task_create` | orchestration | 创建任务记录并返回 taskId |
 | `task_get` | orchestration | 按 ID 查询任务状态、输出和错误信息 |
 | `task_list` | orchestration | 列出任务列表，支持按状态筛选（all / pending / running / completed / error） |
@@ -239,6 +241,10 @@ minimal ⊂ standard ⊂ full
 | `learn` | orchestration | 写入运行学习条目，具体存储由宿主回调决定 |
 | `skill_load` | skill | 调用外部注入的 Skill 加载回调 |
 | `skill_execute` | skill | 调用外部注入的 Skill 执行回调 |
+| `plan_create` | orchestration | 创建结构化执行计划，由调用方提供目标与约束 |
+| `plan_get` | orchestration | 按 ID 获取计划详情，包括任务列表与状态 |
+| `plan_update` | orchestration | 更新计划状态/任务（approve、update_task、add_tasks 等） |
+| `write_todos` | orchestration | 轻量级待办跟踪，写入方法论待办 |
 | `session_manager` | session | 会话管理（列出/创建/删除/压缩），需注入 `sessionManager` 回调 |
 
 ### 当前限制
@@ -259,8 +265,8 @@ minimal ⊂ standard ⊂ full
 
 | 回调 | 必填 | orchestrator 来源 | 说明 |
 |------|------|------------------|------|
-| `dispatchTask` | ✅ | `Orchestrator.dispatchTask` | 任务委派，sync/background 两种模式 |
-| `callAgent` | ✅ | `Orchestrator.callAgent` | 通过宿主 `runSession()` 调用指定 agent |
+| `dispatchTask` | ✅ | `Orchestrator.dispatchTask` | 任务委派，驱动 `task_delegate` / `agent_task` 的 sync/background 路径 |
+| `callAgent` | ✅ | `Orchestrator.callAgent` | 通过宿主 `runSession()` 执行同步隔离调用，驱动 `review_call` / `agent_call` |
 | `createTask` | ❌ | `Orchestrator.createTask` | 创建任务记录并返回 taskId |
 | `getTask` | ❌ | `Orchestrator.getTask` | 返回 tool-friendly 扁平结构 |
 | `listTasks` | ❌ | `Orchestrator.listTasks` | 支持按状态筛选 |

@@ -1,6 +1,6 @@
 # @vitamin/shared
 
-Common utilities shared across all Vitamin packages: logger, filesystem helpers, path utils, typed event emitter, error hierarchy, and JSON/HTTP helpers.
+Common utilities shared across all Vitamin packages: logger, filesystem helpers, path utils, typed event emitter, error hierarchy, JSON/HTTP helpers, markdown processing, and subscription system.
 
 ## Installation
 
@@ -11,12 +11,10 @@ pnpm add @vitamin/shared
 ## Usage
 
 ```typescript
-import { createLogger, readText, TypedEventEmitter, ConfigError } from '@vitamin/shared'
+import { createLogger, TypedEventEmitter, ConfigError, Subscription } from '@vitamin/shared'
 
 const log = createLogger('my-module')
 log.info('started')
-
-const content = await readText('/path/to/file.txt')
 
 throw new ConfigError('Missing config', { code: 'CONFIG_MISSING' })
 ```
@@ -25,21 +23,24 @@ throw new ConfigError('Missing config', { code: 'CONFIG_MISSING' })
 
 | Export | Description |
 |--------|-------------|
-| `createLogger`, `getRootLogger` | Structured logger |
-| `readText`, `writeText`, `readdir`, `mkdirp`, `rimraf`, `exists`, `mime` | Filesystem helpers |
-| `normalizePath`, `resolvePath` | Path utilities |
+| `createLogger`, `getRootLogger`, `attachLogListener` | Structured logger (pino-based) |
+| `mkdirp`, `rimraf`, `exists`, `mime`, `isFile`, `isDirectory` | Filesystem helpers |
+| `normalizePath`, `getVitaminHomeDir`, `getVitaminProjectDir`, `getThirdPartyToolDir`, `getThirdPartyToolBinaryDir` | Path utilities |
+| `createTempLoggerDir`, `createTempLoggerPath` | Temp log path helpers |
 | `TypedEventEmitter` | Generic typed event emitter |
-| `ConfigError`, `ProviderError`, `OAuthError`, ... | Error hierarchy |
-| `createDisposable`, `DisposableStack` | Resource cleanup |
+| `Subscription`, `BusSubscription` | Pub/sub event subscription system |
+| `ConfigError`, `ProviderError`, `OAuthError`, `StreamError`, `AgentError`, `ToolError`, `HookError`, `SessionError`, `ExtensionError`, `McpError` | Error hierarchy |
+| `createDisposable`, `createAsyncDisposable`, `DisposableStack`, `AsyncDisposableStack` | Resource cleanup |
 | `formatBytes`, `truncateLine`, `truncateHead`, `truncateTail` | Text truncation helpers |
 | `slugify` | String utility |
 | `request`, `stream` | HTTP & SSE helpers |
 | `parseJsonc`, `safeStringify` | JSON/JSONC helpers |
-| `createTempLoggerPath` | Temp log path helper |
+| `createMarkdownProcessor`, `createGfmProcessor`, `createFrontmatterProcessor` | Markdown AST processor factories |
+| `getNodeText`, `extractBoldLabels`, `extractInlineCodes`, `countChecks`, `extractFrontmatter`, `extractBodyFromAst` | Markdown AST helpers |
 
 ## Types
 
-`Brand`, `DeepPartial`, `DeepReadonly`, `Awaitable`, `Disposable`, `AsyncDisposable`, `Events`, `HttpRequestOptions`, `HttpResponse`, `SseEvent`
+`Brand`, `DeepPartial`, `DeepReadonly`, `Awaitable`, `VoidCallback`, `AsyncVoidCallback`, `Disposable`, `AsyncDisposable`, `Events`, `HttpRequestOptions`, `HttpResponse`, `SseEvent`, `MarkdownProcessor`, `MdastPosition`, `MdastNode`, `YamlNode`, `RootNode`
 
 ## License
 

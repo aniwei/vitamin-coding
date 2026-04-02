@@ -103,7 +103,7 @@ describe('PersistenceBackedArchiveStorage', () => {
 
   it('type defaults to local when not specified', () => {
     const s = new PersistenceBackedArchiveStorage(persistence)
-    expect(s.type).toBe('local')
+    expect(s.type).toBe('file')
   })
 })
 

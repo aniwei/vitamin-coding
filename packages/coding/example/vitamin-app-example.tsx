@@ -24,7 +24,7 @@ import type { VitaminAppOptions } from '../src'
 
 // ─── 通用模型配置 ─────────────────────────────────────────────────────────────
 
-const baseOptions: VitaminAppOptions = {
+const baseOptions = {
   port: 3000,
   inspect: false,
   logger: {
@@ -49,7 +49,7 @@ const baseOptions: VitaminAppOptions = {
     contextWindow: 200_000,
     maxOutputTokens: 8_192,
   },
-}
+} satisfies VitaminAppOptions
 
 // ─── 场景 1：基本启动 / 停止 ──────────────────────────────────────────────────
 
@@ -109,15 +109,15 @@ async function exampleSessionEvents() {
     const session = await vitamin.createSession()
 
     // AgentSession 继承 TypedEventEmitter，支持类型安全的事件监听
-    session.on('prompt_start', (sessionId, prompt) => {
+    session.on('prompt_start', (sessionId: string, prompt: string) => {
       console.log(`[${sessionId}] prompt started: ${prompt.slice(0, 50)}...`)
     })
 
-    session.on('prompt_end', (sessionId) => {
+    session.on('prompt_end', (sessionId: string) => {
       console.log(`[${sessionId}] prompt ended`)
     })
 
-    session.on('error', (sessionId, error) => {
+    session.on('error', (sessionId: string, error: Error) => {
       console.error(`[${sessionId}] error:`, error.message)
     })
 

@@ -3,7 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { InMemorySession } from '../src/in-memory-session'
-import { createDiskSessionPersistence } from '../src/disk-persistence'
+import { createDiskSessionPersistence } from '../src/file-persistence'
 import {
   SessionManager,
   createDiskSessionManager,
@@ -233,17 +233,20 @@ describe('SessionManager', () => {
       manager.dispose()
     })
 
-    it('#then startGC and stopGC remain compatibility no-ops', async () => {
+    it('#then collectIdle removes idle sessions on demand', async () => {
       const manager = createInMemorySessionManager<string>({ idleTimeoutMs: 20 })
       const session = await manager.create('keep-me') as InMemorySession<string>
 
-      ageSession(session, 100)
-      manager.startGC(10)
-      await sleep(40)
-
+      // Not yet idle — lastActiveAt is recent
+      expect(manager.collectIdle()).toHaveLength(0)
       expect(manager.get('keep-me')).toBeDefined()
 
-      manager.stopGC()
+      // Age the session so it becomes idle
+      ageSession(session, 100)
+      const collected = manager.collectIdle()
+      expect(collected).toContain('keep-me')
+      expect(manager.get('keep-me')).toBeUndefined()
+
       manager.dispose()
     })
   })

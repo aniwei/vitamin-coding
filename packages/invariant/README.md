@@ -1,6 +1,6 @@
 # @vitamin/invariant
 
-Invariant assertions and build-time stripping plugin.
+Invariant assertions, verbosity-controlled console, and build-time stripping plugin.
 
 ## Installation
 
@@ -14,7 +14,41 @@ pnpm add @vitamin/invariant
 import { invariant } from '@vitamin/invariant'
 
 invariant(user != null, 'user is required')
+
+// Function callback support
+invariant(() => count > 0, 'count must be positive')
 ```
+
+## Console Override API
+
+```ts
+import { invariant, setVerbosity } from '@vitamin/invariant'
+
+const prev = setVerbosity('warn')
+invariant.debug('this will not print')  // below 'warn' level
+invariant.warn('this will print')
+invariant.error('this will also print')
+setVerbosity(prev)  // restore
+```
+
+Verbosity levels: `'debug'` | `'log'` | `'warn'` | `'error'` | `'silent'`
+
+## API
+
+| Export | Description |
+|--------|-------------|
+| `invariant(condition, message?)` | Runtime assertion, throws `InvariantError` on failure |
+| `InvariantError` | Custom error class (`name: 'Invariant Violation'`, `framesToPop: 1`) |
+| `setVerbosity(level)` | Set console output level, returns previous level |
+| `invariant.debug/log/warn/error` | Conditional console output controlled by verbosity |
+| `createStripInvariantInProductionPlugin(options)` | Build plugin for AST-based stripping |
+
+## Types
+
+| Type | Description |
+|------|-------------|
+| `VerbosityLevel` | `'debug' \| 'log' \| 'warn' \| 'error' \| 'silent'` |
+| `ConsoleFunctionName` | `Exclude<VerbosityLevel, 'silent'>` |
 
 ## Build Plugin (AST)
 

@@ -10,14 +10,17 @@ import {
   type AgentTool 
 } from '@vitamin/agent'
 import { 
+  createProviderRegistry,
   type Model, 
   type ProviderRegistry, 
   type ThinkingLevel 
 } from '@vitamin/ai'
 import { 
+  createHookRegistry,
   type HookRegistry 
 } from '@vitamin/hooks'
 import { 
+  createLogger,
   type Logger 
 } from '@vitamin/shared'
 
@@ -49,6 +52,24 @@ export interface CodingSessionManagerOptions extends Omit<SessionManagerOptions<
   promptRefresh?: PromptRefresh
 }
 
+export interface InMemoryShorthandOptions {
+  model?: Model
+  systemPrompt?: string
+  tools?: AgentTool[]
+  thinkingLevel?: ThinkingLevel
+  maxToolTurns?: number
+  hooks?: HookRegistry
+  hookRegistry?: HookRegistry
+  providerRegistry?: ProviderRegistry
+  workspaceDir?: string
+  logger?: Logger
+  devtools?: Devtools
+  promptRefresh?: PromptRefresh
+  maxSessions?: number
+  idleTimeoutMs?: number
+  threshold?: number
+}
+
 export interface DiskSessionManagerOptions extends CodingSessionManagerOptions {
   sessionDir: string
 }
@@ -72,6 +93,20 @@ export class CodingSessionManager {
   private systemPrompt: string
   private thinkingLevel: ThinkingLevel
   
+  static inMemory(options: InMemoryShorthandOptions = {}): CodingSessionManager {
+    const hookRegistry = options.hooks ?? options.hookRegistry ?? createHookRegistry({ preset: 'none' })
+    const providerRegistry = options.providerRegistry ?? createProviderRegistry()
+    const workspaceDir = options.workspaceDir ?? process.cwd()
+    const logger = options.logger ?? createLogger('coding-session-manager')
+
+    return createInMemoryCodingSessionManager({
+      ...options,
+      hookRegistry,
+      providerRegistry,
+      workspaceDir,
+      logger,
+    })
+  }
   private workspaceDir: string
   private promptRefresh?: PromptRefresh
 
@@ -133,7 +168,7 @@ export class CodingSessionManager {
   private createManagedAgentSession(
     session: Session<AgentMessage>,
     options: Required<Pick<AgentSessionOptions, 'model' | 'systemPrompt' | 'tools' | 'thinkingLevel' | 'maxToolTurns'>>
-      & Pick<AgentSessionOptions, 'agentName' | 'workspaceDir'>,
+      & Pick<AgentSessionOptions, 'agentName' | 'workspaceDir' | 'promptRefresh'>,
   ): AgentSession {
     const {
       model,
@@ -143,6 +178,7 @@ export class CodingSessionManager {
       maxToolTurns,
       agentName,
       workspaceDir,
+      promptRefresh,
     } = options
 
     const agent = createAgentWithRegistry({
@@ -162,7 +198,7 @@ export class CodingSessionManager {
       workspaceDir: workspaceDir ?? this.workspaceDir,
       devtools: this.devtools,
       logger: this.logger,
-      promptRefresh: this.promptRefresh,
+      promptRefresh: promptRefresh ?? this.promptRefresh,
     })
   }
 
@@ -186,6 +222,7 @@ export class CodingSessionManager {
     const systemPrompt = options.systemPrompt ?? this.systemPrompt
     const thinkingLevel = options.thinkingLevel ?? this.thinkingLevel
     const maxToolTurns = options.maxToolTurns ?? this.maxToolTurns
+    const promptRefresh = options.promptRefresh ?? this.promptRefresh
 
     const agentSession = this.createManagedAgentSession(session, {
       model,
@@ -194,6 +231,7 @@ export class CodingSessionManager {
       tools,
       thinkingLevel,
       maxToolTurns,
+      promptRefresh,
       workspaceDir: options.workspaceDir,
     })
 
@@ -262,6 +300,7 @@ export class CodingSessionManager {
       tools: this.tools,
       thinkingLevel: this.thinkingLevel,
       maxToolTurns: this.maxToolTurns,
+      promptRefresh: source.promptRefresh,
       workspaceDir: source.workspaceDir,
     })
 

@@ -6,7 +6,7 @@ import { createInMemorySessionStore } from '@vitamin/session'
 
 import { AgentSession } from '../src/session/agent-session'
 import { createVitamin } from '../src/app/vitamin-app'
-import { createProviderRegistry } from '../../ai/src/provider-registry'
+import { createProviderRegistry } from '@vitamin/ai'
 
 function makeModel(): Model {
   return {
@@ -126,13 +126,13 @@ describe('coding hooks integration', () => {
     }
 
     const sessionStore = createInMemorySessionStore()
-    const session = sessionStore.createSession('session-1')
+    const session = await sessionStore.createSession('session-1')
     const agent = new Agent({ stream })
     const agentSession = new AgentSession(session, agent, {
       model: makeModel(),
       systemPrompt: 'system',
       tools: [tool],
-      hooks,
+      hookRegistry: hooks,
     })
 
     await agentSession.prompt('original prompt')
@@ -201,7 +201,7 @@ describe('coding hooks integration', () => {
       },
       model: makeModel(),
       providerRegistry,
-      hooks,
+      hookRegistry: hooks,
     })
 
     const session = await app.createSession({ id: 'session-created' })
@@ -233,12 +233,12 @@ describe('coding hooks integration', () => {
     }
 
     const sessionStore = createInMemorySessionStore()
-    const session = sessionStore.createSession('session-stream')
+    const session = await sessionStore.createSession('session-stream')
     const agent = new Agent({ stream })
     const agentSession = new AgentSession(session, agent, {
       model: makeModel(),
       systemPrompt: 'system',
-      hooks,
+      hookRegistry: hooks,
     })
 
     await agentSession.prompt('hi')
@@ -268,12 +268,12 @@ describe('coding hooks integration', () => {
     }
 
     const sessionStore = createInMemorySessionStore()
-    const session = sessionStore.createSession('session-compact')
+    const session = await sessionStore.createSession('session-compact')
     const agent = new Agent({ stream })
     const agentSession = new AgentSession(session, agent, {
       model: makeModel(),
       systemPrompt: 'system',
-      hooks,
+      hookRegistry: hooks,
     })
 
     // 填充一些消息
@@ -305,11 +305,11 @@ describe('coding hooks integration', () => {
         level: 'error',
         destination: 'stdout',
       },
-      hooks,
+      hookRegistry: hooks,
     })
 
-    await app.emitBackgroundStart('task-1', 'worker-agent')
-    await app.emitBackgroundEnd('task-1', 'worker-agent', true)
+    await app.hookRegistry.emit('background.start', { taskId: 'task-1', agentName: 'worker-agent' })
+    await app.hookRegistry.emit('background.end', { taskId: 'task-1', agentName: 'worker-agent', success: true })
 
     expect(bgEvents).toEqual([
       'start:task-1:worker-agent',

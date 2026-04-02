@@ -7,7 +7,7 @@ export function buildLessonInjection(lessons: Lesson[]): string {
     `${i + 1}. [${l.tags.join(', ')}] ${l.trigger} → ${l.insight}`
   )
 
-  return `### Operational Lessons
+  return `### 运行经验
 以下是从之前的会话中学到的相关经验：
 ${lines.join('\n')}`
 }

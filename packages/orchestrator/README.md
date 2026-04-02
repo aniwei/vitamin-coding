@@ -8,7 +8,6 @@
 - `Orchestrator` 直接暴露 `dispatchTask`、`callAgent`、`createTask`、`getTask`、`listTasks`、`updateTask`、`getBackgroundOutput`、`cancelBackground`、`clarifyRequest` 这 9 个回调。
 - `runSession()` 是宿主必须提供的桥接闭包，负责创建或复用 session、执行 prompt，并返回文本结果与 sessionId。
 - `TaskStore` 当前是内存实现；任务状态不会跨进程持久化。
-- `callAgent()` 当前是同步、隔离的直接调用：它直接走一次 `runSession({ sessionMode: 'ephemeral' })`，不创建 task 记录，也不进入重试、熔断或后台任务链。
 - `clarifyRequest()` 当前固定通过 agent 名称 `lead` 发起一次 `callAgent()`，失败时返回 `lead_agent` escalation。
 - `workflowConfig` 的实际类型是 `WorkflowOptions`；当前只有 retry 和 circuit breaker 真正接入执行链。
 - `maxBackgroundTasks` 与 `defaultMaxAttempts` 虽然出现在 `OrchestratorOptions` 中，但当前源码尚未消费；`TaskStore` 仍固定写入 `maxAttempts = 3`。
@@ -70,7 +69,6 @@ dispatchTask()
 
 callAgent()
   -> runSession({ agentName, sessionMode: 'ephemeral' })
-  -> return output directly (no TaskStore / RetryPolicy / CircuitBreaker)
 
 background_output / background_cancel
   -> BackgroundManager

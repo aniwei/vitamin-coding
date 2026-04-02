@@ -27,8 +27,10 @@ import {
 } from './orchestration/background-task-cancel'
 import {
   createAgentCall,
+  createReviewCall,
   type CallAgent,
 } from './orchestration/agent-call'
+import { createAgentTask } from './orchestration/agent-task'
 import {
   createClarifyRequest,
   type ClarifyRequest,
@@ -48,6 +50,8 @@ import {
   createLearn,
   type LearnCallback,
 } from './orchestration/learn'
+
+
 
 // LSP
 // import { createLspDefinition } from './lsp/definition'
@@ -85,6 +89,8 @@ export interface RegisterBuiltinOptions {
   captureFileState?: CaptureFileState
   learn?: LearnCallback
   sessionId?: string
+
+
 }
 
 // 注册所有内置工具 (minimal + standard + full 预设)
@@ -140,7 +146,9 @@ export function registerBuiltinTools(
   /// full
   // 编排工具
   registry.register([
+    createReviewCall(projectRoot, options.callAgent),
     createAgentCall(projectRoot, options.callAgent),
+    createAgentTask(projectRoot, options.dispatchTask),
     createTaskCreate(projectRoot, options.createTask),
     createTaskGet(projectRoot, { get: options.getTask }),
     createTaskList(projectRoot, { list: options.listTasks }),

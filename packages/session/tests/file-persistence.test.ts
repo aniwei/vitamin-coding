@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { DiskSessionPersistence, createDiskSessionPersistence } from '../src/disk-persistence'
+import { DiskSessionPersistence, createDiskSessionPersistence } from '../src/file-persistence'
 
 describe('DiskSessionPersistence', () => {
   let tempDir: string

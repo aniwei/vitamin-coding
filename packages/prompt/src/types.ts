@@ -35,15 +35,6 @@ export interface RemoteProviderOptions {
 
 export type PromptProviderOptions = LocalProviderOptions | RemoteProviderOptions
 
-export interface AssembleOptions {
-  phaseDiscipline?: boolean
-  complexityRouting?: boolean
-  reviewGuidance?: boolean
-  workflowOverview?: boolean
-  fileStateGuidance?: boolean
-  modelSlotGuidance?: boolean
-}
-
 export interface PhaseAnnotation {
   currentPhase: string
   phaseHistory: string[]

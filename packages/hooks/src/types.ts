@@ -41,6 +41,10 @@ export type HookTiming =
   | 'review.requested'
   | 'review.passed'
   | 'review.failed'
+  // Plan 事件
+  | 'plan.created'
+  | 'plan.updated'
+  | 'plan.task_updated'
   // System-prompt 变换
   | 'system-prompt.transform'
 
@@ -158,6 +162,10 @@ export interface HookPayloadMap {
   'review.requested': { input: { taskId: string; reviewType: string }; output: void }
   'review.passed': { input: { taskId: string; reviewType: string }; output: void }
   'review.failed': { input: { taskId: string; reviewType: string; issues: string[] }; output: void }
+  // Plan 事件
+  'plan.created': { input: { plan: Record<string, unknown> }; output: void }
+  'plan.updated': { input: { planId: string; action: string; plan: Record<string, unknown> }; output: void }
+  'plan.task_updated': { input: { planId: string; taskId: string; patch: Record<string, unknown> }; output: void }
   'system-prompt.transform': { input: SystemPromptTransformInput; output: SystemPromptTransformOutput }
 }
 

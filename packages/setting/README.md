@@ -73,7 +73,7 @@ watcher.on('change', (cfg, path) => console.log('updated', path))
 | `loadSetting` | Load and validate setting with multi-layer merging |
 | `SettingLoader` | Class-based loader with `load()` and `save()` |
 | `createSettingStore` | Factory: create local/remote/memory/file/http store |
-| `LocalSettingStore` | File-system JSONC setting store |
+| `FileSettingStore` | File-system JSONC setting store |
 | `RemoteSettingStore` | HTTP REST setting store (path-based API) |
 | `InMemorySettingStore` | In-memory store (testing) |
 | `createFileSettingStore` | Persistence-backed file store |
@@ -83,11 +83,11 @@ watcher.on('change', (cfg, path) => console.log('updated', path))
 | `createSettingWatcher`, `SettingWatcher` | File watcher for live reload |
 | `LOG_LEVELS`, `TOOL_PRESETS` | Built-in literal option sets |
 
-Compatibility aliases are still exported: `loadConfig`, `ConfigLoader`, `createConfigStore`, `ConfigStore`, `createConfigWatcher`, `ConfigWatcher`.
+Presets: `BUILTIN_AGENT_PROFILES`, `COPILOT_MODELS`, `TASK_TYPE_PROFILE_MAP`
 
 ## Types
 
-`VitaminSetting`, `AgentConfig`, `CategoryConfig`, `SettingWarning`, `LoadSettingOptions`, `SettingStore`, `SettingStoreOptions`, `SettingStorageType`, `Migration`, `SettingWatcherOptions`
+`VitaminSetting`, `VitaminSettingFromSchema`, `VitaminSettingKey`, `AgentConfig`, `CategoryConfig`, `SettingWarning`, `ConfigWarning`, `LoadSettingOptions`, `LoadConfigOptions`, `SettingStore`, `StorageType`, `SettingStoreOptions`, `SettingWatcherOptions`, `Migration`
 
 ## Merge Priority (low → high)
 

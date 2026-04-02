@@ -8,7 +8,7 @@
 - `VitaminApp` 负责装配 settings、provider registry、hook registry、prompt manager、internal orchestrator、tool registry、session manager 和可选 devtools。
 - `AgentSession` 与 `createAgentSession()` 提供单会话运行时。
 - `CodingSessionManager` 提供多会话管理、fork 与持久化适配。
-- 默认 tool surface 包含任务编排与方法论工具，如 `task_delegate`、`agent_call`、`write_todos`、`capture_file_state`、`learn`。
+- 默认 tool surface 包含任务编排与方法论工具，如 `task_delegate`、`agent_task`、`review_call`、`write_todos`、`capture_file_state`、`learn`。
 - skill 工具会先注册再被 coding runtime 主动移除，因此不属于当前默认能力面。
 - `ResourceManager` 仍是容器成员，但当前不在主动 session 执行主链上。
 - lead guidance prompt 通过 `promptRefresh` 在 `AgentSession.prompt()` 前懒组装，而不是在 `start()` 中预构建。
@@ -91,6 +91,38 @@ await runPrintMode(session, 'Summarize this workspace')
 
 await vitamin.stop()
 ```
+
+### Example 脚本
+
+仓库内置了两个和本文示例对应的可执行脚本：
+
+- `pnpm run:example:simple`：简单任务示例，默认模型是 `github-copilot/gpt-4o`
+- `pnpm run:example:complex`：复杂任务示例，默认模型是 `github-copilot/gemini-2.5-pro`
+- `pnpm run:example:compare`：批量比较不同模型在复杂任务示例中的行为差异
+
+这几个脚本都支持通过环境变量覆写模型：
+
+```bash
+CODING_EXAMPLE_MODEL_ID=github-copilot/gpt-4.1 pnpm run:example:complex
+```
+
+复杂任务示例还支持覆写 prompt 和工具回合上限：
+
+```bash
+CODING_EXAMPLE_MODEL_ID=github-copilot/gemini-2.5-pro \
+CODING_EXAMPLE_MAX_TOOL_TURNS=20 \
+CODING_EXAMPLE_PROMPT='重构 session 模块：拆分 agent-session.ts 为独立的 prompt-handler 和 lifecycle-manager' \
+pnpm run:example:complex
+```
+
+默认情况下，`run:example:complex` 会先创建一个临时沙箱工作区，再在该副本上执行复杂任务，避免直接修改当前工作目录。它会优先从 git `HEAD` 导出 `packages/coding` 快照；如果当前目录不在 git 仓库中，则回退为复制当前目录。只有在显式设置 `CODING_EXAMPLE_WORKSPACE_DIR` 时，才会改为对指定目录直接执行。
+
+当前这套 prompt 与 Copilot provider 的实测结论：
+
+- `github-copilot/gpt-4o`：能稳定完成简单任务，但复杂任务通常只给出建议，不进入工具循环
+- `github-copilot/gpt-4.1`：比 `gpt-4o` 更容易输出 phase 标记，但复杂任务仍经常不调用工具
+- `github-copilot/o4-mini`：当前订阅下返回 `model_not_supported`
+- `github-copilot/gemini-2.5-pro`：复杂任务最容易实际调用 `bash`、`read`、`edit` 等工具，因此被设为复杂示例默认模型
 
 ## 运行时结构
 
@@ -235,7 +267,7 @@ VitaminApp                              ← packages/coding/src/app/vitamin-app.
 |------|------|----------|
 | **minimal** | `read`, `write`, `edit`, `bash` | `@vitamin/tools` register-builtin.ts |
 | **standard** | + `ls`, `find`, `grep`, `task_delegate`, `write_todos` | 同上 |
-| **full** | + `agent_call`, `task_create`, `task_get`, `task_list`, `task_update`, `background_output`, `background_cancel`, `clarify_request`, `capture_file_state`, `learn`, `session_manager`, `skill_load`, `skill_execute` | 同上 |
+| **full** | + `review_call`, `agent_call`, `agent_task`, `task_create`, `task_get`, `task_list`, `task_update`, `background_output`, `background_cancel`, `clarify_request`, `capture_file_state`, `learn`, `session_manager`, `skill_load`, `skill_execute` | 同上 |
 
 ### Lead Agent 系统提示词组装
 
@@ -324,7 +356,7 @@ await session.prompt('读取 package.json 并告诉我版本号')
   ├─ 构建 StreamContext:
   │    systemPrompt: "### 工作流程引导\n你是 lead agent...\n### Phase Discipline..."
   │    messages: [{ role: "user", content: "读取 package.json 并告诉我版本号" }]
-  │    tools: [read, write, edit, bash, ls, find, grep, task_delegate, agent_call, ...]
+  │    tools: [read, write, edit, bash, ls, find, grep, task_delegate, review_call, agent_task, ...]
   │
   ├─ stream(context, signal) → LLM 流式调用 (@vitamin/ai)
   │    └─ provider.converse() → 请求 Anthropic/OpenAI API
@@ -423,7 +455,7 @@ Lead Agent 根据 **Complexity Routing** 指引，判定为 **Full Pipeline**（
 模块: packages/coding/src/app/vitamin-app.ts — VitaminApp
 ```
 
-`VitaminApp.createSession()` 解析 model 和工具列表（默认 `full` preset，包含 `task_delegate`、`agent_call` 等编排工具）。
+`VitaminApp.createSession()` 解析 model 和工具列表（默认 `full` preset，包含 `task_delegate`、`review_call`、`agent_task` 等编排工具）。
 
 ```
 步骤 2: AgentSession.prompt() 与提示词组装 (同简单任务)
@@ -437,7 +469,7 @@ Lead Agent 根据 **Complexity Routing** 指引，判定为 **Full Pipeline**（
 1. 先用 clarify_request 确认需求
 2. 创建 plan（写入文件或记录在回复中）
 3. 用 task_delegate(planId, taskId) 按计划逐步执行
-4. 关键步骤完成后用 agent_call 请 reviewer agent review
+4. 关键步骤完成后用 review_call 请 reviewer agent review
 5. 确认所有任务完成后总结
 ```
 
@@ -565,7 +597,7 @@ const run = async (options) => {
 - **Hook 增强**：同样经过 `system-prompt.transform` Hook 链（lesson-injection + phase-injection）
 
 与 Lead Agent 的关键区别：
-- Lead Agent 的提示词包含完整的 **workflow-overview**（任务编排指引），拥有 `task_delegate` / `agent_call` 等编排工具
+- Lead Agent 的提示词包含完整的 **workflow-overview**（任务编排指引），拥有 `task_delegate` / `review_call` / `agent_task` 等编排工具
 - Sub-agent（如 "coder"）的提示词通常只包含代码实现指引，工具列表被白名单过滤为 `read` / `write` / `edit` / `bash` / `grep` 等执行工具
 
 ```
@@ -590,13 +622,13 @@ tool_result: "Task delegated successfully: prompt-handler.ts 已创建，包含 
 
 Lead Agent 继续下一轮 WorkLoop，dispatch 下一个子任务...
 
-**Turn 6: [Phase: Execute] — 通过 agent_call 请求 Review**
+**Turn 6: [Phase: Execute] — 通过 review_call 请求 Review**
 
 ```
 LLM 输出:
   content: "[Phase: Verify] 所有文件已修改，请 reviewer 检查..."
   toolCalls: [{
-    name: "agent_call",
+    name: "review_call",
     arguments: {
       agent: "reviewer",
       prompt: "请检查 packages/coding/src/session/ 下的重构变更：
@@ -608,12 +640,12 @@ LLM 输出:
 ```
 
 ```
-步骤 4: agent_call 工具执行
+步骤 4: review_call 工具执行
 ━━━━━━━━━━━━━━━━━━━━━━━━━
 模块: @vitamin/tools — orchestration/agent-call.ts
 ```
 
-`agent_call.execute()` 调用注入的 `call` 回调 → `Orchestrator.callAgent()` → `TaskExecutor.callAgent()`
+`review_call.execute()` 调用注入的 `call` 回调 → `Orchestrator.callAgent()` → `TaskExecutor.callAgent()`
 
 与 `task_delegate` 的区别：`callAgent` 不创建 TaskStore 记录，直接调用 `runSession()`，是轻量级的同步隔离调用。
 
@@ -708,7 +740,7 @@ workLoop 结束后，`session.idle` Hook 触发 session-end-learning：Lead Agen
  │               │                  │                    │                   │                     │                    │
  │               │                  │              Turn 6: [Verify]          │                     │                    │
  │               │                  │                    │─stream()→LLM      │                     │                    │
- │               │                  │                    │←─agent_call(reviewer)                   │                    │
+ │               │                  │                    │←─review_call(reviewer)                  │                    │
  │               │                  │                    │──callAgent()─────→│                     │                    │
  │               │                  │                    │                   │─runSession(slot:"critique")──────────────→│
  │               │                  │                    │                   │  (创建 reviewer session, critique 模型)   │
@@ -737,7 +769,7 @@ workLoop 结束后，`session.idle` Hook 触发 session-end-learning：Lead Agen
 | **Agent 循环** | `Agent` + `workLoop` (`@vitamin/agent`) | stream → tool_use → tool_result → stream 循环 |
 | **工具执行** | `ToolExecutor` (`@vitamin/agent`) + `ToolRegistry` (`@vitamin/tools`) | 只读并行 + 修改顺序 + Steering 中断 |
 | **任务编排** | `Orchestrator` + `TaskExecutor` (`@vitamin/orchestrator`) | 并发控制 + 重试 + 熔断 + 后台任务 |
-| **子任务派发** | `task_delegate` / `agent_call` (`@vitamin/tools/orchestration`) | dispatch → runSession → createSession → sub-agent WorkLoop |
+| **子任务派发** | `task_delegate` / `agent_task` / `review_call` (`@vitamin/tools/orchestration`) | dispatch → runSession → createSession → sub-agent WorkLoop |
 | **经验学习** | `OperationalLearningStore` (`@vitamin/memory`) | session.idle 时提取经验 → 下次 lesson-injection |
 
 ## 进一步阅读

@@ -1,12 +1,14 @@
 import { describe, expect, it } from 'vitest'
 
-import { createAgentCall } from '../src/orchestration/agent-call'
+import { createAgentCall, createReviewCall } from '../src/orchestration/agent-call'
+import { createAgentTask } from '../src/orchestration/agent-task'
 import { createBackgroundCancelTool } from '../src/orchestration/background-task-cancel'
 import { createBackgroundOutputTool } from '../src/orchestration/background-task-output'
 import { createTaskCreate } from '../src/orchestration/task-create'
 import { createTaskGet } from '../src/orchestration/task-get'
 import { createTaskList } from '../src/orchestration/task-list'
 import { createTaskUpdate } from '../src/orchestration/task-update'
+import { createWriteTodos } from '../src/orchestration/write-todos'
 
 describe('orchestration tools (additional coverage)', () => {
   const signal = new AbortController().signal
@@ -175,5 +177,86 @@ describe('orchestration tools (additional coverage)', () => {
       params: { agent: 'explore', prompt: 'hello' },
       signal,
     })).rejects.toThrow('call_agent function is not provided in options')
+  })
+
+  it('review_call throws when callback is missing', async () => {
+    const tool = createReviewCall('/tmp', undefined as unknown as (agent: string, prompt: string) => Promise<{ success: boolean }>)
+
+    await expect(tool.execute({
+      id: 'rc3',
+      params: { agent: 'reviewer', prompt: 'hello' },
+      signal,
+    })).rejects.toThrow('call_agent function is not provided in options')
+  })
+
+  it('agent_task returns isError when dispatch fails', async () => {
+    const tool = createAgentTask('/tmp', async () => ({
+      success: false,
+      error: 'task runtime rejected request',
+    }))
+
+    const result = await tool.execute({
+      id: 'at3',
+      params: {
+        agent: 'implementer',
+        prompt: 'ship change',
+      },
+      signal,
+    })
+
+    expect(result.isError).toBe(true)
+    expect(result.content[0]?.type).toBe('text')
+    if (result.content[0]?.type === 'text') {
+      expect(result.content[0].text).toContain('task runtime rejected request')
+    }
+  })
+
+  it('agent_task throws when dispatch callback is missing', async () => {
+    const tool = createAgentTask('/tmp', undefined as unknown as (args: {
+      prompt?: string
+      subagent?: string
+      mode: 'sync' | 'background'
+      sessionId?: string
+      sessionMode?: 'ephemeral' | 'sticky'
+      slot?: 'normal' | 'thinking' | 'compact' | 'critique' | 'vision'
+    }) => Promise<{ success: boolean }>)
+
+    await expect(tool.execute({
+      id: 'at4',
+      params: { agent: 'implementer', prompt: 'hello' },
+      signal,
+    })).rejects.toThrow('agent_task function is not provided in options')
+  })
+
+  it('write_todos passes sessionId through', async () => {
+    let receivedSessionId: string | undefined
+
+    const tool = createWriteTodos(async ({ action, todos, sessionId }) => {
+      receivedSessionId = sessionId
+      return {
+        success: true,
+        todos,
+      }
+    })
+
+    const result = await tool.execute({
+      id: 'wt1',
+      params: {
+        action: 'set',
+        todos: [{ id: 'T1', title: 'Map todos to plan', status: 'pending' }],
+      },
+      signal,
+      sessionId: 'lead-session-1',
+    })
+
+    expect(result.isError).toBeUndefined()
+    expect(receivedSessionId).toBe('lead-session-1')
+    expect(result.content[0]?.type).toBe('text')
+    if (result.content[0]?.type === 'text') {
+      expect(result.content[0].text).toContain('[pending] T1: Map todos to plan')
+    }
+    expect(result.details).toEqual({
+      todos: [{ id: 'T1', title: 'Map todos to plan', status: 'pending' }],
+    })
   })
 })

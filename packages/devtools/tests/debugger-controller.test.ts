@@ -1,6 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
 import { BREAKPOINT_POINTS, type DebugSnapshot } from '../src/protocol'
+import { Breakpoints } from '../src/tools/breakpoints'
 import { DevtoolsService } from '../src/service'
 import { DevtoolsDebugger } from '../src/tools/debugger'
 
@@ -13,8 +14,9 @@ describe('DevtoolsDebugger', () => {
   })
 
   it('targets the service paused endpoint', () => {
-    const service = new DevtoolsService(3903)
-    const debuggerController = new DevtoolsDebugger(service)
+    const breakpoints = new Breakpoints()
+    const service = new DevtoolsService({ port: 3903, noServer: false }, breakpoints)
+    const debuggerController = new DevtoolsDebugger(service, breakpoints)
 
     expect(debuggerController.serviceUrl).toContain('http://127.0.0.1:3903/')
     expect(debuggerController.serviceUrl.endsWith('/command/debugger/paused')).toBe(true)
@@ -32,7 +34,7 @@ describe('DevtoolsDebugger', () => {
       },
     } as unknown as DevtoolsService
 
-    const debuggerController = new DevtoolsDebugger(fakeService)
+    const debuggerController = new DevtoolsDebugger(fakeService, new Breakpoints())
     const snapshot = makeSnapshot('loop_start')
     debuggerController.pause(snapshot)
 
@@ -50,7 +52,7 @@ describe('DevtoolsDebugger', () => {
       },
     } as unknown as DevtoolsService
 
-    const debuggerController = new DevtoolsDebugger(fakeService)
+    const debuggerController = new DevtoolsDebugger(fakeService, new Breakpoints())
     debuggerController.breakpoints.disable('loop_start')
     debuggerController.pause(makeSnapshot('loop_start'))
 
@@ -65,7 +67,7 @@ describe('DevtoolsDebugger', () => {
       },
     } as unknown as DevtoolsService
 
-    const debuggerController = new DevtoolsDebugger(fakeService)
+    const debuggerController = new DevtoolsDebugger(fakeService, new Breakpoints())
     const points = debuggerController.breakpoints.list().map(item => item.point)
 
     expect(points).toEqual(BREAKPOINT_POINTS)
@@ -79,7 +81,7 @@ describe('DevtoolsDebugger', () => {
       },
     } as unknown as DevtoolsService
 
-    const debuggerController = new DevtoolsDebugger(fakeService)
+    const debuggerController = new DevtoolsDebugger(fakeService, new Breakpoints())
 
     expect(debuggerController.getBreakpoint('loop_start')?.enabled).toBe(true)
     debuggerController.disableBreakpoint('loop_start')
@@ -97,7 +99,7 @@ describe('DevtoolsDebugger', () => {
       },
     } as unknown as DevtoolsService
 
-    const debuggerController = new DevtoolsDebugger(fakeService)
+    const debuggerController = new DevtoolsDebugger(fakeService, new Breakpoints())
 
     debuggerController.disableAllBreakpoints()
     expect(debuggerController.listBreakpoints().every(item => item.enabled === false)).toBe(true)

@@ -234,6 +234,66 @@ describe('Orchestrator', () => {
     })
   })
 
+  describe('writeTodos', () => {
+    it('stores and returns todos per session', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      const first = await orch.writeTodos({
+        sessionId: 'lead-1',
+        action: 'set',
+        todos: [{ id: 'T1', title: 'Inspect runtime wiring', status: 'pending' }],
+      })
+
+      expect(first.success).toBe(true)
+      expect(first.todos).toHaveLength(1)
+      expect(first.todos[0].id).toBe('T1')
+
+      const second = await orch.writeTodos({
+        sessionId: 'lead-1',
+        action: 'update',
+        todos: [
+          { id: 'T1', title: 'Inspect runtime wiring', status: 'in_progress' },
+          { id: 'T2', title: 'Patch tool callback', status: 'pending' },
+        ],
+      })
+
+      expect(second.todos).toHaveLength(2)
+      expect(second.todos[0].status).toBe('in_progress')
+      expect(second.todos[1].id).toBe('T2')
+    })
+
+    it('isolates todos across sessions', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession(),
+      })
+
+      await orch.writeTodos({
+        sessionId: 'lead-a',
+        action: 'set',
+        todos: [{ id: 'T1', title: 'Plan A', status: 'pending' }],
+      })
+
+      await orch.writeTodos({
+        sessionId: 'lead-b',
+        action: 'set',
+        todos: [{ id: 'T1', title: 'Plan B', status: 'pending' }],
+      })
+
+      const a = await orch.writeTodos({
+        sessionId: 'lead-a',
+        action: 'update',
+        todos: [],
+      })
+
+      expect(a.todos).toHaveLength(1)
+      expect(a.todos[0].title).toBe('Plan A')
+    })
+  })
+
   describe('dispatchTask (integration)', () => {
     it('dispatches sync task through full pipeline', async () => {
       const orch = new Orchestrator({

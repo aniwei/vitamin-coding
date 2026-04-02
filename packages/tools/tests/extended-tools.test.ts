@@ -164,18 +164,18 @@ describe('extended tools', () => {
         sessionMode: 'sticky',
       })
     })
-    it('requires taskId when using planId mode', () => {
+    it('requires subagent or category', () => {
       const tool = createTaskDelegate(testDir, async () => ({ success: true }))
 
       const invalid = tool.parameters.safeParse({
-        planId: 'plan-1',
+        prompt: 'do something',
         mode: 'sync',
       })
       expect(invalid.success).toBe(false)
 
       const valid = tool.parameters.safeParse({
-        planId: 'plan-1',
-        taskId: 'task-2',
+        prompt: 'do something',
+        subagent: 'coder',
         mode: 'sync',
       })
       expect(valid.success).toBe(true)

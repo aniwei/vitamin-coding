@@ -1,18 +1,20 @@
 import { describe, expect, it } from 'vitest'
 import { Agent } from '@vitamin/agent'
-import { createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent } from '@vitamin/ai'
+import { createDefaultProviderRegistry, createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent } from '@vitamin/ai'
 import { createHookRegistry } from '@vitamin/hooks'
 import { attachLogListener, createLogger } from '@vitamin/shared'
 
 import { CodingSessionManager as SessionManager } from '../src/session/coding-session-manager'
 import { AgentSession } from '../src/session/agent-session'
 
+const defaultProviderRegistry = createDefaultProviderRegistry()
+
 function makeModel(): Model {
   return {
-    id: 'openai/test-model',
+    id: 'github-copilot/test-model',
     name: 'test-model',
-    api: 'openai-completions',
-    provider: 'openai',
+    api: 'github-copilot',
+    provider: 'github-copilot',
     baseUrl: 'https://example.com',
     reasoning: false,
     input: ['text'],
@@ -26,11 +28,11 @@ function makeAssistantMessage(): AssistantMessage {
   return {
     role: 'assistant',
     content: [{ type: 'text', text: 'hello' }],
-    api: 'openai-completions',
-    provider: 'openai',
+    api: 'github-copilot',
+    provider: 'github-copilot',
     usage: { inputTokens: 10, outputTokens: 5, cacheReadTokens: 0, cacheWriteTokens: 0 },
     stopReason: 'end_turn',
-    model: 'openai/test-model',
+    model: 'github-copilot/test-model',
   }
 }
 
@@ -68,25 +70,28 @@ async function flushLogs(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 20))
 }
 
+function createManager(overrides: Record<string, unknown> = {}) {
+  return SessionManager.inMemory({
+    model: makeModel(),
+    hooks: createHookRegistry({ preset: 'none' }),
+    providerRegistry: defaultProviderRegistry,
+    ...overrides,
+  })
+}
+
 // ═══ SessionManager ═══
 
 describe('SessionManager', () => {
   describe('inMemory', () => {
     it('creates a manager in memory mode', () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        systemPrompt: 'test',
-      })
+      const mgr = createManager({ systemPrompt: 'test' })
 
       expect(mgr).toBeInstanceOf(SessionManager)
       expect(mgr.listSessions()).toHaveLength(0)
     })
 
     it('creates sessions', async () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-      })
+      const mgr = createManager()
 
       const session = await mgr.createSession({ id: 'test-1' })
 
@@ -98,11 +103,7 @@ describe('SessionManager', () => {
     it('emits user-facing lifecycle logs', async () => {
       const entries: string[] = []
       const collector = createLogCollector(entries)
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-        logger: collector.logger,
-      })
+      const mgr = createManager({ logger: collector.logger })
 
       await mgr.createSession({ id: 'log-session' })
       await mgr.removeSession('log-session')
@@ -114,10 +115,7 @@ describe('SessionManager', () => {
     })
 
     it('retrieves sessions by ID', async () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-      })
+      const mgr = createManager()
 
       await mgr.createSession({ id: 'sess-a' })
 
@@ -127,19 +125,13 @@ describe('SessionManager', () => {
     })
 
     it('returns undefined for unknown session', async () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-      })
+      const mgr = createManager()
 
       expect(mgr.getSession('nonexistent')).toBeUndefined()
     })
 
     it('removes sessions', async () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-      })
+      const mgr = createManager()
 
       await mgr.createSession({ id: 'to-remove' })
       expect(mgr.listSessions()).toHaveLength(1)
@@ -151,20 +143,14 @@ describe('SessionManager', () => {
     })
 
     it('returns false when removing nonexistent session', async () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-      })
+      const mgr = createManager()
 
       const removed = await mgr.removeSession('ghost')
       expect(removed).toBe(false)
     })
 
     it('lists sessions with info', async () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-      })
+      const mgr = createManager()
 
       await mgr.createSession({ id: 's1' })
       await mgr.createSession({ id: 's2' })
@@ -176,9 +162,7 @@ describe('SessionManager', () => {
     })
 
     it('throws when no model provided', async () => {
-      const mgr = SessionManager.inMemory({
-        hooks: createHookRegistry({ preset: 'none' }),
-      })
+      const mgr = createManager({ model: undefined })
 
       await expect(mgr.createSession()).rejects.toThrow('No model specified')
     })
@@ -190,23 +174,28 @@ describe('SessionManager', () => {
         id: 'custom/override-model',
       }
 
-      const mgr = SessionManager.inMemory({
-        model: defaultModel,
-        hooks: createHookRegistry({ preset: 'none' }),
-      })
+      const mgr = createManager({ model: defaultModel })
 
       const session = await mgr.createSession({ model: overrideModel })
       // The session was created — model override was accepted
       expect(session).toBeInstanceOf(AgentSession)
     })
+
+    it('session-level promptRefresh overrides manager default', async () => {
+      const mgr = createManager({ promptRefresh: async () => 'manager-prompt' })
+
+      const session = await mgr.createSession({
+        id: 'prompt-refresh-override',
+        promptRefresh: async () => 'session-prompt',
+      })
+
+      expect(await session.promptRefresh?.()).toBe('session-prompt')
+    })
   })
 
   describe('active session', () => {
     it('sets and gets active session', async () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-      })
+      const mgr = createManager()
 
       await mgr.createSession({ id: 'active-1' })
       await mgr.createSession({ id: 'active-2' })
@@ -219,10 +208,7 @@ describe('SessionManager', () => {
     })
 
     it('returns undefined for unknown active', () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-      })
+      const mgr = createManager()
 
       expect(mgr.active).toBeUndefined()
       expect(mgr.setActive('nonexistent')).toBeUndefined()
@@ -231,22 +217,14 @@ describe('SessionManager', () => {
 
   describe('cwd propagation', () => {
     it('passes cwd from manager options to sessions', async () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-        workspaceDir: '/test/workspace',
-      })
+      const mgr = createManager({ workspaceDir: '/test/workspace' })
 
       const session = await mgr.createSession({ id: 'cwd-test' })
       expect(session.workspaceDir).toBe('/test/workspace')
     })
 
     it('session-level cwd overrides manager cwd', async () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-        workspaceDir: '/default/cwd',
-      })
+      const mgr = createManager({ workspaceDir: '/default/cwd' })
 
       const session = await mgr.createSession({ id: 'cwd-override', workspaceDir: '/override/cwd' })
       expect(session.workspaceDir).toBe('/override/cwd')
@@ -255,10 +233,7 @@ describe('SessionManager', () => {
 
   describe('fork', () => {
     it('forks a session', async () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-      })
+      const mgr = createManager()
 
       const original = await mgr.createSession({ id: 'source' })
       // Add a message to make the fork non-trivial
@@ -276,10 +251,7 @@ describe('SessionManager', () => {
     })
 
     it('returns undefined when forking nonexistent session', async () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-      })
+      const mgr = createManager()
 
       const forked = await mgr.forkSession('ghost')
       expect(forked).toBeUndefined()
@@ -288,10 +260,7 @@ describe('SessionManager', () => {
 
   describe('dispose', () => {
     it('disposes all sessions', async () => {
-      const mgr = SessionManager.inMemory({
-        model: makeModel(),
-        hooks: createHookRegistry({ preset: 'none' }),
-      })
+      const mgr = createManager()
 
       await mgr.createSession({ id: 'd1' })
       await mgr.createSession({ id: 'd2' })

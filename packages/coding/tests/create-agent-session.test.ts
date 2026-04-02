@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { Agent, type AgentMessage } from '@vitamin/agent'
-import { createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent, type ToolCall } from '@vitamin/ai'
+import { createEventStream, createProviderRegistry, type AssistantMessage, type Model, type ProviderStream, type StreamContext, type StreamEvent, type ToolCall } from '@vitamin/ai'
 import { createHookRegistry } from '@vitamin/hooks'
 import { attachLogListener, createLogger } from '@vitamin/shared'
 import { createInMemorySessionStore } from '@vitamin/session'
@@ -110,6 +110,18 @@ function createLogCollector(entries: string[]) {
   }
 }
 
+function makeProviderRegistry() {
+  const registry = createProviderRegistry()
+  registry.register('openai-completions', (): ProviderStream => ({
+    id: 'test-openai',
+    displayName: 'Test OpenAI',
+    async *converse() {
+      // no-op — tests use Agent with custom stream, not provider
+    },
+  }))
+  return registry
+}
+
 async function flushLogs(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 20))
 }
@@ -120,6 +132,7 @@ describe('createAgentSession', () => {
   it('creates a working AgentSession with minimal options', () => {
     const session = createAgentSession({
       model: makeModel(),
+      providerRegistry: makeProviderRegistry(),
       systemPrompt: 'You are helpful.',
     })
 
@@ -131,6 +144,7 @@ describe('createAgentSession', () => {
   it('uses provided session ID', () => {
     const session = createAgentSession({
       model: makeModel(),
+      providerRegistry: makeProviderRegistry(),
       id: 'custom-id-123',
     })
 
@@ -141,6 +155,7 @@ describe('createAgentSession', () => {
     const hooks = createHookRegistry({ preset: 'none' })
     const session = createAgentSession({
       model: makeModel(),
+      providerRegistry: makeProviderRegistry(),
       hooks,
     })
 
@@ -151,6 +166,7 @@ describe('createAgentSession', () => {
     const store = createInMemorySessionStore<AgentMessage>()
     const session = createAgentSession({
       model: makeModel(),
+      providerRegistry: makeProviderRegistry(),
       sessionStore: store,
       id: 'store-test',
     })
@@ -163,7 +179,7 @@ describe('createAgentSession', () => {
   it('runs prompt end-to-end without VitaminApp', async () => {
     const hooks = createHookRegistry({ preset: 'none' })
     const store = createInMemorySessionStore<AgentMessage>()
-    const sessionData = store.createSession('e2e-test')
+    const sessionData = await store.createSession('e2e-test')
     const agent = new Agent({ stream: makeStream() })
 
     const agentSession = new AgentSession(sessionData, agent, {
@@ -184,7 +200,7 @@ describe('createAgentSession', () => {
     const collector = createLogCollector(entries)
     const hooks = createHookRegistry({ preset: 'none' })
     const store = createInMemorySessionStore<AgentMessage>()
-    const sessionData = store.createSession('log-e2e')
+    const sessionData = await store.createSession('log-e2e')
     const agent = new Agent({ stream: makeToolStream() })
 
     const tool = {

@@ -3,8 +3,8 @@ import { createDefaultProviderRegistry, createEventStream, type AssistantMessage
 import { createHookRegistry } from '@vitamin/hooks'
 import { InteractiveMode, runJsonMode, runPrintMode } from '@vitamin/coding'
 
-import { createVitamin, type VitaminAppOptions } from '../../coding/src/app/vitamin-app'
-import { createInMemoryResourceManager } from '../../coding/src/resources/resource-manager'
+import { createVitamin, type VitaminAppOptions } from '@vitamin/coding'
+import { createInMemoryResourceManager } from '@vitamin/resources'
 import { parseCLI } from '../src/cli'
 
 function makeModel(): Model {
@@ -99,7 +99,7 @@ describe('CLI session modes', () => {
     const session = await app.createSession()
     const result = await runJsonMode(session, 'Review this change')
 
-    expect(result.status).toBe('idle')
+    expect(result.status).toBe('completed')
     expect(result.response).toBe('done_with_concerns\nTests need rerun.')
     expect(result.sessionId).toBeTruthy()
   })

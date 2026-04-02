@@ -46,7 +46,7 @@
 
 #### B. 编排工具面（@vitamin/tools）
 
-- 已有编排工具：task_delegate、agent_call、task_create/task_get/task_list/task_update、background_output/background_cancel、clarify_request。
+- 已有编排工具：task_delegate、agent_task、review_call（兼容别名 agent_call）、task_create/task_get/task_list/task_update、background_output/background_cancel、clarify_request。
 - 已有方法论工具：write_todos、capture_file_state、learn。
 - 已有会话工具：session_manager。
 
@@ -58,9 +58,10 @@
 
 #### D. Prompt 方法论承载面（@vitamin/prompt）
 
-- PromptManager 支持按 section 组合：workflow-overview、phase-discipline、complexity-routing、review-guidance、model-slot-guidance、file-state-guidance。
+- PromptManager 加载单文件 lead-guidance.md（内含 10 个 section：身份与环境、安全与边界、输出与沟通、工具使用指引、工作流程引导、阶段纪律、复杂度路由、审查指引、模型槽位指引、文件状态刷新）。
 - 已支持 phase 提取与 phase 上下文回注。
 - 已支持会话末学习提示与 lessons 注入。
+- 子代理 prompt 通过 AgentProfile 模板 + SubAgentPromptContext（taskTitle/taskDescription/taskFiles）占位符替换组装。
 
 #### E. 配置面（@vitamin/setting）
 
@@ -72,7 +73,7 @@
 ### 1.2 关键缺口
 
 1. Review 仍偏“Prompt 约束”，缺少统一 runtime 级 ReviewCoordinator。
-2. 缺少“计划工件状态机”（PlanStateManager），目前 write_todos 与 task 之间关联较松。
+2. 当前采用 Claude Code 模式：write_todos 是纯 UI/记忆工具，task_delegate 直接 prompt-based 分发，不经过结构化 plan 状态链路（PlanStore 曾实现后移除）。
 3. TaskStore 当前以内存为主，缺少持久化适配（重启恢复能力有限）。
 4. 缺少方法论 Profile（严格/平衡/极速/长任务）配置抽象。
 5. 缺少 Fleet 级 fan-out/fan-in 统一执行器（虽有基础并行能力）。
@@ -128,7 +129,7 @@
 
 ### 对 Vitamin 的迁移价值
 
-- 非常高：可直接映射为 task_delegate + agent_call(reviewer) 循环。
+- 非常高：可直接映射为 task_delegate/agent_task + review_call(reviewer) 循环。
 
 ### 不建议直接照搬
 
@@ -318,7 +319,7 @@ createAgent/query
 
 ### 当前实线
 
-用户请求 -> LLM 自主调用工具 -> task_delegate/agent_call 可用，但“计划/审查何时触发”主要依赖 prompt。
+用户请求 -> LLM 自主调用工具 -> task_delegate/agent_task/review_call 可用，但“计划/审查何时触发”主要依赖 prompt。
 
 ### 优化目标
 
@@ -472,7 +473,7 @@ Agent 层有只读并行能力；orchestrator 层尚缺 fleet 级聚合策略。
 | @vitamin/prompt | section 化已完成 | 增加 profile 到 section 的投影规则与动态裁剪 | P0 | 同一任务在不同 profile 的 system prompt 可观测差异 |
 | @vitamin/orchestrator.TaskStore | 以内存为主 | 增加 disk/remote persistence adapter | P1 | 进程重启后 task 状态可恢复 |
 | @vitamin/orchestrator | 有 executor/retry/cb，无审查协调器 | 增加 ReviewCoordinator（spec->quality->optional） | P0 | 跨模块任务可自动进入审查闭环 |
-| @vitamin/orchestrator | 有任务分发，无 plan 工件状态机 | 增加 PlanStateManager（planId/taskId 生命周期） | P1 | 任务与计划步骤状态一一对应 |
+| @vitamin/orchestrator | write_todos 是纯 UI/记忆，无 plan 状态链路 | 如需重新引入 plan 工件状态，可增加 PlanStateManager（曾实现后移除） | P1 | 任务与计划步骤状态一一对应 |
 | @vitamin/orchestrator | 有基础并发，无 fleet 聚合执行器 | 增加 FleetCoordinator（fan-out/fan-in/race） | P2 | 可配置并发上限、超时、聚合策略 |
 | @vitamin/hooks | 拦截能力强，策略松散 | 增加 policy priority 与冲突仲裁顺序 | P1 | 同时命中多策略时结果确定且可解释 |
 | @vitamin/tools | 编排工具齐全 | 扩展 task_delegate 元数据（risk/priority/reviewRequired） | P2 | LLM 分发可携带治理信息 |

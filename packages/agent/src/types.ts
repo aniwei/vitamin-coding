@@ -143,6 +143,8 @@ export interface ToolCallContext<Params = unknown> {
   id: string
   params: Params
   signal: AbortSignal
+  sessionId?: string
+  agentName?: string
   onUpdate?: (update: string) => void
 }
 

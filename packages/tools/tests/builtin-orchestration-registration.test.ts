@@ -13,6 +13,9 @@ describe('builtin orchestration registration', () => {
 
     const fullNames = new Set(registry.getAvailable('full').map((t) => t.name))
 
+    expect(fullNames.has('review_call')).toBe(true)
+    expect(fullNames.has('agent_call')).toBe(true)
+    expect(fullNames.has('agent_task')).toBe(true)
     expect(fullNames.has('task_delegate')).toBe(true)
     expect(fullNames.has('task_create')).toBe(true)
     expect(fullNames.has('task_get')).toBe(true)

@@ -95,6 +95,32 @@ describe('TaskExecutor.dispatch', () => {
     }])
   })
 
+  it('forwards task metadata to runSession', async () => {
+    const seen: RunSessionOptions[] = []
+    const { executor } = makeExecutor({
+      runSession: makeRunSession((opts) => {
+        seen.push(opts)
+        return {
+          text: 'context-applied',
+          sessionId: 'ctx-sess',
+          durationMs: 15,
+        }
+      }),
+    })
+
+    const result = await executor.dispatch({
+      prompt: 'dispatch with context',
+      mode: 'sync',
+    })
+
+    expect(result.success).toBe(true)
+    expect(seen).toHaveLength(1)
+    expect(seen[0]).toMatchObject({
+      prompt: 'dispatch with context',
+      sessionMode: 'ephemeral',
+    })
+  })
+
   it('returns error when runSession throws', async () => {
     const { executor } = makeExecutor({
       runSession: makeRunSession(() => { throw new Error('session failed') }),
@@ -214,6 +240,15 @@ describe('TaskExecutor.callAgent', () => {
     expect(result.output).toBe('response to: write code')
   })
 
+  it('does not create task records for direct agent calls', async () => {
+    const { executor, taskStore } = makeExecutor()
+
+    const result = await executor.callAgent('reviewer', 'inspect this change', {})
+
+    expect(result.success).toBe(true)
+    await expect(taskStore.list()).resolves.toEqual([])
+  })
+
   it('uses an isolated ephemeral session and forwards agent name and slot', async () => {
     const seen: RunSessionOptions[] = []
     const { executor } = makeExecutor({
@@ -238,6 +273,51 @@ describe('TaskExecutor.callAgent', () => {
       agentName: 'spec-reviewer',
       slot: 'critique',
     }])
+  })
+
+  it('bypasses the circuit breaker gate for direct agent calls', async () => {
+    const circuitBreaker = new CircuitBreaker({
+      enabled: true,
+      failureThreshold: 1,
+      resetTimeoutMs: 60_000,
+    })
+    circuitBreaker.failure()
+
+    const { executor } = makeExecutor({
+      circuitBreaker,
+      runSession: makeRunSession(() => ({
+        text: 'review completed',
+        sessionId: 'agent-open-breaker',
+        durationMs: 15,
+      })),
+    })
+
+    const result = await executor.callAgent('quality-reviewer', 'review this change', {})
+
+    expect(result.success).toBe(true)
+    expect(result.output).toBe('review completed')
+  })
+
+  it('does not retry failed direct agent calls', async () => {
+    let callCount = 0
+    const { executor } = makeExecutor({
+      retryPolicy: new RetryPolicy({
+        enabled: true,
+        maxAttempts: 3,
+        backoffMs: 1,
+        backoffMultiplier: 1,
+      }),
+      runSession: makeRunSession(() => {
+        callCount++
+        throw new Error('agent crash')
+      }),
+    })
+
+    const result = await executor.callAgent('coder', 'fail once', {})
+
+    expect(result.success).toBe(false)
+    expect(result.error).toContain('agent crash')
+    expect(callCount).toBe(1)
   })
 
   it('returns error on failure', async () => {

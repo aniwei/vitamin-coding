@@ -154,7 +154,74 @@ await hooks.emit('background.end', { taskId: 'bg-1', agentName: 'coding', succes
 | `strict` | `default` + `comment-checker` | 对代码注释质量要求更高 |
 | `none` | 不自动注册内置 Hook | 完全自定义 |
 
-## 6. 自定义 Hook 写法
+## 6. 高级 Hook
+
+### 错误恢复
+
+```ts
+import { createErrorRecoveryHook, resetErrorRecoveryCounter } from '@vitamin/hooks'
+
+const errorRecovery = createErrorRecoveryHook({
+  maxRetries: 3,
+  recoverablePatterns: [/rate limit/i, /timeout/i],
+  recover: (sessionId, error) => { /* 恢复逻辑 */ },
+})
+hooks.register(errorRecovery)
+
+// 手动重置重试计数
+resetErrorRecoveryCounter('session-1')
+```
+
+### 空闲续作
+
+```ts
+import { createIdleContinuationHook } from '@vitamin/hooks'
+
+const idleContinuation = createIdleContinuationHook({
+  hasPendingWork: (sessionId) => checkPendingTasks(sessionId),
+  resumeWork: (sessionId) => resumeSession(sessionId),
+})
+hooks.register(idleContinuation)
+```
+
+### 工具错误断路器
+
+```ts
+import { createToolErrorTrackerHook, getToolErrors, clearToolErrors } from '@vitamin/hooks'
+
+const toolTracker = createToolErrorTrackerHook({
+  circuitBreakerThreshold: 5,    // 连续错误 5 次后触发
+  decayWindowMs: 120_000,         // 2 分钟衰减窗口
+})
+hooks.register(toolTracker)
+```
+
+### 后台任务追踪
+
+```ts
+import {
+  createBackgroundStartHook,
+  createBackgroundEndHook,
+  getActiveBackgroundTasks,
+  getCompletedBackgroundTasks,
+  clearBackgroundTaskHistory,
+} from '@vitamin/hooks'
+
+hooks.register(createBackgroundStartHook())
+hooks.register(createBackgroundEndHook())
+```
+
+### Token 用量追踪
+
+```ts
+import { trackTokenUsage, getTokenUsage, clearTokenUsage } from '@vitamin/hooks'
+
+trackTokenUsage('session-1', 'gpt-4', 1000, 500)
+const usage = getTokenUsage('session-1')
+// { model: 'gpt-4', totalInput: 1000, totalOutput: 500 }
+```
+
+## 7. 自定义 Hook 写法
 
 ```ts
 import { createHookRegistry, type HookRegistration } from '@vitamin/hooks'

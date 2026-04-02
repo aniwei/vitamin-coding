@@ -68,10 +68,10 @@ function makeEchoStream() {
   }
 }
 
-function createSession(id: string): AgentSession {
+async function createSession(id: string): Promise<AgentSession> {
   const hooks = createHookRegistry({ preset: 'none' })
   const store = createInMemorySessionStore<AgentMessage>()
-  const sessionData = store.createSession(id)
+  const sessionData = await store.createSession(id)
   const agent = new Agent({ stream: makeEchoStream() })
 
   return new AgentSession(sessionData, agent, {
@@ -83,7 +83,7 @@ function createSession(id: string): AgentSession {
 
 describe('run modes', () => {
   it('runPrintMode writes and returns the final assistant text', async () => {
-    const session = createSession('print-mode')
+    const session = await createSession('print-mode')
     const output: string[] = []
 
     const text = await runPrintMode(session, 'hello print', (line) => output.push(line))
@@ -93,7 +93,7 @@ describe('run modes', () => {
   })
 
   it('runJsonMode returns normalized session result', async () => {
-    const session = createSession('json-mode')
+    const session = await createSession('json-mode')
 
     const result = await runJsonMode(session, 'hello json')
 
@@ -104,7 +104,7 @@ describe('run modes', () => {
   })
 
   it('runRpcMode handles prompt and status methods', async () => {
-    const session = createSession('rpc-mode')
+    const session = await createSession('rpc-mode')
 
     const promptResult = await runRpcMode(session, {
       id: '1',
@@ -127,7 +127,7 @@ describe('run modes', () => {
   })
 
   it('InteractiveMode handles slash commands and prompt text', async () => {
-    const session = createSession('interactive-mode')
+    const session = await createSession('interactive-mode')
     const mode = new InteractiveMode(session)
 
     const help = await mode.handleInput('/help')

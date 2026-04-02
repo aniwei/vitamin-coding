@@ -94,7 +94,7 @@ const agent = createAgentWithRegistry({
 
 ## Types
 
-`AgentStatus`, `AgentMode`, `AgentEvent`, `ToolCallEvent`, `ToolCallContext`, `AgentMessage`, `CustomAgentMessages`, `AgentState`, `AgentRunContext`, `AgentLoopContext`, `AgentTool`, `ToolResult`, `AgentConfig`, `AgentFactoryConfig`, `AgentEventListener`, `AgentBreakpointPoint`, `AgentDebugSnapshot`, `StreamFunction`, `ToolExecutor`, `ToolHookExecutor`
+`AgentStatus`, `AgentMode`, `AgentEvent`, `ToolCallEvent`, `ToolCallContext`, `AgentMessage`, `CustomAgentMessages`, `AgentState`, `AgentRunContext`, `AgentLoopContext`, `AgentTool`, `ToolResult`, `AgentConfig`, `AgentFactoryConfig`, `AgentBreakpointPoint`, `AgentDebugSnapshot`, `StreamFunction`, `ToolExecutor`, `ToolHookExecutor`
 
 ## Build Behavior
 

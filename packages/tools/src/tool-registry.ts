@@ -138,6 +138,28 @@ export class ToolRegistry {
     return this.getAll().filter((tool) => !nameSet.has(tool.name))
   }
 
+  /**
+   * 收集可用工具的 snippet / guideline，用于注入到 system prompt。
+   * 只返回有 snippet 或 guideline 的工具。
+   */
+  buildToolGuidance(preset: ToolPreset = 'standard'): string {
+    const tools = this.getAvailable(preset)
+    const parts: string[] = []
+
+    for (const tool of tools) {
+      const { snippet, guideline } = tool.metadata
+      if (!snippet && !guideline) continue
+
+      const lines: string[] = [`#### ${tool.name}`]
+      if (guideline) lines.push(guideline)
+      if (snippet) lines.push(`示例：\n\`\`\`\n${snippet}\n\`\`\``)
+      parts.push(lines.join('\n'))
+    }
+
+    if (parts.length === 0) return ''
+    return `### 工具专项指引\n\n${parts.join('\n\n')}`
+  }
+
   clear(): void {
     if (this.tools.size > 0) {
       this.tools.clear()

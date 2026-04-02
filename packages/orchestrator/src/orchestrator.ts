@@ -11,6 +11,7 @@ import type {
   CallAgent,
   GetBackgroundOutput,
   CancelBackground,
+  TodoItem,
 } from '@vitamin/tools'
 import type { OrchestratorOptions } from './types'
 
@@ -23,10 +24,15 @@ export type OrchestratorDeps = Pick<OrchestratorOptions, 'hookRegistry' | 'runSe
 
 export class Orchestrator {
   readonly taskStore: TaskStore
+  private readonly todosBySession = new Map<string, TodoItem[]>()
   private readonly executor: TaskExecutor
   private readonly backgroundManager: BackgroundManager
   private readonly hookRegistry: HookRegistry
   private readonly circuitBreaker: CircuitBreaker
+
+  private getSessionKey(sessionId?: string): string {
+    return sessionId?.trim() || '__default__'
+  }
 
   constructor(options: OrchestratorOptions) {
     const {
@@ -60,7 +66,15 @@ export class Orchestrator {
   // ── 核心回调 ──
 
   dispatchTask: TaskDispatch = async (args) => {
-    return this.executor.dispatch(args)
+    return this.executor.dispatch({
+      prompt: args.prompt,
+      subagent: args.subagent,
+      category: args.category,
+      mode: args.mode,
+      sessionId: args.sessionId,
+      sessionMode: args.sessionMode ?? 'ephemeral',
+      slot: args.slot,
+    })
   }
 
   callAgent: CallAgent = async (agent, prompt, options) => {
@@ -145,8 +159,6 @@ export class Orchestrator {
         prompt: task.input.prompt,
         subagent: task.input.subagent,
         category: task.input.category,
-        planId: task.input.planId,
-        taskId: task.input.taskId,
         mode: task.input.mode ?? 'sync',
         sessionId: task.input.sessionId,
         sessionMode: task.input.sessionMode,
@@ -201,6 +213,29 @@ export class Orchestrator {
         escalation: 'lead_agent' as const,
       }
     }
+  }
+
+  writeTodos = async (args: {
+    action: 'set' | 'update'
+    todos: TodoItem[]
+    sessionId?: string
+  }): Promise<{ success: boolean; todos: TodoItem[] }> => {
+    const { sessionId, action, todos } = args
+    const sessionKey = this.getSessionKey(sessionId)
+    let store = this.todosBySession.get(sessionKey) ?? []
+
+    if (action === 'set') {
+      store = [...todos]
+    } else {
+      const map = new Map(store.map(t => [t.id, t]))
+      for (const todo of todos) {
+        map.set(todo.id, todo)
+      }
+      store = [...map.values()]
+    }
+
+    this.todosBySession.set(sessionKey, store)
+    return { success: true, todos: store }
   }
 
   dispose(): void {

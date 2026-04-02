@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import { complete, stream } from '../src/stream'
+import { complete, stream, simple } from '../src/stream'
 
 import type { AssistantMessage, Model, ProviderStream, StreamContext, StreamEvent } from '../src/types'
 
@@ -88,5 +88,21 @@ describe('stream orchestrator', () => {
     await expect(complete(makeModel(), provider, makeContext(), {})).rejects.toThrow(
       'Stream ended without done event',
     )
+  })
+
+  it('simple returns an EventStream like stream()', async () => {
+    const provider: ProviderStream = {
+      id: 'openai-completions',
+      displayName: 'Mock OpenAI',
+      async *converse(): AsyncIterable<StreamEvent> {
+        const message = makeAssistantMessage('simple reply')
+        yield { type: 'start', partial: message }
+        yield { type: 'done', reason: 'end_turn', message }
+      },
+    }
+
+    const eventStream = simple(makeModel(), provider, makeContext(), {})
+    const result = await eventStream.result()
+    expect(result.content[0]).toEqual({ type: 'text', text: 'simple reply' })
   })
 })

@@ -27,14 +27,19 @@ import {
 } from '../session/coding-session-manager'
 import {
   PromptManager,
+  resolveAgentProfile,
+  resolveAgentToolNames,
   createPromptProvider,
   buildLessonInjection,
   extractPhaseFromMessage,
   injectPhaseContext,
+  collectEnvironment,
+  formatEnvironmentBlock,
   SESSION_END_LEARNING_PROMPT,
   BUILTIN_PROMPTS_DIR,
 } from '@vitamin/prompt'
-import type { PhaseAnnotation } from '@vitamin/prompt'
+import type { AgentProfile, PhaseAnnotation, SubAgentPromptContext } from '@vitamin/prompt'
+import { BUILTIN_AGENT_PROFILES } from '@vitamin/setting'
 
 
 import type { AgentTool } from '@vitamin/agent'
@@ -48,6 +53,11 @@ import type {
 import type { VitaminAppOptions, VitaminContext } from '../types'
 import type { ResourceManager } from '@vitamin/resources'
 export { type VitaminAppOptions, type VitaminContext } from '../types'
+
+function filterToolsByNames(tools: AgentTool[], names: string[]): AgentTool[] {
+  const nameSet = new Set(names)
+  return tools.filter((tool) => nameSet.has(tool.name))
+}
 
 
 export class VitaminApp implements VitaminContext {
@@ -67,6 +77,7 @@ export class VitaminApp implements VitaminContext {
   private readonly fileStateManager: FileStateManager
   private readonly learningStore: OperationalLearningStore
   private readonly promptManager: PromptManager
+  private readonly defaultModel?: Model
 
   private readonly orchestrator: Orchestrator
   
@@ -139,6 +150,7 @@ export class VitaminApp implements VitaminContext {
       modelRegistry,
     })
     const defaultModel = _model ?? (options.modelId ? this.providerRegistry.resolveModel(options.modelId) : undefined)
+    this.defaultModel = defaultModel
 
     if (inspect) {
       this.devtools = new Devtools({
@@ -186,7 +198,7 @@ export class VitaminApp implements VitaminContext {
     )
     
     this.promptManager = new PromptManager({ provider: promptProvider })
-    const promptRefresh = () => this.promptManager.assemble()
+    const promptRefresh = () => this.promptManager.assemblePreset({ preset: 'main' })
 
     const managerOptions = {
       model: defaultModel,
@@ -222,6 +234,7 @@ export class VitaminApp implements VitaminContext {
       sessionMode: 'ephemeral' | 'sticky'
       agentName?: string
       slot?: WorkflowSlot
+      promptContext?: SubAgentPromptContext
     }) => {
       const startTime = Date.now()
 
@@ -235,12 +248,14 @@ export class VitaminApp implements VitaminContext {
             id: options.sessionId,
             agentName: options.agentName,
             slot: options.slot,
+            promptContext: options.promptContext,
           })
         }
       } else {
         session = await this.createSession({
           agentName: options.agentName,
           slot: options.slot,
+          promptContext: options.promptContext,
         })
       }
 
@@ -308,6 +323,7 @@ export class VitaminApp implements VitaminContext {
         })
         return { success: true, lessonId: saved.id }
       },
+      writeTodos: this.orchestrator.writeTodos,
       sessionManager: {
         list: async () => this.listSessions().map((session) => ({
           id: session.id,
@@ -350,16 +366,28 @@ export class VitaminApp implements VitaminContext {
   private resolveWorkflowSlot(
     agentName?: string,
     slot?: WorkflowSlot,
+    modelTier?: string,
   ): WorkflowSlot | undefined {
     if (slot) {
       return slot
     }
 
-    if (!agentName) {
-      return undefined
+    if (agentName) {
+      const settingsSlot = this.settings.get('agents')?.[agentName]?.default_workflow_slot
+      if (settingsSlot) return settingsSlot
     }
 
-    return this.settings.get('agents')?.[agentName]?.default_workflow_slot
+    // 从 agent profile 的 preferredModelTier 映射到 workflow slot
+    if (modelTier) {
+      const tierToSlot: Record<string, WorkflowSlot> = {
+        fast: 'compact',
+        standard: 'normal',
+        powerful: 'thinking',
+      }
+      return tierToSlot[modelTier]
+    }
+
+    return undefined
   }
 
   private resolveModelFromSlot(slot?: WorkflowSlot): Model | undefined {
@@ -381,6 +409,7 @@ export class VitaminApp implements VitaminContext {
     model?: Model
     agentName?: string
     slot?: WorkflowSlot
+    modelTier?: string
   }): Promise<Model> {
     if (options.model) {
       return options.model
@@ -388,7 +417,7 @@ export class VitaminApp implements VitaminContext {
 
     await this.ensureSettingsLoaded()
 
-    const workflowSlot = this.resolveWorkflowSlot(options.agentName, options.slot)
+    const workflowSlot = this.resolveWorkflowSlot(options.agentName, options.slot, options.modelTier)
     const slotModel = this.resolveModelFromSlot(workflowSlot)
     if (slotModel) {
       return slotModel
@@ -397,6 +426,10 @@ export class VitaminApp implements VitaminContext {
     const configuredModel = this.settings.get('model')
     if (configuredModel) {
       return this.providerRegistry.resolveModel(configuredModel)
+    }
+
+    if (this.defaultModel) {
+      return this.defaultModel
     }
 
     throw new Error('No model specified for session and no default model configured.')
@@ -441,39 +474,64 @@ export class VitaminApp implements VitaminContext {
     this.ensureNotDisposed()
     await this.ensureSettingsLoaded()
 
-    const model = await this.resolveSessionModel({
-      model: options.model,
-      agentName: options.agentName,
-      slot: options.slot,
-    })
-
     // 读取 per-agent 配置（system_prompt / tools / max_tool_turns）
     const agentConfig = options.agentName
       ? this.settings.get('agents')?.[options.agentName]
       : undefined
 
+    const promptPreset = options.promptPreset ?? (options.agentName ? 'subagent' : 'main')
+    const agentProfile = promptPreset === 'subagent' && options.agentName
+      ? resolveAgentProfile(BUILTIN_AGENT_PROFILES as AgentProfile[], options.agentName)
+      : undefined
+
+    const model = await this.resolveSessionModel({
+      model: options.model,
+      agentName: options.agentName,
+      slot: options.slot,
+      modelTier: agentProfile?.preferredModelTier,
+    })
+
     const agentSystemPrompt = agentConfig?.system_prompt
-    const agentMaxToolTurns = agentConfig?.max_tool_turns
-    const agentToolNames = agentConfig?.tools
+    const agentMaxToolTurns = agentConfig?.max_tool_turns ?? agentProfile?.defaultMaxToolTurns
+    const agentToolNames = agentConfig?.tools ?? resolveAgentToolNames(agentProfile?.defaultTools)
 
     // 如果 agent 配置了 tools 白名单，则过滤工具列表
     let tools = options.tools ?? this.tools
-    if (agentToolNames && agentToolNames.length > 0) {
-      const nameSet = new Set(agentToolNames)
-      tools = tools.filter(t => nameSet.has(t.name))
+    if (!options.tools && agentToolNames && agentToolNames.length > 0) {
+      tools = filterToolsByNames(tools, agentToolNames)
     }
+
+    const resolvedPromptRefresh = options.promptRefresh ?? (async () => {
+      if (options.systemPrompt !== undefined) return options.systemPrompt
+      if (agentSystemPrompt !== undefined) return agentSystemPrompt
+
+      if (promptPreset === 'subagent' && options.agentName) {
+        return this.promptManager.assemblePreset({
+          preset: 'subagent',
+          agentName: options.agentName,
+          profile: agentProfile,
+          context: options.promptContext,
+        })
+      }
+
+      return this.promptManager.assemblePreset({ preset: 'main' })
+    })
+
+    const initialSystemPrompt = options.systemPrompt
+      ?? agentSystemPrompt
+      ?? await resolvedPromptRefresh()
 
     const agentSession = await this.codingSessionManager.createSession({
       ...options,
       model,
-      systemPrompt: options.systemPrompt ?? agentSystemPrompt,
+      systemPrompt: initialSystemPrompt,
       tools,
       workspaceDir: options.workspaceDir ?? this.workspaceDir,
       hookRegistry: this.hookRegistry,
       providerRegistry: this.providerRegistry,
       logger: this.logger,
       devtools: this.devtools ?? undefined,
-      promptRefresh: options.promptRefresh ?? (() => this.promptManager.assemble()),
+      promptRefresh: resolvedPromptRefresh,
       maxToolTurns: options.maxToolTurns ?? agentMaxToolTurns ?? this.maxToolTurns,
     })
 
@@ -503,6 +561,29 @@ export class VitaminApp implements VitaminContext {
   }
 
   private registerHooks(): void {
+    // system-prompt.transform: 注入工具 snippet / guideline 到 system prompt
+    this.hookRegistry.on('system-prompt.transform', 'tool-guidance-injection', async (_input, output) => {
+      const guidance = this.toolRegistry.buildToolGuidance(this.defaultToolPreset)
+      if (guidance) {
+        output.systemPrompt = `${output.systemPrompt}\n\n${guidance}`
+      }
+    }, 20)
+
+    // system-prompt.transform: 注入运行时环境上下文（工作目录、git 状态、日期）
+    this.hookRegistry.on('system-prompt.transform', 'environment-injection', async (_input, output) => {
+      const exec = async (cmd: string, cwd: string) => {
+        const { execSync } = await import('node:child_process')
+        return execSync(cmd, { cwd, encoding: 'utf-8', timeout: 5000 })
+      }
+      try {
+        const env = await collectEnvironment(this.workspaceDir, exec)
+        const block = formatEnvironmentBlock(env)
+        output.systemPrompt = `${output.systemPrompt}\n\n${block}`
+      } catch {
+        // 环境收集失败不应中断 prompt 组装
+      }
+    }, 25)
+
     // system-prompt.transform: 注入相关历史经验到 system prompt
     this.hookRegistry.on('system-prompt.transform', 'lesson-injection', async (_input, output) => {
       const lessons = await this.learningStore.list()

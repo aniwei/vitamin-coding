@@ -56,7 +56,6 @@ export type {
   PromptEntry,
   PromptProvider,
   PromptProviderOptions,
-  AssembleOptions,
   PhaseAnnotation,
   Lesson,
 } from '@vitamin/prompt'

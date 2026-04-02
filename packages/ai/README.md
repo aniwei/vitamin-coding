@@ -126,6 +126,7 @@ packages/ai/
 │   ├── event-stream.ts        # EventStream<E, R> — 双模式异步可迭代流
 │   ├── stream.ts              # 编排入口: stream() / complete() / simple()
 │   ├── model-registry.ts      # ModelRegistry — 模型 CRUD 注册表
+│   ├── model-slot-resolver.ts # ModelSlot — 按工作流 Slot 解析模型（normal/thinking/compact/critique/vision）
 │   ├── provider-registry.ts   # ProviderRegistry — Provider 工厂 + 惰性单例
 │   ├── oauth-registry.ts      # OAuthRegistry — OAuth 工厂 + 惰性单例
 │   ├── cost.ts                # calculate() + CostTracker

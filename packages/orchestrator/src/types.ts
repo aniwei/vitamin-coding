@@ -16,10 +16,6 @@ export interface TaskInput {
   subagent?: string
   /** 任务类别 — 对齐 task_delegate.category / task_create.category */
   category?: string
-  /** 关联的 plan ID（plan 分发模式） */
-  planId?: string
-  /** plan 内的 task ID（plan 分发模式） */
-  taskId?: string
   /** 复用的 session ID */
   sessionId?: string
   /** session 策略 — 对齐 task_delegate.sessionMode */

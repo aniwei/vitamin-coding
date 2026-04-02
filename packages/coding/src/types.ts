@@ -12,8 +12,6 @@ import type { CodingSessionManager } from './session/coding-session-manager'
 import type { AgentSessionInfo, AgentSessionOptions } from './session/types'
 import type { AgentSession } from './session/agent-session'
 
-
-
 export interface VitaminContext {
   readonly workspaceDir: string
   readonly tools: AgentTool[]

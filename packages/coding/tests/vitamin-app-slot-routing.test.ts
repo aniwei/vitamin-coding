@@ -106,4 +106,75 @@ describe('VitaminApp slot routing', () => {
       await app.stop()
     }
   })
+
+  it('uses subagent prompt preset and profile tool defaults for named worker sessions', async () => {
+    const baseModel = makeModel('openai/subagent-model')
+    const providerRegistry = createDefaultProviderRegistry()
+
+    providerRegistry.getModelRegistry().register(baseModel)
+
+    const app = createVitamin({
+      port: 0,
+      inspect: false,
+      logger: {
+        name: 'vitamin-subagent-preset-test',
+        level: 'error',
+        destination: 'stdout',
+      },
+      model: baseModel,
+      providerRegistry,
+    })
+
+    try {
+      const session = await app.createSession({
+        id: 'subagent-preset',
+        agentName: 'quality-reviewer',
+      })
+
+      const prompt = await session.promptRefresh?.()
+      const toolNames = session.tools.map((tool) => tool.name).sort()
+
+      expect(prompt).toContain('代码审查专项子代理')
+      expect(toolNames).toEqual(['bash', 'find', 'grep', 'ls', 'read'])
+    } finally {
+      await app.stop()
+    }
+  })
+
+  it('allows caller to force the main prompt preset even when agentName is provided', async () => {
+    const baseModel = makeModel('openai/main-override-model')
+    const providerRegistry = createDefaultProviderRegistry()
+
+    providerRegistry.getModelRegistry().register(baseModel)
+
+    const app = createVitamin({
+      port: 0,
+      inspect: false,
+      logger: {
+        name: 'vitamin-main-preset-override-test',
+        level: 'error',
+        destination: 'stdout',
+      },
+      model: baseModel,
+      providerRegistry,
+    })
+
+    try {
+      const session = await app.createSession({
+        id: 'main-preset-override',
+        agentName: 'quality-reviewer',
+        promptPreset: 'main',
+      })
+
+      const prompt = await session.promptRefresh?.()
+      const toolNames = session.tools.map((tool) => tool.name)
+
+      expect(prompt).toContain('身份与环境')
+      expect(prompt).toContain('工作流程引导')
+      expect(toolNames).toContain('write')
+      expect(toolNames).toContain('task_delegate')
+    } finally {
+      await app.stop()
+    }
+  })
 })

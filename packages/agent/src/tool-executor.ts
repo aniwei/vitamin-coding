@@ -1,10 +1,8 @@
-// 工具执行器 — 封装工具查找、参数验证、Hook 管线、执行、错误包装
 import { invariant } from '@vitamin/invariant'
 import type { ToolCall } from '@vitamin/ai'
 import type { Devtools } from '@vitamin/devtools'
 import type { AgentMessage, AgentTool, ToolResult } from './types'
 
-// Hook 执行接口 — 由外部注入（来自 @vitamin/hooks HookRegistry）
 export interface ToolHookExecutor {
   executeBeforeHooks(input: {
     toolName: string
@@ -101,7 +99,7 @@ class DefaultToolExecutor implements ToolExecutor {
     }
 
     const startTime = Date.now()
-    let currentArgs = toolCall.arguments as Record<string, unknown>
+    let args = toolCall.arguments as Record<string, unknown>
 
     try {
       if (this.hookExecutor) {
@@ -120,7 +118,7 @@ class DefaultToolExecutor implements ToolExecutor {
         const beforeResult = await this.hookExecutor.executeBeforeHooks({
           toolName: name,
           toolCallId: id,
-          args: currentArgs,
+          args,
           agentName: this.agentName,
           sessionId: this.sessionId,
         })
@@ -135,11 +133,11 @@ class DefaultToolExecutor implements ToolExecutor {
         }
 
         // Hook 可能修改了参数
-        currentArgs = beforeResult.args
+        args = beforeResult.args
       }
 
       // 参数验证
-      const parsed = tool.parameters.safeParse(currentArgs)
+      const parsed = tool.parameters.safeParse(args)
       const { success, error } = parsed
 
       invariant(() => {
@@ -169,10 +167,12 @@ class DefaultToolExecutor implements ToolExecutor {
       }
 
       // 执行工具
-      let result = await tool.execute({ 
-        id: toolCall.id, 
-        params: parsed.data, 
-        signal 
+      let result = await tool.execute({
+        id: toolCall.id,
+        params: parsed.data,
+        signal,
+        sessionId: this.sessionId || undefined,
+        agentName: this.agentName || undefined,
       })
 
       if (signal.aborted) {
@@ -187,7 +187,7 @@ class DefaultToolExecutor implements ToolExecutor {
         const afterResult = await this.hookExecutor.executeAfterHooks({
           toolName: toolCall.name,
           toolCallId: toolCall.id,
-          args: currentArgs,
+          args,
           result,
           agentName: this.agentName,
           sessionId: this.sessionId,

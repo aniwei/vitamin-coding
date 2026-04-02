@@ -4,7 +4,7 @@ import { createDevtools } from '../src/devtools'
 
 describe('Devtools', () => {
   it('creates debugger lazily and reuses singleton instance', () => {
-    const devtools = createDevtools(3901)
+    const devtools = createDevtools({ port: 3901, noServer: false })
 
     const first = devtools.debugger
     const second = devtools.debugger
@@ -13,7 +13,7 @@ describe('Devtools', () => {
   })
 
   it('builds debugger service url from service id and port', () => {
-    const devtools = createDevtools(3902)
+    const devtools = createDevtools({ port: 3902, noServer: false })
     const debuggerController = devtools.debugger as unknown as { serviceUrl: string }
 
     expect(debuggerController.serviceUrl).toContain('http://127.0.0.1:3902/')

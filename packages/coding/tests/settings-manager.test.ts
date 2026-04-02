@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SettingsManager, createSettingsManager } from '../src/resources/settings-manager'
+import { SettingsManager, createSettingsManager } from '@vitamin/resources'
 
 // ═══ SettingsManager ═══
 

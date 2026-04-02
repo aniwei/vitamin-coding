@@ -1,6 +1,7 @@
 import type { AgentMessage, AgentTool, ToolCallEvent } from '@vitamin/agent'
 import type { Model, ProviderRegistry, ThinkingLevel, WorkflowSlot } from '@vitamin/ai'
 import type { HookRegistry } from '@vitamin/hooks'
+import type { PromptPreset, SubAgentPromptContext } from '@vitamin/prompt'
 import type { Logger } from '@vitamin/shared'
 import type { Devtools } from '@vitamin/devtools'
 import type { SessionStore } from '@vitamin/session'
@@ -9,6 +10,8 @@ export interface AgentSessionOptions {
   id?: string
   model: Model
   agentName?: string
+  promptPreset?: PromptPreset
+  promptContext?: SubAgentPromptContext
   slot?: WorkflowSlot
   systemPrompt?: string
   tools?: AgentTool[]
@@ -16,9 +19,9 @@ export interface AgentSessionOptions {
   maxToolTurns?: number
   workspaceDir?: string
   hooks?: HookRegistry
-  hookRegistry?: HookRegistry
+  hookRegistry: HookRegistry
   providerRegistry?: ProviderRegistry
-  logger?: Logger
+  logger: Logger
   devtools?: Devtools
   promptRefresh?: PromptRefresh
 }

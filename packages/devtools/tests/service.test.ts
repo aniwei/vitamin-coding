@@ -4,6 +4,7 @@ import { describe, expect, it } from 'vitest'
 import WebSocket from 'ws'
 
 import { DevtoolsService } from '../src/service'
+import { Breakpoints } from '../src/tools/breakpoints'
 
 function getFreePort(): Promise<number> {
   return new Promise((resolve, reject) => {
@@ -63,10 +64,10 @@ function waitForMessage(ws: WebSocket): Promise<string> {
 describe('DevtoolService', () => {
   it('starts service and closes connected websocket clients', async () => {
     const port = await getFreePort()
-    const service = new DevtoolsService(port)
+    const service = new DevtoolsService({ port, noServer: false }, new Breakpoints())
 
     await service.start()
-    const ws = await connectWebSocket(service.wsUrl)
+    const ws = await connectWebSocket(service.url)
 
     const closed = waitForClose(ws)
     await service.stop()
@@ -76,10 +77,10 @@ describe('DevtoolService', () => {
 
   it('broadcasts message to websocket clients', async () => {
     const port = await getFreePort()
-    const service = new DevtoolsService(port)
+    const service = new DevtoolsService({ port, noServer: false }, new Breakpoints())
 
     await service.start()
-    const ws = await connectWebSocket(service.wsUrl)
+    const ws = await connectWebSocket(service.url)
 
     const incoming = waitForMessage(ws)
     service.broadcast('vitamin-devtools-broadcast')
@@ -93,10 +94,10 @@ describe('DevtoolService', () => {
 
   it('waits for a websocket command before resuming paused requests', async () => {
     const port = await getFreePort()
-    const service = new DevtoolsService(port)
+    const service = new DevtoolsService({ port, noServer: false }, new Breakpoints())
 
     await service.start()
-    const ws = await connectWebSocket(service.wsUrl)
+    const ws = await connectWebSocket(service.url)
 
     const pausedEvent = waitForMessage(ws)
     const resumeResponse = fetch(service.debuggerPauseUrl, {

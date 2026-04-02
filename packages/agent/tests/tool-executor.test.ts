@@ -127,6 +127,43 @@ describe('ToolExecutor', () => {
     })
   })
 
+  describe('#when execute() with runtime context metadata', () => {
+    it('#then passes sessionId and agentName to the tool', async () => {
+      let received:
+        | {
+            sessionId?: string
+            agentName?: string
+          }
+        | undefined
+
+      const tool: AgentTool = {
+        name: 'contextual',
+        description: 'Contextual tool',
+        parameters: createSchema() as never,
+        execute: async (ctx) => {
+          received = {
+            sessionId: ctx.sessionId,
+            agentName: ctx.agentName,
+          }
+          return { content: [{ type: 'text' as const, text: 'ok' }] }
+        },
+      }
+
+      const executor = createToolExecutor([tool], {
+        sessionId: 'lead-session-1',
+        agentName: 'lead',
+      })
+
+      const result = await executor.execute(makeToolCall('contextual'), new AbortController().signal)
+
+      expect(result.isError).toBeUndefined()
+      expect(received).toEqual({
+        sessionId: 'lead-session-1',
+        agentName: 'lead',
+      })
+    })
+  })
+
   describe('#when executeSequential() without steering', () => {
     it('#then executes all calls and collects results', async () => {
       const executor = createToolExecutor([makeTool('x')])

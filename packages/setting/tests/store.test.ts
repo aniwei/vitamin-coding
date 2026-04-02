@@ -4,7 +4,7 @@ import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 
 import { InMemorySettingStore } from '../src/memory-store'
-import { LocalSettingStore } from '../src/file-store'
+import { FileSettingStore } from '../src/file-store'
 import { createSettingStore } from '../src/store'
 import { loadSetting } from '../src/setting'
 
@@ -40,9 +40,9 @@ describe('InMemorySettingStore', () => {
   })
 })
 
-// ─── LocalSettingStore ───
+// ─── FileSettingStore ───
 
-describe('LocalSettingStore', () => {
+describe('FileSettingStore', () => {
   let tempDir: string
 
   afterEach(async () => {
@@ -58,7 +58,7 @@ describe('LocalSettingStore', () => {
     const { writeFile } = await import('node:fs/promises')
     await writeFile(filePath, '{ "log_level": "warn" /* comment */ }', 'utf-8')
 
-    const store = new LocalSettingStore()
+    const store = new FileSettingStore()
     const content = await store.read(filePath)
 
     expect(content).toBeDefined()
@@ -66,7 +66,7 @@ describe('LocalSettingStore', () => {
   })
 
   it('returns undefined for non-existent file', async () => {
-    const store = new LocalSettingStore()
+    const store = new FileSettingStore()
     const content = await store.read('/tmp/does-not-exist-vitamin-test-' + Date.now())
     expect(content).toBeUndefined()
   })
@@ -75,7 +75,7 @@ describe('LocalSettingStore', () => {
     tempDir = await mkdtemp(join(tmpdir(), 'vitamin-cfg-'))
     const filePath = join(tempDir, 'sub', 'dir', 'config.json')
 
-    const store = new LocalSettingStore()
+    const store = new FileSettingStore()
     await store.write(filePath, { log_level: 'error' })
 
     const written = await readFile(filePath, 'utf-8')
@@ -86,7 +86,7 @@ describe('LocalSettingStore', () => {
     tempDir = await mkdtemp(join(tmpdir(), 'vitamin-cfg-'))
     const filePath = join(tempDir, 'config.json')
 
-    const store = new LocalSettingStore()
+    const store = new FileSettingStore()
     expect(await store.exists(filePath)).toBe(false)
 
     const { writeFile } = await import('node:fs/promises')
@@ -95,8 +95,8 @@ describe('LocalSettingStore', () => {
   })
 
   it('reports correct storage type', () => {
-    const store = new LocalSettingStore()
-    expect(store.type).toBe('local')
+    const store = new FileSettingStore()
+    expect(store.type).toBe('file')
   })
 })
 
@@ -108,17 +108,19 @@ describe('createSettingStore', () => {
     expect(store.type).toBe('memory')
   })
 
-  it('creates local store', () => {
-    const store = createSettingStore({ type: 'local' })
-    expect(store.type).toBe('local')
+  it('creates file store', () => {
+    const store = createSettingStore({ type: 'file', baseDir: '/tmp/test' })
+    expect(store.type).toBe('file')
   })
 
-  it('creates remote store', () => {
+  it('creates http store', () => {
     const store = createSettingStore({
-      type: 'remote',
+      type: 'http',
       baseUrl: 'https://example.com',
+      getAuth: async () => ({ token: 'test' }),
+      fetch: globalThis.fetch,
     })
-    expect(store.type).toBe('remote')
+    expect(store.type).toBe('http')
   })
 })
 
@@ -133,7 +135,7 @@ describe('loadSetting with store', () => {
 
     const setting = await loadSetting({
       store,
-      configPaths: ['/user/config.jsonc', '/project/config.jsonc'],
+      paths: ['/user/config.jsonc', '/project/config.jsonc'],
     })
 
     // project layer (index 1) overrides user layer (index 0)
@@ -149,7 +151,7 @@ describe('loadSetting with store', () => {
 
     const setting = await loadSetting({
       store,
-      configPaths: ['/not-here.jsonc', '/exists.jsonc'],
+      paths: ['/not-here.jsonc', '/exists.jsonc'],
     })
 
     expect(setting.model).toBe('found')
@@ -162,19 +164,16 @@ describe('loadSetting with store', () => {
 
     const setting = await loadSetting({
       store,
-      configPaths: ['/cfg.jsonc'],
-      overrides: { model: 'cli-model' },
+      paths: ['/cfg.jsonc'],
     })
 
-    expect(setting.model).toBe('cli-model')
+    expect(setting.model).toBe('file-model')
   })
 
   it('works without store (backward-compatible)', async () => {
-    const setting = await loadSetting({
-      overrides: { model: 'direct' },
-    })
+    const setting = await loadSetting({})
 
-    expect(setting.model).toBe('direct')
+    // returns defaults
     expect(setting.log_level).toBe('info')
   })
 
@@ -186,7 +185,7 @@ describe('loadSetting with store', () => {
 
     const setting = await loadSetting({
       store,
-      configPaths: ['/bad.jsonc', '/good.jsonc'],
+      paths: ['/bad.jsonc', '/good.jsonc'],
     })
 
     expect(setting.model).toBe('good-model')

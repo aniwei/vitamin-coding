@@ -7,7 +7,8 @@ import type { LocalProviderOptions, PromptEntry, PromptProvider } from './types'
  * 从指定目录读取 markdown 文件作为 prompt 内容
  *
  * 目录结构映射为 key：
- *   baseDir/lead-guidance/workflow-overview.md → "lead-guidance/workflow-overview"
+ *   baseDir/lead-guidance.md → "lead-guidance"
+ *   baseDir/lesson/session-end-learning.md → "lesson/session-end-learning"
  */
 export class LocalPromptProvider implements PromptProvider {
   private readonly baseDir: string

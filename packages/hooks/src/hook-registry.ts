@@ -48,6 +48,12 @@ const HOOK_TIMINGS: HookTiming[] = [
   'review.requested',
   'review.passed',
   'review.failed',
+
+  // plan
+  'plan.created',
+  'plan.updated',
+  'plan.task_updated',
+
   'system-prompt.transform',
 ]
 
@@ -98,6 +104,12 @@ function createHookBuckets(): Record<HookTiming, RuntimeHook[]> {
     'review.requested': [],
     'review.passed': [],
     'review.failed': [],
+
+    // plan
+    'plan.created': [],
+    'plan.updated': [],
+    'plan.task_updated': [],
+
     'system-prompt.transform': [],
   }
 }

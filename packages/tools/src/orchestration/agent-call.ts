@@ -22,15 +22,14 @@ export type CallAgent = (
   error?: string
 }>
 
-
-export function createAgentCall(
-  _projectRoot: string,
-  call: CallAgent
+function createIsolatedAgentCallTool(
+  name: 'agent_call' | 'review_call',
+  description: string,
+  call: CallAgent,
 ): AgentTool<CallAgentArgs> {
-
   return {
-    name: 'agent_call',
-    description: 'Call a specific agent synchronously as an isolated collaborator for exploration, planning, or review. Use task_delegate for background, stateful, or plan-task execution.',
+    name,
+    description,
     parameters: CallAgentArgsSchema,
     visibility: 'always',
 
@@ -42,12 +41,34 @@ export function createAgentCall(
       const result = await call(params.agent, params.prompt, {
         slot: params.slot,
       })
-      
+
       if (result.success) {
         return { content: [{ type: 'text', text: result.output ?? '(no output)' }] }
       }
 
       throw new Error(result.error ?? 'Unknown error from called agent')
-    }
+    },
   }
+}
+
+export function createAgentCall(
+  _projectRoot: string,
+  call: CallAgent
+): AgentTool<CallAgentArgs> {
+  return createIsolatedAgentCallTool(
+    'agent_call',
+    'Backward-compatible alias for review_call. Call a specific agent synchronously as an isolated collaborator for exploration, planning, or review. Use agent_task or task_delegate for background, stateful, or plan-task execution.',
+    call,
+  )
+}
+
+export function createReviewCall(
+  _projectRoot: string,
+  call: CallAgent,
+): AgentTool<CallAgentArgs> {
+  return createIsolatedAgentCallTool(
+    'review_call',
+    'Ask a reviewer or collaborator agent for a synchronous isolated second opinion. Use agent_task or task_delegate for task-governed execution.',
+    call,
+  )
 }

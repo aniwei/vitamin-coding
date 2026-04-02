@@ -18,6 +18,8 @@ pnpm add @vitamin/memory
 - `createArchiveStorage`：创建 `memory/file/http` 归档后端
 - `createPersistenceArchiveStorage`：复用 `@vitamin/persistence` 做归档
 - `estimate*`：token 估算工具函数
+- `FileStateManager`：捕获工作区文件状态快照（目录树、最近修改文件）
+- `OperationalLearningStore`：经验教训提取与持久化，支持按 tag/query 检索
 
 ## 快速接入（推荐）
 
@@ -197,6 +199,8 @@ if (entries.length > 0) {
 - L3：`createArchiveStorage`, `InMemoryArchiveStorage`, `LocalArchiveStorage`, `HttpArchiveStorage`, `createPersistenceArchiveStorage`, `PersistenceBackedArchiveStorage`
 - 默认值与估算：`computeMemoryDefaults`, `resolveContextSize`, `estimateContextTokens`, `estimateMessagesTokens`
 - Prompt 构建：`buildMemoryInjection`, `buildSummarizationPrompt`, `buildArchiveReference`
+- 文件状态：`FileStateManager`
+- 经验学习：`OperationalLearningStore`
 
 ## 注意事项
 

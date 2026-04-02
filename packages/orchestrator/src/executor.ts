@@ -9,6 +9,11 @@ export interface RunSessionOptions {
   sessionMode: 'ephemeral' | 'sticky'
   agentName?: string
   slot?: TaskInput['slot']
+  promptContext?: {
+    taskTitle?: string
+    taskDescription?: string
+    taskFiles?: string[]
+  }
 }
 
 export interface RunSessionResult {
@@ -29,9 +34,7 @@ export class TaskExecutor {
   ) {}
 
   async dispatch(args: {
-    prompt?: string
-    planId?: string
-    taskId?: string
+    prompt: string
     subagent?: string
     category?: string
     mode: 'sync' | 'background'
@@ -64,11 +67,9 @@ export class TaskExecutor {
 
     // 创建 Task 记录
     const task = await this.taskStore.create({
-      prompt: args.prompt ?? '',
+      prompt: args.prompt,
       subagent: args.subagent,
       category: args.category,
-      planId: args.planId,
-      taskId: args.taskId,
       sessionId: args.sessionId,
       sessionMode: args.sessionMode ?? 'ephemeral',
       mode: args.mode,

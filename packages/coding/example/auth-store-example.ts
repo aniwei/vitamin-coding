@@ -129,20 +129,20 @@ async function exampleVitaminAppAuth() {
   // app.providerRegistry 已绑定该 auth 作为主要凭据来源
 
   // CLI 临时注入 key（不调用 save()，进程退出即丢弃）
-  await app.auth.setCredentialKey('anthropic', process.env.ANTHROPIC_API_KEY ?? 'sk-placeholder')
+  await app.authStore.setCredentialKey('anthropic', process.env.ANTHROPIC_API_KEY ?? 'sk-placeholder')
 
   // 检查 anthropic 是否有凭据（会被 ProviderRegistry 的 resolveAccessKey 调用）
-  const ready = await app.auth.hasCredential('anthropic')
+  const ready = await app.authStore.hasCredential('anthropic')
   console.log('anthropic ready:', ready)
 
   // 对于 github-copilot，若尚未登录可触发 OAuth 流程
-  const copilotReady = await app.auth.hasCredential('github-copilot')
+  const copilotReady = await app.authStore.hasCredential('github-copilot')
   if (!copilotReady) {
-    console.log('github-copilot 未配置，可调用 app.auth.login("github-copilot", ...) 启动登录')
+    console.log('github-copilot 未配置，可调用 app.authStore.login("github-copilot", ...) 启动登录')
   }
 
   await app.start()
-  console.log('VitaminApp started with authStore path:', app.auth.path)
+  console.log('VitaminApp started with authStore path:', app.authStore.path)
   await app.stop()
 }
 
