@@ -1,13 +1,13 @@
-import { Link } from 'react-router-dom';
-import { ChevronRightIcon } from '@heroicons/react/24/outline';
+import { ChevronRightIcon } from '@heroicons/react/24/outline'
+import { Link } from 'react-router-dom'
 
 interface BreadcrumbItem {
-  label: string;
-  path?: string;
+  label: string
+  path?: string
 }
 
 interface BreadcrumbProps {
-  items: BreadcrumbItem[];
+  items: BreadcrumbItem[]
 }
 
 export function Breadcrumb({ items }: BreadcrumbProps) {
@@ -17,9 +17,7 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
         <ol className="flex items-center gap-2 text-sm">
           {items.map((item, index) => (
             <li key={index} className="flex items-center gap-2">
-              {index > 0 && (
-                <ChevronRightIcon className="w-3 h-3 text-gray-400" />
-              )}
+              {index > 0 && <ChevronRightIcon className="w-3 h-3 text-gray-400" />}
               {item.path ? (
                 <Link
                   to={item.path}
@@ -35,5 +33,5 @@ export function Breadcrumb({ items }: BreadcrumbProps) {
         </ol>
       </div>
     </nav>
-  );
+  )
 }

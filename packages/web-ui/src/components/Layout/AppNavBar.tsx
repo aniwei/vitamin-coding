@@ -1,15 +1,15 @@
-import { Link, useLocation } from 'react-router-dom';
-import { MagnifyingGlassIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { Cog6ToothIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { Link, useLocation } from 'react-router-dom'
 
 export function AppNavBar() {
-  const location = useLocation();
+  const location = useLocation()
 
   const isActive = (path: string) => {
     if (path === '/chat') {
-      return location.pathname === '/chat' || location.pathname === '/';
+      return location.pathname === '/chat' || location.pathname === '/'
     }
-    return location.pathname.startsWith(path);
-  };
+    return location.pathname.startsWith(path)
+  }
 
   return (
     <nav className="fixed top-0 left-0 right-0 h-14 bg-white border-b border-gray-200 z-50 shadow-sm">
@@ -74,5 +74,5 @@ export function AppNavBar() {
         </div>
       </div>
     </nav>
-  );
+  )
 }

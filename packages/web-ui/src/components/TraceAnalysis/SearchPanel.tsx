@@ -1,7 +1,14 @@
-import { useState, useMemo } from 'react';
-import type { AnyFlowNode } from '../../utils/trace/collapseGraph';
-import type { TraceNodeData, ToolNodeData, TaskNodeData, CollapsedNodeData, AnyNodeData, ContentBlock } from '../../types/trace';
-import { getToolNames } from '../../types/trace';
+import { useMemo, useState } from 'react'
+import type {
+  AnyNodeData,
+  CollapsedNodeData,
+  ContentBlock,
+  TaskNodeData,
+  ToolNodeData,
+  TraceNodeData,
+} from '../../types/trace'
+import { getToolNames } from '../../types/trace'
+import type { AnyFlowNode } from '../../utils/trace/collapseGraph'
 
 const NODE_TYPE_DOT_CLASSES: Record<string, string> = {
   user: 'bg-accent-secondary-100',
@@ -12,119 +19,123 @@ const NODE_TYPE_DOT_CLASSES: Record<string, string> = {
   'subagent-assistant': 'bg-indigo-500',
   'hook-progress': 'bg-gray-400',
   summary: 'bg-gray-400',
-};
+}
 
 interface Props {
-  nodes: AnyFlowNode[];
-  onSelectNode: (nodeId: string, eventIndex?: number) => void;
+  nodes: AnyFlowNode[]
+  onSelectNode: (nodeId: string, eventIndex?: number) => void
 }
 
 interface SearchResult {
-  nodeId: string;
-  eventIndex?: number;
-  eventType: string;
-  preview: string;
-  toolNames: string[];
-  matchSnippet: string;
-  isInnerEvent?: boolean;
-  chainLabel?: string;
+  nodeId: string
+  eventIndex?: number
+  eventType: string
+  preview: string
+  toolNames: string[]
+  matchSnippet: string
+  isInnerEvent?: boolean
+  chainLabel?: string
 }
 
 function matchesQuery(text: string, query: string): boolean {
-  return text.toLowerCase().includes(query.toLowerCase());
+  return text.toLowerCase().includes(query.toLowerCase())
 }
 
 function highlightMatch(text: string, query: string): React.ReactNode {
-  if (!query) return text;
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
-  if (idx === -1) return text;
-  const before = text.slice(0, idx);
-  const match = text.slice(idx, idx + query.length);
-  const after = text.slice(idx + query.length);
+  if (!query) return text
+  const idx = text.toLowerCase().indexOf(query.toLowerCase())
+  if (idx === -1) return text
+  const before = text.slice(0, idx)
+  const match = text.slice(idx, idx + query.length)
+  const after = text.slice(idx + query.length)
   return (
     <>
       {before}
       <span className="bg-accent-main-100/30 text-text-000 rounded-sm px-px">{match}</span>
       {after}
     </>
-  );
+  )
 }
 
 function contentBlocksToText(content: string | ContentBlock[] | undefined): string {
-  if (!content) return '';
-  if (typeof content === 'string') return content;
-  return content.map(block => {
-    if (block.type === 'text') return block.text || '';
-    if (block.type === 'thinking') return block.thinking || '';
-    if (block.type === 'tool_use') return `${block.name || ''} ${JSON.stringify(block.input || {})}`;
-    if (block.type === 'tool_result') {
-      const c = block.content;
-      if (typeof c === 'string') return c;
-      if (Array.isArray(c)) return c.map(b => b.text || '').join(' ');
-    }
-    return '';
-  }).join(' ');
+  if (!content) return ''
+  if (typeof content === 'string') return content
+  return content
+    .map((block) => {
+      if (block.type === 'text') return block.text || ''
+      if (block.type === 'thinking') return block.thinking || ''
+      if (block.type === 'tool_use')
+        return `${block.name || ''} ${JSON.stringify(block.input || {})}`
+      if (block.type === 'tool_result') {
+        const c = block.content
+        if (typeof c === 'string') return c
+        if (Array.isArray(c)) return c.map((b) => b.text || '').join(' ')
+      }
+      return ''
+    })
+    .join(' ')
 }
 
 function getFullContent(data: AnyNodeData): string {
   if (data.eventType === 'tool-call' || data.eventType === 'task-call') {
-    const td = data as ToolNodeData | TaskNodeData;
+    const td = data as ToolNodeData | TaskNodeData
     return [
       contentBlocksToText(td.assistantEvent.message?.content),
       contentBlocksToText(td.userEvent.message?.content),
-    ].join(' ');
+    ].join(' ')
   }
-  const td = data as TraceNodeData;
-  const ev = td.event;
+  const td = data as TraceNodeData
+  const ev = td.event
   if (ev.type === 'progress' && ev.data?.message) {
-    return contentBlocksToText(ev.data.message.message?.content);
+    return contentBlocksToText(ev.data.message.message?.content)
   }
-  return contentBlocksToText(ev.message?.content);
+  return contentBlocksToText(ev.message?.content)
 }
 
 function searchNodeData(data: AnyNodeData, query: string): string | null {
-  if (matchesQuery(data.preview, query)) return data.preview;
-  const toolNames = getToolNames(data);
+  if (matchesQuery(data.preview, query)) return data.preview
+  const toolNames = getToolNames(data)
   for (const name of toolNames) {
-    if (matchesQuery(name, query)) return name;
+    if (matchesQuery(name, query)) return name
   }
-  if (matchesQuery(data.eventType, query)) return data.eventType;
+  if (matchesQuery(data.eventType, query)) return data.eventType
   if (data.eventType === 'tool-call' || data.eventType === 'task-call') {
-    const tools = (data as ToolNodeData | TaskNodeData).tools;
+    const tools = (data as ToolNodeData | TaskNodeData).tools
     for (const tool of tools) {
-      if (tool.result && matchesQuery(tool.result, query)) return truncateAround(tool.result, query, 80);
-      const inputStr = JSON.stringify(tool.input);
-      if (matchesQuery(inputStr, query)) return truncateAround(inputStr, query, 80);
+      if (tool.result && matchesQuery(tool.result, query))
+        return truncateAround(tool.result, query, 80)
+      const inputStr = JSON.stringify(tool.input)
+      if (matchesQuery(inputStr, query)) return truncateAround(inputStr, query, 80)
     }
   }
-  const fullText = getFullContent(data);
-  if (fullText && matchesQuery(fullText, query)) return truncateAround(fullText, query, 80);
-  return null;
+  const fullText = getFullContent(data)
+  if (fullText && matchesQuery(fullText, query)) return truncateAround(fullText, query, 80)
+  return null
 }
 
 function truncateAround(text: string, query: string, maxLen: number): string {
-  if (text.length <= maxLen) return text;
-  const idx = text.toLowerCase().indexOf(query.toLowerCase());
-  if (idx === -1) return text.slice(0, maxLen);
-  const start = Math.max(0, idx - Math.floor((maxLen - query.length) / 2));
-  const slice = text.slice(start, start + maxLen);
-  return (start > 0 ? '\u2026' : '') + slice + (start + maxLen < text.length ? '\u2026' : '');
+  if (text.length <= maxLen) return text
+  const idx = text.toLowerCase().indexOf(query.toLowerCase())
+  if (idx === -1) return text.slice(0, maxLen)
+  const start = Math.max(0, idx - Math.floor((maxLen - query.length) / 2))
+  const slice = text.slice(start, start + maxLen)
+  return (start > 0 ? '\u2026' : '') + slice + (start + maxLen < text.length ? '\u2026' : '')
 }
 
 export function SearchPanel({ nodes, onSelectNode }: Props) {
-  const [query, setQuery] = useState('');
+  const [query, setQuery] = useState('')
 
   const results = useMemo<SearchResult[]>(() => {
-    const q = query.trim();
-    if (!q) return [];
-    const out: SearchResult[] = [];
+    const q = query.trim()
+    if (!q) return []
+    const out: SearchResult[] = []
 
     for (const node of nodes) {
       if (node.type === 'collapsedNode') {
-        const cData = node.data as CollapsedNodeData;
+        const cData = node.data as CollapsedNodeData
         for (let i = 0; i < cData.events.length; i++) {
-          const ev = cData.events[i];
-          const matchText = searchNodeData(ev, q);
+          const ev = cData.events[i]
+          const matchText = searchNodeData(ev, q)
           if (matchText) {
             out.push({
               nodeId: node.id,
@@ -135,12 +146,12 @@ export function SearchPanel({ nodes, onSelectNode }: Props) {
               matchSnippet: matchText.slice(0, 80),
               isInnerEvent: true,
               chainLabel: `chain (${cData.count})`,
-            });
+            })
           }
         }
       } else {
-        const data = node.data as TraceNodeData | ToolNodeData | TaskNodeData;
-        const matchText = searchNodeData(data, q);
+        const data = node.data as TraceNodeData | ToolNodeData | TaskNodeData
+        const matchText = searchNodeData(data, q)
         if (matchText) {
           out.push({
             nodeId: node.id,
@@ -148,13 +159,13 @@ export function SearchPanel({ nodes, onSelectNode }: Props) {
             preview: data.preview.slice(0, 80),
             toolNames: getToolNames(data).slice(0, 3),
             matchSnippet: matchText.slice(0, 80),
-          });
+          })
         }
       }
     }
 
-    return out;
-  }, [nodes, query]);
+    return out
+  }, [nodes, query])
 
   return (
     <div className="w-[260px] shrink-0 flex flex-col bg-bg-100 border-r border-border-300/20 font-sans overflow-hidden">
@@ -193,10 +204,16 @@ export function SearchPanel({ nodes, onSelectNode }: Props) {
             onClick={() => onSelectNode(r.nodeId, r.eventIndex)}
           >
             <div className="flex items-center gap-1.5 mb-0.5">
-              <span className={`inline-block w-2 h-2 rounded-full shrink-0 ${NODE_TYPE_DOT_CLASSES[r.eventType] || 'bg-gray-400'}`} />
-              <span className="text-[10px] font-semibold text-text-400 uppercase">{r.eventType}</span>
+              <span
+                className={`inline-block w-2 h-2 rounded-full shrink-0 ${NODE_TYPE_DOT_CLASSES[r.eventType] || 'bg-gray-400'}`}
+              />
+              <span className="text-[10px] font-semibold text-text-400 uppercase">
+                {r.eventType}
+              </span>
               {r.chainLabel && (
-                <span className="text-[9px] px-1 rounded bg-bg-300 text-text-400 ml-auto">{r.chainLabel}</span>
+                <span className="text-[9px] px-1 rounded bg-bg-300 text-text-400 ml-auto">
+                  {r.chainLabel}
+                </span>
               )}
             </div>
             <div className="text-[11px] text-text-200 leading-4 overflow-hidden text-ellipsis whitespace-nowrap">
@@ -205,7 +222,9 @@ export function SearchPanel({ nodes, onSelectNode }: Props) {
             {r.toolNames.length > 0 && (
               <div className="flex gap-1 mt-1 flex-wrap">
                 {r.toolNames.map((t) => (
-                  <span key={t} className="text-[9px] px-1.5 py-px rounded bg-bg-200 text-text-400">{t}</span>
+                  <span key={t} className="text-[9px] px-1.5 py-px rounded bg-bg-200 text-text-400">
+                    {t}
+                  </span>
                 ))}
               </div>
             )}
@@ -213,5 +232,5 @@ export function SearchPanel({ nodes, onSelectNode }: Props) {
         ))}
       </div>
     </div>
-  );
+  )
 }

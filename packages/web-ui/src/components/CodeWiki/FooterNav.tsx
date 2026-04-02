@@ -1,15 +1,15 @@
-import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, ArrowRightIcon } from '@heroicons/react/24/outline'
 
 interface FooterNavProps {
   previousPage?: {
-    title: string;
-    onClick: () => void;
-  };
+    title: string
+    onClick: () => void
+  }
   nextPage?: {
-    title: string;
-    onClick: () => void;
-  };
-  lastUpdated?: string;
+    title: string
+    onClick: () => void
+  }
+  lastUpdated?: string
 }
 
 export function FooterNav({ previousPage, nextPage, lastUpdated }: FooterNavProps) {
@@ -50,10 +50,8 @@ export function FooterNav({ previousPage, nextPage, lastUpdated }: FooterNavProp
 
       {/* Last Updated */}
       {lastUpdated && (
-        <div className="text-xs text-gray-500 text-center pb-4">
-          Last updated: {lastUpdated}
-        </div>
+        <div className="text-xs text-gray-500 text-center pb-4">Last updated: {lastUpdated}</div>
       )}
     </div>
-  );
+  )
 }

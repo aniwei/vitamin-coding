@@ -1,106 +1,111 @@
-import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { XMarkIcon, ChevronRightIcon, FolderIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline';
-import { apiClient } from '../../api/client';
-import { useChatStore } from '../../stores/chat';
+import {
+  ChevronRightIcon,
+  FolderIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline'
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { apiClient } from '../../api/client'
+import { useChatStore } from '../../stores/chat'
 
 interface NewSessionModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean
+  onClose: () => void
 }
 
 interface DirEntry {
-  name: string;
-  path: string;
+  name: string
+  path: string
 }
 
 const getBreadcrumbs = (absPath: string) => {
-  const parts = absPath.split('/').filter(Boolean);
+  const parts = absPath.split('/').filter(Boolean)
   return parts.map((part, i) => ({
     label: part,
     path: '/' + parts.slice(0, i + 1).join('/'),
-  }));
-};
+  }))
+}
 
 export function NewSessionModal({ isOpen, onClose }: NewSessionModalProps) {
-  const [currentPath, setCurrentPath] = useState('');
-  const [parentPath, setParentPath] = useState<string | null>(null);
-  const [directories, setDirectories] = useState<DirEntry[]>([]);
-  const [manualPath, setManualPath] = useState('');
-  const [showHidden, setShowHidden] = useState(false);
-  const [isLoadingDirs, setIsLoadingDirs] = useState(false);
-  const [browseError, setBrowseError] = useState<string | null>(null);
-  const [filterText, setFilterText] = useState('');
-  const [isCreating, setIsCreating] = useState(false);
-  const [createError, setCreateError] = useState<string | null>(null);
-  const loadSession = useChatStore(state => state.loadSession);
-  const bumpSessionList = useChatStore(state => state.bumpSessionList);
+  const [currentPath, setCurrentPath] = useState('')
+  const [parentPath, setParentPath] = useState<string | null>(null)
+  const [directories, setDirectories] = useState<DirEntry[]>([])
+  const [manualPath, setManualPath] = useState('')
+  const [showHidden, setShowHidden] = useState(false)
+  const [isLoadingDirs, setIsLoadingDirs] = useState(false)
+  const [browseError, setBrowseError] = useState<string | null>(null)
+  const [filterText, setFilterText] = useState('')
+  const [isCreating, setIsCreating] = useState(false)
+  const [createError, setCreateError] = useState<string | null>(null)
+  const loadSession = useChatStore((state) => state.loadSession)
+  const bumpSessionList = useChatStore((state) => state.bumpSessionList)
 
   const fetchDirectory = async (path: string, hidden?: boolean) => {
-    setIsLoadingDirs(true);
-    setBrowseError(null);
+    setIsLoadingDirs(true)
+    setBrowseError(null)
     try {
-      const result = await apiClient.browseDirectory(path, hidden ?? showHidden);
-      setCurrentPath(result.current_path);
-      setParentPath(result.parent_path);
-      setDirectories(result.directories);
-      setManualPath(result.current_path);
-      setFilterText('');
+      const result = await apiClient.browseDirectory(path, hidden ?? showHidden)
+      setCurrentPath(result.current_path)
+      setParentPath(result.parent_path)
+      setDirectories(result.directories)
+      setManualPath(result.current_path)
+      setFilterText('')
       if (result.error) {
-        setBrowseError(result.error);
+        setBrowseError(result.error)
       }
     } catch (err) {
-      setBrowseError('Failed to browse directory');
+      setBrowseError('Failed to browse directory')
     } finally {
-      setIsLoadingDirs(false);
+      setIsLoadingDirs(false)
     }
-  };
+  }
 
   // Load home directory on open
   useEffect(() => {
     if (isOpen) {
-      fetchDirectory('');
+      fetchDirectory('')
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   // Refetch when showHidden toggles
   useEffect(() => {
     if (isOpen && currentPath) {
-      fetchDirectory(currentPath, showHidden);
+      fetchDirectory(currentPath, showHidden)
     }
-  }, [showHidden]);
+  }, [showHidden])
 
   const handleManualGo = () => {
     if (manualPath.trim()) {
-      fetchDirectory(manualPath.trim());
+      fetchDirectory(manualPath.trim())
     }
-  };
+  }
 
   const handleSelect = async () => {
-    if (!currentPath) return;
-    setIsCreating(true);
-    setCreateError(null);
+    if (!currentPath) return
+    setIsCreating(true)
+    setCreateError(null)
     try {
-      const result = await apiClient.createSession(currentPath);
-      bumpSessionList();
-      const sessionId = result.session?.id || (result as any).id;
+      const result = await apiClient.createSession(currentPath)
+      bumpSessionList()
+      const sessionId = result.session?.id || (result as any).id
       if (sessionId) {
-        await loadSession(sessionId);
+        await loadSession(sessionId)
       }
-      onClose();
+      onClose()
     } catch (err) {
-      console.error('Failed to create session:', err);
+      console.error('Failed to create session:', err)
       setCreateError(
-        err instanceof Error ? err.message : 'Failed to create session. Please try again.'
-      );
+        err instanceof Error ? err.message : 'Failed to create session. Please try again.',
+      )
     } finally {
-      setIsCreating(false);
+      setIsCreating(false)
     }
-  };
+  }
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
-  const breadcrumbs = currentPath ? getBreadcrumbs(currentPath) : [];
+  const breadcrumbs = currentPath ? getBreadcrumbs(currentPath) : []
 
   const modalContent = (
     <div
@@ -130,7 +135,7 @@ export function NewSessionModal({ isOpen, onClose }: NewSessionModalProps) {
               value={manualPath}
               onChange={(e) => setManualPath(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') handleManualGo();
+                if (e.key === 'Enter') handleManualGo()
               }}
               placeholder="/path/to/directory"
               className="flex-1 px-3 py-2 text-sm font-mono border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"
@@ -213,8 +218,18 @@ export function NewSessionModal({ isOpen, onClose }: NewSessionModalProps) {
                   onClick={() => fetchDirectory(parentPath)}
                   className="w-full px-5 py-2.5 flex items-center gap-3 hover:bg-amber-50 text-left"
                 >
-                  <svg className="w-4 h-4 text-gray-400 flex-shrink-0" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                    <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 10l7-7m0 0l7 7m-7-7v18" />
+                  <svg
+                    className="w-4 h-4 text-gray-400 flex-shrink-0"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M5 10l7-7m0 0l7 7m-7-7v18"
+                    />
                   </svg>
                   <span className="text-sm text-gray-600">..</span>
                 </button>
@@ -222,29 +237,29 @@ export function NewSessionModal({ isOpen, onClose }: NewSessionModalProps) {
 
               {/* Directory rows */}
               {(() => {
-                const filteredDirs = directories.filter(d =>
-                  d.name.toLowerCase().includes(filterText.toLowerCase())
-                );
+                const filteredDirs = directories.filter((d) =>
+                  d.name.toLowerCase().includes(filterText.toLowerCase()),
+                )
                 if (directories.length === 0 && !parentPath) {
                   return (
                     <div className="px-5 py-8 text-center">
                       <p className="text-sm text-gray-400">No subdirectories</p>
                     </div>
-                  );
+                  )
                 }
                 if (directories.length === 0 && parentPath) {
                   return (
                     <div className="px-5 py-6 text-center">
                       <p className="text-sm text-gray-400">No subdirectories</p>
                     </div>
-                  );
+                  )
                 }
                 if (filteredDirs.length === 0) {
                   return (
                     <div className="px-5 py-6 text-center">
                       <p className="text-sm text-gray-400">No matching folders</p>
                     </div>
-                  );
+                  )
                 }
                 return filteredDirs.map((dir) => (
                   <button
@@ -255,7 +270,7 @@ export function NewSessionModal({ isOpen, onClose }: NewSessionModalProps) {
                     <FolderIcon className="w-4 h-4 text-amber-500 flex-shrink-0" />
                     <span className="text-sm text-gray-800 truncate">{dir.name}</span>
                   </button>
-                ));
+                ))
               })()}
             </div>
           )}
@@ -263,33 +278,31 @@ export function NewSessionModal({ isOpen, onClose }: NewSessionModalProps) {
 
         {/* Footer */}
         <div className="px-5 py-4 border-t border-gray-200">
-          {createError && (
-            <p className="text-sm text-red-500 mb-3">{createError}</p>
-          )}
+          {createError && <p className="text-sm text-red-500 mb-3">{createError}</p>}
           <div className="flex items-center gap-3">
-          <div className="flex-1 min-w-0">
-            <p className="text-xs font-mono text-gray-500 truncate" title={currentPath}>
-              {currentPath}
-            </p>
-          </div>
-          <button
-            onClick={onClose}
-            className="px-4 py-2 text-sm font-medium border border-gray-300 bg-white hover:bg-gray-50 rounded-lg text-gray-700"
-          >
-            Cancel
-          </button>
-          <button
-            onClick={handleSelect}
-            disabled={!currentPath || isCreating}
-            className="px-4 py-2 text-sm font-medium bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg"
-          >
-            {isCreating ? 'Creating...' : 'Select This Directory'}
-          </button>
+            <div className="flex-1 min-w-0">
+              <p className="text-xs font-mono text-gray-500 truncate" title={currentPath}>
+                {currentPath}
+              </p>
+            </div>
+            <button
+              onClick={onClose}
+              className="px-4 py-2 text-sm font-medium border border-gray-300 bg-white hover:bg-gray-50 rounded-lg text-gray-700"
+            >
+              Cancel
+            </button>
+            <button
+              onClick={handleSelect}
+              disabled={!currentPath || isCreating}
+              className="px-4 py-2 text-sm font-medium bg-amber-500 hover:bg-amber-600 disabled:bg-gray-300 disabled:cursor-not-allowed text-white rounded-lg"
+            >
+              {isCreating ? 'Creating...' : 'Select This Directory'}
+            </button>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 
-  return createPortal(modalContent, document.body);
+  return createPortal(modalContent, document.body)
 }

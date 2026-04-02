@@ -1,65 +1,65 @@
-import { Link } from 'react-router-dom';
 import {
+  ArrowPathIcon,
+  CheckCircleIcon,
+  ClockIcon,
+  DocumentTextIcon,
+  ExclamationCircleIcon,
   FolderIcon,
   StarIcon,
-  DocumentTextIcon,
-  CheckCircleIcon,
-  ArrowPathIcon,
-  ExclamationCircleIcon,
-  ClockIcon
-} from '@heroicons/react/24/outline';
-import { Repository } from './RepositoryExplorer';
+} from '@heroicons/react/24/outline'
+import { Link } from 'react-router-dom'
+import type { Repository } from './RepositoryExplorer'
 
 interface RepositoryCardProps {
-  repository: Repository;
+  repository: Repository
 }
 
 // Language color mapping for visual indicators
 const languageColors: Record<string, string> = {
-  'JavaScript': 'bg-yellow-400',
-  'TypeScript': 'bg-blue-400',
-  'Python': 'bg-green-400',
-  'Java': 'bg-red-400',
+  JavaScript: 'bg-yellow-400',
+  TypeScript: 'bg-blue-400',
+  Python: 'bg-green-400',
+  Java: 'bg-red-400',
   'C++': 'bg-purple-400',
-  'Go': 'bg-cyan-400',
-  'Rust': 'bg-orange-400',
-  'Ruby': 'bg-red-500',
-  'PHP': 'bg-indigo-400',
-  'Swift': 'bg-orange-500',
-  'default': 'bg-gray-400'
-};
+  Go: 'bg-cyan-400',
+  Rust: 'bg-orange-400',
+  Ruby: 'bg-red-500',
+  PHP: 'bg-indigo-400',
+  Swift: 'bg-orange-500',
+  default: 'bg-gray-400',
+}
 
 export function RepositoryCard({ repository }: RepositoryCardProps) {
   const getStatusIcon = (status: Repository['status']) => {
     switch (status) {
       case 'indexed':
-        return <CheckCircleIcon className="w-4 h-4 text-green-500" />;
+        return <CheckCircleIcon className="w-4 h-4 text-green-500" />
       case 'indexing':
-        return <ArrowPathIcon className="w-4 h-4 text-blue-500 animate-spin" />;
+        return <ArrowPathIcon className="w-4 h-4 text-blue-500 animate-spin" />
       case 'error':
-        return <ExclamationCircleIcon className="w-4 h-4 text-red-500" />;
+        return <ExclamationCircleIcon className="w-4 h-4 text-red-500" />
     }
-  };
+  }
 
   const getStatusText = (status: Repository['status']) => {
     switch (status) {
       case 'indexed':
-        return 'Indexed';
+        return 'Indexed'
       case 'indexing':
-        return 'Indexing...';
+        return 'Indexing...'
       case 'error':
-        return 'Error';
+        return 'Error'
     }
-  };
+  }
 
   const formatNumber = (num: number) => {
     if (num >= 1000) {
-      return `${(num / 1000).toFixed(1)}k`;
+      return `${(num / 1000).toFixed(1)}k`
     }
-    return num.toString();
-  };
+    return num.toString()
+  }
 
-  const languageColor = languageColors[repository.language] || languageColors.default;
+  const languageColor = languageColors[repository.language] || languageColors.default
 
   return (
     <Link
@@ -88,7 +88,9 @@ export function RepositoryCard({ repository }: RepositoryCardProps) {
 
           <div className="flex items-center gap-1.5 px-2 py-1 bg-white/20 backdrop-blur rounded-full">
             {getStatusIcon(repository.status)}
-            <span className="text-white text-xs font-medium">{getStatusText(repository.status)}</span>
+            <span className="text-white text-xs font-medium">
+              {getStatusText(repository.status)}
+            </span>
           </div>
         </div>
       </div>
@@ -104,7 +106,9 @@ export function RepositoryCard({ repository }: RepositoryCardProps) {
             <div className="flex items-center justify-center gap-1 text-gray-500 mb-1">
               <StarIcon className="w-4 h-4" />
             </div>
-            <div className="text-sm font-semibold text-gray-900">{formatNumber(repository.stars)}</div>
+            <div className="text-sm font-semibold text-gray-900">
+              {formatNumber(repository.stars)}
+            </div>
             <div className="text-xs text-gray-500">Stars</div>
           </div>
 
@@ -112,7 +116,9 @@ export function RepositoryCard({ repository }: RepositoryCardProps) {
             <div className="flex items-center justify-center gap-1 text-gray-500 mb-1">
               <DocumentTextIcon className="w-4 h-4" />
             </div>
-            <div className="text-sm font-semibold text-gray-900">{repository.files.toLocaleString()}</div>
+            <div className="text-sm font-semibold text-gray-900">
+              {repository.files.toLocaleString()}
+            </div>
             <div className="text-xs text-gray-500">Files</div>
           </div>
 
@@ -151,5 +157,5 @@ export function RepositoryCard({ repository }: RepositoryCardProps) {
         </div>
       </div>
     </Link>
-  );
+  )
 }

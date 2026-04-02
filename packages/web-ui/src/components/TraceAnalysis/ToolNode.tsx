@@ -1,11 +1,11 @@
-import { memo } from 'react';
-import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
-import type { ToolNodeData } from '../../types/trace';
+import { Handle, type Node, type NodeProps, Position } from '@xyflow/react'
+import { memo } from 'react'
+import type { ToolNodeData } from '../../types/trace'
 
-export type ToolFlowNode = Node<ToolNodeData, 'toolNode'>;
+export type ToolFlowNode = Node<ToolNodeData, 'toolNode'>
 
 function ToolNodeComponent({ data, selected }: NodeProps<ToolFlowNode>) {
-  const toolCount = data.tools.length;
+  const toolCount = data.tools.length
 
   return (
     <div
@@ -13,11 +13,7 @@ function ToolNodeComponent({ data, selected }: NodeProps<ToolFlowNode>) {
         selected ? 'ring-2 ring-accent-main-100 shadow-lg' : 'shadow-sm'
       }`}
     >
-      <Handle
-        type="target"
-        position={Position.Top}
-        className="!w-2 !h-2 !bg-accent-main-100"
-      />
+      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-accent-main-100" />
 
       <div className="flex items-center gap-1.5 mb-1.5">
         <span className="w-1.5 h-1.5 rounded-full bg-accent-main-100 shrink-0" />
@@ -25,9 +21,7 @@ function ToolNodeComponent({ data, selected }: NodeProps<ToolFlowNode>) {
           TOOL{toolCount > 1 ? ` \u00d7${toolCount}` : ''}
         </span>
         {data.agentId && (
-          <span className="text-text-400 text-[9px] ml-auto">
-            agent:{data.agentId.slice(0, 7)}
-          </span>
+          <span className="text-text-400 text-[9px] ml-auto">agent:{data.agentId.slice(0, 7)}</span>
         )}
         {data.subagentId && !data.agentId && (
           <span className="text-text-400 text-[9px] ml-auto">
@@ -62,13 +56,9 @@ function ToolNodeComponent({ data, selected }: NodeProps<ToolFlowNode>) {
         </div>
       )}
 
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="!w-2 !h-2 !bg-accent-main-100"
-      />
+      <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !bg-accent-main-100" />
     </div>
-  );
+  )
 }
 
-export const ToolNode = memo(ToolNodeComponent);
+export const ToolNode = memo(ToolNodeComponent)

@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { buildLessonInjection, SESSION_END_LEARNING_PROMPT } from '../src/lesson-injection'
+import { buildLessonInjection } from '../src/lesson-injection'
 
 import type { Lesson } from '../src/types'
 
@@ -20,7 +20,7 @@ describe('buildLessonInjection', () => {
   it('#given a single lesson #then formats numbered list', () => {
     const result = buildLessonInjection([makeLesson()])
 
-    expect(result).toContain('### 运行经验')
+    expect(result).toContain('### Runtime Lessons')
     expect(result).toContain('1. [typescript] Writing tests → Use real execution')
   })
 
@@ -40,14 +40,5 @@ describe('buildLessonInjection', () => {
       makeLesson({ tags: ['ts', 'testing', 'vitest'] }),
     ])
     expect(result).toContain('[ts, testing, vitest]')
-  })
-})
-
-describe('SESSION_END_LEARNING_PROMPT', () => {
-  it('#then contains learn tool usage instruction', () => {
-    expect(SESSION_END_LEARNING_PROMPT).toContain('learn')
-    expect(SESSION_END_LEARNING_PROMPT).toContain('tags')
-    expect(SESSION_END_LEARNING_PROMPT).toContain('trigger')
-    expect(SESSION_END_LEARNING_PROMPT).toContain('insight')
   })
 })

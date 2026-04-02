@@ -1,9 +1,9 @@
-import { memo } from 'react';
-import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
-import type { CollapsedNodeData, NodeEventType } from '../../types/trace';
-import { getToolNames } from '../../types/trace';
+import { Handle, type Node, type NodeProps, Position } from '@xyflow/react'
+import { memo } from 'react'
+import type { CollapsedNodeData, NodeEventType } from '../../types/trace'
+import { getToolNames } from '../../types/trace'
 
-export type CollapsedFlowNode = Node<CollapsedNodeData, 'collapsedNode'>;
+export type CollapsedFlowNode = Node<CollapsedNodeData, 'collapsedNode'>
 
 const TYPE_DOT_CLASSES: Record<NodeEventType, string> = {
   user: 'bg-accent-secondary-100',
@@ -14,35 +14,33 @@ const TYPE_DOT_CLASSES: Record<NodeEventType, string> = {
   'subagent-assistant': 'bg-indigo-500',
   'hook-progress': 'bg-gray-400',
   summary: 'bg-gray-400',
-};
+}
 
 function CollapsedNodeComponent({ data, selected }: NodeProps<CollapsedFlowNode>) {
-  const nodeHeight = (data.nodeHeight as number | undefined) ?? 80;
+  const nodeHeight = (data.nodeHeight as number | undefined) ?? 80
 
-  const typeCounts: Record<string, number> = {};
+  const typeCounts: Record<string, number> = {}
   for (const ev of data.events) {
-    const t = ev.eventType;
-    typeCounts[t] = (typeCounts[t] ?? 0) + 1;
+    const t = ev.eventType
+    typeCounts[t] = (typeCounts[t] ?? 0) + 1
   }
 
-  const allToolNames = data.events.flatMap(ev => getToolNames(ev));
-  const uniqueTools = Array.from(new Set(allToolNames));
-  const maxTools = Math.max(3, Math.floor((nodeHeight - 60) / 16));
-  const shownTools = uniqueTools.slice(0, maxTools);
-  const extraTools = uniqueTools.length - shownTools.length;
+  const allToolNames = data.events.flatMap((ev) => getToolNames(ev))
+  const uniqueTools = Array.from(new Set(allToolNames))
+  const maxTools = Math.max(3, Math.floor((nodeHeight - 60) / 16))
+  const shownTools = uniqueTools.slice(0, maxTools)
+  const extraTools = uniqueTools.length - shownTools.length
 
   return (
     <div
       className={`w-[260px] bg-bg-200 border-2 border-dashed rounded-lg px-2.5 py-2 font-mono text-[11px] cursor-pointer relative overflow-hidden flex flex-col ${
-        selected ? 'border-accent-main-100 ring-2 ring-accent-main-100 shadow-lg' : 'border-border-300/50 shadow-sm'
+        selected
+          ? 'border-accent-main-100 ring-2 ring-accent-main-100 shadow-lg'
+          : 'border-border-300/50 shadow-sm'
       }`}
       style={{ height: nodeHeight, boxSizing: 'border-box' }}
     >
-      <Handle
-        type="target"
-        position={Position.Top}
-        className="!w-2 !h-2 !bg-gray-400"
-      />
+      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-gray-400" />
 
       <div className="flex items-center gap-1.5 mb-1.5 shrink-0">
         <span className="bg-bg-300 border border-border-300/30 text-text-400 rounded-full px-2 text-[10px] font-bold">
@@ -79,19 +77,13 @@ function CollapsedNodeComponent({ data, selected }: NodeProps<CollapsedFlowNode>
               {tool}
             </span>
           ))}
-          {extraTools > 0 && (
-            <span className="text-text-400 text-[9px]">+{extraTools}</span>
-          )}
+          {extraTools > 0 && <span className="text-text-400 text-[9px]">+{extraTools}</span>}
         </div>
       )}
 
-      <Handle
-        type="source"
-        position={Position.Bottom}
-        className="!w-2 !h-2 !bg-gray-400"
-      />
+      <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !bg-gray-400" />
     </div>
-  );
+  )
 }
 
-export const CollapsedNode = memo(CollapsedNodeComponent);
+export const CollapsedNode = memo(CollapsedNodeComponent)

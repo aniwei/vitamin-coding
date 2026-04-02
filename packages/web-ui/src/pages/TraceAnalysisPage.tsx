@@ -1,12 +1,12 @@
-import { TopBar } from '../components/Layout/TopBar';
-import { TraceProjectSidebar } from '../components/TraceAnalysis/TraceProjectSidebar';
-import { DAGView } from '../components/TraceAnalysis/DAGView';
-import { useTraceStore } from '../stores/trace';
+import { TopBar } from '../components/Layout/TopBar'
+import { DAGView } from '../components/TraceAnalysis/DAGView'
+import { TraceProjectSidebar } from '../components/TraceAnalysis/TraceProjectSidebar'
+import { useTraceStore } from '../stores/trace'
 
 export function TraceAnalysisPage() {
-  const sessionData = useTraceStore(s => s.sessionData);
-  const loading = useTraceStore(s => s.loading);
-  const selectedSessionId = useTraceStore(s => s.selectedSessionId);
+  const sessionData = useTraceStore((s) => s.sessionData)
+  const loading = useTraceStore((s) => s.loading)
+  const selectedSessionId = useTraceStore((s) => s.selectedSessionId)
 
   return (
     <div className="h-screen flex flex-col bg-bg-100">
@@ -21,5 +21,5 @@ export function TraceAnalysisPage() {
         </main>
       </div>
     </div>
-  );
+  )
 }

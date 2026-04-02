@@ -1,149 +1,173 @@
-import { useState, useEffect } from 'react';
-import { createPortal } from 'react-dom';
-import { apiClient } from '../../api/client';
-import { ModelSlot } from '../Settings/ModelSlot';
-import type { Provider } from '../Settings/ModelSlot';
-import { useToastStore } from '../../stores/toast';
+import { useEffect, useState } from 'react'
+import { createPortal } from 'react-dom'
+import { apiClient } from '../../api/client'
+import { useToastStore } from '../../stores/toast'
+import { ModelSlot } from '../Settings/ModelSlot'
+import type { Provider } from '../Settings/ModelSlot'
 
 interface SessionModelModalProps {
-  sessionId: string | null;
-  sessionLabel: string;
-  onClose: () => void;
+  sessionId: string | null
+  sessionLabel: string
+  onClose: () => void
 }
 
 export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionModelModalProps) {
-  const [providers, setProviders] = useState<Provider[]>([]);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const [hasExistingOverlay, setHasExistingOverlay] = useState(false);
-  const addToast = useToastStore(state => state.addToast);
+  const [providers, setProviders] = useState<Provider[]>([])
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const [hasExistingOverlay, setHasExistingOverlay] = useState(false)
+  const addToast = useToastStore((state) => state.addToast)
 
   // Model slots
-  const [normalProvider, setNormalProvider] = useState('');
-  const [normalModel, setNormalModel] = useState('');
-  const [thinkingProvider, setThinkingProvider] = useState('');
-  const [thinkingModel, setThinkingModel] = useState('');
-  const [compactProvider, setCompactProvider] = useState('');
-  const [compactModel, setCompactModel] = useState('');
-  const [visionProvider, setVisionProvider] = useState('');
-  const [visionModel, setVisionModel] = useState('');
+  const [normalProvider, setNormalProvider] = useState('')
+  const [normalModel, setNormalModel] = useState('')
+  const [thinkingProvider, setThinkingProvider] = useState('')
+  const [thinkingModel, setThinkingModel] = useState('')
+  const [compactProvider, setCompactProvider] = useState('')
+  const [compactModel, setCompactModel] = useState('')
+  const [visionProvider, setVisionProvider] = useState('')
+  const [visionModel, setVisionModel] = useState('')
 
   // Verification states
-  type VerifyStatus = 'idle' | 'verifying' | 'success' | 'error';
-  const [normalVerifyStatus, setNormalVerifyStatus] = useState<VerifyStatus>('idle');
-  const [normalVerifyError, setNormalVerifyError] = useState<string>();
-  const [thinkingVerifyStatus, setThinkingVerifyStatus] = useState<VerifyStatus>('idle');
-  const [thinkingVerifyError, setThinkingVerifyError] = useState<string>();
-  const [compactVerifyStatus, setCompactVerifyStatus] = useState<VerifyStatus>('idle');
-  const [compactVerifyError, setCompactVerifyError] = useState<string>();
-  const [visionVerifyStatus, setVisionVerifyStatus] = useState<VerifyStatus>('idle');
-  const [visionVerifyError, setVisionVerifyError] = useState<string>();
+  type VerifyStatus = 'idle' | 'verifying' | 'success' | 'error'
+  const [normalVerifyStatus, setNormalVerifyStatus] = useState<VerifyStatus>('idle')
+  const [normalVerifyError, setNormalVerifyError] = useState<string>()
+  const [thinkingVerifyStatus, setThinkingVerifyStatus] = useState<VerifyStatus>('idle')
+  const [thinkingVerifyError, setThinkingVerifyError] = useState<string>()
+  const [compactVerifyStatus, setCompactVerifyStatus] = useState<VerifyStatus>('idle')
+  const [compactVerifyError, setCompactVerifyError] = useState<string>()
+  const [visionVerifyStatus, setVisionVerifyStatus] = useState<VerifyStatus>('idle')
+  const [visionVerifyError, setVisionVerifyError] = useState<string>()
 
   useEffect(() => {
     if (sessionId) {
-      loadData();
+      loadData()
     }
-  }, [sessionId]);
+  }, [sessionId])
 
   const loadData = async () => {
-    if (!sessionId) return;
+    if (!sessionId) return
     try {
-      setLoading(true);
+      setLoading(true)
       const [providersData, configData, overlayData] = await Promise.all([
         apiClient.listProviders(),
         apiClient.getConfig(),
         apiClient.getSessionModel(sessionId),
-      ]);
+      ])
 
-      setProviders(providersData);
+      setProviders(providersData)
 
-      const hasOverlay = Object.keys(overlayData).length > 0;
-      setHasExistingOverlay(hasOverlay);
+      const hasOverlay = Object.keys(overlayData).length > 0
+      setHasExistingOverlay(hasOverlay)
 
       // Use overlay values if set, otherwise fall back to global config
-      setNormalProvider(overlayData.model_provider || configData.model_provider || '');
-      setNormalModel(overlayData.model || configData.model || '');
-      setThinkingProvider(overlayData.model_thinking_provider || configData.model_thinking_provider || '');
-      setThinkingModel(overlayData.model_thinking || configData.model_thinking || '');
-      setCompactProvider(overlayData.model_compact_provider || configData.model_compact_provider || '');
-      setCompactModel(overlayData.model_compact || configData.model_compact || '');
-      setVisionProvider(overlayData.model_vlm_provider || configData.model_vlm_provider || '');
-      setVisionModel(overlayData.model_vlm || configData.model_vlm || '');
+      setNormalProvider(overlayData.model_provider || configData.model_provider || '')
+      setNormalModel(overlayData.model || configData.model || '')
+      setThinkingProvider(
+        overlayData.model_thinking_provider || configData.model_thinking_provider || '',
+      )
+      setThinkingModel(overlayData.model_thinking || configData.model_thinking || '')
+      setCompactProvider(
+        overlayData.model_compact_provider || configData.model_compact_provider || '',
+      )
+      setCompactModel(overlayData.model_compact || configData.model_compact || '')
+      setVisionProvider(overlayData.model_vlm_provider || configData.model_vlm_provider || '')
+      setVisionModel(overlayData.model_vlm || configData.model_vlm || '')
     } catch (error) {
-      console.error('Failed to load session model data:', error);
+      console.error('Failed to load session model data:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const verifySingleModel = async (
     provider: string,
     model: string,
     setStatus: (status: VerifyStatus) => void,
-    setError: (error: string | undefined) => void
+    setError: (error: string | undefined) => void,
   ): Promise<boolean> => {
-    if (!provider || !model) return true; // Nothing to verify
+    if (!provider || !model) return true // Nothing to verify
 
-    setStatus('verifying');
-    setError(undefined);
+    setStatus('verifying')
+    setError(undefined)
 
     try {
-      const result = await apiClient.verifyModel(provider, model);
+      const result = await apiClient.verifyModel(provider, model)
       if (result.valid) {
-        setStatus('success');
-        return true;
+        setStatus('success')
+        return true
       } else {
-        setStatus('error');
-        setError(result.error || 'Verification failed');
-        return false;
+        setStatus('error')
+        setError(result.error || 'Verification failed')
+        return false
       }
     } catch (err: any) {
-      setStatus('error');
-      setError(err.message || 'Verification failed');
-      return false;
+      setStatus('error')
+      setError(err.message || 'Verification failed')
+      return false
     }
-  };
+  }
 
   const verifyAllModels = async (): Promise<boolean> => {
-    setSaving(true);
-    let allValid = true;
+    setSaving(true)
+    let allValid = true
 
     // Run verifications in parallel
     const verifications = [
       normalProvider && normalModel
-        ? verifySingleModel(normalProvider, normalModel, setNormalVerifyStatus, setNormalVerifyError)
+        ? verifySingleModel(
+            normalProvider,
+            normalModel,
+            setNormalVerifyStatus,
+            setNormalVerifyError,
+          )
         : Promise.resolve(true),
       thinkingProvider && thinkingModel
-        ? verifySingleModel(thinkingProvider, thinkingModel, setThinkingVerifyStatus, setThinkingVerifyError)
+        ? verifySingleModel(
+            thinkingProvider,
+            thinkingModel,
+            setThinkingVerifyStatus,
+            setThinkingVerifyError,
+          )
         : Promise.resolve(true),
       compactProvider && compactModel
-        ? verifySingleModel(compactProvider, compactModel, setCompactVerifyStatus, setCompactVerifyError)
+        ? verifySingleModel(
+            compactProvider,
+            compactModel,
+            setCompactVerifyStatus,
+            setCompactVerifyError,
+          )
         : Promise.resolve(true),
       visionProvider && visionModel
-        ? verifySingleModel(visionProvider, visionModel, setVisionVerifyStatus, setVisionVerifyError)
+        ? verifySingleModel(
+            visionProvider,
+            visionModel,
+            setVisionVerifyStatus,
+            setVisionVerifyError,
+          )
         : Promise.resolve(true),
-    ];
+    ]
 
-    const results = await Promise.all(verifications);
-    allValid = results.every(Boolean);
+    const results = await Promise.all(verifications)
+    allValid = results.every(Boolean)
 
     if (!allValid) {
-      addToast('One or more models failed verification', 'error');
-      setSaving(false);
+      addToast('One or more models failed verification', 'error')
+      setSaving(false)
     }
 
-    return allValid;
-  };
+    return allValid
+  }
 
   const handleSave = async () => {
-    if (!sessionId) return;
+    if (!sessionId) return
 
     // Verify before saving
-    const isValid = await verifyAllModels();
-    if (!isValid) return;
+    const isValid = await verifyAllModels()
+    if (!isValid) return
 
     try {
-      setSaving(true);
+      setSaving(true)
 
       await apiClient.updateSessionModel(sessionId, {
         model_provider: normalProvider || null,
@@ -152,48 +176,48 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
         model_thinking: thinkingModel || null,
         model_vlm_provider: visionProvider || null,
         model_vlm: visionModel || null,
-      });
+      })
 
-      setHasExistingOverlay(true);
-      addToast('Session model updated', 'success');
-      onClose();
+      setHasExistingOverlay(true)
+      addToast('Session model updated', 'success')
+      onClose()
     } catch (error) {
-      console.error('Failed to save session model:', error);
-      addToast('Failed to save session model', 'error');
+      console.error('Failed to save session model:', error)
+      addToast('Failed to save session model', 'error')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   const handleClear = async () => {
-    if (!sessionId) return;
+    if (!sessionId) return
     try {
-      setSaving(true);
-      await apiClient.clearSessionModel(sessionId);
-      setHasExistingOverlay(false);
+      setSaving(true)
+      await apiClient.clearSessionModel(sessionId)
+      setHasExistingOverlay(false)
 
       // Reload with global defaults
-      const configData = await apiClient.getConfig();
-      setNormalProvider(configData.model_provider || '');
-      setNormalModel(configData.model || '');
-      setThinkingProvider(configData.model_thinking_provider || '');
-      setThinkingModel(configData.model_thinking || '');
-      setCompactProvider(configData.model_compact_provider || '');
-      setCompactModel(configData.model_compact || '');
-      setVisionProvider(configData.model_vlm_provider || '');
-      setVisionModel(configData.model_vlm || '');
+      const configData = await apiClient.getConfig()
+      setNormalProvider(configData.model_provider || '')
+      setNormalModel(configData.model || '')
+      setThinkingProvider(configData.model_thinking_provider || '')
+      setThinkingModel(configData.model_thinking || '')
+      setCompactProvider(configData.model_compact_provider || '')
+      setCompactModel(configData.model_compact || '')
+      setVisionProvider(configData.model_vlm_provider || '')
+      setVisionModel(configData.model_vlm || '')
 
-      addToast('Session model cleared', 'success');
-      onClose();
+      addToast('Session model cleared', 'success')
+      onClose()
     } catch (error) {
-      console.error('Failed to clear session model:', error);
-      addToast('Failed to clear session model', 'error');
+      console.error('Failed to clear session model:', error)
+      addToast('Failed to clear session model', 'error')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
-  if (!sessionId) return null;
+  if (!sessionId) return null
 
   const modalContent = (
     <div
@@ -216,7 +240,12 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
               className="w-8 h-8 rounded-lg flex items-center justify-center hover:bg-gray-100 text-gray-400 hover:text-gray-600"
             >
               <svg className="w-5 h-5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M6 18L18 6M6 6l12 12"
+                />
               </svg>
             </button>
           </div>
@@ -243,63 +272,157 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
               <ModelSlot
                 title="Normal Model"
                 description="Standard coding tasks"
-                icon={<svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" /></svg>}
+                icon={
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+                    />
+                  </svg>
+                }
                 providers={providers}
                 selectedProvider={normalProvider}
                 selectedModel={normalModel}
-                onProviderChange={(p) => { setNormalProvider(p); setNormalVerifyStatus('idle'); }}
-                onModelChange={(m) => { setNormalModel(m); setNormalVerifyStatus('idle'); }}
+                onProviderChange={(p) => {
+                  setNormalProvider(p)
+                  setNormalVerifyStatus('idle')
+                }}
+                onModelChange={(m) => {
+                  setNormalModel(m)
+                  setNormalVerifyStatus('idle')
+                }}
                 verifyStatus={normalVerifyStatus}
                 verifyError={normalVerifyError}
-                onVerify={(p, m) => verifySingleModel(p, m, setNormalVerifyStatus, setNormalVerifyError)}
+                onVerify={(p, m) =>
+                  verifySingleModel(p, m, setNormalVerifyStatus, setNormalVerifyError)
+                }
               />
 
               <ModelSlot
                 title="Thinking Model"
                 description="Complex reasoning (falls back to Normal)"
-                icon={<svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" /></svg>}
+                icon={
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+                    />
+                  </svg>
+                }
                 providers={providers}
                 selectedProvider={thinkingProvider}
                 selectedModel={thinkingModel}
-                onProviderChange={(p) => { setThinkingProvider(p); setThinkingVerifyStatus('idle'); }}
-                onModelChange={(m) => { setThinkingModel(m); setThinkingVerifyStatus('idle'); }}
+                onProviderChange={(p) => {
+                  setThinkingProvider(p)
+                  setThinkingVerifyStatus('idle')
+                }}
+                onModelChange={(m) => {
+                  setThinkingModel(m)
+                  setThinkingVerifyStatus('idle')
+                }}
                 optional
                 notSetText="Use Normal Model"
                 verifyStatus={thinkingVerifyStatus}
                 verifyError={thinkingVerifyError}
-                onVerify={(p, m) => verifySingleModel(p, m, setThinkingVerifyStatus, setThinkingVerifyError)}
+                onVerify={(p, m) =>
+                  verifySingleModel(p, m, setThinkingVerifyStatus, setThinkingVerifyError)
+                }
               />
 
               <ModelSlot
                 title="Compact Model"
                 description="Context compaction (falls back to Normal)"
-                icon={<svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" /></svg>}
+                icon={
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+                    />
+                  </svg>
+                }
                 providers={providers}
                 selectedProvider={compactProvider}
                 selectedModel={compactModel}
-                onProviderChange={(p) => { setCompactProvider(p); setCompactVerifyStatus('idle'); }}
-                onModelChange={(m) => { setCompactModel(m); setCompactVerifyStatus('idle'); }}
+                onProviderChange={(p) => {
+                  setCompactProvider(p)
+                  setCompactVerifyStatus('idle')
+                }}
+                onModelChange={(m) => {
+                  setCompactModel(m)
+                  setCompactVerifyStatus('idle')
+                }}
                 optional
                 notSetText="Use Normal Model"
                 verifyStatus={compactVerifyStatus}
                 verifyError={compactVerifyError}
-                onVerify={(p, m) => verifySingleModel(p, m, setCompactVerifyStatus, setCompactVerifyError)}
+                onVerify={(p, m) =>
+                  verifySingleModel(p, m, setCompactVerifyStatus, setCompactVerifyError)
+                }
               />
 
               <ModelSlot
                 title="Vision Model"
                 description="Image processing (disabled if not set)"
-                icon={<svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" /><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" /></svg>}
+                icon={
+                  <svg
+                    className="w-5 h-5 text-white"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                  >
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+                    />
+                    <path
+                      strokeLinecap="round"
+                      strokeLinejoin="round"
+                      strokeWidth={2}
+                      d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+                    />
+                  </svg>
+                }
                 providers={providers}
                 selectedProvider={visionProvider}
                 selectedModel={visionModel}
-                onProviderChange={(p) => { setVisionProvider(p); setVisionVerifyStatus('idle'); }}
-                onModelChange={(m) => { setVisionModel(m); setVisionVerifyStatus('idle'); }}
+                onProviderChange={(p) => {
+                  setVisionProvider(p)
+                  setVisionVerifyStatus('idle')
+                }}
+                onModelChange={(m) => {
+                  setVisionModel(m)
+                  setVisionVerifyStatus('idle')
+                }}
                 optional
                 notSetText="Vision Disabled"
                 verifyStatus={visionVerifyStatus}
                 verifyError={visionVerifyError}
-                onVerify={(p, m) => verifySingleModel(p, m, setVisionVerifyStatus, setVisionVerifyError)}
+                onVerify={(p, m) =>
+                  verifySingleModel(p, m, setVisionVerifyStatus, setVisionVerifyError)
+                }
               />
             </>
           )}
@@ -337,7 +460,7 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
         )}
       </div>
     </div>
-  );
+  )
 
-  return createPortal(modalContent, document.body);
+  return createPortal(modalContent, document.body)
 }

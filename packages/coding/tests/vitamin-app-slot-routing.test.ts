@@ -169,8 +169,8 @@ describe('VitaminApp slot routing', () => {
       const prompt = await session.promptRefresh?.()
       const toolNames = session.tools.map((tool) => tool.name)
 
-      expect(prompt).toContain('身份与环境')
-      expect(prompt).toContain('工作流程引导')
+      expect(prompt).toContain('Identity & Environment')
+      expect(prompt).toContain('Workflow Guidance')
       expect(toolNames).toContain('write')
       expect(toolNames).toContain('task_delegate')
     } finally {

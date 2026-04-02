@@ -1,21 +1,21 @@
-import { useState } from 'react';
-import { useChatStore } from '../../stores/chat';
+import { useState } from 'react'
+import { useChatStore } from '../../stores/chat'
 
 export function QueueBar() {
-  const [expanded, setExpanded] = useState(false);
+  const [expanded, setExpanded] = useState(false)
 
-  const queuedMessages = useChatStore(state => {
-    const sid = state.currentSessionId;
-    return sid ? state.sessionStates[sid]?.queuedMessages ?? [] : [];
-  });
+  const queuedMessages = useChatStore((state) => {
+    const sid = state.currentSessionId
+    return sid ? (state.sessionStates[sid]?.queuedMessages ?? []) : []
+  })
 
-  if (queuedMessages.length === 0) return null;
+  if (queuedMessages.length === 0) return null
 
   return (
     <div className="px-4">
       <div className="border-t border-border-300/15 bg-bg-200/50 rounded-t-lg overflow-hidden">
         <button
-          onClick={() => setExpanded(prev => !prev)}
+          onClick={() => setExpanded((prev) => !prev)}
           className="w-full flex items-center gap-2 px-3 py-1.5 text-xs text-text-300 hover:text-text-100 transition-colors"
         >
           <svg
@@ -52,5 +52,5 @@ export function QueueBar() {
         </div>
       </div>
     </div>
-  );
+  )
 }

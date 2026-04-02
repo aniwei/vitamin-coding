@@ -1,67 +1,67 @@
-import { useState } from 'react';
 import {
+  ChevronDownIcon,
+  ChevronRightIcon,
+  CodeBracketIcon,
   DocumentTextIcon,
   FolderIcon,
-  ChevronRightIcon,
-  ChevronDownIcon,
   TagIcon,
-  CodeBracketIcon
-} from '@heroicons/react/24/outline';
+} from '@heroicons/react/24/outline'
+import { useState } from 'react'
 
 interface WikiPage {
-  id: string;
-  title: string;
-  type: 'architecture' | 'api' | 'guide' | 'reference' | 'overview';
-  children?: WikiPage[];
-  parent?: string;
+  id: string
+  title: string
+  type: 'architecture' | 'api' | 'guide' | 'reference' | 'overview'
+  children?: WikiPage[]
+  parent?: string
 }
 
 interface WikiSidebarProps {
-  wikiPages: WikiPage[];
-  selectedPageId: string | null;
-  onPageSelect: (pageId: string) => void;
+  wikiPages: WikiPage[]
+  selectedPageId: string | null
+  onPageSelect: (pageId: string) => void
 }
 
 export function WikiSidebar({ wikiPages, selectedPageId, onPageSelect }: WikiSidebarProps) {
-  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['wiki-pages']));
+  const [expandedSections, setExpandedSections] = useState<Set<string>>(new Set(['wiki-pages']))
 
   const toggleSection = (section: string) => {
-    setExpandedSections(prev => {
-      const next = new Set(prev);
+    setExpandedSections((prev) => {
+      const next = new Set(prev)
       if (next.has(section)) {
-        next.delete(section);
+        next.delete(section)
       } else {
-        next.add(section);
+        next.add(section)
       }
-      return next;
-    });
-  };
+      return next
+    })
+  }
 
   const getPageIcon = (type: WikiPage['type']) => {
     switch (type) {
       case 'overview':
-        return <DocumentTextIcon className="w-4 h-4" />;
+        return <DocumentTextIcon className="w-4 h-4" />
       case 'architecture':
-        return <FolderIcon className="w-4 h-4" />;
+        return <FolderIcon className="w-4 h-4" />
       case 'api':
-        return <CodeBracketIcon className="w-4 h-4" />;
+        return <CodeBracketIcon className="w-4 h-4" />
       default:
-        return <DocumentTextIcon className="w-4 h-4" />;
+        return <DocumentTextIcon className="w-4 h-4" />
     }
-  };
+  }
 
-  const renderWikiPage = (page: WikiPage, depth: number = 0) => {
-    const isSelected = selectedPageId === page.id;
-    const hasChildren = page.children && page.children.length > 0;
-    const isExpanded = expandedSections.has(`page-${page.id}`);
+  const renderWikiPage = (page: WikiPage, depth = 0) => {
+    const isSelected = selectedPageId === page.id
+    const hasChildren = page.children && page.children.length > 0
+    const isExpanded = expandedSections.has(`page-${page.id}`)
 
     return (
       <div key={page.id}>
         <button
           onClick={() => {
-            onPageSelect(page.id);
+            onPageSelect(page.id)
             if (hasChildren) {
-              toggleSection(`page-${page.id}`);
+              toggleSection(`page-${page.id}`)
             }
           }}
           className={`w-full flex items-center gap-2 px-3 py-2 text-sm rounded-lg transition-colors ${
@@ -80,21 +80,19 @@ export function WikiSidebar({ wikiPages, selectedPageId, onPageSelect }: WikiSid
               )}
             </span>
           )}
-          <span className="flex-shrink-0 text-gray-500">
-            {getPageIcon(page.type)}
-          </span>
+          <span className="flex-shrink-0 text-gray-500">{getPageIcon(page.type)}</span>
           <span className="truncate">{page.title}</span>
         </button>
 
         {/* Render children if expanded */}
         {hasChildren && isExpanded && (
           <div className="mt-1">
-            {page.children!.map(child => renderWikiPage(child, depth + 1))}
+            {page.children!.map((child) => renderWikiPage(child, depth + 1))}
           </div>
         )}
       </div>
-    );
-  };
+    )
+  }
 
   return (
     <aside className="w-64 bg-gray-50 border-r border-gray-200 overflow-y-auto sticky top-0 h-[calc(100vh-6.5rem)]">
@@ -115,7 +113,7 @@ export function WikiSidebar({ wikiPages, selectedPageId, onPageSelect }: WikiSid
 
           {expandedSections.has('wiki-pages') && (
             <div className="mt-2 space-y-1">
-              {wikiPages.filter(p => !p.parent).map(page => renderWikiPage(page))}
+              {wikiPages.filter((p) => !p.parent).map((page) => renderWikiPage(page))}
             </div>
           )}
         </div>
@@ -136,7 +134,7 @@ export function WikiSidebar({ wikiPages, selectedPageId, onPageSelect }: WikiSid
 
           {expandedSections.has('tags') && (
             <div className="mt-2 flex flex-wrap gap-2">
-              {['architecture', 'api', 'guide', 'overview'].map(tag => (
+              {['architecture', 'api', 'guide', 'overview'].map((tag) => (
                 <button
                   key={tag}
                   className="flex items-center gap-1 px-2 py-1 text-xs bg-gray-100 hover:bg-gray-200 text-gray-700 rounded-full transition-colors"
@@ -165,7 +163,7 @@ export function WikiSidebar({ wikiPages, selectedPageId, onPageSelect }: WikiSid
 
           {expandedSections.has('files') && (
             <div className="mt-2 space-y-1">
-              {['core/agent.py', 'web/server.py', 'tools/registry.py'].map(file => (
+              {['core/agent.py', 'web/server.py', 'tools/registry.py'].map((file) => (
                 <button
                   key={file}
                   className="w-full flex items-center gap-2 px-3 py-2 text-sm text-gray-700 hover:bg-gray-100 rounded-lg transition-colors text-left"
@@ -179,5 +177,5 @@ export function WikiSidebar({ wikiPages, selectedPageId, onPageSelect }: WikiSid
         </div>
       </div>
     </aside>
-  );
+  )
 }

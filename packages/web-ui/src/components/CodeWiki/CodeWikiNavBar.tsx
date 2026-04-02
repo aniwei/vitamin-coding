@@ -1,9 +1,9 @@
-import { Link } from 'react-router-dom';
-import { ArrowLeftIcon, MagnifyingGlassIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
+import { ArrowLeftIcon, Cog6ToothIcon, MagnifyingGlassIcon } from '@heroicons/react/24/outline'
+import { Link } from 'react-router-dom'
 
 interface CodeWikiNavBarProps {
-  repoName: string;
-  onSearch?: (query: string) => void;
+  repoName: string
+  onSearch?: (query: string) => void
 }
 
 export function CodeWikiNavBar({ repoName, onSearch }: CodeWikiNavBarProps) {
@@ -52,5 +52,5 @@ export function CodeWikiNavBar({ repoName, onSearch }: CodeWikiNavBarProps) {
         </div>
       </div>
     </nav>
-  );
+  )
 }

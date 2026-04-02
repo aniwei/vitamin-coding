@@ -1,11 +1,11 @@
-import { memo } from 'react';
-import { Handle, Position, type Node, type NodeProps } from '@xyflow/react';
-import type { TaskNodeData } from '../../types/trace';
+import { Handle, type Node, type NodeProps, Position } from '@xyflow/react'
+import { memo } from 'react'
+import type { TaskNodeData } from '../../types/trace'
 
-export type TaskFlowNode = Node<TaskNodeData, 'taskNode'>;
+export type TaskFlowNode = Node<TaskNodeData, 'taskNode'>
 
 function TaskNodeComponent({ data, selected }: NodeProps<TaskFlowNode>) {
-  const taskCount = data.tools.length;
+  const taskCount = data.tools.length
 
   return (
     <div
@@ -13,11 +13,7 @@ function TaskNodeComponent({ data, selected }: NodeProps<TaskFlowNode>) {
         selected ? 'ring-2 ring-accent-main-100 shadow-lg' : 'shadow-sm'
       }`}
     >
-      <Handle
-        type="target"
-        position={Position.Top}
-        className="!w-2 !h-2 !bg-warning-100"
-      />
+      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-warning-100" />
 
       <div className="flex items-center gap-1.5 mb-1.5">
         <span className="w-1.5 h-1.5 rounded-full bg-warning-100 shrink-0" />
@@ -37,10 +33,11 @@ function TaskNodeComponent({ data, selected }: NodeProps<TaskFlowNode>) {
       </div>
 
       <div className="text-text-200 text-[11px] leading-[1.4] overflow-hidden line-clamp-3">
-        {data.taskDescription
-          ? data.taskDescription.replace(/\n+/g, ' ').slice(0, 160)
-          : <span className="text-text-400 italic">(no description)</span>
-        }
+        {data.taskDescription ? (
+          data.taskDescription.replace(/\n+/g, ' ').slice(0, 160)
+        ) : (
+          <span className="text-text-400 italic">(no description)</span>
+        )}
       </div>
 
       {data.tools[0]?.result && (
@@ -68,7 +65,7 @@ function TaskNodeComponent({ data, selected }: NodeProps<TaskFlowNode>) {
         className="!w-2 !h-2 !bg-warning-100"
       />
     </div>
-  );
+  )
 }
 
-export const TaskNode = memo(TaskNodeComponent);
+export const TaskNode = memo(TaskNodeComponent)

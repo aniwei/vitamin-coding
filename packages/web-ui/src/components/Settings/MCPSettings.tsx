@@ -5,174 +5,179 @@
  * with real-time WebSocket updates
  */
 
-import { useState, useEffect, useRef } from 'react';
-import { AddMCPServerModal } from './AddMCPServerModal';
-import { EditMCPServerModal } from './EditMCPServerModal';
-import { MCPToolsModal } from './MCPToolsModal';
-import { wsClient } from '../../api/websocket';
-import type { MCPServer, MCPServerCreateRequest, MCPServerUpdateRequest, MCPTool } from '../../types/mcp';
-import type { WSMessage } from '../../types';
+import { useEffect, useRef, useState } from 'react'
 import {
-  listMCPServers,
   connectMCPServer,
-  disconnectMCPServer,
-  testMCPServer,
   createMCPServer,
-  updateMCPServer,
   deleteMCPServer,
+  disconnectMCPServer,
   getMCPServer,
-} from '../../api/mcp';
+  listMCPServers,
+  testMCPServer,
+  updateMCPServer,
+} from '../../api/mcp'
+import { wsClient } from '../../api/websocket'
+import type { WebSocketMessage } from '../../types'
+import type {
+  MCPServer,
+  MCPServerCreateRequest,
+  MCPServerUpdateRequest,
+  MCPTool,
+} from '../../types/mcp'
+import { AddMCPServerModal } from './AddMCPServerModal'
+import { EditMCPServerModal } from './EditMCPServerModal'
+import { MCPToolsModal } from './MCPToolsModal'
 
 export function MCPSettings() {
   // Server list state
-  const [servers, setServers] = useState<MCPServer[]>([]);
-  const [isLoading, setIsLoading] = useState(true);
-  const [error, setError] = useState<string | null>(null);
+  const [servers, setServers] = useState<MCPServer[]>([])
+  const [isLoading, setIsLoading] = useState(true)
+  const [error, setError] = useState<string | null>(null)
 
   // Modal states
-  const [showAddModal, setShowAddModal] = useState(false);
-  const [showEditModal, setShowEditModal] = useState(false);
-  const [showToolsModal, setShowToolsModal] = useState(false);
-  const [selectedServer, setSelectedServer] = useState<MCPServer | null>(null);
-  const [selectedServerTools, setSelectedServerTools] = useState<MCPTool[]>([]);
+  const [showAddModal, setShowAddModal] = useState(false)
+  const [showEditModal, setShowEditModal] = useState(false)
+  const [showToolsModal, setShowToolsModal] = useState(false)
+  const [selectedServer, setSelectedServer] = useState<MCPServer | null>(null)
+  const [selectedServerTools, setSelectedServerTools] = useState<MCPTool[]>([])
 
   // Action states
-  const [processingServer, setProcessingServer] = useState<string | null>(null);
+  const [processingServer, setProcessingServer] = useState<string | null>(null)
 
   // Load servers on mount
   useEffect(() => {
-    console.log('[MCPSettings] Component mounted, loading servers...');
-    loadServers();
-  }, []);
+    console.log('[MCPSettings] Component mounted, loading servers...')
+    loadServers()
+  }, [])
 
   // WebSocket event listener for real-time updates
   useEffect(() => {
-    const handleWSMessage = (message: WSMessage) => {
+    const handleWebSocketMessage = (message: WebSocketMessage) => {
       if (message.type === 'mcp_status_update') {
-        const { server_name, status } = message.data;
-        console.log('[MCPSettings] Status update via WebSocket:', { server_name, status });
-        setServers(prev => prev.map(server =>
-          server.name === server_name ? { ...server, status } : server
-        ));
+        const { server_name, status } = message.data
+        console.log('[MCPSettings] Status update via WebSocket:', { server_name, status })
+        setServers((prev) =>
+          prev.map((server) => (server.name === server_name ? { ...server, status } : server)),
+        )
       } else if (message.type === 'mcp_servers_update') {
-        console.log('[MCPSettings] Full update via WebSocket:', message.data);
-        setServers(message.data.servers);
+        console.log('[MCPSettings] Full update via WebSocket:', message.data)
+        setServers(message.data.servers)
       }
-    };
+    }
 
-    const unsubscribe1 = wsClient.on('mcp_status_update', handleWSMessage);
-    const unsubscribe2 = wsClient.on('mcp_servers_update', handleWSMessage);
+    const unsubscribe1 = wsClient.on('mcp_status_update', handleWebSocketMessage)
+    const unsubscribe2 = wsClient.on('mcp_servers_update', handleWebSocketMessage)
 
     return () => {
-      unsubscribe1();
-      unsubscribe2();
-    };
-  }, []);
+      unsubscribe1()
+      unsubscribe2()
+    }
+  }, [])
 
   const loadServers = async () => {
-    setIsLoading(true);
-    setError(null);
+    setIsLoading(true)
+    setError(null)
     try {
-      console.log('[MCPSettings] Fetching from /api/mcp/servers...');
-      const response = await listMCPServers();
-      console.log('[MCPSettings] API Response:', response);
-      console.log('[MCPSettings] Servers loaded:', response.servers?.length || 0, 'servers');
-      setServers(response.servers || []);
+      console.log('[MCPSettings] Fetching from /api/mcp/servers...')
+      const response = await listMCPServers()
+      console.log('[MCPSettings] API Response:', response)
+      console.log('[MCPSettings] Servers loaded:', response.servers?.length || 0, 'servers')
+      setServers(response.servers || [])
     } catch (err) {
-      const errorMsg = err instanceof Error ? err.message : 'Failed to load servers';
-      console.error('[MCPSettings] Load error:', errorMsg, err);
-      setError(errorMsg);
+      const errorMsg = err instanceof Error ? err.message : 'Failed to load servers'
+      console.error('[MCPSettings] Load error:', errorMsg, err)
+      setError(errorMsg)
     } finally {
-      setIsLoading(false);
+      setIsLoading(false)
     }
-  };
+  }
 
   const handleConnect = async (name: string) => {
-    setProcessingServer(name);
+    setProcessingServer(name)
     try {
-      await connectMCPServer(name);
-      await loadServers(); // Reload to update UI
+      await connectMCPServer(name)
+      await loadServers() // Reload to update UI
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to connect');
+      setError(err instanceof Error ? err.message : 'Failed to connect')
     } finally {
-      setProcessingServer(null);
+      setProcessingServer(null)
     }
-  };
+  }
 
   const handleDisconnect = async (name: string) => {
-    setProcessingServer(name);
+    setProcessingServer(name)
     try {
-      await disconnectMCPServer(name);
-      await loadServers(); // Reload to update UI
+      await disconnectMCPServer(name)
+      await loadServers() // Reload to update UI
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to disconnect');
+      setError(err instanceof Error ? err.message : 'Failed to disconnect')
     } finally {
-      setProcessingServer(null);
+      setProcessingServer(null)
     }
-  };
+  }
 
   const handleTest = async (name: string) => {
-    setProcessingServer(name);
+    setProcessingServer(name)
     try {
-      const response = await testMCPServer(name);
-      alert(response.message || 'Connection test successful');
+      const response = await testMCPServer(name)
+      alert(response.message || 'Connection test successful')
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Test failed');
+      setError(err instanceof Error ? err.message : 'Test failed')
     } finally {
-      setProcessingServer(null);
+      setProcessingServer(null)
     }
-  };
+  }
 
   const handleViewTools = async (name: string) => {
     try {
-      const serverDetail = await getMCPServer(name);
-      setSelectedServerTools(serverDetail.tools);
-      setSelectedServer(servers.find(s => s.name === name) || null);
-      setShowToolsModal(true);
+      const serverDetail = await getMCPServer(name)
+      setSelectedServerTools(serverDetail.tools)
+      setSelectedServer(servers.find((s) => s.name === name) || null)
+      setShowToolsModal(true)
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to load tools');
+      setError(err instanceof Error ? err.message : 'Failed to load tools')
     }
-  };
+  }
 
   const handleEdit = (server: MCPServer) => {
-    setSelectedServer(server);
-    setShowEditModal(true);
-  };
+    setSelectedServer(server)
+    setShowEditModal(true)
+  }
 
   const handleDelete = async (name: string) => {
-    if (!confirm(`Remove "${name}"? This action cannot be undone.`)) return;
+    if (!confirm(`Remove "${name}"? This action cannot be undone.`)) return
 
     try {
-      await deleteMCPServer(name);
-      await loadServers();
+      await deleteMCPServer(name)
+      await loadServers()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to remove server');
+      setError(err instanceof Error ? err.message : 'Failed to remove server')
     }
-  };
+  }
 
   const handleAddServer = async (server: MCPServerCreateRequest) => {
     try {
-      await createMCPServer(server);
-      await loadServers();
-      setShowAddModal(false);
+      await createMCPServer(server)
+      await loadServers()
+      setShowAddModal(false)
     } catch (err) {
-      throw err;
+      throw err
     }
-  };
+  }
 
   const handleUpdateServer = async (name: string, update: MCPServerUpdateRequest) => {
     try {
-      await updateMCPServer(name, update);
-      await loadServers();
-      setShowEditModal(false);
-      setSelectedServer(null);
+      await updateMCPServer(name, update)
+      await loadServers()
+      setShowEditModal(false)
+      setSelectedServer(null)
     } catch (err) {
-      throw err;
+      throw err
     }
-  };
+  }
 
   // Debug render
-  console.log('[MCPSettings] Rendering with:', { isLoading, serversCount: servers.length, error });
+  console.log('[MCPSettings] Rendering with:', { isLoading, serversCount: servers.length, error })
 
   return (
     <div className="space-y-4">
@@ -196,14 +201,29 @@ export function MCPSettings() {
       {error && (
         <div className="flex items-center justify-between px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
           <div className="flex items-center gap-3">
-            <svg className="w-5 h-5 text-red-600" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+            <svg
+              className="w-5 h-5 text-red-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              />
             </svg>
             <p className="text-sm text-red-800">{error}</p>
           </div>
           <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800">
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M6 18L18 6M6 6l12 12"
+              />
             </svg>
           </button>
         </div>
@@ -246,8 +266,8 @@ export function MCPSettings() {
         isOpen={showEditModal}
         server={selectedServer}
         onClose={() => {
-          setShowEditModal(false);
-          setSelectedServer(null);
+          setShowEditModal(false)
+          setSelectedServer(null)
         }}
         onSubmit={handleUpdateServer}
       />
@@ -257,13 +277,13 @@ export function MCPSettings() {
         serverName={selectedServer?.name || ''}
         tools={selectedServerTools}
         onClose={() => {
-          setShowToolsModal(false);
-          setSelectedServer(null);
-          setSelectedServerTools([]);
+          setShowToolsModal(false)
+          setSelectedServer(null)
+          setSelectedServerTools([])
         }}
       />
     </div>
-  );
+  )
 }
 
 // ============================================================================
@@ -278,32 +298,40 @@ function LoadingState() {
       </div>
       <p className="text-sm text-gray-600">Loading MCP servers...</p>
     </div>
-  );
+  )
 }
 
 function EmptyState() {
   return (
     <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
-      <svg className="w-12 h-12 mx-auto text-gray-300 mb-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-        <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={1.5} d="M5 12h14M12 5l7 7-7 7" />
+      <svg
+        className="w-12 h-12 mx-auto text-gray-300 mb-3"
+        fill="none"
+        viewBox="0 0 24 24"
+        stroke="currentColor"
+      >
+        <path
+          strokeLinecap="round"
+          strokeLinejoin="round"
+          strokeWidth={1.5}
+          d="M5 12h14M12 5l7 7-7 7"
+        />
       </svg>
       <p className="text-sm text-gray-600 font-medium mb-1">No MCP servers configured</p>
-      <p className="text-xs text-gray-500">
-        Click "Add Server" above to add your first MCP server
-      </p>
+      <p className="text-xs text-gray-500">Click "Add Server" above to add your first MCP server</p>
     </div>
-  );
+  )
 }
 
 interface ServerTableProps {
-  servers: MCPServer[];
-  processingServer: string | null;
-  onConnect: (name: string) => void;
-  onDisconnect: (name: string) => void;
-  onTest: (name: string) => void;
-  onViewTools: (name: string) => void;
-  onEdit: (server: MCPServer) => void;
-  onDelete: (name: string) => void;
+  servers: MCPServer[]
+  processingServer: string | null
+  onConnect: (name: string) => void
+  onDisconnect: (name: string) => void
+  onTest: (name: string) => void
+  onViewTools: (name: string) => void
+  onEdit: (server: MCPServer) => void
+  onDelete: (name: string) => void
 }
 
 function ServerTable({
@@ -362,18 +390,18 @@ function ServerTable({
         </tbody>
       </table>
     </div>
-  );
+  )
 }
 
 interface ServerRowProps {
-  server: MCPServer;
-  isProcessing: boolean;
-  onConnect: (name: string) => void;
-  onDisconnect: (name: string) => void;
-  onTest: (name: string) => void;
-  onViewTools: (name: string) => void;
-  onEdit: (server: MCPServer) => void;
-  onDelete: (name: string) => void;
+  server: MCPServer
+  isProcessing: boolean
+  onConnect: (name: string) => void
+  onDisconnect: (name: string) => void
+  onTest: (name: string) => void
+  onViewTools: (name: string) => void
+  onEdit: (server: MCPServer) => void
+  onDelete: (name: string) => void
 }
 
 function ServerRow({
@@ -386,11 +414,11 @@ function ServerRow({
   onEdit,
   onDelete,
 }: ServerRowProps) {
-  const isConnected = server.status === 'connected';
+  const isConnected = server.status === 'connected'
 
   const handleTest = () => {
-    onTest(server.name);
-  };
+    onTest(server.name)
+  }
 
   return (
     <tr className="hover:bg-gray-50 transition-colors">
@@ -462,7 +490,11 @@ function ServerRow({
       <td className="px-4 py-3 text-center whitespace-nowrap">
         {server.config.enabled ? (
           <svg className="w-5 h-5 text-green-600 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
           </svg>
         ) : (
           <span className="text-gray-300">-</span>
@@ -473,7 +505,11 @@ function ServerRow({
       <td className="px-4 py-3 text-center whitespace-nowrap">
         {server.config.auto_start ? (
           <svg className="w-5 h-5 text-green-600 mx-auto" fill="currentColor" viewBox="0 0 20 20">
-            <path fillRule="evenodd" d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z" clipRule="evenodd" />
+            <path
+              fillRule="evenodd"
+              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
+              clipRule="evenodd"
+            />
           </svg>
         ) : (
           <span className="text-gray-300">-</span>
@@ -492,7 +528,7 @@ function ServerRow({
         </div>
       </td>
     </tr>
-  );
+  )
 }
 
 // ============================================================================
@@ -500,29 +536,29 @@ function ServerRow({
 // ============================================================================
 
 interface DropdownMenuProps {
-  server: MCPServer;
-  isProcessing: boolean;
-  onEdit: (server: MCPServer) => void;
-  onDelete: (name: string) => void;
+  server: MCPServer
+  isProcessing: boolean
+  onEdit: (server: MCPServer) => void
+  onDelete: (name: string) => void
 }
 
 function DropdownMenu({ server, isProcessing, onEdit, onDelete }: DropdownMenuProps) {
-  const [isOpen, setIsOpen] = useState(false);
-  const dropdownRef = useRef<HTMLDivElement>(null);
+  const [isOpen, setIsOpen] = useState(false)
+  const dropdownRef = useRef<HTMLDivElement>(null)
 
   // Close dropdown when clicking outside
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        setIsOpen(false);
+        setIsOpen(false)
       }
-    };
+    }
 
     if (isOpen) {
-      document.addEventListener('mousedown', handleClickOutside);
-      return () => document.removeEventListener('mousedown', handleClickOutside);
+      document.addEventListener('mousedown', handleClickOutside)
+      return () => document.removeEventListener('mousedown', handleClickOutside)
     }
-  }, [isOpen]);
+  }, [isOpen])
 
   return (
     <div className="relative" ref={dropdownRef}>
@@ -543,30 +579,40 @@ function DropdownMenu({ server, isProcessing, onEdit, onDelete }: DropdownMenuPr
         <div className="absolute right-0 mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
           <button
             onClick={() => {
-              onEdit(server);
-              setIsOpen(false);
+              onEdit(server)
+              setIsOpen(false)
             }}
             className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+              />
             </svg>
             Edit
           </button>
           <button
             onClick={() => {
-              onDelete(server.name);
-              setIsOpen(false);
+              onDelete(server.name)
+              setIsOpen(false)
             }}
             className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
           >
             <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+              />
             </svg>
             Remove
           </button>
         </div>
       )}
     </div>
-  );
+  )
 }

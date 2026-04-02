@@ -1,16 +1,12 @@
-import { useState } from 'react';
-import {
-  MagnifyingGlassIcon,
-  PlusIcon,
-  Cog6ToothIcon
-} from '@heroicons/react/24/outline';
-import { RepositoryExplorer } from './RepositoryExplorer';
-import { DocumentationViewer } from './DocumentationViewer';
+import { Cog6ToothIcon, MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { useState } from 'react'
+import { DocumentationViewer } from './DocumentationViewer'
+import { RepositoryExplorer } from './RepositoryExplorer'
 
 export function CodeWikiInterface() {
-  const [selectedRepo, setSelectedRepo] = useState<string | null>(null);
-  const [searchQuery, setSearchQuery] = useState('');
-  const [_isIndexing, setIsIndexing] = useState(false);
+  const [selectedRepo, setSelectedRepo] = useState<string | null>(null)
+  const [searchQuery, setSearchQuery] = useState('')
+  const [_isIndexing, setIsIndexing] = useState(false)
 
   return (
     <div className="h-full flex">
@@ -61,5 +57,5 @@ export function CodeWikiInterface() {
         />
       </div>
     </div>
-  );
+  )
 }

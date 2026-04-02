@@ -1,11 +1,16 @@
-import { InformationCircleIcon, ExclamationTriangleIcon, CheckCircleIcon, XCircleIcon } from '@heroicons/react/24/outline';
+import {
+  CheckCircleIcon,
+  ExclamationTriangleIcon,
+  InformationCircleIcon,
+  XCircleIcon,
+} from '@heroicons/react/24/outline'
 
-type CalloutType = 'info' | 'warning' | 'success' | 'error';
+type CalloutType = 'info' | 'warning' | 'success' | 'error'
 
 interface CalloutProps {
-  type: CalloutType;
-  title?: string;
-  children: React.ReactNode;
+  type: CalloutType
+  title?: string
+  children: React.ReactNode
 }
 
 const calloutStyles = {
@@ -37,23 +42,21 @@ const calloutStyles = {
     text: 'text-red-800',
     Icon: XCircleIcon,
   },
-};
+}
 
 export function Callout({ type, title, children }: CalloutProps) {
-  const styles = calloutStyles[type];
-  const Icon = styles.Icon;
+  const styles = calloutStyles[type]
+  const Icon = styles.Icon
 
   return (
     <div className={`rounded-lg border p-4 my-4 ${styles.container}`}>
       <div className="flex gap-3">
         <Icon className={`w-5 h-5 flex-shrink-0 ${styles.icon}`} />
         <div className="flex-1">
-          {title && (
-            <div className={`font-semibold mb-1 ${styles.title}`}>{title}</div>
-          )}
+          {title && <div className={`font-semibold mb-1 ${styles.title}`}>{title}</div>}
           <div className={`text-sm ${styles.text}`}>{children}</div>
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -5,36 +5,36 @@
  * Follows DRY by reusing form components from AddMCPServerModal.
  */
 
-import { useState, useEffect } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
-import type { MCPServer, MCPServerUpdateRequest } from '../../types/mcp';
+import { XMarkIcon } from '@heroicons/react/24/outline'
+import { useEffect, useState } from 'react'
+import type { MCPServer, MCPServerUpdateRequest } from '../../types/mcp'
 
 interface EditMCPServerModalProps {
-  isOpen: boolean;
-  server: MCPServer | null;
-  onClose: () => void;
-  onSubmit: (name: string, update: MCPServerUpdateRequest) => Promise<void>;
+  isOpen: boolean
+  server: MCPServer | null
+  onClose: () => void
+  onSubmit: (name: string, update: MCPServerUpdateRequest) => Promise<void>
 }
 
 interface FormData {
-  command: string;
-  args: string[];
-  env: Record<string, string>;
-  enabled: boolean;
-  auto_start: boolean;
+  command: string
+  args: string[]
+  env: Record<string, string>
+  enabled: boolean
+  auto_start: boolean
 }
 
 export function EditMCPServerModal({ isOpen, server, onClose, onSubmit }: EditMCPServerModalProps) {
-  const [formData, setFormData] = useState<FormData | null>(null);
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [formData, setFormData] = useState<FormData | null>(null)
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Args management
-  const [argInput, setArgInput] = useState('');
+  const [argInput, setArgInput] = useState('')
 
   // Env management
-  const [envKey, setEnvKey] = useState('');
-  const [envValue, setEnvValue] = useState('');
+  const [envKey, setEnvKey] = useState('')
+  const [envValue, setEnvValue] = useState('')
 
   // Initialize form data when server changes
   useEffect(() => {
@@ -45,85 +45,97 @@ export function EditMCPServerModal({ isOpen, server, onClose, onSubmit }: EditMC
         env: { ...server.config.env },
         enabled: server.config.enabled,
         auto_start: server.config.auto_start,
-      });
+      })
     }
-  }, [server]);
+  }, [server])
 
-  if (!isOpen || !server || !formData) return null;
+  if (!isOpen || !server || !formData) return null
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+    e.preventDefault()
+    setError(null)
 
     if (!formData.command.trim()) {
-      setError('Command is required');
-      return;
+      setError('Command is required')
+      return
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
       await onSubmit(server.name, {
         command: formData.command.trim(),
-        args: formData.args.filter(arg => arg.trim()),
+        args: formData.args.filter((arg) => arg.trim()),
         env: formData.env,
         enabled: formData.enabled,
         auto_start: formData.auto_start,
-      });
+      })
 
-      onClose();
+      onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to update server');
+      setError(err instanceof Error ? err.message : 'Failed to update server')
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setArgInput('');
-      setEnvKey('');
-      setEnvValue('');
-      setError(null);
-      onClose();
+      setArgInput('')
+      setEnvKey('')
+      setEnvValue('')
+      setError(null)
+      onClose()
     }
-  };
+  }
 
   const addArg = () => {
     if (argInput.trim()) {
-      setFormData(prev => prev ? ({
-        ...prev,
-        args: [...prev.args, argInput.trim()],
-      }) : null);
-      setArgInput('');
+      setFormData((prev) =>
+        prev
+          ? {
+              ...prev,
+              args: [...prev.args, argInput.trim()],
+            }
+          : null,
+      )
+      setArgInput('')
     }
-  };
+  }
 
   const removeArg = (index: number) => {
-    setFormData(prev => prev ? ({
-      ...prev,
-      args: prev.args.filter((_, i) => i !== index),
-    }) : null);
-  };
+    setFormData((prev) =>
+      prev
+        ? {
+            ...prev,
+            args: prev.args.filter((_, i) => i !== index),
+          }
+        : null,
+    )
+  }
 
   const addEnvVar = () => {
     if (envKey.trim() && envValue.trim()) {
-      setFormData(prev => prev ? ({
-        ...prev,
-        env: { ...prev.env, [envKey.trim()]: envValue.trim() },
-      }) : null);
-      setEnvKey('');
-      setEnvValue('');
+      setFormData((prev) =>
+        prev
+          ? {
+              ...prev,
+              env: { ...prev.env, [envKey.trim()]: envValue.trim() },
+            }
+          : null,
+      )
+      setEnvKey('')
+      setEnvValue('')
     }
-  };
+  }
 
   const removeEnvVar = (key: string) => {
-    setFormData(prev => {
-      if (!prev) return null;
-      const newEnv = { ...prev.env };
-      delete newEnv[key];
-      return { ...prev, env: newEnv };
-    });
-  };
+    setFormData((prev) => {
+      if (!prev) return null
+      const newEnv = { ...prev.env }
+      delete newEnv[key]
+      return { ...prev, env: newEnv }
+    })
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
@@ -160,7 +172,9 @@ export function EditMCPServerModal({ isOpen, server, onClose, onSubmit }: EditMC
               <input
                 type="text"
                 value={formData.command}
-                onChange={(e) => setFormData(prev => prev ? ({ ...prev, command: e.target.value }) : null)}
+                onChange={(e) =>
+                  setFormData((prev) => (prev ? { ...prev, command: e.target.value } : null))
+                }
                 required
                 disabled={isSubmitting}
                 className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
@@ -213,7 +227,9 @@ export function EditMCPServerModal({ isOpen, server, onClose, onSubmit }: EditMC
 
             {/* Environment Variables */}
             <div>
-              <label className="block text-sm font-medium text-gray-700 mb-1">Environment Variables</label>
+              <label className="block text-sm font-medium text-gray-700 mb-1">
+                Environment Variables
+              </label>
               <div className="space-y-2">
                 {Object.entries(formData.env).map(([key, value]) => (
                   <div key={key} className="flex items-center gap-2">
@@ -272,7 +288,9 @@ export function EditMCPServerModal({ isOpen, server, onClose, onSubmit }: EditMC
               <input
                 type="checkbox"
                 checked={formData.auto_start}
-                onChange={(e) => setFormData(prev => prev ? ({ ...prev, auto_start: e.target.checked }) : null)}
+                onChange={(e) =>
+                  setFormData((prev) => (prev ? { ...prev, auto_start: e.target.checked } : null))
+                }
                 disabled={isSubmitting}
                 className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900 disabled:opacity-50"
               />
@@ -283,7 +301,9 @@ export function EditMCPServerModal({ isOpen, server, onClose, onSubmit }: EditMC
               <input
                 type="checkbox"
                 checked={formData.enabled}
-                onChange={(e) => setFormData(prev => prev ? ({ ...prev, enabled: e.target.checked }) : null)}
+                onChange={(e) =>
+                  setFormData((prev) => (prev ? { ...prev, enabled: e.target.checked } : null))
+                }
                 disabled={isSubmitting}
                 className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900 disabled:opacity-50"
               />
@@ -313,5 +333,5 @@ export function EditMCPServerModal({ isOpen, server, onClose, onSubmit }: EditMC
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -20,7 +20,7 @@ export type PromptPresetOptions =
       context?: SubAgentPromptContext
     }
 
-/** lead-guidance 合并后的单文件 key */
+/** Merged single-file key for lead-guidance */
 const LEAD_GUIDANCE_KEY = 'lead-guidance'
 
 export interface PromptManagerOptions {
@@ -72,6 +72,10 @@ export class PromptManager {
 
   async loadSessionEndLearningPrompt(): Promise<string | null> {
     return this.load('lesson/session-end-learning')
+  }
+
+  async loadRuntimeLessonsTemplate(): Promise<string | null> {
+    return this.load('lesson/runtime-lessons')
   }
 
   invalidate(): void {

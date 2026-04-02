@@ -1,20 +1,20 @@
-import ReactMarkdown from 'react-markdown';
-import { CodeBracketIcon, DocumentTextIcon } from '@heroicons/react/24/outline';
+import { CodeBracketIcon, DocumentTextIcon } from '@heroicons/react/24/outline'
+import ReactMarkdown from 'react-markdown'
 
 interface WikiPage {
-  id: string;
-  title: string;
-  type: 'architecture' | 'api' | 'guide' | 'reference' | 'overview';
-  content: string;
-  description?: string;
-  lastModified: string;
-  relatedFiles?: string[];
-  relatedPages?: string[];
-  tags?: string[];
+  id: string
+  title: string
+  type: 'architecture' | 'api' | 'guide' | 'reference' | 'overview'
+  content: string
+  description?: string
+  lastModified: string
+  relatedFiles?: string[]
+  relatedPages?: string[]
+  tags?: string[]
 }
 
 interface DocumentationContentProps {
-  wikiPage: WikiPage;
+  wikiPage: WikiPage
 }
 
 export function DocumentationContent({ wikiPage }: DocumentationContentProps) {
@@ -22,14 +22,10 @@ export function DocumentationContent({ wikiPage }: DocumentationContentProps) {
     <div className="max-w-4xl mx-auto px-8 py-8">
       {/* Page Header */}
       <div className="mb-8">
-        <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">
-          {wikiPage.title}
-        </h1>
+        <h1 className="text-4xl font-bold text-gray-900 mb-4 leading-tight">{wikiPage.title}</h1>
 
         {wikiPage.description && (
-          <p className="text-xl text-gray-600 leading-relaxed mb-6">
-            {wikiPage.description}
-          </p>
+          <p className="text-xl text-gray-600 leading-relaxed mb-6">{wikiPage.description}</p>
         )}
 
         {/* Metadata */}
@@ -43,7 +39,7 @@ export function DocumentationContent({ wikiPage }: DocumentationContentProps) {
         {/* Tags */}
         {wikiPage.tags && wikiPage.tags.length > 0 && (
           <div className="flex gap-2 flex-wrap mt-4">
-            {wikiPage.tags.map(tag => (
+            {wikiPage.tags.map((tag) => (
               <span
                 key={tag}
                 className="px-3 py-1 bg-gray-100 text-gray-700 rounded-full text-sm hover:bg-gray-200 transition-colors cursor-pointer"
@@ -74,7 +70,10 @@ export function DocumentationContent({ wikiPage }: DocumentationContentProps) {
               </h2>
             ),
             h3: ({ children, ...props }) => (
-              <h3 className="text-xl font-semibold text-gray-900 mt-6 mb-3 leading-tight" {...props}>
+              <h3
+                className="text-xl font-semibold text-gray-900 mt-6 mb-3 leading-tight"
+                {...props}
+              >
                 {children}
               </h3>
             ),
@@ -99,7 +98,7 @@ export function DocumentationContent({ wikiPage }: DocumentationContentProps) {
               </li>
             ),
             code: ({ children, className, ...props }) => {
-              const isInline = !className;
+              const isInline = !className
               return isInline ? (
                 <code
                   className="bg-purple-50 text-purple-900 px-1.5 py-0.5 rounded text-sm font-mono"
@@ -114,7 +113,7 @@ export function DocumentationContent({ wikiPage }: DocumentationContentProps) {
                 >
                   {children}
                 </code>
-              );
+              )
             },
             blockquote: ({ children, ...props }) => (
               <blockquote
@@ -125,10 +124,7 @@ export function DocumentationContent({ wikiPage }: DocumentationContentProps) {
               </blockquote>
             ),
             a: ({ children, ...props }) => (
-              <a
-                className="text-purple-600 hover:text-purple-800 underline"
-                {...props}
-              >
+              <a className="text-purple-600 hover:text-purple-800 underline" {...props}>
                 {children}
               </a>
             ),
@@ -182,5 +178,5 @@ export function DocumentationContent({ wikiPage }: DocumentationContentProps) {
         )}
       </div>
     </div>
-  );
+  )
 }

@@ -18,8 +18,10 @@
     "run:example": "tsx example/vitamin-app-example.tsx",
     "run:example:smoke": "tsx example/vitamin-app-smoke.tsx",
     "run:example:simple": "tsx example/simple-task.ts",
+    "run:example:simple:write": "tsx example/simple-write-file-task.ts",
     "run:example:complex": "tsx example/complex-task.ts",
-    "run:example:compare": "tsx example/model-compare.ts",
+    "run:example:complex:vite": "tsx example/complex-vite-task.ts",    "run:example:service": "tsx example/web-service.ts",
+    "run:example:devtools-service": "tsx example/devtools-service.ts",    "run:example:compare": "tsx example/model-compare.ts",
     "build": "tsup",
     "typecheck:project": "tsc -p tsconfig.json --noEmit",
     "typecheck:file": "tsc src/index.ts --noEmit --target ES2024 --module ESNext --moduleResolution bundler --esModuleInterop --skipLibCheck",
@@ -47,6 +49,7 @@
     "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
+    "@vitamin/service": "workspace:*",
     "tsx": "^4.19.2"
   }
 }

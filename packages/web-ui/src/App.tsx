@@ -1,8 +1,8 @@
-import { BrowserRouter as Router, Routes, Route, Navigate } from 'react-router-dom'
+import { Navigate, Route, BrowserRouter as Router, Routes } from 'react-router-dom'
+import { RepositoryDetailPage } from './components/CodeWiki/RepositoryDetailPage'
 import { ChatPage } from './pages/ChatPage'
 import { CodeWikiPage } from './pages/CodeWikiPage'
 import { TraceAnalysisPage } from './pages/TraceAnalysisPage'
-import { RepositoryDetailPage } from './components/CodeWiki/RepositoryDetailPage'
 
 function App() {
   return (
@@ -15,7 +15,7 @@ function App() {
         <Route path="/" element={<Navigate to="/chat" replace />} />
       </Routes>
     </Router>
-  );
+  )
 }
 
-export default App;
+export default App

@@ -1,62 +1,62 @@
-import { useEffect } from 'react';
-import { useChatStore } from '../stores/chat';
+import { useEffect } from 'react'
+import { useChatStore } from '../stores/chat'
 
 export function ApprovalDialog() {
-  const pendingApproval = useChatStore(state => {
-    const sid = state.currentSessionId;
-    return sid ? state.sessionStates[sid]?.pendingApproval ?? null : null;
-  });
-  const respondToApproval = useChatStore(state => state.respondToApproval);
+  const pendingApproval = useChatStore((state) => {
+    const sid = state.currentSessionId
+    return sid ? (state.sessionStates[sid]?.pendingApproval ?? null) : null
+  })
+  const respondToApproval = useChatStore((state) => state.respondToApproval)
 
   // Define handlers first (before hooks)
   const handleApprove = () => {
     if (pendingApproval) {
-      respondToApproval(pendingApproval.id, true, false);
+      respondToApproval(pendingApproval.id, true, false)
     }
-  };
+  }
 
   const handleApproveAll = () => {
     if (pendingApproval) {
-      respondToApproval(pendingApproval.id, true, true);
+      respondToApproval(pendingApproval.id, true, true)
     }
-  };
+  }
 
   const handleDeny = () => {
     if (pendingApproval) {
-      respondToApproval(pendingApproval.id, false, false);
+      respondToApproval(pendingApproval.id, false, false)
     }
-  };
+  }
 
   // Debug log - MUST be before early return
   useEffect(() => {
     if (pendingApproval) {
-      console.log('[ApprovalDialog] Showing approval dialog:', pendingApproval);
+      console.log('[ApprovalDialog] Showing approval dialog:', pendingApproval)
     } else {
-      console.log('[ApprovalDialog] No pending approval');
+      console.log('[ApprovalDialog] No pending approval')
     }
-  }, [pendingApproval]);
+  }, [pendingApproval])
 
   // Keyboard shortcuts - MUST be before early return
   useEffect(() => {
-    if (!pendingApproval) return;
+    if (!pendingApproval) return
 
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === '1') {
-        handleApprove();
+        handleApprove()
       } else if (e.key === '2') {
-        handleApproveAll();
+        handleApproveAll()
       } else if (e.key === '3') {
-        handleDeny();
+        handleDeny()
       }
-    };
+    }
 
-    window.addEventListener('keydown', handleKeyPress);
-    return () => window.removeEventListener('keydown', handleKeyPress);
-  }, [pendingApproval]);
+    window.addEventListener('keydown', handleKeyPress)
+    return () => window.removeEventListener('keydown', handleKeyPress)
+  }, [pendingApproval])
 
   // Early return AFTER all hooks
   if (!pendingApproval) {
-    return null;
+    return null
   }
 
   return (
@@ -90,9 +90,7 @@ export function ApprovalDialog() {
             <div className="text-xs font-medium text-text-400 uppercase tracking-wider mb-1">
               Description
             </div>
-            <p className="text-sm text-text-000 leading-relaxed">
-              {pendingApproval.description}
-            </p>
+            <p className="text-sm text-text-000 leading-relaxed">{pendingApproval.description}</p>
           </div>
 
           {/* Preview */}
@@ -126,13 +124,26 @@ export function ApprovalDialog() {
           {/* Warning */}
           <div className="bg-warning-100/10 border border-warning-100/20 rounded-lg p-4">
             <div className="flex gap-3">
-              <svg className="w-5 h-5 text-warning-100 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-                <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z" />
+              <svg
+                className="w-5 h-5 text-warning-100 flex-shrink-0 mt-0.5"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  strokeWidth={2}
+                  d="M12 9v2m0 4h.01m-6.938 4h13.856c1.54 0 2.502-1.667 1.732-3L13.732 4c-.77-1.333-2.694-1.333-3.464 0L3.34 16c-.77 1.333.192 3 1.732 3z"
+                />
               </svg>
               <div>
-                <p className="text-sm font-medium text-text-000">Review carefully before approving</p>
+                <p className="text-sm font-medium text-text-000">
+                  Review carefully before approving
+                </p>
                 <p className="text-xs text-text-300 mt-1">
-                  This operation will be executed with your current permissions. Make sure you understand what it will do.
+                  This operation will be executed with your current permissions. Make sure you
+                  understand what it will do.
                 </p>
               </div>
             </div>
@@ -162,8 +173,16 @@ export function ApprovalDialog() {
                 2
               </div>
               <div className="flex-1">
-                <div className="text-text-000">Yes, and auto-approve all <span className="font-semibold text-accent-secondary-100">{pendingApproval.tool_name}</span> commands</div>
-                <div className="text-xs text-text-400 mt-0.5">Future similar commands will run automatically</div>
+                <div className="text-text-000">
+                  Yes, and auto-approve all{' '}
+                  <span className="font-semibold text-accent-secondary-100">
+                    {pendingApproval.tool_name}
+                  </span>{' '}
+                  commands
+                </div>
+                <div className="text-xs text-text-400 mt-0.5">
+                  Future similar commands will run automatically
+                </div>
               </div>
             </button>
 
@@ -182,11 +201,23 @@ export function ApprovalDialog() {
           {/* Keyboard shortcuts hint */}
           <div className="mt-4 pt-3 border-t border-border-300/15 text-center">
             <p className="text-xs text-text-500">
-              Press <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono">1</kbd>, <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono">2</kbd>, or <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono">3</kbd> to select
+              Press{' '}
+              <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono">
+                1
+              </kbd>
+              ,{' '}
+              <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono">
+                2
+              </kbd>
+              , or{' '}
+              <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono">
+                3
+              </kbd>{' '}
+              to select
             </p>
           </div>
         </div>
       </div>
     </div>
-  );
+  )
 }

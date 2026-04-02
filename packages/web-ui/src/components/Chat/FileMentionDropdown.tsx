@@ -5,21 +5,21 @@
  * Supports arrow key navigation and Enter key selection.
  */
 
-import { useEffect, useRef } from 'react';
-import { DocumentIcon } from '@heroicons/react/24/outline';
+import { DocumentIcon } from '@heroicons/react/24/outline'
+import { useEffect, useRef } from 'react'
 
 interface FileItem {
-  path: string;
-  name: string;
-  is_file: boolean;
+  path: string
+  name: string
+  is_file: boolean
 }
 
 interface FileMentionDropdownProps {
-  files: FileItem[];
-  selectedIndex: number;
-  onSelect: (file: FileItem) => void;
-  onClose: () => void;
-  position: { top: number; left: number };
+  files: FileItem[]
+  selectedIndex: number
+  onSelect: (file: FileItem) => void
+  onClose: () => void
+  position: { top: number; left: number }
 }
 
 export function FileMentionDropdown({
@@ -27,32 +27,32 @@ export function FileMentionDropdown({
   selectedIndex,
   onSelect,
   onClose,
-  position
+  position,
 }: FileMentionDropdownProps) {
-  const dropdownRef = useRef<HTMLDivElement>(null);
-  const selectedItemRef = useRef<HTMLDivElement>(null);
+  const dropdownRef = useRef<HTMLDivElement>(null)
+  const selectedItemRef = useRef<HTMLDivElement>(null)
 
   // Scroll selected item into view
   useEffect(() => {
     if (selectedItemRef.current) {
       selectedItemRef.current.scrollIntoView({
         block: 'nearest',
-        behavior: 'smooth'
-      });
+        behavior: 'smooth',
+      })
     }
-  }, [selectedIndex]);
+  }, [selectedIndex])
 
   // Handle click outside to close
   useEffect(() => {
     const handleClickOutside = (event: MouseEvent) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target as Node)) {
-        onClose();
+        onClose()
       }
-    };
+    }
 
-    document.addEventListener('mousedown', handleClickOutside);
-    return () => document.removeEventListener('mousedown', handleClickOutside);
-  }, [onClose]);
+    document.addEventListener('mousedown', handleClickOutside)
+    return () => document.removeEventListener('mousedown', handleClickOutside)
+  }, [onClose])
 
   if (files.length === 0) {
     return (
@@ -61,11 +61,9 @@ export function FileMentionDropdown({
         className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg"
         style={{ top: position.top, left: position.left }}
       >
-        <div className="px-4 py-3 text-sm text-gray-500">
-          No files found
-        </div>
+        <div className="px-4 py-3 text-sm text-gray-500">No files found</div>
       </div>
-    );
+    )
   }
 
   return (
@@ -80,22 +78,16 @@ export function FileMentionDropdown({
           ref={index === selectedIndex ? selectedItemRef : null}
           onClick={() => onSelect(file)}
           className={`flex items-center gap-3 px-4 py-2.5 cursor-pointer transition-colors ${
-            index === selectedIndex
-              ? 'bg-gray-100'
-              : 'hover:bg-gray-50'
+            index === selectedIndex ? 'bg-gray-100' : 'hover:bg-gray-50'
           }`}
         >
           <DocumentIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
           <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-gray-900 truncate">
-              {file.name}
-            </div>
-            <div className="text-xs text-gray-500 truncate">
-              {file.path}
-            </div>
+            <div className="text-sm font-medium text-gray-900 truncate">{file.name}</div>
+            <div className="text-xs text-gray-500 truncate">{file.path}</div>
           </div>
         </div>
       ))}
     </div>
-  );
+  )
 }

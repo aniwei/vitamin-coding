@@ -3,5 +3,5 @@ import { fileURLToPath } from 'node:url'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 
-/** 内置 prompts 目录路径（包发布时随 dist 同级） */
+/** Built-in prompts directory path (published alongside dist) */
 export const BUILTIN_PROMPTS_DIR = resolve(__dirname, '..', 'prompts')

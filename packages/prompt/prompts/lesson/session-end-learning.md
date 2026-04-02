@@ -1,10 +1,10 @@
-在会话即将结束前，回顾你在本次会话中的工作：
-- 是否遇到了意外的困难或错误？
-- 是否发现了有效的模式或策略？
-- 是否有值得记录的经验教训？
+Before the session ends, review your work during this session:
+- Did you encounter any unexpected difficulties or errors?
+- Did you discover any effective patterns or strategies?
+- Are there any lessons worth recording?
 
-如果有值得记录的经验，请使用 `learn` 工具记录下来。
-每条经验应包含：
-- tags: 分类标签（如 "typescript", "testing", "architecture"）
-- trigger: 触发场景（什么情况下这个经验有用）
-- insight: 经验内容（应该怎么做或应该避免什么）
+If there are valuable lessons to record, use the `learn` tool to record them.
+Each lesson should include:
+- tags: Categorization tags (e.g., "typescript", "testing", "architecture")
+- trigger: The triggering scenario (when this lesson is useful)
+- insight: The lesson content (what to do or what to avoid)

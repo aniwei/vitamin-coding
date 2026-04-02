@@ -1,91 +1,90 @@
-import { useState, useEffect } from 'react';
-import { apiClient } from '../../api/client';
-import { ModelSlot } from './ModelSlot';
-import type { Provider } from './ModelSlot';
-import { useToastStore } from '../../stores/toast';
+import { useEffect, useState } from 'react'
+import { apiClient } from '../../api/client'
+import { useToastStore } from '../../stores/toast'
+import { ModelSlot } from './ModelSlot'
+import type { Provider } from './ModelSlot'
 
 interface Config {
-  model_provider: string;
-  model: string;
-  model_thinking_provider?: string | null;
-  model_thinking?: string | null;
-  model_vlm_provider?: string | null;
-  model_vlm?: string | null;
-  model_compact_provider?: string | null;
-  model_compact?: string | null;
-  temperature: number;
+  model_provider: string
+  model: string
+  model_thinking_provider?: string | null
+  model_thinking?: string | null
+  model_vlm_provider?: string | null
+  model_vlm?: string | null
+  model_compact_provider?: string | null
+  model_compact?: string | null
+  temperature: number
 }
 
 export function ModelSettings() {
-  const [providers, setProviders] = useState<Provider[]>([]);
-  const [_config, setConfig] = useState<Config | null>(null);
-  const [loading, setLoading] = useState(true);
-  const [saving, setSaving] = useState(false);
-  const addToast = useToastStore(state => state.addToast);
+  const [providers, setProviders] = useState<Provider[]>([])
+  const [_config, setConfig] = useState<Config | null>(null)
+  const [loading, setLoading] = useState(true)
+  const [saving, setSaving] = useState(false)
+  const addToast = useToastStore((state) => state.addToast)
 
   // Normal model
-  const [normalProvider, setNormalProvider] = useState<string>('');
-  const [normalModel, setNormalModel] = useState<string>('');
+  const [normalProvider, setNormalProvider] = useState<string>('')
+  const [normalModel, setNormalModel] = useState<string>('')
 
   // Thinking model
-  const [thinkingProvider, setThinkingProvider] = useState<string>('');
-  const [thinkingModel, setThinkingModel] = useState<string>('');
+  const [thinkingProvider, setThinkingProvider] = useState<string>('')
+  const [thinkingModel, setThinkingModel] = useState<string>('')
 
   // Vision model
-  const [visionProvider, setVisionProvider] = useState<string>('');
-  const [visionModel, setVisionModel] = useState<string>('');
+  const [visionProvider, setVisionProvider] = useState<string>('')
+  const [visionModel, setVisionModel] = useState<string>('')
 
   // Compact model
-  const [compactProvider, setCompactProvider] = useState<string>('');
-  const [compactModel, setCompactModel] = useState<string>('');
+  const [compactProvider, setCompactProvider] = useState<string>('')
+  const [compactModel, setCompactModel] = useState<string>('')
 
   // Other settings
-  const [temperature, setTemperature] = useState<number>(0.7);
-
+  const [temperature, setTemperature] = useState<number>(0.7)
 
   useEffect(() => {
-    loadSettings();
-  }, []);
+    loadSettings()
+  }, [])
 
   const loadSettings = async () => {
     try {
-      setLoading(true);
+      setLoading(true)
       const [providersData, configData] = await Promise.all([
         apiClient.listProviders(),
         apiClient.getConfig(),
-      ]);
+      ])
 
-      setProviders(providersData);
-      setConfig(configData);
+      setProviders(providersData)
+      setConfig(configData)
 
       // Normal model
-      setNormalProvider(configData.model_provider);
-      setNormalModel(configData.model);
+      setNormalProvider(configData.model_provider)
+      setNormalModel(configData.model)
 
       // Thinking model
-      setThinkingProvider(configData.model_thinking_provider || '');
-      setThinkingModel(configData.model_thinking || '');
+      setThinkingProvider(configData.model_thinking_provider || '')
+      setThinkingModel(configData.model_thinking || '')
 
       // Vision model
-      setVisionProvider(configData.model_vlm_provider || '');
-      setVisionModel(configData.model_vlm || '');
+      setVisionProvider(configData.model_vlm_provider || '')
+      setVisionModel(configData.model_vlm || '')
 
       // Compact model
-      setCompactProvider(configData.model_compact_provider || '');
-      setCompactModel(configData.model_compact || '');
+      setCompactProvider(configData.model_compact_provider || '')
+      setCompactModel(configData.model_compact || '')
 
       // Other settings
-      setTemperature(configData.temperature);
+      setTemperature(configData.temperature)
     } catch (error) {
-      console.error('Failed to load settings:', error);
+      console.error('Failed to load settings:', error)
     } finally {
-      setLoading(false);
+      setLoading(false)
     }
-  };
+  }
 
   const handleSave = async () => {
     try {
-      setSaving(true);
+      setSaving(true)
 
       await apiClient.updateConfig({
         model_provider: normalProvider,
@@ -95,25 +94,27 @@ export function ModelSettings() {
         model_vlm_provider: visionProvider || null,
         model_vlm: visionModel || null,
         temperature,
-      });
+      })
 
       // Dispatch custom event to notify other components
-      window.dispatchEvent(new CustomEvent('config-updated', {
-        detail: {
-          model_provider: normalProvider,
-          model: normalModel,
-          temperature,
-        }
-      }));
+      window.dispatchEvent(
+        new CustomEvent('config-updated', {
+          detail: {
+            model_provider: normalProvider,
+            model: normalModel,
+            temperature,
+          },
+        }),
+      )
 
-      addToast('Settings saved successfully', 'success');
+      addToast('Settings saved successfully', 'success')
     } catch (error) {
-      console.error('Failed to save settings:', error);
-      addToast('Failed to save settings', 'error');
+      console.error('Failed to save settings:', error)
+      addToast('Failed to save settings', 'error')
     } finally {
-      setSaving(false);
+      setSaving(false)
     }
-  };
+  }
 
   if (loading) {
     return (
@@ -123,7 +124,7 @@ export function ModelSettings() {
           <span>Loading settings...</span>
         </div>
       </div>
-    );
+    )
   }
 
   return (
@@ -131,16 +132,28 @@ export function ModelSettings() {
       {/* Header Info */}
       <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
         <div className="flex items-start gap-3">
-          <svg className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" />
+          <svg
+            className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
+            fill="none"
+            viewBox="0 0 24 24"
+            stroke="currentColor"
+          >
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+            />
           </svg>
           <div className="flex-1">
             <h4 className="text-sm font-semibold text-blue-900 mb-1">Model System</h4>
             <p className="text-xs text-blue-700 leading-relaxed">
-              Configure different models for different tasks: <strong>Normal</strong> for standard coding,
-              <strong> Thinking</strong> for complex reasoning, <strong>Compact</strong> for context compaction
-              summaries, and <strong>Vision</strong> for image processing.
-              Optional models fall back: Thinking &rarr; Normal, Compact &rarr; Normal, Vision &rarr; disabled.
+              Configure different models for different tasks: <strong>Normal</strong> for standard
+              coding,
+              <strong> Thinking</strong> for complex reasoning, <strong>Compact</strong> for context
+              compaction summaries, and <strong>Vision</strong> for image processing. Optional
+              models fall back: Thinking &rarr; Normal, Compact &rarr; Normal, Vision &rarr;
+              disabled.
             </p>
           </div>
         </div>
@@ -152,7 +165,12 @@ export function ModelSettings() {
         description="For standard coding tasks and general-purpose operations"
         icon={
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+            />
           </svg>
         }
         providers={providers}
@@ -168,7 +186,12 @@ export function ModelSettings() {
         description="For complex reasoning and planning tasks (falls back to Normal if not set)"
         icon={
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+            />
           </svg>
         }
         providers={providers}
@@ -186,7 +209,12 @@ export function ModelSettings() {
         description="For context compaction summaries (falls back to Normal)"
         icon={
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+            />
           </svg>
         }
         providers={providers}
@@ -204,8 +232,18 @@ export function ModelSettings() {
         description="For image processing and multi-modal tasks (vision unavailable if not set)"
         icon={
           <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M15 12a3 3 0 11-6 0 3 3 0 016 0z" />
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z" />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+            />
+            <path
+              strokeLinecap="round"
+              strokeLinejoin="round"
+              strokeWidth={2}
+              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+            />
           </svg>
         }
         providers={providers}
@@ -232,7 +270,7 @@ export function ModelSettings() {
             max="2"
             step="0.1"
             value={temperature}
-            onChange={(e) => setTemperature(parseFloat(e.target.value))}
+            onChange={(e) => setTemperature(Number.parseFloat(e.target.value))}
             className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
           />
           <div className="flex justify-between text-xs text-gray-500 mt-1">
@@ -241,7 +279,6 @@ export function ModelSettings() {
             <span>Creative</span>
           </div>
         </div>
-
       </div>
 
       {/* Save Button */}
@@ -262,5 +299,5 @@ export function ModelSettings() {
         </button>
       </div>
     </div>
-  );
+  )
 }

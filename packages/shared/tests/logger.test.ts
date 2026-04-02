@@ -1,8 +1,7 @@
 import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
 import { createLogger, getRootLogger } from '../src/logger'
-
-const LOG_FILE = 'vitamin.log'
+import { LOG_FILE } from '@vitamin/env'
 
 describe('createLogger', () => {
   describe('#given a name', () => {

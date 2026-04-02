@@ -1,29 +1,30 @@
-import React, { useEffect } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
+import { XMarkIcon } from '@heroicons/react/24/outline'
+import type React from 'react'
+import { useEffect } from 'react'
 
 interface ModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  title: string;
-  children: React.ReactNode;
-  className?: string;
+  isOpen: boolean
+  onClose: () => void
+  title: string
+  children: React.ReactNode
+  className?: string
 }
 
 export function Modal({ isOpen, onClose, title, children, className = '' }: ModalProps) {
   useEffect(() => {
     const handleEsc = (event: KeyboardEvent) => {
       if (event.key === 'Escape') {
-        onClose();
+        onClose()
       }
-    };
-    window.addEventListener('keydown', handleEsc);
+    }
+    window.addEventListener('keydown', handleEsc)
     return () => {
-      window.removeEventListener('keydown', handleEsc);
-    };
-  }, [onClose]);
+      window.removeEventListener('keydown', handleEsc)
+    }
+  }, [onClose])
 
   if (!isOpen) {
-    return null;
+    return null
   }
 
   return (
@@ -56,5 +57,5 @@ export function Modal({ isOpen, onClose, title, children, className = '' }: Moda
         <div className="p-6">{children}</div>
       </div>
     </div>
-  );
+  )
 }

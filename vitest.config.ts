@@ -25,6 +25,7 @@ export default defineConfig({
       '@vitamin/tui': resolve(__dirname, 'packages/tui/src/index.ts'),
       '@vitamin/coding-agent': resolve(__dirname, 'packages/coding-agent/src/index.ts'),
       '@vitamin/sdk': resolve(__dirname, 'packages/sdk/src/index.ts'),
+      '@vitamin/swarm': resolve(__dirname, 'packages/swarm/src/index.ts'),
     },
   },
   test: {

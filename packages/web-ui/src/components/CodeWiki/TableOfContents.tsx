@@ -1,17 +1,17 @@
 interface TOCItem {
-  id: string;
-  title: string;
-  level: number;
+  id: string
+  title: string
+  level: number
 }
 
 interface TableOfContentsProps {
-  items: TOCItem[];
-  activeId?: string;
+  items: TOCItem[]
+  activeId?: string
 }
 
 export function TableOfContents({ items, activeId }: TableOfContentsProps) {
   if (items.length === 0) {
-    return null;
+    return null
   }
 
   return (
@@ -40,5 +40,5 @@ export function TableOfContents({ items, activeId }: TableOfContentsProps) {
         </nav>
       </div>
     </aside>
-  );
+  )
 }

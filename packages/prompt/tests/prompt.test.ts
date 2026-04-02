@@ -32,8 +32,8 @@ describe('LocalPromptProvider', () => {
     const entry = await provider.load('lead-guidance')
     expect(entry).not.toBeNull()
     expect(entry!.key).toBe('lead-guidance')
-    expect(entry!.content).toContain('身份与环境')
-    expect(entry!.content).toContain('工作流程引导')
+    expect(entry!.content).toContain('Identity & Environment')
+    expect(entry!.content).toContain('Workflow Guidance')
     expect(entry!.version).toBeGreaterThan(0)
   })
 
@@ -52,7 +52,7 @@ describe('LocalPromptProvider', () => {
     const keys = ['lead-guidance', 'lesson/session-end-learning']
     const entries = await provider.loadMany(keys)
     expect(entries.size).toBe(2)
-    expect(entries.get('lead-guidance')!.content).toContain('身份与环境')
+    expect(entries.get('lead-guidance')!.content).toContain('Identity & Environment')
     expect(entries.get('lesson/session-end-learning')!.content).toContain('learn')
   })
 
@@ -222,11 +222,11 @@ describe('PromptManager', () => {
 
   it('assemble returns full lead guidance', async () => {
     const result = await manager.assemble()
-    expect(result).toContain('身份与环境')
-    expect(result).toContain('工作流程引导')
-    expect(result).toContain('阶段纪律')
-    expect(result).toContain('复杂度路由')
-    expect(result).toContain('审查指引')
+    expect(result).toContain('Identity & Environment')
+    expect(result).toContain('Workflow Guidance')
+    expect(result).toContain('Phase Discipline')
+    expect(result).toContain('Complexity Routing')
+    expect(result).toContain('Review Guidelines')
   })
 
   it('load returns a specific prompt', async () => {
@@ -244,7 +244,7 @@ describe('PromptManager', () => {
     manager.invalidate()
     // second call should still work after invalidation
     const result = await manager.assemble()
-    expect(result).toContain('工作流程引导')
+    expect(result).toContain('Workflow Guidance')
   })
 
   it('assemblePreset supports subagent preset with profile', async () => {
@@ -310,8 +310,8 @@ describe('phase-context helpers', () => {
       currentPhase: 'Execute',
       phaseHistory: ['Clarify', 'Plan', 'Execute'],
     })
-    expect(result).toContain('[阶段上下文]')
-    expect(result).toContain('当前阶段：Execute')
+    expect(result).toContain('[Phase Context]')
+    expect(result).toContain('Current phase: Execute')
     expect(result).toContain('Clarify → Plan → Execute')
   })
 
@@ -326,7 +326,7 @@ describe('lesson-injection', () => {
     const result = buildLessonInjection([
       { tags: ['ts'], trigger: 'When importing', insight: 'Use named exports' },
     ])
-    expect(result).toContain('运行经验')
+    expect(result).toContain('Runtime Lessons')
     expect(result).toContain('[ts]')
     expect(result).toContain('Use named exports')
   })
@@ -345,7 +345,7 @@ describe('sub-agent prompt helpers', () => {
       systemPromptTemplate: '任务：{task_title}\n文件：{task_files}',
     })
 
-    expect(result).toContain('未提供')
+    expect(result).toContain('not provided')
   })
 
   it('assembleGenericSubAgentPrompt builds a generic worker prompt', () => {

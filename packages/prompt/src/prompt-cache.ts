@@ -1,8 +1,8 @@
 import type { PromptEntry } from './types'
 
 /**
- * 提示词缓存
- * 按 section key 缓存 prompt 片段，支持版本比较和惰性组装
+ * Prompt cache
+ * Caches prompt sections by key, with version comparison and lazy assembly
  */
 export class PromptCache {
   private sections = new Map<string, PromptEntry>()

@@ -1,152 +1,155 @@
-import { useState, KeyboardEvent, useRef, useEffect } from 'react';
-import { useChatStore } from '../../stores/chat';
-import { apiClient } from '../../api/client';
-import { FileMentionDropdown } from './FileMentionDropdown';
-import { FileChangesButton } from './FileChangesButton';
+import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
+import { apiClient } from '../../api/client'
+import { useChatStore } from '../../stores/chat'
+import { FileChangesButton } from './FileChangesButton'
+import { FileMentionDropdown } from './FileMentionDropdown'
 
 interface FileItem {
-  path: string;
-  name: string;
-  is_file: boolean;
+  path: string
+  name: string
+  is_file: boolean
 }
 
 export function InputBox() {
-  const [input, setInput] = useState('');
-  const [showFileMention, setShowFileMention] = useState(false);
-  const [filesList, setFilesList] = useState<FileItem[]>([]);
-  const [selectedFileIndex, setSelectedFileIndex] = useState(0);
-  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 });
-  const [mentionQuery, setMentionQuery] = useState('');
-  const [mentionStartPos, setMentionStartPos] = useState(0);
-  const textareaRef = useRef<HTMLTextAreaElement>(null);
+  const [input, setInput] = useState('')
+  const [showFileMention, setShowFileMention] = useState(false)
+  const [filesList, setFilesList] = useState<FileItem[]>([])
+  const [selectedFileIndex, setSelectedFileIndex] = useState(0)
+  const [mentionPosition, setMentionPosition] = useState({ top: 0, left: 0 })
+  const [mentionQuery, setMentionQuery] = useState('')
+  const [mentionStartPos, setMentionStartPos] = useState(0)
+  const textareaRef = useRef<HTMLTextAreaElement>(null)
 
-  const sendMessage = useChatStore(state => state.sendMessage);
-  const isLoading = useChatStore(state => {
-    const sid = state.currentSessionId;
-    return sid ? state.sessionStates[sid]?.isLoading ?? false : false;
-  });
-  const isConnected = useChatStore(state => state.isConnected);
-  const currentSessionId = useChatStore(state => state.currentSessionId);
-  const hasActiveSession = !!currentSessionId;
+  const sendMessage = useChatStore((state) => state.sendMessage)
+  const isLoading = useChatStore((state) => {
+    const sid = state.currentSessionId
+    return sid ? (state.sessionStates[sid]?.isLoading ?? false) : false
+  })
+  const isConnected = useChatStore((state) => state.isConnected)
+  const currentSessionId = useChatStore((state) => state.currentSessionId)
+  const hasActiveSession = !!currentSessionId
 
   // Load files when @ is detected
   useEffect(() => {
     if (showFileMention) {
-      apiClient.listFiles(mentionQuery).then(response => {
-        setFilesList(response.files);
-        setSelectedFileIndex(0);
-      }).catch(error => {
-        console.error('Failed to load files:', error);
-        setFilesList([]);
-      });
+      apiClient
+        .listFiles(mentionQuery)
+        .then((response) => {
+          setFilesList(response.files)
+          setSelectedFileIndex(0)
+        })
+        .catch((error) => {
+          console.error('Failed to load files:', error)
+          setFilesList([])
+        })
     }
-  }, [mentionQuery, showFileMention]);
+  }, [mentionQuery, showFileMention])
 
   const handleSend = () => {
-    if (!input.trim() || !isConnected || !hasActiveSession) return;
+    if (!input.trim() || !isConnected || !hasActiveSession) return
 
-    sendMessage(input.trim());
-    setInput('');
-    setShowFileMention(false);
-  };
+    sendMessage(input.trim())
+    setInput('')
+    setShowFileMention(false)
+  }
 
   const handleStop = async () => {
     try {
-      await apiClient.interruptTask();
+      await apiClient.interruptTask()
     } catch (error) {
-      console.error('Failed to interrupt task:', error);
+      console.error('Failed to interrupt task:', error)
     }
-  };
+  }
 
   const handleFileSelect = (file: FileItem) => {
-    if (!textareaRef.current) return;
+    if (!textareaRef.current) return
 
     // Replace @query with @file.path
-    const before = input.substring(0, mentionStartPos);
-    const after = input.substring(textareaRef.current.selectionStart);
-    const newInput = before + '@' + file.path + ' ' + after;
+    const before = input.substring(0, mentionStartPos)
+    const after = input.substring(textareaRef.current.selectionStart)
+    const newInput = before + '@' + file.path + ' ' + after
 
-    setInput(newInput);
-    setShowFileMention(false);
+    setInput(newInput)
+    setShowFileMention(false)
 
     // Set cursor position after the inserted file path
     setTimeout(() => {
       if (textareaRef.current) {
-        const newPos = mentionStartPos + file.path.length + 2; // +2 for @ and space
-        textareaRef.current.setSelectionRange(newPos, newPos);
-        textareaRef.current.focus();
+        const newPos = mentionStartPos + file.path.length + 2 // +2 for @ and space
+        textareaRef.current.setSelectionRange(newPos, newPos)
+        textareaRef.current.focus()
       }
-    }, 0);
-  };
+    }, 0)
+  }
 
   const handleInputChange = (e: React.ChangeEvent<HTMLTextAreaElement>) => {
-    const newInput = e.target.value;
-    const cursorPos = e.target.selectionStart;
+    const newInput = e.target.value
+    const cursorPos = e.target.selectionStart
 
-    setInput(newInput);
+    setInput(newInput)
 
     // Check if @ was just typed or is in the current word
-    const textBeforeCursor = newInput.substring(0, cursorPos);
-    const lastAtIndex = textBeforeCursor.lastIndexOf('@');
+    const textBeforeCursor = newInput.substring(0, cursorPos)
+    const lastAtIndex = textBeforeCursor.lastIndexOf('@')
 
     if (lastAtIndex !== -1) {
       // Check if there's a space between @ and cursor (which would end the mention)
-      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1);
+      const textAfterAt = textBeforeCursor.substring(lastAtIndex + 1)
 
       if (!textAfterAt.includes(' ') && textAfterAt.length >= 0) {
         // We're in a mention
-        setMentionStartPos(lastAtIndex);
-        setMentionQuery(textAfterAt);
-        setShowFileMention(true);
+        setMentionStartPos(lastAtIndex)
+        setMentionQuery(textAfterAt)
+        setShowFileMention(true)
 
         // Calculate dropdown position relative to viewport (show above input box)
         if (textareaRef.current) {
-          const rect = textareaRef.current.getBoundingClientRect();
+          const rect = textareaRef.current.getBoundingClientRect()
           // Position dropdown above the textarea, accounting for dropdown height
           setMentionPosition({
             top: rect.top - 270, // 270px = max-h-64 (256px) + some margin
-            left: rect.left + 20
-          });
+            left: rect.left + 20,
+          })
         }
       } else {
-        setShowFileMention(false);
+        setShowFileMention(false)
       }
     } else {
-      setShowFileMention(false);
+      setShowFileMention(false)
     }
-  };
+  }
 
   const handleKeyDown = (e: KeyboardEvent<HTMLTextAreaElement>) => {
     // Handle file mention dropdown navigation
     if (showFileMention && filesList.length > 0) {
       if (e.key === 'ArrowDown') {
-        e.preventDefault();
-        setSelectedFileIndex((prev) => (prev + 1) % filesList.length);
-        return;
+        e.preventDefault()
+        setSelectedFileIndex((prev) => (prev + 1) % filesList.length)
+        return
       } else if (e.key === 'ArrowUp') {
-        e.preventDefault();
-        setSelectedFileIndex((prev) => (prev - 1 + filesList.length) % filesList.length);
-        return;
+        e.preventDefault()
+        setSelectedFileIndex((prev) => (prev - 1 + filesList.length) % filesList.length)
+        return
       } else if (e.key === 'Enter' && !e.shiftKey) {
-        e.preventDefault();
-        handleFileSelect(filesList[selectedFileIndex]);
-        return;
+        e.preventDefault()
+        handleFileSelect(filesList[selectedFileIndex])
+        return
       } else if (e.key === 'Escape') {
-        e.preventDefault();
-        setShowFileMention(false);
-        return;
+        e.preventDefault()
+        setShowFileMention(false)
+        return
       }
     }
 
     // Normal keyboard handling
     if (e.key === 'Enter' && !e.shiftKey) {
-      e.preventDefault();
-      handleSend();
+      e.preventDefault()
+      handleSend()
     } else if (e.key === 'Escape' && isLoading) {
-      e.preventDefault();
-      handleStop();
+      e.preventDefault()
+      handleStop()
     }
-  };
+  }
 
   return (
     <div className="bg-bg-000 p-4">
@@ -160,12 +163,12 @@ export function InputBox() {
               onKeyDown={handleKeyDown}
               placeholder={
                 !hasActiveSession
-                  ? "Select a session to start chatting..."
+                  ? 'Select a session to start chatting...'
                   : !isConnected
-                  ? "Disconnected..."
-                  : isLoading
-                  ? "Type to queue a message..."
-                  : "Type your message... (use @ to mention files)"
+                    ? 'Disconnected...'
+                    : isLoading
+                      ? 'Type to queue a message...'
+                      : 'Type your message... (use @ to mention files)'
               }
               disabled={!isConnected || !hasActiveSession}
               className="flex-1 bg-transparent text-text-000 placeholder-text-500 rounded-md px-3 py-2 resize-none border-0 focus:outline-none focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
@@ -178,7 +181,13 @@ export function InputBox() {
                   className="px-3 py-2 rounded-lg transition-colors font-medium bg-danger-100 hover:bg-danger-000 text-white hover-scale"
                   title="Stop (Esc)"
                 >
-                  <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2.5}>
+                  <svg
+                    className="w-4 h-4"
+                    fill="none"
+                    viewBox="0 0 24 24"
+                    stroke="currentColor"
+                    strokeWidth={2.5}
+                  >
                     <rect x="6" y="6" width="12" height="12" rx="1" />
                   </svg>
                 </button>
@@ -199,12 +208,26 @@ export function InputBox() {
 
         <div className="flex items-center justify-between mt-2">
           <div className="text-xs text-text-500 px-1">
-            Press <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs">@</kbd> to mention files · <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs">Enter</kbd> to send · <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs">Shift + Enter</kbd> for new line · <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs">Esc</kbd> to stop
+            Press{' '}
+            <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs">
+              @
+            </kbd>{' '}
+            to mention files ·{' '}
+            <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs">
+              Enter
+            </kbd>{' '}
+            to send ·{' '}
+            <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs">
+              Shift + Enter
+            </kbd>{' '}
+            for new line ·{' '}
+            <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs">
+              Esc
+            </kbd>{' '}
+            to stop
           </div>
 
-          {hasActiveSession && (
-            <FileChangesButton />
-          )}
+          {hasActiveSession && <FileChangesButton />}
         </div>
 
         {showFileMention && (
@@ -218,5 +241,5 @@ export function InputBox() {
         )}
       </div>
     </div>
-  );
+  )
 }

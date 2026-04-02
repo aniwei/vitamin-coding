@@ -1,46 +1,46 @@
-import { useState } from 'react';
 import {
-  DocumentTextIcon,
   ChatBubbleLeftRightIcon,
+  CodeBracketIcon,
+  DocumentTextIcon,
+  FolderIcon,
   MagnifyingGlassIcon,
   SparklesIcon,
-  CodeBracketIcon,
-  FolderIcon
-} from '@heroicons/react/24/outline';
-import './CodeWiki.css';
+} from '@heroicons/react/24/outline'
+import { useState } from 'react'
+import './CodeWiki.css'
 
 interface WikiPage {
-  id: string;
-  title: string;
-  type: 'architecture' | 'api' | 'guide' | 'reference' | 'overview';
-  path?: string;
-  content: string;
-  description?: string;
-  lastModified: string;
-  importance?: number;
-  parent?: string;
-  children?: WikiPage[];
-  relatedFiles?: string[];
-  relatedPages?: string[];
-  tags?: string[];
-  diagrams?: string[];
+  id: string
+  title: string
+  type: 'architecture' | 'api' | 'guide' | 'reference' | 'overview'
+  path?: string
+  content: string
+  description?: string
+  lastModified: string
+  importance?: number
+  parent?: string
+  children?: WikiPage[]
+  relatedFiles?: string[]
+  relatedPages?: string[]
+  tags?: string[]
+  diagrams?: string[]
 }
 
 interface DocumentationItem {
-  id: string;
-  title: string;
-  type: 'wiki-page' | 'readme' | 'doc' | 'code' | 'folder';
-  path?: string;
-  content?: string;
-  children?: DocumentationItem[];
-  lastModified: string;
-  wikiPage?: WikiPage;
+  id: string
+  title: string
+  type: 'wiki-page' | 'readme' | 'doc' | 'code' | 'folder'
+  path?: string
+  content?: string
+  children?: DocumentationItem[]
+  lastModified: string
+  wikiPage?: WikiPage
 }
 
 interface DocumentationViewerProps {
-  selectedRepo: string | null;
-  searchQuery: string;
-  onIndexingChange: (isIndexing: boolean) => void;
+  selectedRepo: string | null
+  searchQuery: string
+  onIndexingChange: (isIndexing: boolean) => void
 }
 
 // Mock wiki pages that demonstrate DeepWiki-style intelligent documentation
@@ -82,7 +82,7 @@ OpenDev (Software Engineering CLI) is an AI-powered command-line tool designed t
     relatedFiles: ['opendev/core/agent.py', 'opendev/web/server.py', 'opendev/tools/registry.py'],
     relatedPages: ['agent-system', 'web-interface', 'tool-system'],
     tags: ['architecture', 'overview', 'design'],
-    diagrams: ['architecture-diagram.svg', 'component-interaction.svg']
+    diagrams: ['architecture-diagram.svg', 'component-interaction.svg'],
   },
   {
     id: 'agent-system',
@@ -126,7 +126,7 @@ The agent system is the core intelligence layer of OpenDev, responsible for unde
 6. **Response Generation**: Providing clear, actionable responses`,
     relatedFiles: ['opendev/core/agent.py', 'opendev/agents/normal.py', 'opendev/agents/debug.py'],
     relatedPages: ['tool-system', 'approval-workflow'],
-    tags: ['agents', 'architecture', 'execution']
+    tags: ['agents', 'architecture', 'execution'],
   },
   {
     id: 'web-interface',
@@ -174,7 +174,7 @@ The web interface provides a modern, responsive UI for OpenDev with real-time co
 - **Configuration Management**: Dynamic settings and preferences`,
     relatedFiles: ['opendev/web/server.py', 'opendev/web/websocket.py', 'opendev/web/state.py'],
     relatedPages: ['api-reference', 'session-management'],
-    tags: ['web', 'websocket', 'ui', 'real-time']
+    tags: ['web', 'websocket', 'ui', 'real-time'],
   },
   {
     id: 'api-reference',
@@ -219,11 +219,15 @@ Complete API documentation for OpenDev components, including REST endpoints, Web
 - \`tool_call\` - Tool execution started
 - \`tool_result\` - Tool execution completed
 - \`approval_required\` - User approval needed`,
-    relatedFiles: ['opendev/web/routes/chat.py', 'opendev/web/routes/sessions.py', 'opendev/web/config.py'],
+    relatedFiles: [
+      'opendev/web/routes/chat.py',
+      'opendev/web/routes/sessions.py',
+      'opendev/web/config.py',
+    ],
     relatedPages: ['web-interface'],
-    tags: ['api', 'reference', 'endpoints', 'websocket']
-  }
-];
+    tags: ['api', 'reference', 'endpoints', 'websocket'],
+  },
+]
 
 // Mock documentation tree that combines wiki pages with traditional files
 const mockDocumentation: DocumentationItem[] = [
@@ -232,21 +236,21 @@ const mockDocumentation: DocumentationItem[] = [
     title: 'Architecture Overview',
     type: 'wiki-page',
     lastModified: '2 hours ago',
-    wikiPage: mockWikiPages[0]
+    wikiPage: mockWikiPages[0],
   },
   {
     id: 'wiki-agent-system',
     title: 'Agent System',
     type: 'wiki-page',
     lastModified: '3 hours ago',
-    wikiPage: mockWikiPages[1]
+    wikiPage: mockWikiPages[1],
   },
   {
     id: 'wiki-web-interface',
     title: 'Web Interface',
     type: 'wiki-page',
     lastModified: '1 day ago',
-    wikiPage: mockWikiPages[2]
+    wikiPage: mockWikiPages[2],
   },
   {
     id: '1',
@@ -277,7 +281,7 @@ swe-cli chat
 
 - [Getting Started](./docs/getting-started.md)
 - [API Reference](./docs/api.md)
-- [Examples](./examples/)`
+- [Examples](./examples/)`,
   },
   {
     id: 'docs',
@@ -291,30 +295,34 @@ swe-cli chat
         title: 'getting-started.md',
         type: 'doc',
         path: '/docs/getting-started.md',
-        lastModified: '1 day ago'
+        lastModified: '1 day ago',
       },
       {
         id: '2-2',
         title: 'api.md',
         type: 'doc',
         path: '/docs/api.md',
-        lastModified: '3 days ago'
-      }
-    ]
-  }
-];
+        lastModified: '3 days ago',
+      },
+    ],
+  },
+]
 
-export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChange }: DocumentationViewerProps) {
-  const [selectedDoc, setSelectedDoc] = useState<DocumentationItem | null>(null);
-  const [chatMode, setChatMode] = useState<'browse' | 'chat'>('browse');
-  const [chatMessage, setChatMessage] = useState('');
-  const [isSearching, setIsSearching] = useState(false);
+export function DocumentationViewer({
+  selectedRepo,
+  searchQuery,
+  onIndexingChange,
+}: DocumentationViewerProps) {
+  const [selectedDoc, setSelectedDoc] = useState<DocumentationItem | null>(null)
+  const [chatMode, setChatMode] = useState<'browse' | 'chat'>('browse')
+  const [chatMessage, setChatMessage] = useState('')
+  const [isSearching, setIsSearching] = useState(false)
 
   // TODO: Implement search and indexing functionality
-  void searchQuery;
-  void onIndexingChange;
-  void isSearching;
-  void setIsSearching;
+  void searchQuery
+  void onIndexingChange
+  void isSearching
+  void setIsSearching
 
   if (!selectedRepo) {
     return (
@@ -325,8 +333,8 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
           </div>
           <h2 className="text-2xl font-bold text-gray-900 mb-4">Welcome to CodeWiki</h2>
           <p className="text-gray-600 mb-6">
-            Select a repository from the sidebar to explore its documentation.
-            CodeWiki provides AI-powered documentation search and chat capabilities.
+            Select a repository from the sidebar to explore its documentation. CodeWiki provides
+            AI-powered documentation search and chat capabilities.
           </p>
           <div className="grid grid-cols-1 md:grid-cols-3 gap-4 text-sm">
             <div className="bg-white p-4 rounded-lg border border-gray-200">
@@ -334,7 +342,9 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
                 <MagnifyingGlassIcon className="w-5 h-5 text-purple-600" />
                 <h3 className="font-semibold text-gray-900">Smart Search</h3>
               </div>
-              <p className="text-gray-600 text-xs">Find information across all documentation files</p>
+              <p className="text-gray-600 text-xs">
+                Find information across all documentation files
+              </p>
             </div>
             <div className="bg-white p-4 rounded-lg border border-gray-200">
               <div className="flex items-center gap-2 mb-2">
@@ -348,12 +358,14 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
                 <SparklesIcon className="w-5 h-5 text-purple-600" />
                 <h3 className="font-semibold text-gray-900">Context Aware</h3>
               </div>
-              <p className="text-gray-600 text-xs">Understands your codebase structure and context</p>
+              <p className="text-gray-600 text-xs">
+                Understands your codebase structure and context
+              </p>
             </div>
           </div>
         </div>
       </div>
-    );
+    )
   }
 
   const renderDocumentationItem = (item: DocumentationItem, level = 0) => {
@@ -367,17 +379,19 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
                 <div className="w-2 h-2 bg-orange-400 rounded-full" />
               )}
             </div>
-          ) : <DocumentTextIcon className="w-4 h-4 text-purple-500" />;
+          ) : (
+            <DocumentTextIcon className="w-4 h-4 text-purple-500" />
+          )
         case 'readme':
-          return <DocumentTextIcon className="w-4 h-4 text-blue-500" />;
+          return <DocumentTextIcon className="w-4 h-4 text-blue-500" />
         case 'doc':
-          return <DocumentTextIcon className="w-4 h-4 text-gray-500" />;
+          return <DocumentTextIcon className="w-4 h-4 text-gray-500" />
         case 'code':
-          return <CodeBracketIcon className="w-4 h-4 text-green-500" />;
+          return <CodeBracketIcon className="w-4 h-4 text-green-500" />
         case 'folder':
-          return <FolderIcon className="w-4 h-4 text-yellow-500" />;
+          return <FolderIcon className="w-4 h-4 text-yellow-500" />
       }
-    };
+    }
 
     return (
       <div key={item.id}>
@@ -394,7 +408,7 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
               <span className="text-sm text-gray-900 truncate">{item.title}</span>
               {item.wikiPage?.tags && (
                 <div className="flex gap-1">
-                  {item.wikiPage.tags.slice(0, 2).map(tag => (
+                  {item.wikiPage.tags.slice(0, 2).map((tag) => (
                     <span
                       key={tag}
                       className="px-2 py-0.5 text-xs bg-purple-100 text-purple-700 rounded-full"
@@ -418,10 +432,10 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
             )}
           </div>
         </div>
-        {item.children && item.children.map(child => renderDocumentationItem(child, level + 1))}
+        {item.children && item.children.map((child) => renderDocumentationItem(child, level + 1))}
       </div>
-    );
-  };
+    )
+  }
 
   return (
     <div className="h-full flex flex-col">
@@ -463,7 +477,7 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
           <div className="p-4">
             <h3 className="text-sm font-semibold text-gray-900 mb-3">Documentation</h3>
             <div className="space-y-1">
-              {mockDocumentation.map(item => renderDocumentationItem(item))}
+              {mockDocumentation.map((item) => renderDocumentationItem(item))}
             </div>
           </div>
         </div>
@@ -476,13 +490,23 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
               <div className="border-b border-gray-200 p-4">
                 <div className="flex items-start gap-3 mb-3">
                   <div>
-                    {selectedDoc.type === 'wiki-page' && <DocumentTextIcon className="w-5 h-5 text-purple-500" />}
-                    {selectedDoc.type === 'readme' && <DocumentTextIcon className="w-5 h-5 text-blue-500" />}
-                    {selectedDoc.type === 'doc' && <DocumentTextIcon className="w-5 h-5 text-gray-500" />}
-                    {selectedDoc.type === 'code' && <CodeBracketIcon className="w-5 h-5 text-green-500" />}
+                    {selectedDoc.type === 'wiki-page' && (
+                      <DocumentTextIcon className="w-5 h-5 text-purple-500" />
+                    )}
+                    {selectedDoc.type === 'readme' && (
+                      <DocumentTextIcon className="w-5 h-5 text-blue-500" />
+                    )}
+                    {selectedDoc.type === 'doc' && (
+                      <DocumentTextIcon className="w-5 h-5 text-gray-500" />
+                    )}
+                    {selectedDoc.type === 'code' && (
+                      <CodeBracketIcon className="w-5 h-5 text-green-500" />
+                    )}
                   </div>
                   <div className="flex-1">
-                    <h2 className="text-lg font-semibold text-gray-900 mb-1">{selectedDoc.title}</h2>
+                    <h2 className="text-lg font-semibold text-gray-900 mb-1">
+                      {selectedDoc.title}
+                    </h2>
                     {selectedDoc.wikiPage && (
                       <div className="flex items-center gap-3 text-sm text-gray-600">
                         <span className="px-2 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium">
@@ -491,7 +515,9 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
                         {selectedDoc.wikiPage.importance && (
                           <span className="flex items-center gap-1">
                             <span>Importance:</span>
-                            <span className="font-medium">{selectedDoc.wikiPage.importance}/10</span>
+                            <span className="font-medium">
+                              {selectedDoc.wikiPage.importance}/10
+                            </span>
                           </span>
                         )}
                         {selectedDoc.wikiPage.lastModified && (
@@ -511,7 +537,7 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
                 )}
                 {selectedDoc.wikiPage?.tags && (
                   <div className="flex gap-2 flex-wrap">
-                    {selectedDoc.wikiPage.tags.map(tag => (
+                    {selectedDoc.wikiPage.tags.map((tag) => (
                       <span
                         key={tag}
                         className="px-3 py-1 bg-purple-100 text-purple-700 rounded-full text-xs font-medium"
@@ -527,56 +553,62 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
               <div className="flex-1 overflow-y-auto p-6">
                 {selectedDoc.wikiPage ? (
                   <div className="prose prose-sm max-w-none">
-                    <div dangerouslySetInnerHTML={{
-                      __html: selectedDoc.wikiPage.content.replace(
-                        /`([^`]+)`/g,
-                        '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm text-gray-800">$1</code>'
-                      ).replace(
-                        /\*\*([^*]+)\*\*/g,
-                        '<strong>$1</strong>'
-                      ).replace(
-                        /### (.+)/g,
-                        '<h3 class="text-lg font-semibold text-gray-900 mt-6 mb-3">$1</h3>'
-                      ).replace(
-                        /## (.+)/g,
-                        '<h2 class="text-xl font-bold text-gray-900 mt-8 mb-4">$1</h2>'
-                      ).replace(
-                        /# (.+)/g,
-                        '<h1 class="text-2xl font-bold text-gray-900 mt-8 mb-6">$1</h1>'
-                      ).replace(
-                        /- (.+)/g,
-                        '<li class="ml-4 mb-1">$1</li>'
-                      ).replace(
-                        /\n\n/g,
-                        '</p><p class="mb-4">'
-                      )
-                    }} />
-                    {selectedDoc.wikiPage.relatedFiles && selectedDoc.wikiPage.relatedFiles.length > 0 && (
-                      <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
-                        <h4 className="font-semibold text-blue-900 mb-2">Related Files</h4>
-                        <div className="space-y-2">
-                          {selectedDoc.wikiPage.relatedFiles.map((file, index) => (
-                            <div key={index} className="flex items-center gap-2 text-sm">
-                              <CodeBracketIcon className="w-4 h-4 text-blue-600" />
-                              <code className="text-blue-800 bg-blue-100 px-2 py-1 rounded">{file}</code>
-                            </div>
-                          ))}
+                    <div
+                      dangerouslySetInnerHTML={{
+                        __html: selectedDoc.wikiPage.content
+                          .replace(
+                            /`([^`]+)`/g,
+                            '<code class="bg-gray-100 px-1 py-0.5 rounded text-sm text-gray-800">$1</code>',
+                          )
+                          .replace(/\*\*([^*]+)\*\*/g, '<strong>$1</strong>')
+                          .replace(
+                            /### (.+)/g,
+                            '<h3 class="text-lg font-semibold text-gray-900 mt-6 mb-3">$1</h3>',
+                          )
+                          .replace(
+                            /## (.+)/g,
+                            '<h2 class="text-xl font-bold text-gray-900 mt-8 mb-4">$1</h2>',
+                          )
+                          .replace(
+                            /# (.+)/g,
+                            '<h1 class="text-2xl font-bold text-gray-900 mt-8 mb-6">$1</h1>',
+                          )
+                          .replace(/- (.+)/g, '<li class="ml-4 mb-1">$1</li>')
+                          .replace(/\n\n/g, '</p><p class="mb-4">'),
+                      }}
+                    />
+                    {selectedDoc.wikiPage.relatedFiles &&
+                      selectedDoc.wikiPage.relatedFiles.length > 0 && (
+                        <div className="mt-8 p-4 bg-blue-50 rounded-lg border border-blue-200">
+                          <h4 className="font-semibold text-blue-900 mb-2">Related Files</h4>
+                          <div className="space-y-2">
+                            {selectedDoc.wikiPage.relatedFiles.map((file, index) => (
+                              <div key={index} className="flex items-center gap-2 text-sm">
+                                <CodeBracketIcon className="w-4 h-4 text-blue-600" />
+                                <code className="text-blue-800 bg-blue-100 px-2 py-1 rounded">
+                                  {file}
+                                </code>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
-                    {selectedDoc.wikiPage.relatedPages && selectedDoc.wikiPage.relatedPages.length > 0 && (
-                      <div className="mt-8 p-4 bg-purple-50 rounded-lg border border-purple-200">
-                        <h4 className="font-semibold text-purple-900 mb-2">Related Pages</h4>
-                        <div className="space-y-2">
-                          {selectedDoc.wikiPage.relatedPages.map((page, index) => (
-                            <div key={index} className="flex items-center gap-2 text-sm">
-                              <DocumentTextIcon className="w-4 h-4 text-purple-600" />
-                              <span className="text-purple-800 underline cursor-pointer hover:text-purple-900">{page}</span>
-                            </div>
-                          ))}
+                      )}
+                    {selectedDoc.wikiPage.relatedPages &&
+                      selectedDoc.wikiPage.relatedPages.length > 0 && (
+                        <div className="mt-8 p-4 bg-purple-50 rounded-lg border border-purple-200">
+                          <h4 className="font-semibold text-purple-900 mb-2">Related Pages</h4>
+                          <div className="space-y-2">
+                            {selectedDoc.wikiPage.relatedPages.map((page, index) => (
+                              <div key={index} className="flex items-center gap-2 text-sm">
+                                <DocumentTextIcon className="w-4 h-4 text-purple-600" />
+                                <span className="text-purple-800 underline cursor-pointer hover:text-purple-900">
+                                  {page}
+                                </span>
+                              </div>
+                            ))}
+                          </div>
                         </div>
-                      </div>
-                    )}
+                      )}
                     {selectedDoc.wikiPage.diagrams && selectedDoc.wikiPage.diagrams.length > 0 && (
                       <div className="mt-8 p-4 bg-green-50 rounded-lg border border-green-200">
                         <h4 className="font-semibold text-green-900 mb-2">Diagrams</h4>
@@ -600,7 +632,9 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
                   <div className="flex flex-col items-center justify-center h-full text-center">
                     <DocumentTextIcon className="w-12 h-12 text-gray-400 mb-4" />
                     <p className="text-gray-600">Content preview not available</p>
-                    <p className="text-sm text-gray-500 mt-2">File last modified: {selectedDoc.lastModified}</p>
+                    <p className="text-sm text-gray-500 mt-2">
+                      File last modified: {selectedDoc.lastModified}
+                    </p>
                   </div>
                 )}
               </div>
@@ -610,7 +644,9 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
               <div className="text-center">
                 <DocumentTextIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Select a document</h3>
-                <p className="text-gray-600">Choose a file from the documentation tree to view its content</p>
+                <p className="text-gray-600">
+                  Choose a file from the documentation tree to view its content
+                </p>
               </div>
             </div>
           )}
@@ -637,5 +673,5 @@ export function DocumentationViewer({ selectedRepo, searchQuery, onIndexingChang
         </div>
       </div>
     </div>
-  );
+  )
 }

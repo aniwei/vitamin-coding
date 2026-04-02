@@ -3,10 +3,10 @@ import { join, relative, sep } from 'node:path'
 import type { LocalProviderOptions, PromptEntry, PromptProvider } from './types'
 
 /**
- * 本地文件系统提示词提供者
- * 从指定目录读取 markdown 文件作为 prompt 内容
+ * Local file system prompt provider
+ * Reads markdown files from the specified directory as prompt content
  *
- * 目录结构映射为 key：
+ * Directory structure maps to key:
  *   baseDir/lead-guidance.md → "lead-guidance"
  *   baseDir/lesson/session-end-learning.md → "lesson/session-end-learning"
  */

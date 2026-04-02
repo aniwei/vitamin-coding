@@ -1,4 +1,4 @@
-@import '@xyflow/react/dist/style.css';
+@import "@xyflow/react/dist/style.css";
 
 @tailwind base;
 @tailwind components;
@@ -104,7 +104,8 @@ pre {
   @apply mb-4;
 }
 
-.prose ul, .prose ol {
+.prose ul,
+.prose ol {
   @apply mb-4 pl-6;
 }
 
@@ -138,7 +139,8 @@ pre {
   @apply mb-1.5 leading-5 last:mb-0;
 }
 
-.prose-xs ul, .prose-xs ol {
+.prose-xs ul,
+.prose-xs ol {
   @apply mb-1.5 pl-4;
 }
 
@@ -162,7 +164,12 @@ pre {
   color: hsl(var(--text-300));
 }
 
-.prose-xs h1, .prose-xs h2, .prose-xs h3, .prose-xs h4, .prose-xs h5, .prose-xs h6 {
+.prose-xs h1,
+.prose-xs h2,
+.prose-xs h3,
+.prose-xs h4,
+.prose-xs h5,
+.prose-xs h6 {
   @apply font-semibold text-xs mb-1.5 leading-5;
   color: hsl(var(--text-000));
 }
@@ -190,35 +197,62 @@ pre {
 
 /* Skeleton shimmer for loading placeholders */
 .skeleton-shimmer {
-  background: linear-gradient(90deg, hsl(var(--bg-200)) 25%, hsl(var(--bg-300)) 50%, hsl(var(--bg-200)) 75%);
+  background: linear-gradient(
+    90deg,
+    hsl(var(--bg-200)) 25%,
+    hsl(var(--bg-300)) 50%,
+    hsl(var(--bg-200)) 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 2s ease-in-out infinite;
 }
 
 /* Thinking block header shimmer while active */
 .thinking-shimmer {
-  background: linear-gradient(90deg, transparent 25%, hsl(var(--accent-secondary-100) / 0.08) 50%, transparent 75%);
+  background: linear-gradient(
+    90deg,
+    transparent 25%,
+    hsl(var(--accent-secondary-100) / 0.08) 50%,
+    transparent 75%
+  );
   background-size: 200% 100%;
   animation: shimmer 2.5s ease-in-out infinite;
 }
 
 /* Animated link underline (slides in from left) */
-.link-underline { position: relative; text-decoration: none !important; }
+.link-underline {
+  position: relative;
+  text-decoration: none !important;
+}
 .link-underline::after {
-  content: ''; position: absolute; bottom: -1px; left: 0;
-  width: 0%; height: 1px; background: currentColor;
+  content: "";
+  position: absolute;
+  bottom: -1px;
+  left: 0;
+  width: 0%;
+  height: 1px;
+  background: currentColor;
   transition: width 0.25s ease;
 }
-.link-underline:hover::after { width: 100%; }
+.link-underline:hover::after {
+  width: 100%;
+}
 
 /* Micro-lift on hover */
-.hover-lift:hover { transform: translateY(-1px); }
+.hover-lift:hover {
+  transform: translateY(-1px);
+}
 
 /* Button scale on hover */
-.hover-scale:hover { transform: scale(1.02); box-shadow: 0 2px 8px hsl(var(--border-100) / 0.1); }
+.hover-scale:hover {
+  transform: scale(1.02);
+  box-shadow: 0 2px 8px hsl(var(--border-100) / 0.1);
+}
 
 /* Pill scale on hover */
-.hover-scale-pill:hover { transform: scale(1.03); }
+.hover-scale-pill:hover {
+  transform: scale(1.03);
+}
 
 /* Delete button red glow */
 .delete-glow:hover {
@@ -227,14 +261,24 @@ pre {
 }
 
 /* Pulsing dot loading indicator */
-.pulse-dots { display: inline-flex; gap: 4px; align-items: center; }
+.pulse-dots {
+  display: inline-flex;
+  gap: 4px;
+  align-items: center;
+}
 .pulse-dots span {
-  width: 5px; height: 5px; border-radius: 50%;
+  width: 5px;
+  height: 5px;
+  border-radius: 50%;
   background: hsl(var(--accent-main-100));
   animation: pulse-dot 1.4s ease-in-out infinite;
 }
-.pulse-dots span:nth-child(2) { animation-delay: 0.2s; }
-.pulse-dots span:nth-child(3) { animation-delay: 0.4s; }
+.pulse-dots span:nth-child(2) {
+  animation-delay: 0.2s;
+}
+.pulse-dots span:nth-child(3) {
+  animation-delay: 0.4s;
+}
 
 /* Tool call executing state — pulsing blue left border */
 .tool-executing {
@@ -245,7 +289,9 @@ pre {
 }
 
 /* Code block hover lift */
-.code-hover pre { transition: transform 0.2s ease, box-shadow 0.2s ease; }
+.code-hover pre {
+  transition: transform 0.2s ease, box-shadow 0.2s ease;
+}
 .code-hover pre:hover {
   transform: translateY(-1px);
   box-shadow: 0 2px 8px hsl(var(--border-100) / 0.08);

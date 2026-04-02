@@ -133,7 +133,28 @@ async function afterTool(hooks: ReturnType<typeof createHookRegistry>, input: To
 }
 ```
 
-### 4.4 在事件节点调用
+### 4.4 在系统提示词变换中调用
+
+```ts
+import type {
+	SystemPromptTransformInput,
+	SystemPromptTransformOutput,
+} from '@vitamin/hooks'
+
+async function transformSystemPrompt(hooks: ReturnType<typeof createHookRegistry>, input: SystemPromptTransformInput) {
+	const output: SystemPromptTransformOutput = { systemPrompt: input.systemPrompt }
+	await hooks.execute('system-prompt.transform', input, output)
+	return output.systemPrompt
+}
+```
+
+> `VitaminApp` 默认注册了以下 `system-prompt.transform` Hook（按 priority 顺序）：
+> - `tool-guidance-injection`（priority 20）：提示词工具使用指南注入
+> - `environment-injection`（priority 25）：运行环境上下文注入
+> - `phase-injection`（priority 30）：当前阶段上下文注入
+> - `lesson-injection`（priority 40）：运行经验教训注入
+
+### 4.5 在事件节点调用
 
 ```ts
 await hooks.emit('session.created', { sessionId: 's1', metadata: {} })

@@ -1,21 +1,21 @@
-import { create } from 'zustand';
-import type { TraceSessionInfo, SessionData } from '../types/trace';
-import { fetchTraceProjects, fetchTraceSessions, fetchTraceSession } from '../api/traces';
-import { adaptOpenDevMessages } from '../utils/trace/adapter';
+import { create } from 'zustand'
+import { fetchTraceProjects, fetchTraceSession, fetchTraceSessions } from '../api/traces'
+import type { SessionData, TraceSessionInfo } from '../types/trace'
+import { adaptOpenDevMessages } from '../utils/trace/adapter'
 
 interface TraceState {
-  projects: string[];
-  selectedProject: string | null;
-  sessions: TraceSessionInfo[];
-  selectedSessionId: string | null;
-  sessionData: SessionData | null;
-  loading: boolean;
-  error: string | null;
+  projects: string[]
+  selectedProject: string | null
+  sessions: TraceSessionInfo[]
+  selectedSessionId: string | null
+  sessionData: SessionData | null
+  loading: boolean
+  error: string | null
 
-  loadProjects: () => Promise<void>;
-  selectProject: (project: string) => Promise<void>;
-  selectSession: (sessionId: string) => Promise<void>;
-  clearSelection: () => void;
+  loadProjects: () => Promise<void>
+  selectProject: (project: string) => Promise<void>
+  selectSession: (sessionId: string) => Promise<void>
+  clearSelection: () => void
 }
 
 export const useTraceStore = create<TraceState>((set, get) => ({
@@ -29,10 +29,10 @@ export const useTraceStore = create<TraceState>((set, get) => ({
 
   loadProjects: async () => {
     try {
-      const projects = await fetchTraceProjects();
-      set({ projects });
+      const projects = await fetchTraceProjects()
+      set({ projects })
     } catch (e) {
-      set({ error: (e as Error).message });
+      set({ error: (e as Error).message })
     }
   },
 
@@ -44,30 +44,30 @@ export const useTraceStore = create<TraceState>((set, get) => ({
       sessionData: null,
       loading: true,
       error: null,
-    });
+    })
     try {
-      const sessions = await fetchTraceSessions(project);
-      set({ sessions, loading: false });
+      const sessions = await fetchTraceSessions(project)
+      set({ sessions, loading: false })
     } catch (e) {
-      set({ error: (e as Error).message, loading: false });
+      set({ error: (e as Error).message, loading: false })
     }
   },
 
   selectSession: async (sessionId: string) => {
-    const { selectedProject } = get();
-    if (!selectedProject) return;
+    const { selectedProject } = get()
+    if (!selectedProject) return
 
-    set({ selectedSessionId: sessionId, loading: true, error: null });
+    set({ selectedSessionId: sessionId, loading: true, error: null })
     try {
-      const messages = await fetchTraceSession(selectedProject, sessionId);
-      const sessionData = adaptOpenDevMessages(messages, sessionId);
-      set({ sessionData, loading: false });
+      const messages = await fetchTraceSession(selectedProject, sessionId)
+      const sessionData = adaptOpenDevMessages(messages, sessionId)
+      set({ sessionData, loading: false })
     } catch (e) {
-      set({ error: (e as Error).message, loading: false });
+      set({ error: (e as Error).message, loading: false })
     }
   },
 
   clearSelection: () => {
-    set({ selectedSessionId: null, sessionData: null });
+    set({ selectedSessionId: null, sessionData: null })
   },
-}));
+}))

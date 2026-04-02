@@ -42,13 +42,17 @@ sequenceDiagram
 
 ## 服务端点
 
-- `ws://127.0.0.1:{port}/{serviceId}/ws`
-- `POST /{serviceId}/command/debugger/paused`
-- `POST /{serviceId}/command/debugger/command`
-- `POST /{serviceId}/command/logger`
-- `POST /{serviceId}/command/session`
+- `ws://127.0.0.1:{port}/{serviceId}/inspect` — WebSocket 调试通道
+- `POST /{serviceId}/command/logger` — 日志广播
+- `POST /{serviceId}/command/session` — 会话透传
 
-`Debugger.pause()` 当前通过 Worker 内存同步直接阻塞，不再依赖一次性子进程。
+> ⚠️ **已知偏差**：`DevtoolsService.url` getter 返回 `.../ws` 后缀，
+> 但 `service-worker.ts` 的 `handleUpgrade` 实际监听的是 `.../inspect`。
+> 实际 WebSocket 连接应使用 `serviceUrl.replace('http://', 'ws://') + '/inspect'`。
+>
+> `debuggerPauseUrl`（`/{serviceId}/command/debugger/paused`）对应的 HTTP 路由在
+> `service-worker.ts` 中尚未实现（`createDebuggerRoute` 返回空 Hono App）；
+> 暂停/恢复机制通过 `Atomics.wait()` + Worker postMessage 实现，不经过 HTTP。
 
 ## 示例
 

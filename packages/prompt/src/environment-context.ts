@@ -1,6 +1,6 @@
 /**
- * 收集运行时环境信息，注入到 system prompt 尾部。
- * 类似 opendev 的 EnvironmentContext 和 open-agent-sdk 的 getSystemContext。
+ * Collect runtime environment info and inject it at the end of the system prompt.
+ * Similar to opendev's EnvironmentContext and open-agent-sdk's getSystemContext.
  */
 export interface EnvironmentSnapshot {
   workingDirectory: string
@@ -26,7 +26,7 @@ export async function collectEnvironment(
     const branch = (await exec('git rev-parse --abbrev-ref HEAD', workspaceDir)).trim()
     if (branch) snapshot.gitBranch = branch
   } catch {
-    // 不在 git 仓库中，忽略
+    // Not in a git repository, ignore
   }
 
   try {
@@ -38,7 +38,7 @@ export async function collectEnvironment(
         : status
     }
   } catch {
-    // 忽略
+    // Ignore
   }
 
   return snapshot
@@ -46,18 +46,18 @@ export async function collectEnvironment(
 
 export function formatEnvironmentBlock(env: EnvironmentSnapshot): string {
   const lines = [
-    '### 运行环境',
-    `- 工作目录：${env.workingDirectory}`,
-    `- 日期：${env.date}`,
-    `- 平台：${env.platform}`,
+    '### Runtime Environment',
+    `- Working directory: ${env.workingDirectory}`,
+    `- Date: ${env.date}`,
+    `- Platform: ${env.platform}`,
   ]
 
   if (env.gitBranch) {
-    lines.push(`- Git 分支：${env.gitBranch}`)
+    lines.push(`- Git branch: ${env.gitBranch}`)
   }
 
   if (env.gitStatus) {
-    lines.push(`- Git 状态：\n\`\`\`\n${env.gitStatus}\n\`\`\``)
+    lines.push(`- Git status:\n\`\`\`\n${env.gitStatus}\n\`\`\``)
   }
 
   return lines.join('\n')

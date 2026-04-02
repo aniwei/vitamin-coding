@@ -5,28 +5,24 @@
  * and scalability as more settings categories are added.
  */
 
-import { useState, useEffect } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
-import {
-  CpuChipIcon,
-  ServerIcon,
-  Cog6ToothIcon
-} from '@heroicons/react/24/outline';
-import { ModelSettings } from './ModelSettings';
-import { MCPSettings } from './MCPSettings';
+import { XMarkIcon } from '@heroicons/react/24/outline'
+import { Cog6ToothIcon, CpuChipIcon, ServerIcon } from '@heroicons/react/24/outline'
+import { useEffect, useState } from 'react'
+import { MCPSettings } from './MCPSettings'
+import { ModelSettings } from './ModelSettings'
 
 interface SettingsModalProps {
-  isOpen: boolean;
-  onClose: () => void;
+  isOpen: boolean
+  onClose: () => void
 }
 
-type TabId = 'model' | 'mcp' | 'general';
+type TabId = 'model' | 'mcp' | 'general'
 
 interface TabConfig {
-  id: TabId;
-  label: string;
-  icon: React.ComponentType<{ className?: string }>;
-  description: string;
+  id: TabId
+  label: string
+  icon: React.ComponentType<{ className?: string }>
+  description: string
 }
 
 const tabs: TabConfig[] = [
@@ -34,40 +30,40 @@ const tabs: TabConfig[] = [
     id: 'model',
     label: 'Model',
     icon: CpuChipIcon,
-    description: 'Configure AI model and provider settings'
+    description: 'Configure AI model and provider settings',
   },
   {
     id: 'mcp',
     label: 'MCP Servers',
     icon: ServerIcon,
-    description: 'Manage Model Context Protocol servers'
+    description: 'Manage Model Context Protocol servers',
   },
   {
     id: 'general',
     label: 'General',
     icon: Cog6ToothIcon,
-    description: 'General application settings'
+    description: 'General application settings',
   },
-];
+]
 
 export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
-  const [activeTab, setActiveTab] = useState<TabId>('model');
+  const [activeTab, setActiveTab] = useState<TabId>('model')
 
   // Handle Escape key to close modal
   useEffect(() => {
     const handleEscape = (event: KeyboardEvent) => {
       if (event.key === 'Escape' && isOpen) {
-        onClose();
+        onClose()
       }
-    };
+    }
 
-    document.addEventListener('keydown', handleEscape);
-    return () => document.removeEventListener('keydown', handleEscape);
-  }, [isOpen, onClose]);
+    document.addEventListener('keydown', handleEscape)
+    return () => document.removeEventListener('keydown', handleEscape)
+  }, [isOpen, onClose])
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
-  const activeTabConfig = tabs.find(t => t.id === activeTab);
+  const activeTabConfig = tabs.find((t) => t.id === activeTab)
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
@@ -93,9 +89,9 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
           {/* Vertical Sidebar Navigation */}
           <div className="w-56 border-r border-gray-200 bg-gray-50 overflow-y-auto">
             <nav className="p-3 space-y-1">
-              {tabs.map(tab => {
-                const Icon = tab.icon;
-                const isActive = activeTab === tab.id;
+              {tabs.map((tab) => {
+                const Icon = tab.icon
+                const isActive = activeTab === tab.id
 
                 return (
                   <button
@@ -107,18 +103,18 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                         : 'text-gray-600 hover:bg-white/50 hover:text-gray-900'
                     }`}
                   >
-                    <Icon className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-gray-900' : 'text-gray-400'}`} />
+                    <Icon
+                      className={`w-5 h-5 flex-shrink-0 ${isActive ? 'text-gray-900' : 'text-gray-400'}`}
+                    />
                     <span className="text-sm font-medium">{tab.label}</span>
                   </button>
-                );
+                )
               })}
             </nav>
 
             {/* Sidebar Footer */}
             <div className="p-4 mt-4 border-t border-gray-200">
-              <p className="text-xs text-gray-500">
-                OpenDev v0.1.7
-              </p>
+              <p className="text-xs text-gray-500">OpenDev v0.1.7</p>
             </div>
           </div>
 
@@ -131,9 +127,7 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
                 <div className="text-center py-12">
                   <Cog6ToothIcon className="w-12 h-12 mx-auto text-gray-300 mb-3" />
                   <p className="text-sm text-gray-600 font-medium mb-1">General Settings</p>
-                  <p className="text-xs text-gray-500">
-                    General settings coming soon...
-                  </p>
+                  <p className="text-xs text-gray-500">General settings coming soon...</p>
                 </div>
               )}
             </div>
@@ -151,5 +145,5 @@ export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }

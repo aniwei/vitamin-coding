@@ -3,8 +3,8 @@ import { RemotePromptProvider } from './remote-provider'
 import type { PromptProvider, PromptProviderOptions } from './types'
 
 /**
- * 根据选项创建对应的 PromptProvider 实例
- * 模式与 persistence 包的 createPersistence 一致
+ * Create the corresponding PromptProvider instance based on options.
+ * Pattern is consistent with createPersistence in the persistence package.
  */
 export function createPromptProvider(options: PromptProviderOptions): PromptProvider {
   switch (options.type) {

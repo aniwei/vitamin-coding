@@ -1,32 +1,34 @@
-import { useEffect } from 'react';
-import { useTraceStore } from '../../stores/trace';
-import type { TraceSessionInfo } from '../../types/trace';
+import { useEffect } from 'react'
+import { useTraceStore } from '../../stores/trace'
+import type { TraceSessionInfo } from '../../types/trace'
 
 function formatProjectName(name: string): string {
-  const parts = name.replace(/^-/, '').split('-');
-  return parts[parts.length - 1] || name;
+  const parts = name.replace(/^-/, '').split('-')
+  return parts[parts.length - 1] || name
 }
 
 function formatTimestamp(ts?: string): string {
-  if (!ts) return '';
-  const d = new Date(ts);
-  if (isNaN(d.getTime())) return '';
-  return d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' });
+  if (!ts) return ''
+  const d = new Date(ts)
+  if (isNaN(d.getTime())) return ''
+  return (
+    d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
+  )
 }
 
 export function TraceProjectSidebar() {
-  const projects = useTraceStore(s => s.projects);
-  const selectedProject = useTraceStore(s => s.selectedProject);
-  const sessions = useTraceStore(s => s.sessions);
-  const selectedSessionId = useTraceStore(s => s.selectedSessionId);
-  const loading = useTraceStore(s => s.loading);
-  const loadProjects = useTraceStore(s => s.loadProjects);
-  const selectProject = useTraceStore(s => s.selectProject);
-  const selectSession = useTraceStore(s => s.selectSession);
+  const projects = useTraceStore((s) => s.projects)
+  const selectedProject = useTraceStore((s) => s.selectedProject)
+  const sessions = useTraceStore((s) => s.sessions)
+  const selectedSessionId = useTraceStore((s) => s.selectedSessionId)
+  const loading = useTraceStore((s) => s.loading)
+  const loadProjects = useTraceStore((s) => s.loadProjects)
+  const selectProject = useTraceStore((s) => s.selectProject)
+  const selectSession = useTraceStore((s) => s.selectSession)
 
   useEffect(() => {
-    loadProjects();
-  }, [loadProjects]);
+    loadProjects()
+  }, [loadProjects])
 
   return (
     <div className="w-60 h-full bg-bg-100 border-r border-border-300/20 flex flex-col font-sans shrink-0">
@@ -38,7 +40,7 @@ export function TraceProjectSidebar() {
         {projects.length === 0 && (
           <div className="px-4 text-[11px] text-text-400 italic">No projects found</div>
         )}
-        {projects.map(p => (
+        {projects.map((p) => (
           <button
             key={p}
             onClick={() => selectProject(p)}
@@ -88,14 +90,12 @@ export function TraceProjectSidebar() {
               </div>
               <div className="text-[10px] text-text-400 font-mono">
                 <span>{s.message_count} msgs</span>
-                {s.timestamp && (
-                  <span className="ml-1.5">{formatTimestamp(s.timestamp)}</span>
-                )}
+                {s.timestamp && <span className="ml-1.5">{formatTimestamp(s.timestamp)}</span>}
               </div>
             </button>
           ))}
         </div>
       )}
     </div>
-  );
+  )
 }

@@ -1,38 +1,43 @@
-import { FolderIcon, CheckCircleIcon, ExclamationCircleIcon, ArrowPathIcon } from '@heroicons/react/24/outline';
-import { Repository } from './RepositoryExplorer';
+import {
+  ArrowPathIcon,
+  CheckCircleIcon,
+  ExclamationCircleIcon,
+  FolderIcon,
+} from '@heroicons/react/24/outline'
+import type { Repository } from './RepositoryExplorer'
 
 interface RepositoryHeroProps {
-  repository: Repository;
+  repository: Repository
 }
 
 // Language color mapping
 const languageColors: Record<string, string> = {
-  'JavaScript': 'bg-yellow-400',
-  'TypeScript': 'bg-blue-400',
-  'Python': 'bg-green-400',
-  'Java': 'bg-red-400',
+  JavaScript: 'bg-yellow-400',
+  TypeScript: 'bg-blue-400',
+  Python: 'bg-green-400',
+  Java: 'bg-red-400',
   'C++': 'bg-purple-400',
-  'Go': 'bg-cyan-400',
-  'Rust': 'bg-orange-400',
-  'Ruby': 'bg-red-500',
-  'PHP': 'bg-indigo-400',
-  'Swift': 'bg-orange-500',
-  'default': 'bg-gray-400'
-};
+  Go: 'bg-cyan-400',
+  Rust: 'bg-orange-400',
+  Ruby: 'bg-red-500',
+  PHP: 'bg-indigo-400',
+  Swift: 'bg-orange-500',
+  default: 'bg-gray-400',
+}
 
 export function RepositoryHero({ repository }: RepositoryHeroProps) {
   const getStatusIcon = (status: Repository['status']) => {
     switch (status) {
       case 'indexed':
-        return <CheckCircleIcon className="w-4 h-4 text-green-500" />;
+        return <CheckCircleIcon className="w-4 h-4 text-green-500" />
       case 'indexing':
-        return <ArrowPathIcon className="w-4 h-4 text-blue-500 animate-spin" />;
+        return <ArrowPathIcon className="w-4 h-4 text-blue-500 animate-spin" />
       case 'error':
-        return <ExclamationCircleIcon className="w-4 h-4 text-red-500" />;
+        return <ExclamationCircleIcon className="w-4 h-4 text-red-500" />
     }
-  };
+  }
 
-  const languageColor = languageColors[repository.language] || languageColors.default;
+  const languageColor = languageColors[repository.language] || languageColors.default
 
   return (
     <div className="bg-gradient-to-br from-purple-50 via-white to-blue-50 border-b border-gray-200">
@@ -56,7 +61,9 @@ export function RepositoryHero({ repository }: RepositoryHeroProps) {
               {/* Status Badge */}
               <div className="flex items-center gap-2 px-3 py-1.5 bg-white rounded-full shadow-sm border border-gray-200">
                 {getStatusIcon(repository.status)}
-                <span className="text-sm font-medium text-gray-700 capitalize">{repository.status}</span>
+                <span className="text-sm font-medium text-gray-700 capitalize">
+                  {repository.status}
+                </span>
               </div>
 
               {/* Language Badge */}
@@ -76,5 +83,5 @@ export function RepositoryHero({ repository }: RepositoryHeroProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }

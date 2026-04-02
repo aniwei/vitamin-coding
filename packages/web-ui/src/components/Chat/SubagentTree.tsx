@@ -1,48 +1,54 @@
-import { useEffect, useState } from 'react';
-import { useSubagentStore, formatToolVerb, formatToolArg, type SubagentState, type ActiveToolCall } from '../../stores/subagents';
+import { useEffect, useState } from 'react'
+import {
+  type ActiveToolCall,
+  type SubagentState,
+  formatToolArg,
+  formatToolVerb,
+  useSubagentStore,
+} from '../../stores/subagents'
 
 function formatElapsed(ms: number): string {
-  const secs = Math.floor(ms / 1000);
-  if (secs < 60) return `${secs}s`;
-  const mins = Math.floor(secs / 60);
-  const remSecs = secs % 60;
-  return `${mins}m${remSecs}s`;
+  const secs = Math.floor(ms / 1000)
+  if (secs < 60) return `${secs}s`
+  const mins = Math.floor(secs / 60)
+  const remSecs = secs % 60
+  return `${mins}m${remSecs}s`
 }
 
 function formatTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`;
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`;
-  return String(n);
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
+  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
+  return String(n)
 }
 
-const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏'];
+const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 
 function Spinner({ className }: { className?: string }) {
-  const [frame, setFrame] = useState(0);
+  const [frame, setFrame] = useState(0)
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setFrame((f) => (f + 1) % SPINNER_FRAMES.length);
-    }, 80);
-    return () => clearInterval(interval);
-  }, []);
+      setFrame((f) => (f + 1) % SPINNER_FRAMES.length)
+    }, 80)
+    return () => clearInterval(interval)
+  }, [])
 
-  return <span className={className}>{SPINNER_FRAMES[frame]}</span>;
+  return <span className={className}>{SPINNER_FRAMES[frame]}</span>
 }
 
 function ActiveToolRow({ tool, isLast }: { tool: ActiveToolCall; isLast: boolean }) {
-  const [elapsed, setElapsed] = useState(0);
+  const [elapsed, setElapsed] = useState(0)
 
   useEffect(() => {
     const interval = setInterval(() => {
-      setElapsed(Date.now() - tool.startedAt);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [tool.startedAt]);
+      setElapsed(Date.now() - tool.startedAt)
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [tool.startedAt])
 
-  const verb = formatToolVerb(tool.toolName);
-  const arg = formatToolArg(tool.toolName, tool.args);
-  const connector = isLast ? '└─' : '├─';
+  const verb = formatToolVerb(tool.toolName)
+  const arg = formatToolArg(tool.toolName, tool.args)
+  const connector = isLast ? '└─' : '├─'
 
   return (
     <div className="flex items-center gap-1.5 text-sm font-mono text-text-300 leading-6 pl-8">
@@ -52,13 +58,17 @@ function ActiveToolRow({ tool, isLast }: { tool: ActiveToolCall; isLast: boolean
       {arg && <span className="text-text-400 truncate max-w-[300px]">{arg}</span>}
       <span className="text-text-400 ml-auto shrink-0">({formatElapsed(elapsed)})</span>
     </div>
-  );
+  )
 }
 
-function CompletedToolRow({ toolName, success, isLast }: { toolName: string; success: boolean; isLast: boolean }) {
-  const connector = isLast ? '└─' : '├─';
-  const icon = success ? '✓' : '✗';
-  const color = success ? 'text-green-400' : 'text-red-400';
+function CompletedToolRow({
+  toolName,
+  success,
+  isLast,
+}: { toolName: string; success: boolean; isLast: boolean }) {
+  const connector = isLast ? '└─' : '├─'
+  const icon = success ? '✓' : '✗'
+  const color = success ? 'text-green-400' : 'text-red-400'
 
   return (
     <div className="flex items-center gap-1.5 text-sm font-mono text-text-400 leading-6 pl-8">
@@ -66,21 +76,21 @@ function CompletedToolRow({ toolName, success, isLast }: { toolName: string; suc
       <span className={color}>{icon}</span>
       <span>{formatToolVerb(toolName)}</span>
     </div>
-  );
+  )
 }
 
 function SubagentNode({ sa }: { sa: SubagentState }) {
-  const [elapsed, setElapsed] = useState(0);
+  const [elapsed, setElapsed] = useState(0)
 
   useEffect(() => {
-    if (sa.finished) return;
+    if (sa.finished) return
     const interval = setInterval(() => {
-      setElapsed(Date.now() - sa.startedAt);
-    }, 1000);
-    return () => clearInterval(interval);
-  }, [sa.startedAt, sa.finished]);
+      setElapsed(Date.now() - sa.startedAt)
+    }, 1000)
+    return () => clearInterval(interval)
+  }, [sa.startedAt, sa.finished])
 
-  const finalElapsed = sa.finished ? (Date.now() - sa.startedAt) : elapsed;
+  const finalElapsed = sa.finished ? Date.now() - sa.startedAt : elapsed
 
   // Status indicator
   const statusEl = sa.finished ? (
@@ -91,21 +101,28 @@ function SubagentNode({ sa }: { sa: SubagentState }) {
     )
   ) : (
     <Spinner className="text-blue-400" />
-  );
+  )
 
   // Stats string
-  const tokenStr = sa.tokenCount > 0 ? ` · ${formatTokens(sa.tokenCount)} tokens` : '';
-  const stats = `(${sa.toolCallCount} tool uses${tokenStr} · ${formatElapsed(finalElapsed)})`;
+  const tokenStr = sa.tokenCount > 0 ? ` · ${formatTokens(sa.tokenCount)} tokens` : ''
+  const stats = `(${sa.toolCallCount} tool uses${tokenStr} · ${formatElapsed(finalElapsed)})`
 
   // Display name
-  const displayName = sa.name.split(/[-_]/).map(w => w.charAt(0).toUpperCase() + w.slice(1)).join(' ');
-  const taskPreview = sa.description.length > 60 ? sa.description.slice(0, 57) + '...' : sa.description;
+  const displayName = sa.name
+    .split(/[-_]/)
+    .map((w) => w.charAt(0).toUpperCase() + w.slice(1))
+    .join(' ')
+  const taskPreview =
+    sa.description.length > 60 ? sa.description.slice(0, 57) + '...' : sa.description
 
   // Active tools
-  const activeToolEntries = Array.from(sa.activeTools.values());
+  const activeToolEntries = Array.from(sa.activeTools.values())
   // Show last 3 completed
-  const completedVisible = sa.completedTools.slice(-3);
-  const hiddenCount = Math.max(0, sa.toolCallCount - activeToolEntries.length - completedVisible.length);
+  const completedVisible = sa.completedTools.slice(-3)
+  const hiddenCount = Math.max(
+    0,
+    sa.toolCallCount - activeToolEntries.length - completedVisible.length,
+  )
 
   return (
     <div className="mb-1">
@@ -146,9 +163,7 @@ function SubagentNode({ sa }: { sa: SubagentState }) {
 
       {/* Shallow warning */}
       {sa.shallowWarning && (
-        <div className="text-xs font-mono text-yellow-400 pl-10 leading-6">
-          {sa.shallowWarning}
-        </div>
+        <div className="text-xs font-mono text-yellow-400 pl-10 leading-6">{sa.shallowWarning}</div>
       )}
 
       {/* Completion summary (persistent after finish) */}
@@ -158,18 +173,18 @@ function SubagentNode({ sa }: { sa: SubagentState }) {
         </div>
       )}
     </div>
-  );
+  )
 }
 
 export function SubagentTree() {
-  const subagents = useSubagentStore((s) => s.subagents);
-  const order = useSubagentStore((s) => s.order);
+  const subagents = useSubagentStore((s) => s.subagents)
+  const order = useSubagentStore((s) => s.order)
 
-  if (order.length === 0) return null;
+  if (order.length === 0) return null
 
   // Only show if at least one subagent is not finished, or recently finished
-  const activeSubagents = order.map(id => subagents.get(id)).filter(Boolean) as SubagentState[];
-  if (activeSubagents.length === 0) return null;
+  const activeSubagents = order.map((id) => subagents.get(id)).filter(Boolean) as SubagentState[]
+  if (activeSubagents.length === 0) return null
 
   return (
     <div className="border-t border-border-300/30 bg-bg-100/30 py-2 px-2 shrink-0">
@@ -180,5 +195,5 @@ export function SubagentTree() {
         <SubagentNode key={sa.subagentId} sa={sa} />
       ))}
     </div>
-  );
+  )
 }

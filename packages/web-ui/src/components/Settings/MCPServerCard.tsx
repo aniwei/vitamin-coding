@@ -5,17 +5,17 @@
  * Follows SRP by focusing solely on server presentation and user interactions.
  */
 
-import { useState } from 'react';
-import type { MCPServer } from '../../types/mcp';
+import { useState } from 'react'
+import type { MCPServer } from '../../types/mcp'
 
 interface MCPServerCardProps {
-  server: MCPServer;
-  onConnect: (name: string) => Promise<void>;
-  onDisconnect: (name: string) => Promise<void>;
-  onTest: (name: string) => Promise<void>;
-  onViewTools: (name: string) => void;
-  onEdit: (server: MCPServer) => void;
-  onDelete: (name: string) => void;
+  server: MCPServer
+  onConnect: (name: string) => Promise<void>
+  onDisconnect: (name: string) => Promise<void>
+  onTest: (name: string) => Promise<void>
+  onViewTools: (name: string) => void
+  onEdit: (server: MCPServer) => void
+  onDelete: (name: string) => void
 }
 
 export function MCPServerCard({
@@ -27,30 +27,30 @@ export function MCPServerCard({
   onEdit,
   onDelete,
 }: MCPServerCardProps) {
-  const [isProcessing, setIsProcessing] = useState(false);
-  const [expanded, setExpanded] = useState(false);
+  const [isProcessing, setIsProcessing] = useState(false)
+  const [expanded, setExpanded] = useState(false)
 
   const handleConnectionToggle = async () => {
-    setIsProcessing(true);
+    setIsProcessing(true)
     try {
       if (server.status === 'connected') {
-        await onDisconnect(server.name);
+        await onDisconnect(server.name)
       } else {
-        await onConnect(server.name);
+        await onConnect(server.name)
       }
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
 
   const handleTest = async () => {
-    setIsProcessing(true);
+    setIsProcessing(true)
     try {
-      await onTest(server.name);
+      await onTest(server.name)
     } finally {
-      setIsProcessing(false);
+      setIsProcessing(false)
     }
-  };
+  }
 
   return (
     <div className="bg-white rounded-lg border border-gray-200 hover:border-gray-300 transition-colors">
@@ -88,7 +88,12 @@ export function MCPServerCard({
               viewBox="0 0 24 24"
               stroke="currentColor"
             >
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                strokeWidth={2}
+                d="M19 9l-7 7-7-7"
+              />
             </svg>
           </button>
         </div>
@@ -110,7 +115,7 @@ export function MCPServerCard({
         </div>
       )}
     </div>
-  );
+  )
 }
 
 // ============================================================================
@@ -118,8 +123,8 @@ export function MCPServerCard({
 // ============================================================================
 
 interface StatusIndicatorProps {
-  status: MCPServer['status'];
-  isProcessing: boolean;
+  status: MCPServer['status']
+  isProcessing: boolean
 }
 
 function StatusIndicator({ status, isProcessing }: StatusIndicatorProps) {
@@ -128,7 +133,7 @@ function StatusIndicator({ status, isProcessing }: StatusIndicatorProps) {
       <div className="flex items-center justify-center w-8 h-8">
         <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
       </div>
-    );
+    )
   }
 
   const statusConfig = {
@@ -136,28 +141,30 @@ function StatusIndicator({ status, isProcessing }: StatusIndicatorProps) {
     disconnected: { color: 'bg-gray-400', label: 'Disconnected' },
     connecting: { color: 'bg-yellow-500', label: 'Connecting' },
     error: { color: 'bg-red-500', label: 'Error' },
-  };
+  }
 
-  const config = statusConfig[status];
+  const config = statusConfig[status]
 
   return (
     <div className="relative flex items-center justify-center w-8 h-8">
       <div className={`w-2.5 h-2.5 rounded-full ${config.color}`} />
       {status === 'connected' && (
-        <div className={`absolute w-2.5 h-2.5 rounded-full ${config.color} animate-ping opacity-75`} />
+        <div
+          className={`absolute w-2.5 h-2.5 rounded-full ${config.color} animate-ping opacity-75`}
+        />
       )}
     </div>
-  );
+  )
 }
 
 interface ConnectionButtonProps {
-  status: MCPServer['status'];
-  isProcessing: boolean;
-  onClick: () => void;
+  status: MCPServer['status']
+  isProcessing: boolean
+  onClick: () => void
 }
 
 function ConnectionButton({ status, isProcessing, onClick }: ConnectionButtonProps) {
-  const isConnected = status === 'connected';
+  const isConnected = status === 'connected'
 
   return (
     <button
@@ -171,23 +178,21 @@ function ConnectionButton({ status, isProcessing, onClick }: ConnectionButtonPro
     >
       {isProcessing ? 'Processing...' : isConnected ? 'Disconnect' : 'Connect'}
     </button>
-  );
+  )
 }
 
 interface ServerDetailsProps {
-  server: MCPServer;
+  server: MCPServer
 }
 
 function ServerDetails({ server }: ServerDetailsProps) {
-  const { config } = server;
+  const { config } = server
 
   return (
     <div className="mt-3 space-y-2 text-xs">
       <DetailRow label="Command" value={config.command} mono />
 
-      {config.args.length > 0 && (
-        <DetailRow label="Args" value={config.args.join(' ')} mono />
-      )}
+      {config.args.length > 0 && <DetailRow label="Args" value={config.args.join(' ')} mono />}
 
       {Object.keys(config.env).length > 0 && (
         <div>
@@ -216,14 +221,14 @@ function ServerDetails({ server }: ServerDetailsProps) {
         />
       </div>
     </div>
-  );
+  )
 }
 
 interface DetailRowProps {
-  label: string;
-  value: string;
-  mono?: boolean;
-  valueColor?: string;
+  label: string
+  value: string
+  mono?: boolean
+  valueColor?: string
 }
 
 function DetailRow({ label, value, mono = false, valueColor = 'text-gray-700' }: DetailRowProps) {
@@ -232,16 +237,16 @@ function DetailRow({ label, value, mono = false, valueColor = 'text-gray-700' }:
       <span className="text-gray-500 font-medium">{label}:</span>
       <span className={`${valueColor} ${mono ? 'font-mono' : ''} break-all`}>{value}</span>
     </div>
-  );
+  )
 }
 
 interface ActionButtonsProps {
-  server: MCPServer;
-  isProcessing: boolean;
-  onTest: () => void;
-  onViewTools: (name: string) => void;
-  onEdit: (server: MCPServer) => void;
-  onDelete: (name: string) => void;
+  server: MCPServer
+  isProcessing: boolean
+  onTest: () => void
+  onViewTools: (name: string) => void
+  onEdit: (server: MCPServer) => void
+  onDelete: (name: string) => void
 }
 
 function ActionButtons({
@@ -264,40 +269,28 @@ function ActionButtons({
         </ActionButton>
       )}
 
-      <ActionButton
-        onClick={onTest}
-        disabled={isProcessing}
-        variant="secondary"
-      >
+      <ActionButton onClick={onTest} disabled={isProcessing} variant="secondary">
         Test Connection
       </ActionButton>
 
-      <ActionButton
-        onClick={() => onEdit(server)}
-        disabled={isProcessing}
-        variant="secondary"
-      >
+      <ActionButton onClick={() => onEdit(server)} disabled={isProcessing} variant="secondary">
         Edit
       </ActionButton>
 
       <div className="flex-1" />
 
-      <ActionButton
-        onClick={() => onDelete(server.name)}
-        disabled={isProcessing}
-        variant="danger"
-      >
+      <ActionButton onClick={() => onDelete(server.name)} disabled={isProcessing} variant="danger">
         Remove
       </ActionButton>
     </div>
-  );
+  )
 }
 
 interface ActionButtonProps {
-  onClick: () => void;
-  disabled: boolean;
-  variant: 'primary' | 'secondary' | 'danger';
-  children: React.ReactNode;
+  onClick: () => void
+  disabled: boolean
+  variant: 'primary' | 'secondary' | 'danger'
+  children: React.ReactNode
 }
 
 function ActionButton({ onClick, disabled, variant, children }: ActionButtonProps) {
@@ -305,7 +298,7 @@ function ActionButton({ onClick, disabled, variant, children }: ActionButtonProp
     primary: 'text-white bg-gray-900 hover:bg-gray-800',
     secondary: 'text-gray-700 bg-gray-100 hover:bg-gray-200',
     danger: 'text-red-700 bg-red-50 hover:bg-red-100',
-  };
+  }
 
   return (
     <button
@@ -315,5 +308,5 @@ function ActionButton({ onClick, disabled, variant, children }: ActionButtonProp
     >
       {children}
     </button>
-  );
+  )
 }

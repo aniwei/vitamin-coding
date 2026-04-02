@@ -1,24 +1,30 @@
-import { MagnifyingGlassIcon, PlusIcon, Cog6ToothIcon } from '@heroicons/react/24/outline';
-import { RepositoryCard } from './RepositoryCard';
-import { Repository } from './RepositoryExplorer';
+import { Cog6ToothIcon, MagnifyingGlassIcon, PlusIcon } from '@heroicons/react/24/outline'
+import { RepositoryCard } from './RepositoryCard'
+import type { Repository } from './RepositoryExplorer'
 
 interface RepositoryGridProps {
-  repositories: Repository[];
-  searchQuery: string;
-  onSearchChange: (query: string) => void;
-  onAddRepository: () => void;
+  repositories: Repository[]
+  searchQuery: string
+  onSearchChange: (query: string) => void
+  onAddRepository: () => void
 }
 
-export function RepositoryGrid({ repositories, searchQuery, onSearchChange, onAddRepository }: RepositoryGridProps) {
-  const filteredRepositories = repositories.filter(repo =>
-    repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    repo.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    repo.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
-    repo.language.toLowerCase().includes(searchQuery.toLowerCase())
-  );
+export function RepositoryGrid({
+  repositories,
+  searchQuery,
+  onSearchChange,
+  onAddRepository,
+}: RepositoryGridProps) {
+  const filteredRepositories = repositories.filter(
+    (repo) =>
+      repo.name.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      repo.fullName.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      repo.description.toLowerCase().includes(searchQuery.toLowerCase()) ||
+      repo.language.toLowerCase().includes(searchQuery.toLowerCase()),
+  )
 
-  const totalFiles = filteredRepositories.reduce((sum, repo) => sum + repo.files, 0);
-  const totalDocs = filteredRepositories.reduce((sum, repo) => sum + repo.docsFound, 0);
+  const totalFiles = filteredRepositories.reduce((sum, repo) => sum + repo.files, 0)
+  const totalDocs = filteredRepositories.reduce((sum, repo) => sum + repo.docsFound, 0)
 
   return (
     <div className="min-h-screen bg-gray-50">
@@ -29,7 +35,9 @@ export function RepositoryGrid({ repositories, searchQuery, onSearchChange, onAd
           <div className="flex items-center justify-between mb-6">
             <div>
               <h1 className="text-3xl font-bold text-gray-900">CodeWiki</h1>
-              <p className="text-gray-600 mt-1">Explore intelligent documentation for your repositories</p>
+              <p className="text-gray-600 mt-1">
+                Explore intelligent documentation for your repositories
+              </p>
             </div>
 
             <div className="flex items-center gap-3">
@@ -93,8 +101,7 @@ export function RepositoryGrid({ repositories, searchQuery, onSearchChange, onAd
             <p className="text-gray-600 mb-6 max-w-md mx-auto">
               {searchQuery
                 ? 'Try adjusting your search terms or add new repositories to explore.'
-                : 'Add your first repository to start exploring intelligent documentation.'
-              }
+                : 'Add your first repository to start exploring intelligent documentation.'}
             </p>
             {!searchQuery && (
               <button
@@ -115,5 +122,5 @@ export function RepositoryGrid({ repositories, searchQuery, onSearchChange, onAd
         )}
       </div>
     </div>
-  );
+  )
 }

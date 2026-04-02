@@ -35,7 +35,6 @@ import {
   injectPhaseContext,
   collectEnvironment,
   formatEnvironmentBlock,
-  SESSION_END_LEARNING_PROMPT,
   BUILTIN_PROMPTS_DIR,
 } from '@vitamin/prompt'
 import type { AgentProfile, PhaseAnnotation, SubAgentPromptContext } from '@vitamin/prompt'
@@ -588,7 +587,8 @@ export class VitaminApp implements VitaminContext {
     this.hookRegistry.on('system-prompt.transform', 'lesson-injection', async (_input, output) => {
       const lessons = await this.learningStore.list()
       if (lessons.length > 0) {
-        const injection = buildLessonInjection(lessons)
+        const template = await this.promptManager.loadRuntimeLessonsTemplate() ?? undefined
+        const injection = buildLessonInjection(lessons, template)
         if (injection) {
           output.systemPrompt = `${output.systemPrompt}\n\n${injection}`
         }
@@ -642,7 +642,8 @@ export class VitaminApp implements VitaminContext {
       this.learningTriggeredSessions.add(input.sessionId)
       this.logger.info('Session idle, prompting for learning: %s', input.sessionId)
       try {
-        await session.prompt(SESSION_END_LEARNING_PROMPT)
+        const sessionEndPrompt = await this.promptManager.loadSessionEndLearningPrompt()
+        await session.prompt(sessionEndPrompt ?? '')
       } catch (err) {
         this.logger.warn('Learning prompt failed for session %s: %s', input.sessionId, err)
       }

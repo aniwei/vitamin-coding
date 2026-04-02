@@ -1,21 +1,22 @@
-import { useState } from 'react';
-import { useFileChangesStore } from '../../stores/fileChanges';
-import { useChatStore } from '../../stores/chat';
+import { useState } from 'react'
+import { useChatStore } from '../../stores/chat'
+import { useFileChangesStore } from '../../stores/fileChanges'
+import type { FileChange, FileChangesSummary } from '../../stores/fileChanges'
 
 export function FileChangesButton() {
-  const [isModalOpen, setIsModalOpen] = useState(false);
-  const { changes, summary, loadFileChanges, isLoading } = useFileChangesStore();
-  const { currentSessionId } = useChatStore(state => state);
+  const [isModalOpen, setIsModalOpen] = useState(false)
+  const { changes, summary, loadFileChanges, isLoading } = useFileChangesStore()
+  const { currentSessionId } = useChatStore((state) => state)
 
   const handleClick = () => {
     if (currentSessionId && !isModalOpen) {
-      loadFileChanges(currentSessionId);
+      loadFileChanges(currentSessionId)
     }
-    setIsModalOpen(!isModalOpen);
-  };
+    setIsModalOpen(!isModalOpen)
+  }
 
-  const hasChanges = changes && changes.length > 0;
-  const changeCount = changes.length;
+  const hasChanges = changes && changes.length > 0
+  const changeCount = changes.length
 
   return (
     <>
@@ -24,8 +25,18 @@ export function FileChangesButton() {
         className="flex items-center gap-2 px-3 py-2 text-xs text-gray-600 bg-gray-50 border border-gray-200 rounded-lg hover:bg-gray-100 hover:text-gray-800 transition-colors"
         title={hasChanges ? `${changeCount} file changes` : 'View file changes'}
       >
-        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-          <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+        <svg
+          className="w-4 h-4"
+          fill="none"
+          viewBox="0 0 24 24"
+          stroke="currentColor"
+          strokeWidth={2}
+        >
+          <path
+            strokeLinecap="round"
+            strokeLinejoin="round"
+            d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+          />
         </svg>
         <span className="font-medium">File Changes</span>
         {hasChanges && (
@@ -44,14 +55,14 @@ export function FileChangesButton() {
         />
       )}
     </>
-  );
+  )
 }
 
 interface FileChangesModalProps {
-  onClose: () => void;
-  changes: any[];
-  summary: any;
-  isLoading: boolean;
+  onClose: () => void
+  changes: FileChange[]
+  summary: FileChangesSummary | null
+  isLoading: boolean
 }
 
 function FileChangesModal({ onClose, changes, summary, isLoading }: FileChangesModalProps) {
@@ -61,16 +72,29 @@ function FileChangesModal({ onClose, changes, summary, isLoading }: FileChangesM
         {/* Header */}
         <div className="flex items-center justify-between p-4 border-b border-gray-200">
           <h2 className="text-lg font-semibold text-gray-900 flex items-center gap-2">
-            <svg className="w-5 h-5 text-gray-600" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-              <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+            <svg
+              className="w-5 h-5 text-gray-600"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
+              <path
+                strokeLinecap="round"
+                strokeLinejoin="round"
+                d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+              />
             </svg>
             File Changes
           </h2>
-          <button
-            onClick={onClose}
-            className="text-gray-400 hover:text-gray-600 transition-colors"
-          >
-            <svg className="w-6 h-6" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
+          <button onClick={onClose} className="text-gray-400 hover:text-gray-600 transition-colors">
+            <svg
+              className="w-6 h-6"
+              fill="none"
+              viewBox="0 0 24 24"
+              stroke="currentColor"
+              strokeWidth={2}
+            >
               <path strokeLinecap="round" strokeLinejoin="round" d="M6 18L18 6M6 6l12 12" />
             </svg>
           </button>
@@ -114,8 +138,18 @@ function FileChangesModal({ onClose, changes, summary, isLoading }: FileChangesM
             </div>
           ) : (
             <div className="text-center py-8 text-gray-500">
-              <svg className="w-12 h-12 mx-auto mb-4 text-gray-300" fill="none" viewBox="0 0 24 24" stroke="currentColor" strokeWidth={2}>
-                <path strokeLinecap="round" strokeLinejoin="round" d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z" />
+              <svg
+                className="w-12 h-12 mx-auto mb-4 text-gray-300"
+                fill="none"
+                viewBox="0 0 24 24"
+                stroke="currentColor"
+                strokeWidth={2}
+              >
+                <path
+                  strokeLinecap="round"
+                  strokeLinejoin="round"
+                  d="M9 12h6m-6 4h6m2 5H7a2 2 0 01-2-2V5a2 2 0 012-2h5.586a1 1 0 01.707.293l5.414 5.414a1 1 0 01.293.707V19a2 2 0 01-2 2z"
+                />
               </svg>
               <div className="text-lg font-medium">No file changes yet</div>
               <div className="text-sm">Start making changes to see them here</div>
@@ -139,36 +173,41 @@ function FileChangesModal({ onClose, changes, summary, isLoading }: FileChangesM
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 interface FileChangeItemProps {
-  change: any;
+  change: FileChange
 }
 
 function FileChangeItem({ change }: FileChangeItemProps) {
   const getTimeAgo = (timestamp: string) => {
-    const now = new Date();
-    const changeTime = new Date(timestamp);
-    const diffInMinutes = Math.floor((now.getTime() - changeTime.getTime()) / (1000 * 60));
+    const now = new Date()
+    const changeTime = new Date(timestamp)
+    const diffInMinutes = Math.floor((now.getTime() - changeTime.getTime()) / (1000 * 60))
 
-    if (diffInMinutes < 1) return 'just now';
-    if (diffInMinutes < 60) return `${diffInMinutes}m ago`;
-    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`;
-    return `${Math.floor(diffInMinutes / 1440)}d ago`;
-  };
+    if (diffInMinutes < 1) return 'just now'
+    if (diffInMinutes < 60) return `${diffInMinutes}m ago`
+    if (diffInMinutes < 1440) return `${Math.floor(diffInMinutes / 60)}h ago`
+    return `${Math.floor(diffInMinutes / 1440)}d ago`
+  }
 
   const getStatusColor = (color: string) => {
     switch (color) {
-      case 'green': return 'text-green-600 bg-green-50 border-green-200';
-      case 'blue': return 'text-blue-600 bg-blue-50 border-blue-200';
-      case 'red': return 'text-red-600 bg-red-50 border-red-200';
-      case 'orange': return 'text-orange-600 bg-orange-50 border-orange-200';
-      default: return 'text-gray-600 bg-gray-50 border-gray-200';
+      case 'green':
+        return 'text-green-600 bg-green-50 border-green-200'
+      case 'blue':
+        return 'text-blue-600 bg-blue-50 border-blue-200'
+      case 'red':
+        return 'text-red-600 bg-red-50 border-red-200'
+      case 'orange':
+        return 'text-orange-600 bg-orange-50 border-orange-200'
+      default:
+        return 'text-gray-600 bg-gray-50 border-gray-200'
     }
-  };
+  }
 
-  const statusClasses = getStatusColor(change.color);
+  const statusClasses = getStatusColor(change.color)
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-3 hover:bg-gray-50 transition-colors">
@@ -185,27 +224,17 @@ function FileChangeItem({ change }: FileChangeItemProps) {
             </span>
           </div>
 
-          <div className="text-xs text-gray-500 mb-1">
-            {change.file_path}
-          </div>
+          <div className="text-xs text-gray-500 mb-1">{change.file_path}</div>
 
           {change.summary && (
-            <div className="text-xs text-gray-600 font-mono mb-1">
-              {change.summary}
-            </div>
+            <div className="text-xs text-gray-600 font-mono mb-1">{change.summary}</div>
           )}
 
-          {change.description && (
-            <div className="text-xs text-gray-500">
-              {change.description}
-            </div>
-          )}
+          {change.description && <div className="text-xs text-gray-500">{change.description}</div>}
         </div>
 
         <div className="text-right">
-          <div className="text-xs text-gray-500">
-            {getTimeAgo(change.timestamp)}
-          </div>
+          <div className="text-xs text-gray-500">{getTimeAgo(change.timestamp)}</div>
           {(change.lines_added > 0 || change.lines_removed > 0) && (
             <div className="text-xs font-medium mt-1">
               <span className="text-green-600">+{change.lines_added}</span>
@@ -215,5 +244,5 @@ function FileChangeItem({ change }: FileChangeItemProps) {
         </div>
       </div>
     </div>
-  );
+  )
 }

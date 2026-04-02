@@ -1,10 +1,10 @@
 import type { RemoteProviderOptions, PromptEntry, PromptProvider } from './types'
 
 /**
- * 远程 HTTP 提示词提供者
- * 从远程 API 获取 prompt 内容
+ * Remote HTTP prompt provider
+ * Fetches prompt content from a remote API
  *
- * API 约定：
+ * API contract:
  *   GET {baseUrl}/prompts         → string[]          (list)
  *   GET {baseUrl}/prompts/{key}   → PromptEntry       (load)
  *   POST {baseUrl}/prompts/batch  → PromptEntry[]     (loadMany)

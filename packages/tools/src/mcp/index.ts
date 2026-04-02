@@ -1,17 +1,21 @@
 // @vitamin/tools MCP 模块入口
+// 迁移至 @vitamin/mcp，此处保留 re-export 以保持向后兼容
 
-export { McpClient, createMcpClient } from './mcp-client'
-export type { McpClientOptions } from './mcp-client'
-
-export { McpManager, createMcpManager } from './mcp-manager'
-export type { McpManagerOptions } from './mcp-manager'
-
-export { createMcpToolAdapter, createMcpToolAdapters } from './mcp-tool-adapter'
-
-export { StdioTransport, SseTransport, createStdioTransport, createSseTransport } from './transport'
-export type { McpTransport } from './transport'
+export {
+  McpClient,
+  createMcpClient,
+  McpManager,
+  createMcpManager,
+  createMcpToolAdapter,
+  createMcpToolAdapters,
+  StdioTransport,
+  SseTransport,
+} from '@vitamin/mcp'
 
 export type {
+  McpClientOptions,
+  McpManagerOptions,
+  McpTransport,
   McpServerConfig,
   McpToolDefinition,
   McpToolCallParams,
@@ -24,4 +28,4 @@ export type {
   McpJsonSchemaProperty,
   McpServerCapabilities,
   McpInitializeResult,
-} from './types'
+} from '@vitamin/mcp'

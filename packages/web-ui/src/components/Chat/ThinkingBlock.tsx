@@ -1,31 +1,31 @@
-import { useState, useRef, useEffect } from 'react';
+import { useEffect, useRef, useState } from 'react'
 
 interface ThinkingBlockProps {
-  content: string;
-  level?: string;
-  isActive?: boolean;
+  content: string
+  level?: string
+  isActive?: boolean
 }
 
 const LEVEL_COLORS: Record<string, string> = {
   Low: 'bg-emerald-500/15 text-emerald-400',
   Medium: 'bg-indigo-500/15 text-indigo-400',
   High: 'bg-purple-500/15 text-purple-400',
-};
+}
 
 export function ThinkingBlock({ content, level, isActive }: ThinkingBlockProps) {
-  const [isExpanded, setIsExpanded] = useState(false);
-  const contentRef = useRef<HTMLDivElement>(null);
-  const [contentHeight, setContentHeight] = useState(0);
+  const [isExpanded, setIsExpanded] = useState(false)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const [contentHeight, setContentHeight] = useState(0)
 
-  const isCritique = content.startsWith('[Critique]');
-  const accentColor = isCritique ? 'border-l-amber-500/70' : 'border-l-indigo-500/70';
-  const levelBadge = level && LEVEL_COLORS[level] ? level : null;
+  const isCritique = content.startsWith('[Critique]')
+  const accentColor = isCritique ? 'border-l-amber-500/70' : 'border-l-indigo-500/70'
+  const levelBadge = level && LEVEL_COLORS[level] ? level : null
 
   useEffect(() => {
     if (contentRef.current) {
-      setContentHeight(contentRef.current.scrollHeight);
+      setContentHeight(contentRef.current.scrollHeight)
     }
-  }, [content]);
+  }, [content])
 
   return (
     <div className="animate-slide-up">
@@ -56,7 +56,9 @@ export function ThinkingBlock({ content, level, isActive }: ThinkingBlockProps) 
 
           {/* Level badge */}
           {levelBadge && (
-            <span className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${LEVEL_COLORS[levelBadge]}`}>
+            <span
+              className={`text-[10px] font-medium px-1.5 py-0.5 rounded-full ${LEVEL_COLORS[levelBadge]}`}
+            >
               {levelBadge}
             </span>
           )}
@@ -97,5 +99,5 @@ export function ThinkingBlock({ content, level, isActive }: ThinkingBlockProps) 
         </div>
       </div>
     </div>
-  );
+  )
 }

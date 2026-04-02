@@ -26,6 +26,7 @@
     "@vitamin/env": "workspace:*",
     "@vitamin/hooks": "workspace:*",
     "@vitamin/invariant": "workspace:*",
+    "@vitamin/mcp": "workspace:*",
     "@vitamin/shared": "workspace:*",
     "chalk": "^5.6.2",
     "diff": "^8.0.4",

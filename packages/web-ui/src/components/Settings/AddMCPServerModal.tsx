@@ -5,24 +5,24 @@
  * Supports both manual form entry and JSON import.
  */
 
-import { useState } from 'react';
-import { XMarkIcon } from '@heroicons/react/24/outline';
-import type { MCPServerCreateRequest } from '../../types/mcp';
+import { XMarkIcon } from '@heroicons/react/24/outline'
+import { useState } from 'react'
+import type { MCPServerCreateRequest } from '../../types/mcp'
 
 interface AddMCPServerModalProps {
-  isOpen: boolean;
-  onClose: () => void;
-  onSubmit: (server: MCPServerCreateRequest) => Promise<void>;
+  isOpen: boolean
+  onClose: () => void
+  onSubmit: (server: MCPServerCreateRequest) => Promise<void>
 }
 
 interface FormData {
-  name: string;
-  command: string;
-  args: string[];
-  env: Record<string, string>;
-  enabled: boolean;
-  auto_start: boolean;
-  project_config: boolean;
+  name: string
+  command: string
+  args: string[]
+  env: Record<string, string>
+  enabled: boolean
+  auto_start: boolean
+  project_config: boolean
 }
 
 const initialFormData: FormData = {
@@ -33,38 +33,38 @@ const initialFormData: FormData = {
   enabled: true,
   auto_start: false,
   project_config: false,
-};
+}
 
-type InputMode = 'form' | 'json';
+type InputMode = 'form' | 'json'
 
 export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerModalProps) {
-  const [mode, setMode] = useState<InputMode>('form');
-  const [formData, setFormData] = useState<FormData>(initialFormData);
-  const [jsonInput, setJsonInput] = useState('');
-  const [isSubmitting, setIsSubmitting] = useState(false);
-  const [error, setError] = useState<string | null>(null);
+  const [mode, setMode] = useState<InputMode>('form')
+  const [formData, setFormData] = useState<FormData>(initialFormData)
+  const [jsonInput, setJsonInput] = useState('')
+  const [isSubmitting, setIsSubmitting] = useState(false)
+  const [error, setError] = useState<string | null>(null)
 
   // Args management
-  const [argInput, setArgInput] = useState('');
+  const [argInput, setArgInput] = useState('')
 
   // Env management
-  const [envKey, setEnvKey] = useState('');
-  const [envValue, setEnvValue] = useState('');
+  const [envKey, setEnvKey] = useState('')
+  const [envValue, setEnvValue] = useState('')
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   const parseJSON = () => {
     try {
-      const parsed = JSON.parse(jsonInput);
+      const parsed = JSON.parse(jsonInput)
 
       // Support Claude Code format: { "mcpServers": { "name": { config } } }
       if (parsed.mcpServers) {
-        const serverName = Object.keys(parsed.mcpServers)[0];
+        const serverName = Object.keys(parsed.mcpServers)[0]
         if (!serverName) {
-          setError('No server found in JSON');
-          return;
+          setError('No server found in JSON')
+          return
         }
-        const serverConfig = parsed.mcpServers[serverName];
+        const serverConfig = parsed.mcpServers[serverName]
         setFormData({
           name: serverName,
           command: serverConfig.command || '',
@@ -73,9 +73,9 @@ export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerMod
           enabled: serverConfig.enabled ?? true,
           auto_start: serverConfig.auto_start ?? false,
           project_config: false,
-        });
-        setMode('form');
-        setError(null);
+        })
+        setMode('form')
+        setError(null)
       }
       // Support direct server config format: { "command": "...", "args": [...] }
       else if (parsed.command) {
@@ -87,106 +87,106 @@ export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerMod
           enabled: parsed.enabled ?? true,
           auto_start: parsed.auto_start ?? false,
           project_config: parsed.project_config ?? false,
-        });
-        setMode('form');
-        setError(null);
+        })
+        setMode('form')
+        setError(null)
       } else {
-        setError('Invalid JSON format. Expected either Claude Code format or server config.');
+        setError('Invalid JSON format. Expected either Claude Code format or server config.')
       }
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Invalid JSON');
+      setError(err instanceof Error ? err.message : 'Invalid JSON')
     }
-  };
+  }
 
   const handleSubmit = async (e: React.FormEvent) => {
-    e.preventDefault();
-    setError(null);
+    e.preventDefault()
+    setError(null)
 
     // Validation
     if (!formData.name.trim()) {
-      setError('Server name is required');
-      return;
+      setError('Server name is required')
+      return
     }
 
     if (!formData.command.trim()) {
-      setError('Command is required');
-      return;
+      setError('Command is required')
+      return
     }
 
-    setIsSubmitting(true);
+    setIsSubmitting(true)
     try {
       await onSubmit({
         name: formData.name.trim(),
         command: formData.command.trim(),
-        args: formData.args.filter(arg => arg.trim()),
+        args: formData.args.filter((arg) => arg.trim()),
         env: formData.env,
         enabled: formData.enabled,
         auto_start: formData.auto_start,
         project_config: formData.project_config,
-      });
+      })
 
       // Reset form and close
-      setFormData(initialFormData);
-      setJsonInput('');
-      setArgInput('');
-      setEnvKey('');
-      setEnvValue('');
-      onClose();
+      setFormData(initialFormData)
+      setJsonInput('')
+      setArgInput('')
+      setEnvKey('')
+      setEnvValue('')
+      onClose()
     } catch (err) {
-      setError(err instanceof Error ? err.message : 'Failed to add server');
+      setError(err instanceof Error ? err.message : 'Failed to add server')
     } finally {
-      setIsSubmitting(false);
+      setIsSubmitting(false)
     }
-  };
+  }
 
   const handleClose = () => {
     if (!isSubmitting) {
-      setFormData(initialFormData);
-      setJsonInput('');
-      setArgInput('');
-      setEnvKey('');
-      setEnvValue('');
-      setError(null);
-      setMode('form');
-      onClose();
+      setFormData(initialFormData)
+      setJsonInput('')
+      setArgInput('')
+      setEnvKey('')
+      setEnvValue('')
+      setError(null)
+      setMode('form')
+      onClose()
     }
-  };
+  }
 
   const addArg = () => {
     if (argInput.trim()) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         args: [...prev.args, argInput.trim()],
-      }));
-      setArgInput('');
+      }))
+      setArgInput('')
     }
-  };
+  }
 
   const removeArg = (index: number) => {
-    setFormData(prev => ({
+    setFormData((prev) => ({
       ...prev,
       args: prev.args.filter((_, i) => i !== index),
-    }));
-  };
+    }))
+  }
 
   const addEnvVar = () => {
     if (envKey.trim() && envValue.trim()) {
-      setFormData(prev => ({
+      setFormData((prev) => ({
         ...prev,
         env: { ...prev.env, [envKey.trim()]: envValue.trim() },
-      }));
-      setEnvKey('');
-      setEnvValue('');
+      }))
+      setEnvKey('')
+      setEnvValue('')
     }
-  };
+  }
 
   const removeEnvVar = (key: string) => {
-    setFormData(prev => {
-      const newEnv = { ...prev.env };
-      delete newEnv[key];
-      return { ...prev, env: newEnv };
-    });
-  };
+    setFormData((prev) => {
+      const newEnv = { ...prev.env }
+      delete newEnv[key]
+      return { ...prev, env: newEnv }
+    })
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
@@ -258,7 +258,7 @@ export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerMod
               <TextField
                 label="Server Name"
                 value={formData.name}
-                onChange={(value) => setFormData(prev => ({ ...prev, name: value }))}
+                onChange={(value) => setFormData((prev) => ({ ...prev, name: value }))}
                 placeholder="e.g., github, filesystem"
                 required
                 disabled={isSubmitting}
@@ -267,7 +267,7 @@ export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerMod
               <TextField
                 label="Command"
                 value={formData.command}
-                onChange={(value) => setFormData(prev => ({ ...prev, command: value }))}
+                onChange={(value) => setFormData((prev) => ({ ...prev, command: value }))}
                 placeholder="e.g., npx -y @modelcontextprotocol/server-github"
                 required
                 disabled={isSubmitting}
@@ -296,21 +296,23 @@ export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerMod
               <CheckboxField
                 label="Enable auto-start on launch"
                 checked={formData.auto_start}
-                onChange={(checked) => setFormData(prev => ({ ...prev, auto_start: checked }))}
+                onChange={(checked) => setFormData((prev) => ({ ...prev, auto_start: checked }))}
                 disabled={isSubmitting}
               />
 
               <CheckboxField
                 label="Enable this server"
                 checked={formData.enabled}
-                onChange={(checked) => setFormData(prev => ({ ...prev, enabled: checked }))}
+                onChange={(checked) => setFormData((prev) => ({ ...prev, enabled: checked }))}
                 disabled={isSubmitting}
               />
 
               <CheckboxField
                 label="Save to project config (instead of global)"
                 checked={formData.project_config}
-                onChange={(checked) => setFormData(prev => ({ ...prev, project_config: checked }))}
+                onChange={(checked) =>
+                  setFormData((prev) => ({ ...prev, project_config: checked }))
+                }
                 disabled={isSubmitting}
               />
             </form>
@@ -327,7 +329,7 @@ export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerMod
         />
       </div>
     </div>
-  );
+  )
 }
 
 // ============================================================================
@@ -335,9 +337,9 @@ export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerMod
 // ============================================================================
 
 interface ModalHeaderProps {
-  title: string;
-  onClose: () => void;
-  disabled: boolean;
+  title: string
+  onClose: () => void
+  disabled: boolean
 }
 
 function ModalHeader({ title, onClose, disabled }: ModalHeaderProps) {
@@ -353,18 +355,24 @@ function ModalHeader({ title, onClose, disabled }: ModalHeaderProps) {
         <XMarkIcon className="w-5 h-5" />
       </button>
     </div>
-  );
+  )
 }
 
 interface ModalFooterProps {
-  onClose: () => void;
-  onSubmit: (e: React.FormEvent) => void;
-  isSubmitting: boolean;
-  submitLabel: string;
-  showSubmit?: boolean;
+  onClose: () => void
+  onSubmit: (e: React.FormEvent) => void
+  isSubmitting: boolean
+  submitLabel: string
+  showSubmit?: boolean
 }
 
-function ModalFooter({ onClose, onSubmit, isSubmitting, submitLabel, showSubmit = true }: ModalFooterProps) {
+function ModalFooter({
+  onClose,
+  onSubmit,
+  isSubmitting,
+  submitLabel,
+  showSubmit = true,
+}: ModalFooterProps) {
   return (
     <div className="flex items-center justify-end gap-3 px-6 py-4 border-t border-gray-200 bg-gray-50">
       <button
@@ -386,11 +394,11 @@ function ModalFooter({ onClose, onSubmit, isSubmitting, submitLabel, showSubmit 
         </button>
       )}
     </div>
-  );
+  )
 }
 
 interface ErrorMessageProps {
-  message: string;
+  message: string
 }
 
 function ErrorMessage({ message }: ErrorMessageProps) {
@@ -398,16 +406,16 @@ function ErrorMessage({ message }: ErrorMessageProps) {
     <div className="px-4 py-3 bg-red-50 border border-red-200 rounded-lg mb-4">
       <p className="text-sm text-red-800">{message}</p>
     </div>
-  );
+  )
 }
 
 interface TextFieldProps {
-  label: string;
-  value: string;
-  onChange: (value: string) => void;
-  placeholder?: string;
-  required?: boolean;
-  disabled?: boolean;
+  label: string
+  value: string
+  onChange: (value: string) => void
+  placeholder?: string
+  required?: boolean
+  disabled?: boolean
 }
 
 function TextField({ label, value, onChange, placeholder, required, disabled }: TextFieldProps) {
@@ -427,14 +435,14 @@ function TextField({ label, value, onChange, placeholder, required, disabled }: 
         className="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-gray-900 focus:border-transparent disabled:bg-gray-50 disabled:text-gray-500"
       />
     </div>
-  );
+  )
 }
 
 interface CheckboxFieldProps {
-  label: string;
-  checked: boolean;
-  onChange: (checked: boolean) => void;
-  disabled?: boolean;
+  label: string
+  checked: boolean
+  onChange: (checked: boolean) => void
+  disabled?: boolean
 }
 
 function CheckboxField({ label, checked, onChange, disabled }: CheckboxFieldProps) {
@@ -449,16 +457,16 @@ function CheckboxField({ label, checked, onChange, disabled }: CheckboxFieldProp
       />
       <span className="text-sm text-gray-700">{label}</span>
     </label>
-  );
+  )
 }
 
 interface ArgumentsListProps {
-  args: string[];
-  argInput: string;
-  onArgInputChange: (value: string) => void;
-  onAddArg: () => void;
-  onRemoveArg: (index: number) => void;
-  disabled?: boolean;
+  args: string[]
+  argInput: string
+  onArgInputChange: (value: string) => void
+  onAddArg: () => void
+  onRemoveArg: (index: number) => void
+  disabled?: boolean
 }
 
 function ArgumentsList({
@@ -512,18 +520,18 @@ function ArgumentsList({
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 interface EnvironmentVariablesProps {
-  env: Record<string, string>;
-  envKey: string;
-  envValue: string;
-  onEnvKeyChange: (value: string) => void;
-  onEnvValueChange: (value: string) => void;
-  onAddEnv: () => void;
-  onRemoveEnv: (key: string) => void;
-  disabled?: boolean;
+  env: Record<string, string>
+  envKey: string
+  envValue: string
+  onEnvKeyChange: (value: string) => void
+  onEnvValueChange: (value: string) => void
+  onAddEnv: () => void
+  onRemoveEnv: (key: string) => void
+  disabled?: boolean
 }
 
 function EnvironmentVariables({
@@ -592,5 +600,5 @@ function EnvironmentVariables({
         </div>
       </div>
     </div>
-  );
+  )
 }

@@ -1,30 +1,30 @@
 export interface Provider {
-  id: string;
-  name: string;
-  description: string;
-  models: Model[];
+  id: string
+  name: string
+  description: string
+  models: Model[]
 }
 
 export interface Model {
-  id: string;
-  name: string;
-  description: string;
+  id: string
+  name: string
+  description: string
 }
 
 export interface ModelSlotProps {
-  title: string;
-  description: string;
-  icon: React.ReactNode;
-  providers: Provider[];
-  selectedProvider: string;
-  selectedModel: string;
-  onProviderChange: (provider: string) => void;
-  onModelChange: (model: string) => void;
-  optional?: boolean;
-  notSetText?: string;
-  verifyStatus?: 'idle' | 'verifying' | 'success' | 'error';
-  verifyError?: string;
-  onVerify?: (provider: string, model: string) => void;
+  title: string
+  description: string
+  icon: React.ReactNode
+  providers: Provider[]
+  selectedProvider: string
+  selectedModel: string
+  onProviderChange: (provider: string) => void
+  onModelChange: (model: string) => void
+  optional?: boolean
+  notSetText?: string
+  verifyStatus?: 'idle' | 'verifying' | 'success' | 'error'
+  verifyError?: string
+  onVerify?: (provider: string, model: string) => void
 }
 
 export function ModelSlot({
@@ -37,13 +37,13 @@ export function ModelSlot({
   onProviderChange,
   onModelChange,
   optional = false,
-  notSetText = "Not configured",
+  notSetText = 'Not configured',
   verifyStatus = 'idle',
   verifyError,
-  onVerify
+  onVerify,
 }: ModelSlotProps) {
-  const currentProvider = providers.find(p => p.id === selectedProvider);
-  const availableModels = currentProvider?.models || [];
+  const currentProvider = providers.find((p) => p.id === selectedProvider)
+  const availableModels = currentProvider?.models || []
 
   return (
     <div className="border border-gray-200 rounded-lg p-4 bg-gradient-to-br from-white to-gray-50">
@@ -68,26 +68,22 @@ export function ModelSlot({
       {/* Provider Selection */}
       <div className="space-y-3">
         <div>
-          <label className="block text-xs font-medium text-gray-700 mb-1.5">
-            Provider
-          </label>
+          <label className="block text-xs font-medium text-gray-700 mb-1.5">Provider</label>
           <select
             value={selectedProvider || ''}
             onChange={(e) => {
-              const newProvider = e.target.value;
-              onProviderChange(newProvider);
+              const newProvider = e.target.value
+              onProviderChange(newProvider)
               // Reset model selection when provider changes
-              const provider = providers.find(p => p.id === newProvider);
+              const provider = providers.find((p) => p.id === newProvider)
               if (provider && provider.models.length > 0) {
-                onModelChange(provider.models[0].id);
+                onModelChange(provider.models[0].id)
               }
             }}
             className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
           >
-            {optional && (
-              <option value="">{notSetText}</option>
-            )}
-            {providers.map(provider => (
+            {optional && <option value="">{notSetText}</option>}
+            {providers.map((provider) => (
               <option key={provider.id} value={provider.id}>
                 {provider.name}
               </option>
@@ -98,24 +94,22 @@ export function ModelSlot({
         {/* Model Selection */}
         {selectedProvider && (
           <div>
-            <label className="block text-xs font-medium text-gray-700 mb-1.5">
-              Model
-            </label>
+            <label className="block text-xs font-medium text-gray-700 mb-1.5">Model</label>
             <select
               value={selectedModel || ''}
               onChange={(e) => onModelChange(e.target.value)}
               className="w-full px-3 py-2 text-sm border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500 focus:border-transparent bg-white"
               disabled={availableModels.length === 0}
             >
-              {availableModels.map(model => (
+              {availableModels.map((model) => (
                 <option key={model.id} value={model.id}>
                   {model.name}
                 </option>
               ))}
             </select>
-            {availableModels.find(m => m.id === selectedModel) && (
+            {availableModels.find((m) => m.id === selectedModel) && (
               <p className="mt-1.5 text-xs text-gray-500">
-                {availableModels.find(m => m.id === selectedModel)?.description}
+                {availableModels.find((m) => m.id === selectedModel)?.description}
               </p>
             )}
 
@@ -125,18 +119,45 @@ export function ModelSlot({
                 <div className="flex-1 pr-4">
                   {verifyStatus === 'success' && (
                     <div className="flex items-center gap-1.5 text-green-600">
-                      <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M5 13l4 4L19 7" /></svg>
+                      <svg
+                        className="w-4 h-4"
+                        fill="none"
+                        viewBox="0 0 24 24"
+                        stroke="currentColor"
+                      >
+                        <path
+                          strokeLinecap="round"
+                          strokeLinejoin="round"
+                          strokeWidth={2}
+                          d="M5 13l4 4L19 7"
+                        />
+                      </svg>
                       <span className="text-xs font-medium">Model verified successfully</span>
                     </div>
                   )}
                   {verifyStatus === 'error' && (
                     <div className="flex flex-col gap-0.5">
                       <div className="flex items-center gap-1.5 text-red-600">
-                        <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor"><path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z" /></svg>
+                        <svg
+                          className="w-4 h-4"
+                          fill="none"
+                          viewBox="0 0 24 24"
+                          stroke="currentColor"
+                        >
+                          <path
+                            strokeLinecap="round"
+                            strokeLinejoin="round"
+                            strokeWidth={2}
+                            d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                          />
+                        </svg>
                         <span className="text-xs font-medium">Verification failed</span>
                       </div>
                       {verifyError && (
-                        <span className="text-xs text-red-500 break-words line-clamp-2" title={verifyError}>
+                        <span
+                          className="text-xs text-red-500 break-words line-clamp-2"
+                          title={verifyError}
+                        >
                           {verifyError}
                         </span>
                       )}
@@ -166,5 +187,5 @@ export function ModelSlot({
         )}
       </div>
     </div>
-  );
+  )
 }

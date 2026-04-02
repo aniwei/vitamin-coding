@@ -50,7 +50,6 @@ export {
   injectPhaseContext,
   extractPhaseFromMessage,
   buildLessonInjection,
-  SESSION_END_LEARNING_PROMPT,
 } from '@vitamin/prompt'
 export type {
   PromptEntry,

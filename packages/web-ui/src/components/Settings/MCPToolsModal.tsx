@@ -5,60 +5,64 @@
  * Uses a master-detail pattern for optimal information architecture.
  */
 
-import { useState, useMemo, useEffect } from 'react';
-import { XMarkIcon, MagnifyingGlassIcon, ClipboardIcon, CheckIcon } from '@heroicons/react/24/outline';
-import { WrenchScrewdriverIcon } from '@heroicons/react/24/solid';
-import type { MCPTool } from '../../types/mcp';
+import {
+  CheckIcon,
+  ClipboardIcon,
+  MagnifyingGlassIcon,
+  XMarkIcon,
+} from '@heroicons/react/24/outline'
+import { WrenchScrewdriverIcon } from '@heroicons/react/24/solid'
+import { useEffect, useMemo, useState } from 'react'
+import type { MCPTool } from '../../types/mcp'
 
 interface MCPToolsModalProps {
-  isOpen: boolean;
-  serverName: string;
-  tools: MCPTool[];
-  onClose: () => void;
+  isOpen: boolean
+  serverName: string
+  tools: MCPTool[]
+  onClose: () => void
 }
 
 export function MCPToolsModal({ isOpen, serverName, tools, onClose }: MCPToolsModalProps) {
-  const [searchQuery, setSearchQuery] = useState('');
-  const [selectedTool, setSelectedTool] = useState<MCPTool | null>(null);
-  const [copiedText, setCopiedText] = useState<string | null>(null);
+  const [searchQuery, setSearchQuery] = useState('')
+  const [selectedTool, setSelectedTool] = useState<MCPTool | null>(null)
+  const [copiedText, setCopiedText] = useState<string | null>(null)
 
   // Reset state when modal opens or tools change
   useEffect(() => {
     if (isOpen) {
-      setSearchQuery('');
-      setSelectedTool(tools[0] || null);
-      setCopiedText(null);
+      setSearchQuery('')
+      setSelectedTool(tools[0] || null)
+      setCopiedText(null)
     }
-  }, [isOpen, tools]);
+  }, [isOpen, tools])
 
   // Filter tools based on search query
   const filteredTools = useMemo(() => {
-    if (!searchQuery.trim()) return tools;
+    if (!searchQuery.trim()) return tools
 
-    const query = searchQuery.toLowerCase();
+    const query = searchQuery.toLowerCase()
     return tools.filter(
-      tool =>
-        tool.name.toLowerCase().includes(query) ||
-        tool.description.toLowerCase().includes(query)
-    );
-  }, [tools, searchQuery]);
+      (tool) =>
+        tool.name.toLowerCase().includes(query) || tool.description.toLowerCase().includes(query),
+    )
+  }, [tools, searchQuery])
 
   // Auto-select first tool when filtered list changes
   useMemo(() => {
-    if (filteredTools.length > 0 && !filteredTools.find(t => t.name === selectedTool?.name)) {
-      setSelectedTool(filteredTools[0]);
+    if (filteredTools.length > 0 && !filteredTools.find((t) => t.name === selectedTool?.name)) {
+      setSelectedTool(filteredTools[0])
     } else if (filteredTools.length === 0) {
-      setSelectedTool(null);
+      setSelectedTool(null)
     }
-  }, [filteredTools, selectedTool]);
+  }, [filteredTools, selectedTool])
 
-  if (!isOpen) return null;
+  if (!isOpen) return null
 
   const copyToClipboard = (text: string) => {
-    navigator.clipboard.writeText(text);
-    setCopiedText(text);
-    setTimeout(() => setCopiedText(null), 2000);
-  };
+    navigator.clipboard.writeText(text)
+    setCopiedText(text)
+    setTimeout(() => setCopiedText(null), 2000)
+  }
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center bg-black/50 backdrop-blur-sm animate-fade-in">
@@ -66,9 +70,7 @@ export function MCPToolsModal({ isOpen, serverName, tools, onClose }: MCPToolsMo
         {/* Header */}
         <div className="flex items-center justify-between px-6 py-4 border-b border-gray-200 bg-gradient-to-r from-gray-50 to-white">
           <div>
-            <h2 className="text-xl font-semibold text-gray-900">
-              Tools from {serverName}
-            </h2>
+            <h2 className="text-xl font-semibold text-gray-900">Tools from {serverName}</h2>
             <p className="text-sm text-gray-500 mt-0.5">
               {filteredTools.length} {filteredTools.length === 1 ? 'tool' : 'tools'} available
             </p>
@@ -136,7 +138,7 @@ export function MCPToolsModal({ isOpen, serverName, tools, onClose }: MCPToolsMo
         </div>
       </div>
     </div>
-  );
+  )
 }
 
 // ============================================================================
@@ -144,7 +146,7 @@ export function MCPToolsModal({ isOpen, serverName, tools, onClose }: MCPToolsMo
 // ============================================================================
 
 interface EmptyStateProps {
-  searchQuery: string;
+  searchQuery: string
 }
 
 function EmptyState({ searchQuery }: EmptyStateProps) {
@@ -163,23 +165,21 @@ function EmptyState({ searchQuery }: EmptyStateProps) {
       <p className="text-sm text-gray-600 font-medium mb-1">
         {searchQuery ? 'No tools found' : 'No tools available'}
       </p>
-      {searchQuery && (
-        <p className="text-xs text-gray-500">
-          Try a different search term
-        </p>
-      )}
+      {searchQuery && <p className="text-xs text-gray-500">Try a different search term</p>}
     </div>
-  );
+  )
 }
 
 interface ToolListItemProps {
-  tool: MCPTool;
-  isSelected: boolean;
-  onClick: () => void;
+  tool: MCPTool
+  isSelected: boolean
+  onClick: () => void
 }
 
 function ToolListItem({ tool, isSelected, onClick }: ToolListItemProps) {
-  const paramCount = tool.inputSchema?.properties ? Object.keys(tool.inputSchema.properties).length : 0;
+  const paramCount = tool.inputSchema?.properties
+    ? Object.keys(tool.inputSchema.properties).length
+    : 0
 
   return (
     <button
@@ -191,18 +191,20 @@ function ToolListItem({ tool, isSelected, onClick }: ToolListItemProps) {
       }`}
     >
       <div className="flex items-start gap-2">
-        <WrenchScrewdriverIcon className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
-          isSelected ? 'text-gray-900' : 'text-gray-400'
-        }`} />
+        <WrenchScrewdriverIcon
+          className={`w-4 h-4 mt-0.5 flex-shrink-0 ${
+            isSelected ? 'text-gray-900' : 'text-gray-400'
+          }`}
+        />
         <div className="flex-1 min-w-0">
-          <h4 className={`text-sm font-medium truncate ${
-            isSelected ? 'text-gray-900' : 'text-gray-700'
-          }`}>
+          <h4
+            className={`text-sm font-medium truncate ${
+              isSelected ? 'text-gray-900' : 'text-gray-700'
+            }`}
+          >
             {tool.name}
           </h4>
-          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">
-            {tool.description}
-          </p>
+          <p className="text-xs text-gray-500 mt-0.5 line-clamp-2">{tool.description}</p>
           {paramCount > 0 && (
             <div className="mt-1.5">
               <span className="inline-flex items-center px-2 py-0.5 rounded text-xs font-medium bg-gray-100 text-gray-600">
@@ -213,21 +215,21 @@ function ToolListItem({ tool, isSelected, onClick }: ToolListItemProps) {
         </div>
       </div>
     </button>
-  );
+  )
 }
 
 interface ToolDetailsProps {
-  tool: MCPTool;
-  serverName: string;
-  copiedText: string | null;
-  onCopy: (text: string) => void;
+  tool: MCPTool
+  serverName: string
+  copiedText: string | null
+  onCopy: (text: string) => void
 }
 
 function ToolDetails({ tool, serverName, copiedText, onCopy }: ToolDetailsProps) {
-  const fullName = `mcp__${serverName}__${tool.name}`;
-  const properties = tool.inputSchema?.properties || {};
-  const required = tool.inputSchema?.required || [];
-  const hasParameters = Object.keys(properties).length > 0;
+  const fullName = `mcp__${serverName}__${tool.name}`
+  const properties = tool.inputSchema?.properties || {}
+  const required = tool.inputSchema?.required || []
+  const hasParameters = Object.keys(properties).length > 0
 
   return (
     <div className="p-6">
@@ -287,26 +289,26 @@ function ToolDetails({ tool, serverName, copiedText, onCopy }: ToolDetailsProps)
         )}
       </div>
     </div>
-  );
+  )
 }
 
 interface ParameterCardProps {
-  name: string;
-  schema: any;
-  isRequired: boolean;
+  name: string
+  schema: any
+  isRequired: boolean
 }
 
 function ParameterCard({ name, schema, isRequired }: ParameterCardProps) {
   const getTypeDisplay = (schema: any): string => {
     if (schema.enum) {
-      return `enum: ${schema.enum.join(' | ')}`;
+      return `enum: ${schema.enum.join(' | ')}`
     }
     if (schema.type === 'array') {
-      const itemType = schema.items?.type || 'any';
-      return `array<${itemType}>`;
+      const itemType = schema.items?.type || 'any'
+      return `array<${itemType}>`
     }
-    return schema.type || 'any';
-  };
+    return schema.type || 'any'
+  }
 
   return (
     <div className="bg-white border border-gray-200 rounded-lg p-4 hover:border-gray-300 transition-colors">
@@ -341,5 +343,5 @@ function ParameterCard({ name, schema, isRequired }: ParameterCardProps) {
         </div>
       )}
     </div>
-  );
+  )
 }

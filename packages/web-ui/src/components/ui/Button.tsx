@@ -1,18 +1,18 @@
-import React from 'react';
+import React from 'react'
 
 // Define ButtonVariant type
-type ButtonVariant = 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link';
+type ButtonVariant = 'default' | 'destructive' | 'outline' | 'secondary' | 'ghost' | 'link'
 
 // Define ButtonProps interface
 interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement> {
-  variant?: ButtonVariant;
+  variant?: ButtonVariant
 }
 
 const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
   ({ className, variant = 'default', ...props }, ref) => {
     // Base button styles
     const baseClasses =
-      'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50';
+      'inline-flex items-center justify-center rounded-md text-sm font-medium ring-offset-background transition-colors focus-visible:outline-none focus-visible:ring-2 focus-visible:ring-ring focus-visible:ring-offset-2 disabled:pointer-events-none disabled:opacity-50'
 
     // Variant-specific styles
     const variantClasses: Record<ButtonVariant, string> = {
@@ -22,14 +22,14 @@ const Button = React.forwardRef<HTMLButtonElement, ButtonProps>(
       secondary: 'bg-secondary text-secondary-foreground hover:bg-secondary/80',
       ghost: 'hover:bg-accent hover:text-accent-foreground',
       link: 'text-primary underline-offset-4 hover:underline',
-    };
+    }
 
-    const combinedClasses = `${baseClasses} ${variantClasses[variant]} ${className || ''}`;
+    const combinedClasses = `${baseClasses} ${variantClasses[variant]} ${className || ''}`
 
-    return <button className={combinedClasses} ref={ref} {...props} />;
-  }
-);
+    return <button className={combinedClasses} ref={ref} {...props} />
+  },
+)
 
-Button.displayName = 'Button';
+Button.displayName = 'Button'
 
-export { Button };
+export { Button }

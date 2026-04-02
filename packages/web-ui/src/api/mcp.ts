@@ -1,23 +1,16 @@
-/**
- * MCP API client for managing MCP servers.
- *
- * This module provides a clean interface to interact with MCP server endpoints,
- * following the Single Responsibility Principle by focusing solely on API communication.
- */
+// MCP 服务器管理 API 客户端
 
 import type {
-  MCPServersResponse,
-  MCPServerDetailed,
-  MCPServerCreateRequest,
-  MCPServerUpdateRequest,
   MCPApiResponse,
-} from '../types/mcp';
+  MCPServerCreateRequest,
+  MCPServerDetailed,
+  MCPServerUpdateRequest,
+  MCPServersResponse,
+} from '../types/mcp'
 
-const API_BASE = '/api';
+const API_BASE = '/api'
 
-/**
- * Helper function for making API requests
- */
+// 通用 API 请求辅助函数
 async function fetchAPI<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${url}`, {
     ...options,
@@ -25,92 +18,67 @@ async function fetchAPI<T>(url: string, options?: RequestInit): Promise<T> {
       'Content-Type': 'application/json',
       ...options?.headers,
     },
-  });
+  })
 
   if (!response.ok) {
-    const errorData = await response.json().catch(() => ({ message: response.statusText }));
-    throw new Error(errorData.message || `API error: ${response.statusText}`);
+    const errorData = await response.json().catch(() => ({ message: response.statusText }))
+    throw new Error(errorData.message || `API error: ${response.statusText}`)
   }
 
-  return response.json();
+  return response.json()
 }
 
-/**
- * List all configured MCP servers with their status.
- */
+// 列出所有已配置的 MCP 服务器及其状态
 export async function listMCPServers(): Promise<MCPServersResponse> {
-  return fetchAPI<MCPServersResponse>('/mcp/servers');
+  return fetchAPI<MCPServersResponse>('/mcp/servers')
 }
 
-/**
- * Get detailed information about a specific MCP server.
- */
+// 获取指定 MCP 服务器的详细信息
 export async function getMCPServer(name: string): Promise<MCPServerDetailed> {
-  return fetchAPI<MCPServerDetailed>(`/mcp/servers/${encodeURIComponent(name)}`);
+  return fetchAPI<MCPServerDetailed>(`/mcp/servers/${encodeURIComponent(name)}`)
 }
 
-/**
- * Connect to an MCP server.
- */
+// 连接到 MCP 服务器
 export async function connectMCPServer(name: string): Promise<MCPApiResponse> {
-  return fetchAPI<MCPApiResponse>(
-    `/mcp/servers/${encodeURIComponent(name)}/connect`,
-    { method: 'POST' }
-  );
+  return fetchAPI<MCPApiResponse>(`/mcp/servers/${encodeURIComponent(name)}/connect`, {
+    method: 'POST',
+  })
 }
 
-/**
- * Disconnect from an MCP server.
- */
+// 断开与 MCP 服务器的连接
 export async function disconnectMCPServer(name: string): Promise<MCPApiResponse> {
-  return fetchAPI<MCPApiResponse>(
-    `/mcp/servers/${encodeURIComponent(name)}/disconnect`,
-    { method: 'POST' }
-  );
+  return fetchAPI<MCPApiResponse>(`/mcp/servers/${encodeURIComponent(name)}/disconnect`, {
+    method: 'POST',
+  })
 }
 
-/**
- * Test connection to an MCP server.
- */
+// 测试 MCP 服务器连接
 export async function testMCPServer(name: string): Promise<MCPApiResponse> {
-  return fetchAPI<MCPApiResponse>(
-    `/mcp/servers/${encodeURIComponent(name)}/test`,
-    { method: 'POST' }
-  );
+  return fetchAPI<MCPApiResponse>(`/mcp/servers/${encodeURIComponent(name)}/test`, {
+    method: 'POST',
+  })
 }
 
-/**
- * Create a new MCP server configuration.
- */
+// 创建新的 MCP 服务器配置
 export async function createMCPServer(server: MCPServerCreateRequest): Promise<MCPApiResponse> {
   return fetchAPI<MCPApiResponse>('/mcp/servers', {
     method: 'POST',
     body: JSON.stringify(server),
-  });
+  })
 }
 
-/**
- * Update an existing MCP server configuration.
- */
+// 更新已有的 MCP 服务器配置
 export async function updateMCPServer(
   name: string,
-  update: MCPServerUpdateRequest
+  update: MCPServerUpdateRequest,
 ): Promise<MCPApiResponse> {
-  return fetchAPI<MCPApiResponse>(
-    `/mcp/servers/${encodeURIComponent(name)}`,
-    {
-      method: 'PUT',
-      body: JSON.stringify(update),
-    }
-  );
+  return fetchAPI<MCPApiResponse>(`/mcp/servers/${encodeURIComponent(name)}`, {
+    method: 'PUT',
+    body: JSON.stringify(update),
+  })
 }
 
-/**
- * Delete an MCP server configuration.
- */
+// 删除 MCP 服务器配置
 export async function deleteMCPServer(name: string): Promise<MCPApiResponse> {
-  return fetchAPI<MCPApiResponse>(
-    `/mcp/servers/${encodeURIComponent(name)}`,
-    { method: 'DELETE' }
-  );
+  return fetchAPI<MCPApiResponse>(`/mcp/servers/${encodeURIComponent(name)}`, { method: 'DELETE' })
 }

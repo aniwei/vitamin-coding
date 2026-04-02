@@ -1,10 +1,10 @@
-import { useState } from 'react';
-import { useParams, Link } from 'react-router-dom';
-import { FolderIcon, ArrowLeftIcon } from '@heroicons/react/24/outline';
-import { Breadcrumb } from '../Layout/Breadcrumb';
-import { WikiSidebar } from './WikiSidebar';
-import { DocumentationContent } from './DocumentationContent';
-import { Repository } from './RepositoryExplorer';
+import { ArrowLeftIcon, FolderIcon } from '@heroicons/react/24/outline'
+import { useState } from 'react'
+import { Link, useParams } from 'react-router-dom'
+import { Breadcrumb } from '../Layout/Breadcrumb'
+import { DocumentationContent } from './DocumentationContent'
+import type { Repository } from './RepositoryExplorer'
+import { WikiSidebar } from './WikiSidebar'
 
 // Mock function to get repository by name
 const getRepositoryByName = (name: string): Repository | null => {
@@ -13,13 +13,14 @@ const getRepositoryByName = (name: string): Repository | null => {
       id: '1',
       name: 'react',
       fullName: 'facebook/react',
-      description: 'A declarative, efficient, and flexible JavaScript library for building user interfaces.',
+      description:
+        'A declarative, efficient, and flexible JavaScript library for building user interfaces.',
       language: 'JavaScript',
       stars: 220000,
       lastIndexed: '2 hours ago',
       status: 'indexed',
       files: 3456,
-      docsFound: 234
+      docsFound: 234,
     },
     {
       id: '2',
@@ -32,7 +33,7 @@ const getRepositoryByName = (name: string): Repository | null => {
       status: 'indexed',
       files: 892,
       docsFound: 67,
-      localPath: '/Users/quocnghi/codes/swe-cli'
+      localPath: '/Users/quocnghi/codes/swe-cli',
     },
     {
       id: '3',
@@ -44,12 +45,12 @@ const getRepositoryByName = (name: string): Repository | null => {
       lastIndexed: '3 days ago',
       status: 'error',
       files: 2341,
-      docsFound: 0
-    }
-  ];
+      docsFound: 0,
+    },
+  ]
 
-  return mockRepositories.find(repo => repo.name === name) || null;
-};
+  return mockRepositories.find((repo) => repo.name === name) || null
+}
 
 // Mock wiki pages for the repository
 const mockWikiPages = [
@@ -81,7 +82,7 @@ This document provides a comprehensive overview of the repository architecture a
 - Context-aware processing`,
     relatedFiles: ['src/core/agent.py', 'src/web/server.py'],
     relatedPages: ['agent-system', 'api-reference'],
-    tags: ['architecture', 'overview', 'core']
+    tags: ['architecture', 'overview', 'core'],
   },
   {
     id: 'agent-system',
@@ -102,7 +103,7 @@ The agent system provides intelligent task execution through coordinated multi-a
 - **Research Agent**: Gathers information`,
     relatedFiles: ['src/agents/base.py', 'src/agents/code.py'],
     relatedPages: ['overview'],
-    tags: ['agents', 'architecture']
+    tags: ['agents', 'architecture'],
   },
   {
     id: 'api-reference',
@@ -124,23 +125,23 @@ The agent system provides intelligent task execution through coordinated multi-a
 - \`DELETE /api/sessions/:id\` - Delete session`,
     relatedFiles: ['src/web/routes/chat.py', 'src/web/routes/sessions.py'],
     relatedPages: ['overview'],
-    tags: ['api', 'reference', 'endpoints']
-  }
-];
+    tags: ['api', 'reference', 'endpoints'],
+  },
+]
 
 interface RepositoryDetailPageProps {
-  searchQuery?: string;
+  searchQuery?: string
 }
 
 export function RepositoryDetailPage({ searchQuery = '' }: RepositoryDetailPageProps) {
-  const { repoName } = useParams<{ repoName: string }>();
-  const repository = getRepositoryByName(repoName || '');
-  const [selectedPageId, setSelectedPageId] = useState<string | null>('overview');
+  const { repoName } = useParams<{ repoName: string }>()
+  const repository = getRepositoryByName(repoName || '')
+  const [selectedPageId, setSelectedPageId] = useState<string | null>('overview')
 
-  const selectedPage = mockWikiPages.find(page => page.id === selectedPageId);
+  const selectedPage = mockWikiPages.find((page) => page.id === selectedPageId)
 
   // TODO: Implement search functionality
-  void searchQuery;
+  void searchQuery
 
   if (!repository) {
     return (
@@ -160,17 +161,14 @@ export function RepositoryDetailPage({ searchQuery = '' }: RepositoryDetailPageP
           </Link>
         </div>
       </div>
-    );
+    )
   }
 
   // Build breadcrumb items
-  const breadcrumbItems = [
-    { label: 'CodeWiki', path: '/codewiki' },
-    { label: repository.name },
-  ];
+  const breadcrumbItems = [{ label: 'CodeWiki', path: '/codewiki' }, { label: repository.name }]
 
   if (selectedPage) {
-    breadcrumbItems.push({ label: selectedPage.title });
+    breadcrumbItems.push({ label: selectedPage.title })
   }
 
   return (
@@ -196,12 +194,14 @@ export function RepositoryDetailPage({ searchQuery = '' }: RepositoryDetailPageP
               <div className="text-center">
                 <FolderIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
                 <h3 className="text-lg font-medium text-gray-900 mb-2">Select a page</h3>
-                <p className="text-gray-600">Choose a wiki page from the sidebar to view its content</p>
+                <p className="text-gray-600">
+                  Choose a wiki page from the sidebar to view its content
+                </p>
               </div>
             </div>
           )}
         </main>
       </div>
     </div>
-  );
+  )
 }
