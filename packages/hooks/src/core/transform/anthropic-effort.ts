@@ -7,7 +7,7 @@ export function createAnthropicEffortHook(): HookRegistration<'chat.params'> {
     timing: 'chat.params',
     priority: 10,
     enabled: true,
-    handler(input: ChatParamsInput, output: ChatParamsOutput): void {
+    handle(input: ChatParamsInput, output: ChatParamsOutput): void {
       // 仅对 Anthropic 模型调整
       if (input.provider !== 'anthropic') return
 

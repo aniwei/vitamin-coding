@@ -13,7 +13,7 @@ describe('safeCreateHook', () => {
         timing: 'chat.message.before',
         priority: 10,
         enabled: true,
-        handler() {},
+        handle() {},
       }), { enabled: true })
 
       expect(hook).not.toBeNull()
@@ -31,7 +31,7 @@ describe('safeCreateHook', () => {
           timing: 'chat.message.before',
           priority: 10,
           enabled: true,
-          handler() {},
+          handle() {},
         }
       }, { enabled: false })
 

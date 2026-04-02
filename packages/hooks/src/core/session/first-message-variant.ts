@@ -7,7 +7,7 @@ export function createFirstMessageVariantHook(): HookRegistration<'chat.message.
     timing: 'chat.message.before',
     priority: 10,
     enabled: true,
-    handler(_input: ChatMessageInput, output: ChatMessageOutput): void {
+    handle(_input: ChatMessageInput, output: ChatMessageOutput): void {
       // 标记首条消息（用于下游 Hook 和 Agent 决策）
       if (_input.isFirstMessage) {
         output.metadata.isFirstMessage = true

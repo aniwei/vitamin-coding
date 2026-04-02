@@ -1,7 +1,5 @@
-// @vitamin/orchestrator — 任务执行器
-
 import type { HookRegistry } from '@vitamin/hooks'
-import type { TaskOutput } from './types'
+import type { TaskInput, TaskOutput } from './types'
 import type { TaskStore } from './task-store'
 import type { RetryPolicy, CircuitBreaker } from './retry'
 
@@ -9,6 +7,8 @@ export interface RunSessionOptions {
   prompt: string
   sessionId?: string
   sessionMode: 'ephemeral' | 'sticky'
+  agentName?: string
+  slot?: TaskInput['slot']
 }
 
 export interface RunSessionResult {
@@ -37,6 +37,7 @@ export class TaskExecutor {
     mode: 'sync' | 'background'
     sessionId?: string
     sessionMode?: 'ephemeral' | 'sticky'
+    slot?: TaskInput['slot']
   }): Promise<{
     success: boolean
     output?: string
@@ -71,9 +72,12 @@ export class TaskExecutor {
       sessionId: args.sessionId,
       sessionMode: args.sessionMode ?? 'ephemeral',
       mode: args.mode,
+      slot: args.slot,
     })
 
-    await this.hookRegistry.emit('task.created', { task: { ...task } as unknown as Record<string, unknown> })
+    await this.hookRegistry.emit('task.created', { 
+      task: { ...task } as unknown as Record<string, unknown> 
+    })
 
     // 后台模式：不等待完成
     if (args.mode === 'background') {
@@ -91,15 +95,16 @@ export class TaskExecutor {
   }
 
   async callAgent(
-    _agent: string,
+    agent: string,
     prompt: string,
-    options?: { sessionId?: string },
+    options?: { slot?: TaskInput['slot'] },
   ): Promise<{ success: boolean; output?: string; error?: string }> {
     try {
       const result = await this.runSession({
         prompt,
-        sessionId: options?.sessionId,
         sessionMode: 'ephemeral',
+        agentName: agent,
+        slot: options?.slot,
       })
 
       return { success: true, output: result.text }
@@ -134,6 +139,8 @@ export class TaskExecutor {
         prompt: task.input.prompt,
         sessionId: task.input.sessionId,
         sessionMode: task.sessionPolicy,
+        agentName: task.input.subagent,
+        slot: task.input.slot,
       })
 
       const output: TaskOutput = {
@@ -149,7 +156,7 @@ export class TaskExecutor {
         completedAt: Date.now(),
       })
 
-      this.circuitBreaker.recordSuccess()
+      this.circuitBreaker.success()
 
       await this.hookRegistry.emit('task.completed', {
         task: { ...task, status: 'completed', output } as unknown as Record<string, unknown>,
@@ -173,7 +180,7 @@ export class TaskExecutor {
         return this.executeTask(taskId)
       }
 
-      this.circuitBreaker.recordFailure()
+      this.circuitBreaker.failure()
 
       const taskError = {
         code: 'EXECUTION_FAILED',

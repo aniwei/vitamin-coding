@@ -19,26 +19,28 @@ const PROTECTED_PATTERNS = [
 const WRITE_TOOLS = new Set(['write', 'edit', 'edit-diff', 'bash'])
 
 export function createFileGuardHook(): HookRegistration<'tool.execute.before'> {
+  const handle = (input: ToolExecuteBeforeInput, output: ToolExecuteBeforeOutput): void => {
+    // 仅检查写入类工具
+    if (!WRITE_TOOLS.has(input.toolName)) return
+
+    const filePath = extractPath(input.args)
+    if (!filePath) return
+
+    for (const pattern of PROTECTED_PATTERNS) {
+      if (pattern.test(filePath)) {
+        output.cancelled = true
+        output.cancelReason = `File guard: write to protected path "${filePath}" is not allowed`
+        throw new ToolError(output.cancelReason, { code: 'HOOK_FILE_GUARD' })
+      }
+    }
+  }
+
   return {
     name: 'file-guard',
     timing: 'tool.execute.before',
     priority: 10,
     enabled: true,
-    handler(input: ToolExecuteBeforeInput, output: ToolExecuteBeforeOutput): void {
-      // 仅检查写入类工具
-      if (!WRITE_TOOLS.has(input.toolName)) return
-
-      const filePath = extractPath(input.args)
-      if (!filePath) return
-
-      for (const pattern of PROTECTED_PATTERNS) {
-        if (pattern.test(filePath)) {
-          output.cancelled = true
-          output.cancelReason = `File guard: write to protected path "${filePath}" is not allowed`
-          throw new ToolError(output.cancelReason, { code: 'HOOK_FILE_GUARD' })
-        }
-      }
-    },
+    handle,
   }
 }
 

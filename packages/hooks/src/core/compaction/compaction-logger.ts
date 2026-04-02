@@ -19,7 +19,7 @@ export function createCompactionLoggerHook(): HookRegistration<'compaction.befor
     timing: 'compaction.before',
     priority: 10,
     enabled: true,
-    handler(input: { sessionId: string; messageCount: number }): void {
+    handle(input: { sessionId: string; messageCount: number }): void {
       const stats = compactionStats.get(input.sessionId) ?? {
         compactionCount: 0,
         totalCompacted: 0,
@@ -46,7 +46,7 @@ export function createCompactionAfterHook(): HookRegistration<'compaction.after'
     timing: 'compaction.after',
     priority: 10,
     enabled: true,
-    handler(input: { sessionId: string; retainedCount: number }): void {
+    handle(input: { sessionId: string; retainedCount: number }): void {
       const stats = compactionStats.get(input.sessionId)
       if (stats) {
         const duration = Date.now() - stats.lastCompactionTime

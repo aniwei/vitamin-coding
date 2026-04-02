@@ -119,6 +119,9 @@ importers:
       '@vitamin/orchestrator':
         specifier: workspace:*
         version: link:../orchestrator
+      '@vitamin/prompt':
+        specifier: workspace:*
+        version: link:../prompt
       '@vitamin/resources':
         specifier: workspace:*
         version: link:../resources
@@ -223,6 +226,16 @@ importers:
       '@vitamin/env':
         specifier: workspace:*
         version: link:../env
+
+  packages/prompt:
+    dependencies:
+      '@vitamin/shared':
+        specifier: workspace:*
+        version: link:../shared
+    devDependencies:
+      '@types/node':
+        specifier: ^25.3.5
+        version: 25.3.5
 
   packages/resources:
     dependencies:

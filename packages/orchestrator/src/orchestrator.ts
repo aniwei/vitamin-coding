@@ -13,20 +13,13 @@ import type {
   CancelBackground,
 } from '@vitamin/tools'
 import type { OrchestratorOptions } from './types'
-import type { RunSessionOptions, RunSessionResult } from './executor'
 
 import { TaskStore } from './task-store'
 import { TaskExecutor } from './executor'
 import { BackgroundManager } from './background-manager'
 import { RetryPolicy, CircuitBreaker } from './retry'
 
-export interface OrchestratorDeps {
-  hookRegistry: HookRegistry
-  /** 由 VitaminApp 注入：创建子 session → prompt → 提取输出文本 */
-  runSession: (options: RunSessionOptions) => Promise<RunSessionResult>
-  /** 可选：外部 abort 回调 */
-  abortTask?: (taskId: string) => void
-}
+export type OrchestratorDeps = Pick<OrchestratorOptions, 'hookRegistry' | 'runSession' | 'abortTask'>
 
 export class Orchestrator {
   readonly taskStore: TaskStore
@@ -35,14 +28,19 @@ export class Orchestrator {
   private readonly hookRegistry: HookRegistry
   private readonly circuitBreaker: CircuitBreaker
 
-  constructor(deps: OrchestratorDeps, options: OrchestratorOptions = {}) {
-    const { hookRegistry, runSession, abortTask } = deps
-    const { workflowConfig, maxActiveTasks = 10 } = options
+  constructor(options: OrchestratorOptions) {
+    const {
+      hookRegistry,
+      runSession,
+      abortTask,
+      workflowConfig,
+      maxActiveTasks = 10,
+    } = options
 
     this.hookRegistry = hookRegistry
     this.taskStore = new TaskStore()
-    const retryPolicy = RetryPolicy.fromWorkflowConfig(workflowConfig)
-    this.circuitBreaker = CircuitBreaker.fromWorkflowConfig(workflowConfig)
+    const retryPolicy = RetryPolicy.fromWorkflowOptions(workflowConfig)
+    this.circuitBreaker = CircuitBreaker.fromWorkflowOptions(workflowConfig)
 
     this.executor = new TaskExecutor(
       this.taskStore,
@@ -50,10 +48,13 @@ export class Orchestrator {
       retryPolicy,
       this.circuitBreaker,
       runSession,
-      maxActiveTasks,
+      maxActiveTasks
     )
 
-    this.backgroundManager = new BackgroundManager(this.taskStore, abortTask)
+    this.backgroundManager = new BackgroundManager(
+      this.taskStore, 
+      abortTask
+    )
   }
 
   // ── 核心回调 ──
@@ -149,6 +150,7 @@ export class Orchestrator {
         mode: task.input.mode ?? 'sync',
         sessionId: task.input.sessionId,
         sessionMode: task.input.sessionMode,
+        slot: task.input.slot,
       })
       return { success: result.success, message: result.output ?? result.error ?? 'Retry completed' }
     }
@@ -166,13 +168,38 @@ export class Orchestrator {
     return this.backgroundManager.cancel(id)
   }
 
-  // ── Clarify（Phase 1: stub，后续实现 steering 注入） ──
+  // ── Clarify — 通过 lead agent 会话获取澄清答案 ──
 
-  clarifyRequest: ClarifyRequest = async (_args) => {
-    return {
-      success: false,
-      error: 'Clarify request is not yet implemented. The lead agent should handle clarification directly.',
-      escalation: 'lead_agent' as const,
+  clarifyRequest: ClarifyRequest = async (args) => {
+    const prompt = [
+      `A sub-agent working on task "${args.taskId}" needs clarification.`,
+      `Reason: ${args.reason ?? 'missing_context'}`,
+      `Question: ${args.question}`,
+      `Please provide a clear, concise answer to help the sub-agent continue its work.`,
+    ].join('\n')
+
+    try {
+      const result = await this.executor.callAgent('lead', prompt)
+
+      if (result.success && result.output) {
+        return {
+          success: true,
+          answer: result.output,
+        }
+      }
+
+      // 如果 lead agent 调用失败，回退到 escalation
+      return {
+        success: false,
+        error: result.error ?? 'Lead agent did not provide an answer.',
+        escalation: 'lead_agent' as const,
+      }
+    } catch (error) {
+      return {
+        success: false,
+        error: error instanceof Error ? error.message : String(error),
+        escalation: 'lead_agent' as const,
+      }
     }
   }
 

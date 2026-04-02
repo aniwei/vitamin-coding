@@ -38,7 +38,7 @@ export function createErrorRecoveryHook(
     timing: 'session.error',
     priority: 10,
     enabled: true,
-    handler(input: SessionEventInput & { error: Error }): void {
+    handle(input: SessionEventInput & { error: Error }): void {
       const { sessionId, error } = input
       const errorMessage = error.message
 

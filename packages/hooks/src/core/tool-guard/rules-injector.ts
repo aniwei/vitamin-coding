@@ -16,7 +16,7 @@ export function createRulesInjectorHook(projectRoot: string): HookRegistration<'
     timing: 'tool.execute.before',
     priority: 30,
     enabled: true,
-    async handler(input: ToolExecuteBeforeInput, output: ToolExecuteBeforeOutput): Promise<void> {
+    async handle(input: ToolExecuteBeforeInput, output: ToolExecuteBeforeOutput): Promise<void> {
       // 仅对写入类工具注入规则
       if (!INJECTION_TOOLS.has(input.toolName)) return
 

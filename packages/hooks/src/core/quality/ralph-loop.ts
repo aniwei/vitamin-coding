@@ -20,7 +20,7 @@ export function createRalphLoopHook(): HookRegistration<'tool.execute.after'> {
     timing: 'tool.execute.after',
     priority: 40,
     enabled: true,
-    handler(input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
+    handle(input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
       const sequence = sessionSequences.get(input.sessionId) ?? []
       sequence.push(input.toolName)
 

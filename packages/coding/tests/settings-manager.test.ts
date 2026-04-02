@@ -10,7 +10,7 @@ describe('SettingsManager', () => {
 
     expect(mgr.config).toBeDefined()
     expect(mgr.config.log_level).toBe('info')
-    expect(mgr.config.tool_preset).toBe('standard')
+    expect(mgr.config.tool_preset).toBe('full')
   })
 
   it('creates via factory function', async () => {

@@ -14,7 +14,7 @@ import { createToolErrorTrackerHook } from './core/tool-guard/tool-error-tracker
 import { createTokenBudgetHook } from './core/transform/token-budget'
 import { createBackgroundStartHook, createBackgroundEndHook } from './core/background/background-tracker'
 
-import type { HookHandler, HookInput, HookOutput, HookRegistration, HookTiming } from './types'
+import type { HookHandle, HookInput, HookOutput, HookRegistration, HookTiming } from './types'
 
 const logger = createLogger('@vitamin/hooks')
 
@@ -37,6 +37,7 @@ const HOOK_TIMINGS: HookTiming[] = [
   'background.end',
   'extension.loaded',
   'extension.error',
+  
   // orchestrator
   'task.created',
   'task.started',
@@ -86,6 +87,7 @@ function createHookBuckets(): Record<HookTiming, RuntimeHook[]> {
     'background.end': [],
     'extension.loaded': [],
     'extension.error': [],
+    
     // orchestrator
     'task.created': [],
     'task.started': [],
@@ -106,9 +108,6 @@ export interface HookRegistryOptions {
   preset?: HookPreset
 }
 
-/** @deprecated Use HookRegistryOptions instead */
-export type HookEngineOptions = HookRegistryOptions
-
 export class HookRegistry {
   private readonly hooks = createHookBuckets()
   private readonly disabled = new Set<string>()
@@ -119,18 +118,22 @@ export class HookRegistry {
     }
   }
 
-  // ── 注册 ──
-
   // 注册 Hook
   register<T extends HookTiming>(registration: HookRegistration<T>): void {
+    const handle = registration.handle
+    if (!handle) {
+      logger.warn(`Hook ${registration.name} skipped: missing handle`) 
+      return
+    }
+
     const run = (input: unknown, output: unknown): void | Promise<void> => {
-      const handler = registration.handler as HookHandler<T>
-      return handler(input as HookInput<T>, output as HookOutput<T>)
+      const runHandler = handle as HookHandle<T>
+      return runHandler(input as HookInput<T>, output as HookOutput<T>)
     }
 
     const emit = (input: unknown): void | Promise<void> => {
-      const handler = registration.handler as (input: HookInput<T>) => void | Promise<void>
-      return handler(input as HookInput<T>)
+      const emitHandler = handle as (input: HookInput<T>) => void | Promise<void>
+      return emitHandler(input as HookInput<T>)
     }
 
     const list = this.hooks[registration.timing]
@@ -157,10 +160,17 @@ export class HookRegistry {
   on<T extends HookTiming>(
     timing: T,
     name: string,
-    handler: HookHandler<T>,
+    handle: HookHandle<T>,
     priority = 50,
   ): this {
-    this.register({ name, timing, priority, enabled: true, handler })
+    this.register({ 
+      name, 
+      timing, 
+      priority, 
+      enabled: true, 
+      handle 
+    })
+
     return this
   }
 
@@ -286,17 +296,6 @@ function toHookInfo(hook: RuntimeHook): RegisteredHookInfo {
   }
 }
 
-export function createHookRegistry(options?: HookRegistryOptions): HookRegistry {
-  return new HookRegistry(options)
-}
-
-/** @deprecated Use HookRegistry instead */
-export const HookEngine = HookRegistry
-/** @deprecated Use createHookRegistry instead */
-export const createHookEngine = createHookRegistry
-
-// ── 预设 Hook 集合 ──
-
 function getPresetHooks(preset: HookPreset): HookRegistration[] {
   switch (preset) {
     case 'default':
@@ -341,4 +340,9 @@ function getMinimalPresetHooks(): HookRegistration[] {
     createFileGuardHook() as HookRegistration,
     createOutputTruncationHook() as HookRegistration,
   ]
+}
+
+
+export function createHookRegistry(options?: HookRegistryOptions): HookRegistry {
+  return new HookRegistry(options)
 }

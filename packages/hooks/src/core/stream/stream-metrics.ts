@@ -21,7 +21,7 @@ export function createStreamMetricsHook(): HookRegistration<'stream.start'> {
     timing: 'stream.start',
     priority: 10,
     enabled: true,
-    handler(input: { sessionId: string; model: string }): void {
+    handle(input: { sessionId: string; model: string }): void {
       sessionMetrics.set(input.sessionId, {
         startTime: Date.now(),
         model: input.model,
@@ -40,7 +40,7 @@ export function createStreamEndMetricsHook(): HookRegistration<'stream.end'> {
     timing: 'stream.end',
     priority: 10,
     enabled: true,
-    handler(input: { sessionId: string; model: string; stopReason: string }): void {
+    handle(input: { sessionId: string; model: string; stopReason: string }): void {
       const metrics = sessionMetrics.get(input.sessionId)
       if (metrics) {
         const duration = Date.now() - metrics.startTime

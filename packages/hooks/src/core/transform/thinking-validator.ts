@@ -7,7 +7,7 @@ export function createThinkingValidatorHook(): HookRegistration<'messages.transf
     timing: 'messages.transform',
     priority: 20,
     enabled: true,
-    handler(_input: MessagesTransformInput, output: MessagesTransformOutput): void {
+    handle(_input: MessagesTransformInput, output: MessagesTransformOutput): void {
       // 遍历消息，修复/移除无效的 thinking block
       output.messages = output.messages.map((msg) => {
         if (!isAssistantMessage(msg)) return msg

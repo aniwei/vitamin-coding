@@ -15,6 +15,7 @@ const DelegateTaskArgsSchema = z.object({
   mode: z.enum(['sync', 'background']).optional().default('sync').describe('Execution mode'),
   sessionId: z.string().optional().describe('Optional child session ID. When used with sticky mode, later calls can reuse the same child context.'),
   sessionMode: z.enum(['ephemeral', 'sticky']).optional().default('ephemeral').describe('Child session lifecycle. ephemeral deletes the child session after the task; sticky keeps it for later reuse.'),
+  slot: z.enum(['normal', 'thinking', 'compact', 'critique', 'vision']).optional().describe('Model slot to use for this task'),
 }).refine(
   (data) => {
     if (data.planId !== undefined) {
@@ -45,11 +46,12 @@ export type TaskDispatch = (args: {
   mode: 'sync' | 'background'
   sessionId?: string
   sessionMode?: 'ephemeral' | 'sticky'
+  slot?: 'normal' | 'thinking' | 'compact' | 'critique' | 'vision'
 }) => Promise<TaskDispatchResult>
 
 
 export function createTaskDelegate(
-  _projectRoot: string,
+  _workspaceDir: string,
   dispatch: TaskDispatch
 ): AgentTool<DelegateTaskArgs> {
   return {
@@ -72,6 +74,7 @@ export function createTaskDelegate(
         mode: params.mode,
         sessionId: params.sessionId,
         sessionMode: params.sessionMode,
+        slot: params.slot,
       })
 
       if (result.success) {

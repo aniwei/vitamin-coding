@@ -1,6 +1,3 @@
-// Phase Context Injection — system-prompt.transform hook
-// 根据 session metadata 注入阶段上下文到 system prompt
-
 export interface PhaseAnnotation {
   currentPhase: string
   phaseHistory: string[]

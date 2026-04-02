@@ -63,6 +63,38 @@ describe('TaskExecutor.dispatch', () => {
     expect(task!.output!.text).toBe('hello world')
   })
 
+  it('forwards subagent and slot to runSession', async () => {
+    const seen: RunSessionOptions[] = []
+    const { executor } = makeExecutor({
+      runSession: makeRunSession((opts) => {
+        seen.push(opts)
+        return {
+          text: 'reviewed',
+          sessionId: 'slot-sess',
+          durationMs: 25,
+        }
+      }),
+    })
+
+    const result = await executor.dispatch({
+      prompt: 'review this diff',
+      subagent: 'quality-reviewer',
+      slot: 'critique',
+      sessionId: 'child-review',
+      sessionMode: 'sticky',
+      mode: 'sync',
+    })
+
+    expect(result.success).toBe(true)
+    expect(seen).toEqual([{
+      prompt: 'review this diff',
+      sessionId: 'child-review',
+      sessionMode: 'sticky',
+      agentName: 'quality-reviewer',
+      slot: 'critique',
+    }])
+  })
+
   it('returns error when runSession throws', async () => {
     const { executor } = makeExecutor({
       runSession: makeRunSession(() => { throw new Error('session failed') }),
@@ -117,7 +149,7 @@ describe('TaskExecutor.dispatch', () => {
 
   it('rejects when circuit breaker is open', async () => {
     const cb = new CircuitBreaker({ enabled: true, failureThreshold: 1, resetTimeoutMs: 60_000 })
-    cb.recordFailure() // trip the breaker
+    cb.failure() // trip the breaker
 
     const { executor } = makeExecutor({ circuitBreaker: cb })
 
@@ -155,9 +187,9 @@ describe('TaskExecutor.dispatch', () => {
     const hookRegistry = new HookRegistry()
     const events: string[] = []
 
-    hookRegistry.register({ name: 'test-created', timing: 'task.created', priority: 0, enabled: true, handler: () => { events.push('created') } })
-    hookRegistry.register({ name: 'test-started', timing: 'task.started', priority: 0, enabled: true, handler: () => { events.push('started') } })
-    hookRegistry.register({ name: 'test-completed', timing: 'task.completed', priority: 0, enabled: true, handler: () => { events.push('completed') } })
+    hookRegistry.on('task.created', 'test-created', () => { events.push('created') }, 0)
+    hookRegistry.on('task.started', 'test-started', () => { events.push('started') }, 0)
+    hookRegistry.on('task.completed', 'test-completed', () => { events.push('completed') }, 0)
 
     const { executor } = makeExecutor({ hookRegistry })
 
@@ -180,6 +212,32 @@ describe('TaskExecutor.callAgent', () => {
     const result = await executor.callAgent('coder', 'write code', {})
     expect(result.success).toBe(true)
     expect(result.output).toBe('response to: write code')
+  })
+
+  it('uses an isolated ephemeral session and forwards agent name and slot', async () => {
+    const seen: RunSessionOptions[] = []
+    const { executor } = makeExecutor({
+      runSession: makeRunSession((opts) => {
+        seen.push(opts)
+        return {
+          text: 'done',
+          sessionId: 'agent-call-slot',
+          durationMs: 10,
+        }
+      }),
+    })
+
+    const result = await executor.callAgent('spec-reviewer', 'check against spec', {
+      slot: 'critique',
+    })
+
+    expect(result.success).toBe(true)
+    expect(seen).toEqual([{
+      prompt: 'check against spec',
+      sessionMode: 'ephemeral',
+      agentName: 'spec-reviewer',
+      slot: 'critique',
+    }])
   })
 
   it('returns error on failure', async () => {

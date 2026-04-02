@@ -24,7 +24,7 @@ export function createBackgroundStartHook(): HookRegistration<'background.start'
     timing: 'background.start',
     priority: 10,
     enabled: true,
-    handler(input: { taskId: string; agentName: string }): void {
+    handle(input: { taskId: string; agentName: string }): void {
       activeTasks.set(input.taskId, {
         taskId: input.taskId,
         agentName: input.agentName,
@@ -41,7 +41,7 @@ export function createBackgroundEndHook(): HookRegistration<'background.end'> {
     timing: 'background.end',
     priority: 10,
     enabled: true,
-    handler(input: { taskId: string; agentName: string; success: boolean }): void {
+    handle(input: { taskId: string; agentName: string; success: boolean }): void {
       const record = activeTasks.get(input.taskId)
       if (record) {
         record.endTime = Date.now()

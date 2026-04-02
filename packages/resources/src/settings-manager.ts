@@ -7,13 +7,19 @@ import type {
   SettingStore,
 } from '@vitamin/setting'
 import { 
+  createLogger,
   TypedEventEmitter, 
   type Events 
 } from '@vitamin/shared'
 import type { SettingWatcher } from '@vitamin/setting'
+import { resolve } from 'node:path'
+
+const logger = createLogger('@vitamin/resource:settings-manager')
 
 export interface SettingsOptions {
   workspaceDir?: string
+  projectConfigPath?: string
+  overrides?: Partial<VitaminSetting>
 }
 
 interface SettingsEvents extends Events {
@@ -27,6 +33,7 @@ export class SettingsManager extends TypedEventEmitter<SettingsEvents> {
 
   private readonly paths: string[]
   private readonly watch: boolean
+  private overrides: Partial<VitaminSetting>
 
   private store: SettingStore | undefined
   private setting: VitaminSetting = {} as VitaminSetting
@@ -35,6 +42,7 @@ export class SettingsManager extends TypedEventEmitter<SettingsEvents> {
     super()
     this.watch = false
     this.paths = buildSettingPaths(options)
+    this.overrides = { ...(options.overrides ?? {}) }
   }
 
   get<K extends keyof VitaminSetting>(key: K): VitaminSetting[K] {
@@ -62,7 +70,7 @@ export class SettingsManager extends TypedEventEmitter<SettingsEvents> {
   }
 
   async load(): Promise<VitaminSetting> {
-    const setting = await this.reload()
+    const setting = await this.reload(this.overrides)
 
     if (this.watch && this.paths.length > 0 && !this.watcher) {
       this.watching()
@@ -77,14 +85,23 @@ export class SettingsManager extends TypedEventEmitter<SettingsEvents> {
       paths: this.paths,
     })
 
-    this.setting = setting
-    this.emit('change', setting)
+    this.setting = {
+      ...setting,
+      ...overrides,
+    }
 
-    return setting
+    this.emit('change', this.setting)
+
+    return this.setting
   }
 
   async update(overrides: Partial<VitaminSetting>): Promise<VitaminSetting> {
-    return this.reload(overrides)
+    this.overrides = {
+      ...this.overrides,
+      ...overrides,
+    }
+
+    return this.reload(this.overrides)
   }
 
   private watching(): void {
@@ -94,7 +111,7 @@ export class SettingsManager extends TypedEventEmitter<SettingsEvents> {
     })
 
     this.watcher.on('error', () => {
-      // Errors are surfaced through the watcher; SettingsManager keeps last good snapshot.
+      logger.error('Settings watcher error, stopping watcher')
     })
   }
 
@@ -106,29 +123,21 @@ export class SettingsManager extends TypedEventEmitter<SettingsEvents> {
   }
 }
 
-export const createSettings = createSettingsManager
-
-function buildSettingPaths(options: SettingsOptions): string[] {
-  const paths: string[] = []
-
-  // 全局配置（低优先级）
-  // if (options.globalSettingPath) {
-  //   paths.push(options.globalSettingPath)
-  // }
-
-  // // 项目级配置（高优先级）
-  // if (options.projectSettingPath) {
-  //   paths.push(options.projectSettingPath)
-  // } else if (options.workspaceDir) {
-  //   paths.push(`${options.workspaceDir}/.vitamin/config.jsonc`)
-  // }
-
-  return paths
-}
-
 export function createSettingsManager(
-  options?: SettingsManagerOptions,
+  options: SettingsManagerOptions = {},
 ): Promise<SettingsManager> {
   const settings = new SettingsManager(options)
   return settings.load().then(() => settings)
+}
+
+function buildSettingPaths(options: SettingsOptions): string[] {
+  if (options.projectConfigPath) {
+    return [options.projectConfigPath]
+  }
+
+  if (options.workspaceDir) {
+    return [resolve(options.workspaceDir, '.vitamin/config.jsonc')]
+  }
+
+  return []
 }

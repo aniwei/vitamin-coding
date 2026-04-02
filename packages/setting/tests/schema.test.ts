@@ -1,117 +1,117 @@
 import { describe, expect, it } from 'vitest'
 import {
-  AgentConfigSchema,
-  CategoryConfigSchema,
-  LogLevelSchema,
-  VitaminSettingSchema,
-  VitaminSettingStrictSchema,
-} from '../src/schema/index'
+  BUILTIN_REVIEWER_AGENTS,
+  COMPACTION_STRATEGIES,
+  LOG_LEVELS,
+  TOOL_PRESETS,
+  VITAMIN_SETTING_KEYS,
+  WORKFLOW_SLOTS,
+} from '../src/types'
+import { loadSetting } from '../src/setting'
+import { createSettingStore } from '../src/store'
 
-describe('VitaminSettingSchema', () => {
-  describe('#given a valid config', () => {
-    it('#then parses successfully', () => {
-      const result = VitaminSettingSchema.safeParse({
-        config_version: '1.0.0',
-        log_level: 'debug',
-        model: 'claude-sonnet-4-6',
-        theme: 'dark',
-      })
-      expect(result.success).toBe(true)
+describe('setting schema literals', () => {
+  it('exposes expected log levels and tool presets', () => {
+    expect(LOG_LEVELS).toEqual(['trace', 'debug', 'info', 'warn', 'error', 'fatal'])
+    expect(TOOL_PRESETS).toEqual(['minimal', 'standard', 'full'])
+  })
+
+  it('exposes known workflow and compaction option sets', () => {
+    expect(WORKFLOW_SLOTS).toEqual([
+      'normal',
+      'thinking',
+      'compact',
+      'critique',
+      'vision',
+    ])
+    expect(COMPACTION_STRATEGIES).toEqual(['summary', 'sliding-window', 'incremental'])
+  })
+
+  it('keeps builtin reviewer agent presets', () => {
+    expect(BUILTIN_REVIEWER_AGENTS['spec-reviewer']).toMatchObject({
+      categories: ['review'],
+      default_workflow_slot: 'critique',
+    })
+    expect(BUILTIN_REVIEWER_AGENTS['quality-reviewer']).toMatchObject({
+      categories: ['review'],
+      default_workflow_slot: 'critique',
     })
   })
 
-  describe('#given an empty object', () => {
-    it('#then parses successfully (all fields optional)', () => {
-      const result = VitaminSettingSchema.safeParse({})
-      expect(result.success).toBe(true)
-    })
-  })
-
-  describe('#given an invalid log_level', () => {
-    it('#then fails validation', () => {
-      const result = VitaminSettingSchema.safeParse({
-        log_level: 'verbose',
-      })
-      expect(result.success).toBe(false)
-    })
-  })
-
-  describe('#given agents config', () => {
-    it('#then validates nested agent config', () => {
-      const result = VitaminSettingSchema.safeParse({
-        agents: {
-          sisyphus: {
-            model: 'claude-sonnet-4-6',
-            temperature: 0.5,
-          },
-        },
-      })
-      expect(result.success).toBe(true)
-    })
-  })
-
-  describe('#given invalid temperature', () => {
-    it('#then rejects temperature > 2', () => {
-      const result = AgentConfigSchema.safeParse({
-        temperature: 3.0,
-      })
-      expect(result.success).toBe(false)
-    })
+  it('lists stable top-level setting keys used by runtime validation', () => {
+    expect(VITAMIN_SETTING_KEYS).toContain('log_level')
+    expect(VITAMIN_SETTING_KEYS).toContain('tool_preset')
+    expect(VITAMIN_SETTING_KEYS).toContain('experimental')
+    expect(VITAMIN_SETTING_KEYS).not.toContain('mcp')
+    expect(VITAMIN_SETTING_KEYS).not.toContain('skills')
+    expect(VITAMIN_SETTING_KEYS).not.toContain('disabled_mcps')
+    expect(VITAMIN_SETTING_KEYS).not.toContain('disabled_skills')
   })
 })
 
-describe('VitaminSettingSchema passthrough', () => {
-  describe('#given config with unknown fields', () => {
-    it('#then preserves unknown fields via passthrough', () => {
-      const result = VitaminSettingSchema.safeParse({
-        log_level: 'info',
-        custom_plugin_field: 'hello',
-      })
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect(result.data.custom_plugin_field).toBe('hello')
-      }
+describe('setting validation without zod', () => {
+  it('drops invalid known fields and keeps defaults', async () => {
+    const store = createSettingStore({
+      type: 'memory',
+      initial: {
+        main: JSON.stringify({
+          log_level: 'verbose',
+          tool_preset: 'super',
+          disabled_tools: ['ok', 1],
+        }),
+      },
     })
+
+    const setting = await loadSetting({
+      store,
+      paths: ['main'],
+    })
+
+    expect(setting.log_level).toBe('info')
+    expect(setting.tool_preset).toBe('full')
+    expect(setting.disabled_tools).toEqual([])
   })
 
-  describe('#given strict schema with unknown fields', () => {
-    it('#then strict schema strips unknown fields', () => {
-      const result = VitaminSettingStrictSchema.safeParse({
-        log_level: 'info',
-        custom_plugin_field: 'hello',
-      })
-      expect(result.success).toBe(true)
-      if (result.success) {
-        expect('custom_plugin_field' in result.data).toBe(false)
-      }
+  it('keeps unknown fields as passthrough values', async () => {
+    const store = createSettingStore({
+      type: 'memory',
+      initial: {
+        main: JSON.stringify({
+          custom_plugin_field: 'hello',
+        }),
+      },
     })
-  })
-})
 
-describe('LogLevelSchema', () => {
-  describe('#given valid log levels', () => {
-    it('#then accepts all 6 levels', () => {
-      for (const level of ['trace', 'debug', 'info', 'warn', 'error', 'fatal']) {
-        expect(LogLevelSchema.safeParse(level).success).toBe(true)
-      }
+    const setting = await loadSetting({
+      store,
+      paths: ['main'],
     })
+
+    expect((setting as Record<string, unknown>).custom_plugin_field).toBe('hello')
   })
 
-  describe('#given invalid log level', () => {
-    it('#then rejects it', () => {
-      expect(LogLevelSchema.safeParse('verbose').success).toBe(false)
+  it('drops removed legacy mcp and skill fields', async () => {
+    const store = createSettingStore({
+      type: 'memory',
+      initial: {
+        main: JSON.stringify({
+          mcp: { servers: { local: { command: 'node' } } },
+          skills: { enabled: ['research'] },
+          disabled_mcps: ['legacy'],
+          disabled_skills: ['legacy-skill'],
+        }),
+      },
     })
-  })
-})
 
-describe('CategoryConfigSchema', () => {
-  describe('#given a valid category config', () => {
-    it('#then parses with preferred_models', () => {
-      const result = CategoryConfigSchema.safeParse({
-        preferred_models: ['claude-sonnet-4-6', 'gpt-4o'],
-        default_model: 'claude-sonnet-4-6',
-      })
-      expect(result.success).toBe(true)
+    const setting = await loadSetting({
+      store,
+      paths: ['main'],
     })
+
+    const runtime = setting as Record<string, unknown>
+    expect(runtime).not.toHaveProperty('mcp')
+    expect(runtime).not.toHaveProperty('skills')
+    expect(runtime).not.toHaveProperty('disabled_mcps')
+    expect(runtime).not.toHaveProperty('disabled_skills')
   })
 })

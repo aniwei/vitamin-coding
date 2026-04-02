@@ -12,7 +12,7 @@ export function createOutputTruncationHook(
     timing: 'tool.execute.after',
     priority: 10,
     enabled: true,
-    handler(_input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
+    handle(_input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
       const { content } = output.result
       let totalSize = 0
 

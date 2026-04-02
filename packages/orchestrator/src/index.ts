@@ -8,7 +8,7 @@ export type {
   TaskOutput,
   TaskError,
   OrchestratorOptions,
-  WorkflowConfig,
+  WorkflowOptions,
   FleetStrategy,
   FleetSpec,
   FleetMember,

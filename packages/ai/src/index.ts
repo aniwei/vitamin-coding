@@ -49,8 +49,8 @@ export { EventStream, createEventStream } from './event-stream'
 
 // 模型注册表
 export { ModelRegistry, createModelRegistry, createDefaultModelRegistry } from './model-registry'
-export { ModelSlotResolver, createModelSlotResolver } from './model-slot-resolver'
-export type { WorkflowSlot, ModelSlotConfig } from './model-slot-resolver'
+export { ModelSlot, createModelSlot } from './model-slot-resolver'
+export type { WorkflowSlot, ModelSlotOptions } from './model-slot-resolver'
 
 // Provider
 export { createCopilotProvider } from './provider/github-copilot'

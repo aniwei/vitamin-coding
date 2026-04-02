@@ -20,11 +20,6 @@ pnpm add @vitamin/hooks
 - `createHookRegistry(options?)`
 - `HookRegistry`
 
-兼容别名（已废弃）：
-
-- `createHookEngine`
-- `HookEngine`
-
 ## 3. 快速接入（最小可用）
 
 ```ts

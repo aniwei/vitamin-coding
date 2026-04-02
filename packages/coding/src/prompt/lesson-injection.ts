@@ -1,6 +1,3 @@
-// Lesson Injection — system-prompt.transform hook 注入相关历史经验
-// Session-end Learning — session.idle hook 触发经验提取 prompt
-
 export function buildLessonInjection(lessons: Array<{
   tags: string[]
   trigger: string

@@ -4,10 +4,22 @@ import {
   createInMemorySessionManager,
   createRemoteSessionManager,
 } from '@vitamin/session'
-import { createAgentWithRegistry, type AgentMessage, type AgentTool } from '@vitamin/agent'
-import { createDefaultProviderRegistry, type Model, type ProviderRegistry, type ThinkingLevel } from '@vitamin/ai'
-import { createHookRegistry, type HookRegistry } from '@vitamin/hooks'
-import { createLogger, type Logger } from '@vitamin/shared'
+import { 
+  createAgentWithRegistry, 
+  type AgentMessage, 
+  type AgentTool 
+} from '@vitamin/agent'
+import { 
+  type Model, 
+  type ProviderRegistry, 
+  type ThinkingLevel 
+} from '@vitamin/ai'
+import { 
+  type HookRegistry 
+} from '@vitamin/hooks'
+import { 
+  type Logger 
+} from '@vitamin/shared'
 
 import { AgentSession } from './agent-session'
 
@@ -26,14 +38,13 @@ export interface CodingSessionManagerOptions extends Omit<SessionManagerOptions<
   tools?: AgentTool[]
   thinkingLevel?: ThinkingLevel
   maxToolTurns?: number
-  hooks?: HookRegistry
-  hookRegistry?: HookRegistry
-  providerRegistry?: ProviderRegistry
-  workspaceDir?: string
+  hookRegistry: HookRegistry
+  providerRegistry: ProviderRegistry
+  workspaceDir: string
   maxSessions?: number
   idleTimeoutMs?: number
   threshold?: number
-  logger?: Logger
+  logger: Logger
   devtools?: Devtools
   promptRefresh?: PromptRefresh
 }
@@ -47,53 +58,52 @@ export interface RemoteSessionManagerOptions extends CodingSessionManagerOptions
 }
 
 export class CodingSessionManager {
-  static inMemory(options: CodingSessionManagerOptions = {}): CodingSessionManager {
-    return createInMemoryCodingSessionManager(options)
-  }
-
-  static disk(sessionDir: string, options: CodingSessionManagerOptions = {}): CodingSessionManager {
-    return createDiskCodingSessionManager({ ...options, sessionDir })
-  }
-
-  static remote(sessionUrl: string, options: CodingSessionManagerOptions = {}): CodingSessionManager {
-    return createRemoteCodingSessionManager({ ...options, sessionUrl })
-  }
-
   private readonly sessionManager: SessionManager<AgentMessage>
   private readonly agentSessions = new Map<string, AgentSession>()
+
+  private providerRegistry: ProviderRegistry
   private hookRegistry: HookRegistry
   private logger: Logger
   private devtools?: Devtools
 
   private model?: Model
   private tools: AgentTool[]
-  private thinkingLevel: ThinkingLevel
   private maxToolTurns: number
   private systemPrompt: string
-  private providerRegistry: ProviderRegistry
+  private thinkingLevel: ThinkingLevel
+  
   private workspaceDir: string
   private promptRefresh?: PromptRefresh
 
   constructor(
     sessionManager: SessionManager<AgentMessage>,
-    options: CodingSessionManagerOptions = {},
+    options: CodingSessionManagerOptions,
   ) {
-    const hookRegistry = options.hookRegistry ?? options.hooks ?? createHookRegistry({ preset: 'default' })
-    const logger = options.logger ?? createLogger('coding-session-manager', {
-      level: 'info',
-      destination: 'stdout',
-    })
+    const { 
+      model, 
+      systemPrompt, 
+      tools, 
+      thinkingLevel, 
+      maxToolTurns, 
+      providerRegistry, 
+      hookRegistry, 
+      logger, 
+      workspaceDir, 
+      promptRefresh 
+    } = options
 
-    this.model = options.model
+
+    this.model = model
+    this.systemPrompt = systemPrompt ?? ''
+    this.workspaceDir = workspaceDir
+    this.tools = tools ?? []
+    this.thinkingLevel = thinkingLevel ?? 'medium'
+    this.maxToolTurns = maxToolTurns ?? 25
+    this.promptRefresh = promptRefresh
+
     this.hookRegistry = hookRegistry
     this.sessionManager = sessionManager
-    this.systemPrompt = options.systemPrompt ?? ''
-    this.workspaceDir = options.workspaceDir ?? process.cwd()
-    this.providerRegistry = options.providerRegistry ?? createDefaultProviderRegistry()
-    this.tools = options.tools ?? []
-    this.thinkingLevel = options.thinkingLevel ?? 'medium'
-    this.maxToolTurns = options.maxToolTurns ?? 25
-    this.promptRefresh = options.promptRefresh
+    this.providerRegistry = providerRegistry
 
     this.logger = logger
     this.devtools = options.devtools
@@ -122,9 +132,18 @@ export class CodingSessionManager {
 
   private createManagedAgentSession(
     session: Session<AgentMessage>,
-    options: Required<Pick<AgentSessionOptions, 'model' | 'systemPrompt' | 'tools' | 'thinkingLevel' | 'maxToolTurns'>>,
+    options: Required<Pick<AgentSessionOptions, 'model' | 'systemPrompt' | 'tools' | 'thinkingLevel' | 'maxToolTurns'>>
+      & Pick<AgentSessionOptions, 'agentName' | 'workspaceDir'>,
   ): AgentSession {
-    const { model, systemPrompt, tools, thinkingLevel, maxToolTurns } = options
+    const {
+      model,
+      systemPrompt,
+      tools,
+      thinkingLevel,
+      maxToolTurns,
+      agentName,
+      workspaceDir,
+    } = options
 
     const agent = createAgentWithRegistry({
       model,
@@ -133,13 +152,14 @@ export class CodingSessionManager {
 
     return new AgentSession(session, agent, {
       model,
+      agentName,
       systemPrompt,
       tools,
       thinkingLevel,
       maxToolTurns,
       providerRegistry: this.providerRegistry,
       hookRegistry: this.hookRegistry,
-      workspaceDir: this.workspaceDir,
+      workspaceDir: workspaceDir ?? this.workspaceDir,
       devtools: this.devtools,
       logger: this.logger,
       promptRefresh: this.promptRefresh,
@@ -169,10 +189,12 @@ export class CodingSessionManager {
 
     const agentSession = this.createManagedAgentSession(session, {
       model,
+      agentName: options.agentName,
       systemPrompt,
       tools,
       thinkingLevel,
       maxToolTurns,
+      workspaceDir: options.workspaceDir,
     })
 
     this.agentSessions.set(session.id, agentSession)
@@ -235,10 +257,12 @@ export class CodingSessionManager {
 
     const agentSession = this.createManagedAgentSession(forked, {
       model,
+      agentName: source.agentName,
       systemPrompt: this.systemPrompt,
       tools: this.tools,
       thinkingLevel: this.thinkingLevel,
       maxToolTurns: this.maxToolTurns,
+      workspaceDir: source.workspaceDir,
     })
 
     this.agentSessions.set(forked.id, agentSession)
@@ -254,19 +278,17 @@ export class CodingSessionManager {
   }
 
   updateDefaults(options: Partial<CodingSessionManagerOptions>): void {
-    if (options.model !== undefined) this.model = options.model
-    if (options.systemPrompt !== undefined) this.systemPrompt = options.systemPrompt
-    if (options.tools !== undefined) this.tools = options.tools
-    if (options.thinkingLevel !== undefined) this.thinkingLevel = options.thinkingLevel
-    if (options.maxToolTurns !== undefined) this.maxToolTurns = options.maxToolTurns
-    if (options.providerRegistry !== undefined) this.providerRegistry = options.providerRegistry
-    if (options.workspaceDir !== undefined) this.workspaceDir = options.workspaceDir
-    if (options.promptRefresh !== undefined) this.promptRefresh = options.promptRefresh
-    if (options.devtools !== undefined) this.devtools = options.devtools
-    if (options.logger !== undefined) this.logger = options.logger
-    if (options.hookRegistry !== undefined || options.hooks !== undefined) {
-      this.hookRegistry = options.hookRegistry ?? options.hooks ?? this.hookRegistry
-    }
+    if (options.model) this.model = options.model
+    if (options.systemPrompt) this.systemPrompt = options.systemPrompt
+    if (options.tools) this.tools = options.tools
+    if (options.thinkingLevel) this.thinkingLevel = options.thinkingLevel
+    if (options.maxToolTurns) this.maxToolTurns = options.maxToolTurns
+    if (options.providerRegistry) this.providerRegistry = options.providerRegistry
+    if (options.workspaceDir) this.workspaceDir = options.workspaceDir
+    if (options.promptRefresh) this.promptRefresh = options.promptRefresh
+    if (options.devtools) this.devtools = options.devtools
+    if (options.logger) this.logger = options.logger
+    if (options.hookRegistry) this.hookRegistry = options.hookRegistry
   }
 
   async save(id: string): Promise<void> {
@@ -372,7 +394,7 @@ export function createRemoteCodingSessionManager(options: RemoteSessionManagerOp
 }
 
 export function createInMemoryCodingSessionManager(
-  options: CodingSessionManagerOptions = {},
+  options: CodingSessionManagerOptions,
 ): CodingSessionManager {
   const { maxSessions, idleTimeoutMs, threshold } = options
   const sm = createInMemorySessionManager<AgentMessage>({

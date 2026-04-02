@@ -1,7 +1,4 @@
-// @vitamin/orchestrator — 重试策略 + 熔断器
-// 配置来自 WorkflowConfig.retry / WorkflowConfig.circuit_breaker
-
-import type { WorkflowConfig } from './types'
+import type { WorkflowOptions } from './types'
 
 // ═══ RetryPolicy ═══
 
@@ -34,10 +31,14 @@ export class RetryPolicy {
     return this.config.backoffMs * (this.config.backoffMultiplier ** (attempt - 1))
   }
 
-  static fromWorkflowConfig(wf?: WorkflowConfig): RetryPolicy {
+  static fromWorkflowOptions(wf?: WorkflowOptions): RetryPolicy {
+    const retry = wf?.retry as
+      | { enabled?: boolean; backoffMs?: number; maxAttempts?: number }
+      | undefined
+
     return new RetryPolicy({
-      enabled: wf?.retry?.enabled ?? true,
-      maxAttempts: wf?.retry?.max_attempts ?? 3,
+      enabled: retry?.enabled ?? true,
+      maxAttempts: retry?.maxAttempts ?? 3,
     })
   }
 }
@@ -57,20 +58,26 @@ const DEFAULT_CIRCUIT_BREAKER: CircuitBreakerConfig = {
 }
 
 export class CircuitBreaker {
-  private readonly config: CircuitBreakerConfig
+  private readonly enabled: boolean
+  private readonly failureThreshold: number
+  private readonly resetTimeoutMs: number
   private consecutiveFailures = 0
   private openedAt: number | null = null
 
   constructor(config?: Partial<CircuitBreakerConfig>) {
-    this.config = { ...DEFAULT_CIRCUIT_BREAKER, ...config }
+    const resolvedConfig = { ...DEFAULT_CIRCUIT_BREAKER, ...config }
+
+    this.enabled = resolvedConfig.enabled
+    this.failureThreshold = resolvedConfig.failureThreshold
+    this.resetTimeoutMs = resolvedConfig.resetTimeoutMs
   }
 
   isOpen(): boolean {
-    if (!this.config.enabled) return false
+    if (!this.enabled) return false
     if (this.openedAt === null) return false
 
     // 半开：距上次打开超过 resetTimeoutMs 则自动尝试恢复
-    if (Date.now() - this.openedAt >= this.config.resetTimeoutMs) {
+    if (Date.now() - this.openedAt >= this.resetTimeoutMs) {
       this.openedAt = null
       this.consecutiveFailures = 0
       return false
@@ -79,14 +86,14 @@ export class CircuitBreaker {
     return true
   }
 
-  recordSuccess(): void {
+  success(): void {
     this.consecutiveFailures = 0
     this.openedAt = null
   }
 
-  recordFailure(): void {
+  failure(): void {
     this.consecutiveFailures++
-    if (this.consecutiveFailures >= this.config.failureThreshold) {
+    if (this.consecutiveFailures >= this.failureThreshold) {
       this.openedAt = Date.now()
     }
   }
@@ -96,11 +103,26 @@ export class CircuitBreaker {
     this.openedAt = null
   }
 
-  static fromWorkflowConfig(wf?: WorkflowConfig): CircuitBreaker {
+  static fromWorkflowOptions(wf?: WorkflowOptions): CircuitBreaker {
+    const circuitCamel = (wf as {
+      circuitBreaker?: {
+        enabled?: boolean
+        failureThreshold?: number
+        resetTimeoutMs?: number
+      }
+    } | undefined)?.circuitBreaker
+    const circuitSnake = (wf as {
+      circuitBreaker?: {
+        enabled?: boolean
+        failureThreshold?: number
+        timeoutMs?: number
+      }
+    } | undefined)?.circuitBreaker
+
     return new CircuitBreaker({
-      enabled: wf?.circuit_breaker?.enabled ?? true,
-      failureThreshold: wf?.circuit_breaker?.failure_threshold ?? 5,
-      resetTimeoutMs: wf?.circuit_breaker?.reset_timeout_ms ?? 60_000,
+      enabled: circuitCamel?.enabled ?? circuitSnake?.enabled ?? true,
+      failureThreshold: circuitCamel?.failureThreshold ?? circuitSnake?.failureThreshold ?? 5,
+      resetTimeoutMs: circuitCamel?.resetTimeoutMs ?? circuitSnake?.timeoutMs ?? 60_000,
     })
   }
 }

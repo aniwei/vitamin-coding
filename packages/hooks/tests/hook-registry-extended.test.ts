@@ -1,4 +1,4 @@
-// HookEngine + 新 Hook 测试
+// HookRegistry + 新 Hook 测试
 import { describe, expect, it } from 'vitest'
 
 import { HookRegistry, createHookRegistry } from '../src/hook-registry'
@@ -35,8 +35,8 @@ describe('HookRegistry', () => {
     it('#then registerAll registers multiple hooks', () => {
       const engine = createHookRegistry()
       engine.registerAll([
-        { name: 'h1', timing: 'chat.message.before', priority: 10, enabled: true, handler() {} },
-        { name: 'h2', timing: 'tool.execute.before', priority: 10, enabled: true, handler() {} },
+        { name: 'h1', timing: 'chat.message.before', priority: 10, enabled: true, handle() {} },
+        { name: 'h2', timing: 'tool.execute.before', priority: 10, enabled: true, handle() {} },
       ])
 
       expect(engine.getRegistered()).toHaveLength(2)

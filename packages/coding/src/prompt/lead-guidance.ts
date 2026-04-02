@@ -1,9 +1,7 @@
-// Lead Agent Prompt Guidance — 注入 system prompt 的引导文本模板
-
 export const PHASE_DISCIPLINE = `### Phase Discipline
 你在执行任务时应遵循以下阶段模型：
 **Clarify** → **Plan** → **Execute** → **Verify** → **Conclude**
-- **Clarify**: 理解需求，阅读相关代码，提出澄清问题。不要在此阶段修改文件。
+- **Clarify**: 理解需求，阅读相关文档和代码，提出澄清问题。不要在此阶段修改文件。
 - **Plan**: 制定方案（简单任务可内联规划，复杂任务使用 plan 工具）。
 - **Execute**: 实施变更，按计划逐步执行。
 - **Verify**: 自查变更是否正确，运行相关测试。
@@ -57,7 +55,7 @@ export const WORKFLOW_OVERVIEW = `### 工作流程引导
 export const FILE_STATE_GUIDANCE = `当你感知到对话已经很长、上下文可能遗漏了之前的文件变更时，
 可以调用 \`capture_file_state\` 工具刷新工作空间状态。`
 
-export const MODEL_SLOT_GUIDANCE = `当 dispatch 子任务时，你可以指定 workflowSlot：
+export const MODEL_SLOT_GUIDANCE = `当 dispatch 子任务时，你可以指定 slot：
 - normal: 常规执行
 - thinking: 深度推理
 - compact: 压缩摘要

@@ -168,7 +168,7 @@ export type HookOutput<T extends HookTiming> = HookPayloadMap[T]['output']
 // Hook 处理器签名
 
 // 有输出的 Hook (链式处理)
-export type HookHandler<T extends HookTiming> =
+export type HookHandle<T extends HookTiming> =
   HookOutput<T> extends void
     ? (input: HookInput<T>) => void | Promise<void>
     : (input: HookInput<T>, output: HookOutput<T>) => void | Promise<void>
@@ -179,5 +179,5 @@ export interface HookRegistration<T extends HookTiming = HookTiming> {
   timing: T
   priority: number
   enabled: boolean
-  handler: HookHandler<T>
+  handle?: HookHandle<T>
 }

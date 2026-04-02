@@ -4,14 +4,12 @@ import type { AgentTool, ToolResult } from '@vitamin/agent'
 const CallAgentArgsSchema = z.object({
   agent: z.string().describe('Agent name (e.g. "explore", "librarian")'),
   prompt: z.string().describe('Prompt to send to the Agent'),
-  mode: z.enum(['sync', 'async']).optional().default('sync').describe('Call mode, sync waits for result, async does not wait'),
-  sessionId: z.string().optional().describe('Optional session ID to maintain context across calls'),
+  slot: z.enum(['normal', 'thinking', 'compact', 'critique', 'vision']).optional().describe('Model slot to use for this synchronous isolated call'),
 })
 
 type CallAgentArgs = z.infer<typeof CallAgentArgsSchema>
 type CallAgentOptions = {
-  mode?: 'sync' | 'async'
-  sessionId?: string
+  slot?: 'normal' | 'thinking' | 'compact' | 'critique' | 'vision'
 }
 
 export type CallAgent = (
@@ -32,7 +30,7 @@ export function createAgentCall(
 
   return {
     name: 'agent_call',
-    description: 'Call a specific agent as an isolated collaborator for exploration, planning, or review. Use task_delegate for plan task execution and state updates.',
+    description: 'Call a specific agent synchronously as an isolated collaborator for exploration, planning, or review. Use task_delegate for background, stateful, or plan-task execution.',
     parameters: CallAgentArgsSchema,
     visibility: 'always',
 
@@ -42,8 +40,7 @@ export function createAgentCall(
       }
 
       const result = await call(params.agent, params.prompt, {
-        mode: params.mode ?? 'sync',
-        sessionId: params.sessionId,
+        slot: params.slot,
       })
       
       if (result.success) {

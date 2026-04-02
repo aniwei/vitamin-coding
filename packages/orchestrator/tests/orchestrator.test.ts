@@ -171,7 +171,8 @@ describe('Orchestrator', () => {
           sessionId: 's2',
           durationMs: 10,
         })),
-      }, { workflowConfig: { retry: { enabled: false } } })
+        workflowConfig: { retry: { enabled: false } },
+      })
 
       const { id } = await orch.createTask({ prompt: 'retry me' })
       await orch.taskStore.update(id!, {
@@ -206,13 +207,28 @@ describe('Orchestrator', () => {
   })
 
   describe('clarifyRequest', () => {
-    it('returns stub escalation', async () => {
+    it('routes clarification through lead agent', async () => {
       const orch = new Orchestrator({
         hookRegistry: new HookRegistry(),
-        runSession: makeRunSession(),
+        runSession: makeRunSession(() => ({
+          text: 'Use blue color for the header.',
+          sessionId: 's-clarify',
+          durationMs: 10,
+        })),
       })
 
-      const result = await orch.clarifyRequest({ question: 'what color?' })
+      const result = await orch.clarifyRequest({ taskId: 'task_1', question: 'what color?', reason: 'missing_context' })
+      expect(result.success).toBe(true)
+      expect(result.answer).toContain('blue')
+    })
+
+    it('escalates on runSession failure', async () => {
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: async () => { throw new Error('session failed') },
+      })
+
+      const result = await orch.clarifyRequest({ taskId: 'task_1', question: 'what color?' })
       expect(result.success).toBe(false)
       expect(result.escalation).toBe('lead_agent')
     })
@@ -227,7 +243,8 @@ describe('Orchestrator', () => {
           sessionId: 'sess-int',
           durationMs: 10,
         })),
-      }, { workflowConfig: { retry: { enabled: false } } })
+        workflowConfig: { retry: { enabled: false } },
+      })
 
       const result = await orch.dispatchTask({
         prompt: 'integration test',

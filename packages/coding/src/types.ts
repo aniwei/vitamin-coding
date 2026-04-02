@@ -4,6 +4,7 @@ import type { AuthStore, Model, ProviderRegistry } from '@vitamin/ai'
 import type { ModelRegistry } from '@vitamin/ai'
 import type { HookRegistry } from '@vitamin/hooks'
 import type { ToolRegistry } from '@vitamin/tools'
+import type { PromptProviderOptions } from '@vitamin/prompt'
 
 import type { ResourceManager } from '@vitamin/resources'
 import type { SettingsManager } from '@vitamin/resources'
@@ -45,6 +46,7 @@ export interface VitaminAppOptions {
   }
   
   model?: Model
+  modelId?: string
   modelRegistry?: ModelRegistry 
   tools?: AgentTool[]
   authStore?: AuthStore
@@ -52,9 +54,12 @@ export interface VitaminAppOptions {
   systemPrompt?: string
   hookRegistry?: HookRegistry
   workspaceDir?: string
+  projectConfigPath?: string
   sessionDir?: string
   sessionUrl?: string
   maxSessions?: number
   maxToolTurns?: number
   resourceManager?: ResourceManager
+  /** prompt 提供者配置，默认使用内置 prompts 目录 */
+  prompt?: PromptProviderOptions
 }

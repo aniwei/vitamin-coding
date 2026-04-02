@@ -108,10 +108,10 @@ describe('core hooks', () => {
         // file-guard throws ToolError — engine catches it
         await engine.execute('tool.execute.before', input, output)
         // 由于 engine 会 catch error，hook 的 throw 被吞掉
-        // 但我们可以直接测试 hook handler
+        // 但我们可以直接测试 hook handle
         const hook = createFileGuardHook()
         expect(() => {
-          hook.handler(input, output)
+          hook.handle(input, output)
         }).toThrow('File guard')
       })
     })
@@ -146,7 +146,7 @@ describe('core hooks', () => {
           sessionId: 's1',
         }
         const output = { args: { ...input.args }, cancelled: false }
-        expect(() => hook.handler(input, output)).toThrow('File guard')
+        expect(() => hook.handle(input, output)).toThrow('File guard')
       })
     })
   })
@@ -353,28 +353,28 @@ describe('core hooks', () => {
       // 注册所有 14 个核心 Hook
       engine.register(createFirstMessageVariantHook())
       engine.register(
-        { name: 'session-recovery', timing: 'chat.message.before', priority: 20, enabled: true, handler() {} },
+        { name: 'session-recovery', timing: 'chat.message.before', priority: 20, enabled: true, handle() {} },
       )
       engine.register(createKeywordDetectionHook())
       engine.register(
-        { name: 'session-history', timing: 'chat.message.before', priority: 40, enabled: true, handler() {} },
+        { name: 'session-history', timing: 'chat.message.before', priority: 40, enabled: true, handle() {} },
       )
       engine.register(createFileGuardHook())
       engine.register(createLabelTruncatorHook())
       engine.register(
-        { name: 'rules-injector', timing: 'tool.execute.before', priority: 30, enabled: true, handler() {} },
+        { name: 'rules-injector', timing: 'tool.execute.before', priority: 30, enabled: true, handle() {} },
       )
       engine.register(createOutputTruncationHook())
       engine.register(
-        { name: 'context-injector', timing: 'messages.transform', priority: 10, enabled: true, handler() {} },
+        { name: 'context-injector', timing: 'messages.transform', priority: 10, enabled: true, handle() {} },
       )
       engine.register(
-        { name: 'thinking-validator', timing: 'messages.transform', priority: 20, enabled: true, handler() {} },
+        { name: 'thinking-validator', timing: 'messages.transform', priority: 20, enabled: true, handle() {} },
       )
       engine.register(createAnthropicEffortHook())
       engine.register(createCommentCheckerHook())
       engine.register(
-        { name: 'babysitting', timing: 'tool.execute.after', priority: 30, enabled: true, handler() {} },
+        { name: 'babysitting', timing: 'tool.execute.after', priority: 30, enabled: true, handle() {} },
       )
       engine.register(createRalphLoopHook())
 

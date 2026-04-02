@@ -31,7 +31,7 @@ export function createTokenBudgetHook(
     timing: 'chat.params',
     priority: 20,
     enabled: true,
-    handler(input: ChatParamsInput, output: ChatParamsOutput): void {
+    handle(input: ChatParamsInput, output: ChatParamsOutput): void {
       const usageKey = input.sessionId ?? input.model
 
       // 如果 maxTokens 未设或超出预算，强制上限

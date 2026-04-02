@@ -33,6 +33,7 @@
     "@vitamin/invariant": "workspace:*",
     "@vitamin/memory": "workspace:*",
     "@vitamin/orchestrator": "workspace:*",
+    "@vitamin/prompt": "workspace:*",
     "@vitamin/resources": "workspace:*",
     "@vitamin/session": "workspace:*",
     "@vitamin/shared": "workspace:*",

@@ -57,6 +57,7 @@ export {
 export { 
   normalizePath, 
   createTempLoggerDir,
+  createTempLoggerPath,
   getVitaminHomeDir,
   getVitaminProjectDir,
   getThirdPartyToolDir,

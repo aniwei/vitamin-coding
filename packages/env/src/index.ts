@@ -82,6 +82,7 @@ export const MEMORY_LEGACY_TOOL_FILE_SEARCH = 'file_search'
 export const MEMORY_LEGACY_TOOL_WRITE_FILE = 'write_file'
 export const MEMORY_LEGACY_TOOL_EDIT_FILE = 'edit_file'
 export const MEMORY_LEGACY_TOOL_REPLACE_STRING_IN_FILE = 'replace_string_in_file'
+export const MEMORY_ARCHIVE_SNAPSHOT_VERSION = normalizeEnv(process.env['MEMORY_ARCHIVE_SNAPSHOT_VERSION'], 1)
 
 export const SETTING_OFFLINE_MODE_ENABLED = process.env['VITAMIN_OFFLINE'] === '1' || process.env['VITAMIN_OFFLINE']?.toLowerCase() === 'true' || process.env['VITAMIN_OFFLINE']?.toLowerCase() === 'yes'
 

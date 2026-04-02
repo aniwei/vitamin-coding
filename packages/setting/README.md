@@ -1,6 +1,6 @@
 # @vitamin/setting
 
-Zod v4 configuration schema, multi-layer merging, automatic migration, persistent storage (local/remote/memory/file/http), and file watcher for live reloading.
+Type-driven configuration definition, multi-layer merging, automatic migration, persistent storage (memory/file/http), and file watcher for live reloading.
 
 ## Installation
 
@@ -81,7 +81,7 @@ watcher.on('change', (cfg, path) => console.log('updated', path))
 | `VITAMIN_DEFAULT_CONFIG` | Built-in default configuration object |
 | `migrate`, `registerMigration` | Config version migration system |
 | `createSettingWatcher`, `SettingWatcher` | File watcher for live reload |
-| `VitaminSettingSchema` | Zod v4 validation schema |
+| `LOG_LEVELS`, `TOOL_PRESETS` | Built-in literal option sets |
 
 Compatibility aliases are still exported: `loadConfig`, `ConfigLoader`, `createConfigStore`, `ConfigStore`, `createConfigWatcher`, `ConfigWatcher`.
 
@@ -92,10 +92,8 @@ Compatibility aliases are still exported: `loadConfig`, `ConfigLoader`, `createC
 ## Merge Priority (low → high)
 
 1. `VITAMIN_DEFAULT_CONFIG` (built-in defaults)
-2. `extensionDefaults` (extension-provided)
-3. File layers from `configPaths` (ordered low → high)
-4. Environment variables (`VITAMIN_MODEL`, `VITAMIN_THEME`, `VITAMIN_LOG_LEVEL`)
-5. `overrides` (CLI-level, highest priority)
+2. File layers from `paths` (ordered low → high)
+3. Environment variables (`VITAMIN_MODEL`, `VITAMIN_THEME`, `VITAMIN_LOG_LEVEL`)
 
 `disabled_*` arrays are union-merged with deduplication; objects are deep-merged; other values are overwritten.
 

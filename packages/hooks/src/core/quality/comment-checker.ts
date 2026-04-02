@@ -17,7 +17,7 @@ export function createCommentCheckerHook(): HookRegistration<'tool.execute.after
     timing: 'tool.execute.after',
     priority: 20,
     enabled: true,
-    handler(input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
+    handle(input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
       // 仅检查写入类工具
       if (!WRITE_TOOLS.has(input.toolName)) return
 

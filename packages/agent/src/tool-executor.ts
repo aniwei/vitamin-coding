@@ -4,7 +4,7 @@ import type { ToolCall } from '@vitamin/ai'
 import type { Devtools } from '@vitamin/devtools'
 import type { AgentMessage, AgentTool, ToolResult } from './types'
 
-// Hook 执行接口 — 由外部注入（来自 @vitamin/hooks HookEngine）
+// Hook 执行接口 — 由外部注入（来自 @vitamin/hooks HookRegistry）
 export interface ToolHookExecutor {
   executeBeforeHooks(input: {
     toolName: string

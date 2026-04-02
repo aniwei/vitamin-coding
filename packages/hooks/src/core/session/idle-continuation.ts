@@ -19,7 +19,7 @@ export function createIdleContinuationHook(
     timing: 'session.idle',
     priority: 50,
     enabled: true,
-    handler(input: SessionEventInput): void {
+    handle(input: SessionEventInput): void {
       const { sessionId } = input
 
       if (config.hasPendingWork(sessionId)) {

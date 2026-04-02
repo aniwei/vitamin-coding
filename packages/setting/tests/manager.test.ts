@@ -2,6 +2,7 @@ import { afterEach, describe, expect, it } from 'vitest'
 
 import { loadSetting } from '../src/setting'
 import { registerMigration, resetMigrations } from '../src/migrator'
+import { createSettingStore } from '../src/store'
 
 describe('setting loading and migrations', () => {
   const originalEnv = { ...process.env }
@@ -11,14 +12,22 @@ describe('setting loading and migrations', () => {
     resetMigrations()
   })
 
-  it('merges disabled lists from defaults, env and overrides without duplicates', async () => {
+  it('merges disabled lists from defaults and store layers without duplicates', async () => {
+    const store = createSettingStore({
+      type: 'memory',
+      initial: {
+        shared: JSON.stringify({
+          disabled_tools: ['read', 'grep'],
+        }),
+        project: JSON.stringify({
+          disabled_tools: ['grep', 'write'],
+        }),
+      },
+    })
+
     const setting = await loadSetting({
-      extensionDefaults: {
-        disabled_tools: ['read', 'grep'],
-      },
-      overrides: {
-        disabled_tools: ['grep', 'write'],
-      },
+      store,
+      paths: ['shared', 'project'],
     })
 
     expect(setting.disabled_tools).toContain('read')

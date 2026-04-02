@@ -7,7 +7,7 @@ export function createSessionRecoveryHook(): HookRegistration<'chat.message.befo
     timing: 'chat.message.before',
     priority: 20,
     enabled: true,
-    handler(_input: ChatMessageInput, output: ChatMessageOutput): void {
+    handle(_input: ChatMessageInput, output: ChatMessageOutput): void {
       // 会话恢复时注入 metadata 标记
       if (_input.metadata.recovered === true) {
         output.metadata.sessionRecovered = true

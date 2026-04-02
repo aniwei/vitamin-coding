@@ -31,8 +31,6 @@ The module core is intentionally small:
 
 - `HookRegistry`
 - `createHookRegistry(options?)`
-- `HookEngine` (deprecated alias)
-- `createHookEngine` (deprecated alias)
 
 Core methods:
 
@@ -60,7 +58,7 @@ Core methods:
 - `HookTiming`: 28 lifecycle timings
 - `HookPayloadMap`: timing to `{ input, output }` mapping
 - `HookInput<T>` / `HookOutput<T>` generic extraction
-- `HookHandler<T>` typed handler signature
+- `HookHandle<T>` typed handler signature
 
 The registry relies on this contract to keep timing and payload alignment explicit at compile time.
 

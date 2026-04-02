@@ -32,7 +32,7 @@ export function createToolErrorTrackerHook(
     timing: 'tool.execute.after',
     priority: 15,
     enabled: true,
-    handler(input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
+    handle(input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
       const toolMap = sessionErrors.get(input.sessionId) ?? new Map<string, ToolErrorRecord>()
       sessionErrors.set(input.sessionId, toolMap)
 

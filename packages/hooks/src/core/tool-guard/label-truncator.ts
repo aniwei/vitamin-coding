@@ -9,7 +9,7 @@ export function createLabelTruncatorHook(): HookRegistration<'tool.execute.befor
     timing: 'tool.execute.before',
     priority: 20,
     enabled: true,
-    handler(_input: ToolExecuteBeforeInput, output: ToolExecuteBeforeOutput): void {
+    handle(_input: ToolExecuteBeforeInput, output: ToolExecuteBeforeOutput): void {
       // 截断参数中可能过长的描述性字段
       for (const key of ['label', 'description', 'title']) {
         const value = output.args[key]

@@ -169,21 +169,6 @@ describe('loadSetting with store', () => {
     expect(setting.model).toBe('cli-model')
   })
 
-  it('file layers override extensionDefaults', async () => {
-    const store = new InMemorySettingStore({
-      '/cfg.jsonc': '{ "theme": "dark" }',
-    })
-
-    const setting = await loadSetting({
-      store,
-      configPaths: ['/cfg.jsonc'],
-      extensionDefaults: { theme: 'light', model: 'ext-model' },
-    })
-
-    expect(setting.theme).toBe('dark')
-    expect(setting.model).toBe('ext-model')
-  })
-
   it('works without store (backward-compatible)', async () => {
     const setting = await loadSetting({
       overrides: { model: 'direct' },

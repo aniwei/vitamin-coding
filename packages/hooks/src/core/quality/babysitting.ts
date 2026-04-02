@@ -25,7 +25,7 @@ export function createBabysittingHook(): HookRegistration<'tool.execute.after'> 
     timing: 'tool.execute.after',
     priority: 30,
     enabled: true,
-    handler(input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
+    handle(input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
       const history = getHistory(input.sessionId)
 
       // 记录本次调用

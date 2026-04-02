@@ -1,50 +1,50 @@
-// ModelSlotResolver — WorkflowSlot → Model 配置驱动查表
 import type { Model, ModelSpec } from './types'
 import type { ModelRegistry } from './model-registry'
 
 export type WorkflowSlot = 'normal' | 'thinking' | 'compact' | 'critique' | 'vision'
 
-export interface ModelSlotConfig {
+export interface ModelSlotOptions {
   slots: Partial<Record<WorkflowSlot, ModelSpec | ModelSpec[]>>
   default: ModelSpec
 }
 
-export class ModelSlotResolver {
+export class ModelSlot {
+  public slots: Partial<Record<WorkflowSlot, ModelSpec | ModelSpec[]>>
+  public default: ModelSpec
+
   constructor(
-    private readonly config: ModelSlotConfig,
+    options: ModelSlotOptions,
     private readonly registry: ModelRegistry,
-  ) {}
+  ) {
+    this.slots = options.slots
+    this.default = options.default
+  }
 
   resolve(slot?: WorkflowSlot): Model {
     if (!slot) {
-      return this.registry.resolve(this.config.default)
+      return this.registry.resolve(this.default)
     }
 
-    const specOrSpecs = this.config.slots[slot]
+    const specOrSpecs = this.slots[slot]
     if (!specOrSpecs) {
-      return this.registry.resolve(this.config.default)
+      return this.registry.resolve(this.default)
     }
 
-    // Array: try each spec in order, return first resolvable
     if (Array.isArray(specOrSpecs)) {
       for (const spec of specOrSpecs) {
         const model = this.registry.tryResolve(spec)
         if (model) return model
       }
-      return this.registry.resolve(this.config.default)
+      return this.registry.resolve(this.default)
     }
 
     return this.registry.resolve(specOrSpecs)
   }
-
-  getConfig(): ModelSlotConfig {
-    return this.config
-  }
 }
 
-export function createModelSlotResolver(
-  config: ModelSlotConfig,
+export function createModelSlot(
+  options: ModelSlotOptions,
   registry: ModelRegistry,
-): ModelSlotResolver {
-  return new ModelSlotResolver(config, registry)
+): ModelSlot {
+  return new ModelSlot(options, registry)
 }

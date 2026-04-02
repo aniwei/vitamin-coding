@@ -30,32 +30,32 @@ describe('CircuitBreaker', () => {
 
   it('opens after reaching failure threshold', () => {
     const cb = new CircuitBreaker({ enabled: true, failureThreshold: 3, resetTimeoutMs: 60_000 })
-    cb.recordFailure()
-    cb.recordFailure()
+    cb.failure()
+    cb.failure()
     expect(cb.isOpen()).toBe(false)
-    cb.recordFailure()
+    cb.failure()
     expect(cb.isOpen()).toBe(true)
   })
 
   it('resets on success', () => {
     const cb = new CircuitBreaker({ enabled: true, failureThreshold: 2, resetTimeoutMs: 60_000 })
-    cb.recordFailure()
-    cb.recordFailure()
+    cb.failure()
+    cb.failure()
     expect(cb.isOpen()).toBe(true)
-    cb.recordSuccess()
+    cb.success()
     expect(cb.isOpen()).toBe(false)
   })
 
   it('stays closed when disabled', () => {
     const cb = new CircuitBreaker({ enabled: false, failureThreshold: 1 })
-    cb.recordFailure()
-    cb.recordFailure()
+    cb.failure()
+    cb.failure()
     expect(cb.isOpen()).toBe(false)
   })
 
   it('resets via reset()', () => {
     const cb = new CircuitBreaker({ enabled: true, failureThreshold: 1, resetTimeoutMs: 60_000 })
-    cb.recordFailure()
+    cb.failure()
     expect(cb.isOpen()).toBe(true)
     cb.reset()
     expect(cb.isOpen()).toBe(false)

@@ -1,5 +1,5 @@
 import type { AgentMessage, AgentTool, ToolCallEvent } from '@vitamin/agent'
-import type { Model, ProviderRegistry, ThinkingLevel } from '@vitamin/ai'
+import type { Model, ProviderRegistry, ThinkingLevel, WorkflowSlot } from '@vitamin/ai'
 import type { HookRegistry } from '@vitamin/hooks'
 import type { Logger } from '@vitamin/shared'
 import type { Devtools } from '@vitamin/devtools'
@@ -8,6 +8,8 @@ import type { SessionStore } from '@vitamin/session'
 export interface AgentSessionOptions {
   id?: string
   model: Model
+  agentName?: string
+  slot?: WorkflowSlot
   systemPrompt?: string
   tools?: AgentTool[]
   thinkingLevel?: ThinkingLevel

@@ -1,6 +1,3 @@
-// System Prompt Section Caching
-// 缓存不常变化的 prompt 段落，避免每次 prompt() 调用都重新计算
-
 export interface PromptSection {
   key: string
   content: string

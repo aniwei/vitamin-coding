@@ -3,6 +3,7 @@ import { invariant } from '@vitamin/invariant'
 import { createToolHookExecutor } from './hooks'
 import { calculate, type AssistantMessage } from '@vitamin/ai'
 import { createHookRegistry } from '@vitamin/hooks'
+import { createLogger, type Logger } from '@vitamin/shared'
 import type { Agent, AgentMessage } from '@vitamin/agent'
 import type { AgentTool } from '@vitamin/agent'
 import type { HookRegistry } from '@vitamin/hooks'
@@ -10,7 +11,6 @@ import type { Session } from '@vitamin/session'
 import type { Message, Model, ThinkingLevel, Usage } from '@vitamin/ai'
 import type { Devtools } from '@vitamin/devtools'
 import type { Events } from '@vitamin/shared'
-import { createLogger, type Logger } from '@vitamin/shared'
 import type { 
   AgentSessionOptions, 
   PromptRefresh, 
@@ -42,10 +42,10 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
   public promptRefresh?: PromptRefresh
 
   private logger: Logger
-  private devtools?: Devtools
   private hookRegistry: HookRegistry
+  private devtools?: Devtools
 
-  public get id(): string {
+  get id(): string {
     return this.session.id
   }
 
@@ -66,18 +66,20 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     this.session = session
     this.agent = agent
 
-    const hookRegistry = options.hookRegistry ??createHookRegistry({ preset: 'default' })
+    const hookRegistry = options.hookRegistry ?? createHookRegistry({ preset: 'default' })
     const logger = options.logger ?? createLogger(`agent-session:${session.id}`, {
       level: 'info',
       destination: 'stdout',
     })
+
     const promptRefresh = options.promptRefresh
     const systemPrompt = options.systemPrompt ?? ''
     const tools = options.tools ?? []
     const thinkingLevel = options.thinkingLevel ?? 'medium'
     const maxToolTurns = options.maxToolTurns ?? 25
     const workspaceDir = options.workspaceDir ?? process.cwd()
-    const { model, devtools } = options
+    
+    const { model, devtools, agentName } = options
 
     this.model = model
     this.tools = tools
@@ -85,7 +87,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     this.thinkingLevel = thinkingLevel
     this.maxToolTurns = maxToolTurns
     this.hookRegistry = hookRegistry
-    this.agentName = 'TODO' // TODO: agentName 应该从 options 传入，目前先 hardcode
+    this.agentName = agentName ?? 'agent' // TODO
     this.devtools = devtools
     this.logger = logger
     this.workspaceDir = workspaceDir
@@ -102,6 +104,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     this.ensureNotDisposed()
     
     if (this.isExecuting) {
+
       const { streamingBehavior } = options ?? {}
       if (streamingBehavior === 'followUp') {
         this.followUp(text)
@@ -112,6 +115,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
       }
     } else {
       this.emit('prompt_start', this.id, text)
+
       this.logger.info('Session %s prompt started', this.id)
 
       if (this.promptRefresh) {
@@ -130,6 +134,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
         messagesCount: this.session.messages().length,
         metadata: { sessionId: this.id, isFirstMessage: this.session.messages().length === 0 },
       })
+
       return true
     }, `Prompt before: ${this.id}`)
 
@@ -152,7 +157,11 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
       metadata: {},
     }
 
-    await this.hookRegistry.execute('chat.message.before', beforeInput, beforeOutput)
+    await this.hookRegistry.execute(
+      'chat.message.before', 
+      beforeInput, 
+      beforeOutput
+    )
 
     if (beforeOutput.cancelled) {
       this.emit('prompt_end', this.id)
@@ -211,13 +220,21 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     }, paramsOutput)
 
     // 订阅 Agent 流事件，桥接到 stream.start / stream.end hooks
-    const unsubStream = this.agent.on('stream_event', (...args: unknown[]) => {
+    const unsubStream = this.agent.on('stream_event', async (...args: unknown[]) => {
       const event = args[0] as { type: string; event: { type: string; reason?: string } }
       const se = event.event
       if (se.type === 'start') {
-        void this.hookRegistry.emit('stream.start', { sessionId: this.id, model: this.model.id })
+        await this.hookRegistry.emit('stream.start', { 
+          sessionId: this.id, 
+          model: this.model.id 
+        })
       } else if (se.type === 'done') {
-        void this.hookRegistry.emit('stream.end', { sessionId: this.id, model: this.model.id, stopReason: se.reason ?? 'end_turn' })
+        await this.hookRegistry.emit('stream.end', { 
+          sessionId: this.id, 
+          model: this.model.id, 
+          stopReason: 
+          se.reason ?? 'end_turn' 
+        })
       }
     })
 
@@ -304,6 +321,12 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
 
       this.emit('prompt_end', this.id)
       this.logger.info('Session %s prompt finished', this.id)
+
+      // 通知 session 进入空闲状态
+      await this.hookRegistry.emit('session.idle', {
+        sessionId: this.id,
+        metadata: {},
+      })
     } catch (error) {
       this.persistNewMessages(messages, messagesBefore)
       const err = error instanceof Error ? error : new Error(String(error))
@@ -386,6 +409,7 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
     }
 
     const cost = calculate(this.model, usage)
+
     this.logger.info(
       'Session %s usage input=%d output=%d cacheRead=%d cacheWrite=%d estimatedCost=$%s',
       this.id,
@@ -433,10 +457,11 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
 
   dispose(): void {
     if (this.disposed) return
+
     this.disposed = true
     this.agent.abort()
-
     this.emit('session_end', this.id)
+
     this.logger.info('Session %s disposed', this.id)
   }
 }

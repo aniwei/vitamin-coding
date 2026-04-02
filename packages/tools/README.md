@@ -40,7 +40,7 @@ Tool 注册与执行系统，包含 Skill 工具入口。
 
 1. **统一的工具注册表** — 管理 Agent 可调用的所有工具，支持分层预设（minimal / standard / full）
 2. **内置工具集** — 文件系统、Shell、搜索、编排，以及 Skill 相关工具入口
-3. **编排工具回调注入** — 9 个编排 + 2 个 Skill 工具本身是纯壳，实际逻辑由 `@vitamin/orchestrator` 通过 `toToolCallbacks()` 注入（见 [与 @vitamin/orchestrator 的关系](#与-vitaminorchestrator-的关系)）
+3. **编排与方法论回调注入** — `task_delegate`、`agent_call`、`task_*`、`background_*`、`clarify_request`、`write_todos`、`capture_file_state`、`learn`、`skill_*` 本身都是壳层，实际逻辑通过 `RegisterBuiltinOptions` 注入；其中 `@vitamin/orchestrator` 负责核心 task callbacks（见 [与 @vitamin/orchestrator 的关系](#与-vitaminorchestrator-的关系)）
 4. **Skill 工具入口** — 提供 `skill_load` / `skill_execute` 两个工具，实际加载与执行逻辑通过回调注入
 5. **Extension 扩展机制**（规划中）— 支持第三方通过 TypeScript 模块注册自定义工具、命令、事件钩子
 6. **二进制工具管理** — 自动下载并缓存外部 CLI 二进制（fd、rg 等），跨平台支持
@@ -94,13 +94,14 @@ Tool 注册与执行系统，包含 Skill 工具入口。
 │     │      │  回调注入 (registerBuiltinTools)                         │
 │     │      │  ┌──────────────────────────────────────────────┐       │
 │     │      └──┤ @vitamin/orchestrator                        │       │
-│     │         │   toToolCallbacks() 提供 11 个回调:           │       │
-│     │         │   AgentRegistry ──── callAgent               │       │
-│     │         │   Dispatcher ─────── dispatchTask / create /  │       │
-│     │         │                      get / list / update      │       │
-│     │         │   BackgroundManager  getOutput / cancel       │       │
-│     │         │   PlanLoader ──────── performWork             │       │
-│     │         │   compatibility ───── loadSkill / executeSkill│       │
+│     │         │   dispatchTask / callAgent                   │       │
+│     │         │   create / get / list / update task          │       │
+│     │         │   background output / cancel                 │       │
+│     │         │   clarifyRequest                             │       │
+│     │         ├──────────────────────────────────────────────┤       │
+│     │         │   host runtime                               │       │
+│     │         │   writeTodos / captureFileState / learn      │       │
+│     │         │   loadSkill / executeSkill / sessionManager  │       │
 │     │         └──────────────────────────────────────────────┘       │
 │     ▼                                                                │
 │  ┌──────────────┐  ┌──────────────┐                                  │
@@ -161,7 +162,6 @@ import { createToolRegistry } from '@vitamin/tools'
 
 const registry = createToolRegistry(projectRoot, {
   dispatchTask: async (args) => { /* ... */ },
-  performWork: async (name) => { /* ... */ },
   callAgent: async (agent, prompt) => { /* ... */ },
   loadSkill: async (path) => { /* ... */ },
   executeSkill: async (name, input, params) => { /* ... */ },
@@ -193,7 +193,7 @@ minimal ⊂ standard ⊂ full
 |------|---------|------|
 | `minimal` | 4 | 核心文件操作 + Shell，适合受限环境 |
 | `standard` | 8+6 | + 搜索/导航 + 任务委派 (+ 6 LSP 可选)，日常开发 |
-| `full` | 21+7 | + 多 Agent 编排 + 任务管理 + 后台控制 + 澄清通道 + Skill 系统 (+ LSP + Session Manager 可选)，完整能力 |
+| `full` | 20+7 | + 多 Agent 编排 + 任务管理 + 后台控制 + 方法论工具 + Skill 系统 (+ LSP + Session Manager 可选)，完整能力 |
 
 ### 内置工具一览
 
@@ -223,19 +223,20 @@ minimal ⊂ standard ⊂ full
 | `lsp_prepare_rename` | lsp | 验证重命名是否可行（需 `enableLsp: true`） |
 | `lsp_rename` | lsp | 执行符号重命名（需 `enableLsp: true`） |
 
-#### Full (+11, +1 Session Manager 可选)
+#### Full (+12, +1 Session Manager 可选)
 
 | 工具 | 分类 | 描述 |
 |------|------|------|
-| `agent_call` | orchestration | 调用指定 Agent，支持 sync（等待结果）/ async（后台执行）模式，可通过 sessionId 复用会话 |
-| `perform_work` | orchestration | 执行计划文件的下一个待定步骤（单次调用执行一步，调用方应循环推进），需配合 PlanFileStore |
-| `clarify_request` | orchestration | 向父任务/主代理请求补充说明，每个任务有次数限制（默认 3 次），需配合 ClarifyChannel |
-| `task_create` | orchestration | 创建任务并提交到 Dispatcher，返回 taskId |
+| `agent_call` | orchestration | 同步调用指定 Agent 作为隔离协作者，适合探索、规划或 review；长任务或需状态管理时应使用 `task_delegate` |
+| `task_create` | orchestration | 创建任务记录并返回 taskId |
 | `task_get` | orchestration | 按 ID 查询任务状态、输出和错误信息 |
 | `task_list` | orchestration | 列出任务列表，支持按状态筛选（all / pending / running / completed / error） |
 | `task_update` | orchestration | 更新任务：取消（cancel）或重试（retry） |
 | `background_output` | orchestration | 获取后台任务的当前状态和输出 |
 | `background_cancel` | orchestration | 取消正在运行的后台任务 |
+| `clarify_request` | orchestration | 向宿主/协调代理请求补充说明，具体路由由 `clarifyRequest` 回调决定 |
+| `capture_file_state` | orchestration | 捕获文件状态摘要，具体持久化与格式由宿主回调决定 |
+| `learn` | orchestration | 写入运行学习条目，具体存储由宿主回调决定 |
 | `skill_load` | skill | 调用外部注入的 Skill 加载回调 |
 | `skill_execute` | skill | 调用外部注入的 Skill 执行回调 |
 | `session_manager` | session | 会话管理（列出/创建/删除/压缩），需注入 `sessionManager` 回调 |
@@ -249,54 +250,70 @@ minimal ⊂ standard ⊂ full
 
 ### 与 @vitamin/orchestrator 的关系
 
-编排工具（10 个）和 Skill 工具（2 个）和澄清工具（1 个）本身是纯壳，实际逻辑通过 `RegisterBuiltinOptions` 的回调注入。`@vitamin/orchestrator` 提供了这些回调的完整实现：
+`registerBuiltinTools()` 需要一组宿主回调。当前这些回调分成两类：
+
+- `@vitamin/orchestrator` 提供核心 task callbacks。
+- 更高层 runtime 提供方法论、Skill 和 session callbacks。
 
 **回调注入映射：**
 
 | 回调 | 必填 | orchestrator 来源 | 说明 |
 |------|------|------------------|------|
-| `dispatchTask` | ✅ | `Dispatcher.dispatch()` | 任务委派，sync/background 两种模式 |
-| `callAgent` | ✅ | `AgentRegistry.call()` | 调用指定 Agent，支持 sessionId 复用 |
-| `performWork` | ✅ | `PlanLoader` + `Dispatcher` | 按 Markdown 计划文件逐步执行，需 `planFileStore` |
-| `loadSkill` | ✅ | `toToolCallbacks().loadSkill()` | orchestrator 默认仅返回兼容占位错误 |
-| `executeSkill` | ✅ | `toToolCallbacks().executeSkill()` | 同上 |
-| `createTask` | ❌ | `Dispatcher.create()` | 可选；未注入时工具返回 "not available" |
-| `getTask` | ❌ | `Dispatcher.get()` → 映射 | 返回 tool-friendly 扁平结构 |
-| `listTasks` | ❌ | `Dispatcher.list()` | 支持按状态筛选 |
-| `updateTask` | ❌ | `Dispatcher.update()` | cancel / retry 两种操作 |
+| `dispatchTask` | ✅ | `Orchestrator.dispatchTask` | 任务委派，sync/background 两种模式 |
+| `callAgent` | ✅ | `Orchestrator.callAgent` | 通过宿主 `runSession()` 调用指定 agent |
+| `createTask` | ❌ | `Orchestrator.createTask` | 创建任务记录并返回 taskId |
+| `getTask` | ❌ | `Orchestrator.getTask` | 返回 tool-friendly 扁平结构 |
+| `listTasks` | ❌ | `Orchestrator.listTasks` | 支持按状态筛选 |
+| `updateTask` | ❌ | `Orchestrator.updateTask` | cancel / retry 两种操作 |
 | `getBackgroundOutput` | ❌ | `BackgroundManager.getOutput()` | 后台任务轮询 |
 | `cancelBackground` | ❌ | `BackgroundManager.cancel()` | 协作式取消 |
-| `clarifyRequest` | ❌ | `ClarifyChannel.request()` | 可选；需在 OrchestratorOptions 中注入 `clarifyChannel` |
+| `clarifyRequest` | ❌ | `Orchestrator.clarifyRequest` | 当前默认转发给 `lead` agent |
+| `writeTodos` | ✅ | host runtime | 方法论待办写入，不属于 orchestrator |
+| `captureFileState` | ❌ | host runtime | 文件状态快照，不属于 orchestrator |
+| `learn` | ❌ | host runtime | 运行学习沉淀，不属于 orchestrator |
+| `loadSkill` | ✅ | host runtime | Skill runtime 注入 |
+| `executeSkill` | ✅ | host runtime | Skill runtime 注入 |
+| `sessionManager` | ❌ | host runtime | 会话管理工具注入 |
 
 **典型接线方式：**
 
 ```typescript
-import { createOrchestrator } from '@vitamin/orchestrator'
-import { createClarifyChannel } from '@vitamin/orchestrator'
+import { HookRegistry } from '@vitamin/hooks'
+import { Orchestrator } from '@vitamin/orchestrator'
 import { registerBuiltinTools } from '@vitamin/tools'
 
-const orchestrator = createOrchestrator({
-  sessionFactory,
-  toolRegistry,
-  hooks,
-  planFileStore,     // 可选，performWork 需要
-  clarifyChannel: createClarifyChannel({
-    handler: async (req) => {
-      // 实现澄清逻辑：转发给 lead agent / 用户 / planner
-      return { answer: '...' }
-    },
-  }),  // 可选，clarify_request 工具需要
+const orchestrator = new Orchestrator({
+  hookRegistry: new HookRegistry(),
+  runSession: async ({ prompt, sessionId, sessionMode, agentName, slot }) => {
+    // 桥接到宿主自己的 session runtime。
+    return {
+      text: `handled by ${agentName ?? 'default'}: ${prompt}`,
+      sessionId: sessionId ?? crypto.randomUUID(),
+      durationMs: 50,
+    }
+  },
 })
 
-// orchestrator.toToolCallbacks() 返回全部 12 个回调
 registerBuiltinTools(toolRegistry, projectRoot, {
-  ...orchestrator.toToolCallbacks(),
-  enableLsp: true,                   // opt-in: 注册 6 个 LSP 工具
-  sessionManager: mySessionManager,  // opt-in: 注册 session_manager 工具
+  dispatchTask: orchestrator.dispatchTask,
+  callAgent: orchestrator.callAgent,
+  createTask: orchestrator.createTask,
+  getTask: orchestrator.getTask,
+  listTasks: orchestrator.listTasks,
+  updateTask: orchestrator.updateTask,
+  getBackgroundOutput: orchestrator.getBackgroundOutput,
+  cancelBackground: orchestrator.cancelBackground,
+  clarifyRequest: orchestrator.clarifyRequest,
+  loadSkill,
+  executeSkill,
+  writeTodos,
+  captureFileState,
+  learn,
+  sessionManager: mySessionManager,
 })
 ```
 
-详见 `@vitamin/orchestrator` README §6.2（推荐装配方式）和 §12.1（与 @vitamin/tools 的契约）。
+详见 [../orchestrator/README.md](../orchestrator/README.md) 和 [../orchestrator/DESIGN.md](../orchestrator/DESIGN.md)。
 
 ### 工具参数验证
 
@@ -862,7 +879,6 @@ import { createToolRegistry } from '@vitamin/tools'
 // 创建注册表（自动注册所有内置工具）
 const registry = createToolRegistry(process.cwd(), {
   dispatchTask: async (args) => ({ success: false, error: 'not implemented' }),
-  performWork: async (name) => ({ success: false, error: new Error('not implemented') }),
   callAgent: async (agent, prompt) => ({ success: false, error: 'not implemented' }),
   loadSkill: async (path) => ({ success: false, error: 'not implemented' }),
   executeSkill: async (name, input, params) => ({ success: false, error: 'not implemented' }),
@@ -882,10 +898,12 @@ registry.register(myTool, { preset: 'standard', category: 'custom' })
 | `ToolRegistry`, `createToolRegistry` | 工具注册表和工厂 |
 | `validateToolArgs` | Zod 参数验证 |
 | `RegisteredTool`, `ToolMetadata`, `ToolPreset` | 核心类型 |
-| `TaskDispatch`, `CallAgent`, `PerformWork` | 编排回调类型 |
+| `TaskDispatch`, `CallAgent`, `CreateTask`, `GetTask`, `ListTasks`, `UpdateTask`, `ClarifyRequest`, `GetBackgroundOutput`, `CancelBackground` | 编排回调类型 |
+| `WriteTodos`, `CaptureFileState`, `LearnCallback` | 方法论回调类型 |
+| `LoadSkill`, `ExecuteSkill` | Skill 回调类型 |
 
-说明：当前包入口尚未导出 `LoadSkill` / `ExecuteSkill` 类型；如需对外暴露，需后续补充到 [packages/tools/src/index.ts](/Users/aniwei/Desktop/workspaces/vitamin-coding/packages/tools/src/index.ts)。
+说明：当前公开导出以 [src/index.ts](src/index.ts) 为准。
 
 ## License
 
-See [root README](../../README.md) for details.
+See package metadata for details.

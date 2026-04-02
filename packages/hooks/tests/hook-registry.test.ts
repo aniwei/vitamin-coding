@@ -15,7 +15,7 @@ describe('HookRegistry', () => {
           timing: 'chat.message.before',
           priority: 10,
           enabled: true,
-          handler() {},
+          handle() {},
         }
         engine.register(hook)
 
@@ -31,7 +31,7 @@ describe('HookRegistry', () => {
           timing: 'system-prompt.transform',
           priority: 10,
           enabled: true,
-          handler() {},
+          handle() {},
         }
 
         engine.register(hook)
@@ -52,14 +52,14 @@ describe('HookRegistry', () => {
           timing: 'chat.message.before',
           priority: 10,
           enabled: true,
-          handler() {},
+          handle() {},
         })
         engine.register({
           name: 'hook-b',
           timing: 'tool.execute.before',
           priority: 10,
           enabled: true,
-          handler() {},
+          handle() {},
         })
 
         expect(engine.getRegistered()).toHaveLength(2)
@@ -74,7 +74,7 @@ describe('HookRegistry', () => {
           timing: 'chat.message.before',
           priority: 10,
           enabled: true,
-          handler() {},
+          handle() {},
         })
 
         const removed = engine.unregister('removable')
@@ -100,21 +100,21 @@ describe('HookRegistry', () => {
           timing: 'chat.message.before',
           priority: 20,
           enabled: true,
-          handler() { order.push('20') },
+          handle() { order.push('20') },
         })
         engine.register({
           name: 'priority-5',
           timing: 'chat.message.before',
           priority: 5,
           enabled: true,
-          handler() { order.push('5') },
+          handle() { order.push('5') },
         })
         engine.register({
           name: 'priority-10',
           timing: 'chat.message.before',
           priority: 10,
           enabled: true,
-          handler() { order.push('10') },
+          handle() { order.push('10') },
         })
 
         const input = { message: {}, sessionId: 's1', isFirstMessage: false, metadata: {} }
@@ -137,7 +137,7 @@ describe('HookRegistry', () => {
           timing: 'tool.execute.after',
           priority: 10,
           enabled: true,
-          handler() {
+          handle() {
             executed.push('a')
             throw new Error('Hook A failed')
           },
@@ -147,7 +147,7 @@ describe('HookRegistry', () => {
           timing: 'tool.execute.after',
           priority: 20,
           enabled: true,
-          handler() { executed.push('b') },
+          handle() { executed.push('b') },
         })
 
         const input = {
@@ -178,14 +178,14 @@ describe('HookRegistry', () => {
           timing: 'chat.message.before',
           priority: 10,
           enabled: true,
-          handler() { executed.push('active') },
+          handle() { executed.push('active') },
         })
         engine.register({
           name: 'hook-disabled',
           timing: 'chat.message.before',
           priority: 20,
           enabled: true,
-          handler() { executed.push('disabled') },
+          handle() { executed.push('disabled') },
         })
 
         engine.disable('hook-disabled')
@@ -208,7 +208,7 @@ describe('HookRegistry', () => {
           timing: 'chat.message.before',
           priority: 10,
           enabled: true,
-          handler() { executed.push('toggler') },
+          handle() { executed.push('toggler') },
         })
 
         engine.disable('toggler')
@@ -235,7 +235,7 @@ describe('HookRegistry', () => {
           timing: 'session.created',
           priority: 10,
           enabled: true,
-          handler(input) { received = input },
+          handle(input) { received = input },
         })
 
         await engine.emit('session.created', { sessionId: 'test-session', metadata: { foo: 'bar' } })
@@ -256,14 +256,14 @@ describe('HookRegistry', () => {
           timing: 'chat.message.before',
           priority: 10,
           enabled: true,
-          handler() { executed.push('enabled') },
+          handle() { executed.push('enabled') },
         })
         engine.register({
           name: 'disabled-at-reg',
           timing: 'chat.message.before',
           priority: 20,
           enabled: false,
-          handler() { executed.push('disabled-at-reg') },
+          handle() { executed.push('disabled-at-reg') },
         })
 
         const input = { message: {}, sessionId: 's1', isFirstMessage: false, metadata: {} }
@@ -283,7 +283,7 @@ describe('HookRegistry', () => {
         timing: 'chat.message.before',
         priority: 10,
         enabled: true,
-        handler() {},
+        handle() {},
       })
 
       engine.clear()

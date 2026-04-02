@@ -11,7 +11,7 @@ export function createKeywordDetectionHook(): HookRegistration<'chat.message.bef
     timing: 'chat.message.before',
     priority: 30,
     enabled: true,
-    handler(input: ChatMessageInput, output: ChatMessageOutput): void {
+    handle(input: ChatMessageInput, output: ChatMessageOutput): void {
       const text = extractText(input.message)
       if (!text) return
 

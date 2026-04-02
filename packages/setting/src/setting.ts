@@ -1,14 +1,51 @@
 import { createLogger, parseJsonc } from '@vitamin/shared'
-import { VitaminSettingSchema, VitaminSettingStrictSchema } from './schema'
+import { LOG_LEVELS, TOOL_PRESETS, VITAMIN_SETTING_KEYS } from './types'
 import { migrate } from './migrator'
 
 import { type VitaminSetting, type LoadSettingOptions, VITAMIN_DEFAULT_CONFIG } from './types'
 import type { SettingStore } from './store'
 
 const logger = createLogger('@vitamin/setting')
+const LOG_LEVEL_SET = new Set<string>(LOG_LEVELS)
+const TOOL_PRESET_SET = new Set<string>(TOOL_PRESETS)
+
+const ROOT_STRING_KEYS = ['config_version', 'version', 'model', 'theme'] as const
+const ROOT_STRING_ARRAY_KEYS = [
+  'model_fallback',
+  'disabled_agents',
+  'disabled_hooks',
+  'disabled_tools',
+  '_migrations',
+] as const
+const ROOT_OBJECT_KEYS = [
+  'agents',
+  'categories',
+  'session',
+  'compaction',
+  'notification',
+  'workflow',
+  'model_slots',
+  'background_task',
+  'experimental',
+] as const
+const REMOVED_LEGACY_KEYS = [
+  'mcp',
+  'skills',
+  'disabled_mcps',
+  'disabled_skills',
+] as const
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
+}
+
+function isStringArray(value: unknown): value is string[] {
+  return Array.isArray(value) && value.every((item) => typeof item === 'string')
+}
+
+function dropInvalidField(target: Partial<VitaminSetting>, key: string, message: string): void {
+  logger.warn({ key, message }, 'Config validation issue')
+  delete target[key]
 }
 
 function deepMerge(
@@ -56,7 +93,7 @@ function merge(...layers: Partial<VitaminSetting>[]): Partial<VitaminSetting> {
   }
 
   if (others.length > 0) {
-    return merge(result, ...others.slice(2))
+    return merge(result, ...others)
   }
 
   return result
@@ -73,8 +110,7 @@ function loadSettingFromEnv(): Partial<VitaminSetting> {
 
   const logLevel = process.env.VITAMIN_LOG_LEVEL
   if (logLevel) {
-    const validLevels = ['trace', 'debug', 'info', 'warn', 'error', 'fatal']
-    if (validLevels.includes(logLevel)) {
+    if (LOG_LEVEL_SET.has(logLevel)) {
       setting.log_level = logLevel as VitaminSetting['log_level']
     }
   }
@@ -83,25 +119,57 @@ function loadSettingFromEnv(): Partial<VitaminSetting> {
 }
 
 function validate(setting: Partial<VitaminSetting>): Partial<VitaminSetting> {
-  const knownKeys = new Set(Object.keys(VitaminSettingStrictSchema.shape))
+  const knownKeys = new Set<string>(VITAMIN_SETTING_KEYS)
+  const validated: Partial<VitaminSetting> = { ...setting }
+
+  for (const key of REMOVED_LEGACY_KEYS) {
+    if (validated[key] !== undefined) {
+      logger.warn({ key }, 'Removed legacy config key is ignored')
+      delete validated[key]
+    }
+  }
   
-  for (const key of Object.keys(setting)) {
+  for (const key of Object.keys(validated)) {
     if (!knownKeys.has(key)) {
-      logger.warn({ key }, 'Unknown config key (will be ignored)')
+      logger.warn({ key }, 'Unknown config key (passthrough)')
     }
   }
 
-  const result = VitaminSettingSchema.safeParse(setting)
-  if (result.success) {
-    return result.data
+  for (const key of ROOT_STRING_KEYS) {
+    const value = validated[key]
+    if (value !== undefined && typeof value !== 'string') {
+      dropInvalidField(validated, key, 'Expected string')
+    }
   }
 
-  for (const issue of result.error.issues) {
-    logger.warn({ key: issue.path.join('.'), message: issue.message }, 'Config validation issue')
+  const logLevel = validated.log_level
+  if (logLevel !== undefined && (typeof logLevel !== 'string' || !LOG_LEVEL_SET.has(logLevel))) {
+    dropInvalidField(validated, 'log_level', `Invalid log_level: ${String(logLevel)}`)
   }
 
-  const partial = VitaminSettingSchema.partial().safeParse(setting)
-  return partial.success ? partial.data : {}
+  const toolPreset = validated.tool_preset
+  if (
+    toolPreset !== undefined
+    && (typeof toolPreset !== 'string' || !TOOL_PRESET_SET.has(toolPreset))
+  ) {
+    dropInvalidField(validated, 'tool_preset', `Invalid tool_preset: ${String(toolPreset)}`)
+  }
+
+  for (const key of ROOT_STRING_ARRAY_KEYS) {
+    const value = validated[key]
+    if (value !== undefined && !isStringArray(value)) {
+      dropInvalidField(validated, key, 'Expected string[]')
+    }
+  }
+
+  for (const key of ROOT_OBJECT_KEYS) {
+    const value = validated[key]
+    if (value !== undefined && !isPlainObject(value)) {
+      dropInvalidField(validated, key, 'Expected object')
+    }
+  }
+
+  return validated
 }
 
 async function loadSettingFromStore(

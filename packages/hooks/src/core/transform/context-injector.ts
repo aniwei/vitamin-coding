@@ -18,7 +18,7 @@ export function createContextInjectorHook(
     timing: 'messages.transform',
     priority: 10,
     enabled: true,
-    async handler(_input: MessagesTransformInput, output: MessagesTransformOutput): Promise<void> {
+    async handle(_input: MessagesTransformInput, output: MessagesTransformOutput): Promise<void> {
       const contexts: string[] = []
 
       for (const provider of config.contextProviders) {

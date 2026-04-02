@@ -1,6 +1,6 @@
-// @vitamin/hooks — 生命周期 Hook 引擎
-export { HookRegistry, createHookRegistry, HookEngine, createHookEngine } from './hook-registry'
-export type { HookPreset, HookRegistryOptions, HookEngineOptions } from './hook-registry'
+// @vitamin/hooks — 生命周期 Hook 注册器
+export { HookRegistry, createHookRegistry } from './hook-registry'
+export type { HookPreset, HookRegistryOptions } from './hook-registry'
 export { safeCreateHook, isHookEnabled, safeHookEnabled } from './safe-hook'
 
 // 核心 Hook
@@ -55,7 +55,7 @@ export type {
   HookTiming,
   HookInput,
   HookOutput,
-  HookHandler,
+  HookHandle,
   HookRegistration,
   HookPayloadMap,
   ChatMessageInput,

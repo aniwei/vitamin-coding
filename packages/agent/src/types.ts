@@ -9,9 +9,9 @@ import type {
   ThinkingLevel,
   ZodType,
 } from '@vitamin/ai'
+import type { Logger } from '@vitamin/shared'
 
 import type { Devtools, BreakpointPoint } from '@vitamin/devtools'
-import type pino from 'pino'
 import type { ToolHookExecutor } from './tool-executor'
 
 // Agent 运行状态
@@ -63,8 +63,6 @@ export interface ToolCallEvent {
   arguments: Record<string, unknown>
 }
 
-// 可扩展消息类型（declaration merging）
-// biome-ignore lint/suspicious/noEmptyInterface: 需要空接口供应用层通过 declaration merging 扩展
 export interface CustomAgentMessages {
   // 应用层通过 declaration merging 扩展
 }
@@ -87,7 +85,7 @@ export interface AgentRunContext {
   systemPrompt: string
   messages: AgentMessage[]
   tools: AgentTool[]
-  logger?: pino.Logger
+  logger?: Logger
   toolHookExecutor?: ToolHookExecutor
   agentName?: string
   sessionId?: string
@@ -111,7 +109,7 @@ export interface AgentRunContext {
 export interface AgentLoopContext {
   model: Model
   systemPrompt: string
-  logger?: pino.Logger
+  logger?: Logger
   // AgentMessage[] → LLM Message[] 转换
   convertToLLM: (messages: AgentMessage[]) => Message[] | Promise<Message[]>
   

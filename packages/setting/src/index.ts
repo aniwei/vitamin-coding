@@ -1,23 +1,27 @@
 export type {
   VitaminSetting,
+  VitaminSettingFromSchema,
+  VitaminSettingKey,
   AgentConfig,
   CategoryConfig,
+  LogLevel,
+  ToolPreset,
+  WorkflowSlot,
   SettingWarning,
   ConfigWarning,
   LoadSettingOptions,
   LoadConfigOptions,
 } from './types'
 
-export { VITAMIN_DEFAULT_CONFIG } from './types'
-
 export {
-  VitaminSettingSchema,
-  VitaminSettingStrictSchema,
-  AgentConfigSchema,
-  CategoryConfigSchema,
-  LogLevelSchema,
-} from './schema'
-export type { VitaminSettingFromSchema } from './schema'
+  BUILTIN_REVIEWER_AGENTS,
+  COMPACTION_STRATEGIES,
+  LOG_LEVELS,
+  TOOL_PRESETS,
+  VITAMIN_DEFAULT_CONFIG,
+  VITAMIN_SETTING_KEYS,
+  WORKFLOW_SLOTS,
+} from './types'
 
 export { 
   migrate, 

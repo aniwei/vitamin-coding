@@ -17,7 +17,8 @@
       "@vitamin/resources": ["../resources/src/index.ts"],
       "@vitamin/session": ["../session/src/index.ts"],
       "@vitamin/shared": ["../shared/src/index.ts"],
-      "@vitamin/tools": ["../tools/src/index.ts"]
+      "@vitamin/tools": ["../tools/src/index.ts"],
+      "@vitamin/prompt": ["../prompt/src/index.ts"]
     }
   },
   "include": ["src"]

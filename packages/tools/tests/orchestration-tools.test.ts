@@ -172,7 +172,7 @@ describe('orchestration tools (additional coverage)', () => {
 
     await expect(tool.execute({
       id: 'ac3',
-      params: { agent: 'explore', prompt: 'hello', mode: 'sync' as const },
+      params: { agent: 'explore', prompt: 'hello' },
       signal,
     })).rejects.toThrow('call_agent function is not provided in options')
   })

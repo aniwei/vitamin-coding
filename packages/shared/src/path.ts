@@ -12,8 +12,15 @@ export function getVitaminProjectDir(): string {
   return VITAMIN_PROJECT_DIR
 }
 
-export function getVitaminProjectConfigPath(): string {
-  return resolve(getVitaminProjectDir(), '.config.json')
+export function getVitaminPromptsDir(): string {
+  return resolve(getVitaminHomeDir(), 'prompts')
+}
+
+export function getVitaminSettingsPaths(): string[] {
+  return [
+    resolve(getVitaminProjectDir(), 'config.json'),
+    resolve(getVitaminHomeDir(), 'config.json'),
+  ]
 }
 
 export function getVitaminHomeDir(): string {
@@ -35,5 +42,10 @@ export function getThirdPartyToolBinaryDir(toolName: string, version: string = '
 export function createTempLoggerDir(): string {
   const id = v5(Date.now().toString(), v5.URL);
   return join(tmpdir(), `vitamin-coding-${id}.log`);
+}
+
+// Backward compatibility: historical name used by tools/tests.
+export function createTempLoggerPath(): string {
+  return createTempLoggerDir()
 }
 

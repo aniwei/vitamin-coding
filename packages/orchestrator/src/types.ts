@@ -1,3 +1,6 @@
+import type { HookRegistry } from '@vitamin/hooks'
+import type { RunSessionOptions, RunSessionResult } from './executor'
+
 export type TaskStatus =
   | 'pending'      // 已创建，等待执行
   | 'running'      // 正在执行中
@@ -23,6 +26,8 @@ export interface TaskInput {
   sessionMode?: 'ephemeral' | 'sticky'
   /** 执行模式 — 对齐 task_delegate.mode */
   mode?: 'sync' | 'background'
+  /** 模型槽位 — 对齐 task_delegate.slot / agent_call.slot */
+  slot?: 'normal' | 'thinking' | 'compact' | 'critique' | 'vision'
 }
 
 export interface TaskOutput {
@@ -54,29 +59,30 @@ export interface Task {
 }
 
 export interface OrchestratorOptions {
-  /** WorkflowConfig (retry / circuit_breaker 等) */
-  workflowConfig?: WorkflowConfig
-  /** 最大同时活跃任务 */
+  hookRegistry: HookRegistry
+  /** 由 VitaminApp 注入：创建子 session → prompt → 提取输出文本 */
+  runSession: (options: RunSessionOptions) => Promise<RunSessionResult>
+  /** 可选：外部 abort 回调 */
+  abortTask?: (taskId: string) => void
+  workflowConfig?: WorkflowOptions
   maxActiveTasks?: number
-  /** 最大后台任务 */
   maxBackgroundTasks?: number
-  /** 默认最大重试次数 */
   defaultMaxAttempts?: number
 }
 
-export interface WorkflowConfig {
+export interface WorkflowOptions {
   enabled?: boolean
   review?: {
     enabled?: boolean
   }
   retry?: {
     enabled?: boolean
-    max_attempts?: number
+    maxAttempts?: number
   }
-  circuit_breaker?: {
+  circuitBreaker?: {
     enabled?: boolean
-    failure_threshold?: number
-    reset_timeout_ms?: number
+    failureThreshold?: number
+    timeoutMs?: number
   }
   routing?: {
     enabled?: boolean

@@ -1,5 +1,6 @@
 import { Devtools } from '@vitamin/devtools'
 import {
+  createModelSlot,
   createDefaultProviderRegistry,
   ModelRegistry,
 } from '@vitamin/ai'
@@ -13,8 +14,9 @@ import {
 import { SESSION_MAX } from '@vitamin/env'
 import { createResourceManager, SettingsManager } from '@vitamin/resources'
 import { Orchestrator } from '@vitamin/orchestrator'
+import { FileStateManager, OperationalLearningStore } from '@vitamin/memory'
 
-import { attachLogListener, createLogger } from '@vitamin/shared'
+import { attachLogListener, createLogger, type Logger } from '@vitamin/shared'
 import { AgentSession } from '../session/agent-session'
 import { getLastAssistantText } from '../modes/run-modes'
 import {
@@ -23,10 +25,20 @@ import {
   createInMemoryCodingSessionManager,
   createRemoteCodingSessionManager,
 } from '../session/coding-session-manager'
+import {
+  PromptManager,
+  createPromptProvider,
+  buildLessonInjection,
+  extractPhaseFromMessage,
+  injectPhaseContext,
+  SESSION_END_LEARNING_PROMPT,
+  BUILTIN_PROMPTS_DIR,
+} from '@vitamin/prompt'
+import type { PhaseAnnotation } from '@vitamin/prompt'
 
 
 import type { AgentTool } from '@vitamin/agent'
-import type { AuthStore, ProviderRegistry } from '@vitamin/ai'
+import type { AuthStore, Model, ProviderRegistry, WorkflowSlot } from '@vitamin/ai'
 import type { HookRegistry } from '@vitamin/hooks'
 import type {
   AgentSessionInfo,
@@ -45,22 +57,32 @@ export class VitaminApp implements VitaminContext {
   public readonly hookRegistry: HookRegistry
   public readonly providerRegistry: ProviderRegistry
   public readonly codingSessionManager: CodingSessionManager
-  public readonly logger: ReturnType<typeof createLogger>
+  public readonly logger: Logger
+
   public readonly workspaceDir: string
   public readonly maxSessions: number
   public readonly maxToolTurns: number
 
-  private readonly defaultTools: AgentTool[] = []
   private readonly devtools: Devtools | null = null
-  private orchestrator!: Orchestrator
+  private readonly fileStateManager: FileStateManager
+  private readonly learningStore: OperationalLearningStore
+  private readonly promptManager: PromptManager
+
+  private readonly orchestrator: Orchestrator
+  
+  private defaultToolPreset: 'minimal' | 'standard' | 'full' = 'full'
   private disposed = false
-  private defaultToolPreset: 'minimal' | 'standard' | 'full' = 'standard'
+  private settingsLoaded = false
+
+  private readonly phaseTracker = new Map<string, string[]>()
+  private readonly learningTriggeredSessions = new Set<string>()
 
   public get tools(): AgentTool[] {
     return this.toolRegistry.getAvailable(this.defaultToolPreset).map((tool) => ({
       name: tool.name,
       description: tool.description,
       parameters: tool.parameters,
+      readonly: tool.readonly,
       visibility: tool.metadata.builtin ? 'always' : 'when-enabled',
       execute: tool.execute,
     }))
@@ -68,10 +90,6 @@ export class VitaminApp implements VitaminContext {
 
   public get modelRegistry(): ModelRegistry {
     return this.providerRegistry.getModelRegistry()
-  }
-
-  public get auth(): AuthStore {
-    return this.providerRegistry.getAuthStore()
   }
 
   public get authStore(): AuthStore {
@@ -88,17 +106,16 @@ export class VitaminApp implements VitaminContext {
     const {
       inspect,
       logger,
+      projectConfigPath,
       sessionDir,
       sessionUrl,
       maxSessions,
       maxToolTurns,
       port,
-      resourceManager,
-      tools,
       workspaceDir,
+      resourceManager,
     } = options
 
-    this.defaultTools = tools ?? []
     this.maxSessions = maxSessions ?? SESSION_MAX
     this.maxToolTurns = maxToolTurns ?? 10
     this.workspaceDir = workspaceDir ?? process.cwd()
@@ -121,6 +138,7 @@ export class VitaminApp implements VitaminContext {
       authStore,
       modelRegistry,
     })
+    const defaultModel = _model ?? (options.modelId ? this.providerRegistry.resolveModel(options.modelId) : undefined)
 
     if (inspect) {
       this.devtools = new Devtools({
@@ -137,15 +155,41 @@ export class VitaminApp implements VitaminContext {
     }
 
     this.settings = new SettingsManager({
-      workspaceDir: this.workspaceDir
+      workspaceDir: this.workspaceDir,
+      projectConfigPath,
+    })
+
+    this.settings.on('change', (config) => {
+      this.settingsLoaded = true
+
+      if (config.tool_preset) {
+        this.defaultToolPreset = config.tool_preset
+      }
     })
 
     this.resourceManager = resourceManager ?? createResourceManager({
       workspaceDir: this.workspaceDir,
     })
 
+    // 初始化 FileStateManager 和 OperationalLearningStore
+    this.fileStateManager = new FileStateManager()
+    this.learningStore = new OperationalLearningStore({
+      filePath: `${this.workspaceDir}/.vitamin/lessons.json`,
+    })
+
+    // 初始化 PromptManager（默认使用内置 prompts 目录）
+    const promptProvider = createPromptProvider(
+      options.prompt ?? {
+        type: 'local',
+        baseDir: BUILTIN_PROMPTS_DIR,
+      },
+    )
+    
+    this.promptManager = new PromptManager({ provider: promptProvider })
+    const promptRefresh = () => this.promptManager.assemble()
 
     const managerOptions = {
+      model: defaultModel,
       systemPrompt: ``,
       tools: [] as AgentTool[],
       maxSessions,
@@ -155,7 +199,7 @@ export class VitaminApp implements VitaminContext {
       workspaceDir: this.workspaceDir,
       logger: this.logger,
       devtools: this.devtools ?? undefined,
-      promptRefresh: async () => ``,
+      promptRefresh,
     }
 
     if (sessionDir) {
@@ -172,24 +216,32 @@ export class VitaminApp implements VitaminContext {
       this.codingSessionManager = createInMemoryCodingSessionManager(managerOptions)
     }
 
-    this.toolRegistry = this.buildToolRegistry()
-  }
-
-  private buildRunSession() {
-    return async (options: { prompt: string; sessionId?: string; sessionMode: 'ephemeral' | 'sticky' }) => {
+    const run = async (options: {
+      prompt: string
+      sessionId?: string
+      sessionMode: 'ephemeral' | 'sticky'
+      agentName?: string
+      slot?: WorkflowSlot
+    }) => {
       const startTime = Date.now()
 
-      // sticky 模式：复用已有 session
       let session: AgentSession
       if (options.sessionMode === 'sticky' && options.sessionId) {
         const existing = this.getSession(options.sessionId)
         if (existing) {
           session = existing
         } else {
-          session = await this.createSession({ id: options.sessionId })
+          session = await this.createSession({
+            id: options.sessionId,
+            agentName: options.agentName,
+            slot: options.slot,
+          })
         }
       } else {
-        session = await this.createSession()
+        session = await this.createSession({
+          agentName: options.agentName,
+          slot: options.slot,
+        })
       }
 
       await session.prompt(options.prompt)
@@ -206,10 +258,153 @@ export class VitaminApp implements VitaminContext {
         durationMs: Date.now() - startTime,
       }
     }
+
+    // 创建 orchestrator — 注入真实回调
+    this.orchestrator = new Orchestrator({
+      hookRegistry: this.hookRegistry,
+      runSession: run,
+    })
+
+    const loadSkill: LoadSkill = async () => ({
+      success: false,
+      error: `Loading skills is not available in this environment.`,
+    })
+
+    const executeSkill: ExecuteSkill = async () => ({
+      success: false,
+      error: `Executing skills is not available in this environment.`,
+    })
+
+    this.toolRegistry = createToolRegistry(this.workspaceDir, {
+      callAgent: this.orchestrator.callAgent,
+      loadSkill,
+      executeSkill,
+      dispatchTask: this.orchestrator.dispatchTask,
+      createTask: this.orchestrator.createTask,
+      getTask: this.orchestrator.getTask,
+      listTasks: this.orchestrator.listTasks,
+      updateTask: this.orchestrator.updateTask,
+      getBackgroundOutput: this.orchestrator.getBackgroundOutput,
+      cancelBackground: this.orchestrator.cancelBackground,
+      clarifyRequest: this.orchestrator.clarifyRequest,
+      captureFileState: async (input) => {
+        const snapshot = await this.fileStateManager.capture({
+          workspaceDir: this.workspaceDir,
+          recentFiles: input.recentFiles,
+          planStatus: input.planStatus,
+        })
+        return {
+          success: true,
+          summary: this.fileStateManager.formatSnapshot(snapshot),
+          timestamp: snapshot.timestamp,
+        }
+      },
+      learn: async (lesson) => {
+        const saved = await this.learningStore.save({
+          tags: lesson.tags,
+          trigger: lesson.trigger,
+          insight: lesson.insight,
+          sourceSessionId: lesson.sessionId,
+        })
+        return { success: true, lessonId: saved.id }
+      },
+      sessionManager: {
+        list: async () => this.listSessions().map((session) => ({
+          id: session.id,
+          title: session.id,
+          messageCount: session.messageCount,
+        })),
+        create: async () => {
+          const session = await this.createSession()
+          return { id: session.id }
+        },
+        remove: async (id: string) => this.removeSession(id),
+        compact: async (id: string) => {
+          const session = this.getSession(id)
+          if (!session) return false
+          await session.compact('Compacted by session_manager tool', 1)
+          return true
+        }
+      }
+    })
+
+    // 仅移除 skill 类别工具（orchestration 工具现在有真实回调，保留）
+    const skillTools = this.toolRegistry.getByCategory('skill').map((tool) => tool.name)
+    if (skillTools.length > 0) {
+      this.toolRegistry.unregister(skillTools)
+    }
+
+    // 注册 hooks
+    this.registerHooks()
+  }
+
+  private async ensureSettingsLoaded(): Promise<void> {
+    if (this.settingsLoaded) {
+      return
+    }
+
+    await this.settings.load()
+    this.settingsLoaded = true
+  }
+
+  private resolveWorkflowSlot(
+    agentName?: string,
+    slot?: WorkflowSlot,
+  ): WorkflowSlot | undefined {
+    if (slot) {
+      return slot
+    }
+
+    if (!agentName) {
+      return undefined
+    }
+
+    return this.settings.get('agents')?.[agentName]?.default_workflow_slot
+  }
+
+  private resolveModelFromSlot(slot?: WorkflowSlot): Model | undefined {
+    const modelSlots = this.settings.get('model_slots')
+    const defaultSpec = modelSlots?.default ?? this.settings.get('model')
+    if (!defaultSpec) {
+      return undefined
+    }
+
+    const modelSlot = createModelSlot({
+      slots: modelSlots?.slots ?? {},
+      default: defaultSpec,
+    }, this.modelRegistry)
+
+    return modelSlot.resolve(slot)
+  }
+
+  private async resolveSessionModel(options: {
+    model?: Model
+    agentName?: string
+    slot?: WorkflowSlot
+  }): Promise<Model> {
+    if (options.model) {
+      return options.model
+    }
+
+    await this.ensureSettingsLoaded()
+
+    const workflowSlot = this.resolveWorkflowSlot(options.agentName, options.slot)
+    const slotModel = this.resolveModelFromSlot(workflowSlot)
+    if (slotModel) {
+      return slotModel
+    }
+
+    const configuredModel = this.settings.get('model')
+    if (configuredModel) {
+      return this.providerRegistry.resolveModel(configuredModel)
+    }
+
+    throw new Error('No model specified for session and no default model configured.')
   }
 
   async start(): Promise<void> {
     this.ensureNotDisposed()
+    await this.ensureSettingsLoaded()
 
     if (this.devtools) {
       await this.devtools.start()
@@ -244,19 +439,42 @@ export class VitaminApp implements VitaminContext {
 
   async createSession(options: Partial<AgentSessionOptions> = {}): Promise<AgentSession> {
     this.ensureNotDisposed()
+    await this.ensureSettingsLoaded()
+
+    const model = await this.resolveSessionModel({
+      model: options.model,
+      agentName: options.agentName,
+      slot: options.slot,
+    })
+
+    // 读取 per-agent 配置（system_prompt / tools / max_tool_turns）
+    const agentConfig = options.agentName
+      ? this.settings.get('agents')?.[options.agentName]
+      : undefined
+
+    const agentSystemPrompt = agentConfig?.system_prompt
+    const agentMaxToolTurns = agentConfig?.max_tool_turns
+    const agentToolNames = agentConfig?.tools
+
+    // 如果 agent 配置了 tools 白名单，则过滤工具列表
+    let tools = options.tools ?? this.tools
+    if (agentToolNames && agentToolNames.length > 0) {
+      const nameSet = new Set(agentToolNames)
+      tools = tools.filter(t => nameSet.has(t.name))
+    }
 
     const agentSession = await this.codingSessionManager.createSession({
       ...options,
-      model: options.model,
-      systemPrompt: options.systemPrompt,
-      tools: options.tools ?? this.defaultTools,
+      model,
+      systemPrompt: options.systemPrompt ?? agentSystemPrompt,
+      tools,
       workspaceDir: options.workspaceDir ?? this.workspaceDir,
       hookRegistry: this.hookRegistry,
       providerRegistry: this.providerRegistry,
       logger: this.logger,
       devtools: this.devtools ?? undefined,
-      promptRefresh: async () => ``,
-      maxToolTurns: options.maxToolTurns ?? this.maxToolTurns,
+      promptRefresh: options.promptRefresh ?? (() => this.promptManager.assemble()),
+      maxToolTurns: options.maxToolTurns ?? agentMaxToolTurns ?? this.maxToolTurns,
     })
 
     this.logger.info('Session created: %s', agentSession.id)
@@ -284,62 +502,70 @@ export class VitaminApp implements VitaminContext {
     return this.codingSessionManager.forkSession(sourceId, newId)
   }
 
-  private buildToolRegistry(): ToolRegistry {
-    // 创建 orchestrator — 注入真实回调
-    this.orchestrator = new Orchestrator({
-      hookRegistry: this.hookRegistry,
-      runSession: this.buildRunSession(),
-    })
+  private registerHooks(): void {
+    // system-prompt.transform: 注入相关历史经验到 system prompt
+    this.hookRegistry.on('system-prompt.transform', 'lesson-injection', async (_input, output) => {
+      const lessons = await this.learningStore.list()
+      if (lessons.length > 0) {
+        const injection = buildLessonInjection(lessons)
+        if (injection) {
+          output.systemPrompt = `${output.systemPrompt}\n\n${injection}`
+        }
+      }
+    }, 40)
 
-    const loadSkill: LoadSkill = async () => ({
-      success: false,
-      error: `Loading skills is not available in this environment.`,
-    })
+    // system-prompt.transform: 注入当前 phase 上下文
+    this.hookRegistry.on('system-prompt.transform', 'phase-injection', async (input, output) => {
+      const history = this.phaseTracker.get(input.sessionId)
+      const currentPhase = history?.[history.length - 1]
+      if (history && history.length > 0 && currentPhase) {
+        const annotation: PhaseAnnotation = {
+          currentPhase,
+          phaseHistory: history,
+        }
+        output.systemPrompt = injectPhaseContext(output.systemPrompt, annotation)
+      }
+    }, 30)
 
-    const executeSkill: ExecuteSkill = async () => ({
-      success: false,
-      error: `Executing skills is not available in this environment.`,
-    })
+    // chat.message.after: 从 LLM 回复中提取 phase 标注并存储
+    this.hookRegistry.on('chat.message.after', 'phase-extraction', async (input) => {
+      const message = input.message
+      if (message.role === 'assistant' && message.content) {
+        for (const part of message.content) {
+          if (part.type === 'text') {
+            const phase = extractPhaseFromMessage(part.text)
+            if (phase) {
+              const history = this.phaseTracker.get(input.sessionId) ?? []
+              history.push(phase)
+              this.phaseTracker.set(input.sessionId, history)
+              this.logger.debug('Phase extracted: %s (session=%s)', phase, input.sessionId)
+            }
+          }
+        }
+      }
+    }, 50)
 
-    const registry = createToolRegistry(this.workspaceDir, {
-      callAgent: this.orchestrator.callAgent,
-      loadSkill,
-      executeSkill,
-      dispatchTask: this.orchestrator.dispatchTask,
-      createTask: this.orchestrator.createTask,
-      getTask: this.orchestrator.getTask,
-      listTasks: this.orchestrator.listTasks,
-      updateTask: this.orchestrator.updateTask,
-      getBackgroundOutput: this.orchestrator.getBackgroundOutput,
-      cancelBackground: this.orchestrator.cancelBackground,
-      clarifyRequest: this.orchestrator.clarifyRequest,
-      sessionManager: {
-        list: async () => this.listSessions().map((session) => ({
-          id: session.id,
-          title: session.id,
-          messageCount: session.messageCount,
-        })),
-        create: async () => {
-          const session = await this.createSession()
-          return { id: session.id }
-        },
-        remove: async (id: string) => this.removeSession(id),
-        compact: async (id: string) => {
-          const session = this.getSession(id)
-          if (!session) return false
-          await session.compact('Compacted by session_manager tool', 1)
-          return true
-        },
-      },
-    })
-
-    // 仅移除 skill 类别工具（orchestration 工具现在有真实回调，保留）
-    const skillTools = registry.getByCategory('skill').map((tool) => tool.name)
-    if (skillTools.length > 0) {
-      registry.unregister(skillTools)
-    }
-
-    return registry
+    // session.idle: 触发经验提取（每个 session 仅触发一次）
+    this.hookRegistry.on('session.idle', 'session-end-learning', async (input) => {
+      if (this.learningTriggeredSessions.has(input.sessionId)) {
+        return
+      }
+      const session = this.getSession(input.sessionId)
+      if (!session) {
+        return
+      }
+      const messageCount = session.session.messages().length
+      if (messageCount < 6) {
+        return
+      }
+      this.learningTriggeredSessions.add(input.sessionId)
+      this.logger.info('Session idle, prompting for learning: %s', input.sessionId)
+      try {
+        await session.prompt(SESSION_END_LEARNING_PROMPT)
+      } catch (err) {
+        this.logger.warn('Learning prompt failed for session %s: %s', input.sessionId, err)
+      }
+    }, 50)
   }
 
   private ensureNotDisposed(): void {
