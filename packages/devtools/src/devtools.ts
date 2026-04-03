@@ -1,34 +1,28 @@
-import { Server } from 'node:http'
-import { DevtoolsService } from './service'
+import { Service } from './service'
 import { Breakpoints } from './tools/breakpoints'
-import { DevtoolsDebugger } from './tools/debugger'
-import { DevtoolsLogger } from './tools/logger'
+import { Debugger } from './tools/debugger'
+import { Logger } from './tools/logger'
 
 interface DevtoolsOptions {
   port?: number
-  server?: Server
-  noServer?: boolean
 }
 
 export class Devtools {
-  public readonly service: DevtoolsService
+  public readonly service: Service
   private breakpoints: Breakpoints
   
-  public debugger: DevtoolsDebugger
-  public logger: DevtoolsLogger
+  public debugger: Debugger
+  public logger: Logger
 
-  constructor(options: DevtoolsOptions) {
-    const { port, server, noServer } = options
+  constructor(options: DevtoolsOptions = {}) {
     this.breakpoints = new Breakpoints()
 
-    this.service = new DevtoolsService({
-      port: noServer ? undefined : (port || 0),
-      server,
-      noServer: !!noServer,
-    }, this.breakpoints)
+    this.service = new Service(this.breakpoints, {
+      port: options.port,
+    })
 
-    this.debugger = new DevtoolsDebugger(this.service, this.breakpoints)
-    this.logger = new DevtoolsLogger(this.service)
+    this.debugger = new Debugger(this.service, this.breakpoints)
+    this.logger = new Logger(this.service)
   }
 
   start() {

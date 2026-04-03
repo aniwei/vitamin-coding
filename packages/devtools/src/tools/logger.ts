@@ -1,14 +1,12 @@
 
 
-import type { DevtoolsService } from '../service'
+import type { Service } from '../service'
 
-export class DevtoolsLogger {
-  public readonly serviceUrl: string
-  private readonly service: DevtoolsService
+export class Logger {
+  private readonly service: Service
 
-  constructor(service: DevtoolsService) {
+  constructor(service: Service) {
     this.service = service
-    this.serviceUrl = service.loggerUrl
   }
 
   publish(message: unknown) {

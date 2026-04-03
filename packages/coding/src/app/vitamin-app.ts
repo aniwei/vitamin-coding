@@ -152,11 +152,7 @@ export class VitaminApp implements VitaminContext {
     this.defaultModel = defaultModel
 
     if (inspect) {
-      this.devtools = new Devtools(
-        port
-          ? { port }
-          : { noServer: true }
-      )
+      this.devtools = new Devtools({ port })
 
       this.globalLogSubscription = attachLogListener((data) => {
         const log = data as { name: string; level: string; msg: string }

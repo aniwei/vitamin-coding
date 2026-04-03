@@ -15,7 +15,7 @@ describe('DevtoolsDebugger', () => {
 
   it('targets the service paused endpoint', () => {
     const breakpoints = new Breakpoints()
-    const service = new DevtoolsService({ port: 3903, noServer: false }, breakpoints)
+    const service = new DevtoolsService({ port: 3903 }, breakpoints)
     const debuggerController = new DevtoolsDebugger(service, breakpoints)
 
     expect(debuggerController.serviceUrl).toContain('http://127.0.0.1:3903/')

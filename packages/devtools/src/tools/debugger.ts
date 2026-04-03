@@ -1,21 +1,19 @@
 import { createLogger } from '@vitamin/shared'
 import { Breakpoints, type Breakpoint } from './breakpoints'
 import type { BreakpointPoint, DebugSnapshot, PauseResult } from '../protocol'
-import type { DevtoolsService } from '../service'
+import type { Service } from '../service'
 
 const logger = createLogger('@vitamin/devtools:debugger')
 
-export class DevtoolsDebugger {
-  public readonly serviceUrl: string
+export class Debugger {
   public readonly breakpoints: Breakpoints
-  private readonly service: DevtoolsService
+  private readonly service: Service
 
   constructor(
-    service: DevtoolsService, 
+    service: Service, 
     breakpoints: Breakpoints
   ) {
     this.service = service
-    this.serviceUrl = service.debuggerPauseUrl
     this.breakpoints = breakpoints
   }
 

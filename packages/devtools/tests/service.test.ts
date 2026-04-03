@@ -89,7 +89,7 @@ describe('DevtoolService', () => {
   // 在修复 service.ts stop() 竞态之前，下列测试暂时跳过。
   it.skip('starts service and closes connected websocket clients', async () => {
     const port = await getFreePort()
-    const service = new DevtoolsService({ port, noServer: false }, new Breakpoints())
+    const service = new DevtoolsService({ port }, new Breakpoints())
 
     await service.start()
     // service-worker 实际监听路径为 /${serviceId}/inspect（而非 service.url 中的 /ws）
@@ -103,7 +103,7 @@ describe('DevtoolService', () => {
 
   it.skip('broadcasts message to websocket clients', async () => {
     const port = await getFreePort()
-    const service = new DevtoolsService({ port, noServer: false }, new Breakpoints())
+    const service = new DevtoolsService({ port }, new Breakpoints())
 
     await service.start()
     const ws = await connectWebSocket(inspectUrl(service))
@@ -123,7 +123,7 @@ describe('DevtoolService', () => {
   // 此测试在修复路由前无法通过，已暂时跳过。
   it.skip('waits for a websocket command before resuming paused requests', async () => {
     const port = await getFreePort()
-    const service = new DevtoolsService({ port, noServer: false }, new Breakpoints())
+    const service = new DevtoolsService({ port }, new Breakpoints())
 
     await service.start()
     const ws = await connectWebSocket(inspectUrl(service))

@@ -1,7 +1,6 @@
 import { randomUUID } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
-import { Server } from 'node:http'
 import { Worker } from 'node:worker_threads'
 import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
 
@@ -35,7 +34,7 @@ function resolveWorkerPath(): string {
   return join(thisDir, 'service-worker.ts')
 }
 
-interface DevtoolsServiceEvents extends Events {
+interface ServiceEvents extends Events {
   'Debugger.enabled': () => void,
   'Debugger.disabled': () => void,
   'Debugger.started': () => void,
@@ -43,13 +42,11 @@ interface DevtoolsServiceEvents extends Events {
   'error': (error: Error) => void,
 }
 
-interface DevtoolsServiceOptions {
+interface ServiceOptions {
   port?: number
-  server?: Server
-  noServer: boolean
 }
-export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
-  private readonly port: number | undefined
+export class Service extends TypedEventEmitter<ServiceEvents> {
+  private port: number | undefined
   private readonly id: string = randomUUID()
   private worker: Worker | null = null
   private started = false
@@ -64,27 +61,11 @@ export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
     return `ws://${SERVICE_HOST}:${this.port}/${this.id}/ws`
   }
 
-  public get debuggerPauseUrl(): string {
-    return `${this.serviceUrl}/command/debugger/paused`
-  }
-
-  public get debuggerCommandUrl(): string {
-    return `${this.serviceUrl}/command/debugger/command`
-  }
-
-  public get loggerUrl(): string {
-    return `${this.serviceUrl}/command/logger`
-  }
-
-  public get sessionUrl(): string {
-    return `${this.serviceUrl}/command/session`
-  }
-
-  constructor(options: DevtoolsServiceOptions, breakpoints: Breakpoints) {
+  constructor(
+    breakpoints: Breakpoints,
+    options: ServiceOptions
+  ) {
     super()
-    if (options.noServer && options.port) {
-      throw new Error('Cannot specify a port when noServer is true')
-    }
 
     this.port = options.port
     this.breakpoints = breakpoints
@@ -267,6 +248,9 @@ export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
         this.emit('Debugger.disabled')
         break
       case 'Debugger.started':
+        if (typeof payload.port === 'number') {
+          this.port = payload.port
+        }
         this.emit('Debugger.started')
         break
       case 'Debugger.stopped':

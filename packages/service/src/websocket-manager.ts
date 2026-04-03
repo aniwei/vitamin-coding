@@ -1,5 +1,5 @@
 import { WebSocketServer } from 'ws'
-import { createLogger } from '@vitamin/shared'
+import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
 import type { WebSocket } from 'ws'
 import type { IncomingMessage } from 'node:http'
 import type { Socket } from 'node:net'
@@ -12,20 +12,24 @@ export type WebSocketClientHandler = (
   message: WebSocketClientMessage,
 ) => void
 
-export class WebSocketManager {
+interface WebSocketManagerEvents extends Events {
+  message: (clientId: string, message: WebSocketClientMessage) => void
+}
+
+export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> {
   private readonly wss: WebSocketServer
   private readonly clients = new Map<string, WebSocket>()
   private readonly sessionSubscriptions = new Map<string, Set<string>>() 
-  private nextClientId = 0
-  private clientHandler: WebSocketClientHandler | null = null
+  private clientId = 0
 
   get clientCount(): number {
     return this.clients.size
   }
 
   constructor() {
+    super()
     this.wss = new WebSocketServer({ noServer: true })
-    this.wss.on('connection', this.handleConnection)
+    this.wss.on('connection', this.onConnection)
   }
 
   handleUpgrade(
@@ -41,10 +45,6 @@ export class WebSocketManager {
     this.wss.handleUpgrade(request, socket, head, (ws) => this.wss.emit('connection', ws, request))
     
     return true
-  }
-
-  onClientMessage(handler: WebSocketClientHandler): void {
-    this.clientHandler = handler
   }
 
   broadcast(message: WebSocketMessage): void {
@@ -88,8 +88,8 @@ export class WebSocketManager {
     this.wss.close()
   }
 
-  private handleConnection = (ws: WebSocket) => {
-    const clientId = String(++this.nextClientId)
+  private onConnection = (ws: WebSocket) => {
+    const clientId = String(++this.clientId)
     this.clients.set(clientId, ws)
 
     logger.debug(`client connected: ${clientId}`)
@@ -127,7 +127,7 @@ export class WebSocketManager {
         }
 
         // Forward to handler
-        this.clientHandler?.(clientId, message)
+        this.emit('message', clientId, message)
       } catch {
         logger.warn(`invalid message from client ${clientId}`)
       }

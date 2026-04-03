@@ -36,8 +36,10 @@ export function createApp(context: CodingService, options: AppOptions = {}): Hon
   app.route('/api/logs', createLogRoute(options.debugBridge ?? null))
 
   if (options.staticDir) {
-    app.get('*', (c) => context.serveStaticFile(c))
+    app.get('*', c => context.static(c))
   }
+
+  app.notFound((c) => c.text('not found', 404))
 
   return app
 }

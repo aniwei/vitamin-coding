@@ -1,22 +1,17 @@
 /**
- * 例: Devtools + Web UI 共享端口服务
+ * 例: Devtools + Web UI 服务
  *
- * 演示 CodingService 复用 devtools Worker HTTP 端口的两种方式:
+ * DevtoolsService 使用 Worker 线程运行独立 HTTP/WS 服务，
+ * 负责断点暂停/恢复通信（主线程 Atomics.wait() 阻塞时仍能响应）。
  *
- *   方式 A (推荐): CodingService 作为主服务器，devtools 挂载路由
- *     - CodingService 拥有 HTTP server，devtools 以 noServer 模式运行
- *     - 单端口同时提供 web-ui API + devtools debug API
+ *   - 指定 port: devtools inspector 固定绑定到该端口
+ *   - 不指定 port: 自动分配随机端口（内部使用，不对外暴露）
  *
- *   方式 B: 双端口，各自独立运行
- *     - CodingService on :8080 (web-ui)
- *     - DevtoolsService on :9229 (debug inspector)
- *
- * 本例展示方式 B (更简单，已有功能即可):
+ * 本例: devtools on :9229, Web UI service on :8080
  *   tsx example/devtools-service.ts
  */
-
-import { createVitamin } from '../src'
 import { createCodingService } from '@vitamin/service'
+import { createVitamin } from '../src'
 
 const modelId = process.env.CODING_EXAMPLE_MODEL_ID ?? 'github-copilot/gpt-4o'
 

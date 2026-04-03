@@ -1,18 +1,21 @@
-import { createServer, IncomingMessage, type Server } from 'node:http'
+import { createServer, type Server } from 'node:http'
 import { readFileSync, existsSync } from 'node:fs'
 import { join, extname } from 'node:path'
 import { Hono } from 'hono'
+import { cors } from 'hono/cors'
 import { createLogger } from '@vitamin/shared'
-import { WebSocketManager } from './websocket-manager'
+import { WebSocketManager } from './ws-manager'
 import { EventBridge } from './event-bridge'
-import { DebugBridge } from './debug-bridge'
-import { createApp } from './create-app'
+import { createHealthRoute } from './routes/health'
+import { createChatRoute } from './routes/chat'
+import { createSessionsRoute } from './routes/sessions'
+import { createConfigRoute } from './routes/config'
+import type { VitaminContext } from '../types'
+import type { AgentSession } from '../session/agent-session'
 import type { CodingServiceOptions } from './types'
 import type { Socket } from 'node:net'
-import type { VitaminContext, AgentSession } from '@vitamin/coding'
 
-
-const logger = createLogger('@vitamin/service')
+const logger = createLogger('@vitamin/coding:service')
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
@@ -26,20 +29,33 @@ const MIME_TYPES: Record<string, string> = {
   '.woff': 'font/woff',
 }
 
+/**
+ * HTTP + WebSocket service that bridges VitaminApp ↔ web-ui.
+ *
+ * Architecture:
+ *   - Hono-based REST API on `/api/*` (matching web-ui client.ts expectations)
+ *   - WebSocket on `/ws` (matching web-ui websocket.ts expectations)
+ *   - Optional static file serving for web-ui production build
+ *   - Optional devtools route mounting via `mountDevtools()`
+ *
+ * Usage:
+ *   const vitamin = createVitamin({ ... })
+ *   await vitamin.start()
+ *   const service = createCodingService(vitamin, { port: 8080 })
+ *   await service.start()
+ */
 export class CodingService {
   private readonly app: Hono
+  private readonly ws: WebSocketManager
   private readonly server: Server
   private readonly bridges = new Map<string, EventBridge>()
   private readonly host: string
   private readonly port: number
   private readonly staticDir?: string
-  private readonly debugBridge: DebugBridge | null = null
   private started = false
-  
-  public readonly ws: WebSocketManager
 
   constructor(
-    public readonly vitamin: VitaminContext,
+    private readonly ctx: VitaminContext,
     options: CodingServiceOptions,
   ) {
     this.host = options.host ?? '127.0.0.1'
@@ -47,73 +63,63 @@ export class CodingService {
     this.staticDir = options.staticDir
 
     this.ws = new WebSocketManager()
-
-    if (options.devtools) {
-      this.debugBridge = new DebugBridge(options.devtools, this.ws)
-    }
-
-    this.app = createApp(this, { 
-      cors: options.cors, 
-      devtools: options.devtools, 
-      staticDir: options.staticDir,
-      debugBridge: this.debugBridge,
-    })
-
+    this.app = this.createApp(options.corsOrigin)
     this.server = createServer()
 
-    this.server.on('request', (req, res) => {
-      debugger
-    })
-    this.server.on('upgrade', this.onUpgrade)
+    // Wire HTTP → Hono
+    this.server.on('request', this.app.fetch)
 
-    this.ws.on('message', (clientId, message) => {
+    // Wire WebSocket upgrades
+    this.server.on('upgrade', (req, socket, head) => {
+      const url = new URL(req.url ?? '/', `http://${this.host}:${this.port}`)
+      const handled = this.ws.handleUpgrade(req, socket as Socket, head as Buffer, url.pathname)
+      if (!handled) {
+        // If devtools or other services are mounted, they could handle it here.
+        // For now, destroy unrecognized upgrades.
+        (socket as Socket).destroy()
+      }
+    })
+
+    // Handle incoming WS client messages (approve, reject, etc.)
+    this.ws.onClientMessage((clientId, message) => {
       this.handleClientMessage(clientId, message)
     })
   }
 
+  /** Get the underlying HTTP server */
   get httpServer(): Server {
     return this.server
   }
 
-  onUpgrade = (req: IncomingMessage, socket: Socket, head: Buffer) => {
-    const url = new URL(req.url ?? '/', `http://${this.host}:${this.port}`)
-    const handled = this.ws.handleUpgrade(
-      req, 
-      socket, 
-      head, 
-      url.pathname
-    )
-
-    if (!handled) {
-      socket.destroy()
-    }
+  /** Get the WebSocket manager (for external event injection) */
+  get wsManager(): WebSocketManager {
+    return this.ws
   }
 
+  /** Start listening */
   async start(): Promise<void> {
     if (this.started) return
 
     return new Promise<void>((resolve, reject) => {
       this.server.listen(this.port, this.host, () => {
         this.started = true
-        this.debugBridge?.attach()
         logger.info(`service started on http://${this.host}:${this.port}`)
         resolve()
       })
-
       this.server.on('error', reject)
     })
   }
 
+  /** Stop the server */
   async stop(): Promise<void> {
     if (!this.started) return
 
-    this.debugBridge?.detach()
-
+    // Detach all bridges
     for (const [, bridge] of this.bridges) {
       bridge.detach()
     }
-
     this.bridges.clear()
+
     this.ws.close()
 
     return new Promise<void>((resolve) => {
@@ -125,6 +131,10 @@ export class CodingService {
     })
   }
 
+  /**
+   * Attach event bridge for a session.
+   * Call this after creating an AgentSession to enable real-time WS streaming.
+   */
   attachSession(session: AgentSession): void {
     if (this.bridges.has(session.id)) return
 
@@ -132,6 +142,7 @@ export class CodingService {
     bridge.attach()
     this.bridges.set(session.id, bridge)
 
+    // Notify all WS clients about new session activity
     this.ws.broadcast({
       type: 'session_activity',
       data: {
@@ -154,12 +165,46 @@ export class CodingService {
   /**
    * Mount additional Hono routes (e.g., devtools debug routes).
    * Must be called before start().
+   *
+   * Example:
+   *   service.mount('/devtools', devtoolsApp)
    */
-  mount(path: string, routeApp: Hono): void {
-    this.app.route(path, routeApp)
+  mount(path: string, app: Hono): void {
+    this.app.route(path, app)
   }
 
-  static(c: any) {
+  private createApp(corsOrigin?: string): Hono {
+    const app = new Hono()
+
+    // CORS for dev mode
+    if (corsOrigin) {
+      app.use(
+        '/api/*',
+        cors({
+          origin: corsOrigin,
+          allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+          allowHeaders: ['Content-Type', 'Authorization'],
+        }),
+      )
+    }
+
+    // API routes — matching web-ui client.ts endpoints
+    app.route('/api/health', createHealthRoute(this.ctx))
+    app.route('/api/chat', createChatRoute(this.ctx, this.ws, this.bridges))
+    app.route('/api/sessions', createSessionsRoute(this.ctx, this.ws, this.bridges))
+    app.route('/api/config', createConfigRoute(this.ctx))
+
+    // Static file serving for production web-ui build
+    if (this.staticDir) {
+      app.get('*', (c) => {
+        return this.serveStatic(c)
+      })
+    }
+
+    return app
+  }
+
+  private serveStatic(c: any) {
     if (!this.staticDir) {
       return c.text('not found', 404)
     }
@@ -177,6 +222,7 @@ export class CodingService {
     }
 
     if (!existsSync(fullPath)) {
+      // SPA fallback: serve index.html for non-asset routes
       const indexPath = join(this.staticDir, 'index.html')
       if (existsSync(indexPath)) {
         const content = readFileSync(indexPath)
@@ -202,91 +248,34 @@ export class CodingService {
     const sessionId = message.data.sessionId as string | undefined
 
     switch (message.type) {
-      case 'approve':
+      case 'approve': {
+        // Tool approval — forward to the hook system
         logger.debug(`approval from client ${clientId} for session ${sessionId}`)
         break
-      case 'reject':
+      }
+      case 'reject': {
         logger.debug(`rejection from client ${clientId} for session ${sessionId}`)
         break
-      case 'ask_user_response':
+      }
+      case 'ask_user_response': {
         logger.debug(`ask_user response from client ${clientId}`)
         break
+      }
       case 'plan_approve':
-      case 'plan_reject':
+      case 'plan_reject': {
         logger.debug(`plan ${message.type} from client ${clientId}`)
         break
-      case 'debug_command':
-      case 'Debugger.resume':
-      case 'Debugger.stepOver':
-      case 'Debugger.stepInto':
-      case 'Debugger.disable':
-        this.handleDebugCommand(message.type, message.data)
-        break
-      case 'Debugger.setBreakpoint':
-        this.handleDebugSetBreakpoint(message.data)
-        break
-      case 'Debugger.setBreakpointsActive':
-        this.handleDebugSetBreakpointsActive(message.data)
-        break
+      }
       default:
         logger.debug(`unknown client message type: ${message.type}`)
     }
   }
-
-  private handleDebugCommand(method: string, data: Record<string, unknown>): void {
-    if (!this.debugBridge) return
-
-    // Map CDP-style method names to command types
-    const methodToType: Record<string, string> = {
-      'Debugger.resume': 'continue',
-      'Debugger.stepOver': 'next',
-      'Debugger.stepInto': 'step',
-      'Debugger.disable': 'stop',
-      'debug_command': data.type as string, // legacy
-    }
-
-    const type = methodToType[method] ?? (data.type as string)
-    if (!type) return
-
-    this.debugBridge.sendCommand(
-      {
-        type,
-        seq: (data.seq as number) ?? Date.now(),
-        ...(data.depth !== undefined ? { depth: data.depth as number } : {}),
-      },
-      data.payload as Record<string, unknown> | undefined,
-    )
-  }
-
-  private handleDebugSetBreakpoint(data: Record<string, unknown>): void {
-    // Forward breakpoint changes via the bridge
-    if (!this.debugBridge) return
-    // Forward as REST-equivalent via WS
-    const point = data.point as string
-    const enabled = data.enabled as boolean
-    if (point !== undefined && enabled !== undefined) {
-      this.debugBridge.sendCommand({
-        type: 'setBreakpoint',
-        seq: Date.now(),
-        point,
-        enabled,
-      } as any)
-    }
-  }
-
-  private handleDebugSetBreakpointsActive(data: Record<string, unknown>): void {
-    if (!this.debugBridge) return
-    this.debugBridge.sendCommand({
-      type: 'setBreakpointsActive',
-      seq: Date.now(),
-      active: data.active as boolean,
-    } as any)
-  }
 }
 
+/** Factory function */
 export function createCodingService(
-  context: VitaminContext,
+  ctx: VitaminContext,
   options: CodingServiceOptions,
 ): CodingService {
-  return new CodingService(context, options)
+  return new CodingService(ctx, options)
 }

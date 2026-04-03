@@ -1,5 +1,5 @@
 import WebSocket from 'ws'
-import { createLogger } from '@vitamin/shared'
+import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
 import type { WebSocketManager } from './websocket-manager'
 import type { Devtools } from '@vitamin/devtools'
 import type { PauseResumePayload } from '@vitamin/devtools'
@@ -15,19 +15,24 @@ export interface LogEntry {
   data?: Record<string, unknown>
 }
 
-type LogListener = (entry: LogEntry) => void
+interface DebugBridgeEvents extends Events {
+  'Debugger.paused': (data: Record<string, unknown>) => void
+  'Debugger.resumed': (data: Record<string, unknown>) => void
+  'Log.entryAdded': (entry: LogEntry) => void
+}
 
-export class DebugBridge {
-  private ws: WebSocket | null = null
+export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
+  private socket: WebSocket | null = null
   private reconnectTimer: ReturnType<typeof setTimeout> | null = null
   private readonly logBuffer: LogEntry[] = []
-  private readonly logListeners = new Set<LogListener>()
   private logIdCounter = 0
 
   constructor(
     private readonly devtools: Devtools,
     private readonly wsManager: WebSocketManager,
-  ) {}
+  ) {
+    super()
+  }
 
   attach(): void {
     this.connect()
@@ -38,16 +43,16 @@ export class DebugBridge {
       clearTimeout(this.reconnectTimer)
       this.reconnectTimer = null
     }
-    this.ws?.close()
-    this.ws = null
+    this.socket?.close()
+    this.socket = null
   }
 
   sendCommand(
     command: { type: string; seq: number; depth?: number },
     payload?: PauseResumePayload,
   ): void {
-    if (this.ws?.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify({ ...command, payload }))
+    if (this.socket?.readyState === WebSocket.OPEN) {
+      this.socket.send(JSON.stringify({ ...command, payload }))
     } else {
       logger.warn('debug bridge not connected, command dropped')
     }
@@ -57,24 +62,17 @@ export class DebugBridge {
     return [...this.logBuffer]
   }
 
-  onLog(listener: LogListener): () => void {
-    this.logListeners.add(listener)
-    return () => {
-      this.logListeners.delete(listener)
-    }
-  }
-
   private connect(): void {
     const inspectUrl = this.devtools.service.serviceUrl
       .replace('http://', 'ws://') + '/inspect'
 
-    this.ws = new WebSocket(inspectUrl)
+    this.socket = new WebSocket(inspectUrl)
 
-    this.ws.on('open', () => {
+    this.socket.on('open', () => {
       logger.info('debug bridge connected to devtools worker')
     })
 
-    this.ws.on('message', (data: Buffer) => {
+    this.socket.on('message', (data: Buffer) => {
       try {
         const event = JSON.parse(data.toString())
         this.handleDevtoolsEvent(event)
@@ -83,12 +81,12 @@ export class DebugBridge {
       }
     })
 
-    this.ws.on('close', () => {
+    this.socket.on('close', () => {
       logger.info('debug bridge disconnected, scheduling reconnect')
       this.scheduleReconnect()
     })
 
-    this.ws.on('error', (err) => {
+    this.socket.on('error', (err) => {
       logger.warn(`debug bridge error: ${err.message}`)
     })
   }
@@ -148,9 +146,7 @@ export class DebugBridge {
         data: { entry: entry as unknown as Record<string, unknown> },
       })
 
-      for (const listener of this.logListeners) {
-        listener(entry)
-      }
+      this.emit('Log.entryAdded', entry)
     }
   }
 

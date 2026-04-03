@@ -1,12 +1,9 @@
 import { URL } from 'node:url'
-import { createServer, type IncomingMessage, type ServerResponse } from 'node:http'
+import { Hono } from 'hono'
+import { createServer, type IncomingMessage } from 'node:http'
 import { parentPort, workerData } from 'node:worker_threads'
 import { randomUUID } from 'node:crypto'
-import { Hono } from 'hono'
 import { WebSocketServer, type WebSocket } from 'ws'
-import { createLoggerRoute } from './routes/logger'
-import { createSessionRoute } from './routes/session'
-import { createDebuggerRoute } from './routes/debugger'
 import {
   SAB_HEADER_SIZE,
   WAKE_RESUMED,
@@ -17,12 +14,13 @@ import {
   COMMAND_OVER,
   COMMAND_STOP,
 } from './protocol'
+import type { AddressInfo } from 'node:net'
 import type { PauseResumePayload } from './protocol'
 import type { Socket } from 'node:net'
 
 interface WorkerData {
   host: string
-  port: number
+  port?: number
   serviceId: string
 }
 
@@ -51,18 +49,6 @@ const workerPort = (() => {
   return parentPort
 })()
 
-function createCommandRoutes(server: ServiceWorkerServer): Hono {
-  const app = new Hono()
-
-  app.route('/logger', createLoggerRoute(server))
-  app.route(`/session`,createSessionRoute(server))
-  app.route(`/debugger`, createDebuggerRoute(server))
-
-  app.notFound((context) => context.text('not found', 404))
-
-  return app
-}
-
 export class ServiceWorkerServer {
   private readonly port: number
   private readonly host: string
@@ -78,17 +64,12 @@ export class ServiceWorkerServer {
   private readonly wss
 
   constructor({ serviceId, host, port }: WorkerData) {
-    this.port = port
+    this.port = port ?? 0
     this.host = host
     this.serviceId = serviceId
     this.base = `/${this.serviceId}`
 
-    const app = new Hono()
-
-    app.route(`/command/${this.base}`, createCommandRoutes(this))
-
     this.server = createServer()
-    this.server.on('request', app.fetch)
     this.server.on('upgrade', this.handleUpgrade)
 
     this.wss = new WebSocketServer({ noServer: true })
@@ -98,7 +79,10 @@ export class ServiceWorkerServer {
   }
 
   start(): void {
-    this.server.listen(this.port, this.host, () => workerPort.postMessage({ type: 'Debugger.started' }))
+    this.server.listen(this.port ?? 0, this.host, () => {
+      const addr = this.server.address() as AddressInfo
+      workerPort.postMessage({ type: 'Debugger.started', port: addr.port })
+    })
   }
 
   broadcast(message: string): void {
@@ -119,8 +103,6 @@ export class ServiceWorkerServer {
       workerPort.postMessage({ type, requestId, ...(payload ?? {}) })
     })
   }
-
-
 
   private handleMessage(data: unknown): void {
     const message = data as Record<string, unknown>
