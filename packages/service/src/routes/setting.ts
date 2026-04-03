@@ -1,14 +1,15 @@
 import { Hono } from 'hono'
+import { CodingService } from '../coding-service'
 import type { VitaminContext } from '@vitamin/coding'
 
-export function createConfigRoute(ctx: VitaminContext): Hono {
+export function createConfigRoute(service: CodingService): Hono {
   const app = new Hono()
 
   // GET /config — current configuration
   app.get('/', (c) => {
-    const active = ctx.sessionManager.active
+    const active = service.vitamin.sessionManager.active
     return c.json({
-      working_directory: ctx.workspaceDir,
+      working_directory: service.vitamin.workspaceDir,
       model: active?.model?.id,
       model_provider: active?.model?.provider,
     })
@@ -22,7 +23,7 @@ export function createConfigRoute(ctx: VitaminContext): Hono {
 
   // GET /config/providers — list available providers
   app.get('/providers', (c) => {
-    const providers = ctx.providerRegistry.list()
+    const providers = service.vitamin.providerRegistry.list()
     return c.json(
       providers.map((p: any) => ({
         id: p.id,
@@ -36,7 +37,7 @@ export function createConfigRoute(ctx: VitaminContext): Hono {
   app.post('/verify-model', async (c) => {
     const body = await c.req.json<{ provider: string; model: string }>()
     try {
-      const model = ctx.modelRegistry.resolve(body.model)
+      const model = service.vitamin.modelRegistry.resolve(body.model)
       return c.json({ valid: !!model })
     } catch {
       return c.json({ valid: false, error: 'model not found' })

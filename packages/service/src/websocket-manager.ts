@@ -7,7 +7,7 @@ import type { WebSocketMessage, WebSocketClientMessage } from './types'
 
 const logger = createLogger('@vitamin/service:ws-manager')
 
-export type WSClientHandler = (
+export type WebSocketClientHandler = (
   clientId: string,
   message: WebSocketClientMessage,
 ) => void
@@ -15,16 +15,19 @@ export type WSClientHandler = (
 export class WebSocketManager {
   private readonly wss: WebSocketServer
   private readonly clients = new Map<string, WebSocket>()
-  private readonly sessionSubscriptions = new Map<string, Set<string>>() // sessionId → clientIds
+  private readonly sessionSubscriptions = new Map<string, Set<string>>() 
   private nextClientId = 0
-  private clientHandler: WSClientHandler | null = null
+  private clientHandler: WebSocketClientHandler | null = null
+
+  get clientCount(): number {
+    return this.clients.size
+  }
 
   constructor() {
     this.wss = new WebSocketServer({ noServer: true })
     this.wss.on('connection', this.handleConnection)
   }
 
-  /** Call from parent HTTP server's 'upgrade' event */
   handleUpgrade(
     request: IncomingMessage,
     socket: Socket,
@@ -40,12 +43,10 @@ export class WebSocketManager {
     return true
   }
 
-  /** Register handler for incoming client messages */
-  onClientMessage(handler: WSClientHandler): void {
+  onClientMessage(handler: WebSocketClientHandler): void {
     this.clientHandler = handler
   }
 
-  /** Broadcast to all connected clients */
   broadcast(message: WebSocketMessage): void {
     const payload = JSON.stringify(message)
     for (const [, ws] of this.clients) {
@@ -55,11 +56,9 @@ export class WebSocketManager {
     }
   }
 
-  /** Send to clients subscribed to a specific session */
   sendToSession(sessionId: string, message: WebSocketMessage): void {
     const subscribers = this.sessionSubscriptions.get(sessionId)
     if (!subscribers || subscribers.size === 0) {
-      // Fall back to broadcast if no explicit subscriptions
       this.broadcast(message)
       return
     }
@@ -73,16 +72,11 @@ export class WebSocketManager {
     }
   }
 
-  /** Send to a specific client */
   sendToClient(clientId: string, message: WebSocketMessage): void {
     const ws = this.clients.get(clientId)
     if (ws && ws.readyState === ws.OPEN) {
       ws.send(JSON.stringify(message))
     }
-  }
-
-  get clientCount(): number {
-    return this.clients.size
   }
 
   close(): void {
@@ -105,7 +99,6 @@ export class WebSocketManager {
       try {
         const message = JSON.parse(raw.toString()) as WebSocketClientMessage
 
-        // Handle ping internally
         if (message.type === 'ping') {
           this.sendToClient(clientId, {
             type: 'pong',
@@ -114,7 +107,6 @@ export class WebSocketManager {
           return
         }
 
-        // Handle session subscriptions
         if (message.type === 'subscribe_session') {
           const sessionId = message.data.sessionId as string
           if (sessionId) {

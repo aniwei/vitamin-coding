@@ -156,6 +156,29 @@ export interface WorkflowOptions {
 export const LOG_LEVELS = ['trace', 'debug', 'info', 'warn', 'error', 'fatal'] as const
 export type LogLevel = (typeof LOG_LEVELS)[number]
 
+export const PERMISSION_MODES = ['bypass', 'auto', 'confirm', 'strict', 'readonly'] as const
+export type PermissionMode = (typeof PERMISSION_MODES)[number]
+
+export interface PermissionRuleConfig {
+  name: string
+  effect: 'allow' | 'deny' | 'ask'
+  tools?: string[]
+  paths?: string[]
+  deny_reason?: string
+  ask_prompt?: string
+}
+
+export interface PermissionPolicyConfig {
+  name: string
+  priority?: number
+  enabled?: boolean
+  scope?: {
+    agents?: string[]
+    sessions?: string[]
+  }
+  rules: PermissionRuleConfig[]
+}
+
 export interface VitaminSettingFromSchema {
   config_version?: string
   version?: string
@@ -176,6 +199,8 @@ export interface VitaminSettingFromSchema {
   disabled_agents?: string[]
   disabled_hooks?: string[]
   disabled_tools?: string[]
+  permission_mode?: PermissionMode
+  permissions?: PermissionPolicyConfig[]
   _migrations?: string[]
   [key: string]: unknown
 }
@@ -200,6 +225,8 @@ export const VITAMIN_SETTING_KEYS = [
   'disabled_agents',
   'disabled_hooks',
   'disabled_tools',
+  'permission_mode',
+  'permissions',
   '_migrations',
 ] as const
 
@@ -238,4 +265,6 @@ export const VITAMIN_DEFAULT_CONFIG: VitaminSetting = {
   disabled_agents: [],
   disabled_hooks: [],
   disabled_tools: [],
+  permission_mode: 'auto',
+  permissions: [],
 }

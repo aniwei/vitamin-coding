@@ -31,6 +31,14 @@ export const BREAKPOINT_POINTS = [
 
 export type BreakpointPoint = (typeof BREAKPOINT_POINTS)[number]
 
+export interface MessageSummaryItem {
+  index: number
+  role: 'user' | 'assistant' | 'tool_result' | 'system'
+  preview: string
+  toolName?: string
+  tokenEstimate?: number
+}
+
 export interface DebugSnapshot {
   turn: number
   point: BreakpointPoint
@@ -39,7 +47,50 @@ export interface DebugSnapshot {
   lastToolName?: string
   tokenUsage?: { input: number; output: number }
   metadata?: Record<string, string | number | boolean | null>
+  systemPrompt?: string
+  messagesSummary?: MessageSummaryItem[]
+  llmParams?: {
+    temperature?: number
+    maxTokens?: number
+    thinkingLevel?: string
+  }
 }
+
+export interface InjectedMessage {
+  role: 'user' | 'system'
+  content: string
+}
+
+export interface PauseResumePayload {
+  systemPrompt?: string
+  injectMessages?: InjectedMessage[]
+  removeMessageIndices?: number[]
+  llmParams?: {
+    temperature?: number
+    maxTokens?: number
+    thinkingLevel?: string
+  }
+  metadata?: Record<string, string | number | boolean | null>
+}
+
+export interface PauseResult {
+  command: DebugCommand
+  payload: PauseResumePayload | null
+}
+
+// ─── Shared memory constants ───
+export const WAKE_PENDING = 0
+export const WAKE_RESUMED = 1
+export const WAKE_WITH_PAYLOAD = 2
+
+export const COMMAND_CONTINUE = 0
+export const COMMAND_NEXT = 1
+export const COMMAND_STEP = 2
+export const COMMAND_OVER = 3
+export const COMMAND_STOP = 4
+
+export const SAB_HEADER_SIZE = 12
+export const SAB_DEFAULT_PAYLOAD_SIZE = 64 * 1024
 
 export type DebuggerEvent =
   | {

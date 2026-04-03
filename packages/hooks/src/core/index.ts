@@ -66,3 +66,31 @@ export {
   clearTokenUsage,
 } from './transform'
 export type { TokenBudgetConfig } from './transform'
+
+// Permission
+export {
+  PermissionPolicyRegistry,
+  PermissionAuditLog,
+  PermissionGuardHook,
+  compilePolicyFromConfig,
+  createPermissionGuardHook,
+  FILE_GUARD_POLICY,
+  DESTRUCTIVE_COMMAND_POLICY,
+  createDirectoryFreezePolicy,
+  createDisabledToolsPolicy,
+  createAgentBoundaryPolicy,
+  createPermissionModePolicy,
+} from './permission'
+export type {
+  RuleEffect,
+  PermissionMode,
+  PolicyScope,
+  PermissionContext,
+  RuleMatch,
+  PermissionRule,
+  PermissionPolicy,
+  PermissionDecision,
+  PermissionAuditEntry,
+  PermissionRuleConfig,
+  PermissionPolicyConfig,
+} from './permission'

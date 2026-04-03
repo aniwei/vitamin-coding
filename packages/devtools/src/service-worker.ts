@@ -7,6 +7,17 @@ import { WebSocketServer, type WebSocket } from 'ws'
 import { createLoggerRoute } from './routes/logger'
 import { createSessionRoute } from './routes/session'
 import { createDebuggerRoute } from './routes/debugger'
+import {
+  SAB_HEADER_SIZE,
+  WAKE_RESUMED,
+  WAKE_WITH_PAYLOAD,
+  COMMAND_CONTINUE,
+  COMMAND_NEXT,
+  COMMAND_STEP,
+  COMMAND_OVER,
+  COMMAND_STOP,
+} from './protocol'
+import type { PauseResumePayload } from './protocol'
 import type { Socket } from 'node:net'
 
 interface WorkerData {
@@ -16,9 +27,7 @@ interface WorkerData {
 }
 
 interface PendingPause {
-  kind: 'http' | 'shared'
-  response?: ServerResponse
-  flag?: SharedArrayBuffer
+  flag: SharedArrayBuffer
 }
 
 interface DebugCommand {
@@ -160,7 +169,7 @@ export class ServiceWorkerServer {
   private handlePausedMessage(message: Record<string, unknown>): void {
     this.queue(
       { type: 'Agent.debugger.paused', snapshot: message.snapshot },
-      { kind: 'shared', flag: message.flag as SharedArrayBuffer },
+      { flag: message.shared as SharedArrayBuffer },
     )
   }
 
@@ -194,7 +203,7 @@ export class ServiceWorkerServer {
     }
   }
 
-  private resolvePause(command: DebugCommand): void {
+  private resolvePause(command: DebugCommand, payload?: PauseResumePayload): void {
     const pause = this.pauses.shift()
 
     if (!pause) {
@@ -202,10 +211,35 @@ export class ServiceWorkerServer {
       return
     }
 
-    if (pause.flag) {
-      const state = new Int32Array(pause.flag)
-      Atomics.store(state, 0, 1)
-      Atomics.notify(state, 0, 1)
+    const header = new Int32Array(pause.flag, 0, 3)
+    const payloadRegion = new Uint8Array(pause.flag, SAB_HEADER_SIZE)
+
+    Atomics.store(header, 1, this.encodeCommandType(command.type))
+
+    if (payload && Object.keys(payload).length > 0) {
+      const jsonBytes = new TextEncoder().encode(JSON.stringify(payload))
+
+      if (jsonBytes.length <= payloadRegion.length) {
+        payloadRegion.set(jsonBytes)
+        Atomics.store(header, 2, jsonBytes.length)
+        Atomics.store(header, 0, WAKE_WITH_PAYLOAD)
+        Atomics.notify(header, 0, 1)
+        return
+      }
+    }
+
+    Atomics.store(header, 0, WAKE_RESUMED)
+    Atomics.notify(header, 0, 1)
+  }
+
+  private encodeCommandType(type: string): number {
+    switch (type) {
+      case 'next': return COMMAND_NEXT
+      case 'step': return COMMAND_STEP
+      case 'over': return COMMAND_OVER
+      case 'stop': return COMMAND_STOP
+      case 'continue':
+      default: return COMMAND_CONTINUE
     }
   }
 
@@ -227,12 +261,14 @@ export class ServiceWorkerServer {
         parsed = null
       }
 
-      const command = this.normalizeCommand(parsed)
+      const msg = parsed as Record<string, unknown>
+      const command = this.normalizeCommand(msg)
       if (!command) {
         return
       }
 
-      this.resolvePause(command)
+      const payload = msg?.payload as PauseResumePayload | undefined
+      this.resolvePause(command, payload)
     })
   }
 

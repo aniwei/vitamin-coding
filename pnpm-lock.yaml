@@ -282,6 +282,9 @@ importers:
       '@vitamin/coding':
         specifier: workspace:*
         version: link:../coding
+      '@vitamin/devtools':
+        specifier: workspace:*
+        version: link:../devtools
       '@vitamin/shared':
         specifier: workspace:*
         version: link:../shared

@@ -52,6 +52,18 @@ export interface Config {
   temperature: number
   enable_bash: boolean
   working_directory: string
+  working_dir?: string
+  // Extended runtime fields returned by the backend
+  mode?: 'normal' | 'plan'
+  autonomy_level?: 'Manual' | 'Semi-Auto' | 'Auto'
+  thinking_level?: 'Off' | 'Low' | 'Medium' | 'High'
+  git_branch?: string | null
+  model_thinking_provider?: string | null
+  model_thinking?: string | null
+  model_compact_provider?: string | null
+  model_compact?: string | null
+  model_vlm_provider?: string | null
+  model_vlm?: string | null
 }
 
 // Provider types
@@ -101,7 +113,14 @@ export interface WebSocketMessage {
     | 'progress'
     | 'nested_tool_call'
     | 'nested_tool_result'
-  data: unknown
+    // ─── CDP-style Debugger domain events ───
+    | 'Debugger.paused'
+    | 'Debugger.resumed'
+    | 'Debugger.breakpointsChanged'
+    // ─── CDP-style Log domain events ───
+    | 'Log.entryAdded'
+  // eslint-disable-next-line @typescript-eslint/no-explicit-any
+  data: any
 }
 
 export interface ToolCall {

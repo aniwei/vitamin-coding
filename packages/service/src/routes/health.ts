@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
-import type { VitaminContext } from '@vitamin/coding'
+import type { CodingService } from '../coding-service'
 
-export function createHealthRoute(_ctx: VitaminContext): Hono {
+export function createHealthRoute(_context: CodingService): Hono {
   const app = new Hono()
 
   app.get('/', (c) =>

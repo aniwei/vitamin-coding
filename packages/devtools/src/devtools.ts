@@ -7,11 +7,11 @@ import { DevtoolsLogger } from './tools/logger'
 interface DevtoolsOptions {
   port?: number
   server?: Server
-  noServer: boolean
+  noServer?: boolean
 }
 
 export class Devtools {
-  private service: DevtoolsService
+  public readonly service: DevtoolsService
   private breakpoints: Breakpoints
   
   public debugger: DevtoolsDebugger
@@ -22,7 +22,7 @@ export class Devtools {
     this.breakpoints = new Breakpoints()
 
     this.service = new DevtoolsService({
-      port: port || 0,
+      port: noServer ? undefined : (port || 0),
       server,
       noServer: !!noServer,
     }, this.breakpoints)

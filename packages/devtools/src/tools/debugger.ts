@@ -1,6 +1,6 @@
 import { createLogger } from '@vitamin/shared'
 import { Breakpoints, type Breakpoint } from './breakpoints'
-import type { BreakpointPoint, DebugSnapshot } from '../protocol'
+import type { BreakpointPoint, DebugSnapshot, PauseResult } from '../protocol'
 import type { DevtoolsService } from '../service'
 
 const logger = createLogger('@vitamin/devtools:debugger')
@@ -48,11 +48,12 @@ export class DevtoolsDebugger {
   }
 
   
-  pause(message: DebugSnapshot) {
+  pause(message: DebugSnapshot): PauseResult | undefined {
     if (this.shouldPause(message.point)) {
       logger.debug({ message }, 'Pausing execution at breakpoint')
       return this.service.pause(message)
     }
+    return undefined
   }
   
   private shouldPause(point: BreakpointPoint): boolean {

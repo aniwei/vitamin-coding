@@ -1,4 +1,4 @@
-import type { Message, Session } from '../types'
+import type { Config, Message, Provider, Session } from '../types'
 
 const API_BASE = '/api'
 

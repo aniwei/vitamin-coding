@@ -5,15 +5,25 @@ import { Server } from 'node:http'
 import { Worker } from 'node:worker_threads'
 import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
 
-import type { DebugSnapshot } from './protocol'
+import type { DebugSnapshot, PauseResult, PauseResumePayload, DebugCommand } from './protocol'
 import type { BreakpointPoint } from './protocol'
 import type { Breakpoints } from './tools/breakpoints'
+import {
+  WAKE_PENDING,
+  WAKE_RESUMED,
+  WAKE_WITH_PAYLOAD,
+  SAB_HEADER_SIZE,
+  SAB_DEFAULT_PAYLOAD_SIZE,
+  COMMAND_CONTINUE,
+  COMMAND_NEXT,
+  COMMAND_STEP,
+  COMMAND_OVER,
+  COMMAND_STOP,
+} from './protocol'
 
 const logger = createLogger('@vitamin/devtools:service')
 
 const SERVICE_HOST = '127.0.0.1'
-const WAKE_PENDING = 0
-const WAKE_RESUMED = 1
 
 function resolveWorkerPath(): string {
   const thisDir = dirname(fileURLToPath(import.meta.url))
@@ -34,12 +44,12 @@ interface DevtoolsServiceEvents extends Events {
 }
 
 interface DevtoolsServiceOptions {
-  port: number
+  port?: number
   server?: Server
   noServer: boolean
 }
 export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
-  private readonly port: number
+  private readonly port: number | undefined
   private readonly id: string = randomUUID()
   private worker: Worker | null = null
   private started = false
@@ -155,9 +165,11 @@ export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
     })
   }
 
-  pause(snapshot: DebugSnapshot): void {
-    const sab = new SharedArrayBuffer(Int32Array.BYTES_PER_ELEMENT)
-    const state = new Int32Array(sab)
+  pause(snapshot: DebugSnapshot): PauseResult {
+    const totalSize = SAB_HEADER_SIZE + SAB_DEFAULT_PAYLOAD_SIZE
+    const sab = new SharedArrayBuffer(totalSize)
+    const header = new Int32Array(sab, 0, 3)
+    const payloadRegion = new Uint8Array(sab, SAB_HEADER_SIZE)
 
     this.worker?.postMessage({
       type: 'paused',
@@ -165,14 +177,42 @@ export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
       shared: sab,
     })
 
-    Atomics.wait(state, 0, WAKE_PENDING)
+    Atomics.wait(header, 0, WAKE_PENDING)
 
-    if (Atomics.load(state, 0) !== WAKE_RESUMED) {
-      throw new Error('Devtools pause resumed with an unexpected state')
+    const stateValue = Atomics.load(header, 0)
+
+    if (stateValue !== WAKE_RESUMED && stateValue !== WAKE_WITH_PAYLOAD) {
+      throw new Error(`Devtools pause resumed with unexpected state: ${stateValue}`)
+    }
+
+    const command = this.decodeCommand(Atomics.load(header, 1))
+
+    let payload: PauseResumePayload | null = null
+    if (stateValue === WAKE_WITH_PAYLOAD) {
+      const payloadLength = Atomics.load(header, 2)
+      if (payloadLength > 0) {
+        const jsonBytes = payloadRegion.slice(0, payloadLength)
+        const jsonStr = new TextDecoder().decode(jsonBytes)
+        payload = JSON.parse(jsonStr) as PauseResumePayload
+      }
+    }
+
+    return { command, payload }
+  }
+
+  private decodeCommand(typeInt: number): DebugCommand {
+    const seq = Date.now()
+    switch (typeInt) {
+      case COMMAND_NEXT: return { type: 'next', seq }
+      case COMMAND_STEP: return { type: 'step', seq }
+      case COMMAND_OVER: return { type: 'over', seq, depth: 0 }
+      case COMMAND_STOP: return { type: 'stop', seq }
+      case COMMAND_CONTINUE:
+      default: return { type: 'continue', seq }
     }
   }
 
-  private handleBreakpointList(requestId: string): void {
+  private handleBreakpoints(requestId: string): void {
     this.worker?.postMessage({
       type: 'Debugger.breakpoints.response',
       requestId,
@@ -212,7 +252,7 @@ export class DevtoolsService extends TypedEventEmitter<DevtoolsServiceEvents> {
 
     switch (payload.type) {
       case 'Debugger.breakpoints.list':
-        this.handleBreakpointList(requestId)
+        this.handleBreakpoints(requestId)
         break
       case 'Debugger.breakpoints.set':
         this.handleBreakpointSet(requestId, payload)

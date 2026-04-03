@@ -5,6 +5,7 @@ import { AbortError, MaxToolTurnsError } from './errors'
 
 import type { ToolExecutor } from './tool-executor'
 import type { AssistantMessage, StreamContext, ToolDefinition, StreamEvent } from '@vitamin/ai'
+import type { PauseResumePayload, MessageSummaryItem } from '@vitamin/devtools'
 import type {
   AgentEvent,
   AgentLoopContext,
@@ -46,12 +47,8 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
     messages, 
     signal, 
     logger,
-    maxTokens,
-    temperature,
     devtools,
-    systemPrompt,
     toolExecutor, 
-    thinkingLevel,
     maxToolTurns, 
     getSteeringMessages,
     getFollowUpMessages,
@@ -59,6 +56,11 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
     convertToLLM,
     emit, 
   } = context
+
+  let systemPrompt = context.systemPrompt
+  let temperature = context.temperature
+  let maxTokens = context.maxTokens
+  let thinkingLevel = context.thinkingLevel
 
   try {
     logger?.info('Agent loop started for model %s with %d messages', context.model.id, messages.length)
@@ -140,13 +142,34 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
         }
 
         invariant(() => {
-          devtools?.debugger.pause({
+          const result = devtools?.debugger.pause({
             turn: turnIndex,
             point: 'model_before',
             frameDepth: 0,
             messagesCount: messages.length,
-            tokenUsage: lastTokenUsage,  
+            tokenUsage: lastTokenUsage,
+            systemPrompt,
+            messagesSummary: summarizeMessages(messages, 10),
+            llmParams: { temperature, maxTokens, thinkingLevel },
           })
+
+          if (result?.payload) {
+            applyPausePayload(result.payload, {
+              getSystemPrompt: () => systemPrompt,
+              setSystemPrompt: (v) => { systemPrompt = v },
+              getTemperature: () => temperature,
+              setTemperature: (v) => { temperature = v },
+              getMaxTokens: () => maxTokens,
+              setMaxTokens: (v) => { maxTokens = v },
+              getThinkingLevel: () => thinkingLevel,
+              setThinkingLevel: (v) => { thinkingLevel = v as any },
+              messages,
+            })
+          }
+
+          if (result?.command.type === 'stop') {
+            throw new AbortError(result.command.type === 'stop' ? 'Stopped by debugger' : undefined)
+          }
 
           return true
         }, `Turn ${turnIndex} before model stream`)
@@ -451,4 +474,64 @@ function createToolDefinitions(tools: AgentTool[]): ToolDefinition[] {
     parameters: tool.parameters,
     visibility: tool.visibility,
   }))
+}
+
+function summarizeMessages(messages: AgentMessage[], lastN: number): MessageSummaryItem[] {
+  const start = Math.max(0, messages.length - lastN)
+  return messages.slice(start).map((msg, i) => ({
+    index: start + i,
+    role: msg.role as MessageSummaryItem['role'],
+    preview: typeof msg.content === 'string'
+      ? msg.content.slice(0, 200)
+      : JSON.stringify(msg.content).slice(0, 200),
+    toolName: msg.role === 'tool_result' ? (msg as any).toolCallId : undefined,
+    tokenEstimate: Math.ceil(
+      (typeof msg.content === 'string' ? msg.content.length : JSON.stringify(msg.content).length) / 4,
+    ),
+  }))
+}
+
+interface PayloadApplyTarget {
+  getSystemPrompt: () => string | undefined
+  setSystemPrompt: (v: string) => void
+  getTemperature: () => number | undefined
+  setTemperature: (v: number) => void
+  getMaxTokens: () => number | undefined
+  setMaxTokens: (v: number) => void
+  getThinkingLevel: () => string | undefined
+  setThinkingLevel: (v: string) => void
+  messages: AgentMessage[]
+}
+
+function applyPausePayload(payload: PauseResumePayload, target: PayloadApplyTarget): void {
+  if (payload.systemPrompt !== undefined) {
+    target.setSystemPrompt(payload.systemPrompt)
+  }
+
+  if (payload.removeMessageIndices?.length) {
+    const sorted = [...payload.removeMessageIndices].sort((a, b) => b - a)
+    for (const idx of sorted) {
+      if (idx >= 0 && idx < target.messages.length) {
+        target.messages.splice(idx, 1)
+      }
+    }
+  }
+
+  if (payload.injectMessages?.length) {
+    for (const msg of payload.injectMessages) {
+      target.messages.push({ role: msg.role, content: msg.content } as AgentMessage)
+    }
+  }
+
+  if (payload.llmParams) {
+    if (payload.llmParams.temperature !== undefined) {
+      target.setTemperature(payload.llmParams.temperature)
+    }
+    if (payload.llmParams.maxTokens !== undefined) {
+      target.setMaxTokens(payload.llmParams.maxTokens)
+    }
+    if (payload.llmParams.thinkingLevel !== undefined) {
+      target.setThinkingLevel(payload.llmParams.thinkingLevel)
+    }
+  }
 }

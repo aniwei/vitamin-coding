@@ -152,10 +152,11 @@ export class VitaminApp implements VitaminContext {
     this.defaultModel = defaultModel
 
     if (inspect) {
-      this.devtools = new Devtools({
-        port: port ?? 0,
-        noServer: true,
-      })
+      this.devtools = new Devtools(
+        port
+          ? { port }
+          : { noServer: true }
+      )
 
       this.globalLogSubscription = attachLogListener((data) => {
         const log = data as { name: string; level: string; msg: string }
@@ -528,7 +529,7 @@ export class VitaminApp implements VitaminContext {
       workspaceDir: options.workspaceDir ?? this.workspaceDir,
       hookRegistry: this.hookRegistry,
       providerRegistry: this.providerRegistry,
-      logger: this.logger,
+      logger: this.logger.child({ sessionId: options.id }),
       devtools: this.devtools ?? undefined,
       promptRefresh: resolvedPromptRefresh,
       maxToolTurns: options.maxToolTurns ?? agentMaxToolTurns ?? this.maxToolTurns,
@@ -631,14 +632,17 @@ export class VitaminApp implements VitaminContext {
       if (this.learningTriggeredSessions.has(input.sessionId)) {
         return
       }
+
       const session = this.getSession(input.sessionId)
       if (!session) {
         return
       }
+
       const messageCount = session.session.messages().length
       if (messageCount < 6) {
         return
       }
+
       this.learningTriggeredSessions.add(input.sessionId)
       this.logger.info('Session idle, prompting for learning: %s', input.sessionId)
       try {

@@ -20,6 +20,7 @@
   },
   "dependencies": {
     "@vitamin/coding": "workspace:*",
+    "@vitamin/devtools": "workspace:*",
     "@vitamin/ai": "workspace:*",
     "@vitamin/shared": "workspace:*",
     "hono": "^4.12.7",

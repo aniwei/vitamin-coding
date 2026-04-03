@@ -461,13 +461,13 @@ export function ToolCallMessage({ message, hasResult }: ToolCallMessageExtProps)
     // For spawn_subagent, use subagent type as verb and description as summary
     // to match TUI: "code-explorer(Auth flow overview)" → "▶ Code Explorer  Auth flow overview"
     if (toolName === 'spawn_subagent') {
-      const subagentType = toolArgs?.subagent_type || toolArgs?.agent_type || ''
+      const subagentType = String(toolArgs?.subagent_type || toolArgs?.agent_type || '')
       if (subagentType) {
         verb = subagentType
           .split(/[-_]/)
           .map((w: string) => w.charAt(0).toUpperCase() + w.slice(1))
           .join(' ')
-        summary = toolArgs?.description || ''
+        summary = String(toolArgs?.description || '')
       }
     }
 
@@ -510,18 +510,19 @@ export function ToolCallMessage({ message, hasResult }: ToolCallMessageExtProps)
 
     // Check for expandable content
     let fullOutput: string | undefined
+    const rd = resultData as any
     if (typeof toolResult === 'string') {
       fullOutput = toolResult
-    } else if (resultData?.output) {
+    } else if (rd?.output) {
       fullOutput =
-        typeof resultData.output === 'string'
-          ? resultData.output
-          : JSON.stringify(resultData.output, null, 2)
-    } else if (Object.keys(resultData || {}).length > 0) {
+        typeof rd.output === 'string'
+          ? rd.output
+          : JSON.stringify(rd.output, null, 2)
+    } else if (Object.keys(rd || {}).length > 0) {
       try {
-        fullOutput = JSON.stringify(resultData, null, 2)
+        fullOutput = JSON.stringify(rd, null, 2)
       } catch {
-        fullOutput = String(resultData)
+        fullOutput = String(rd)
       }
     }
     const hasExpandableContent = !!fullOutput && fullOutput.length > 200

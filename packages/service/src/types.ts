@@ -1,4 +1,16 @@
 import type { AgentSessionEvent } from '@vitamin/coding'
+import type { Devtools } from '@vitamin/devtools'
+
+// ─── CDP-inspired domain protocol ───
+//
+// Inspired by Chrome DevTools Protocol:
+//   - Events use `Domain.event` naming: 'Debugger.paused', 'Log.entryAdded'
+//   - Commands use `Domain.method` naming: 'Debugger.resume', 'Debugger.setBreakpoint'
+//   - All messages serialised as { type, data } (keeping existing WS envelope)
+//
+// Domains:
+//   Debugger — breakpoint management, pause/resume, context writeback
+//   Log      — structured log streaming + history
 
 // ─── WebSocket protocol (server → client) ───
 export type WebSocketEventType =
@@ -31,6 +43,19 @@ export type WebSocketEventType =
   | 'error'
   | 'mcp_status_update'
   | 'mcp_servers_update'
+  // ─── Debugger domain events ───
+  | 'Debugger.paused'
+  | 'Debugger.resumed'
+  | 'Debugger.breakpointsChanged'
+  // ─── Log domain events ───
+  | 'Log.entryAdded'
+  // ─── Legacy aliases (deprecated, kept for compat) ───
+  | 'debug_paused'
+  | 'debug_resumed'
+  | 'debug_command'
+  | 'debug_breakpoints'
+  | 'log_entry'
+  | 'log_batch'
 
 export interface WebSocketMessage {
   type: WebSocketEventType
@@ -47,6 +72,22 @@ export type WebSocketClientMessageType =
   | 'plan_reject'
   | 'subscribe_session'
   | 'unsubscribe_session'
+  // ─── Debugger domain commands ───
+  | 'Debugger.resume'
+  | 'Debugger.stepOver'
+  | 'Debugger.stepInto'
+  | 'Debugger.disable'
+  | 'Debugger.setBreakpoint'
+  | 'Debugger.setBreakpointsActive'
+  // ─── Log domain commands ───
+  | 'Log.enable'
+  | 'Log.disable'
+  | 'Log.clear'
+  // ─── Legacy aliases (deprecated, kept for compat) ───
+  | 'debug_command'
+  | 'debug_set_breakpoint'
+  | 'debug_subscribe'
+  | 'log_subscribe'
 
 export interface WebSocketClientMessage {
   type: WebSocketClientMessageType
@@ -57,10 +98,9 @@ export interface WebSocketClientMessage {
 export interface CodingServiceOptions {
   host?: string
   port: number
-  /** serve web-ui static files from this directory */
   staticDir?: string
-  /** CORS origin for dev mode  */
-  corsOrigin?: string
+  cors?: string
+  devtools?: Devtools
 }
 
 // ─── Event bridge: maps internal events → WS events ───

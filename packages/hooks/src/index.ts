@@ -50,6 +50,34 @@ export {
 } from './core'
 export type { ContextInjectorConfig, ContextProvider, IdleContinuationConfig, ErrorRecoveryConfig, ToolErrorTrackerConfig, TokenBudgetConfig } from './core'
 
+// Permission
+export {
+  PermissionPolicyRegistry,
+  PermissionAuditLog,
+  PermissionGuardHook,
+  compilePolicyFromConfig,
+  createPermissionGuardHook,
+  FILE_GUARD_POLICY,
+  DESTRUCTIVE_COMMAND_POLICY,
+  createDirectoryFreezePolicy,
+  createDisabledToolsPolicy,
+  createAgentBoundaryPolicy,
+  createPermissionModePolicy,
+} from './core'
+export type {
+  RuleEffect,
+  PermissionMode,
+  PolicyScope,
+  PermissionContext,
+  RuleMatch,
+  PermissionRule,
+  PermissionPolicy,
+  PermissionDecision,
+  PermissionAuditEntry,
+  PermissionRuleConfig,
+  PermissionPolicyConfig,
+} from './core'
+
 // 类型导出
 export type {
   HookTiming,

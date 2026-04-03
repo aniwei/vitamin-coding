@@ -47,8 +47,8 @@ export const useFileChangesStore = create<FileChangesState>((set) => ({
     set({ isLoading: true, error: null })
 
     try {
-      const response = await apiClient.get(`/sessions/${sessionId}/file-changes`)
-      const data = response.data
+      const response = await apiClient.get<any>(`/sessions/${sessionId}/file-changes`)
+      const data = response?.data ?? response
 
       set({
         changes: data.changes || [],

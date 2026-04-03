@@ -54,7 +54,7 @@ export const MessageItem = React.memo(function MessageItem({
     return (
       <ThinkingBlock
         content={message.content}
-        level={message.metadata?.level}
+        level={message.metadata?.level as string | undefined}
         isActive={isLastThinking}
       />
     )

@@ -2,6 +2,7 @@ import { Command, PanelLeft } from 'lucide-react'
 import { useEffect } from 'react'
 import { apiClient } from '../../api/client'
 import { useChatStore } from '../../stores/chat'
+import { DebugStatusBadge } from '../Devtools/DebugStatusBadge'
 
 const MODE_STYLES = {
   normal: 'bg-bg-400/40 text-text-200 border-gray-300 hover:bg-bg-400/60',
@@ -194,6 +195,9 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
           >
             Think: {thinkingLevel}
           </button>
+
+          {/* Debug badge */}
+          <DebugStatusBadge />
 
           {/* Command palette button */}
           <button

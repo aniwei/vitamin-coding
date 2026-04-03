@@ -1,16 +1,11 @@
 import { Hono } from 'hono'
-import type { VitaminContext } from '@vitamin/coding'
-import type { WebSocketManager } from '../websocket-manager'
-import type { EventBridge } from '../event-bridge'
+import type { CodingService } from '../coding-service'
 
 export function createChatRoute(
-  ctx: VitaminContext,
-  ws: WebSocketManager,
-  _bridges: Map<string, EventBridge>,
+  service: CodingService
 ): Hono {
   const app = new Hono()
 
-  // POST /chat/query — send a prompt to the active (or specified) session
   app.post('/query', async (c) => {
     const body = await c.req.json<{ message: string; sessionId?: string }>()
     const { message, sessionId } = body
@@ -20,18 +15,15 @@ export function createChatRoute(
     }
 
     let session = sessionId
-      ? ctx.getSession(sessionId)
-      : ctx.sessionManager.active
+      ? service.vitamin.getSession(sessionId)
+      : service.vitamin.sessionManager.active
 
     if (!session) {
-      // Auto-create a session if none exists
-      session = await ctx.createSession()
+      return c.json({ status: 'error', message: 'no active session' }, 404)
     }
 
-    // Non-blocking: fire prompt and return immediately.
-    // Streaming results go over WebSocket.
     session.prompt(message).catch((err) => {
-      ws.sendToSession(session!.id, {
+      service.ws.sendToSession(session!.id, {
         type: 'error',
         data: { sessionId: session!.id, message: err.message },
       })
@@ -46,7 +38,7 @@ export function createChatRoute(
 
   // GET /chat/messages — get messages for the active session
   app.get('/messages', (c) => {
-    const session = ctx.sessionManager.active
+    const session = service.vitamin.sessionManager.active
     if (!session) {
       return c.json([])
     }
@@ -55,7 +47,7 @@ export function createChatRoute(
 
   // POST /chat/interrupt — abort the active session
   app.post('/interrupt', (c) => {
-    const session = ctx.sessionManager.active
+    const session = service.vitamin.sessionManager.active
     if (!session) {
       return c.json({ status: 'error', message: 'no active session' }, 404)
     }
@@ -65,7 +57,7 @@ export function createChatRoute(
 
   // DELETE /chat/clear — clear messages in the active session
   app.delete('/clear', async (c) => {
-    const session = ctx.sessionManager.active
+    const session = service.vitamin.sessionManager.active
     if (!session) {
       return c.json({ status: 'error', message: 'no active session' }, 404)
     }

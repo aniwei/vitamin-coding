@@ -1,28 +1,24 @@
 import { Hono } from 'hono'
 import { existsSync, statSync, readdirSync } from 'node:fs'
-import { resolve, dirname, basename, join } from 'node:path'
+import { resolve, dirname, join } from 'node:path'
 import { homedir } from 'node:os'
-import type { VitaminContext } from '@vitamin/coding'
-import type { WebSocketManager } from '../websocket-manager'
-import type { EventBridge } from '../event-bridge'
+import type { CodingService } from '../coding-service'
 
 export function createSessionsRoute(
-  ctx: VitaminContext,
-  _ws: WebSocketManager,
-  _bridges: Map<string, EventBridge>,
+  context: CodingService
 ): Hono {
   const app = new Hono()
 
   // GET /sessions — list all sessions
   app.get('/', (c) => {
-    const sessions = ctx.listSessions()
+    const sessions = context.vitamin.listSessions()
     return c.json(
       sessions.map((s) => ({
         id: s.id,
         created_at: s.createdAt.toISOString(),
         updated_at: s.createdAt.toISOString(),
         message_count: s.messageCount,
-        working_directory: ctx.workspaceDir,
+        working_directory: context.vitamin.workspaceDir,
         title: s.model ?? s.id,
         status: s.status,
       })),
@@ -32,13 +28,13 @@ export function createSessionsRoute(
   // POST /sessions — create a new session
   app.post('/', async (c) => {
     await c.req.json<{ working_directory?: string }>().catch(() => ({}))
-    const session = await ctx.createSession()
+    const session = await context.vitamin.createSession()
     return c.json({
       status: 'ok',
       message: 'session created',
       session: {
         id: session.id,
-        working_directory: ctx.workspaceDir,
+        working_directory: context.vitamin.workspaceDir,
         created_at: new Date().toISOString(),
       },
     })
@@ -46,13 +42,13 @@ export function createSessionsRoute(
 
   // GET /sessions/current — get the active session
   app.get('/current', (c) => {
-    const session = ctx.sessionManager.active
+    const session = context.vitamin.sessionManager.active
     if (!session) {
       return c.json({ status: 'error', message: 'no active session' }, 404)
     }
     return c.json({
       id: session.id,
-      working_directory: ctx.workspaceDir,
+      working_directory: context.vitamin.workspaceDir,
       message_count: session.session.messages().length,
       status: session.status,
     })
@@ -60,7 +56,7 @@ export function createSessionsRoute(
 
   // GET /sessions/bridge-info
   app.get('/bridge-info', (c) => {
-    const session = ctx.sessionManager.active
+    const session = context.vitamin.sessionManager.active
     return c.json({
       bridge_mode: false,
       session_id: session?.id ?? null,
@@ -95,7 +91,7 @@ export function createSessionsRoute(
   // POST /sessions/browse-directory
   app.post('/browse-directory', async (c) => {
     const body = await c.req.json<{ path?: string; show_hidden?: boolean }>()
-    const targetPath = body.path || ctx.workspaceDir || homedir()
+    const targetPath = body.path || context.vitamin.workspaceDir || homedir()
     const showHidden = body.show_hidden ?? false
 
     const resolved = targetPath.startsWith('~')
@@ -139,9 +135,9 @@ export function createSessionsRoute(
   app.get('/files', (c) => {
     const query = c.req.query('query')
     try {
-      const entries = readdirSync(ctx.workspaceDir, { withFileTypes: true })
+      const entries = readdirSync(context.vitamin.workspaceDir, { withFileTypes: true })
       let files = entries.map((e) => ({
-        path: join(ctx.workspaceDir, e.name),
+        path: join(context.vitamin.workspaceDir, e.name),
         name: e.name,
         is_file: e.isFile(),
       }))
@@ -157,7 +153,7 @@ export function createSessionsRoute(
 
   // GET /sessions/:id/messages
   app.get('/:id/messages', (c) => {
-    const session = ctx.getSession(c.req.param('id'))
+    const session = context.vitamin.getSession(c.req.param('id'))
     if (!session) {
       return c.json([], 404)
     }
@@ -166,7 +162,7 @@ export function createSessionsRoute(
 
   // POST /sessions/:id/resume
   app.post('/:id/resume', (c) => {
-    const session = ctx.getSession(c.req.param('id'))
+    const session = context.vitamin.getSession(c.req.param('id'))
     if (!session) {
       return c.json({ status: 'error', message: 'session not found' }, 404)
     }
@@ -175,7 +171,7 @@ export function createSessionsRoute(
 
   // GET /sessions/:id/export
   app.get('/:id/export', (c) => {
-    const session = ctx.getSession(c.req.param('id'))
+    const session = context.vitamin.getSession(c.req.param('id'))
     if (!session) {
       return c.json({ status: 'error', message: 'session not found' }, 404)
     }
@@ -188,7 +184,7 @@ export function createSessionsRoute(
 
   // GET /sessions/:id/model
   app.get('/:id/model', (c) => {
-    const session = ctx.getSession(c.req.param('id'))
+    const session = context.vitamin.getSession(c.req.param('id'))
     if (!session) {
       return c.json({}, 404)
     }

@@ -5,6 +5,7 @@ import { ChatInterface } from '../components/Chat/ChatInterface'
 import { CommandPalette } from '../components/Chat/CommandPalette'
 import { PlanApprovalDialog } from '../components/Chat/PlanApprovalDialog'
 import { StatusDialog } from '../components/Chat/StatusDialog'
+import { Devtools } from '../components/Devtools'
 import { SessionsSidebar } from '../components/Layout/SessionsSidebar'
 import { TopBar } from '../components/Layout/TopBar'
 import { ToastContainer } from '../components/ui/Toast'
@@ -26,9 +27,9 @@ export function ChatPage() {
         <main className="flex-1 flex flex-col overflow-hidden bg-bg-000">
           <ChatInterface />
         </main>
+        <Devtools />
       </div>
 
-      {/* Modals */}
       <ApprovalDialog />
       <AskUserDialog />
       <PlanApprovalDialog />
