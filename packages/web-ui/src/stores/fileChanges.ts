@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { apiClient } from '../api/client'
+import { api } from '../api/client'
 
 export interface FileChange {
   id: string
@@ -47,7 +47,7 @@ export const useFileChangesStore = create<FileChangesState>((set) => ({
     set({ isLoading: true, error: null })
 
     try {
-      const response = await apiClient.get<any>(`/sessions/${sessionId}/file-changes`)
+      const response = await api.get<any>(`/sessions/${sessionId}/file-changes`)
       const data = response?.data ?? response
 
       set({

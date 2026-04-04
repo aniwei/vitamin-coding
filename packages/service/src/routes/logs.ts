@@ -1,6 +1,6 @@
 import { Hono } from 'hono'
 import { streamSSE } from 'hono/streaming'
-import type { DebugBridge } from '../debug-bridge'
+import type { CodingService } from '../coding-service'
 
 const LOG_LEVEL_SEVERITY: Record<string, number> = {
   trace: 0,
@@ -11,22 +11,22 @@ const LOG_LEVEL_SEVERITY: Record<string, number> = {
   fatal: 5,
 }
 
-export function createLogRoute(bridge: DebugBridge | null): Hono {
+export function createLoggerRoute(
+  context: CodingService,
+): Hono {
   const app = new Hono()
 
   app.get('/history', (c) => {
-    if (!bridge) return c.json({ entries: [], total: 0 })
+    if (!context.bridge) return c.json({ entries: [], total: 0 })
 
     const limit = Math.min(Number(c.req.query('limit') ?? 100), 2000)
     const level = c.req.query('level')
     const module = c.req.query('module')
 
-    let entries = bridge.getLogBuffer()
+    let entries = context.bridge.getLogs()
     if (level && LOG_LEVEL_SEVERITY[level] !== undefined) {
       const minSeverity = LOG_LEVEL_SEVERITY[level]
-      entries = entries.filter(
-        (e) => (LOG_LEVEL_SEVERITY[e.level] ?? 0) >= minSeverity,
-      )
+      entries = entries.filter(e => (LOG_LEVEL_SEVERITY[e.level] ?? 0) >= minSeverity)
     }
     if (module) {
       entries = entries.filter((e) => e.module.includes(module))
@@ -38,13 +38,15 @@ export function createLogRoute(bridge: DebugBridge | null): Hono {
   })
 
   app.get('/stream', (c) => {
-    if (!bridge) return c.text('debugger not enabled', 503)
+    // TODO
+    if (!context.bridge) return c.text('debugger not enabled', 503)
 
     return streamSSE(c, async (stream) => {
-      const unsubscribe = bridge.onLog((entry) => {
+      const unsubscribe = context.bridge?.on('log', (entry) => {
         stream.writeSSE({ event: 'log', data: JSON.stringify(entry) })
       })
-      stream.onAbort(() => unsubscribe())
+
+      stream.onAbort(() => unsubscribe?.())
     })
   })
 

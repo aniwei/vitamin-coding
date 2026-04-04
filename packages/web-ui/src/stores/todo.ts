@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { wsClient } from '../api/websocket'
+import { ws } from '../api/websocket'
 
 export interface TodoItem {
   id: string
@@ -42,7 +42,7 @@ export const useTodoStore = create<TodoStore>((set) => ({
 }))
 
 // Listen for todo-related tool results that carry todo state
-wsClient.on('tool_result', (message) => {
+ws.on('tool_result', (message) => {
   const d = message.data
   if (!d) return
 
@@ -62,7 +62,7 @@ wsClient.on('tool_result', (message) => {
 })
 
 // Listen for status updates that may carry todo data
-wsClient.on('status_update', (message) => {
+ws.on('status_update', (message) => {
   const d = message.data
   if (!d?.todos) return
 

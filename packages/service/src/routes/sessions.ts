@@ -9,14 +9,13 @@ export function createSessionsRoute(
 ): Hono {
   const app = new Hono()
 
-  // GET /sessions — list all sessions
   app.get('/', (c) => {
     const sessions = context.vitamin.listSessions()
     return c.json(
       sessions.map((s) => ({
         id: s.id,
         created_at: s.createdAt.toISOString(),
-        updated_at: s.createdAt.toISOString(),
+        updated_at: s.updatedAt?.toISOString(),
         message_count: s.messageCount,
         working_directory: context.vitamin.workspaceDir,
         title: s.model ?? s.id,
@@ -25,7 +24,6 @@ export function createSessionsRoute(
     )
   })
 
-  // POST /sessions — create a new session
   app.post('/', async (c) => {
     await c.req.json<{ working_directory?: string }>().catch(() => ({}))
     const session = await context.vitamin.createSession()
@@ -40,7 +38,6 @@ export function createSessionsRoute(
     })
   })
 
-  // GET /sessions/current — get the active session
   app.get('/current', (c) => {
     const session = context.vitamin.sessionManager.active
     if (!session) {
@@ -54,7 +51,6 @@ export function createSessionsRoute(
     })
   })
 
-  // GET /sessions/bridge-info
   app.get('/bridge-info', (c) => {
     const session = context.vitamin.sessionManager.active
     return c.json({
@@ -63,7 +59,6 @@ export function createSessionsRoute(
     })
   })
 
-  // POST /sessions/verify-path
   app.post('/verify-path', async (c) => {
     const body = await c.req.json<{ path: string }>()
     const targetPath = body.path
@@ -88,7 +83,6 @@ export function createSessionsRoute(
     }
   })
 
-  // POST /sessions/browse-directory
   app.post('/browse-directory', async (c) => {
     const body = await c.req.json<{ path?: string; show_hidden?: boolean }>()
     const targetPath = body.path || context.vitamin.workspaceDir || homedir()
@@ -131,7 +125,6 @@ export function createSessionsRoute(
     }
   })
 
-  // GET /sessions/files
   app.get('/files', (c) => {
     const query = c.req.query('query')
     try {
@@ -151,30 +144,33 @@ export function createSessionsRoute(
     }
   })
 
-  // GET /sessions/:id/messages
   app.get('/:id/messages', (c) => {
-    const session = context.vitamin.getSession(c.req.param('id'))
+    const session = context.getSession(c.req.param('id'))
+
     if (!session) {
       return c.json([], 404)
     }
+
     return c.json(serializeMessages(session))
   })
 
-  // POST /sessions/:id/resume
   app.post('/:id/resume', (c) => {
-    const session = context.vitamin.getSession(c.req.param('id'))
+    const session = context.getSession(c.req.param('id'))
+
     if (!session) {
       return c.json({ status: 'error', message: 'session not found' }, 404)
     }
+
     return c.json({ status: 'ok', message: 'resumed', sessionId: session.id })
   })
 
-  // GET /sessions/:id/export
   app.get('/:id/export', (c) => {
-    const session = context.vitamin.getSession(c.req.param('id'))
+    const session = context.getSession(c.req.param('id'))
+
     if (!session) {
       return c.json({ status: 'error', message: 'session not found' }, 404)
     }
+    
     return c.json({
       id: session.id,
       messages: session.session.messages(),
@@ -182,25 +178,31 @@ export function createSessionsRoute(
     })
   })
 
-  // GET /sessions/:id/model
   app.get('/:id/model', (c) => {
-    const session = context.vitamin.getSession(c.req.param('id'))
+    const session = context.getSession(c.req.param('id'))
+    
     if (!session) {
       return c.json({}, 404)
     }
+
     const model = session.model
     return c.json(model ? { id: model.id, provider: model.provider } : {})
   })
 
-  // PUT /sessions/:id/model — update model overlay
   app.put('/:id/model', async (c) => {
     await c.req.json()
-    return c.json({ status: 'ok', message: 'model overlay updated' })
+
+    return c.json({ 
+      status: 'ok', 
+      message: 'model overlay updated' 
+    })
   })
 
-  // DELETE /sessions/:id/model — clear model overlay
-  app.delete('/:id/model', (_c) => {
-    return _c.json({ status: 'ok', message: 'model overlay cleared' })
+  app.delete('/:id/model', (c) => {
+    return c.json({ 
+      status: 'ok',
+      message: 'model overlay cleared' 
+    })
   })
 
   return app

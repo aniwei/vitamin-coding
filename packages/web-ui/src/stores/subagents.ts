@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { wsClient } from '../api/websocket'
+import { ws } from '../api/websocket'
 
 export interface ActiveToolCall {
   toolName: string
@@ -96,7 +96,7 @@ export { formatToolVerb, formatToolArg }
 
 // ─── WebSocket Event Handlers ───────────────────────────────────────────────
 
-wsClient.on('subagent_start', (message) => {
+ws.on('subagent_start', (message) => {
   const d = message.data
   if (!d) return
 
@@ -140,7 +140,7 @@ wsClient.on('subagent_start', (message) => {
   })
 })
 
-wsClient.on('nested_tool_call', (message) => {
+ws.on('nested_tool_call', (message) => {
   const d = message.data
   if (!d) return
 
@@ -175,7 +175,7 @@ wsClient.on('nested_tool_call', (message) => {
   }
 })
 
-wsClient.on('nested_tool_result', (message) => {
+ws.on('nested_tool_result', (message) => {
   const d = message.data
   if (!d) return
 
@@ -227,7 +227,7 @@ wsClient.on('nested_tool_result', (message) => {
   }
 })
 
-wsClient.on('subagent_complete', (message) => {
+ws.on('subagent_complete', (message) => {
   const d = message.data
   if (!d) return
 
@@ -268,7 +268,7 @@ wsClient.on('subagent_complete', (message) => {
 })
 
 // Token updates (if backend sends them)
-wsClient.on('status_update', (message) => {
+ws.on('status_update', (message) => {
   const d = message.data
   if (!d?.subagent_id || !d?.token_count) return
 

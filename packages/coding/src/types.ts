@@ -11,6 +11,8 @@ import type { SettingsManager } from '@vitamin/resources'
 import type { CodingSessionManager } from './session/coding-session-manager'
 import type { AgentSessionInfo, AgentSessionOptions } from './session/types'
 import type { AgentSession } from './session/agent-session'
+import type { Logger } from '@vitamin/shared'
+import type { Devtools } from '@vitamin/devtools'
 
 export interface VitaminContext {
   readonly workspaceDir: string
@@ -24,6 +26,8 @@ export interface VitaminContext {
   readonly toolRegistry: ToolRegistry
   readonly sessionManager: CodingSessionManager
   readonly authStore: AuthStore
+  readonly logger: Logger
+  readonly devtools: Devtools | null
 
   start(): Promise<void>
   stop(): Promise<void>

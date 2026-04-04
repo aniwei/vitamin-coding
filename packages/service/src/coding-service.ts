@@ -1,7 +1,8 @@
-import { createServer, IncomingMessage, type Server } from 'node:http'
+import { type IncomingMessage, type Server } from 'node:http'
 import { readFileSync, existsSync } from 'node:fs'
 import { join, extname } from 'node:path'
 import { Hono } from 'hono'
+import { createAdaptorServer } from '@hono/node-server'
 import { createLogger } from '@vitamin/shared'
 import { WebSocketManager } from './websocket-manager'
 import { EventBridge } from './event-bridge'
@@ -29,14 +30,18 @@ const MIME_TYPES: Record<string, string> = {
 export class CodingService {
   private readonly app: Hono
   private readonly server: Server
-  private readonly bridges = new Map<string, EventBridge>()
   private readonly host: string
   private readonly port: number
   private readonly staticDir?: string
-  private readonly debugBridge: DebugBridge | null = null
+  private readonly bridges = new Map<string, EventBridge>()
   private started = false
   
+  public readonly bridge: DebugBridge | null = null
   public readonly ws: WebSocketManager
+
+  get httpServer(): Server {
+    return this.server
+  }
 
   constructor(
     public readonly vitamin: VitaminContext,
@@ -48,22 +53,20 @@ export class CodingService {
 
     this.ws = new WebSocketManager()
 
-    if (options.devtools) {
-      this.debugBridge = new DebugBridge(options.devtools, this.ws)
+    if (vitamin.devtools) {
+      this.bridge = new DebugBridge(vitamin.devtools, this.ws)
     }
 
     this.app = createApp(this, { 
       cors: options.cors, 
-      devtools: options.devtools, 
+      devtools: vitamin.devtools ?? undefined, 
       staticDir: options.staticDir,
-      debugBridge: this.debugBridge,
+      debug: this.bridge,
     })
 
-    this.server = createServer()
-
-    this.server.on('request', (req, res) => {
-      debugger
-    })
+    this.server = createAdaptorServer({
+      fetch: this.app.fetch,
+    }) as Server
     this.server.on('upgrade', this.onUpgrade)
 
     this.ws.on('message', (clientId, message) => {
@@ -71,8 +74,12 @@ export class CodingService {
     })
   }
 
-  get httpServer(): Server {
-    return this.server
+  getSession(sessionId: string): AgentSession | undefined {
+    return this.vitamin.getSession(sessionId)
+  }
+
+  getActiveSession(): AgentSession | undefined {
+    return this.vitamin.sessionManager.active
   }
 
   onUpgrade = (req: IncomingMessage, socket: Socket, head: Buffer) => {
@@ -95,7 +102,7 @@ export class CodingService {
     return new Promise<void>((resolve, reject) => {
       this.server.listen(this.port, this.host, () => {
         this.started = true
-        this.debugBridge?.attach()
+        this.bridge?.attach()
         logger.info(`service started on http://${this.host}:${this.port}`)
         resolve()
       })
@@ -107,7 +114,7 @@ export class CodingService {
   async stop(): Promise<void> {
     if (!this.started) return
 
-    this.debugBridge?.detach()
+    this.bridge?.detach()
 
     for (const [, bridge] of this.bridges) {
       bridge.detach()
@@ -142,7 +149,6 @@ export class CodingService {
     })
   }
 
-  /** Detach event bridge when session is removed */
   detachSession(sessionId: string): void {
     const bridge = this.bridges.get(sessionId)
     if (bridge) {
@@ -151,10 +157,6 @@ export class CodingService {
     }
   }
 
-  /**
-   * Mount additional Hono routes (e.g., devtools debug routes).
-   * Must be called before start().
-   */
   mount(path: string, routeApp: Hono): void {
     this.app.route(path, routeApp)
   }
@@ -202,6 +204,8 @@ export class CodingService {
     const sessionId = message.data.sessionId as string | undefined
 
     switch (message.type) {
+      case 'query':
+        break
       case 'approve':
         logger.debug(`approval from client ${clientId} for session ${sessionId}`)
         break
@@ -233,10 +237,12 @@ export class CodingService {
     }
   }
 
-  private handleDebugCommand(method: string, data: Record<string, unknown>): void {
-    if (!this.debugBridge) return
+  private handleDebugCommand(
+    method: string, 
+    data: Record<string, unknown>
+  ): void {
+    if (!this.bridge) return
 
-    // Map CDP-style method names to command types
     const methodToType: Record<string, string> = {
       'Debugger.resume': 'continue',
       'Debugger.stepOver': 'next',
@@ -248,39 +254,36 @@ export class CodingService {
     const type = methodToType[method] ?? (data.type as string)
     if (!type) return
 
-    this.debugBridge.sendCommand(
-      {
-        type,
-        seq: (data.seq as number) ?? Date.now(),
-        ...(data.depth !== undefined ? { depth: data.depth as number } : {}),
-      },
-      data.payload as Record<string, unknown> | undefined,
-    )
+    this.bridge.send({
+      type,
+      seq: (data.seq as number) ?? Date.now(),
+      ...(data.depth !== undefined ? { depth: data.depth as number } : {}),
+    }, data.payload as Record<string, unknown> | undefined)
   }
 
   private handleDebugSetBreakpoint(data: Record<string, unknown>): void {
-    // Forward breakpoint changes via the bridge
-    if (!this.debugBridge) return
-    // Forward as REST-equivalent via WS
+    if (!this.bridge) return
+
     const point = data.point as string
     const enabled = data.enabled as boolean
     if (point !== undefined && enabled !== undefined) {
-      this.debugBridge.sendCommand({
+      this.bridge.send({
         type: 'setBreakpoint',
         seq: Date.now(),
         point,
         enabled,
-      } as any)
+      })
     }
   }
 
   private handleDebugSetBreakpointsActive(data: Record<string, unknown>): void {
-    if (!this.debugBridge) return
-    this.debugBridge.sendCommand({
+    if (!this.bridge) return
+
+    this.bridge.send({
       type: 'setBreakpointsActive',
       seq: Date.now(),
       active: data.active as boolean,
-    } as any)
+    })
   }
 }
 

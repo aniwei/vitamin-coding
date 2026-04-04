@@ -42,7 +42,7 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
       return false
     }
 
-    this.wss.handleUpgrade(request, socket, head, (ws) => this.wss.emit('connection', ws, request))
+    this.wss.handleUpgrade(request, socket, head, ws => this.wss.emit('connection', ws, request))
     
     return true
   }

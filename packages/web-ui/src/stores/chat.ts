@@ -1,6 +1,6 @@
 import { create } from 'zustand'
-import { apiClient } from '../api/client'
-import { wsClient } from '../api/websocket'
+import { api } from '../api/client'
+import { ws } from '../api/websocket'
 import type {
   ApprovalRequest,
   AskUserRequest,
@@ -42,6 +42,191 @@ function patchSession(
       [sessionId]: { ...prev, ...updates },
     },
   }
+}
+
+type WSData = Record<string, unknown>
+
+function asObject(value: unknown): WSData | null {
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    return value as WSData
+  }
+
+  return null
+}
+
+function readString(data: WSData, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = data[key]
+    if (typeof value === 'string') {
+      return value
+    }
+  }
+
+  return undefined
+}
+
+function readBoolean(data: WSData, ...keys: string[]): boolean | undefined {
+  for (const key of keys) {
+    const value = data[key]
+    if (typeof value === 'boolean') {
+      return value
+    }
+  }
+
+  return undefined
+}
+
+function readNumber(data: WSData, ...keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = data[key]
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value
+    }
+    if (typeof value === 'string' && value.trim() !== '') {
+      const parsed = Number(value)
+      if (Number.isFinite(parsed)) {
+        return parsed
+      }
+    }
+  }
+
+  return undefined
+}
+
+function normalizeApprovalRequest(data: WSData): ApprovalRequest {
+  const toolName = readString(data, 'tool_name', 'name') ?? 'tool'
+  const command = readString(data, 'command')
+
+  return {
+    id: readString(data, 'id', 'approval_id') ?? '',
+    tool_name: toolName,
+    arguments: asObject(data.arguments) ?? {},
+    description: readString(data, 'description') ?? command ?? `Run ${toolName}`,
+    preview: readString(data, 'preview') ?? command,
+  }
+}
+
+function normalizeAskUserOption(option: unknown): { label: string; description?: string } {
+  if (typeof option === 'string') {
+    return { label: option }
+  }
+
+  const data = asObject(option)
+  if (!data) {
+    return { label: String(option ?? '') }
+  }
+
+  return {
+    label: readString(data, 'label', 'value') ?? '',
+    description: readString(data, 'description'),
+  }
+}
+
+function normalizeAskUserQuestion(question: unknown, index: number) {
+  const data = asObject(question)
+  if (!data) {
+    return {
+      question: `Question ${index + 1}`,
+      options: [],
+      multi_select: false,
+    }
+  }
+
+  const options = Array.isArray(data.options) ? data.options.map(normalizeAskUserOption) : []
+
+  return {
+    header: readString(data, 'header'),
+    question: readString(data, 'question', 'prompt') ?? `Question ${index + 1}`,
+    options,
+    multi_select: readBoolean(data, 'multi_select', 'multiSelect') ?? false,
+  }
+}
+
+function normalizeAskUserRequest(data: WSData): AskUserRequest {
+  const request_id = readString(data, 'request_id', 'requestId') ?? ''
+  const rawQuestions = Array.isArray(data.questions) ? data.questions : null
+
+  if (rawQuestions && rawQuestions.length > 0) {
+    return {
+      request_id,
+      questions: rawQuestions.map((question, index) => normalizeAskUserQuestion(question, index)),
+    }
+  }
+
+  const options = Array.isArray(data.options) ? data.options.map(normalizeAskUserOption) : []
+  const defaultOption = readString(data, 'default')
+
+  if (defaultOption && !options.some((option) => option.label === defaultOption)) {
+    options.push({ label: defaultOption })
+  }
+
+  return {
+    request_id,
+    questions: [
+      {
+        header: readString(data, 'header'),
+        question: readString(data, 'question') ?? 'Question',
+        options,
+        multi_select: readBoolean(data, 'multi_select', 'multiSelect') ?? false,
+      },
+    ],
+  }
+}
+
+function normalizePlanApprovalRequest(data: WSData): PlanApprovalRequest {
+  return {
+    request_id: readString(data, 'request_id', 'requestId') ?? '',
+    plan_content: readString(data, 'plan_content', 'planContent', 'content') ?? '',
+  }
+}
+
+function normalizeStatusInfo(data: WSData, previous: StatusInfo | null): StatusInfo {
+  const mode = readString(data, 'mode')
+  const autonomy = readString(data, 'autonomy_level')
+  const thinking = readString(data, 'thinking_level')
+
+  return {
+    mode: mode === 'plan' || mode === 'normal' ? mode : previous?.mode ?? 'normal',
+    autonomy_level:
+      autonomy === 'Manual' || autonomy === 'Semi-Auto' || autonomy === 'Auto'
+        ? autonomy
+        : previous?.autonomy_level ?? 'Manual',
+    thinking_level:
+      thinking === 'Off' || thinking === 'Low' || thinking === 'Medium' || thinking === 'High'
+        ? thinking
+        : previous?.thinking_level,
+    model: readString(data, 'model') ?? previous?.model,
+    model_provider: readString(data, 'model_provider', 'provider') ?? previous?.model_provider,
+    working_dir:
+      readString(data, 'working_dir', 'working_directory', 'workingDirectory') ??
+      previous?.working_dir,
+    git_branch: readString(data, 'git_branch') ?? previous?.git_branch ?? null,
+    session_cost:
+      readNumber(data, 'session_cost', 'session_cost_usd') ?? previous?.session_cost,
+    context_usage_pct: readNumber(data, 'context_usage_pct') ?? previous?.context_usage_pct,
+  }
+}
+
+function resolveRunningState(data: WSData): boolean | null {
+  const running = readBoolean(data, 'running')
+  if (running !== undefined) {
+    return running
+  }
+
+  const status = readString(data, 'status', 'action')
+  if (!status) {
+    return null
+  }
+
+  if (['running', 'streaming', 'started', 'resumed'].includes(status)) {
+    return true
+  }
+
+  if (['complete', 'completed', 'finished', 'idle', 'stopped', 'error'].includes(status)) {
+    return false
+  }
+
+  return null
 }
 
 /** Recursively expand tool calls (including nested) into flat message list. */
@@ -192,7 +377,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
       try {
         console.log(`[Frontend] Fetching messages for session ${sessionId}`)
-        const rawMessages = await apiClient.getSessionMessages(sessionId)
+        const rawMessages = await api.getSessionMessages(sessionId)
         const messages = expandMessages(rawMessages)
         console.log(`[Frontend] Loaded ${messages.length} messages for ${sessionId}`)
 
@@ -211,11 +396,11 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }
 
     // Fire-and-forget: resume on backend for config context
-    apiClient.resumeSession(sessionId).catch(() => {})
+    api.resumeSession(sessionId).catch(() => {})
 
     // Refresh status after session change
     try {
-      const configData = await apiClient.getConfig()
+      const configData = await api.getSetting()
       set({
         thinkingLevel: configData.thinking_level || 'Medium',
         status: {
@@ -258,9 +443,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }))
 
     try {
-      wsClient.send({
+      ws.send({
         type: 'query',
-        data: { message: content, session_id: sessionId },
+        data: { message: content, session_id: sessionId, sessionId },
       })
     } catch (error) {
       set((state) => ({
@@ -275,7 +460,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   clearChat: async () => {
     const sessionId = get().currentSessionId
     try {
-      await apiClient.clearChat()
+      await api.clearChat()
       if (sessionId) {
         set((state) => ({
           ...patchSession(state, sessionId, { messages: [], error: null }),
@@ -297,9 +482,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   respondToApproval: (approvalId: string, approved: boolean, autoApprove = false) => {
-    wsClient.send({
+    ws.send({
       type: 'approve',
-      data: { approvalId, approved, autoApprove },
+      data: {
+        approvalId,
+        approval_id: approvalId,
+        approved,
+        autoApprove,
+        auto_approve: autoApprove,
+      },
     })
     const sessionId = get().currentSessionId
     if (sessionId) {
@@ -321,7 +512,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const { status } = get()
     if (!status) return
     const newMode = status.mode === 'normal' ? 'plan' : 'normal'
-    apiClient.setMode(newMode).catch(console.error)
+    api.setMode(newMode).catch(console.error)
     set({ status: { ...status, mode: newMode } })
   },
 
@@ -330,7 +521,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     if (!status) return
     const currentIdx = AUTONOMY_CYCLE.indexOf(status.autonomy_level)
     const nextLevel = AUTONOMY_CYCLE[(currentIdx + 1) % AUTONOMY_CYCLE.length]
-    apiClient.setAutonomy(nextLevel).catch(console.error)
+    api.setAutonomy(nextLevel).catch(console.error)
     set({ status: { ...status, autonomy_level: nextLevel } })
   },
 
@@ -344,7 +535,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
       | undefined
     const currentIdx = THINKING_CYCLE.indexOf(currentLevel ?? 'Off')
     const nextLevel = THINKING_CYCLE[(currentIdx + 1) % THINKING_CYCLE.length]
-    apiClient.setThinkingLevel(nextLevel).catch(console.error)
+    api.setThinkingLevel(nextLevel).catch(console.error)
     set({
       thinkingLevel: nextLevel,
       status: status ? { ...status, thinking_level: nextLevel } : status,
@@ -352,9 +543,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   respondToAskUser: (requestId: string, answers: Record<string, unknown> | null) => {
-    wsClient.send({
+    ws.send({
       type: 'ask_user_response',
-      data: { requestId, answers, cancelled: answers === null },
+      data: { requestId, request_id: requestId, answers, cancelled: answers === null },
     })
     const sessionId = get().currentSessionId
     if (sessionId) {
@@ -365,9 +556,9 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   respondToPlanApproval: (requestId: string, action: string, feedback?: string) => {
-    wsClient.send({
+    ws.send({
       type: 'plan_approval_response',
-      data: { requestId, action, feedback: feedback || '' },
+      data: { requestId, request_id: requestId, action, feedback: feedback || '' },
     })
     const sessionId = get().currentSessionId
     if (sessionId) {
@@ -381,7 +572,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     const sessionId = get().currentSessionId
     if (!sessionId) return
 
-    apiClient.interruptTask().catch(console.error)
+    api.interruptTask().catch(console.error)
 
     set((state) => ({
       ...patchSession(state, sessionId, (prev) => ({
@@ -415,14 +606,21 @@ function markLastToolCallInterrupted(messages: Message[]): Message[] {
 // ─── WebSocket Event Handlers ───────────────────────────────────────────────
 
 /** Resolve the session ID from a WS event, falling back to currentSessionId. */
-function resolveSessionId(data: any): string | null {
-  return data?.session_id || useChatStore.getState().currentSessionId
+function resolveSessionId(data: unknown): string | null {
+  const payload = asObject(data)
+  if (!payload) {
+    return useChatStore.getState().currentSessionId
+  }
+
+  return (
+    readString(payload, 'session_id', 'sessionId') ?? useChatStore.getState().currentSessionId
+  )
 }
 
 let connectionStableTimer: number | null = null
 let wasEverStable = false
 
-wsClient.on('connected', () => {
+ws.on('connected', () => {
   useChatStore.getState().setConnected(true)
   if (wasEverStable) {
     useToastStore.getState().addToast('Reconnected to server', 'success')
@@ -432,7 +630,7 @@ wsClient.on('connected', () => {
   }, 2000)
 })
 
-wsClient.on('disconnected', () => {
+ws.on('disconnected', () => {
   useChatStore.getState().setConnected(false)
   if (connectionStableTimer) {
     clearTimeout(connectionStableTimer)
@@ -443,10 +641,12 @@ wsClient.on('disconnected', () => {
   }
 })
 
-wsClient.on('user_message', (message) => {
-  const sid = resolveSessionId(message.data)
+ws.on('user_message', (message) => {
+  const payload = asObject(message.data)
+  const sid = resolveSessionId(payload)
   if (!sid) return
-  const content = message.data.content
+  const content = payload ? readString(payload, 'content', 'message') : undefined
+  if (!content) return
   const sessionState = getSessionState(useChatStore.getState().sessionStates, sid)
   const msgs = sessionState.messages
   // Dedup: skip if last user message already has this content (optimistic add from sendMessage)
@@ -466,7 +666,7 @@ wsClient.on('user_message', (message) => {
   }))
 })
 
-wsClient.on('message_start', (message) => {
+ws.on('message_start', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   useChatStore.setState((state) => ({
@@ -488,10 +688,12 @@ function finalizeThinking(msgs: Message[]): Message[] {
   return msgs
 }
 
-wsClient.on('message_chunk', (message) => {
-  const sid = resolveSessionId(message.data)
+ws.on('message_chunk', (message) => {
+  const payload = asObject(message.data)
+  const sid = resolveSessionId(payload)
   if (!sid) return
-  console.log('[Frontend] Received message_chunk:', message.data.content.substring(0, 100))
+  const chunk = payload ? readString(payload, 'content', 'delta') ?? '' : ''
+  console.log('[Frontend] Received message_chunk:', chunk.substring(0, 100))
 
   useChatStore.setState((state) => {
     const sessionState = getSessionState(state.sessionStates, sid)
@@ -502,17 +704,17 @@ wsClient.on('message_chunk', (message) => {
     if (lastMessage && lastMessage.role === 'assistant') {
       newMessages = [
         ...msgs.slice(0, -1),
-        { ...lastMessage, content: lastMessage.content + message.data.content },
+        { ...lastMessage, content: lastMessage.content + chunk },
       ]
     } else {
-      newMessages = [...msgs, { role: 'assistant' as const, content: message.data.content }]
+      newMessages = [...msgs, { role: 'assistant' as const, content: chunk }]
     }
 
     return patchSession(state, sid, { messages: newMessages })
   })
 })
 
-wsClient.on('message_complete', (message) => {
+ws.on('message_complete', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   console.log('[Frontend] Received message_complete')
@@ -521,7 +723,7 @@ wsClient.on('message_complete', (message) => {
   }))
 })
 
-wsClient.on('error', (message) => {
+ws.on('error', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   useChatStore.setState((state) => ({
@@ -533,16 +735,18 @@ wsClient.on('error', (message) => {
   useToastStore.getState().addToast(message.data.message || 'An error occurred', 'error')
 })
 
-wsClient.on('approval_required', (message) => {
+ws.on('approval_required', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   console.log('[Frontend] Received approval_required:', message.data)
   useChatStore.setState((state) => ({
-    ...patchSession(state, sid, { pendingApproval: message.data as ApprovalRequest }),
+    ...patchSession(state, sid, {
+      pendingApproval: normalizeApprovalRequest(asObject(message.data) ?? {}),
+    }),
   }))
 })
 
-wsClient.on('approval_resolved', (message) => {
+ws.on('approval_resolved', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   useChatStore.setState((state) => ({
@@ -550,17 +754,24 @@ wsClient.on('approval_resolved', (message) => {
   }))
 })
 
-wsClient.on('tool_call', (message) => {
-  const sid = resolveSessionId(message.data)
+ws.on('tool_call', (message) => {
+  const payload = asObject(message.data)
+  const sid = resolveSessionId(payload)
   if (!sid) return
+
+  const toolName = payload ? readString(payload, 'tool_name', 'name') ?? 'tool' : 'tool'
+  const toolCallId = payload ? readString(payload, 'tool_call_id', 'tool_id', 'id') : undefined
+  const toolArgs = (payload && asObject(payload.arguments)) ?? {}
+  const toolArgsDisplay = payload ? readString(payload, 'arguments_display') : undefined
+  const description = payload ? readString(payload, 'description', 'command') : undefined
 
   const toolCallMessage: Message = {
     role: 'tool_call',
-    content: message.data.description || `Calling ${message.data.tool_name}`,
-    tool_call_id: message.data.tool_call_id,
-    tool_name: message.data.tool_name,
-    tool_args: message.data.arguments,
-    tool_args_display: message.data.arguments_display || null,
+    content: description || `Calling ${toolName}`,
+    tool_call_id: toolCallId,
+    tool_name: toolName,
+    tool_args: toolArgs,
+    tool_args_display: toolArgsDisplay || null,
     timestamp: new Date().toISOString(),
   }
 
@@ -570,40 +781,50 @@ wsClient.on('tool_call', (message) => {
   })
 })
 
-wsClient.on('tool_result', (message) => {
-  const sid = resolveSessionId(message.data)
+ws.on('tool_result', (message) => {
+  const payload = asObject(message.data)
+  const sid = resolveSessionId(payload)
   if (!sid) return
+
+  const callId = payload ? readString(payload, 'tool_call_id', 'tool_id', 'id') : undefined
+  const toolName = payload ? readString(payload, 'tool_name', 'name') ?? 'tool' : 'tool'
+  const success = payload
+    ? readBoolean(payload, 'success') ?? !(readBoolean(payload, 'isError') ?? false)
+    : false
+  const error = payload ? readString(payload, 'error') : undefined
+  const toolResult = payload ? (payload.raw_result ?? payload.output ?? payload.result) : undefined
 
   useChatStore.setState((state) => {
     const sessionState = getSessionState(state.sessionStates, sid)
     const msgs = sessionState.messages
-    const callId = message.data.tool_call_id
 
     for (let i = msgs.length - 1; i >= 0; i--) {
       if (msgs[i].role === 'tool_call' && msgs[i].tool_call_id === callId && !msgs[i].tool_result) {
         const updatedMessages = [...msgs]
         updatedMessages[i] = {
           ...msgs[i],
-          tool_result: message.data.raw_result ?? message.data.output,
-          tool_success: message.data.success,
-          tool_error: message.data.error || null,
+          tool_result: toolResult,
+          tool_success: success,
+          tool_error: error || null,
         }
         return patchSession(state, sid, { messages: updatedMessages })
       }
     }
 
-    console.warn(
-      `Received tool_result for ${message.data.tool_name} but no matching tool_call found`,
-    )
+    console.warn(`Received tool_result for ${toolName} but no matching tool_call found`)
     return {}
   })
 })
 
-wsClient.on('thinking_block', (message) => {
-  const sid = resolveSessionId(message.data)
+ws.on('thinking_block', (message) => {
+  const payload = asObject(message.data)
+  const sid = resolveSessionId(payload)
   if (!sid) return
-  const content = message.data.content || ''
-  const isBlockStart = message.data.block_start === true
+  const content = payload ? readString(payload, 'content', 'delta') ?? '' : ''
+  const action = payload ? readString(payload, 'action') : undefined
+  const isBlockStart = payload?.block_start === true || action === 'start'
+  const isBlockEnd = action === 'end'
+  const level = payload ? readString(payload, 'level') ?? 'Medium' : 'Medium'
 
   useChatStore.setState((state) => {
     const sessionState = getSessionState(state.sessionStates, sid)
@@ -617,7 +838,7 @@ wsClient.on('thinking_block', (message) => {
           {
             role: 'thinking' as const,
             content: '',
-            metadata: { level: message.data.level || 'Medium', isActive: true },
+            metadata: { level, isActive: true },
           },
         ],
       })
@@ -630,6 +851,11 @@ wsClient.on('thinking_block', (message) => {
       updated[lastIdx] = {
         ...msgs[lastIdx],
         content: msgs[lastIdx].content + content,
+        metadata: {
+          ...msgs[lastIdx].metadata,
+          level,
+          isActive: isBlockEnd ? false : msgs[lastIdx].metadata?.isActive,
+        },
       }
       return patchSession(state, sid, { messages: updated })
     }
@@ -641,35 +867,35 @@ wsClient.on('thinking_block', (message) => {
         {
           role: 'thinking' as const,
           content,
-          metadata: { level: message.data.level || 'Medium', isActive: true },
+          metadata: { level, isActive: !isBlockEnd },
         },
       ],
     })
   })
 })
 
-wsClient.on('status_update', (message) => {
+ws.on('status_update', (message) => {
+  const payload = asObject(message.data) ?? {}
   const { status } = useChatStore.getState()
-  const newStatus = {
-    ...status,
-    ...message.data,
-  } as StatusInfo
+  const newStatus = normalizeStatusInfo(payload, status)
   useChatStore.setState({
     status: newStatus,
     thinkingLevel: newStatus.thinking_level || useChatStore.getState().thinkingLevel,
   })
 })
 
-wsClient.on('ask_user_required', (message) => {
+ws.on('ask_user_required', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   console.log('[Frontend] Received ask_user_required:', message.data)
   useChatStore.setState((state) => ({
-    ...patchSession(state, sid, { pendingAskUser: message.data as AskUserRequest }),
+    ...patchSession(state, sid, {
+      pendingAskUser: normalizeAskUserRequest(asObject(message.data) ?? {}),
+    }),
   }))
 })
 
-wsClient.on('ask_user_resolved', (message) => {
+ws.on('ask_user_resolved', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   useChatStore.setState((state) => ({
@@ -677,36 +903,44 @@ wsClient.on('ask_user_resolved', (message) => {
   }))
 })
 
-wsClient.on('session_activity', (message) => {
-  const { session_id, status, running } = message.data
-  // Support both formats: {status: "running"} and {running: true}
-  const isRunning = running === true || status === 'running'
+ws.on('session_activity', (message) => {
+  const payload = asObject(message.data)
+  const sessionId = resolveSessionId(payload)
+  if (!sessionId) return
+
+  const isRunning = payload ? resolveRunningState(payload) : null
   useChatStore.setState((state) => {
+    if (isRunning === null) {
+      return { runningSessions: new Set(state.runningSessions) }
+    }
+
     const next = new Set(state.runningSessions)
-    if (isRunning) next.add(session_id)
-    else next.delete(session_id)
+    if (isRunning) next.add(sessionId)
+    else next.delete(sessionId)
     return { runningSessions: next }
   })
   useChatStore.getState().bumpSessionList()
 
   // Toast notification when a non-current session completes
-  if (!isRunning && session_id !== useChatStore.getState().currentSessionId) {
-    useToastStore.getState().addToast(`Session ${session_id.slice(0, 8)} completed`, 'success')
+  if (isRunning === false && sessionId !== useChatStore.getState().currentSessionId) {
+    useToastStore.getState().addToast(`Session ${sessionId.slice(0, 8)} completed`, 'success')
   }
 })
 
 // ─── Plan Approval Events ────────────────────────────────────────────────────
 
-wsClient.on('plan_approval_required', (message) => {
+ws.on('plan_approval_required', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   console.log('[Frontend] Received plan_approval_required:', message.data)
   useChatStore.setState((state) => ({
-    ...patchSession(state, sid, { pendingPlanApproval: message.data as PlanApprovalRequest }),
+    ...patchSession(state, sid, {
+      pendingPlanApproval: normalizePlanApprovalRequest(asObject(message.data) ?? {}),
+    }),
   }))
 })
 
-wsClient.on('plan_approval_resolved', (message) => {
+ws.on('plan_approval_resolved', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   useChatStore.setState((state) => ({
@@ -716,10 +950,13 @@ wsClient.on('plan_approval_resolved', (message) => {
 
 // ─── Subagent Events ─────────────────────────────────────────────────────────
 
-wsClient.on('subagent_start', (message) => {
-  const sid = resolveSessionId(message.data)
+ws.on('subagent_start', (message) => {
+  const payload = asObject(message.data)
+  const sid = resolveSessionId(payload)
   if (!sid) return
-  const { agent_type, description, tool_call_id } = message.data
+  const agent_type = payload ? readString(payload, 'agent_type') ?? 'subagent' : 'subagent'
+  const description = payload ? readString(payload, 'description') ?? '' : ''
+  const tool_call_id = payload ? readString(payload, 'tool_call_id', 'tool_id') : undefined
   console.log('[Frontend] Subagent start:', agent_type, description)
 
   const subagentMessage: Message = {
@@ -737,10 +974,13 @@ wsClient.on('subagent_start', (message) => {
   })
 })
 
-wsClient.on('subagent_complete', (message) => {
-  const sid = resolveSessionId(message.data)
+ws.on('subagent_complete', (message) => {
+  const payload = asObject(message.data)
+  const sid = resolveSessionId(payload)
   if (!sid) return
-  const { tool_call_id, success } = message.data
+  const tool_call_id = payload ? readString(payload, 'tool_call_id', 'tool_id') : undefined
+  const success = payload ? readBoolean(payload, 'success') ?? false : false
+  const resultSummary = payload ? readString(payload, 'result_summary', 'summary') : undefined
 
   useChatStore.setState((state) => {
     const sessionState = getSessionState(state.sessionStates, sid)
@@ -750,13 +990,16 @@ wsClient.on('subagent_complete', (message) => {
       if (
         msgs[i].role === 'tool_call' &&
         msgs[i].tool_name === 'spawn_subagent' &&
-        msgs[i].tool_call_id === tool_call_id &&
+        (tool_call_id ? msgs[i].tool_call_id === tool_call_id : true) &&
         !msgs[i].tool_result
       ) {
         const updatedMessages = [...msgs]
         updatedMessages[i] = {
           ...msgs[i],
-          tool_result: { success, output: success ? 'Agent completed' : 'Agent failed' },
+          tool_result: {
+            success,
+            output: resultSummary || (success ? 'Agent completed' : 'Agent failed'),
+          },
           tool_success: success,
         }
         return patchSession(state, sid, { messages: updatedMessages })
@@ -766,7 +1009,7 @@ wsClient.on('subagent_complete', (message) => {
   })
 })
 
-wsClient.on('task_completed', (message) => {
+ws.on('task_completed', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   console.log('[Frontend] Task completed:', message.data.summary)
@@ -774,10 +1017,14 @@ wsClient.on('task_completed', (message) => {
 
 // ─── Progress Events ─────────────────────────────────────────────────────────
 
-wsClient.on('progress', (message) => {
-  const sid = resolveSessionId(message.data)
+ws.on('progress', (message) => {
+  const payload = asObject(message.data)
+  const sid = resolveSessionId(payload)
   if (!sid) return
-  const { status, message: progressMsg } = message.data
+  const status = payload ? readString(payload, 'status') : undefined
+  const progressMsg = payload
+    ? readString(payload, 'message') ?? readString(payload, 'phase')
+    : undefined
 
   if (status === 'complete') {
     useChatStore.setState((state) => ({
@@ -792,18 +1039,25 @@ wsClient.on('progress', (message) => {
 
 // ─── Nested Tool Events ──────────────────────────────────────────────────────
 
-wsClient.on('nested_tool_call', (message) => {
-  const sid = resolveSessionId(message.data)
+ws.on('nested_tool_call', (message) => {
+  const payload = asObject(message.data)
+  const sid = resolveSessionId(payload)
   if (!sid) return
-  const { tool_name, arguments: args, depth, parent } = message.data
+  const tool_name = payload ? readString(payload, 'tool_name', 'name') ?? 'tool' : 'tool'
+  const args = (payload && asObject(payload.arguments)) ?? {}
+  const depth = payload ? readNumber(payload, 'depth') ?? 1 : 1
+  const parent = payload
+    ? readString(payload, 'parent', 'parent_tool_call_id', 'tool_call_id')
+    : undefined
+  const toolId = payload ? readString(payload, 'tool_id', 'tool_call_id', 'id') : undefined
 
   const nestedMsg: Message = {
     role: 'tool_call',
     content: `Calling ${tool_name}`,
     tool_name,
     tool_args: args || {},
-    tool_call_id: `nested-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    depth: depth || 1,
+    tool_call_id: toolId || `nested-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    depth,
     parent_tool_call_id: parent,
     timestamp: new Date().toISOString(),
   }
@@ -814,10 +1068,16 @@ wsClient.on('nested_tool_call', (message) => {
   })
 })
 
-wsClient.on('nested_tool_result', (message) => {
-  const sid = resolveSessionId(message.data)
+ws.on('nested_tool_result', (message) => {
+  const payload = asObject(message.data)
+  const sid = resolveSessionId(payload)
   if (!sid) return
-  const { tool_name, success, summary, depth } = message.data
+  const tool_name = payload ? readString(payload, 'tool_name', 'name') ?? 'tool' : 'tool'
+  const success = payload ? readBoolean(payload, 'success') ?? false : false
+  const summary = payload
+    ? readString(payload, 'summary', 'result_summary', 'output')
+    : undefined
+  const depth = payload ? readNumber(payload, 'depth') : undefined
 
   useChatStore.setState((state) => {
     const sessionState = getSessionState(state.sessionStates, sid)

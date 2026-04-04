@@ -41,6 +41,7 @@ export interface Session {
   message_count: number
   token_usage?: Record<string, number>
   title?: string
+  status?: string
   has_session_model?: boolean
 }
 
@@ -154,12 +155,12 @@ export interface StatusInfo {
 // Ask-user question types
 export interface AskUserOption {
   label: string
-  description: string
+  description?: string
 }
 
 export interface AskUserQuestion {
   question: string
-  header: string
+  header?: string
   options: AskUserOption[]
   multi_select: boolean
 }

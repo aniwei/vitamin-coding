@@ -1,10 +1,10 @@
 import type { WebSocketMessage } from '../types'
 
-export type WSEventHandler = (message: WebSocketMessage) => void
+export type WebSocketEventHandler = (message: WebSocketMessage) => void
 
 class WebSocketClient {
   private ws: WebSocket | null = null
-  private handlers: Map<string, Set<WSEventHandler>> = new Map()
+  private handlers: Map<string, Set<WebSocketEventHandler>> = new Map()
   private reconnectTimer: number | null = null
   private reconnectAttempts = 0
   private reconnectDelay = 1000
@@ -114,7 +114,7 @@ class WebSocketClient {
     this.send({ type: 'ping', data: { timestamp: Date.now() } })
   }
 
-  on(eventType: string, handler: WSEventHandler) {
+  on(eventType: string, handler: WebSocketEventHandler) {
     if (!this.handlers.has(eventType)) {
       this.handlers.set(eventType, new Set())
     }
@@ -178,5 +178,5 @@ class WebSocketClient {
     }, delay)
   }
 }
-
-export const wsClient = new WebSocketClient()
+ export const ws = new WebSocketClient()
+ 

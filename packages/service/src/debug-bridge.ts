@@ -21,15 +21,23 @@ interface DebugBridgeEvents extends Events {
   'Log.entryAdded': (entry: LogEntry) => void
 }
 
+interface SendCommand { 
+  type: string; 
+  seq: number; 
+  depth?: number, 
+  [extra: string]: unknown 
+}
+
+
 export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
+  private logId = 0
   private socket: WebSocket | null = null
-  private reconnectTimer: ReturnType<typeof setTimeout> | null = null
-  private readonly logBuffer: LogEntry[] = []
-  private logIdCounter = 0
+  private timer: ReturnType<typeof setTimeout> | null = null
+  private readonly logs: LogEntry[] = []
 
   constructor(
     private readonly devtools: Devtools,
-    private readonly wsManager: WebSocketManager,
+    private readonly ws: WebSocketManager,
   ) {
     super()
   }
@@ -39,16 +47,22 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
   }
 
   detach(): void {
-    if (this.reconnectTimer) {
-      clearTimeout(this.reconnectTimer)
-      this.reconnectTimer = null
+    if (this.timer) {
+      clearTimeout(this.timer)
+      this.timer = null
     }
+
     this.socket?.close()
     this.socket = null
   }
 
-  sendCommand(
-    command: { type: string; seq: number; depth?: number },
+  dispose(): void {
+    this.detach()
+    this.removeAllListeners()
+  }
+
+  send(
+    command: SendCommand,
     payload?: PauseResumePayload,
   ): void {
     if (this.socket?.readyState === WebSocket.OPEN) {
@@ -58,13 +72,13 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
     }
   }
 
-  getLogBuffer(): LogEntry[] {
-    return [...this.logBuffer]
+  getLogs(): LogEntry[] {
+    return [...this.logs]
   }
 
   private connect(): void {
-    const inspectUrl = this.devtools.service.serviceUrl
-      .replace('http://', 'ws://') + '/inspect'
+    const serviceUrl = this.devtools.service.serviceUrl
+    const inspectUrl = serviceUrl.replace('http://', 'ws://') + '/inspect'
 
     this.socket = new WebSocket(inspectUrl)
 
@@ -83,22 +97,22 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
 
     this.socket.on('close', () => {
       logger.info('debug bridge disconnected, scheduling reconnect')
-      this.scheduleReconnect()
+      this.reconnect()
     })
 
-    this.socket.on('error', (err) => {
+    this.socket.on('error', err => {
       logger.warn(`debug bridge error: ${err.message}`)
     })
   }
 
-  private scheduleReconnect(): void {
-    this.reconnectTimer = setTimeout(() => this.connect(), 2000)
+  private reconnect(): void {
+    this.timer = setTimeout(() => this.connect(), 20_000)
   }
 
   private handleDevtoolsEvent(event: Record<string, unknown>): void {
     switch (event.type) {
       case 'Agent.debugger.paused':
-        this.wsManager.broadcast({
+        this.ws.broadcast({
           type: 'Debugger.paused',
           data: {
             reason: 'breakpoint',
@@ -110,10 +124,10 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
         break
 
       case 'Debugger.command':
-        this.wsManager.broadcast({
+        this.ws.broadcast({
           type: 'Debugger.resumed',
           data: {
-            command: event.command as Record<string, unknown>,
+            command: event.command as SendCommand,
             timestamp: new Date().toISOString(),
           },
         })
@@ -128,7 +142,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
   private handleLogMessage(event: Record<string, unknown>): void {
     if (typeof event.level !== 'undefined' || typeof event.msg === 'string') {
       const entry: LogEntry = {
-        id: ++this.logIdCounter,
+        id: ++this.logId,
         timestamp: (event.time as string) ?? new Date().toISOString(),
         level: this.normalizeLevel(event.level),
         module: (event.name as string) ?? 'unknown',
@@ -136,12 +150,12 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
         data: event,
       }
 
-      this.logBuffer.push(entry)
-      if (this.logBuffer.length > 2000) {
-        this.logBuffer.splice(0, this.logBuffer.length - 2000)
+      this.logs.push(entry)
+      if (this.logs.length > 2000) {
+        this.logs.splice(0, this.logs.length - 2000)
       }
 
-      this.wsManager.broadcast({
+      this.ws.broadcast({
         type: 'Log.entryAdded',
         data: { entry: entry as unknown as Record<string, unknown> },
       })
@@ -157,6 +171,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
         return l
       }
     }
+
     if (typeof level === 'number') {
       if (level <= 10) return 'trace'
       if (level <= 20) return 'debug'
@@ -165,6 +180,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
       if (level <= 50) return 'error'
       return 'fatal'
     }
+
     return 'info'
   }
 }

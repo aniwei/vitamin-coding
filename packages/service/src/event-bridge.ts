@@ -1,90 +1,76 @@
 import type { AgentSessionEvent, AgentSession } from '@vitamin/coding'
-import type { StreamEvent, AssistantMessage, TextContent } from '@vitamin/ai'
+import type { StreamEvent, TextContent } from '@vitamin/ai'
 import type { WebSocketMessage } from './types'
 import type { WebSocketManager } from './websocket-manager'
 
-/**
- * Bridges AgentSession internal events → WebSocketManager WebSocket messages.
- *
- * One bridge per AgentSession. Listens to:
- *   - AgentSession events (prompt_start, prompt_end, error, etc.)
- *   - Agent StreamEvents (text deltas, thinking, tool calls)
- */
-export class EventBridge {
-  private readonly disposers: Array<() => void> = []
 
+export class EventBridge {
   constructor(
     private readonly session: AgentSession,
     private readonly ws: WebSocketManager,
   ) {}
 
-  /** Start forwarding events for this session */
-  attach(): void {
+  private onPrompStart = (_id: string, text: string) => {
     const sid = this.session.id
-
-    // Session-level events via TypedEventEmitter
-    const offPromptStart = this.session.on('prompt_start', (_id, text) => {
-      this.send(sid, {
-        type: 'user_message',
-        data: { sessionId: sid, content: text, timestamp: new Date().toISOString() },
-      })
-      this.send(sid, {
-        type: 'message_start',
-        data: { sessionId: sid, role: 'assistant' },
-      })
+    this.send(sid, {
+      type: 'user_message',
+      data: { sessionId: sid, content: text, timestamp: new Date().toISOString() },
     })
 
-    const offPromptEnd = this.session.on('prompt_end', () => {
-      this.send(sid, {
-        type: 'message_complete',
-        data: { sessionId: sid },
-      })
+    this.send(sid, {
+      type: 'message_start',
+      data: { sessionId: sid, role: 'assistant' },
     })
-
-    const offError = this.session.on('error', (_id, error) => {
-      this.send(sid, {
-        type: 'error',
-        data: { sessionId: sid, message: error.message },
-      })
-    })
-
-    this.disposers.push(offPromptStart, offPromptEnd, offError)
   }
 
-  /** Forward a StreamEvent from the Agent layer */
+  private onPromptEnd = () => {
+    const sid = this.session.id
+    this.send(sid, {
+      type: 'message_complete',
+      data: { sessionId: sid },
+    })
+  }
+
+  private onError = (_id: string, error: Error) => {
+    const sid = this.session.id
+    this.send(sid, {
+      type: 'error',
+      data: { sessionId: sid, message: error.message }
+    })
+  }
+
+
+  attach(): void {
+    this.session.on('prompt_start', this.onPrompStart)
+    this.session.on('prompt_end', this.onPromptEnd)
+    this.session.on('error', this.onError)
+  }
+
   handleStreamEvent(event: StreamEvent): void {
     const sid = this.session.id
-    const mapped = this.mapStreamEvent(sid, event)
-    if (mapped) {
-      for (const msg of Array.isArray(mapped) ? mapped : [mapped]) {
+    const messages = this.createMessageFromStreamEvent(sid, event)
+    if (messages) {
+      for (const msg of Array.isArray(messages) ? messages : [messages]) {
         this.send(sid, msg)
       }
     }
   }
 
-  /** Forward an AgentSessionEvent from the orchestrator */
   handleSessionEvent(event: AgentSessionEvent): void {
     const sid = this.session.id
-    const mapped = this.mapSessionEvent(sid, event)
-    if (mapped) {
-      for (const msg of Array.isArray(mapped) ? mapped : [mapped]) {
+    const messages = this.createMessageFromSessionEvent(sid, event)
+    if (messages) {
+      for (const msg of Array.isArray(messages) ? messages : [messages]) {
         this.send(sid, msg)
       }
     }
-  }
-
-  detach(): void {
-    for (const dispose of this.disposers) {
-      dispose()
-    }
-    this.disposers.length = 0
   }
 
   private send(sessionId: string, message: WebSocketMessage): void {
     this.ws.sendToSession(sessionId, message)
   }
 
-  private mapStreamEvent(
+  private createMessageFromStreamEvent(
     sessionId: string,
     event: StreamEvent,
   ): WebSocketMessage | WebSocketMessage[] | null {
@@ -126,13 +112,25 @@ export class EventBridge {
         }
       }
 
-      case 'done':
-        return this.mapDoneMessage(sessionId, event.message)
+      case 'done': {
+        const events: WebSocketMessage[] = []
 
+        const blocks = event.message.content.filter((b): b is TextContent => b.type === 'text')
+        if (blocks.length > 0) {
+          const fullText = blocks.map(b => b.text).join('')
+          events.push({
+            type: 'message_complete',
+            data: { sessionId, content: fullText, role: 'assistant' },
+          })
+        }
+
+        return events
+      }
+        
       case 'error':
         return {
           type: 'error',
-          data: { sessionId, message: event.error.message },
+          data: { sessionId, message: event.error.message }
         }
 
       default:
@@ -140,7 +138,7 @@ export class EventBridge {
     }
   }
 
-  private mapSessionEvent(
+  private createMessageFromSessionEvent(
     sessionId: string,
     event: AgentSessionEvent,
   ): WebSocketMessage | WebSocketMessage[] | null {
@@ -209,23 +207,13 @@ export class EventBridge {
     }
   }
 
-  private mapDoneMessage(
-    sessionId: string,
-    message: AssistantMessage,
-  ): WebSocketMessage[] {
-    const events: WebSocketMessage[] = []
+  detach(): void {
+    this.session.off('prompt_start', this.onPrompStart)
+    this.session.off('prompt_end', this.onPromptEnd)
+    this.session.off('error', this.onError)
+  }
 
-    const textBlocks = message.content.filter(
-      (b): b is TextContent => b.type === 'text',
-    )
-    if (textBlocks.length > 0) {
-      const fullText = textBlocks.map((b) => b.text).join('')
-      events.push({
-        type: 'message_complete',
-        data: { sessionId, content: fullText, role: 'assistant' },
-      })
-    }
-
-    return events
+  dispose(): void {
+    this.detach()
   }
 }

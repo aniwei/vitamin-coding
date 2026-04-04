@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiClient } from '../../api/client'
+import { api } from '../../api/client'
 import { useToastStore } from '../../stores/toast'
 import { ModelSlot } from './ModelSlot'
 import type { Provider } from './ModelSlot'
@@ -50,8 +50,8 @@ export function ModelSettings() {
     try {
       setLoading(true)
       const [providersData, configData] = await Promise.all([
-        apiClient.listProviders(),
-        apiClient.getConfig(),
+        api.listProviders(),
+        api.getSetting(),
       ])
 
       setProviders(providersData)
@@ -86,7 +86,7 @@ export function ModelSettings() {
     try {
       setSaving(true)
 
-      await apiClient.updateConfig({
+      await api.updateSetting({
         model_provider: normalProvider,
         model: normalModel,
         model_thinking_provider: thinkingProvider || null,

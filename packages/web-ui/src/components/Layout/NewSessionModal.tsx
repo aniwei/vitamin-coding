@@ -6,7 +6,7 @@ import {
 } from '@heroicons/react/24/outline'
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { apiClient } from '../../api/client'
+import { api } from '../../api/client'
 import { useChatStore } from '../../stores/chat'
 
 interface NewSessionModalProps {
@@ -45,7 +45,7 @@ export function NewSessionModal({ isOpen, onClose }: NewSessionModalProps) {
     setIsLoadingDirs(true)
     setBrowseError(null)
     try {
-      const result = await apiClient.browseDirectory(path, hidden ?? showHidden)
+      const result = await api.browseDirectory(path, hidden ?? showHidden)
       setCurrentPath(result.current_path)
       setParentPath(result.parent_path)
       setDirectories(result.directories)
@@ -86,7 +86,7 @@ export function NewSessionModal({ isOpen, onClose }: NewSessionModalProps) {
     setIsCreating(true)
     setCreateError(null)
     try {
-      const result = await apiClient.createSession(currentPath)
+      const result = await api.createSession(currentPath)
       bumpSessionList()
       const sessionId = result.session?.id || (result as any).id
       if (sessionId) {

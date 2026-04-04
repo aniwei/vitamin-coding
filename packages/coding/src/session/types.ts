@@ -55,6 +55,7 @@ export interface AgentSessionInfo {
   id: string
   messageCount: number
   createdAt: Date
+  updatedAt?: Date
   model?: string
   status: string
 }

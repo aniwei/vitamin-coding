@@ -1,6 +1,6 @@
 import { Command, PanelLeft } from 'lucide-react'
 import { useEffect } from 'react'
-import { apiClient } from '../../api/client'
+import { api } from '../../api/client'
 import { useChatStore } from '../../stores/chat'
 import { DebugStatusBadge } from '../Devtools/DebugStatusBadge'
 
@@ -52,7 +52,7 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
   useEffect(() => {
     const loadStatus = async () => {
       try {
-        const configData = await apiClient.getConfig()
+        const configData = await api.getSetting()
         useChatStore.setState({
           thinkingLevel: configData.thinking_level || 'Medium',
         })
@@ -119,14 +119,14 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
         </button>
 
         {/* Logo */}
-        <img
+        {/* <img
           src="/icon_blue.png"
-          alt="OpenDev"
+          alt="Vitamin"
           className="w-7 h-7 rounded-lg shadow-sm flex-shrink-0"
-        />
+        /> */}
 
         <div className="flex items-baseline gap-1.5">
-          <span className="text-sm font-bold tracking-tight text-gray-900">OPENDEV</span>
+          <span className="text-sm font-bold tracking-tight text-gray-900">VITAMIN</span>
           <span className="text-[10px] uppercase tracking-wider text-gray-500 hidden sm:inline">
             AI Assistant
           </span>

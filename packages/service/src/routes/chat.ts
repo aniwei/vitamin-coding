@@ -14,9 +14,9 @@ export function createChatRoute(
       return c.json({ status: 'error', message: 'message is required' }, 400)
     }
 
-    let session = sessionId
-      ? service.vitamin.getSession(sessionId)
-      : service.vitamin.sessionManager.active
+    const session = sessionId
+      ? service.getSession(sessionId)
+      : service.getActiveSession()
 
     if (!session) {
       return c.json({ status: 'error', message: 'no active session' }, 404)
@@ -36,7 +36,6 @@ export function createChatRoute(
     })
   })
 
-  // GET /chat/messages — get messages for the active session
   app.get('/messages', (c) => {
     const session = service.vitamin.sessionManager.active
     if (!session) {
@@ -45,7 +44,6 @@ export function createChatRoute(
     return c.json(serializeMessages(session))
   })
 
-  // POST /chat/interrupt — abort the active session
   app.post('/interrupt', (c) => {
     const session = service.vitamin.sessionManager.active
     if (!session) {
@@ -55,7 +53,6 @@ export function createChatRoute(
     return c.json({ status: 'ok', message: 'interrupted' })
   })
 
-  // DELETE /chat/clear — clear messages in the active session
   app.delete('/clear', async (c) => {
     const session = service.vitamin.sessionManager.active
     if (!session) {

@@ -25,13 +25,15 @@ const logger = createLogger('@vitamin/devtools:service')
 const SERVICE_HOST = '127.0.0.1'
 
 function resolveWorkerPath(): string {
-  const thisDir = dirname(fileURLToPath(import.meta.url))
+  const thisFile = fileURLToPath(import.meta.url)
+  const thisDir = dirname(thisFile)
 
-  if (process.env.NODE_ENV === 'production') {
-    return join(thisDir, 'service-worker.cjs')
+  // 当前模块仍是 .ts 说明由 tsx / ts-node 直接运行，worker 同样使用 .ts
+  if (thisFile.endsWith('.ts')) {
+    return join(thisDir, 'service-worker.ts')
   }
 
-  return join(thisDir, 'service-worker.ts')
+  return join(thisDir, 'service-worker.cjs')
 }
 
 interface ServiceEvents extends Events {

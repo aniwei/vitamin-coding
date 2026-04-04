@@ -72,7 +72,8 @@ export class VitaminApp implements VitaminContext {
   public readonly maxSessions: number
   public readonly maxToolTurns: number
 
-  private readonly devtools: Devtools | null = null
+  public readonly devtools: Devtools | null = null
+  
   private readonly fileStateManager: FileStateManager
   private readonly learningStore: OperationalLearningStore
   private readonly promptManager: PromptManager

@@ -19,9 +19,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@hono/node-server": "^1.19.12",
+    "@vitamin/ai": "workspace:*",
     "@vitamin/coding": "workspace:*",
     "@vitamin/devtools": "workspace:*",
-    "@vitamin/ai": "workspace:*",
     "@vitamin/shared": "workspace:*",
     "hono": "^4.12.7",
     "ws": "^8.19.0"

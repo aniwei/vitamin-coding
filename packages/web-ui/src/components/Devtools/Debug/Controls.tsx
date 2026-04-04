@@ -30,7 +30,7 @@ export function Controls() {
   }
 
   return (
-    <div className="px-3 py-2 border-b border-gray-200 bg-amber-50/50">
+    <div className="px-1 py-1 border-b border-gray-200 bg-amber-50/50">
       <div className="flex items-center gap-1">
         {ACTIONS.map(({ key, icon: Icon, label, shortcut, color }) => (
           <button
@@ -39,7 +39,7 @@ export function Controls() {
             className={`p-1 rounded hover:bg-gray-200/50 transition-colors ${color}`}
             title={`${label} (${shortcut})`}
           >
-            <Icon className="w-4 h-4" />
+            <Icon className="w-3 h-3" />
           </button>
         ))}
         {hasChanges && (

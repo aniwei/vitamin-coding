@@ -1,18 +1,5 @@
 import type { AgentSessionEvent } from '@vitamin/coding'
-import type { Devtools } from '@vitamin/devtools'
 
-// ─── CDP-inspired domain protocol ───
-//
-// Inspired by Chrome DevTools Protocol:
-//   - Events use `Domain.event` naming: 'Debugger.paused', 'Log.entryAdded'
-//   - Commands use `Domain.method` naming: 'Debugger.resume', 'Debugger.setBreakpoint'
-//   - All messages serialised as { type, data } (keeping existing WS envelope)
-//
-// Domains:
-//   Debugger — breakpoint management, pause/resume, context writeback
-//   Log      — structured log streaming + history
-
-// ─── WebSocket protocol (server → client) ───
 export type WebSocketEventType =
   | 'connected'
   | 'pong'
@@ -100,7 +87,6 @@ export interface CodingServiceOptions {
   port: number
   staticDir?: string
   cors?: string
-  devtools?: Devtools
 }
 
 // ─── Event bridge: maps internal events → WS events ───

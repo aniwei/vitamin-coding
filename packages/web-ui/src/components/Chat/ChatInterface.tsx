@@ -1,5 +1,5 @@
 import { useEffect, useState } from 'react'
-import { apiClient } from '../../api/client'
+import { api } from '../../api/client'
 import { useChatStore } from '../../stores/chat'
 import { InputBox } from './InputBox'
 import { LandingPage } from './LandingPage'
@@ -21,7 +21,7 @@ export function ChatInterface() {
   // Auto-join TUI session in bridge mode
   useEffect(() => {
     let cancelled = false
-    apiClient
+    api
       .getBridgeInfo()
       .then((info) => {
         if (cancelled) return

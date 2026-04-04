@@ -16,7 +16,7 @@ import {
   testMCPServer,
   updateMCPServer,
 } from '../../api/mcp'
-import { wsClient } from '../../api/websocket'
+import { ws } from '../../api/websocket'
 import type { WebSocketMessage } from '../../types'
 import type {
   MCPServer,
@@ -65,8 +65,8 @@ export function MCPSettings() {
       }
     }
 
-    const unsubscribe1 = wsClient.on('mcp_status_update', handleWebSocketMessage)
-    const unsubscribe2 = wsClient.on('mcp_servers_update', handleWebSocketMessage)
+    const unsubscribe1 = ws.on('mcp_status_update', handleWebSocketMessage)
+    const unsubscribe2 = ws.on('mcp_servers_update', handleWebSocketMessage)
 
     return () => {
       unsubscribe1()

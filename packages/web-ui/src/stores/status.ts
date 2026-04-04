@@ -1,5 +1,5 @@
 import { create } from 'zustand'
-import { wsClient } from '../api/websocket'
+import { ws } from '../api/websocket'
 
 export interface StatusBarData {
   model: string | null
@@ -44,7 +44,7 @@ export const useStatusStore = create<StatusStore>((set) => ({
 }))
 
 // Subscribe to WebSocket status events
-wsClient.on('status_update', (message) => {
+ws.on('status_update', (message) => {
   const d = message.data
   if (!d) return
 

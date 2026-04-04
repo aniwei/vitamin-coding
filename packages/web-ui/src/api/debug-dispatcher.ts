@@ -9,7 +9,7 @@
  * into the Zustand stores.
  */
 
-import { wsClient } from './websocket'
+import { ws } from './websocket'
 import { useDebugStore } from '../stores/debug'
 import { useLogStore } from '../stores/logs'
 import type { DebugSnapshot } from '../types/debug'
@@ -23,24 +23,24 @@ export function setupDebugWsHandlers(): void {
 
   // ─── Debugger domain ───
 
-  wsClient.on('Debugger.paused', (msg) => {
+  ws.on('Debugger.paused', (msg) => {
     const data = msg.data as { reason: string; snapshot: DebugSnapshot }
     useDebugStore.getState().handlePaused(data)
     // Auto-open debug panel on pause
     useDebugStore.getState().openPanel()
   })
 
-  wsClient.on('Debugger.resumed', () => {
+  ws.on('Debugger.resumed', () => {
     useDebugStore.getState().handleResumed()
   })
 
-  wsClient.on('Debugger.breakpointsChanged', (msg) => {
+  ws.on('Debugger.breakpointsChanged', (msg) => {
     const data = msg.data as { breakpoints: Array<{ point: string; enabled: boolean }> }
     useDebugStore.getState().handleBreakpointsChanged(data.breakpoints)
   })
 
   // ─── Log domain ───
-  wsClient.on('Log.entryAdded', (msg) => {
+  ws.on('Log.entryAdded', (msg) => {
     const data = msg.data as { entry: LogEntry }
     useLogStore.getState().appendEntry(data.entry)
   })

@@ -1,5 +1,5 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
-import { apiClient } from '../../api/client'
+import { api } from '../../api/client'
 import { SPINNER_FRAMES } from '../../constants/spinner'
 import { useChatStore } from '../../stores/chat'
 import { NewSessionModal } from '../Layout/NewSessionModal'
@@ -39,7 +39,7 @@ export function LandingPage() {
 
   // Fetch workspaces on mount
   useEffect(() => {
-    apiClient
+    api
       .listSessions()
       .then((sessions) => {
         // Group by working_dir, sort by most recent
@@ -109,7 +109,7 @@ export function LandingPage() {
     setError(null)
 
     try {
-      const result = await apiClient.createSession(selectedWorkspace)
+      const result = await api.createSession(selectedWorkspace)
       bumpSessionList()
       const sessionId = result.session?.id || (result as any).id
       await loadSession(sessionId)
@@ -156,10 +156,9 @@ export function LandingPage() {
 
   return (
     <div className="relative flex flex-col items-center justify-center h-full px-6 bg-bg-100 overflow-hidden">
-      {/* Background watermark layer */}
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <span className="text-5xl md:text-7xl font-mono font-bold tracking-wider text-bg-300 animate-breathe select-none">
-          OpenDev
+          Vitamin
         </span>
         <div className="absolute animate-spin-slow" style={{ width: 360, height: 360 }}>
           {Array.from({ length: 24 }).map((_, i) => {

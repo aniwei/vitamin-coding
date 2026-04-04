@@ -1,6 +1,6 @@
 import { useEffect, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { apiClient } from '../../api/client'
+import { api } from '../../api/client'
 import { useToastStore } from '../../stores/toast'
 import { ModelSlot } from '../Settings/ModelSlot'
 import type { Provider } from '../Settings/ModelSlot'
@@ -50,9 +50,9 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
     try {
       setLoading(true)
       const [providersData, configData, overlayData] = await Promise.all([
-        apiClient.listProviders(),
-        apiClient.getConfig(),
-        apiClient.getSessionModel(sessionId),
+        api.listProviders(),
+        api.getSetting(),
+        api.getSessionModel(sessionId),
       ])
 
       setProviders(providersData)
@@ -92,7 +92,7 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
     setError(undefined)
 
     try {
-      const result = await apiClient.verifyModel(provider, model)
+      const result = await api.verifyModel(provider, model)
       if (result.valid) {
         setStatus('success')
         return true
@@ -169,7 +169,7 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
     try {
       setSaving(true)
 
-      await apiClient.updateSessionModel(sessionId, {
+      await api.updateSessionModel(sessionId, {
         model_provider: normalProvider || null,
         model: normalModel || null,
         model_thinking_provider: thinkingProvider || null,
@@ -193,11 +193,11 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
     if (!sessionId) return
     try {
       setSaving(true)
-      await apiClient.clearSessionModel(sessionId)
+      await api.clearSessionModel(sessionId)
       setHasExistingOverlay(false)
 
       // Reload with global defaults
-      const configData = await apiClient.getConfig()
+      const configData = await api.getSetting()
       setNormalProvider(configData.model_provider || '')
       setNormalModel(configData.model || '')
       setThinkingProvider(configData.model_thinking_provider || '')

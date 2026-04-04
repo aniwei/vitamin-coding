@@ -5,7 +5,7 @@ import type {
   PauseResumePayload,
 } from '../types/debug'
 import * as debugApi from '../api/debug'
-import { wsClient } from '../api/websocket'
+import { ws } from '../api/websocket'
 
 interface DebugState {
   // Connection
@@ -206,7 +206,7 @@ export const useDebugStore = create<DebugState>((set, get) => ({
   // ─── CDP commands: Debugger.resume / stepOver / stepInto / disable ───
   resume: (payload) => {
     const draft = payload ?? buildPayload(get())
-    wsClient.send({
+    ws.send({
       type: 'Debugger.resume',
       data: { payload: draft },
     })
@@ -214,7 +214,7 @@ export const useDebugStore = create<DebugState>((set, get) => ({
 
   stepOver: (payload) => {
     const draft = payload ?? buildPayload(get())
-    wsClient.send({
+    ws.send({
       type: 'Debugger.stepOver',
       data: { payload: draft },
     })
@@ -222,14 +222,14 @@ export const useDebugStore = create<DebugState>((set, get) => ({
 
   stepInto: (payload) => {
     const draft = payload ?? buildPayload(get())
-    wsClient.send({
+    ws.send({
       type: 'Debugger.stepInto',
       data: { payload: draft },
     })
   },
 
   disable: () => {
-    wsClient.send({ type: 'Debugger.disable', data: {} })
+    ws.send({ type: 'Debugger.disable', data: {} })
   },
 }))
 

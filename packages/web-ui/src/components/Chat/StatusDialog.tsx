@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { apiClient } from '../../api/client'
+import { api } from '../../api/client'
 import { useChatStore } from '../../stores/chat'
 
 interface StatusDialogProps {
@@ -29,7 +29,7 @@ export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
   useEffect(() => {
     if (!isOpen) return
     setLoading(true)
-    apiClient
+    api
       .get<{ servers: MCPServer[] }>('/mcp/servers')
       .then((data) => setMcpServers(data?.servers || []))
       .catch(() => setMcpServers([]))

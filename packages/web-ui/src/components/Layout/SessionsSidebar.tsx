@@ -1,28 +1,13 @@
 import { ChevronDownIcon, Cog6ToothIcon, FolderIcon, PlusIcon } from '@heroicons/react/24/outline'
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
-import { apiClient } from '../../api/client'
+import { api } from '../../api/client'
+import type { Session } from '../../types'
 import { useChatStore } from '../../stores/chat'
 import { SettingsModal } from '../Settings/SettingsModal'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
 import { NewSessionModal } from './NewSessionModal'
 import { SessionModelModal } from './SessionModelModal'
-
-interface Session {
-  id: string
-  working_dir?: string
-  working_directory?: string
-  message_count: number
-  token_usage?: {
-    prompt_tokens: number
-    completion_tokens: number
-  }
-  created_at: string
-  updated_at: string
-  title?: string
-  status?: 'active' | 'answered' | 'open'
-  has_session_model?: boolean
-}
 
 interface WorkspaceGroup {
   path: string
@@ -94,8 +79,7 @@ export function SessionsSidebar() {
 
   const fetchSessions = async () => {
     try {
-      const response = await fetch('/api/sessions')
-      const data = await response.json()
+      const data = await api.listSessions()
       setSessions(data)
 
       // Group sessions by workspace
@@ -183,7 +167,7 @@ export function SessionsSidebar() {
     e.stopPropagation()
 
     try {
-      const result = await apiClient.createSession(workspacePath)
+      const result = await api.createSession(workspacePath)
 
       // Refresh sessions list
       await fetchSessions()

@@ -1,5 +1,5 @@
 import { type KeyboardEvent, useEffect, useRef, useState } from 'react'
-import { apiClient } from '../../api/client'
+import { api } from '../../api/client'
 import { useChatStore } from '../../stores/chat'
 import { FileChangesButton } from './FileChangesButton'
 import { FileMentionDropdown } from './FileMentionDropdown'
@@ -32,7 +32,7 @@ export function InputBox() {
   // Load files when @ is detected
   useEffect(() => {
     if (showFileMention) {
-      apiClient
+      api
         .listFiles(mentionQuery)
         .then((response) => {
           setFilesList(response.files)
@@ -55,7 +55,7 @@ export function InputBox() {
 
   const handleStop = async () => {
     try {
-      await apiClient.interruptTask()
+      await api.interruptTask()
     } catch (error) {
       console.error('Failed to interrupt task:', error)
     }
