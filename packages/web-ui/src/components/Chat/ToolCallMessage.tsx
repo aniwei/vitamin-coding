@@ -76,7 +76,7 @@ function getToolDisplayParts(toolName: string): { verb: string; label: string } 
 
   if (toolMap[toolName]) return toolMap[toolName]
 
-  // Smart fallback: parse tool_name tokens into verb + label
+  // Smart fallback: parse tool name tokens into verb + label
   const tokens = toolName.replace(/-/g, '_').split('_').filter(Boolean)
   if (tokens.length === 0) return { verb: 'Call', label: 'tool' }
   const verb = tokens[0].charAt(0).toUpperCase() + tokens[0].slice(1)
@@ -106,7 +106,7 @@ function summarizeToolArgs(toolName: string, toolArgs: any): string {
     analyze_image: ['image_path', 'file_path'],
     git_commit: ['message'],
     present_plan: ['plan_file_path'],
-    spawn_subagent: ['subagent_type', 'description'],
+    spawn_subagent: ['subagent_type', 'agent_type', 'agentType', 'description'],
     task_complete: ['summary'],
     invoke_skill: ['skill_name'],
     get_process_output: ['pid', 'command'],
@@ -344,7 +344,7 @@ function formatPresentPlanResult(_toolArgs: any, result: any): string[] {
 }
 
 function formatSpawnSubagentResult(toolArgs: any, result: any): string[] {
-  const agentType = toolArgs?.subagent_type || toolArgs?.agent_type || 'agent'
+  const agentType = toolArgs?.subagent_type || toolArgs?.agent_type || toolArgs?.agentType || 'agent'
   const output = typeof result?.output === 'string' ? result.output : ''
   if (result?.success === false) {
     return [`${agentType} agent failed`]
@@ -439,18 +439,18 @@ export function ToolCallMessage({ message, hasResult }: ToolCallMessageExtProps)
 
   if (message.role === 'tool_call') {
     const toolName =
-      message.tool_name ||
-      (message.tool_calls && message.tool_calls[0]?.name) ||
+      message.toolName ||
+      (message.toolCalls && message.toolCalls[0]?.name) ||
       (message as any)?.name ||
       ''
 
-    const toolArgs = message.tool_args || {}
-    const toolResult = message.tool_result ?? {}
-    const summaryOverride = message.tool_summary
-    const successOverride = message.tool_success
+    const toolArgs = message.toolArgs || {}
+    const toolResult = message.toolResult ?? {}
+    const summaryOverride = message.toolSummary
+    const successOverride = message.toolSuccess
 
     let { verb } = getToolDisplayParts(toolName)
-    let summary = message.tool_args_display ?? summarizeToolArgs(toolName, toolArgs)
+    let summary = message.toolArgsDisplay ?? summarizeToolArgs(toolName, toolArgs)
 
     // format_tool_call returns "Verb(args)" — extract just the args part
     if (summary && summary.includes('(') && summary.endsWith(')')) {
@@ -461,7 +461,9 @@ export function ToolCallMessage({ message, hasResult }: ToolCallMessageExtProps)
     // For spawn_subagent, use subagent type as verb and description as summary
     // to match TUI: "code-explorer(Auth flow overview)" → "▶ Code Explorer  Auth flow overview"
     if (toolName === 'spawn_subagent') {
-      const subagentType = String(toolArgs?.subagent_type || toolArgs?.agent_type || '')
+      const subagentType = String(
+        toolArgs?.subagent_type || toolArgs?.agent_type || toolArgs?.agentType || '',
+      )
       if (subagentType) {
         verb = subagentType
           .split(/[-_]/)
@@ -570,7 +572,7 @@ export function ToolCallMessage({ message, hasResult }: ToolCallMessageExtProps)
                   lineStr.includes('Changes') ||
                   lineStr.includes('Packages installed') ||
                   lineStr.includes('completed'))
-              const isError = message.tool_error
+              const isError = message.toolError
                 ? true
                 : lineStr.includes('Error') ||
                   lineStr.includes('Failed') ||

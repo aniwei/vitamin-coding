@@ -21,8 +21,8 @@ interface FormData {
   args: string[]
   env: Record<string, string>
   enabled: boolean
-  auto_start: boolean
-  project_config: boolean
+  autoStart: boolean
+  projectConfig: boolean
 }
 
 const initialFormData: FormData = {
@@ -31,8 +31,8 @@ const initialFormData: FormData = {
   args: [],
   env: {},
   enabled: true,
-  auto_start: false,
-  project_config: false,
+  autoStart: false,
+  projectConfig: false,
 }
 
 type InputMode = 'form' | 'json'
@@ -71,8 +71,8 @@ export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerMod
           args: serverConfig.args || [],
           env: serverConfig.env || {},
           enabled: serverConfig.enabled ?? true,
-          auto_start: serverConfig.auto_start ?? false,
-          project_config: false,
+          autoStart: serverConfig.autoStart ?? false,
+          projectConfig: false,
         })
         setMode('form')
         setError(null)
@@ -85,8 +85,8 @@ export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerMod
           args: parsed.args || [],
           env: parsed.env || {},
           enabled: parsed.enabled ?? true,
-          auto_start: parsed.auto_start ?? false,
-          project_config: parsed.project_config ?? false,
+          autoStart: parsed.autoStart ?? false,
+          projectConfig: parsed.projectConfig ?? false,
         })
         setMode('form')
         setError(null)
@@ -121,8 +121,8 @@ export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerMod
         args: formData.args.filter((arg) => arg.trim()),
         env: formData.env,
         enabled: formData.enabled,
-        auto_start: formData.auto_start,
-        project_config: formData.project_config,
+        autoStart: formData.autoStart,
+        projectConfig: formData.projectConfig,
       })
 
       // Reset form and close
@@ -295,8 +295,8 @@ export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerMod
 
               <CheckboxField
                 label="Enable auto-start on launch"
-                checked={formData.auto_start}
-                onChange={(checked) => setFormData((prev) => ({ ...prev, auto_start: checked }))}
+                checked={formData.autoStart}
+                onChange={(checked) => setFormData((prev) => ({ ...prev, autoStart: checked }))}
                 disabled={isSubmitting}
               />
 
@@ -309,9 +309,9 @@ export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerMod
 
               <CheckboxField
                 label="Save to project config (instead of global)"
-                checked={formData.project_config}
+                checked={formData.projectConfig}
                 onChange={(checked) =>
-                  setFormData((prev) => ({ ...prev, project_config: checked }))
+                  setFormData((prev) => ({ ...prev, projectConfig: checked }))
                 }
                 disabled={isSubmitting}
               />

@@ -4,7 +4,7 @@ import { ws } from '../api/websocket'
 export interface TodoItem {
   id: string
   content: string
-  status: 'pending' | 'in_progress' | 'completed'
+  status: 'pending' | 'inProgress' | 'completed'
   children?: TodoItem[]
 }
 
@@ -17,10 +17,11 @@ interface RawTodoItem {
 }
 
 function mapTodoItem(t: RawTodoItem): TodoItem {
+  const status = t.status === 'inProgress' ? 'inProgress' : t.status === 'completed' ? 'completed' : 'pending'
   return {
     id: t.id || String(Math.random()),
     content: t.content || t.title || '',
-    status: (t.status as TodoItem['status']) || 'pending',
+    status,
     children: t.children?.map(mapTodoItem),
   }
 }
@@ -41,12 +42,33 @@ export const useTodoStore = create<TodoStore>((set) => ({
   toggleVisible: () => set((s) => ({ visible: !s.visible })),
 }))
 
+type EventData = Record<string, unknown>
+
+function asEventData(value: unknown): EventData | null {
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    return value as EventData
+  }
+
+  return null
+}
+
+function readString(data: EventData, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = data[key]
+    if (typeof value === 'string') {
+      return value
+    }
+  }
+
+  return undefined
+}
+
 // Listen for todo-related tool results that carry todo state
 ws.on('tool_result', (message) => {
-  const d = message.data
+  const d = asEventData(message.data)
   if (!d) return
 
-  const toolName = d.tool_name
+  const toolName = readString(d, 'toolName')
   if (
     toolName === 'write_todos' ||
     toolName === 'update_todo' ||
@@ -54,18 +76,18 @@ ws.on('tool_result', (message) => {
     toolName === 'clear_todos'
   ) {
     // If the backend sends todo state in the result, update store
-    if (d.todos) {
+    if (Array.isArray(d.todos)) {
       const items: TodoItem[] = (d.todos as RawTodoItem[]).map(mapTodoItem)
-      useTodoStore.getState().setItems(items, d.plan_name)
+      useTodoStore.getState().setItems(items, readString(d, 'planName'))
     }
   }
 })
 
 // Listen for status updates that may carry todo data
 ws.on('status_update', (message) => {
-  const d = message.data
-  if (!d?.todos) return
+  const d = asEventData(message.data)
+  if (!d || !Array.isArray(d.todos)) return
 
   const items: TodoItem[] = (d.todos as RawTodoItem[]).map(mapTodoItem)
-  useTodoStore.getState().setItems(items, d.plan_name)
+  useTodoStore.getState().setItems(items, readString(d, 'planName'))
 })

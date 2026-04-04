@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
-import { useDebugStore } from '../../../stores/debug'
+import { useDevtoolsStore } from '../../../stores/debug'
 
 type Category = 'session' | 'prompt' | 'loop' | 'model' | 'tool'
 
@@ -28,7 +28,7 @@ const CATEGORY_STYLES: Record<Category, {
 }
 
 export const BreakpointNode = memo(({ data }: BreakpointNodeProps) => {
-  const { breakpoints, toggleBreakpoint, currentSnapshot, paused } = useDebugStore()
+  const { breakpoints, toggleBreakpoint, currentSnapshot, paused } = useDevtoolsStore()
 
   const { label, point, isVirtual, category } = data
   const bp = breakpoints.find((b) => b.point === point)

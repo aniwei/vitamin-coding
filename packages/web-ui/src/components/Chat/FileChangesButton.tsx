@@ -109,15 +109,15 @@ function FileChangesModal({ onClose, changes, summary, isLoading }: FileChangesM
                 <div className="text-xs text-gray-600">Total Changes</div>
               </div>
               <div className="bg-white p-3 rounded-lg border border-gray-200">
-                <div className="text-xl font-bold text-green-600">+{summary.total_lines_added}</div>
+                <div className="text-xl font-bold text-green-600">+{summary.totalLinesAdded}</div>
                 <div className="text-xs text-gray-600">Lines Added</div>
               </div>
               <div className="bg-white p-3 rounded-lg border border-gray-200">
-                <div className="text-xl font-bold text-red-600">-{summary.total_lines_removed}</div>
+                <div className="text-xl font-bold text-red-600">-{summary.totalLinesRemoved}</div>
                 <div className="text-xs text-gray-600">Lines Removed</div>
               </div>
               <div className="bg-white p-3 rounded-lg border border-gray-200">
-                <div className="text-xl font-bold text-purple-600">{summary.net_lines}</div>
+                <div className="text-xl font-bold text-purple-600">{summary.netLines}</div>
                 <div className="text-xs text-gray-600">Net Change</div>
               </div>
             </div>
@@ -217,14 +217,14 @@ function FileChangeItem({ change }: FileChangeItemProps) {
         <div className="flex-1 min-w-0">
           <div className="flex items-center gap-2 mb-1">
             <span className="font-medium text-gray-900 truncate">
-              {change.file_path.split('/').pop()}
+              {change.filePath.split('/').pop()}
             </span>
             <span className={`px-2 py-1 rounded text-xs font-medium border ${statusClasses}`}>
               {change.type}
             </span>
           </div>
 
-          <div className="text-xs text-gray-500 mb-1">{change.file_path}</div>
+          <div className="text-xs text-gray-500 mb-1">{change.filePath}</div>
 
           {change.summary && (
             <div className="text-xs text-gray-600 font-mono mb-1">{change.summary}</div>
@@ -235,10 +235,10 @@ function FileChangeItem({ change }: FileChangeItemProps) {
 
         <div className="text-right">
           <div className="text-xs text-gray-500">{getTimeAgo(change.timestamp)}</div>
-          {(change.lines_added > 0 || change.lines_removed > 0) && (
+          {(change.linesAdded > 0 || change.linesRemoved > 0) && (
             <div className="text-xs font-medium mt-1">
-              <span className="text-green-600">+{change.lines_added}</span>
-              <span className="text-red-600 ml-1">-{change.lines_removed}</span>
+              <span className="text-green-600">+{change.linesAdded}</span>
+              <span className="text-red-600 ml-1">-{change.linesRemoved}</span>
             </div>
           )}
         </div>

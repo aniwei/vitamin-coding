@@ -10,7 +10,7 @@
  */
 
 import { ws } from './websocket'
-import { useDebugStore } from '../stores/debug'
+import { useDevtoolsStore } from '../stores/debug'
 import { useLogStore } from '../stores/logs'
 import type { DebugSnapshot } from '../types/debug'
 import type { LogEntry } from '../types/logs'
@@ -25,18 +25,18 @@ export function setupDebugWsHandlers(): void {
 
   ws.on('Debugger.paused', (msg) => {
     const data = msg.data as { reason: string; snapshot: DebugSnapshot }
-    useDebugStore.getState().handlePaused(data)
+    useDevtoolsStore.getState().handlePaused(data)
     // Auto-open debug panel on pause
-    useDebugStore.getState().openPanel()
+    useDevtoolsStore.getState().openPanel()
   })
 
   ws.on('Debugger.resumed', () => {
-    useDebugStore.getState().handleResumed()
+    useDevtoolsStore.getState().handleResumed()
   })
 
   ws.on('Debugger.breakpointsChanged', (msg) => {
     const data = msg.data as { breakpoints: Array<{ point: string; enabled: boolean }> }
-    useDebugStore.getState().handleBreakpointsChanged(data.breakpoints)
+    useDevtoolsStore.getState().handleBreakpointsChanged(data.breakpoints)
   })
 
   // ─── Log domain ───

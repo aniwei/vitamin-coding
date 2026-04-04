@@ -11,7 +11,7 @@ import {
   MarkerType,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useDebugStore } from '../../../stores/debug'
+import { useDevtoolsStore } from '../../../stores/debug'
 import { BreakpointNode } from './BreakpointNode'
 
 const nodeTypes = {
@@ -94,7 +94,7 @@ const INITIAL_EDGES: Edge[] = [
 }))
 
 export function BreakpointFlow({ className }: { className?: string }) {
-  const { currentSnapshot, paused } = useDebugStore()
+  const { currentSnapshot, paused } = useDevtoolsStore()
   
   const initialNodes: Node[] = FLOW_NODES.map(node => ({
     id: node.id,

@@ -5,9 +5,9 @@ export interface ToolCallInfo {
   parameters: Record<string, unknown>
   result?: string | null
   error?: string | null
-  result_summary?: string | null
+  resultSummary?: string | null
   approved?: boolean | null
-  nested_tool_calls?: ToolCallInfo[] | null
+  nestedToolCalls?: ToolCallInfo[] | null
 }
 
 // Message types
@@ -15,56 +15,53 @@ export interface Message {
   role: 'user' | 'assistant' | 'system' | 'tool_call' | 'tool_result' | 'thinking'
   content: string
   timestamp?: string
-  tool_call_id?: string
-  tool_name?: string
-  tool_args?: Record<string, unknown>
-  tool_result?: unknown
-  tool_args_display?: string | null
-  tool_summary?: string | string[] | null
-  tool_success?: boolean
-  tool_error?: string | null
-  tool_calls?: ToolCallInfo[]
+  toolCallId?: string
+  toolName?: string
+  toolArgs?: Record<string, unknown>
+  toolResult?: unknown
+  toolArgsDisplay?: string | null
+  toolSummary?: string | string[] | null
+  toolSuccess?: boolean
+  toolError?: string | null
+  toolCalls?: ToolCallInfo[]
   metadata?: Record<string, unknown>
   depth?: number
-  parent_tool_call_id?: string
-  thinking_trace?: string | null
-  reasoning_content?: string | null
+  parentToolCallId?: string
+  thinkingTrace?: string | null
+  reasoningContent?: string | null
 }
 
 // Session types
 export interface Session {
   id: string
-  working_dir?: string
-  working_directory?: string // Backend returns this field name
-  created_at: string
-  updated_at: string
-  message_count: number
-  token_usage?: Record<string, number>
+  workingDirectory?: string
+  createdAt: string
+  updatedAt?: string
+  messageCount: number
+  tokenUsage?: Record<string, number>
   title?: string
-  status?: string
-  has_session_model?: boolean
+  status?: 'active' | 'answered' | 'open'
+  hasSessionModel?: boolean
 }
 
 // Configuration types
 export interface Config {
-  model_provider: string
-  model: string
-  api_key: string | null
-  temperature: number
-  enable_bash: boolean
-  working_directory: string
-  working_dir?: string
-  // Extended runtime fields returned by the backend
+  modelProvider?: string
+  model?: string
+  apiKey?: string | null
+  temperature?: number
+  enableBash?: boolean
+  workingDirectory?: string
   mode?: 'normal' | 'plan'
-  autonomy_level?: 'Manual' | 'Semi-Auto' | 'Auto'
-  thinking_level?: 'Off' | 'Low' | 'Medium' | 'High'
-  git_branch?: string | null
-  model_thinking_provider?: string | null
-  model_thinking?: string | null
-  model_compact_provider?: string | null
-  model_compact?: string | null
-  model_vlm_provider?: string | null
-  model_vlm?: string | null
+  autonomyLevel?: 'Manual' | 'Semi-Auto' | 'Auto'
+  thinkingLevel?: 'Off' | 'Low' | 'Medium' | 'High'
+  gitBranch?: string | null
+  modelThinkingProvider?: string | null
+  modelThinking?: string | null
+  modelCompactProvider?: string | null
+  modelCompact?: string | null
+  modelVlmProvider?: string | null
+  modelVlm?: string | null
 }
 
 // Provider types
@@ -114,11 +111,9 @@ export interface WebSocketMessage {
     | 'progress'
     | 'nested_tool_call'
     | 'nested_tool_result'
-    // ─── CDP-style Debugger domain events ───
     | 'Debugger.paused'
     | 'Debugger.resumed'
     | 'Debugger.breakpointsChanged'
-    // ─── CDP-style Log domain events ───
     | 'Log.entryAdded'
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any
@@ -128,12 +123,12 @@ export interface ToolCall {
   id: string
   name: string
   arguments: Record<string, unknown>
-  requiresApproval: boolean
+  requiresApproval?: boolean
 }
 
 export interface ApprovalRequest {
   id: string
-  tool_name: string
+  toolName: string
   arguments: Record<string, unknown>
   description: string
   preview?: string
@@ -142,14 +137,14 @@ export interface ApprovalRequest {
 // Status bar info
 export interface StatusInfo {
   mode: 'normal' | 'plan'
-  autonomy_level: 'Manual' | 'Semi-Auto' | 'Auto'
-  thinking_level?: 'Off' | 'Low' | 'Medium' | 'High'
+  autonomyLevel: 'Manual' | 'Semi-Auto' | 'Auto'
+  thinkingLevel?: 'Off' | 'Low' | 'Medium' | 'High'
   model?: string
-  model_provider?: string
-  working_dir?: string
-  git_branch?: string | null
-  session_cost?: number
-  context_usage_pct?: number
+  modelProvider?: string
+  workingDirectory?: string
+  gitBranch?: string | null
+  sessionCost?: number
+  contextUsagePct?: number
 }
 
 // Ask-user question types
@@ -160,20 +155,20 @@ export interface AskUserOption {
 
 export interface AskUserQuestion {
   question: string
-  header?: string
+  header: string
   options: AskUserOption[]
-  multi_select: boolean
+  multiSelect: boolean
 }
 
 export interface AskUserRequest {
-  request_id: string
+  requestId: string
   questions: AskUserQuestion[]
 }
 
 // Plan approval types
 export interface PlanApprovalRequest {
-  request_id: string
-  plan_content: string
+  requestId: string
+  planContent: string
 }
 
 // Per-session state for concurrent session support

@@ -40,7 +40,7 @@ export function AskUserDialog() {
       if (!isNaN(num) && num >= 1 && num <= q.options.length) {
         e.preventDefault()
         const optIdx = num - 1
-        if (q.multi_select) {
+        if (q.multiSelect) {
           setSelectedOptions((prev) => {
             const next = new Set(prev)
             if (next.has(optIdx)) next.delete(optIdx)
@@ -55,7 +55,7 @@ export function AskUserDialog() {
 
       // 'o' for Other
       if (e.key === 'o' || e.key === 'O') {
-        if (!q.multi_select) {
+        if (!q.multiSelect) {
           setSelectedOptions(new Set())
         }
         setShowOther(true)
@@ -95,7 +95,7 @@ export function AskUserDialog() {
   const isLastQuestion = currentIdx === questions.length - 1
 
   const handleOptionClick = (optIdx: number) => {
-    if (currentQuestion.multi_select) {
+    if (currentQuestion.multiSelect) {
       setSelectedOptions((prev) => {
         const next = new Set(prev)
         if (next.has(optIdx)) next.delete(optIdx)
@@ -110,7 +110,7 @@ export function AskUserDialog() {
   }
 
   const handleOtherClick = () => {
-    if (!currentQuestion.multi_select) {
+    if (!currentQuestion.multiSelect) {
       setSelectedOptions(new Set())
     }
     setShowOther(true)
@@ -120,14 +120,14 @@ export function AskUserDialog() {
     // Save current answer
     let answer: string | string[]
     if (showOther && otherText.trim()) {
-      answer = currentQuestion.multi_select
+      answer = currentQuestion.multiSelect
         ? [
             ...Array.from(selectedOptions).map((i) => currentQuestion.options[i].label),
             otherText.trim(),
           ]
         : otherText.trim()
     } else if (selectedOptions.size > 0) {
-      if (currentQuestion.multi_select) {
+      if (currentQuestion.multiSelect) {
         answer = Array.from(selectedOptions).map((i) => currentQuestion.options[i].label)
       } else {
         const idx = Array.from(selectedOptions)[0]
@@ -142,7 +142,7 @@ export function AskUserDialog() {
 
     if (isLastQuestion) {
       // Submit
-      respondToAskUser(pendingAskUser.request_id, newAnswers)
+      respondToAskUser(pendingAskUser.requestId, newAnswers)
     } else {
       // Next question
       setCurrentIdx(currentIdx + 1)
@@ -162,7 +162,7 @@ export function AskUserDialog() {
   }
 
   const handleCancel = () => {
-    respondToAskUser(pendingAskUser.request_id, null)
+    respondToAskUser(pendingAskUser.requestId, null)
   }
 
   return (
@@ -218,7 +218,7 @@ export function AskUserDialog() {
                 >
                   {/* Selection indicator */}
                   <div
-                    className={`w-5 h-5 rounded${currentQuestion.multi_select ? '' : '-full'} border-2 flex items-center justify-center flex-shrink-0 ${
+                    className={`w-5 h-5 rounded${currentQuestion.multiSelect ? '' : '-full'} border-2 flex items-center justify-center flex-shrink-0 ${
                       isSelected
                         ? 'border-accent-secondary-100 bg-accent-secondary-100'
                         : 'border-border-300/30'

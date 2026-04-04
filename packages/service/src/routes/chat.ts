@@ -72,7 +72,7 @@ function serializeMessages(session: { session: { messages(): unknown[] } }) {
     role: msg.role,
     content: serializeContent(msg),
     timestamp: msg.timestamp,
-    tool_calls: msg.content?.filter?.((b: any) => b.type === 'tool_call') ?? [],
+    toolCalls: msg.content?.filter?.((b: any) => b.type === 'tool_call') ?? [],
   }))
 }
 

@@ -33,7 +33,7 @@ export const MessageItem = React.memo(function MessageItem({
 
   // Render tool calls with special component
   if (message.role === 'tool_call') {
-    const hasResult = message.tool_result != null && Object.keys(message.tool_result).length > 0
+    const hasResult = message.toolResult != null && Object.keys(message.toolResult).length > 0
     return (
       <div
         className={`animate-slide-up ${depthMargin}`}

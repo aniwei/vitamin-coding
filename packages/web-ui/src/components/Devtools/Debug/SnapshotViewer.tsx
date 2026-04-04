@@ -1,4 +1,4 @@
-import { useDebugStore } from '../../../stores/debug'
+import { useDevtoolsStore } from '../../../stores/debug'
 
 function formatNumber(n: number): string {
   return n.toLocaleString()
@@ -26,8 +26,8 @@ function MetadataTree({ data }: { data: Record<string, unknown> }) {
 }
 
 export function SnapshotViewer() {
-  const snapshot = useDebugStore((s) => s.currentSnapshot)
-  const paused = useDebugStore((s) => s.paused)
+  const snapshot = useDevtoolsStore((s) => s.currentSnapshot)
+  const paused = useDevtoolsStore((s) => s.paused)
 
   if (!paused || !snapshot) return null
 

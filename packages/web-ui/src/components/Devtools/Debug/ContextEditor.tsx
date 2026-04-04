@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, RotateCcw, Plus } from 'lucide-react'
-import { useDebugStore } from '../../../stores/debug'
+import { useDevtoolsStore } from '../../../stores/debug'
 
 function Section({
   title,
@@ -36,9 +36,9 @@ function Section({
 }
 
 function SystemPromptEditor() {
-  const draft = useDebugStore((s) => s.editDraft)
-  const snapshot = useDebugStore((s) => s.currentSnapshot)
-  const updateDraftSystemPrompt = useDebugStore((s) => s.updateDraftSystemPrompt)
+  const draft = useDevtoolsStore((s) => s.editDraft)
+  const snapshot = useDevtoolsStore((s) => s.currentSnapshot)
+  const updateDraftSystemPrompt = useDevtoolsStore((s) => s.updateDraftSystemPrompt)
 
   const isModified = draft.systemPrompt !== snapshot?.systemPrompt
 
@@ -66,11 +66,11 @@ function SystemPromptEditor() {
 }
 
 function MessagesEditor() {
-  const snapshot = useDebugStore((s) => s.currentSnapshot)
-  const draft = useDebugStore((s) => s.editDraft)
-  const toggleDraftRemoveMessage = useDebugStore((s) => s.toggleDraftRemoveMessage)
-  const addDraftInjectMessage = useDebugStore((s) => s.addDraftInjectMessage)
-  const removeDraftInjectMessage = useDebugStore((s) => s.removeDraftInjectMessage)
+  const snapshot = useDevtoolsStore((s) => s.currentSnapshot)
+  const draft = useDevtoolsStore((s) => s.editDraft)
+  const toggleDraftRemoveMessage = useDevtoolsStore((s) => s.toggleDraftRemoveMessage)
+  const addDraftInjectMessage = useDevtoolsStore((s) => s.addDraftInjectMessage)
+  const removeDraftInjectMessage = useDevtoolsStore((s) => s.removeDraftInjectMessage)
   const [injectRole, setInjectRole] = useState<'user' | 'system'>('user')
   const [injectContent, setInjectContent] = useState('')
 
@@ -177,9 +177,9 @@ function MessagesEditor() {
 }
 
 function LlmParamsEditor() {
-  const draft = useDebugStore((s) => s.editDraft)
-  const snapshot = useDebugStore((s) => s.currentSnapshot)
-  const updateParam = useDebugStore((s) => s.updateDraftLlmParam)
+  const draft = useDevtoolsStore((s) => s.editDraft)
+  const snapshot = useDevtoolsStore((s) => s.currentSnapshot)
+  const updateParam = useDevtoolsStore((s) => s.updateDraftLlmParam)
 
   const isModified =
     JSON.stringify(draft.llmParams) !== JSON.stringify(snapshot?.llmParams)
@@ -235,8 +235,8 @@ function LlmParamsEditor() {
 }
 
 export function ContextEditor() {
-  const paused = useDebugStore((s) => s.paused)
-  const resetDraft = useDebugStore((s) => s.resetDraft)
+  const paused = useDevtoolsStore((s) => s.paused)
+  const resetDraft = useDevtoolsStore((s) => s.resetDraft)
 
   if (!paused) return null
 

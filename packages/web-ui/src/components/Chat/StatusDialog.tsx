@@ -1,6 +1,6 @@
 import { X } from 'lucide-react'
 import { useEffect, useState } from 'react'
-import { api } from '../../api/client'
+import { listMCPServers } from '../../api/mcp'
 import { useChatStore } from '../../stores/chat'
 
 interface StatusDialogProps {
@@ -12,7 +12,7 @@ interface MCPServer {
   name: string
   status: string
   config: { enabled: boolean }
-  tools_count: number
+  toolsCount: number
 }
 
 export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
@@ -29,8 +29,7 @@ export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
   useEffect(() => {
     if (!isOpen) return
     setLoading(true)
-    api
-      .get<{ servers: MCPServer[] }>('/mcp/servers')
+    listMCPServers()
       .then((data) => setMcpServers(data?.servers || []))
       .catch(() => setMcpServers([]))
       .finally(() => setLoading(false))
@@ -59,7 +58,7 @@ export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
             <div className="text-sm text-text-200 space-y-1">
               <div className="flex justify-between">
                 <span className="text-text-400">Provider</span>
-                <span className="font-mono">{status?.model_provider || '—'}</span>
+                <span className="font-mono">{status?.modelProvider || '—'}</span>
               </div>
               <div className="flex justify-between">
                 <span className="text-text-400">Model</span>
@@ -86,22 +85,22 @@ export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
               </div>
               <div className="flex justify-between">
                 <span className="text-text-400">Autonomy</span>
-                <span>{status?.autonomy_level || '—'}</span>
+                <span>{status?.autonomyLevel || '—'}</span>
               </div>
-              {status?.session_cost != null && (
+              {status?.sessionCost != null && (
                 <div className="flex justify-between">
                   <span className="text-text-400">Cost</span>
                   <span className="font-mono">
-                    {status.session_cost < 0.01
-                      ? `$${status.session_cost.toFixed(4)}`
-                      : `$${status.session_cost.toFixed(2)}`}
+                    {status.sessionCost < 0.01
+                      ? `$${status.sessionCost.toFixed(4)}`
+                      : `$${status.sessionCost.toFixed(2)}`}
                   </span>
                 </div>
               )}
-              {status?.context_usage_pct != null && (
+              {status?.contextUsagePct != null && (
                 <div className="flex justify-between">
                   <span className="text-text-400">Context Usage</span>
-                  <span>{Math.round(status.context_usage_pct)}%</span>
+                  <span>{Math.round(status.contextUsagePct)}%</span>
                 </div>
               )}
             </div>
@@ -126,7 +125,7 @@ export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
                     <span className="text-text-200 font-mono">{server.name}</span>
                     <span className="text-text-400 text-xs">
                       {server.status === 'connected'
-                        ? `connected (${server.tools_count} tools)`
+                        ? `connected (${server.toolsCount} tools)`
                         : 'disconnected'}
                     </span>
                   </div>
@@ -136,14 +135,14 @@ export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
           </section>
 
           {/* Working Directory */}
-          {status?.working_dir && (
+          {status?.workingDirectory && (
             <section>
               <h3 className="text-xs font-semibold uppercase text-text-400 mb-2">
                 Working Directory
               </h3>
-              <div className="text-sm text-text-200 font-mono break-all">{status.working_dir}</div>
-              {status.git_branch && (
-                <div className="text-sm text-text-400 mt-1">Branch: {status.git_branch}</div>
+              <div className="text-sm text-text-200 font-mono break-all">{status.workingDirectory}</div>
+              {status.gitBranch && (
+                <div className="text-sm text-text-400 mt-1">Branch: {status.gitBranch}</div>
               )}
             </section>
           )}

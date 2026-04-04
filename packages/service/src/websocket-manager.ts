@@ -97,9 +97,14 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
 
     ws.on('message', (raw: Buffer) => {
       try {
-        const message = JSON.parse(raw.toString()) as WebSocketClientMessage
+        const parsed = JSON.parse(raw.toString()) as unknown
+        const message = this.normalizeClientMessage(parsed)
+        if (!message) {
+          logger.warn(`invalid message from client ${clientId}`)
+          return
+        }
 
-        if (message.type === 'ping') {
+        if (message.type === 'Runtime.ping') {
           this.sendToClient(clientId, {
             type: 'pong',
             data: { timestamp: Date.now() },
@@ -107,7 +112,7 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
           return
         }
 
-        if (message.type === 'subscribe_session') {
+        if (message.type === 'Session.subscribe') {
           const sessionId = message.data.sessionId as string
           if (sessionId) {
             if (!this.sessionSubscriptions.has(sessionId)) {
@@ -118,7 +123,7 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
           return
         }
 
-        if (message.type === 'unsubscribe_session') {
+        if (message.type === 'Session.unsubscribe') {
           const sessionId = message.data.sessionId as string
           if (sessionId) {
             this.sessionSubscriptions.get(sessionId)?.delete(clientId)
@@ -145,5 +150,42 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
     ws.on('error', (err) => {
       logger.warn(`client ${clientId} error: ${err.message}`)
     })
+  }
+
+  private normalizeClientMessage(raw: unknown): WebSocketClientMessage | null {
+    if (!raw || typeof raw !== 'object' || Array.isArray(raw)) {
+      return null
+    }
+
+    const value = raw as Record<string, unknown>
+
+    if (typeof value.method === 'string') {
+      const method = value.method
+      const data = this.asRecord(value.params)
+
+      if (typeof value.id === 'number') {
+        if (data.seq === undefined) {
+          data.seq = value.id
+        }
+        if (data.requestId === undefined) {
+          data.requestId = value.id
+        }
+      }
+
+      return {
+        type: method as WebSocketClientMessage['type'],
+        data,
+      }
+    }
+
+    return null
+  }
+
+  private asRecord(value: unknown): Record<string, unknown> {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return value as Record<string, unknown>
+    }
+
+    return {}
   }
 }

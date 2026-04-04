@@ -24,11 +24,11 @@ export function StatusBar() {
   const runningCount = runningSessions.size
 
   const model = data.model || status?.model || '—'
-  const branch = data.gitBranch || status?.git_branch || null
-  const autonomy = data.autonomyLevel || status?.autonomy_level || 'Semi-Auto'
+  const branch = data.gitBranch || status?.gitBranch || null
+  const autonomy = data.autonomyLevel || status?.autonomyLevel || 'Semi-Auto'
   const totalTokens = data.inputTokens + data.outputTokens
-  const cost = data.sessionCostUsd || status?.session_cost || 0
-  const contextPct = data.contextUsagePct || status?.context_usage_pct || 0
+  const cost = data.sessionCostUsd || status?.sessionCost || 0
+  const contextPct = data.contextUsagePct || status?.contextUsagePct || 0
 
   return (
     <div className="flex items-center gap-4 px-4 py-1.5 bg-bg-100 border-t border-border-300/30 text-xs font-mono text-text-400 select-none shrink-0">

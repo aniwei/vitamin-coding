@@ -2,6 +2,40 @@ import type { WebSocketMessage } from '../types'
 
 export type WebSocketEventHandler = (message: WebSocketMessage) => void
 
+export interface CDPCommandMessage {
+  id?: number
+  method: string
+  params?: Record<string, unknown>
+}
+
+function toCamelKey(key: string): string {
+  return key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
+}
+
+function normalizeToCamel<T>(value: unknown): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeToCamel(item)) as T
+  }
+
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      out[toCamelKey(key)] = normalizeToCamel(val)
+    }
+    return out as T
+  }
+
+  return value as T
+}
+
+function asRecord(value: unknown): Record<string, unknown> {
+  if (value && typeof value === 'object' && !Array.isArray(value)) {
+    return value as Record<string, unknown>
+  }
+
+  return {}
+}
+
 class WebSocketClient {
   private ws: WebSocket | null = null
   private handlers: Map<string, Set<WebSocketEventHandler>> = new Map()
@@ -12,6 +46,7 @@ class WebSocketClient {
   private intentionalClose = false
   private pingInterval: number | null = null
   private visibilityListenerAdded = false
+  private nextCommandId = 1
 
   connect() {
     // Prevent multiple connections
@@ -50,7 +85,10 @@ class WebSocketClient {
       this.ws.onmessage = (event) => {
         try {
           const message: WebSocketMessage = JSON.parse(event.data)
-          this.emit(message)
+          this.emit({
+            ...message,
+            data: normalizeToCamel(message.data),
+          })
         } catch (error) {
           console.error('Failed to parse WebSocket message:', error)
         }
@@ -102,16 +140,26 @@ class WebSocketClient {
     }
   }
 
-  send(message: WebSocketMessage | { type: string; data: unknown }) {
+  send(message: CDPCommandMessage) {
     if (this.ws && this.ws.readyState === WebSocket.OPEN) {
-      this.ws.send(JSON.stringify(message))
+      this.ws.send(
+        JSON.stringify({
+          id: message.id ?? this.nextCommandId++,
+          method: message.method,
+          params: asRecord(message.params),
+        }),
+      )
     } else {
       console.warn('WebSocket is not connected')
     }
   }
 
+  sendCommand(method: string, params: Record<string, unknown> = {}, id?: number) {
+    this.send({ id, method, params })
+  }
+
   ping() {
-    this.send({ type: 'ping', data: { timestamp: Date.now() } })
+    this.sendCommand('Runtime.ping', { timestamp: Date.now() })
   }
 
   on(eventType: string, handler: WebSocketEventHandler) {

@@ -5,7 +5,7 @@ export interface ContentBlock {
   id?: string
   name?: string
   input?: Record<string, unknown>
-  tool_use_id?: string
+  toolUseId?: string
   content?: string | ContentBlock[]
 }
 
@@ -15,10 +15,10 @@ export interface Message {
   model?: string
   id?: string
   usage?: {
-    input_tokens?: number
-    output_tokens?: number
-    cache_read_input_tokens?: number
-    cache_creation_input_tokens?: number
+    inputTokens?: number
+    outputTokens?: number
+    cacheReadInputTokens?: number
+    cacheCreationInputTokens?: number
   }
 }
 
@@ -149,16 +149,16 @@ export interface OpenDevChatMessage {
   content: string
   timestamp: string
   metadata?: Record<string, unknown>
-  tool_calls?: Array<{
+  toolCalls?: Array<{
     id: string
     name: string
     parameters: Record<string, unknown>
     result?: unknown
-    result_summary?: string
+    resultSummary?: string
     timestamp?: string
     approved?: boolean
     error?: string
-    nested_tool_calls?: Array<{
+    nestedToolCalls?: Array<{
       id: string
       name: string
       parameters: Record<string, unknown>
@@ -166,17 +166,17 @@ export interface OpenDevChatMessage {
       error?: string
     }>
   }>
-  thinking_trace?: string
-  reasoning_content?: string
-  token_usage?: Record<string, unknown>
+  thinkingTrace?: string
+  reasoningContent?: string
+  tokenUsage?: Record<string, unknown>
   tokens?: number
 }
 
 /** Session info as returned by the traces API. */
 export interface TraceSessionInfo {
-  session_id: string
+  sessionId: string
   title: string
-  message_count: number
+  messageCount: number
   timestamp: string
-  working_dir?: string
+  workingDirectory?: string
 }

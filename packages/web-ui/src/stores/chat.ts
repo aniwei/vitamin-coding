@@ -44,191 +44,6 @@ function patchSession(
   }
 }
 
-type WSData = Record<string, unknown>
-
-function asObject(value: unknown): WSData | null {
-  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    return value as WSData
-  }
-
-  return null
-}
-
-function readString(data: WSData, ...keys: string[]): string | undefined {
-  for (const key of keys) {
-    const value = data[key]
-    if (typeof value === 'string') {
-      return value
-    }
-  }
-
-  return undefined
-}
-
-function readBoolean(data: WSData, ...keys: string[]): boolean | undefined {
-  for (const key of keys) {
-    const value = data[key]
-    if (typeof value === 'boolean') {
-      return value
-    }
-  }
-
-  return undefined
-}
-
-function readNumber(data: WSData, ...keys: string[]): number | undefined {
-  for (const key of keys) {
-    const value = data[key]
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return value
-    }
-    if (typeof value === 'string' && value.trim() !== '') {
-      const parsed = Number(value)
-      if (Number.isFinite(parsed)) {
-        return parsed
-      }
-    }
-  }
-
-  return undefined
-}
-
-function normalizeApprovalRequest(data: WSData): ApprovalRequest {
-  const toolName = readString(data, 'tool_name', 'name') ?? 'tool'
-  const command = readString(data, 'command')
-
-  return {
-    id: readString(data, 'id', 'approval_id') ?? '',
-    tool_name: toolName,
-    arguments: asObject(data.arguments) ?? {},
-    description: readString(data, 'description') ?? command ?? `Run ${toolName}`,
-    preview: readString(data, 'preview') ?? command,
-  }
-}
-
-function normalizeAskUserOption(option: unknown): { label: string; description?: string } {
-  if (typeof option === 'string') {
-    return { label: option }
-  }
-
-  const data = asObject(option)
-  if (!data) {
-    return { label: String(option ?? '') }
-  }
-
-  return {
-    label: readString(data, 'label', 'value') ?? '',
-    description: readString(data, 'description'),
-  }
-}
-
-function normalizeAskUserQuestion(question: unknown, index: number) {
-  const data = asObject(question)
-  if (!data) {
-    return {
-      question: `Question ${index + 1}`,
-      options: [],
-      multi_select: false,
-    }
-  }
-
-  const options = Array.isArray(data.options) ? data.options.map(normalizeAskUserOption) : []
-
-  return {
-    header: readString(data, 'header'),
-    question: readString(data, 'question', 'prompt') ?? `Question ${index + 1}`,
-    options,
-    multi_select: readBoolean(data, 'multi_select', 'multiSelect') ?? false,
-  }
-}
-
-function normalizeAskUserRequest(data: WSData): AskUserRequest {
-  const request_id = readString(data, 'request_id', 'requestId') ?? ''
-  const rawQuestions = Array.isArray(data.questions) ? data.questions : null
-
-  if (rawQuestions && rawQuestions.length > 0) {
-    return {
-      request_id,
-      questions: rawQuestions.map((question, index) => normalizeAskUserQuestion(question, index)),
-    }
-  }
-
-  const options = Array.isArray(data.options) ? data.options.map(normalizeAskUserOption) : []
-  const defaultOption = readString(data, 'default')
-
-  if (defaultOption && !options.some((option) => option.label === defaultOption)) {
-    options.push({ label: defaultOption })
-  }
-
-  return {
-    request_id,
-    questions: [
-      {
-        header: readString(data, 'header'),
-        question: readString(data, 'question') ?? 'Question',
-        options,
-        multi_select: readBoolean(data, 'multi_select', 'multiSelect') ?? false,
-      },
-    ],
-  }
-}
-
-function normalizePlanApprovalRequest(data: WSData): PlanApprovalRequest {
-  return {
-    request_id: readString(data, 'request_id', 'requestId') ?? '',
-    plan_content: readString(data, 'plan_content', 'planContent', 'content') ?? '',
-  }
-}
-
-function normalizeStatusInfo(data: WSData, previous: StatusInfo | null): StatusInfo {
-  const mode = readString(data, 'mode')
-  const autonomy = readString(data, 'autonomy_level')
-  const thinking = readString(data, 'thinking_level')
-
-  return {
-    mode: mode === 'plan' || mode === 'normal' ? mode : previous?.mode ?? 'normal',
-    autonomy_level:
-      autonomy === 'Manual' || autonomy === 'Semi-Auto' || autonomy === 'Auto'
-        ? autonomy
-        : previous?.autonomy_level ?? 'Manual',
-    thinking_level:
-      thinking === 'Off' || thinking === 'Low' || thinking === 'Medium' || thinking === 'High'
-        ? thinking
-        : previous?.thinking_level,
-    model: readString(data, 'model') ?? previous?.model,
-    model_provider: readString(data, 'model_provider', 'provider') ?? previous?.model_provider,
-    working_dir:
-      readString(data, 'working_dir', 'working_directory', 'workingDirectory') ??
-      previous?.working_dir,
-    git_branch: readString(data, 'git_branch') ?? previous?.git_branch ?? null,
-    session_cost:
-      readNumber(data, 'session_cost', 'session_cost_usd') ?? previous?.session_cost,
-    context_usage_pct: readNumber(data, 'context_usage_pct') ?? previous?.context_usage_pct,
-  }
-}
-
-function resolveRunningState(data: WSData): boolean | null {
-  const running = readBoolean(data, 'running')
-  if (running !== undefined) {
-    return running
-  }
-
-  const status = readString(data, 'status', 'action')
-  if (!status) {
-    return null
-  }
-
-  if (['running', 'streaming', 'started', 'resumed'].includes(status)) {
-    return true
-  }
-
-  if (['complete', 'completed', 'finished', 'idle', 'stopped', 'error'].includes(status)) {
-    return false
-  }
-
-  return null
-}
-
 /** Recursively expand tool calls (including nested) into flat message list. */
 function expandToolCalls(
   toolCalls: ToolCallInfo[],
@@ -241,48 +56,48 @@ function expandToolCalls(
     messages.push({
       role: 'tool_call',
       content: `Calling ${tc.name}`,
-      tool_call_id: tc.id,
-      tool_name: tc.name,
-      tool_args: tc.parameters,
-      tool_args_display: undefined,
-      tool_result: toolResult,
-      tool_summary: tc.result_summary || null,
-      tool_success: !tc.error,
-      tool_error: tc.error || null,
+      toolCallId: tc.id,
+      toolName: tc.name,
+      toolArgs: tc.parameters,
+      toolArgsDisplay: undefined,
+      toolResult: toolResult,
+      toolSummary: tc.resultSummary || null,
+      toolSuccess: !tc.error,
+      toolError: tc.error || null,
       timestamp,
       depth: depth > 0 ? depth : undefined,
     })
     // Recurse into nested tool calls
-    if (tc.nested_tool_calls && tc.nested_tool_calls.length > 0) {
-      messages.push(...expandToolCalls(tc.nested_tool_calls, timestamp, depth + 1))
+    if (tc.nestedToolCalls && tc.nestedToolCalls.length > 0) {
+      messages.push(...expandToolCalls(tc.nestedToolCalls, timestamp, depth + 1))
     }
   }
   return messages
 }
 
-/** Expand raw API messages (with tool_calls arrays) into flat message list. */
+/** Expand raw API messages (with toolCalls arrays) into flat message list. */
 function expandMessages(rawMessages: Message[]): Message[] {
   const expanded: Message[] = []
   for (const msg of rawMessages) {
     // Emit thinking traces before content (matches TUI hydration order)
-    if (msg.thinking_trace && msg.thinking_trace.trim()) {
+    if (msg.thinkingTrace && msg.thinkingTrace.trim()) {
       expanded.push({
         role: 'thinking',
-        content: msg.thinking_trace,
+        content: msg.thinkingTrace,
         metadata: { level: 'Medium' },
         timestamp: msg.timestamp,
       })
     }
-    if (msg.reasoning_content && msg.reasoning_content.trim()) {
+    if (msg.reasoningContent && msg.reasoningContent.trim()) {
       expanded.push({
         role: 'thinking',
-        content: msg.reasoning_content,
+        content: msg.reasoningContent,
         metadata: { level: 'Medium' },
         timestamp: msg.timestamp,
       })
     }
 
-    if (msg.tool_calls && msg.tool_calls.length > 0) {
+    if (msg.toolCalls && msg.toolCalls.length > 0) {
       if (msg.content && msg.content.trim()) {
         expanded.push({
           role: msg.role as Message['role'],
@@ -290,7 +105,7 @@ function expandMessages(rawMessages: Message[]): Message[] {
           timestamp: msg.timestamp,
         })
       }
-      expanded.push(...expandToolCalls(msg.tool_calls, msg.timestamp))
+      expanded.push(...expandToolCalls(msg.toolCalls, msg.timestamp))
     } else {
       if (msg.content && msg.content.trim()) {
         expanded.push({
@@ -402,15 +217,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
     try {
       const configData = await api.getSetting()
       set({
-        thinkingLevel: configData.thinking_level || 'Medium',
+        thinkingLevel: configData.thinkingLevel || 'Medium',
         status: {
           mode: configData.mode || 'normal',
-          autonomy_level: configData.autonomy_level || 'Manual',
-          thinking_level: configData.thinking_level || 'Medium',
+          autonomyLevel: configData.autonomyLevel || 'Manual',
+          thinkingLevel: configData.thinkingLevel || 'Medium',
           model: configData.model,
-          model_provider: configData.model_provider,
-          working_dir: configData.working_dir || '',
-          git_branch: configData.git_branch,
+          modelProvider: configData.modelProvider,
+          workingDirectory: configData.workingDirectory || '',
+          gitBranch: configData.gitBranch,
         },
       })
     } catch {
@@ -443,10 +258,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
     }))
 
     try {
-      ws.send({
-        type: 'query',
-        data: { message: content, session_id: sessionId, sessionId },
-      })
+      ws.sendCommand('Chat.query', { message: content, sessionId })
     } catch (error) {
       set((state) => ({
         ...patchSession(state, sessionId, {
@@ -482,16 +294,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   respondToApproval: (approvalId: string, approved: boolean, autoApprove = false) => {
-    ws.send({
-      type: 'approve',
-      data: {
-        approvalId,
-        approval_id: approvalId,
-        approved,
-        autoApprove,
-        auto_approve: autoApprove,
-      },
-    })
+    ws.sendCommand('Chat.approval', { approvalId, approved, autoApprove })
     const sessionId = get().currentSessionId
     if (sessionId) {
       set((state) => ({
@@ -519,15 +322,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
   cycleAutonomy: () => {
     const { status } = get()
     if (!status) return
-    const currentIdx = AUTONOMY_CYCLE.indexOf(status.autonomy_level)
+    const currentIdx = AUTONOMY_CYCLE.indexOf(status.autonomyLevel)
     const nextLevel = AUTONOMY_CYCLE[(currentIdx + 1) % AUTONOMY_CYCLE.length]
     api.setAutonomy(nextLevel).catch(console.error)
-    set({ status: { ...status, autonomy_level: nextLevel } })
+    set({ status: { ...status, autonomyLevel: nextLevel } })
   },
 
   cycleThinkingLevel: () => {
     const { status } = get()
-    const currentLevel = (status?.thinking_level || get().thinkingLevel) as
+    const currentLevel = (status?.thinkingLevel || get().thinkingLevel) as
       | 'Off'
       | 'Low'
       | 'Medium'
@@ -538,14 +341,15 @@ export const useChatStore = create<ChatState>((set, get) => ({
     api.setThinkingLevel(nextLevel).catch(console.error)
     set({
       thinkingLevel: nextLevel,
-      status: status ? { ...status, thinking_level: nextLevel } : status,
+      status: status ? { ...status, thinkingLevel: nextLevel } : status,
     })
   },
 
   respondToAskUser: (requestId: string, answers: Record<string, unknown> | null) => {
-    ws.send({
-      type: 'ask_user_response',
-      data: { requestId, request_id: requestId, answers, cancelled: answers === null },
+    ws.sendCommand('Chat.askUserResponse', {
+      requestId,
+      answers,
+      cancelled: answers === null,
     })
     const sessionId = get().currentSessionId
     if (sessionId) {
@@ -556,9 +360,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
   },
 
   respondToPlanApproval: (requestId: string, action: string, feedback?: string) => {
-    ws.send({
-      type: 'plan_approval_response',
-      data: { requestId, request_id: requestId, action, feedback: feedback || '' },
+    ws.sendCommand('Chat.planApprovalResponse', {
+      requestId,
+      action,
+      feedback: feedback || '',
     })
     const sessionId = get().currentSessionId
     if (sessionId) {
@@ -589,13 +394,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
 /** Mark the last pending tool_call message as interrupted. */
 function markLastToolCallInterrupted(messages: Message[]): Message[] {
   for (let i = messages.length - 1; i >= 0; i--) {
-    if (messages[i].role === 'tool_call' && !messages[i].tool_result) {
+    if (messages[i].role === 'tool_call' && !messages[i].toolResult) {
       const updated = [...messages]
       updated[i] = {
         ...messages[i],
-        tool_result: { success: false, error: 'Interrupted' },
-        tool_success: false,
-        tool_error: 'Interrupted',
+        toolResult: { success: false, error: 'Interrupted' },
+        toolSuccess: false,
+        toolError: 'Interrupted',
       }
       return updated
     }
@@ -606,15 +411,8 @@ function markLastToolCallInterrupted(messages: Message[]): Message[] {
 // ─── WebSocket Event Handlers ───────────────────────────────────────────────
 
 /** Resolve the session ID from a WS event, falling back to currentSessionId. */
-function resolveSessionId(data: unknown): string | null {
-  const payload = asObject(data)
-  if (!payload) {
-    return useChatStore.getState().currentSessionId
-  }
-
-  return (
-    readString(payload, 'session_id', 'sessionId') ?? useChatStore.getState().currentSessionId
-  )
+function resolveSessionId(data: any): string | null {
+  return data?.sessionId || useChatStore.getState().currentSessionId
 }
 
 let connectionStableTimer: number | null = null
@@ -642,11 +440,9 @@ ws.on('disconnected', () => {
 })
 
 ws.on('user_message', (message) => {
-  const payload = asObject(message.data)
-  const sid = resolveSessionId(payload)
+  const sid = resolveSessionId(message.data)
   if (!sid) return
-  const content = payload ? readString(payload, 'content', 'message') : undefined
-  if (!content) return
+  const content = message.data.content
   const sessionState = getSessionState(useChatStore.getState().sessionStates, sid)
   const msgs = sessionState.messages
   // Dedup: skip if last user message already has this content (optimistic add from sendMessage)
@@ -689,11 +485,9 @@ function finalizeThinking(msgs: Message[]): Message[] {
 }
 
 ws.on('message_chunk', (message) => {
-  const payload = asObject(message.data)
-  const sid = resolveSessionId(payload)
+  const sid = resolveSessionId(message.data)
   if (!sid) return
-  const chunk = payload ? readString(payload, 'content', 'delta') ?? '' : ''
-  console.log('[Frontend] Received message_chunk:', chunk.substring(0, 100))
+  console.log('[Frontend] Received message_chunk:', message.data.content.substring(0, 100))
 
   useChatStore.setState((state) => {
     const sessionState = getSessionState(state.sessionStates, sid)
@@ -704,10 +498,10 @@ ws.on('message_chunk', (message) => {
     if (lastMessage && lastMessage.role === 'assistant') {
       newMessages = [
         ...msgs.slice(0, -1),
-        { ...lastMessage, content: lastMessage.content + chunk },
+        { ...lastMessage, content: lastMessage.content + message.data.content },
       ]
     } else {
-      newMessages = [...msgs, { role: 'assistant' as const, content: chunk }]
+      newMessages = [...msgs, { role: 'assistant' as const, content: message.data.content }]
     }
 
     return patchSession(state, sid, { messages: newMessages })
@@ -740,9 +534,7 @@ ws.on('approval_required', (message) => {
   if (!sid) return
   console.log('[Frontend] Received approval_required:', message.data)
   useChatStore.setState((state) => ({
-    ...patchSession(state, sid, {
-      pendingApproval: normalizeApprovalRequest(asObject(message.data) ?? {}),
-    }),
+    ...patchSession(state, sid, { pendingApproval: message.data as ApprovalRequest }),
   }))
 })
 
@@ -755,23 +547,20 @@ ws.on('approval_resolved', (message) => {
 })
 
 ws.on('tool_call', (message) => {
-  const payload = asObject(message.data)
-  const sid = resolveSessionId(payload)
+  const sid = resolveSessionId(message.data)
   if (!sid) return
 
-  const toolName = payload ? readString(payload, 'tool_name', 'name') ?? 'tool' : 'tool'
-  const toolCallId = payload ? readString(payload, 'tool_call_id', 'tool_id', 'id') : undefined
-  const toolArgs = (payload && asObject(payload.arguments)) ?? {}
-  const toolArgsDisplay = payload ? readString(payload, 'arguments_display') : undefined
-  const description = payload ? readString(payload, 'description', 'command') : undefined
+  const toolCallId = message.data.toolCallId || message.data.id
+  const toolName = message.data.toolName || message.data.name
+  const toolArgs = message.data.arguments || {}
 
   const toolCallMessage: Message = {
     role: 'tool_call',
-    content: description || `Calling ${toolName}`,
-    tool_call_id: toolCallId,
-    tool_name: toolName,
-    tool_args: toolArgs,
-    tool_args_display: toolArgsDisplay || null,
+    content: message.data.description || `Calling ${toolName}`,
+    toolCallId,
+    toolName,
+    toolArgs,
+    toolArgsDisplay: message.data.argumentsDisplay || null,
     timestamp: new Date().toISOString(),
   }
 
@@ -782,30 +571,33 @@ ws.on('tool_call', (message) => {
 })
 
 ws.on('tool_result', (message) => {
-  const payload = asObject(message.data)
-  const sid = resolveSessionId(payload)
+  const sid = resolveSessionId(message.data)
   if (!sid) return
-
-  const callId = payload ? readString(payload, 'tool_call_id', 'tool_id', 'id') : undefined
-  const toolName = payload ? readString(payload, 'tool_name', 'name') ?? 'tool' : 'tool'
-  const success = payload
-    ? readBoolean(payload, 'success') ?? !(readBoolean(payload, 'isError') ?? false)
-    : false
-  const error = payload ? readString(payload, 'error') : undefined
-  const toolResult = payload ? (payload.raw_result ?? payload.output ?? payload.result) : undefined
 
   useChatStore.setState((state) => {
     const sessionState = getSessionState(state.sessionStates, sid)
     const msgs = sessionState.messages
+    const callId = message.data.toolCallId || message.data.id
+    const toolName = message.data.toolName || message.data.name || 'unknown'
+    const success =
+      typeof message.data.success === 'boolean'
+        ? message.data.success
+        : !Boolean(message.data.isError)
+    const toolResultData =
+      message.data.rawResult ??
+      message.data.output ??
+      message.data.result ??
+      (success ? 'Completed' : 'Failed')
+    const toolError = message.data.error || (success ? null : 'Tool failed')
 
     for (let i = msgs.length - 1; i >= 0; i--) {
-      if (msgs[i].role === 'tool_call' && msgs[i].tool_call_id === callId && !msgs[i].tool_result) {
+      if (msgs[i].role === 'tool_call' && msgs[i].toolCallId === callId && !msgs[i].toolResult) {
         const updatedMessages = [...msgs]
         updatedMessages[i] = {
           ...msgs[i],
-          tool_result: toolResult,
-          tool_success: success,
-          tool_error: error || null,
+          toolResult: toolResultData,
+          toolSuccess: success,
+          toolError,
         }
         return patchSession(state, sid, { messages: updatedMessages })
       }
@@ -817,20 +609,18 @@ ws.on('tool_result', (message) => {
 })
 
 ws.on('thinking_block', (message) => {
-  const payload = asObject(message.data)
-  const sid = resolveSessionId(payload)
+  const sid = resolveSessionId(message.data)
   if (!sid) return
-  const content = payload ? readString(payload, 'content', 'delta') ?? '' : ''
-  const action = payload ? readString(payload, 'action') : undefined
-  const isBlockStart = payload?.block_start === true || action === 'start'
+  const action = message.data.action
+  const isBlockStart = action === 'start' || message.data.blockStart === true
   const isBlockEnd = action === 'end'
-  const level = payload ? readString(payload, 'level') ?? 'Medium' : 'Medium'
+  const content = action === 'delta' ? (message.data.delta || '') : (message.data.content || '')
 
   useChatStore.setState((state) => {
     const sessionState = getSessionState(state.sessionStates, sid)
     const msgs = sessionState.messages
 
-    // If block_start, always create a new thinking message
+    // If the block starts, always create a new thinking message.
     if (isBlockStart) {
       return patchSession(state, sid, {
         messages: [
@@ -838,7 +628,7 @@ ws.on('thinking_block', (message) => {
           {
             role: 'thinking' as const,
             content: '',
-            metadata: { level, isActive: true },
+            metadata: { level: message.data.level || 'Medium', isActive: true },
           },
         ],
       })
@@ -853,7 +643,6 @@ ws.on('thinking_block', (message) => {
         content: msgs[lastIdx].content + content,
         metadata: {
           ...msgs[lastIdx].metadata,
-          level,
           isActive: isBlockEnd ? false : msgs[lastIdx].metadata?.isActive,
         },
       }
@@ -867,7 +656,7 @@ ws.on('thinking_block', (message) => {
         {
           role: 'thinking' as const,
           content,
-          metadata: { level, isActive: !isBlockEnd },
+          metadata: { level: message.data.level || 'Medium', isActive: !isBlockEnd },
         },
       ],
     })
@@ -875,12 +664,14 @@ ws.on('thinking_block', (message) => {
 })
 
 ws.on('status_update', (message) => {
-  const payload = asObject(message.data) ?? {}
   const { status } = useChatStore.getState()
-  const newStatus = normalizeStatusInfo(payload, status)
+  const newStatus = {
+    ...status,
+    ...message.data,
+  } as StatusInfo
   useChatStore.setState({
     status: newStatus,
-    thinkingLevel: newStatus.thinking_level || useChatStore.getState().thinkingLevel,
+    thinkingLevel: newStatus.thinkingLevel || useChatStore.getState().thinkingLevel,
   })
 })
 
@@ -889,9 +680,7 @@ ws.on('ask_user_required', (message) => {
   if (!sid) return
   console.log('[Frontend] Received ask_user_required:', message.data)
   useChatStore.setState((state) => ({
-    ...patchSession(state, sid, {
-      pendingAskUser: normalizeAskUserRequest(asObject(message.data) ?? {}),
-    }),
+    ...patchSession(state, sid, { pendingAskUser: message.data as AskUserRequest }),
   }))
 })
 
@@ -904,16 +693,10 @@ ws.on('ask_user_resolved', (message) => {
 })
 
 ws.on('session_activity', (message) => {
-  const payload = asObject(message.data)
-  const sessionId = resolveSessionId(payload)
-  if (!sessionId) return
+  const { sessionId, status, running } = message.data
 
-  const isRunning = payload ? resolveRunningState(payload) : null
+  const isRunning = running === true || status === 'running'
   useChatStore.setState((state) => {
-    if (isRunning === null) {
-      return { runningSessions: new Set(state.runningSessions) }
-    }
-
     const next = new Set(state.runningSessions)
     if (isRunning) next.add(sessionId)
     else next.delete(sessionId)
@@ -922,7 +705,7 @@ ws.on('session_activity', (message) => {
   useChatStore.getState().bumpSessionList()
 
   // Toast notification when a non-current session completes
-  if (isRunning === false && sessionId !== useChatStore.getState().currentSessionId) {
+  if (!isRunning && sessionId !== useChatStore.getState().currentSessionId) {
     useToastStore.getState().addToast(`Session ${sessionId.slice(0, 8)} completed`, 'success')
   }
 })
@@ -934,9 +717,7 @@ ws.on('plan_approval_required', (message) => {
   if (!sid) return
   console.log('[Frontend] Received plan_approval_required:', message.data)
   useChatStore.setState((state) => ({
-    ...patchSession(state, sid, {
-      pendingPlanApproval: normalizePlanApprovalRequest(asObject(message.data) ?? {}),
-    }),
+    ...patchSession(state, sid, { pendingPlanApproval: message.data as PlanApprovalRequest }),
   }))
 })
 
@@ -951,20 +732,17 @@ ws.on('plan_approval_resolved', (message) => {
 // ─── Subagent Events ─────────────────────────────────────────────────────────
 
 ws.on('subagent_start', (message) => {
-  const payload = asObject(message.data)
-  const sid = resolveSessionId(payload)
+  const sid = resolveSessionId(message.data)
   if (!sid) return
-  const agent_type = payload ? readString(payload, 'agent_type') ?? 'subagent' : 'subagent'
-  const description = payload ? readString(payload, 'description') ?? '' : ''
-  const tool_call_id = payload ? readString(payload, 'tool_call_id', 'tool_id') : undefined
-  console.log('[Frontend] Subagent start:', agent_type, description)
+  const { agentType, description, toolCallId } = message.data
+  console.log('[Frontend] Subagent start:', agentType, description)
 
   const subagentMessage: Message = {
     role: 'tool_call',
-    content: `Spawning ${agent_type} agent`,
-    tool_call_id: tool_call_id,
-    tool_name: 'spawn_subagent',
-    tool_args: { agent_type, description },
+    content: `Spawning ${agentType} agent`,
+    toolCallId,
+    toolName: 'spawn_subagent',
+    toolArgs: { agentType, description },
     timestamp: new Date().toISOString(),
   }
 
@@ -975,12 +753,9 @@ ws.on('subagent_start', (message) => {
 })
 
 ws.on('subagent_complete', (message) => {
-  const payload = asObject(message.data)
-  const sid = resolveSessionId(payload)
+  const sid = resolveSessionId(message.data)
   if (!sid) return
-  const tool_call_id = payload ? readString(payload, 'tool_call_id', 'tool_id') : undefined
-  const success = payload ? readBoolean(payload, 'success') ?? false : false
-  const resultSummary = payload ? readString(payload, 'result_summary', 'summary') : undefined
+  const { toolCallId, success } = message.data
 
   useChatStore.setState((state) => {
     const sessionState = getSessionState(state.sessionStates, sid)
@@ -989,18 +764,15 @@ ws.on('subagent_complete', (message) => {
     for (let i = msgs.length - 1; i >= 0; i--) {
       if (
         msgs[i].role === 'tool_call' &&
-        msgs[i].tool_name === 'spawn_subagent' &&
-        (tool_call_id ? msgs[i].tool_call_id === tool_call_id : true) &&
-        !msgs[i].tool_result
+        msgs[i].toolName === 'spawn_subagent' &&
+        msgs[i].toolCallId === toolCallId &&
+        !msgs[i].toolResult
       ) {
         const updatedMessages = [...msgs]
         updatedMessages[i] = {
           ...msgs[i],
-          tool_result: {
-            success,
-            output: resultSummary || (success ? 'Agent completed' : 'Agent failed'),
-          },
-          tool_success: success,
+          toolResult: { success, output: success ? 'Agent completed' : 'Agent failed' },
+          toolSuccess: success,
         }
         return patchSession(state, sid, { messages: updatedMessages })
       }
@@ -1018,13 +790,9 @@ ws.on('task_completed', (message) => {
 // ─── Progress Events ─────────────────────────────────────────────────────────
 
 ws.on('progress', (message) => {
-  const payload = asObject(message.data)
-  const sid = resolveSessionId(payload)
+  const sid = resolveSessionId(message.data)
   if (!sid) return
-  const status = payload ? readString(payload, 'status') : undefined
-  const progressMsg = payload
-    ? readString(payload, 'message') ?? readString(payload, 'phase')
-    : undefined
+  const { status, message: progressMsg } = message.data
 
   if (status === 'complete') {
     useChatStore.setState((state) => ({
@@ -1040,25 +808,18 @@ ws.on('progress', (message) => {
 // ─── Nested Tool Events ──────────────────────────────────────────────────────
 
 ws.on('nested_tool_call', (message) => {
-  const payload = asObject(message.data)
-  const sid = resolveSessionId(payload)
+  const sid = resolveSessionId(message.data)
   if (!sid) return
-  const tool_name = payload ? readString(payload, 'tool_name', 'name') ?? 'tool' : 'tool'
-  const args = (payload && asObject(payload.arguments)) ?? {}
-  const depth = payload ? readNumber(payload, 'depth') ?? 1 : 1
-  const parent = payload
-    ? readString(payload, 'parent', 'parent_tool_call_id', 'tool_call_id')
-    : undefined
-  const toolId = payload ? readString(payload, 'tool_id', 'tool_call_id', 'id') : undefined
+  const { toolName, arguments: args, depth, parentToolCallId } = message.data
 
   const nestedMsg: Message = {
     role: 'tool_call',
-    content: `Calling ${tool_name}`,
-    tool_name,
-    tool_args: args || {},
-    tool_call_id: toolId || `nested-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
-    depth,
-    parent_tool_call_id: parent,
+    content: `Calling ${toolName}`,
+    toolName,
+    toolArgs: args || {},
+    toolCallId: `nested-${Date.now()}-${Math.random().toString(36).slice(2, 6)}`,
+    depth: depth || 1,
+    parentToolCallId,
     timestamp: new Date().toISOString(),
   }
 
@@ -1069,15 +830,9 @@ ws.on('nested_tool_call', (message) => {
 })
 
 ws.on('nested_tool_result', (message) => {
-  const payload = asObject(message.data)
-  const sid = resolveSessionId(payload)
+  const sid = resolveSessionId(message.data)
   if (!sid) return
-  const tool_name = payload ? readString(payload, 'tool_name', 'name') ?? 'tool' : 'tool'
-  const success = payload ? readBoolean(payload, 'success') ?? false : false
-  const summary = payload
-    ? readString(payload, 'summary', 'result_summary', 'output')
-    : undefined
-  const depth = payload ? readNumber(payload, 'depth') : undefined
+  const { toolName, success, summary, depth } = message.data
 
   useChatStore.setState((state) => {
     const sessionState = getSessionState(state.sessionStates, sid)
@@ -1087,16 +842,16 @@ ws.on('nested_tool_result', (message) => {
     for (let i = msgs.length - 1; i >= 0; i--) {
       if (
         msgs[i].role === 'tool_call' &&
-        msgs[i].tool_name === tool_name &&
+        msgs[i].toolName === toolName &&
         msgs[i].depth === depth &&
-        !msgs[i].tool_result
+        !msgs[i].toolResult
       ) {
         const updated = [...msgs]
         updated[i] = {
           ...msgs[i],
-          tool_result: { success, output: summary },
-          tool_summary: summary || (success ? 'Completed' : 'Failed'),
-          tool_success: success,
+          toolResult: { success, output: summary },
+          toolSummary: summary || (success ? 'Completed' : 'Failed'),
+          toolSuccess: success,
         }
         return patchSession(state, sid, { messages: updated })
       }

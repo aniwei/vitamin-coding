@@ -7,7 +7,7 @@ import { FileMentionDropdown } from './FileMentionDropdown'
 interface FileItem {
   path: string
   name: string
-  is_file: boolean
+  isFile: boolean
 }
 
 export function InputBox() {

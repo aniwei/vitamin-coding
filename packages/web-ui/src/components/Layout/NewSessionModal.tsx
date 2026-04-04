@@ -46,10 +46,10 @@ export function NewSessionModal({ isOpen, onClose }: NewSessionModalProps) {
     setBrowseError(null)
     try {
       const result = await api.browseDirectory(path, hidden ?? showHidden)
-      setCurrentPath(result.current_path)
-      setParentPath(result.parent_path)
+      setCurrentPath(result.currentPath)
+      setParentPath(result.parentPath)
       setDirectories(result.directories)
-      setManualPath(result.current_path)
+      setManualPath(result.currentPath)
       setFilterText('')
       if (result.error) {
         setBrowseError(result.error)

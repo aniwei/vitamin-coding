@@ -9,16 +9,16 @@ export interface MCPServerConfig {
   args: string[]
   env: Record<string, string>
   enabled: boolean
-  auto_start: boolean
+  autoStart: boolean
 }
 
 export interface MCPServer {
   name: string
   status: MCPServerStatus
   config: MCPServerConfig
-  tools_count: number
-  config_location: 'global' | 'project'
-  config_path: string
+  toolsCount: number
+  configLocation: 'global' | 'project'
+  configPath: string
 }
 
 export interface MCPTool {
@@ -52,8 +52,8 @@ export interface MCPServerCreateRequest {
   args?: string[]
   env?: Record<string, string>
   enabled?: boolean
-  auto_start?: boolean
-  project_config?: boolean
+  autoStart?: boolean
+  projectConfig?: boolean
 }
 
 export interface MCPServerUpdateRequest {
@@ -61,13 +61,13 @@ export interface MCPServerUpdateRequest {
   args?: string[]
   env?: Record<string, string>
   enabled?: boolean
-  auto_start?: boolean
+  autoStart?: boolean
 }
 
 export interface MCPApiResponse {
   success: boolean
   message: string
-  tools_count?: number
+  toolsCount?: number
 }
 
 export interface MCPServersResponse {
@@ -78,9 +78,9 @@ export interface MCPServersResponse {
 export interface MCPStatusChangedEvent {
   type: 'mcp:status_changed'
   data: {
-    server_name: string
+    serverName: string
     status: MCPServerStatus
-    tools_count: number
+    toolsCount: number
   }
 }
 
@@ -88,7 +88,7 @@ export interface MCPServersUpdatedEvent {
   type: 'mcp:servers_updated'
   data: {
     action: 'added' | 'removed' | 'updated'
-    server_name: string
+    serverName: string
   }
 }
 

@@ -10,6 +10,26 @@ import type {
 
 const API_BASE = '/api'
 
+function toCamelKey(key: string): string {
+  return key.replace(/_([a-z])/g, (_, c: string) => c.toUpperCase())
+}
+
+function normalizeToCamel<T>(value: unknown): T {
+  if (Array.isArray(value)) {
+    return value.map((item) => normalizeToCamel(item)) as T
+  }
+
+  if (value && typeof value === 'object') {
+    const out: Record<string, unknown> = {}
+    for (const [key, val] of Object.entries(value as Record<string, unknown>)) {
+      out[toCamelKey(key)] = normalizeToCamel(val)
+    }
+    return out as T
+  }
+
+  return value as T
+}
+
 // 通用 API 请求辅助函数
 async function fetchAPI<T>(url: string, options?: RequestInit): Promise<T> {
   const response = await fetch(`${API_BASE}${url}`, {
@@ -25,7 +45,8 @@ async function fetchAPI<T>(url: string, options?: RequestInit): Promise<T> {
     throw new Error(errorData.message || `API error: ${response.statusText}`)
   }
 
-  return response.json()
+  const data = await response.json()
+  return normalizeToCamel<T>(data)
 }
 
 // 列出所有已配置的 MCP 服务器及其状态

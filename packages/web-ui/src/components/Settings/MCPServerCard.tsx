@@ -63,10 +63,10 @@ export function MCPServerCard({
             <h4 className="text-sm font-medium text-gray-900 truncate">{server.name}</h4>
             <div className="flex items-center gap-2 mt-0.5">
               <span className="text-xs text-gray-500">
-                {server.status === 'connected' ? `${server.tools_count} tools` : 'Not connected'}
+                {server.status === 'connected' ? `${server.toolsCount} tools` : 'Not connected'}
               </span>
               <span className="text-xs text-gray-400">•</span>
-              <span className="text-xs text-gray-500 capitalize">{server.config_location}</span>
+              <span className="text-xs text-gray-500 capitalize">{server.configLocation}</span>
             </div>
           </div>
         </div>
@@ -211,8 +211,8 @@ function ServerDetails({ server }: ServerDetailsProps) {
       <div className="flex items-center gap-4">
         <DetailRow
           label="Auto-start"
-          value={config.auto_start ? 'Enabled' : 'Disabled'}
-          valueColor={config.auto_start ? 'text-green-600' : 'text-gray-500'}
+          value={config.autoStart ? 'Enabled' : 'Disabled'}
+          valueColor={config.autoStart ? 'text-green-600' : 'text-gray-500'}
         />
         <DetailRow
           label="Enabled"
@@ -265,7 +265,7 @@ function ActionButtons({
           disabled={isProcessing}
           variant="secondary"
         >
-          View Tools ({server.tools_count})
+          View Tools ({server.toolsCount})
         </ActionButton>
       )}
 

@@ -142,8 +142,8 @@ export class CodingService {
     this.ws.broadcast({
       type: 'session_activity',
       data: {
-        sessionId: session.id,
         action: 'created',
+        sessionId: session.id,
         timestamp: new Date().toISOString(),
       },
     })
@@ -203,23 +203,31 @@ export class CodingService {
   ): void {
     const sessionId = message.data.sessionId as string | undefined
 
+    logger.debug(`message from client ${clientId}: ${message.type} for session ${sessionId ?? 'N/A'}`)
+
     switch (message.type) {
-      case 'query':
+      case 'Chat.query':
+        this.bridge?.send({
+          type: 'Chat.query',
+          seq: (message.data.seq as number) ?? Date.now(),
+          query: message.data.query as string,
+        })
         break
-      case 'approve':
-        logger.debug(`approval from client ${clientId} for session ${sessionId}`)
+      case 'Chat.approval': {
+        const approved = message.data.approved === true
+        logger.debug(
+          `${approved ? 'approval' : 'rejection'} from client ${clientId} for session ${sessionId}`,
+        )
         break
-      case 'reject':
-        logger.debug(`rejection from client ${clientId} for session ${sessionId}`)
-        break
-      case 'ask_user_response':
+      }
+      case 'Chat.askUserResponse':
         logger.debug(`ask_user response from client ${clientId}`)
         break
-      case 'plan_approve':
-      case 'plan_reject':
-        logger.debug(`plan ${message.type} from client ${clientId}`)
+      case 'Chat.planApprovalResponse': {
+        const action = (message.data.action as string | undefined) || 'unknown'
+        logger.debug(`plan ${action} from client ${clientId}`)
         break
-      case 'debug_command':
+      }
       case 'Debugger.resume':
       case 'Debugger.stepOver':
       case 'Debugger.stepInto':
@@ -248,10 +256,9 @@ export class CodingService {
       'Debugger.stepOver': 'next',
       'Debugger.stepInto': 'step',
       'Debugger.disable': 'stop',
-      'debug_command': data.type as string, // legacy
     }
 
-    const type = methodToType[method] ?? (data.type as string)
+    const type = methodToType[method]
     if (!type) return
 
     this.bridge.send({

@@ -1,11 +1,11 @@
 import { Bug } from 'lucide-react'
-import { useDebugStore } from '../../stores/debug'
+import { useDevtoolsStore } from '../../stores/debug'
 
 export function DebugStatusBadge() {
-  const enabled = useDebugStore((s) => s.enabled)
-  const paused = useDebugStore((s) => s.paused)
-  const currentSnapshot = useDebugStore((s) => s.currentSnapshot)
-  const togglePanel = useDebugStore((s) => s.togglePanel)
+  const enabled = useDevtoolsStore((s) => s.enabled)
+  const paused = useDevtoolsStore((s) => s.paused)
+  const currentSnapshot = useDevtoolsStore((s) => s.currentSnapshot)
+  const togglePanel = useDevtoolsStore((s) => s.togglePanel)
 
   if (paused) {
     return (

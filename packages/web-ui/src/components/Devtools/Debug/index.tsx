@@ -2,12 +2,12 @@ import { Controls } from './Controls'
 import { SnapshotViewer } from './SnapshotViewer'
 import { ContextEditor } from './ContextEditor'
 import { BreakpointList } from './BreakpointList'
-import { useDebugStore } from '../../../stores/debug'
+import { useDevtoolsStore } from '../../../stores/debug'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 
 function SnapshotHistory() {
-  const history = useDebugStore((s) => s.snapshotHistory)
+  const history = useDevtoolsStore((s) => s.snapshotHistory)
   const [open, setOpen] = useState(false)
 
   if (history.length === 0) return null

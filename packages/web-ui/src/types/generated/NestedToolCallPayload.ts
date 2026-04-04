@@ -2,9 +2,9 @@
 import type { JsonValue } from './serde_json/JsonValue'
 
 export type NestedToolCallPayload = {
-  subagent_id: string
-  tool_name: string
-  tool_id: string
+  subagentId: string
+  toolName: string
+  toolId: string
   arguments: { [key in string]?: JsonValue }
   depth: number
 }

@@ -48,8 +48,8 @@ interface ServiceOptions {
   port?: number
 }
 export class Service extends TypedEventEmitter<ServiceEvents> {
-  private port: number | undefined
   private readonly id: string = randomUUID()
+  private port: number | undefined
   private worker: Worker | null = null
   private started = false
   private breakpoints: Breakpoints

@@ -80,7 +80,7 @@ export function ApprovalDialog() {
             <div className="flex items-center gap-2">
               <div className="w-2 h-2 rounded-full bg-accent-main-100" />
               <code className="text-sm font-mono bg-bg-100 px-2 py-1 rounded border border-border-300/15">
-                {pendingApproval.tool_name}
+                {pendingApproval.toolName}
               </code>
             </div>
           </div>
@@ -176,7 +176,7 @@ export function ApprovalDialog() {
                 <div className="text-text-000">
                   Yes, and auto-approve all{' '}
                   <span className="font-semibold text-accent-secondary-100">
-                    {pendingApproval.tool_name}
+                    {pendingApproval.toolName}
                   </span>{' '}
                   commands
                 </div>

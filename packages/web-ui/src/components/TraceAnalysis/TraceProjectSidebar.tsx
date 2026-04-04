@@ -75,21 +75,21 @@ export function TraceProjectSidebar() {
           )}
           {sessions.map((s: TraceSessionInfo) => (
             <button
-              key={s.session_id}
-              onClick={() => selectSession(s.session_id)}
+              key={s.sessionId}
+              onClick={() => selectSession(s.sessionId)}
               className={`flex flex-col px-4 py-2 w-full text-left border-none cursor-pointer font-sans gap-0.5 ${
-                selectedSessionId === s.session_id
+                selectedSessionId === s.sessionId
                   ? 'bg-accent-main-100/10 border-l-2 border-l-success-100'
                   : 'bg-transparent border-l-2 border-l-transparent hover:bg-bg-200'
               }`}
             >
               <div className="flex items-center gap-1.5">
                 <span className="text-[11px] font-semibold text-text-200 overflow-hidden text-ellipsis whitespace-nowrap flex-1 font-mono">
-                  {s.title || s.session_id.slice(0, 12)}
+                  {s.title || s.sessionId.slice(0, 12)}
                 </span>
               </div>
               <div className="text-[10px] text-text-400 font-mono">
-                <span>{s.message_count} msgs</span>
+                <span>{s.messageCount} msgs</span>
                 {s.timestamp && <span className="ml-1.5">{formatTimestamp(s.timestamp)}</span>}
               </div>
             </button>

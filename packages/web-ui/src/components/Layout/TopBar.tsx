@@ -54,16 +54,16 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
       try {
         const configData = await api.getSetting()
         useChatStore.setState({
-          thinkingLevel: configData.thinking_level || 'Medium',
+          thinkingLevel: configData.thinkingLevel || 'Medium',
         })
         useChatStore.getState().setStatus({
           mode: configData.mode || 'normal',
-          autonomy_level: configData.autonomy_level || 'Manual',
-          thinking_level: configData.thinking_level || 'Medium',
+          autonomyLevel: configData.autonomyLevel || 'Manual',
+          thinkingLevel: configData.thinkingLevel || 'Medium',
           model: configData.model,
-          model_provider: configData.model_provider,
-          working_dir: configData.working_dir || '',
-          git_branch: configData.git_branch,
+          modelProvider: configData.modelProvider,
+          workingDirectory: configData.workingDirectory || '',
+          gitBranch: configData.gitBranch,
         })
       } catch {
         /* ignore */
@@ -140,22 +140,22 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
       {status && (
         <div className="flex items-center gap-2 flex-shrink-0">
           {/* Cost pill — only shown when agent has run */}
-          {status.session_cost != null && status.session_cost > 0 && (
+          {status.sessionCost != null && status.sessionCost > 0 && (
             <span
               className={`${pillBase} cursor-default bg-bg-200 text-text-300 border-border-300/30`}
-              title={`Session cost: ${formatCost(status.session_cost)}`}
+              title={`Session cost: ${formatCost(status.sessionCost)}`}
             >
-              {formatCost(status.session_cost)}
+              {formatCost(status.sessionCost)}
             </span>
           )}
 
           {/* Context usage pill — only shown when available */}
-          {status.context_usage_pct != null && (
+          {status.contextUsagePct != null && (
             <span
-              className={`${pillBase} cursor-default ${getContextColor(status.context_usage_pct)}`}
-              title={`Context window: ${Math.round(status.context_usage_pct)}% used, ${Math.round(100 - status.context_usage_pct)}% remaining`}
+              className={`${pillBase} cursor-default ${getContextColor(status.contextUsagePct)}`}
+              title={`Context window: ${Math.round(status.contextUsagePct)}% used, ${Math.round(100 - status.contextUsagePct)}% remaining`}
             >
-              Ctx: {Math.round(status.context_usage_pct)}%
+              Ctx: {Math.round(status.contextUsagePct)}%
             </span>
           )}
 
@@ -181,10 +181,10 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
           {/* Autonomy pill */}
           <button
             onClick={cycleAutonomy}
-            className={`${pillBase} ${AUTONOMY_STYLES[status.autonomy_level]}`}
+            className={`${pillBase} ${AUTONOMY_STYLES[status.autonomyLevel]}`}
             title="Manual: approve each tool · Semi-Auto: auto-approve safe tools · Auto: approve all. Click to cycle (Ctrl+Shift+A)"
           >
-            Approval: {status.autonomy_level}
+            Approval: {status.autonomyLevel}
           </button>
 
           {/* Thinking pill */}
@@ -227,24 +227,24 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
       {/* ── Far-Right: Project / Model ── */}
       {status && (
         <div className="flex items-center gap-2 text-xs text-text-500 flex-shrink-0 ml-1 hidden md:flex">
-          {status.working_dir && (
-            <span className="truncate max-w-[160px]" title={status.working_dir}>
-              {getProjectName(status.working_dir)}
-              {status.git_branch && (
+          {status.workingDirectory && (
+            <span className="truncate max-w-[160px]" title={status.workingDirectory}>
+              {getProjectName(status.workingDirectory)}
+              {status.gitBranch && (
                 <span className="text-text-400">
                   <span className="text-text-500"> / </span>
-                  {status.git_branch}
+                  {status.gitBranch}
                 </span>
               )}
             </span>
           )}
 
-          {status.working_dir && status.model && <span className="text-gray-300">|</span>}
+          {status.workingDirectory && status.model && <span className="text-gray-300">|</span>}
 
           {status.model && (
             <span
               className="font-mono text-text-400 truncate max-w-[140px]"
-              title={`${status.model_provider}/${status.model}`}
+              title={`${status.modelProvider}/${status.model}`}
             >
               {status.model}
             </span>

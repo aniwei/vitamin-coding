@@ -11,7 +11,7 @@ import { useEffect, useRef } from 'react'
 interface FileItem {
   path: string
   name: string
-  is_file: boolean
+  isFile: boolean
 }
 
 interface FileMentionDropdownProps {

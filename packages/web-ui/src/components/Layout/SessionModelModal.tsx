@@ -61,18 +61,18 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
       setHasExistingOverlay(hasOverlay)
 
       // Use overlay values if set, otherwise fall back to global config
-      setNormalProvider(overlayData.model_provider || configData.model_provider || '')
+      setNormalProvider(overlayData.modelProvider || configData.modelProvider || '')
       setNormalModel(overlayData.model || configData.model || '')
       setThinkingProvider(
-        overlayData.model_thinking_provider || configData.model_thinking_provider || '',
+        overlayData.modelThinkingProvider || configData.modelThinkingProvider || '',
       )
-      setThinkingModel(overlayData.model_thinking || configData.model_thinking || '')
+      setThinkingModel(overlayData.modelThinking || configData.modelThinking || '')
       setCompactProvider(
-        overlayData.model_compact_provider || configData.model_compact_provider || '',
+        overlayData.modelCompactProvider || configData.modelCompactProvider || '',
       )
-      setCompactModel(overlayData.model_compact || configData.model_compact || '')
-      setVisionProvider(overlayData.model_vlm_provider || configData.model_vlm_provider || '')
-      setVisionModel(overlayData.model_vlm || configData.model_vlm || '')
+      setCompactModel(overlayData.modelCompact || configData.modelCompact || '')
+      setVisionProvider(overlayData.modelVlmProvider || configData.modelVlmProvider || '')
+      setVisionModel(overlayData.modelVlm || configData.modelVlm || '')
     } catch (error) {
       console.error('Failed to load session model data:', error)
     } finally {
@@ -170,12 +170,14 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
       setSaving(true)
 
       await api.updateSessionModel(sessionId, {
-        model_provider: normalProvider || null,
+        modelProvider: normalProvider || null,
         model: normalModel || null,
-        model_thinking_provider: thinkingProvider || null,
-        model_thinking: thinkingModel || null,
-        model_vlm_provider: visionProvider || null,
-        model_vlm: visionModel || null,
+        modelThinkingProvider: thinkingProvider || null,
+        modelThinking: thinkingModel || null,
+        modelCompactProvider: compactProvider || null,
+        modelCompact: compactModel || null,
+        modelVlmProvider: visionProvider || null,
+        modelVlm: visionModel || null,
       })
 
       setHasExistingOverlay(true)
@@ -198,14 +200,14 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
 
       // Reload with global defaults
       const configData = await api.getSetting()
-      setNormalProvider(configData.model_provider || '')
+      setNormalProvider(configData.modelProvider || '')
       setNormalModel(configData.model || '')
-      setThinkingProvider(configData.model_thinking_provider || '')
-      setThinkingModel(configData.model_thinking || '')
-      setCompactProvider(configData.model_compact_provider || '')
-      setCompactModel(configData.model_compact || '')
-      setVisionProvider(configData.model_vlm_provider || '')
-      setVisionModel(configData.model_vlm || '')
+      setThinkingProvider(configData.modelThinkingProvider || '')
+      setThinkingModel(configData.modelThinking || '')
+      setCompactProvider(configData.modelCompactProvider || '')
+      setCompactModel(configData.modelCompact || '')
+      setVisionProvider(configData.modelVlmProvider || '')
+      setVisionModel(configData.modelVlm || '')
 
       addToast('Session model cleared', 'success')
       onClose()

@@ -5,6 +5,6 @@ export type TodoItemPayload = {
   id: string
   title: string
   status: string
-  active_form: string | null
+  activeForm: string | null
   children: Array<TodoChildPayload>
 }

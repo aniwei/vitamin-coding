@@ -2,8 +2,8 @@
 
 export type ApprovalRequiredPayload = {
   id: string
-  tool_name: string
+  toolName: string
   description: string
   command: string | null
-  session_id: string | null
+  sessionId: string | null
 }

@@ -14,10 +14,10 @@ export function createSessionsRoute(
     return c.json(
       sessions.map((s) => ({
         id: s.id,
-        created_at: s.createdAt.toISOString(),
-        updated_at: s.updatedAt?.toISOString(),
-        message_count: s.messageCount,
-        working_directory: context.vitamin.workspaceDir,
+        createdAt: s.createdAt.toISOString(),
+        updatedAt: s.updatedAt?.toISOString(),
+        messageCount: s.messageCount,
+        workingDirectory: context.vitamin.workspaceDir,
         title: s.model ?? s.id,
         status: s.status,
       })),
@@ -25,15 +25,15 @@ export function createSessionsRoute(
   })
 
   app.post('/', async (c) => {
-    await c.req.json<{ working_directory?: string }>().catch(() => ({}))
+    await c.req.json<{ workingDirectory?: string }>().catch(() => ({}))
     const session = await context.vitamin.createSession()
     return c.json({
       status: 'ok',
       message: 'session created',
       session: {
         id: session.id,
-        working_directory: context.vitamin.workspaceDir,
-        created_at: new Date().toISOString(),
+        workingDirectory: context.vitamin.workspaceDir,
+        createdAt: new Date().toISOString(),
       },
     })
   })
@@ -45,8 +45,8 @@ export function createSessionsRoute(
     }
     return c.json({
       id: session.id,
-      working_directory: context.vitamin.workspaceDir,
-      message_count: session.session.messages().length,
+      workingDirectory: context.vitamin.workspaceDir,
+      messageCount: session.session.messages().length,
       status: session.status,
     })
   })
@@ -54,8 +54,8 @@ export function createSessionsRoute(
   app.get('/bridge-info', (c) => {
     const session = context.vitamin.sessionManager.active
     return c.json({
-      bridge_mode: false,
-      session_id: session?.id ?? null,
+      bridgeMode: false,
+      sessionId: session?.id ?? null,
     })
   })
 
@@ -64,7 +64,7 @@ export function createSessionsRoute(
     const targetPath = body.path
 
     if (!targetPath) {
-      return c.json({ exists: false, is_directory: false, error: 'path is required' })
+      return c.json({ exists: false, isDirectory: false, error: 'path is required' })
     }
 
     const resolved = targetPath.startsWith('~')
@@ -75,18 +75,18 @@ export function createSessionsRoute(
       const stat = statSync(resolved)
       return c.json({
         exists: true,
-        is_directory: stat.isDirectory(),
+        isDirectory: stat.isDirectory(),
         path: resolved,
       })
     } catch {
-      return c.json({ exists: false, is_directory: false, path: resolved })
+      return c.json({ exists: false, isDirectory: false, path: resolved })
     }
   })
 
   app.post('/browse-directory', async (c) => {
-    const body = await c.req.json<{ path?: string; show_hidden?: boolean }>()
+    const body = await c.req.json<{ path?: string; showHidden?: boolean }>()
     const targetPath = body.path || context.vitamin.workspaceDir || homedir()
-    const showHidden = body.show_hidden ?? false
+    const showHidden = body.showHidden ?? false
 
     const resolved = targetPath.startsWith('~')
       ? resolve(homedir(), targetPath.slice(2))
@@ -94,8 +94,8 @@ export function createSessionsRoute(
 
     if (!existsSync(resolved)) {
       return c.json({
-        current_path: resolved,
-        parent_path: dirname(resolved),
+        currentPath: resolved,
+        parentPath: dirname(resolved),
         directories: [],
         error: 'path does not exist',
       })
@@ -110,15 +110,15 @@ export function createSessionsRoute(
         .sort((a, b) => a.name.localeCompare(b.name))
 
       return c.json({
-        current_path: resolved,
-        parent_path: dirname(resolved),
+        currentPath: resolved,
+        parentPath: dirname(resolved),
         directories,
         error: null,
       })
     } catch (err: any) {
       return c.json({
-        current_path: resolved,
-        parent_path: dirname(resolved),
+        currentPath: resolved,
+        parentPath: dirname(resolved),
         directories: [],
         error: err.message,
       })
@@ -132,7 +132,7 @@ export function createSessionsRoute(
       let files = entries.map((e) => ({
         path: join(context.vitamin.workspaceDir, e.name),
         name: e.name,
-        is_file: e.isFile(),
+        isFile: e.isFile(),
       }))
       if (query) {
         const q = query.toLowerCase()
@@ -221,7 +221,7 @@ function serializeMessages(session: { session: { messages(): unknown[] } }) {
             .join('')
         : '',
     timestamp: msg.timestamp,
-    tool_calls: Array.isArray(msg.content)
+    toolCalls: Array.isArray(msg.content)
       ? msg.content
           .filter((b: any) => b.type === 'tool_call')
           .map((b: any) => ({

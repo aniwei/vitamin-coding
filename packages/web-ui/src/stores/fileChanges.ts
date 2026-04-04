@@ -4,11 +4,11 @@ import { api } from '../api/client'
 export interface FileChange {
   id: string
   type: 'created' | 'modified' | 'deleted' | 'renamed'
-  file_path: string
-  old_path?: string
+  filePath: string
+  oldPath?: string
   timestamp: string
-  lines_added: number
-  lines_removed: number
+  linesAdded: number
+  linesRemoved: number
   description?: string
   icon: string
   color: string
@@ -21,9 +21,9 @@ export interface FileChangesSummary {
   modified: number
   deleted: number
   renamed: number
-  total_lines_added: number
-  total_lines_removed: number
-  net_lines: number
+  totalLinesAdded: number
+  totalLinesRemoved: number
+  netLines: number
 }
 
 interface FileChangesState {
@@ -35,6 +35,36 @@ interface FileChangesState {
   // Actions
   loadFileChanges: (sessionId: string) => Promise<void>
   clearChanges: () => void
+}
+
+function normalizeFileChange(raw: any): FileChange {
+  return {
+    id: raw.id,
+    type: raw.type,
+    filePath: raw.filePath,
+    oldPath: raw.oldPath,
+    timestamp: raw.timestamp,
+    linesAdded: raw.linesAdded ?? 0,
+    linesRemoved: raw.linesRemoved ?? 0,
+    description: raw.description,
+    icon: raw.icon,
+    color: raw.color,
+    summary: raw.summary,
+  }
+}
+
+function normalizeSummary(raw: any): FileChangesSummary | null {
+  if (!raw || typeof raw !== 'object') return null
+  return {
+    total: raw.total ?? 0,
+    created: raw.created ?? 0,
+    modified: raw.modified ?? 0,
+    deleted: raw.deleted ?? 0,
+    renamed: raw.renamed ?? 0,
+    totalLinesAdded: raw.totalLinesAdded ?? 0,
+    totalLinesRemoved: raw.totalLinesRemoved ?? 0,
+    netLines: raw.netLines ?? 0,
+  }
 }
 
 export const useFileChangesStore = create<FileChangesState>((set) => ({
@@ -49,10 +79,11 @@ export const useFileChangesStore = create<FileChangesState>((set) => ({
     try {
       const response = await api.get<any>(`/sessions/${sessionId}/file-changes`)
       const data = response?.data ?? response
+      const rawChanges = Array.isArray(data?.changes) ? data.changes : []
 
       set({
-        changes: data.changes || [],
-        summary: data.summary || null,
+        changes: rawChanges.map(normalizeFileChange),
+        summary: normalizeSummary(data?.summary),
         isLoading: false,
       })
     } catch (error) {

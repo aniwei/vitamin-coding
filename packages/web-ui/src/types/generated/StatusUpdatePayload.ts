@@ -3,16 +3,16 @@ import type { FileChangesPayload } from './FileChangesPayload'
 import type { TodoItemPayload } from './TodoItemPayload'
 
 export type StatusUpdatePayload = {
-  session_id: string
+  sessionId: string
   model: string | null
   provider: string | null
-  input_tokens: bigint | null
-  output_tokens: bigint | null
-  context_usage_pct: number | null
-  session_cost_usd: number | null
-  git_branch: string | null
-  autonomy_level: string | null
-  thinking_level: string | null
-  file_changes: FileChangesPayload | null
+  inputTokens: bigint | null
+  outputTokens: bigint | null
+  contextUsagePct: number | null
+  sessionCostUsd: number | null
+  gitBranch: string | null
+  autonomyLevel: string | null
+  thinkingLevel: string | null
+  fileChanges: FileChangesPayload | null
   todos: Array<TodoItemPayload> | null
 }

@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronRight, ChevronDown } from 'lucide-react'
-import { useDebugStore } from '../../../stores/debug'
+import { useDevtoolsStore } from '../../../stores/debug'
 import { BREAKPOINT_CATEGORIES } from '../../../types/debug'
 
 function CategoryGroup({
@@ -11,9 +11,9 @@ function CategoryGroup({
   points: readonly string[]
 }) {
   const [expanded, setExpanded] = useState(true)
-  const breakpoints = useDebugStore((s) => s.breakpoints)
-  const toggleBreakpoint = useDebugStore((s) => s.toggleBreakpoint)
-  const currentPoint = useDebugStore((s) => s.currentSnapshot?.point)
+  const breakpoints = useDevtoolsStore((s) => s.breakpoints)
+  const toggleBreakpoint = useDevtoolsStore((s) => s.toggleBreakpoint)
+  const currentPoint = useDevtoolsStore((s) => s.currentSnapshot?.point)
 
   const bpMap = new Map(breakpoints.map((bp) => [bp.point, bp.enabled]))
   const enabledCount = points.filter((p) => bpMap.get(p) === true).length
@@ -74,9 +74,9 @@ function CategoryGroup({
 }
 
 export function BreakpointList() {
-  const enableAll = useDebugStore((s) => s.enableAll)
-  const disableAll = useDebugStore((s) => s.disableAll)
-  const loadingBreakpoints = useDebugStore((s) => s.loadingBreakpoints)
+  const enableAll = useDevtoolsStore((s) => s.enableAll)
+  const disableAll = useDevtoolsStore((s) => s.disableAll)
+  const loadingBreakpoints = useDevtoolsStore((s) => s.loadingBreakpoints)
 
   return (
     <div className="flex-1 overflow-y-auto">

@@ -2,12 +2,23 @@ import { ChevronDownIcon, Cog6ToothIcon, FolderIcon, PlusIcon } from '@heroicons
 import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { api } from '../../api/client'
-import type { Session } from '../../types'
 import { useChatStore } from '../../stores/chat'
 import { SettingsModal } from '../Settings/SettingsModal'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
 import { NewSessionModal } from './NewSessionModal'
 import { SessionModelModal } from './SessionModelModal'
+
+interface Session {
+  id: string
+  workingDirectory?: string
+  messageCount: number
+  tokenUsage?: Record<string, number>
+  createdAt: string
+  updatedAt?: string
+  title?: string
+  status?: 'active' | 'answered' | 'open'
+  hasSessionModel?: boolean
+}
 
 interface WorkspaceGroup {
   path: string
@@ -97,7 +108,7 @@ export function SessionsSidebar() {
 
     // Filter out sessions without a working directory
     sessions.forEach((session) => {
-      const wd = session.working_dir || session.working_directory
+      const wd = session.workingDirectory
       if (!wd || wd.trim() === '') {
         return // Skip sessions without working directory
       }
@@ -108,11 +119,13 @@ export function SessionsSidebar() {
       groups[path].push(session)
     })
 
-    // Convert to array and sort each group by updated_at
+    // Convert to array and sort each group by updatedAt
     return Object.entries(groups)
       .map(([path, sessions]) => {
         const sorted = sessions.sort(
-          (a, b) => new Date(b.updated_at).getTime() - new Date(a.updated_at).getTime(),
+          (a, b) =>
+            new Date(b.updatedAt || b.createdAt).getTime() -
+            new Date(a.updatedAt || a.createdAt).getTime(),
         )
         return {
           path,
@@ -122,7 +135,8 @@ export function SessionsSidebar() {
       })
       .sort(
         (a, b) =>
-          new Date(b.mostRecent.updated_at).getTime() - new Date(a.mostRecent.updated_at).getTime(),
+          new Date(b.mostRecent.updatedAt || b.mostRecent.createdAt).getTime() -
+          new Date(a.mostRecent.updatedAt || a.mostRecent.createdAt).getTime(),
       )
   }
 
@@ -476,7 +490,9 @@ export function SessionsSidebar() {
                             </h3>
                             <div className="flex items-center justify-between text-xs mt-1">
                               <span className="text-gray-400 truncate" title={workspace.path}>
-                                {formatDate(workspace.mostRecent.updated_at)}
+                                {formatDate(
+                                  workspace.mostRecent.updatedAt || workspace.mostRecent.createdAt,
+                                )}
                               </span>
                               <span
                                 className={`ml-2 px-1.5 py-0.5 rounded-full text-xs flex-shrink-0 ${
@@ -602,7 +618,7 @@ export function SessionsSidebar() {
                                         !
                                       </div>
                                     )}
-                                    {session.has_session_model && (
+                                    {session.hasSessionModel && (
                                       <span
                                         className="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0"
                                         title="Custom model"
@@ -615,14 +631,14 @@ export function SessionsSidebar() {
                                         isActiveSession ? 'text-amber-600' : 'text-gray-400'
                                       }`}
                                     >
-                                      {formatDate(session.updated_at)}
+                                      {formatDate(session.updatedAt || session.createdAt)}
                                     </span>
                                     <span
                                       className={`${
                                         isActiveSession ? 'text-amber-600' : 'text-gray-400'
                                       }`}
                                     >
-                                      {session.message_count} msgs
+                                      {session.messageCount} msgs
                                     </span>
                                   </div>
                                 </button>

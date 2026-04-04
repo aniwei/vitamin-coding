@@ -147,7 +147,7 @@ function renderContent(content: string | ContentBlock[] | undefined): React.Reac
               TOOL RESULT
             </span>
             <span className="text-[9px] text-text-400 ml-auto font-mono">
-              {block.tool_use_id?.slice(-8)}
+              {block.toolUseId?.slice(-8)}
             </span>
           </div>
           <pre className="m-0 p-2 text-[11px] leading-relaxed text-text-200 font-mono whitespace-pre-wrap break-words overflow-wrap-anywhere max-h-[200px] overflow-y-auto">
@@ -197,7 +197,7 @@ export function NodeDetail({ data, onClose }: Props) {
                 {aEvent.message?.usage && (
                   <MetaRow
                     label="Tokens"
-                    value={`\u2191${aEvent.message.usage.input_tokens ?? 0} \u2193${aEvent.message.usage.output_tokens ?? 0}${aEvent.message.usage.cache_read_input_tokens ? ` cache\u2191${aEvent.message.usage.cache_read_input_tokens}` : ''}`}
+                    value={`\u2191${aEvent.message.usage.inputTokens ?? 0} \u2193${aEvent.message.usage.outputTokens ?? 0}${aEvent.message.usage.cacheReadInputTokens ? ` cache\u2191${aEvent.message.usage.cacheReadInputTokens}` : ''}`}
                   />
                 )}
               </div>
@@ -258,7 +258,7 @@ export function NodeDetail({ data, onClose }: Props) {
                 {aEvent.message?.usage && (
                   <MetaRow
                     label="Tokens"
-                    value={`\u2191${aEvent.message.usage.input_tokens ?? 0} \u2193${aEvent.message.usage.output_tokens ?? 0}${aEvent.message.usage.cache_read_input_tokens ? ` cache\u2191${aEvent.message.usage.cache_read_input_tokens}` : ''}`}
+                    value={`\u2191${aEvent.message.usage.inputTokens ?? 0} \u2193${aEvent.message.usage.outputTokens ?? 0}${aEvent.message.usage.cacheReadInputTokens ? ` cache\u2191${aEvent.message.usage.cacheReadInputTokens}` : ''}`}
                   />
                 )}
               </div>
@@ -331,7 +331,7 @@ export function NodeDetail({ data, onClose }: Props) {
               {event.message?.usage && (
                 <MetaRow
                   label="Tokens"
-                  value={`\u2191${event.message.usage.input_tokens ?? 0} \u2193${event.message.usage.output_tokens ?? 0}${event.message.usage.cache_read_input_tokens ? ` cache\u2191${event.message.usage.cache_read_input_tokens}` : ''}`}
+                  value={`\u2191${event.message.usage.inputTokens ?? 0} \u2193${event.message.usage.outputTokens ?? 0}${event.message.usage.cacheReadInputTokens ? ` cache\u2191${event.message.usage.cacheReadInputTokens}` : ''}`}
                 />
               )}
             </div>

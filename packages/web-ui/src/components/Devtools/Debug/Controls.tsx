@@ -1,5 +1,5 @@
 import { Play, SkipForward, ArrowDownRight, Square } from 'lucide-react'
-import { useDebugStore } from '../../../stores/debug'
+import { useDevtoolsStore } from '../../../stores/debug'
 
 const ACTIONS = [
   { key: 'resume', icon: Play, label: 'Resume', shortcut: 'F5', color: 'text-emerald-500' },
@@ -9,12 +9,12 @@ const ACTIONS = [
 ] as const
 
 export function Controls() {
-  const resume = useDebugStore((s) => s.resume)
-  const stepOver = useDebugStore((s) => s.stepOver)
-  const stepInto = useDebugStore((s) => s.stepInto)
-  const disable = useDebugStore((s) => s.disable)
-  const editDraft = useDebugStore((s) => s.editDraft)
-  const currentSnapshot = useDebugStore((s) => s.currentSnapshot)
+  const resume = useDevtoolsStore((s) => s.resume)
+  const stepOver = useDevtoolsStore((s) => s.stepOver)
+  const stepInto = useDevtoolsStore((s) => s.stepInto)
+  const disable = useDevtoolsStore((s) => s.disable)
+  const editDraft = useDevtoolsStore((s) => s.editDraft)
+  const currentSnapshot = useDevtoolsStore((s) => s.currentSnapshot)
 
   const hasChanges =
     editDraft.systemPrompt !== currentSnapshot?.systemPrompt ||

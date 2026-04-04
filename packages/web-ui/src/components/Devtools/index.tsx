@@ -1,6 +1,6 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
-import { Workflow, Terminal, PanelRightClose } from 'lucide-react'
-import { useDebugStore } from '../../stores/debug'
+import { Terminal, PanelRightClose } from 'lucide-react'
+import { useDevtoolsStore } from '../../stores/debug'
 import { Debug } from './Debug'
 import { Console } from './Console'
 import { BreakpointFlow } from './Flow/index'
@@ -17,11 +17,11 @@ const TOP_MAX_H_RATIO = 0.85
 const FLOW_MIN_W = 160
 
 export function Devtools() {
-  const panelOpen = useDebugStore((s) => s.panelOpen)
-  const closePanel = useDebugStore((s) => s.closePanel)
-  const paused = useDebugStore((s) => s.paused)
-  const fetchStatus = useDebugStore((s) => s.fetchStatus)
-  const fetchBreakpoints = useDebugStore((s) => s.fetchBreakpoints)
+  const panelOpen = useDevtoolsStore((s) => s.panelOpen)
+  const closePanel = useDevtoolsStore((s) => s.closePanel)
+  const paused = useDevtoolsStore((s) => s.paused)
+  const fetchStatus = useDevtoolsStore((s) => s.fetchStatus)
+  const fetchBreakpoints = useDevtoolsStore((s) => s.fetchBreakpoints)
 
   const [panelWidth, setPanelWidth] = useState(720)
   const [topHeight, setTopHeight] = useState(420)
@@ -123,13 +123,6 @@ export function Devtools() {
 
       {/* ── Full-width top bar ── */}
       <div className="flex items-center px-3 py-1 border-b border-gray-200 bg-gray-50/60 shrink-0">
-        <button
-          className="p-0.5 rounded hover:bg-gray-100 text-gray-400"
-          title="Show/Hide panel"
-        >
-          <Workflow className="w-3 h-3 text-gray-400 mr-1" />
-        </button>
-        <span className="text-[11px] font-semibold text-gray-500">Debugger</span>
         {paused && <span className="ml-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
         <div className="flex-1" />
         <button

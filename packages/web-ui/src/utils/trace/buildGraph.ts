@@ -182,7 +182,7 @@ function collectToolCalls(assistantNode: TraceFlowNode, userNode: TraceFlowNode)
   const toolResults = userBlocks.filter((b) => b.type === 'tool_result')
 
   return toolUses.map((use) => {
-    const result = toolResults.find((r) => r.tool_use_id === use.id)
+    const result = toolResults.find((r) => r.toolUseId === use.id)
     let resultText: string | undefined
     if (result) {
       const c = result.content

@@ -2,9 +2,9 @@
 import type { TodoItemPayload } from './TodoItemPayload'
 
 export type ToolResultPayload = {
-  session_id: string
-  tool_id: string
-  tool_name: string
+  sessionId: string
+  toolId: string
+  toolName: string
   output: string
   success: boolean
   /**

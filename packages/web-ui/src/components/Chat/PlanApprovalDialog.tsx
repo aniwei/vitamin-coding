@@ -94,9 +94,9 @@ export function PlanApprovalDialog() {
         setShowFeedback(true)
         return
       }
-      respondToPlanApproval(pendingPlanApproval.request_id, action, feedback)
+      respondToPlanApproval(pendingPlanApproval.requestId, action, feedback)
     } else {
-      respondToPlanApproval(pendingPlanApproval.request_id, action)
+      respondToPlanApproval(pendingPlanApproval.requestId, action)
     }
   }
 
@@ -119,7 +119,7 @@ export function PlanApprovalDialog() {
         {/* Plan content - scrollable */}
         <div className="flex-1 overflow-y-auto px-6 py-4 min-h-0">
           <div className="prose prose-sm prose-invert max-w-none text-text-200">
-            <ReactMarkdown>{pendingPlanApproval.plan_content}</ReactMarkdown>
+            <ReactMarkdown>{pendingPlanApproval.planContent}</ReactMarkdown>
           </div>
         </div>
 
@@ -134,7 +134,7 @@ export function PlanApprovalDialog() {
                   setSelectedIndex(i)
                   setShowFeedback(false)
                   if (i !== 2) {
-                    respondToPlanApproval(pendingPlanApproval.request_id, opt.action)
+                    respondToPlanApproval(pendingPlanApproval.requestId, opt.action)
                   } else {
                     setShowFeedback(true)
                   }
@@ -171,7 +171,7 @@ export function PlanApprovalDialog() {
               />
               <button
                 onClick={() =>
-                  respondToPlanApproval(pendingPlanApproval.request_id, 'modify', feedback)
+                  respondToPlanApproval(pendingPlanApproval.requestId, 'modify', feedback)
                 }
                 className="px-4 py-2 text-sm font-medium text-white bg-accent-secondary-100 rounded-lg hover:bg-accent-secondary-100/90 transition-colors"
               >

@@ -43,25 +43,72 @@ export const useStatusStore = create<StatusStore>((set) => ({
   update: (partial) => set((state) => ({ data: { ...state.data, ...partial } })),
 }))
 
+type EventData = Record<string, unknown>
+
+function asEventData(value: unknown): EventData | null {
+  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+    return value as EventData
+  }
+
+  return null
+}
+
+function readString(data: EventData, ...keys: string[]): string | undefined {
+  for (const key of keys) {
+    const value = data[key]
+    if (typeof value === 'string') {
+      return value
+    }
+  }
+
+  return undefined
+}
+
+function readNumber(data: EventData, ...keys: string[]): number | undefined {
+  for (const key of keys) {
+    const value = data[key]
+    if (typeof value === 'number' && Number.isFinite(value)) {
+      return value
+    }
+  }
+
+  return undefined
+}
+
+function readObject<T>(data: EventData, ...keys: string[]): T | undefined {
+  for (const key of keys) {
+    const value = data[key]
+    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
+      return value as T
+    }
+  }
+
+  return undefined
+}
+
 // Subscribe to WebSocket status events
 ws.on('status_update', (message) => {
-  const d = message.data
+  const d = asEventData(message.data)
   if (!d) return
 
   const updates: Partial<StatusBarData> = {}
-  if (d.model != null) updates.model = d.model
-  if (d.provider != null) updates.provider = d.provider
-  if (d.input_tokens != null) updates.inputTokens = d.input_tokens
-  if (d.output_tokens != null) updates.outputTokens = d.output_tokens
-  if (d.max_tokens != null) updates.maxTokens = d.max_tokens
-  if (d.context_usage_pct != null) updates.contextUsagePct = d.context_usage_pct
-  if (d.session_cost_usd != null) updates.sessionCostUsd = d.session_cost_usd
-  if (d.git_branch != null) updates.gitBranch = d.git_branch
-  if (d.autonomy_level != null) updates.autonomyLevel = d.autonomy_level
-  if (d.thinking_level != null) updates.thinkingLevel = d.thinking_level
-  if (d.mcp_connected != null) updates.mcpConnected = d.mcp_connected
-  if (d.mcp_total != null) updates.mcpTotal = d.mcp_total
-  if (d.file_changes != null) updates.fileChanges = d.file_changes
+  if (typeof d.model === 'string') updates.model = d.model
+  updates.provider = readString(d, 'provider', 'modelProvider') ?? updates.provider
+  updates.inputTokens = readNumber(d, 'inputTokens') ?? updates.inputTokens
+  updates.outputTokens = readNumber(d, 'outputTokens') ?? updates.outputTokens
+  updates.maxTokens = readNumber(d, 'maxTokens') ?? updates.maxTokens
+  updates.contextUsagePct = readNumber(d, 'contextUsagePct') ?? updates.contextUsagePct
+  updates.sessionCostUsd = readNumber(d, 'sessionCostUsd') ?? updates.sessionCostUsd
+  updates.gitBranch = readString(d, 'gitBranch') ?? updates.gitBranch
+  updates.autonomyLevel =
+    (readString(d, 'autonomyLevel') as StatusBarData['autonomyLevel'] | undefined) ??
+    updates.autonomyLevel
+  updates.thinkingLevel =
+    (readString(d, 'thinkingLevel') as StatusBarData['thinkingLevel'] | undefined) ??
+    updates.thinkingLevel
+  updates.mcpConnected = readNumber(d, 'mcpConnected') ?? updates.mcpConnected
+  updates.mcpTotal = readNumber(d, 'mcpTotal') ?? updates.mcpTotal
+  updates.fileChanges = readObject<StatusBarData['fileChanges']>(d, 'fileChanges') ?? updates.fileChanges
 
   useStatusStore.getState().update(updates)
 })

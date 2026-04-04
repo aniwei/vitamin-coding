@@ -42,14 +42,14 @@ export function LandingPage() {
     api
       .listSessions()
       .then((sessions) => {
-        // Group by working_dir, sort by most recent
+        // Group by workingDirectory, sort by most recent
         const grouped: Record<string, string> = {}
         const recency: Record<string, number> = {}
 
         for (const s of sessions) {
-          const wd = s.working_dir || s.working_directory
+          const wd = s.workingDirectory
           if (!wd || !wd.trim()) continue
-          const t = new Date(s.updated_at).getTime()
+          const t = new Date(s.updatedAt || s.createdAt).getTime()
           if (!recency[wd] || t > recency[wd]) {
             recency[wd] = t
           }

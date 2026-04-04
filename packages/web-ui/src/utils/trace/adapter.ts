@@ -61,11 +61,11 @@ export function adaptOpenDevMessages(
       const contentBlocks: ContentBlock[] = []
 
       // Add thinking block if present
-      if (msg.thinking_trace) {
-        contentBlocks.push({ type: 'thinking', thinking: msg.thinking_trace })
+      if (msg.thinkingTrace) {
+        contentBlocks.push({ type: 'thinking', thinking: msg.thinkingTrace })
       }
-      if (msg.reasoning_content) {
-        contentBlocks.push({ type: 'thinking', thinking: msg.reasoning_content })
+      if (msg.reasoningContent) {
+        contentBlocks.push({ type: 'thinking', thinking: msg.reasoningContent })
       }
 
       // Add text content
@@ -74,7 +74,7 @@ export function adaptOpenDevMessages(
       }
 
       // Add tool_use blocks for each tool call
-      const toolCalls = msg.tool_calls ?? []
+      const toolCalls = msg.toolCalls ?? []
       for (const tc of toolCalls) {
         contentBlocks.push({
           type: 'tool_use',
@@ -84,17 +84,17 @@ export function adaptOpenDevMessages(
         })
       }
 
-      // Map token_usage to the expected shape
-      const usage = msg.token_usage
+      // Map token usage to the trace-view shape.
+      const usage = msg.tokenUsage
         ? {
-            input_tokens: (msg.token_usage.input_tokens ??
-              msg.token_usage.prompt_tokens ??
+            inputTokens: (msg.tokenUsage.inputTokens ??
+              msg.tokenUsage.promptTokens ??
               0) as number,
-            output_tokens: (msg.token_usage.output_tokens ??
-              msg.token_usage.completion_tokens ??
+            outputTokens: (msg.tokenUsage.outputTokens ??
+              msg.tokenUsage.completionTokens ??
               0) as number,
-            cache_read_input_tokens: (msg.token_usage.cache_read_input_tokens ?? 0) as number,
-            cache_creation_input_tokens: (msg.token_usage.cache_creation_input_tokens ??
+            cacheReadInputTokens: (msg.tokenUsage.cacheReadInputTokens ?? 0) as number,
+            cacheCreationInputTokens: (msg.tokenUsage.cacheCreationInputTokens ??
               0) as number,
           }
         : undefined
@@ -123,7 +123,7 @@ export function adaptOpenDevMessages(
 
           resultBlocks.push({
             type: 'tool_result',
-            tool_use_id: tc.id,
+            toolUseId: tc.id,
             content: resultText,
           })
         }

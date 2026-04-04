@@ -1,20 +1,9 @@
 import { useEffect, useState } from 'react'
 import { api } from '../../api/client'
 import { useToastStore } from '../../stores/toast'
+import type { Config } from '../../types'
 import { ModelSlot } from './ModelSlot'
 import type { Provider } from './ModelSlot'
-
-interface Config {
-  model_provider: string
-  model: string
-  model_thinking_provider?: string | null
-  model_thinking?: string | null
-  model_vlm_provider?: string | null
-  model_vlm?: string | null
-  model_compact_provider?: string | null
-  model_compact?: string | null
-  temperature: number
-}
 
 export function ModelSettings() {
   const [providers, setProviders] = useState<Provider[]>([])
@@ -58,23 +47,23 @@ export function ModelSettings() {
       setConfig(configData)
 
       // Normal model
-      setNormalProvider(configData.model_provider)
-      setNormalModel(configData.model)
+      setNormalProvider(configData.modelProvider ?? '')
+      setNormalModel(configData.model ?? '')
 
       // Thinking model
-      setThinkingProvider(configData.model_thinking_provider || '')
-      setThinkingModel(configData.model_thinking || '')
+      setThinkingProvider(configData.modelThinkingProvider || '')
+      setThinkingModel(configData.modelThinking || '')
 
       // Vision model
-      setVisionProvider(configData.model_vlm_provider || '')
-      setVisionModel(configData.model_vlm || '')
+      setVisionProvider(configData.modelVlmProvider || '')
+      setVisionModel(configData.modelVlm || '')
 
       // Compact model
-      setCompactProvider(configData.model_compact_provider || '')
-      setCompactModel(configData.model_compact || '')
+      setCompactProvider(configData.modelCompactProvider || '')
+      setCompactModel(configData.modelCompact || '')
 
       // Other settings
-      setTemperature(configData.temperature)
+      setTemperature(configData.temperature ?? 0.7)
     } catch (error) {
       console.error('Failed to load settings:', error)
     } finally {
@@ -87,12 +76,14 @@ export function ModelSettings() {
       setSaving(true)
 
       await api.updateSetting({
-        model_provider: normalProvider,
+        modelProvider: normalProvider,
         model: normalModel,
-        model_thinking_provider: thinkingProvider || null,
-        model_thinking: thinkingModel || null,
-        model_vlm_provider: visionProvider || null,
-        model_vlm: visionModel || null,
+        modelThinkingProvider: thinkingProvider || null,
+        modelThinking: thinkingModel || null,
+        modelCompactProvider: compactProvider || null,
+        modelCompact: compactModel || null,
+        modelVlmProvider: visionProvider || null,
+        modelVlm: visionModel || null,
         temperature,
       })
 
@@ -100,7 +91,7 @@ export function ModelSettings() {
       window.dispatchEvent(
         new CustomEvent('config-updated', {
           detail: {
-            model_provider: normalProvider,
+            modelProvider: normalProvider,
             model: normalModel,
             temperature,
           },

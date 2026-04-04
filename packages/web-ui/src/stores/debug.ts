@@ -65,7 +65,7 @@ interface DebugState {
 
 const EMPTY_DRAFT: PauseResumePayload = {}
 
-export const useDebugStore = create<DebugState>((set, get) => ({
+export const useDevtoolsStore = create<DebugState>((set, get) => ({
   enabled: false,
   connected: true,
   panelOpen: true,
@@ -206,30 +206,21 @@ export const useDebugStore = create<DebugState>((set, get) => ({
   // ─── CDP commands: Debugger.resume / stepOver / stepInto / disable ───
   resume: (payload) => {
     const draft = payload ?? buildPayload(get())
-    ws.send({
-      type: 'Debugger.resume',
-      data: { payload: draft },
-    })
+    ws.sendCommand('Debugger.resume', { payload: draft })
   },
 
   stepOver: (payload) => {
     const draft = payload ?? buildPayload(get())
-    ws.send({
-      type: 'Debugger.stepOver',
-      data: { payload: draft },
-    })
+    ws.sendCommand('Debugger.stepOver', { payload: draft })
   },
 
   stepInto: (payload) => {
     const draft = payload ?? buildPayload(get())
-    ws.send({
-      type: 'Debugger.stepInto',
-      data: { payload: draft },
-    })
+    ws.sendCommand('Debugger.stepInto', { payload: draft })
   },
 
   disable: () => {
-    ws.send({ type: 'Debugger.disable', data: {} })
+    ws.sendCommand('Debugger.disable')
   },
 }))
 

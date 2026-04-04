@@ -25,8 +25,8 @@ export function ChatInterface() {
       .getBridgeInfo()
       .then((info) => {
         if (cancelled) return
-        if (info.bridge_mode && info.session_id) {
-          loadSession(info.session_id)
+        if (info.bridgeMode && info.sessionId) {
+          loadSession(info.sessionId)
         }
         setBridgeChecked(true)
       })

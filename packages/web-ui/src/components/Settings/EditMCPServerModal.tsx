@@ -21,7 +21,7 @@ interface FormData {
   args: string[]
   env: Record<string, string>
   enabled: boolean
-  auto_start: boolean
+  autoStart: boolean
 }
 
 export function EditMCPServerModal({ isOpen, server, onClose, onSubmit }: EditMCPServerModalProps) {
@@ -44,7 +44,7 @@ export function EditMCPServerModal({ isOpen, server, onClose, onSubmit }: EditMC
         args: [...server.config.args],
         env: { ...server.config.env },
         enabled: server.config.enabled,
-        auto_start: server.config.auto_start,
+        autoStart: server.config.autoStart,
       })
     }
   }, [server])
@@ -67,7 +67,7 @@ export function EditMCPServerModal({ isOpen, server, onClose, onSubmit }: EditMC
         args: formData.args.filter((arg) => arg.trim()),
         env: formData.env,
         enabled: formData.enabled,
-        auto_start: formData.auto_start,
+        autoStart: formData.autoStart,
       })
 
       onClose()
@@ -287,9 +287,9 @@ export function EditMCPServerModal({ isOpen, server, onClose, onSubmit }: EditMC
             <label className="flex items-center gap-2 cursor-pointer">
               <input
                 type="checkbox"
-                checked={formData.auto_start}
+                checked={formData.autoStart}
                 onChange={(e) =>
-                  setFormData((prev) => (prev ? { ...prev, auto_start: e.target.checked } : null))
+                  setFormData((prev) => (prev ? { ...prev, autoStart: e.target.checked } : null))
                 }
                 disabled={isSubmitting}
                 className="w-4 h-4 text-gray-900 border-gray-300 rounded focus:ring-gray-900 disabled:opacity-50"

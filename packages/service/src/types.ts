@@ -51,14 +51,14 @@ export interface WebSocketMessage {
 
 // ─── WebSocket protocol (client → server) ───
 export type WebSocketClientMessageType =
-  | 'ping'
-  | 'approve'
-  | 'reject'
-  | 'ask_user_response'
-  | 'plan_approve'
-  | 'plan_reject'
-  | 'subscribe_session'
-  | 'unsubscribe_session'
+  // ─── CDP-style generic/runtime commands ───
+  | 'Runtime.ping'
+  | 'Chat.query'
+  | 'Chat.approval'
+  | 'Chat.askUserResponse'
+  | 'Chat.planApprovalResponse'
+  | 'Session.subscribe'
+  | 'Session.unsubscribe'
   // ─── Debugger domain commands ───
   | 'Debugger.resume'
   | 'Debugger.stepOver'
@@ -70,11 +70,6 @@ export type WebSocketClientMessageType =
   | 'Log.enable'
   | 'Log.disable'
   | 'Log.clear'
-  // ─── Legacy aliases (deprecated, kept for compat) ───
-  | 'debug_command'
-  | 'debug_set_breakpoint'
-  | 'debug_subscribe'
-  | 'log_subscribe'
 
 export interface WebSocketClientMessage {
   type: WebSocketClientMessageType

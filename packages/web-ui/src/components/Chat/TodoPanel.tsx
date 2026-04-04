@@ -4,7 +4,7 @@ function statusIcon(status: string): string {
   switch (status) {
     case 'completed':
       return '✓'
-    case 'in_progress':
+    case 'inProgress':
       return '→'
     default:
       return '○'
@@ -15,7 +15,7 @@ function statusColor(status: string): string {
   switch (status) {
     case 'completed':
       return 'text-yellow-400'
-    case 'in_progress':
+    case 'inProgress':
       return 'text-accent-100'
     default:
       return 'text-text-400'
@@ -30,7 +30,7 @@ function TodoItemRow({ item, indent = 0 }: { item: TodoItem; indent?: number }) 
         style={{ paddingLeft: `${indent * 16 + 8}px` }}
       >
         <span className={`shrink-0 w-4 text-center ${statusColor(item.status)}`}>
-          {item.status === 'in_progress' ? (
+          {item.status === 'inProgress' ? (
             <span className="inline-block w-3 h-3 border-2 border-accent-100/60 border-t-transparent rounded-full animate-spin" />
           ) : (
             statusIcon(item.status)
@@ -40,7 +40,7 @@ function TodoItemRow({ item, indent = 0 }: { item: TodoItem; indent?: number }) 
           className={`${
             item.status === 'completed'
               ? 'text-text-400 line-through'
-              : item.status === 'in_progress'
+              : item.status === 'inProgress'
                 ? 'text-text-200'
                 : 'text-text-300'
           }`}
