@@ -4,7 +4,18 @@ import {
   createDefaultProviderRegistry,
   ModelRegistry,
 } from '@vitamin/ai'
-import { createHookRegistry } from '@vitamin/hooks'
+import {
+  createHookRegistry,
+  PermissionPolicyRegistry,
+  PermissionAuditLog,
+  createPermissionGuardHook,
+  FILE_GUARD_POLICY,
+  DESTRUCTIVE_COMMAND_POLICY,
+  createPermissionModePolicy,
+  createDisabledToolsPolicy,
+  compilePolicyFromConfig,
+} from '@vitamin/hooks'
+import type { PermissionMode, PermissionPolicyConfig } from '@vitamin/hooks'
 import {
   createToolRegistry,
   ToolRegistry,
@@ -66,6 +77,8 @@ export class VitaminApp implements VitaminContext {
   public readonly hookRegistry: HookRegistry
   public readonly providerRegistry: ProviderRegistry
   public readonly codingSessionManager: CodingSessionManager
+  public readonly permissionRegistry: PermissionPolicyRegistry
+  public readonly auditLog: PermissionAuditLog
   public readonly logger: Logger
 
   public readonly workspaceDir: string
@@ -73,7 +86,7 @@ export class VitaminApp implements VitaminContext {
   public readonly maxToolTurns: number
 
   public readonly devtools: Devtools | null = null
-  
+
   private readonly fileStateManager: FileStateManager
   private readonly learningStore: OperationalLearningStore
   private readonly promptManager: PromptManager
@@ -149,6 +162,12 @@ export class VitaminApp implements VitaminContext {
       authStore,
       modelRegistry,
     })
+
+    // 初始化权限系统
+    this.permissionRegistry = new PermissionPolicyRegistry()
+    this.auditLog = new PermissionAuditLog()
+    this.registerBuiltinPermissionPolicies()
+    this.hookRegistry.register(createPermissionGuardHook(this.permissionRegistry, this.auditLog))
     const defaultModel = _model ?? (options.modelId ? this.providerRegistry.resolveModel(options.modelId) : undefined)
     this.defaultModel = defaultModel
 
@@ -174,6 +193,8 @@ export class VitaminApp implements VitaminContext {
       if (config.tool_preset) {
         this.defaultToolPreset = config.tool_preset
       }
+
+      this.syncPermissionPolicies(config)
     })
 
     this.resourceManager = resourceManager ?? createResourceManager({
@@ -649,6 +670,56 @@ export class VitaminApp implements VitaminContext {
         this.logger.warn('Learning prompt failed for session %s: %s', input.sessionId, err)
       }
     }, 50)
+  }
+
+  /** 注册内置权限策略 (FILE_GUARD + DESTRUCTIVE_COMMAND + 默认 auto mode) */
+  private registerBuiltinPermissionPolicies(): void {
+    this.permissionRegistry.register(createPermissionModePolicy('auto'))
+    this.permissionRegistry.register(FILE_GUARD_POLICY)
+    this.permissionRegistry.register(DESTRUCTIVE_COMMAND_POLICY)
+  }
+
+  /** 根据 settings 变更同步权限策略 */
+  private syncPermissionPolicies(config: {
+    permission_mode?: PermissionMode
+    permissions?: PermissionPolicyConfig[]
+    disabled_tools?: string[]
+  }): void {
+    // 1. permission_mode 变更 → 重新注册 mode 策略
+    if (config.permission_mode) {
+      this.permissionRegistry.unregister('mode:bypass')
+      this.permissionRegistry.unregister('mode:auto')
+      this.permissionRegistry.unregister('mode:confirm')
+      this.permissionRegistry.unregister('mode:strict')
+      this.permissionRegistry.unregister('mode:readonly')
+      this.permissionRegistry.register(createPermissionModePolicy(config.permission_mode))
+    }
+
+    // 2. disabled_tools 变更 → 重新注册 disabled-tools 策略
+    if (config.disabled_tools && config.disabled_tools.length > 0) {
+      this.permissionRegistry.unregister('setting:disabled-tools')
+      this.permissionRegistry.register(createDisabledToolsPolicy(config.disabled_tools))
+    } else {
+      this.permissionRegistry.unregister('setting:disabled-tools')
+    }
+
+    // 3. 用户自定义策略 → 先清除旧的 user: 前缀策略，再编译注册
+    for (const p of this.permissionRegistry.getAll()) {
+      if (p.name.startsWith('user:')) {
+        this.permissionRegistry.unregister(p.name)
+      }
+    }
+    if (config.permissions) {
+      for (const pc of config.permissions) {
+        const policy = compilePolicyFromConfig({ ...pc, name: `user:${pc.name}` })
+        this.permissionRegistry.register(policy)
+      }
+    }
+
+    this.logger.debug(
+      'Permission policies synced: %d policies active',
+      this.permissionRegistry.getAll().length,
+    )
   }
 
   private ensureNotDisposed(): void {

@@ -2,7 +2,7 @@
 import type { AgentTool } from '@vitamin/agent'
 import type { AuthStore, Model, ProviderRegistry } from '@vitamin/ai'
 import type { ModelRegistry } from '@vitamin/ai'
-import type { HookRegistry } from '@vitamin/hooks'
+import type { HookRegistry, PermissionPolicyRegistry, PermissionAuditLog } from '@vitamin/hooks'
 import type { ToolRegistry } from '@vitamin/tools'
 import type { PromptProviderOptions } from '@vitamin/prompt'
 
@@ -23,6 +23,8 @@ export interface VitaminContext {
   readonly modelRegistry: ModelRegistry
   readonly providerRegistry: ProviderRegistry
   readonly hookRegistry: HookRegistry
+  readonly permissionRegistry: PermissionPolicyRegistry
+  readonly auditLog: PermissionAuditLog
   readonly toolRegistry: ToolRegistry
   readonly sessionManager: CodingSessionManager
   readonly authStore: AuthStore
