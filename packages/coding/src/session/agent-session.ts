@@ -8,7 +8,7 @@ import type { Agent, AgentMessage } from '@vitamin/agent'
 import type { AgentTool } from '@vitamin/agent'
 import type { HookRegistry } from '@vitamin/hooks'
 import type { Session } from '@vitamin/session'
-import type { Message, Model, ThinkingLevel, Usage } from '@vitamin/ai'
+import type { Message, Model, StreamEvent, ThinkingLevel, Usage } from '@vitamin/ai'
 import type { Devtools, PauseResult } from '@vitamin/devtools'
 import type { Events } from '@vitamin/shared'
 import type { 
@@ -288,8 +288,15 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
 
     // 订阅 Agent 流事件，桥接到 stream.start / stream.end hooks
     const unsubStream = this.agent.on('stream_event', async (...args: unknown[]) => {
-      const event = args[0] as { type: string; event: { type: string; reason?: string } }
+      const event = args[0] as { type: string; event: StreamEvent }
       const se = event.event
+
+      this.notify({
+        type: 'stream_event',
+        sessionId: this.id,
+        event: se,
+      })
+
       if (se.type === 'start') {
         await this.hookRegistry.emit('stream.start', { 
           sessionId: this.id, 

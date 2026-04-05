@@ -18,14 +18,14 @@ interface SettingsModalProps {
 
 type TabId = 'model' | 'mcp' | 'general'
 
-interface TabConfig {
+interface Tabs {
   id: TabId
   label: string
   icon: React.ComponentType<{ className?: string }>
   description: string
 }
 
-const tabs: TabConfig[] = [
+const tabs: Tabs[] = [
   {
     id: 'model',
     label: 'Model',
@@ -46,7 +46,7 @@ const tabs: TabConfig[] = [
   },
 ]
 
-export function SettingsModal({ isOpen, onClose }: SettingsModalProps) {
+export function Settings({ isOpen, onClose }: SettingsModalProps) {
   const [activeTab, setActiveTab] = useState<TabId>('model')
 
   // Handle Escape key to close modal

@@ -1,5 +1,5 @@
 import type { AgentMessage, AgentTool, ToolCallEvent } from '@vitamin/agent'
-import type { Model, ProviderRegistry, ThinkingLevel, WorkflowSlot } from '@vitamin/ai'
+import type { Model, ProviderRegistry, StreamEvent, ThinkingLevel, WorkflowSlot } from '@vitamin/ai'
 import type { HookRegistry } from '@vitamin/hooks'
 import type { PromptPreset, SubAgentPromptContext } from '@vitamin/prompt'
 import type { Logger } from '@vitamin/shared'
@@ -37,6 +37,7 @@ export type AgentSessionEvent =
   | { type: 'session_end'; sessionId: string }
   | { type: 'prompt_start'; sessionId: string; text: string }
   | { type: 'prompt_end'; sessionId: string }
+  | { type: 'stream_event'; sessionId: string; event: StreamEvent }
   | { type: 'message_persisted'; sessionId: string; role: string }
   | { type: 'agent_status'; sessionId: string; from: string; to: string }
   | { type: 'streaming_start'; sessionId: string; model: string }

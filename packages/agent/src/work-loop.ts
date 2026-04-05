@@ -192,7 +192,12 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
           tokenUsage: lastTokenUsage,  
         })
 
-        emit({ type: 'turn_end', turnIndex, message: assistantMessage })
+        emit({ 
+          type: 'turn_end', 
+          turnIndex, 
+          message: assistantMessage 
+        })
+
         turnIndex++
 
         if (hasToolCalls(assistantMessage)) {
@@ -201,6 +206,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
             from: currentStatus, 
             to: 'tool_executing' 
           })
+          
           currentStatus = 'tool_executing'
 
           const toolCalls = getToolCallsByAssistantMessage(assistantMessage)

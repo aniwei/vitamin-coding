@@ -2,7 +2,7 @@ import { useEffect, useState } from 'react'
 import { useChatStore } from '../../stores/chat'
 import type { AskUserQuestion } from '../../types'
 
-export function AskUserDialog() {
+export function AskUser() {
   const pendingAskUser = useChatStore((state) => {
     const sid = state.currentSessionId
     return sid ? (state.sessionStates[sid]?.pendingAskUser ?? null) : null

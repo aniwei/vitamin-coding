@@ -3,7 +3,7 @@ import { useEffect, useRef, useState } from 'react'
 import { createPortal } from 'react-dom'
 import { api } from '../../api/client'
 import { useChatStore } from '../../stores/chat'
-import { SettingsModal } from '../Settings/SettingsModal'
+import { Settings } from '../Settings/Settings'
 import { DeleteConfirmModal } from './DeleteConfirmModal'
 import { NewSessionModal } from './NewSessionModal'
 import { SessionModelModal } from './SessionModelModal'
@@ -704,7 +704,7 @@ export function SessionsSidebar() {
       )}
 
       {/* ===== MODALS (always accessible, outside conditional blocks) ===== */}
-      <SettingsModal isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
+      <Settings isOpen={isSettingsOpen} onClose={() => setIsSettingsOpen(false)} />
 
       <NewSessionModal isOpen={isNewSessionOpen} onClose={() => setIsNewSessionOpen(false)} />
 

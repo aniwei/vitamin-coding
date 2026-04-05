@@ -51,6 +51,19 @@ export class EventBridge {
     this.unsubscribeSession = this.session.subscribe((event) => {
       const sid = this.session.id
       switch (event.type) {
+        case 'stream_event': {
+          if (event.event.type === 'done' || event.event.type === 'tool_call_end') {
+            break
+          }
+
+          const messages = this.createMessageFromStreamEvent(sid, event.event)
+          if (messages) {
+            for (const msg of Array.isArray(messages) ? messages : [messages]) {
+              this.send(sid, msg)
+            }
+          }
+          break
+        }
         case 'approval_required':
           this.send(sid, {
             type: 'Chat.approvalRequired',

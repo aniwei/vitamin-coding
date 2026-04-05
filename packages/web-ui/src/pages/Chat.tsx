@@ -1,6 +1,6 @@
 import { useCallback, useState } from 'react'
 import { Approval } from '../components/Approval'
-import { AskUserDialog } from '../components/Chat/AskUserDialog'
+import { AskUser } from '../components/Chat/AskUser'
 import { ChatInterface } from '../components/Chat/ChatInterface'
 import { CommandPalette } from '../components/Chat/CommandPalette'
 import { PlanApprovalDialog } from '../components/Chat/PlanApprovalDialog'
@@ -31,7 +31,7 @@ export function Chat() {
       </div>
 
       <Approval />
-      <AskUserDialog />
+      <AskUser />
       <PlanApprovalDialog />
       <CommandPalette
         isOpen={commandPaletteOpen}
