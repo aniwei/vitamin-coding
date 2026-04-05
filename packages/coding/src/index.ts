@@ -36,6 +36,7 @@ export type {
   AgentSessionEvent,
   AgentSessionEventType,
   AgentSessionSubscriber,
+  AskUserQuestion,
   CreateAgentSessionOptions,
   PromptOptions,
 } from './session/types'

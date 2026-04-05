@@ -1,22 +1,63 @@
-import { useState } from 'react'
+import { useMemo, useState } from 'react'
 import { ChevronRight, ChevronDown } from 'lucide-react'
-import { useDevtoolsStore } from '../../../stores/debug'
-import { BREAKPOINT_CATEGORIES } from '../../../types/debug'
+import { useDevtoolsStore } from '../../../stores/devtools'
+import {
+  BREAKPOINT_CATEGORY_LABELS,
+  type Breakpoint,
+  type BreakpointCategory,
+} from '../../../types/debug'
+
+const CATEGORY_ORDER: BreakpointCategory[] = [
+  'agent_work_loop',
+  'work_loop_injection',
+  'tool_executor',
+  'session_prompt_lifecycle',
+  'custom',
+]
+
+function normalizeCategory(category?: Breakpoint['category']): BreakpointCategory {
+  return category ?? 'custom'
+}
+
+function groupBreakpoints(breakpoints: Breakpoint[]): Array<{
+  category: BreakpointCategory
+  name: string
+  items: Breakpoint[]
+}> {
+  const groups = new Map<BreakpointCategory, Breakpoint[]>()
+
+  for (const breakpoint of breakpoints) {
+    const category = normalizeCategory(breakpoint.category)
+    const current = groups.get(category)
+    if (current) {
+      current.push(breakpoint)
+      continue
+    }
+
+    groups.set(category, [breakpoint])
+  }
+
+  return Array.from(groups.entries())
+    .sort(([left], [right]) => CATEGORY_ORDER.indexOf(left) - CATEGORY_ORDER.indexOf(right))
+    .map(([category, items]) => ({
+      category,
+      name: BREAKPOINT_CATEGORY_LABELS[category],
+      items,
+    }))
+}
 
 function CategoryGroup({
   name,
-  points,
+  items,
 }: {
   name: string
-  points: readonly string[]
+  items: Breakpoint[]
 }) {
   const [expanded, setExpanded] = useState(true)
-  const breakpoints = useDevtoolsStore((s) => s.breakpoints)
   const toggleBreakpoint = useDevtoolsStore((s) => s.toggleBreakpoint)
   const currentPoint = useDevtoolsStore((s) => s.currentSnapshot?.point)
 
-  const bpMap = new Map(breakpoints.map((bp) => [bp.point, bp.enabled]))
-  const enabledCount = points.filter((p) => bpMap.get(p) === true).length
+  const enabledCount = items.filter((item) => item.enabled).length
 
   return (
     <div>
@@ -31,14 +72,15 @@ function CategoryGroup({
         )}
         <span className="text-[11px] font-medium text-gray-600 flex-1">{name}</span>
         <span className="text-[10px] text-gray-400 tabular-nums">
-          {enabledCount}/{points.length}
+          {enabledCount}/{items.length}
         </span>
       </button>
 
       {expanded && (
         <div className="ml-4">
-          {points.map((point) => {
-            const enabled = bpMap.get(point) ?? false
+          {items.map((breakpoint) => {
+            const { point, enabled } = breakpoint
+            const displayName = breakpoint.name ?? point
             const isCurrent = point === currentPoint
 
             return (
@@ -54,13 +96,18 @@ function CategoryGroup({
                   onChange={() => toggleBreakpoint(point)}
                   className="w-3 h-3 rounded border-gray-300 text-blue-500 focus:ring-blue-500/30"
                 />
-                <span
-                  className={`text-[11px] font-mono ${
-                    isCurrent ? 'text-amber-700 font-semibold' : 'text-gray-700'
-                  }`}
-                >
-                  {point}
-                </span>
+                <div className="min-w-0 flex-1">
+                  <div
+                    className={`text-[11px] ${
+                      isCurrent ? 'text-amber-700 font-semibold' : 'text-gray-700'
+                    }`}
+                  >
+                    {displayName}
+                  </div>
+                  {displayName !== point && (
+                    <div className="text-[10px] font-mono text-gray-400 truncate">{point}</div>
+                  )}
+                </div>
                 {isCurrent && (
                   <span className="w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />
                 )}
@@ -76,7 +123,10 @@ function CategoryGroup({
 export function BreakpointList() {
   const enableAll = useDevtoolsStore((s) => s.enableAll)
   const disableAll = useDevtoolsStore((s) => s.disableAll)
+  const breakpoints = useDevtoolsStore((s) => s.breakpoints)
   const loadingBreakpoints = useDevtoolsStore((s) => s.loadingBreakpoints)
+
+  const groupedBreakpoints = useMemo(() => groupBreakpoints(breakpoints), [breakpoints])
 
   return (
     <div className="flex-1 overflow-y-auto">
@@ -102,8 +152,8 @@ export function BreakpointList() {
         </div>
       </div>
 
-      {Object.entries(BREAKPOINT_CATEGORIES).map(([name, points]) => (
-        <CategoryGroup key={name} name={name} points={points} />
+      {groupedBreakpoints.map((group) => (
+        <CategoryGroup key={group.category} name={group.name} items={group.items} />
       ))}
     </div>
   )

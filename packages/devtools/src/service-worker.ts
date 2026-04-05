@@ -1,22 +1,12 @@
 import { URL } from 'node:url'
-import { Hono } from 'hono'
 import { createServer, type IncomingMessage } from 'node:http'
 import { parentPort, workerData } from 'node:worker_threads'
 import { randomUUID } from 'node:crypto'
 import { WebSocketServer, type WebSocket } from 'ws'
-import {
-  SAB_HEADER_SIZE,
-  WAKE_RESUMED,
-  WAKE_WITH_PAYLOAD,
-  COMMAND_CONTINUE,
-  COMMAND_NEXT,
-  COMMAND_STEP,
-  COMMAND_OVER,
-  COMMAND_STOP,
-} from './protocol'
+import { CDP_METHOD_TO_COMMAND } from './protocol'
 import type { AddressInfo } from 'node:net'
-import type { PauseResumePayload } from './protocol'
 import type { Socket } from 'node:net'
+import type { PauseResumePayload, DebugCommand, CommandRejectCode } from './protocol'
 
 interface WorkerData {
   host: string
@@ -25,12 +15,7 @@ interface WorkerData {
 }
 
 interface PendingPause {
-  flag: SharedArrayBuffer
-}
-
-interface DebugCommand {
-  type: string
-  seq: number
+  pauseId: string
 }
 
 interface BreakpointResponse {
@@ -40,7 +25,12 @@ interface BreakpointResponse {
   error?: string
 }
 
-const allowedCommandTypes = new Set(['next', 'step', 'over', 'continue', 'stop'])
+interface InspectCommandMessage {
+  command: DebugCommand
+  pauseId?: string
+  payload?: PauseResumePayload
+}
+
 const workerPort = (() => {
   if (!parentPort) {
     throw new Error('service-worker requires parentPort')
@@ -49,7 +39,7 @@ const workerPort = (() => {
   return parentPort
 })()
 
-export class ServiceWorkerServer {
+export class ServiceWorker {
   private readonly port: number
   private readonly host: string
   private readonly serviceId: string
@@ -70,12 +60,12 @@ export class ServiceWorkerServer {
     this.base = `/${this.serviceId}`
 
     this.server = createServer()
-    this.server.on('upgrade', this.handleUpgrade)
+    this.server.on('upgrade', this.onUpgrade)
 
     this.wss = new WebSocketServer({ noServer: true })
-    this.wss.on('connection', this.handleConnection)
+    this.wss.on('connection', this.onConnection)
 
-    workerPort.on('message', this.handleMessage)
+    workerPort.on('message', this.onMessage)
   }
 
   start(): void {
@@ -104,26 +94,32 @@ export class ServiceWorkerServer {
     })
   }
 
-  private handleMessage(data: unknown): void {
+  private onMessage = (data: unknown): void => {
     const message = data as Record<string, unknown>
 
     switch (message.type) {
       case 'Debugger.breakpoints.response':
         this.handleBreakpointResponse(message)
-      break
-    case 'broadcast':
-    case 'logger':
-    case 'session':
-      this.handleBroadcastMessage(message)
-      break
-    case 'paused':
-      this.handlePausedMessage(message)
-      break
-    case 'stop':
-      this.handleStopMessage()
-      break
-    default:
-      break
+        break
+      case 'Runtime.broadcast':
+        this.handleRuntimeBroadcast(message)
+        break
+      case 'Log.entryAdded':
+        this.handleLogMessage(message)
+        break
+      case 'Session.update':
+        this.handleBroadcastMessage(message)
+        break
+      case 'Debugger.paused':
+        this.handlePausedMessage(message)
+        break
+      case 'Debugger.resumed':
+        break
+      case 'Runtime.stop':
+        this.handleStopMessage()
+        break
+      default:
+        break
     }
   }
 
@@ -144,14 +140,25 @@ export class ServiceWorkerServer {
     }
   }
 
-  private handleBroadcastMessage(msg: Record<string, unknown>): void {
-    this.broadcast(msg.message as string)
+  private handleLogMessage(message: Record<string, unknown>): void {
+    this.broadcast(JSON.stringify(message))
+  }
+
+  private handleRuntimeBroadcast(message: Record<string, unknown>): void {
+    if (typeof message.message === 'string') {
+      this.broadcast(message.message)
+    }
+  }
+
+  private handleBroadcastMessage(message: Record<string, unknown>): void {
+    this.broadcast(JSON.stringify(message))
   }
 
   private handlePausedMessage(message: Record<string, unknown>): void {
+    const pauseId = message.pauseId as string
     this.queue(
-      { type: 'Agent.debugger.paused', snapshot: message.snapshot },
-      { flag: message.shared as SharedArrayBuffer },
+      { type: 'Debugger.paused', pauseId, snapshot: message.snapshot },
+      { pauseId },
     )
   }
 
@@ -175,54 +182,78 @@ export class ServiceWorkerServer {
     }
 
     const command = input as Record<string, unknown>
-    if (!allowedCommandTypes.has(command.type as string)) {
+    if (typeof command.type !== 'string') {
       return null
     }
 
-    return {
-      type: command.type as string,
-      seq: typeof command.seq === 'number' ? command.seq : 0,
+    const seq = typeof command.seq === 'number' ? command.seq : 0
+
+    // Support CDP-style methods (Debugger.resume → continue)
+    const resolvedType = CDP_METHOD_TO_COMMAND[command.type] ?? command.type
+
+    switch (resolvedType) {
+      case 'next':
+      case 'step':
+      case 'continue':
+        return { type: resolvedType, seq }
+      case 'over':
+        return {
+          type: 'over',
+          seq,
+          depth: typeof command.depth === 'number' ? command.depth : 0,
+        }
+      case 'stop':
+        return {
+          type: 'stop',
+          seq,
+          reason: typeof command.reason === 'string' ? command.reason : undefined,
+        }
+      default:
+        return null
     }
   }
 
-  private resolvePause(command: DebugCommand, payload?: PauseResumePayload): void {
-    const pause = this.pauses.shift()
+  private resolve(command: DebugCommand, pauseId?: string, payload?: PauseResumePayload): void {
+    const pause = pauseId
+      ? this.findPause(pauseId)
+      : this.pauses.shift()
 
     if (!pause) {
-      this.broadcast(JSON.stringify({ type: 'Debugger.command', command }))
+      this.broadcastCommandRejected('STALE_OR_NO_PAUSE', command, pauseId)
       return
     }
 
-    const header = new Int32Array(pause.flag, 0, 3)
-    const payloadRegion = new Uint8Array(pause.flag, SAB_HEADER_SIZE)
+    workerPort.postMessage({
+      type: 'Debugger.resumed',
+      pauseId: pause.pauseId,
+      command,
+      payload: payload ?? null,
+    })
 
-    Atomics.store(header, 1, this.encodeCommandType(command.type))
-
-    if (payload && Object.keys(payload).length > 0) {
-      const jsonBytes = new TextEncoder().encode(JSON.stringify(payload))
-
-      if (jsonBytes.length <= payloadRegion.length) {
-        payloadRegion.set(jsonBytes)
-        Atomics.store(header, 2, jsonBytes.length)
-        Atomics.store(header, 0, WAKE_WITH_PAYLOAD)
-        Atomics.notify(header, 0, 1)
-        return
-      }
-    }
-
-    Atomics.store(header, 0, WAKE_RESUMED)
-    Atomics.notify(header, 0, 1)
+    this.broadcast(JSON.stringify({
+      type: 'Debugger.resumed',
+      pauseId: pause.pauseId,
+      command,
+    }))
   }
 
-  private encodeCommandType(type: string): number {
-    switch (type) {
-      case 'next': return COMMAND_NEXT
-      case 'step': return COMMAND_STEP
-      case 'over': return COMMAND_OVER
-      case 'stop': return COMMAND_STOP
-      case 'continue':
-      default: return COMMAND_CONTINUE
-    }
+  private findPause(pauseId: string): PendingPause | undefined {
+    const idx = this.pauses.findIndex(p => p.pauseId === pauseId)
+    if (idx === -1) return undefined
+    return this.pauses.splice(idx, 1)[0]
+  }
+
+  private broadcastCommandRejected(
+    code: CommandRejectCode,
+    command: DebugCommand,
+    pauseId?: string,
+  ): void {
+    this.broadcast(JSON.stringify({
+      type: 'Debugger.commandRejected',
+      code,
+      command,
+      pauseId,
+    }))
   }
 
   private queue(event: Record<string, unknown>, pause: PendingPause): void {
@@ -230,31 +261,100 @@ export class ServiceWorkerServer {
     this.pauses.push(pause)
   }
 
-  private handleConnection = (ws: WebSocket) => {
+  private onConnection = (ws: WebSocket) => {
     this.clients.add(ws)
 
     ws.on('close', () => this.clients.delete(ws))
-    ws.on('message', (data: Buffer) => {
-      let parsed: unknown = null
-
-      try {
-        parsed = JSON.parse(data.toString())
-      } catch {
-        parsed = null
-      }
-
-      const msg = parsed as Record<string, unknown>
-      const command = this.normalizeCommand(msg)
-      if (!command) {
-        return
-      }
-
-      const payload = msg?.payload as PauseResumePayload | undefined
-      this.resolvePause(command, payload)
-    })
+    ws.on('message', (data: Buffer) => this.handleInspectClientMessage(data))
   }
 
-  private handleUpgrade = (
+  private handleInspectClientMessage(data: Buffer): void {
+    const message = this.parseInspectCommandMessage(data)
+    if (!message) {
+      return
+    }
+
+    this.dispatchInspectCommand(message)
+  }
+
+  private parseInspectCommandMessage(data: Buffer): InspectCommandMessage | null {
+    const parsed = this.parseJson(data)
+    if (!parsed || typeof parsed !== 'object' || Array.isArray(parsed)) {
+      return null
+    }
+
+    const message = parsed as Record<string, unknown>
+    const command = this.normalizeCommand(message)
+    if (!command) {
+      return null
+    }
+
+    return {
+      command,
+      pauseId: typeof message.pauseId === 'string' ? message.pauseId : undefined,
+      payload: this.asPausePayload(message.payload),
+    }
+  }
+
+  private dispatchInspectCommand(message: InspectCommandMessage): void {
+    switch (message.command.type) {
+      case 'continue':
+        this.handleContinueCommand(message)
+        break
+      case 'next':
+        this.handleNextCommand(message)
+        break
+      case 'step':
+        this.handleStepCommand(message)
+        break
+      case 'over':
+        this.handleOverCommand(message)
+        break
+      case 'stop':
+        this.handleStopCommand(message)
+        break
+      default:
+        break
+    }
+  }
+
+  private handleContinueCommand(message: InspectCommandMessage): void {
+    this.resolve(message.command, message.pauseId, message.payload)
+  }
+
+  private handleNextCommand(message: InspectCommandMessage): void {
+    this.resolve(message.command, message.pauseId, message.payload)
+  }
+
+  private handleStepCommand(message: InspectCommandMessage): void {
+    this.resolve(message.command, message.pauseId, message.payload)
+  }
+
+  private handleOverCommand(message: InspectCommandMessage): void {
+    this.resolve(message.command, message.pauseId, message.payload)
+  }
+
+  private handleStopCommand(message: InspectCommandMessage): void {
+    this.resolve(message.command, message.pauseId, message.payload)
+  }
+
+  private parseJson(data: Buffer): unknown {
+    try {
+      return JSON.parse(data.toString()) as unknown
+    } catch {
+      return null
+    }
+  }
+
+  private asPausePayload(value: unknown): PauseResumePayload | undefined {
+    if (value && typeof value === 'object' && !Array.isArray(value)) {
+      return value as PauseResumePayload
+    }
+
+    return undefined
+  }
+
+  private onUpgrade = (
     request: IncomingMessage, 
     socket: Socket, 
     head: Buffer
@@ -274,5 +374,5 @@ export class ServiceWorkerServer {
   }
 }
 
-const workerServer = new ServiceWorkerServer(workerData as WorkerData)
+const workerServer = new ServiceWorker(workerData as WorkerData)
 workerServer.start()

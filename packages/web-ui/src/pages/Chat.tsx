@@ -1,5 +1,5 @@
 import { useCallback, useState } from 'react'
-import { ApprovalDialog } from '../components/ApprovalDialog'
+import { Approval } from '../components/Approval'
 import { AskUserDialog } from '../components/Chat/AskUserDialog'
 import { ChatInterface } from '../components/Chat/ChatInterface'
 import { CommandPalette } from '../components/Chat/CommandPalette'
@@ -10,7 +10,7 @@ import { SessionsSidebar } from '../components/Layout/SessionsSidebar'
 import { TopBar } from '../components/Layout/TopBar'
 import { ToastContainer } from '../components/ui/Toast'
 
-export function ChatPage() {
+export function Chat() {
   const [commandPaletteOpen, setCommandPaletteOpen] = useState(false)
   const [statusDialogOpen, setStatusDialogOpen] = useState(false)
 
@@ -30,7 +30,7 @@ export function ChatPage() {
         <Devtools />
       </div>
 
-      <ApprovalDialog />
+      <Approval />
       <AskUserDialog />
       <PlanApprovalDialog />
       <CommandPalette

@@ -1,7 +1,7 @@
-import { invariant } from '@vitamin/invariant'
 import type { ToolCall } from '@vitamin/ai'
-import type { Devtools } from '@vitamin/devtools'
+import type { Devtools, PauseResumePayload } from '@vitamin/devtools'
 import type { AgentMessage, AgentTool, ToolResult } from './types'
+import { AbortError } from './errors'
 
 export interface ToolHookExecutor {
   executeBeforeHooks(input: {
@@ -50,6 +50,7 @@ export interface ToolExecutorOptions {
   agentName?: string
   sessionId?: string
   devtools?: Devtools
+  approval?: (toolName: string, args: Record<string, unknown>, reason: string) => Promise<boolean>
 }
 
 // 默认工具执行器实现
@@ -59,6 +60,7 @@ class DefaultToolExecutor implements ToolExecutor {
   private readonly agentName: string
   private readonly sessionId: string
   private readonly devtools: Devtools | undefined
+  private readonly approval: ((toolName: string, args: Record<string, unknown>, reason: string) => Promise<boolean>) | undefined
 
   constructor(options: ToolExecutorOptions) {
     this.tools = new Map()
@@ -69,6 +71,7 @@ class DefaultToolExecutor implements ToolExecutor {
     this.agentName = options.agentName ?? ''
     this.sessionId = options.sessionId ?? ''
     this.devtools = options.devtools
+    this.approval = options.approval
   }
 
   list(): AgentTool[] {
@@ -79,17 +82,21 @@ class DefaultToolExecutor implements ToolExecutor {
     const { id, name } = toolCall
     const tool = this.tools.get(name)
 
-    invariant(() => {
-      this.devtools?.debugger.pause({
-        turn: 0,
-        point: 'tool_resolve',
-        frameDepth: 2,
-        messagesCount: 0,
-        lastToolName: name,
-        metadata: { found: !!tool, toolCallId: id },
-      })
-      return true
-    }, `Tool resolve: ${name}`)
+    const consume = (result: { command: { type: string }; payload: PauseResumePayload | null } | undefined): void => {
+      if (!result) return
+      if (result.command.type === 'stop') {
+        throw new AbortError('Stopped by debugger')
+      }
+    }
+
+    consume(await this.devtools?.debugger.pause({
+      turn: 0,
+      point: 'tool_resolve',
+      frameDepth: 2,
+      messagesCount: 0,
+      lastToolName: name,
+      metadata: { found: !!tool, toolCallId: id },
+    }))
 
     if (!tool) {
       return {
@@ -103,17 +110,14 @@ class DefaultToolExecutor implements ToolExecutor {
 
     try {
       if (this.hookExecutor) {
-        invariant(() => {
-          this.devtools?.debugger.pause({
-            turn: 0,
-            point: 'tool_hook_before',
-            frameDepth: 2,
-            messagesCount: 0,
-            lastToolName: name,
-            metadata: { toolCallId: id },
-          })
-          return true
-        }, `Tool hook before: ${name}`)
+        consume(await this.devtools?.debugger.pause({
+          turn: 0,
+          point: 'tool_hook_before',
+          frameDepth: 2,
+          messagesCount: 0,
+          lastToolName: name,
+          metadata: { toolCallId: id },
+        }))
 
         const beforeResult = await this.hookExecutor.executeBeforeHooks({
           toolName: name,
@@ -132,25 +136,33 @@ class DefaultToolExecutor implements ToolExecutor {
           }
         }
 
+        // Permission hook 'ask' decision → approval gate
+        if (cancelReason?.startsWith('[CONFIRM]') && this.approval) {
+          const reason = cancelReason.slice('[CONFIRM] '.length)
+          const approved = await this.approval(name, args, reason)
+          if (!approved) {
+            return {
+              content: [{ type: 'text', text: `Tool ${name} was rejected by user: ${reason}` }],
+              isError: true,
+            }
+          }
+        }
+
         // Hook 可能修改了参数
         args = beforeResult.args
       }
 
-      // 参数验证
       const parsed = tool.parameters.safeParse(args)
       const { success, error } = parsed
 
-      invariant(() => {
-        this.devtools?.debugger.pause({
-          turn: 0,
-          point: 'tool_validate',
-          frameDepth: 2,
-          messagesCount: 0,
-          lastToolName: name,
-          metadata: { valid: success, toolCallId: id },
-        })
-        return true
-      }, `Tool validate: ${name} ${success ? 'passed' : 'failed'}`)
+      consume(await this.devtools?.debugger.pause({
+        turn: 0,
+        point: 'tool_validate',
+        frameDepth: 2,
+        messagesCount: 0,
+        lastToolName: name,
+        metadata: { valid: success, toolCallId: id },
+      }))
 
       if (!success) {
         return {
@@ -196,17 +208,14 @@ class DefaultToolExecutor implements ToolExecutor {
 
         result = afterResult.result
 
-        invariant(() => {
-          this.devtools?.debugger.pause({
-            turn: 0,
-            point: 'tool_hook_after',
-            frameDepth: 2,
-            messagesCount: 0,
-            lastToolName: name,
-            metadata: { toolCallId: id, durationMs: Date.now() - startTime },
-          })
-          return true
-        }, `Tool hook after: ${name}`)
+        consume(await this.devtools?.debugger.pause({
+          turn: 0,
+          point: 'tool_hook_after',
+          frameDepth: 2,
+          messagesCount: 0,
+          lastToolName: name,
+          metadata: { toolCallId: id, durationMs: Date.now() - startTime },
+        }))
       }
 
       if (signal.aborted) {
@@ -269,6 +278,6 @@ class DefaultToolExecutor implements ToolExecutor {
 }
 
 // 工厂函数
-export function createToolExecutor(tools: AgentTool[], options?: { hookExecutor?: ToolHookExecutor; agentName?: string; sessionId?: string; devtools?: Devtools }): ToolExecutor {
+export function createToolExecutor(tools: AgentTool[], options?: { hookExecutor?: ToolHookExecutor; agentName?: string; sessionId?: string; devtools?: Devtools; approval?: (toolName: string, args: Record<string, unknown>, reason: string) => Promise<boolean> }): ToolExecutor {
   return new DefaultToolExecutor({ tools, ...options })
 }

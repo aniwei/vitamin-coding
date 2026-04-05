@@ -1,0 +1,18 @@
+{
+  "lessons": [
+    {
+      "tags": [
+        "data_access",
+        "reliability",
+        "communication"
+      ],
+      "trigger": "When dealing with questions requiring real-time or external information that isn't accessible during the session.",
+      "insight": "When real-time or dynamically changing data (e.g., GitHub stars) cannot be accessed, redirect users to trusted sources like the system's official page. Avoid assumptions that can lead to inaccuracies.",
+      "sourceSessionId": "",
+      "id": "lesson_1",
+      "createdAt": 1775390775313,
+      "appliedCount": 0
+    }
+  ],
+  "nextId": 2
+}

@@ -1,4 +1,5 @@
 export * from './devtools'
 export * from './protocol'
 export * from './service'
+export * from './tools/debugger'
 export * from './tools/breakpoints'

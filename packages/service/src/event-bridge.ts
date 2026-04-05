@@ -5,6 +5,8 @@ import type { WebSocketManager } from './websocket-manager'
 
 
 export class EventBridge {
+  private unsubscribeSession?: () => void
+
   constructor(
     private readonly session: AgentSession,
     private readonly ws: WebSocketManager,
@@ -13,12 +15,12 @@ export class EventBridge {
   private onPrompStart = (_id: string, text: string) => {
     const sid = this.session.id
     this.send(sid, {
-      type: 'user_message',
+      type: 'Chat.userMessage',
       data: { sessionId: sid, content: text, timestamp: new Date().toISOString() },
     })
 
     this.send(sid, {
-      type: 'message_start',
+      type: 'Chat.messageStart',
       data: { sessionId: sid, role: 'assistant' },
     })
   }
@@ -26,7 +28,7 @@ export class EventBridge {
   private onPromptEnd = () => {
     const sid = this.session.id
     this.send(sid, {
-      type: 'message_complete',
+      type: 'Chat.messageComplete',
       data: { sessionId: sid },
     })
   }
@@ -34,7 +36,7 @@ export class EventBridge {
   private onError = (_id: string, error: Error) => {
     const sid = this.session.id
     this.send(sid, {
-      type: 'error',
+      type: 'Runtime.error',
       data: { sessionId: sid, message: error.message }
     })
   }
@@ -44,6 +46,63 @@ export class EventBridge {
     this.session.on('prompt_start', this.onPrompStart)
     this.session.on('prompt_end', this.onPromptEnd)
     this.session.on('error', this.onError)
+
+    // Subscribe to session-level gate events (approval, askUser, planApproval)
+    this.unsubscribeSession = this.session.subscribe((event) => {
+      const sid = this.session.id
+      switch (event.type) {
+        case 'approval_required':
+          this.send(sid, {
+            type: 'Chat.approvalRequired',
+            data: {
+              sessionId: sid,
+              id: event.id,
+              toolName: event.toolName,
+              arguments: event.arguments,
+              description: event.description,
+            },
+          })
+          break
+        case 'approval_resolved':
+          this.send(sid, {
+            type: 'Chat.approvalResolved',
+            data: { sessionId: sid, id: event.id, approved: event.approved },
+          })
+          break
+        case 'ask_user_required':
+          this.send(sid, {
+            type: 'Chat.askUserRequired',
+            data: {
+              sessionId: sid,
+              requestId: event.requestId,
+              questions: event.questions,
+            },
+          })
+          break
+        case 'ask_user_resolved':
+          this.send(sid, {
+            type: 'Chat.askUserResolved',
+            data: { sessionId: sid, requestId: event.requestId },
+          })
+          break
+        case 'plan_approval_required':
+          this.send(sid, {
+            type: 'Chat.planApprovalRequired',
+            data: {
+              sessionId: sid,
+              requestId: event.requestId,
+              planContent: event.planContent,
+            },
+          })
+          break
+        case 'plan_approval_resolved':
+          this.send(sid, {
+            type: 'Chat.planApprovalResolved',
+            data: { sessionId: sid, requestId: event.requestId, action: event.action },
+          })
+          break
+      }
+    })
   }
 
   handleStreamEvent(event: StreamEvent): void {
@@ -77,32 +136,32 @@ export class EventBridge {
     switch (event.type) {
       case 'text_delta':
         return {
-          type: 'message_chunk',
+          type: 'Chat.messageChunk',
           data: { sessionId, content: event.delta, role: 'assistant' },
         }
 
       case 'thinking_start':
         return {
-          type: 'thinking_block',
+          type: 'Chat.thinkingBlock',
           data: { sessionId, action: 'start', index: event.index },
         }
 
       case 'thinking_delta':
         return {
-          type: 'thinking_block',
+          type: 'Chat.thinkingBlock',
           data: { sessionId, action: 'delta', delta: event.delta, index: event.index },
         }
 
       case 'thinking_end':
         return {
-          type: 'thinking_block',
+          type: 'Chat.thinkingBlock',
           data: { sessionId, action: 'end', content: event.content, index: event.index },
         }
 
       case 'tool_call_end': {
         const tc = event.toolCall
         return {
-          type: 'tool_call',
+          type: 'Chat.toolCall',
           data: {
             sessionId,
             id: tc.id,
@@ -119,7 +178,7 @@ export class EventBridge {
         if (blocks.length > 0) {
           const fullText = blocks.map(b => b.text).join('')
           events.push({
-            type: 'message_complete',
+            type: 'Chat.messageComplete',
             data: { sessionId, content: fullText, role: 'assistant' },
           })
         }
@@ -129,7 +188,7 @@ export class EventBridge {
         
       case 'error':
         return {
-          type: 'error',
+          type: 'Runtime.error',
           data: { sessionId, message: event.error.message }
         }
 
@@ -145,7 +204,7 @@ export class EventBridge {
     switch (event.type) {
       case 'tool_call_start':
         return {
-          type: 'tool_call',
+          type: 'Chat.toolCall',
           data: {
             sessionId,
             id: event.toolCall.id,
@@ -157,7 +216,7 @@ export class EventBridge {
 
       case 'tool_call_end':
         return {
-          type: 'tool_result',
+          type: 'Chat.toolResult',
           data: {
             sessionId,
             id: event.toolCall.id,
@@ -168,37 +227,37 @@ export class EventBridge {
 
       case 'streaming_start':
         return {
-          type: 'status_update',
+          type: 'Session.statusUpdate',
           data: { sessionId, status: 'streaming', model: event.model },
         }
 
       case 'streaming_end':
         return {
-          type: 'status_update',
+          type: 'Session.statusUpdate',
           data: { sessionId, status: 'idle', model: event.model, stopReason: event.stopReason },
         }
 
       case 'turn_start':
         return {
-          type: 'progress',
+          type: 'Chat.progress',
           data: { sessionId, phase: 'turn', turnIndex: event.turnIndex },
         }
 
       case 'compaction_start':
         return {
-          type: 'status_update',
+          type: 'Session.statusUpdate',
           data: { sessionId, status: 'compacting', messageCount: event.messageCount },
         }
 
       case 'compaction_end':
         return {
-          type: 'status_update',
+          type: 'Session.statusUpdate',
           data: { sessionId, status: 'idle', retainedCount: event.retainedCount },
         }
 
       case 'error':
         return {
-          type: 'error',
+          type: 'Runtime.error',
           data: { sessionId, message: event.error.message },
         }
 
@@ -211,6 +270,8 @@ export class EventBridge {
     this.session.off('prompt_start', this.onPrompStart)
     this.session.off('prompt_end', this.onPromptEnd)
     this.session.off('error', this.onError)
+    this.unsubscribeSession?.()
+    this.unsubscribeSession = undefined
   }
 
   dispose(): void {

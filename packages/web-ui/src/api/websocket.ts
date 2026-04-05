@@ -78,7 +78,7 @@ class WebSocketClient {
       this.ws.onopen = () => {
         console.log('WebSocket connected successfully')
         this.reconnectAttempts = 0
-        this.emit({ type: 'connected', data: {} })
+        this.emit({ type: 'Runtime.connected', data: {} })
         this.startHeartbeat()
       }
 
@@ -102,7 +102,7 @@ class WebSocketClient {
         console.log('WebSocket disconnected:', event.code, event.reason)
         this.ws = null
         this.stopHeartbeat()
-        this.emit({ type: 'disconnected', data: {} })
+        this.emit({ type: 'Runtime.disconnected', data: {} })
 
         if (!this.intentionalClose) {
           this.attemptReconnect()

@@ -1,5 +1,5 @@
 import { Bug } from 'lucide-react'
-import { useDevtoolsStore } from '../../stores/debug'
+import { useDevtoolsStore } from '../../stores/devtools'
 
 export function DebugStatusBadge() {
   const enabled = useDevtoolsStore((s) => s.enabled)
@@ -23,7 +23,7 @@ export function DebugStatusBadge() {
     return (
       <button
         onClick={togglePanel}
-        className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-medium"
+        className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-medium"
       >
         <Bug className="w-3 h-3" />
         Devtools

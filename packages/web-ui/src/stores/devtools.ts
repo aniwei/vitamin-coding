@@ -3,11 +3,13 @@ import type {
   Breakpoint,
   DebugSnapshot,
   PauseResumePayload,
+  DebuggerCommandMethod,
+  CommandRejectCode,
 } from '../types/debug'
-import * as debugApi from '../api/debug'
+import * as debugApi from '../api/devtools'
 import { ws } from '../api/websocket'
 
-interface DebugState {
+interface DevtoolsState {
   // Connection
   enabled: boolean
   connected: boolean
@@ -23,9 +25,14 @@ interface DebugState {
 
   // Pause state
   paused: boolean
+  pauseId: string | null
   pauseReason: string | null
   currentSnapshot: DebugSnapshot | null
   snapshotHistory: DebugSnapshot[]
+
+  // Command tracking
+  pendingCommand: DebuggerCommandMethod | null
+  lastRejectedReason: CommandRejectCode | null
 
   // Context writeback draft
   editDraft: PauseResumePayload
@@ -44,8 +51,9 @@ interface DebugState {
   disableAll: () => Promise<void>
 
   // WS event handlers (CDP-style: Debugger.paused, Debugger.resumed)
-  handlePaused: (data: { reason: string; snapshot: DebugSnapshot }) => void
-  handleResumed: () => void
+  handlePaused: (data: { reason: string; pauseId: string; snapshot: DebugSnapshot }) => void
+  handleResumed: (data?: { pauseId?: string }) => void
+  handleCommandRejected: (data: { code: CommandRejectCode; pauseId?: string }) => void
   handleBreakpointsChanged: (breakpoints: Breakpoint[]) => void
 
   // Draft editing
@@ -65,7 +73,7 @@ interface DebugState {
 
 const EMPTY_DRAFT: PauseResumePayload = {}
 
-export const useDevtoolsStore = create<DebugState>((set, get) => ({
+export const useDevtoolsStore = create<DevtoolsState>((set, get) => ({
   enabled: false,
   connected: true,
   panelOpen: true,
@@ -74,9 +82,12 @@ export const useDevtoolsStore = create<DebugState>((set, get) => ({
   breakpoints: [],
   loadingBreakpoints: false,
   paused: false,
+  pauseId: null,
   pauseReason: null,
   currentSnapshot: null,
   snapshotHistory: [],
+  pendingCommand: null,
+  lastRejectedReason: null,
   editDraft: { ...EMPTY_DRAFT },
 
   togglePanel: () => set((s) => ({ panelOpen: !s.panelOpen })),
@@ -87,7 +98,7 @@ export const useDevtoolsStore = create<DebugState>((set, get) => ({
 
   fetchStatus: async () => {
     try {
-      const status = await debugApi.fetchDebugStatus()
+      const status = await debugApi.fetchDevtoolsStatus()
       set({ enabled: status.enabled, connected: status.connected })
     } catch {
       set({ enabled: false, connected: false })
@@ -128,12 +139,15 @@ export const useDevtoolsStore = create<DebugState>((set, get) => ({
   },
 
   // ─── CDP event: Debugger.paused ───
-  handlePaused: ({ reason, snapshot }) => {
+  handlePaused: ({ reason, pauseId, snapshot }) => {
     set((s) => ({
       paused: true,
+      pauseId,
       pauseReason: reason,
       currentSnapshot: snapshot,
       snapshotHistory: [...s.snapshotHistory.slice(-49), snapshot],
+      pendingCommand: null,
+      lastRejectedReason: null,
       editDraft: {
         systemPrompt: snapshot.systemPrompt,
         llmParams: snapshot.llmParams ? { ...snapshot.llmParams } : undefined,
@@ -142,8 +156,16 @@ export const useDevtoolsStore = create<DebugState>((set, get) => ({
   },
 
   // ─── CDP event: Debugger.resumed ───
-  handleResumed: () => {
-    set({ paused: false, pauseReason: null, currentSnapshot: null, editDraft: { ...EMPTY_DRAFT } })
+  handleResumed: (data) => {
+    const state = get()
+    // Only clear if pauseId matches or no pauseId provided
+    if (data?.pauseId && state.pauseId && data.pauseId !== state.pauseId) return
+    set({ paused: false, pauseId: null, pauseReason: null, currentSnapshot: null, pendingCommand: null, editDraft: { ...EMPTY_DRAFT } })
+  },
+
+  // ─── CDP event: Debugger.commandRejected ───
+  handleCommandRejected: ({ code }) => {
+    set({ pendingCommand: null, lastRejectedReason: code })
   },
 
   // ─── CDP event: Debugger.breakpointsChanged ───
@@ -206,26 +228,43 @@ export const useDevtoolsStore = create<DebugState>((set, get) => ({
   // ─── CDP commands: Debugger.resume / stepOver / stepInto / disable ───
   resume: (payload) => {
     const draft = payload ?? buildPayload(get())
-    ws.sendCommand('Debugger.resume', { payload: draft })
+    set({ pendingCommand: 'Debugger.resume', lastRejectedReason: null })
+    sendDebuggerCommand('Debugger.resume', get().pauseId, draft)
   },
 
   stepOver: (payload) => {
     const draft = payload ?? buildPayload(get())
-    ws.sendCommand('Debugger.stepOver', { payload: draft })
+    set({ pendingCommand: 'Debugger.stepOver', lastRejectedReason: null })
+    sendDebuggerCommand('Debugger.stepOver', get().pauseId, draft)
   },
 
   stepInto: (payload) => {
     const draft = payload ?? buildPayload(get())
-    ws.sendCommand('Debugger.stepInto', { payload: draft })
+    set({ pendingCommand: 'Debugger.stepInto', lastRejectedReason: null })
+    sendDebuggerCommand('Debugger.stepInto', get().pauseId, draft)
   },
 
   disable: () => {
-    ws.sendCommand('Debugger.disable')
+    set({ pendingCommand: 'Debugger.disable', lastRejectedReason: null })
+    sendDebuggerCommand('Debugger.disable', get().pauseId)
   },
 }))
 
+function sendDebuggerCommand(method: DebuggerCommandMethod, pauseId: string | null, payload?: PauseResumePayload): void {
+  const params: Record<string, unknown> = {}
+  if (pauseId) params.pauseId = pauseId
+  if (payload) params.payload = payload
+
+  if (Object.keys(params).length > 0) {
+    ws.sendCommand(method, params)
+    return
+  }
+
+  ws.sendCommand(method)
+}
+
 // Private helper — build payload from draft only if changes exist
-function buildPayload(state: DebugState): PauseResumePayload | undefined {
+function buildPayload(state: DevtoolsState): PauseResumePayload | undefined {
   const { editDraft, currentSnapshot } = state
   const hasChanges =
     editDraft.systemPrompt !== currentSnapshot?.systemPrompt ||

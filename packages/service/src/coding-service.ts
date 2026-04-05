@@ -67,11 +67,9 @@ export class CodingService {
     this.server = createAdaptorServer({
       fetch: this.app.fetch,
     }) as Server
-    this.server.on('upgrade', this.onUpgrade)
 
-    this.ws.on('message', (clientId, message) => {
-      this.handleClientMessage(clientId, message)
-    })
+    this.server.on('upgrade', this.onUpgrade)
+    this.ws.on('message', this.onMessage)
   }
 
   getSession(sessionId: string): AgentSession | undefined {
@@ -140,7 +138,7 @@ export class CodingService {
     this.bridges.set(session.id, bridge)
 
     this.ws.broadcast({
-      type: 'session_activity',
+      type: 'Session.activity',
       data: {
         action: 'created',
         sessionId: session.id,
@@ -197,35 +195,82 @@ export class CodingService {
     })
   }
 
-  private handleClientMessage(
+  private onMessage = (
     clientId: string,
     message: { type: string; data: Record<string, unknown> },
-  ): void {
+  ) => {
     const sessionId = message.data.sessionId as string | undefined
 
     logger.debug(`message from client ${clientId}: ${message.type} for session ${sessionId ?? 'N/A'}`)
 
     switch (message.type) {
-      case 'Chat.query':
+      case 'Chat.query': {
+        // Forward to devtools for monitoring
         this.bridge?.send({
           type: 'Chat.query',
           seq: (message.data.seq as number) ?? Date.now(),
           query: message.data.query as string,
         })
-        break
-      case 'Chat.approval': {
-        const approved = message.data.approved === true
-        logger.debug(
-          `${approved ? 'approval' : 'rejection'} from client ${clientId} for session ${sessionId}`,
-        )
+
+        // Route to session for actual execution
+        const querySession = sessionId
+          ? this.getSession(sessionId)
+          : this.getActiveSession()
+
+        if (querySession) {
+          const query = message.data.message as string
+          if (query) {
+            querySession.prompt(query).catch((err) => {
+              this.ws.broadcast({
+                type: 'Runtime.error',
+                data: { sessionId: querySession.id, message: err.message },
+              })
+            })
+          }
+        }
         break
       }
-      case 'Chat.askUserResponse':
-        logger.debug(`ask_user response from client ${clientId}`)
+      case 'Chat.approval': {
+        const approvalSession = sessionId
+          ? this.getSession(sessionId)
+          : this.getActiveSession()
+
+        if (approvalSession) {
+          const approvalId = message.data.approvalId as string
+          const approved = message.data.approved === true
+          approvalSession.resolveApproval(approvalId, approved)
+          logger.debug(`${approved ? 'approval' : 'rejection'} from client ${clientId} for session ${sessionId}`)
+        }
         break
+      }
+      case 'Chat.askUserResponse': {
+        const askSession = sessionId
+          ? this.getSession(sessionId)
+          : this.getActiveSession()
+
+        if (askSession) {
+          const requestId = message.data.requestId as string
+          const answers = message.data.cancelled === true
+            ? null
+            : (message.data.answers as Record<string, unknown>)
+          askSession.resolveAskUser(requestId, answers)
+          logger.debug(`ask_user response from client ${clientId} for session ${sessionId}`)
+        }
+
+        break
+      }
       case 'Chat.planApprovalResponse': {
-        const action = (message.data.action as string | undefined) || 'unknown'
-        logger.debug(`plan ${action} from client ${clientId}`)
+        const planSession = sessionId
+          ? this.getSession(sessionId)
+          : this.getActiveSession()
+
+        if (planSession) {
+          const requestId = message.data.requestId as string
+          const action = message.data.action as string
+          const feedback = message.data.feedback as string | undefined
+          planSession.resolvePlanApproval(requestId, action, feedback)
+          logger.debug(`plan ${action} from client ${clientId} for session ${sessionId}`)
+        }
         break
       }
       case 'Debugger.resume':
@@ -251,19 +296,10 @@ export class CodingService {
   ): void {
     if (!this.bridge) return
 
-    const methodToType: Record<string, string> = {
-      'Debugger.resume': 'continue',
-      'Debugger.stepOver': 'next',
-      'Debugger.stepInto': 'step',
-      'Debugger.disable': 'stop',
-    }
-
-    const type = methodToType[method]
-    if (!type) return
-
     this.bridge.send({
-      type,
+      type: method,
       seq: (data.seq as number) ?? Date.now(),
+      ...(data.pauseId !== undefined ? { pauseId: data.pauseId as string } : {}),
       ...(data.depth !== undefined ? { depth: data.depth as number } : {}),
     }, data.payload as Record<string, unknown> | undefined)
   }

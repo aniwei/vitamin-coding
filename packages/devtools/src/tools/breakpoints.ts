@@ -1,16 +1,23 @@
-import { BREAKPOINT_POINTS, type BreakpointPoint } from '../protocol'
+import {
+  BREAKPOINT_POINTS,
+  type BreakpointCategory,
+  type BreakpointDefinition,
+  type BreakpointPoint,
+} from '../protocol'
 
 export interface Breakpoint {
   point: BreakpointPoint
+  name: string
+  category: BreakpointCategory
   enabled: boolean
 }
 
 export class Breakpoints {
   private readonly byPoint = new Map<BreakpointPoint, Breakpoint>()
 
-  constructor(points: readonly BreakpointPoint[] = BREAKPOINT_POINTS) {
+  constructor(points: readonly BreakpointDefinition[] = BREAKPOINT_POINTS) {
     for (const point of points) {
-      this.byPoint.set(point, { point, enabled: true })
+      this.byPoint.set(point.point, { ...point, enabled: true })
     }
   }
 
@@ -34,7 +41,12 @@ export class Breakpoints {
   set(point: BreakpointPoint, enabled: boolean): Breakpoint {
     const breakpoint = this.byPoint.get(point)
     if (!breakpoint) {
-      const next = { point, enabled }
+      const next: Breakpoint = {
+        point,
+        name: point,
+        category: 'custom',
+        enabled,
+      }
       this.byPoint.set(point, next)
       return { ...next }
     }

@@ -124,7 +124,6 @@ class APIClient {
     return response.json()
   }
 
-  // Session model endpoints
   async getSessionModel(sessionId: string): Promise<Record<string, string>> {
     const response = await fetch(`${API_BASE}/sessions/${sessionId}/model`)
     if (!response.ok) throw new Error(`API error: ${response.statusText}`)
@@ -162,7 +161,6 @@ class APIClient {
     return response.json()
   }
 
-  // 配置接口
   async getSetting(): Promise<Config> {
     const response = await fetch(`${API_BASE}/setting`)
     if (!response.ok) throw new Error(`API error: ${response.statusText}`)
@@ -215,7 +213,6 @@ class APIClient {
     return response.json()
   }
 
-  // File listing
   async listFiles(
     query?: string,
   ): Promise<{ files: Array<{ path: string; name: string; isFile: boolean }> }> {
@@ -227,14 +224,12 @@ class APIClient {
     return response.json()
   }
 
-  // Bridge mode
   async getBridgeInfo(): Promise<{ bridgeMode: boolean; sessionId: string | null }> {
     const response = await fetch(`${API_BASE}/sessions/bridge-info`)
     if (!response.ok) return { bridgeMode: false, sessionId: null }
     return response.json()
   }
 
-  // Health check
   async health(): Promise<{ status: string; service: string }> {
     const response = await fetch(`${API_BASE}/health`)
     if (!response.ok) throw new Error(`API error: ${response.statusText}`)

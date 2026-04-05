@@ -20,11 +20,10 @@ import { DevtoolsService, Breakpoints } from '../dist/index.js'
 
 /**
  * service-worker.ts 中 handleUpgrade 校验路径为 `/${serviceId}/inspect`。
- * 而 DevtoolsService.url getter 返回 `.../ws` 后缀（与实际路径不符，属于已知源码偏差）。
- * 使用 serviceUrl 派生正确的 WebSocket 检查端点：`ws://HOST:PORT/${id}/inspect`
+ * DevtoolsService.url 已与实际监听路径保持一致。
  */
 function inspectUrl(service: DevtoolsService): string {
-  return service.serviceUrl.replace('http://', 'ws://') + '/inspect'
+  return service.url
 }
 
 function getFreePort(): Promise<number> {
@@ -84,15 +83,12 @@ function waitForMessage(ws: WebSocket): Promise<string> {
 
 describe('DevtoolService', () => {
   // DevtoolsService 依赖 Worker 线程运行 service-worker.cjs，属于集成级测试。
-  // 已知问题：Worker 在 Debugger.started 后因环境错误退出，触发 dispose() 清空 this.worker，
-  // 随后 stop() 调用的 postMessage 为空操作，导致 Debugger.stopped 永不触发，stop() 无限挂起。
-  // 在修复 service.ts stop() 竞态之前，下列测试暂时跳过。
-  it.skip('starts service and closes connected websocket clients', async () => {
+  it('starts service and closes connected websocket clients', async () => {
     const port = await getFreePort()
     const service = new DevtoolsService({ port }, new Breakpoints())
 
     await service.start()
-    // service-worker 实际监听路径为 /${serviceId}/inspect（而非 service.url 中的 /ws）
+    // service-worker 实际监听路径为 /${serviceId}/inspect
     const ws = await connectWebSocket(inspectUrl(service))
 
     const closed = waitForClose(ws)
@@ -101,7 +97,7 @@ describe('DevtoolService', () => {
     await closed
   })
 
-  it.skip('broadcasts message to websocket clients', async () => {
+  it('broadcasts message to websocket clients', async () => {
     const port = await getFreePort()
     const service = new DevtoolsService({ port }, new Breakpoints())
 
@@ -118,10 +114,7 @@ describe('DevtoolService', () => {
     await closed
   })
 
-  // TODO: service.pause() 使用 Atomics.wait() 阻塞主线程；debuggerPauseUrl HTTP 端点
-  // 在 service-worker.ts 中未实现路由（createDebuggerRoute 返回空 Hono App）。
-  // 此测试在修复路由前无法通过，已暂时跳过。
-  it.skip('waits for a websocket command before resuming paused requests', async () => {
+  it('waits for a websocket command before resuming paused requests', async () => {
     const port = await getFreePort()
     const service = new DevtoolsService({ port }, new Breakpoints())
 
@@ -129,24 +122,23 @@ describe('DevtoolService', () => {
     const ws = await connectWebSocket(inspectUrl(service))
 
     const pausedEvent = waitForMessage(ws)
-    const resumeResponse = fetch(service.debuggerPauseUrl, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        turn: 1,
-        point: 'model_before',
-        frameDepth: 0,
-        messagesCount: 3,
-      }),
-    }).then((response) => response.text())
+    const resumeResult = service.pause({
+      turn: 1,
+      point: 'model_before',
+      frameDepth: 0,
+      messagesCount: 3,
+    })
 
-    await expect(pausedEvent).resolves.toContain('Agent.debugger.paused')
+    await expect(pausedEvent).resolves.toContain('Debugger.paused')
 
     ws.send(JSON.stringify({ type: 'continue' }))
 
-    await expect(resumeResponse).resolves.toBe('ok')
+    await expect(resumeResult).resolves.toMatchObject({
+      command: {
+        type: 'continue',
+      },
+      payload: null,
+    })
 
     const closed = waitForClose(ws)
     await service.stop()

@@ -49,38 +49,32 @@ async function fetchAPI<T>(url: string, options?: RequestInit): Promise<T> {
   return normalizeToCamel<T>(data)
 }
 
-// 列出所有已配置的 MCP 服务器及其状态
 export async function listMCPServers(): Promise<MCPServersResponse> {
   return fetchAPI<MCPServersResponse>('/mcp/servers')
 }
 
-// 获取指定 MCP 服务器的详细信息
 export async function getMCPServer(name: string): Promise<MCPServerDetailed> {
   return fetchAPI<MCPServerDetailed>(`/mcp/servers/${encodeURIComponent(name)}`)
 }
 
-// 连接到 MCP 服务器
 export async function connectMCPServer(name: string): Promise<MCPApiResponse> {
   return fetchAPI<MCPApiResponse>(`/mcp/servers/${encodeURIComponent(name)}/connect`, {
     method: 'POST',
   })
 }
 
-// 断开与 MCP 服务器的连接
 export async function disconnectMCPServer(name: string): Promise<MCPApiResponse> {
   return fetchAPI<MCPApiResponse>(`/mcp/servers/${encodeURIComponent(name)}/disconnect`, {
     method: 'POST',
   })
 }
 
-// 测试 MCP 服务器连接
 export async function testMCPServer(name: string): Promise<MCPApiResponse> {
   return fetchAPI<MCPApiResponse>(`/mcp/servers/${encodeURIComponent(name)}/test`, {
     method: 'POST',
   })
 }
 
-// 创建新的 MCP 服务器配置
 export async function createMCPServer(server: MCPServerCreateRequest): Promise<MCPApiResponse> {
   return fetchAPI<MCPApiResponse>('/mcp/servers', {
     method: 'POST',
@@ -88,7 +82,6 @@ export async function createMCPServer(server: MCPServerCreateRequest): Promise<M
   })
 }
 
-// 更新已有的 MCP 服务器配置
 export async function updateMCPServer(
   name: string,
   update: MCPServerUpdateRequest,

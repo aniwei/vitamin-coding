@@ -53,20 +53,20 @@ export function MCPSettings() {
   // WebSocket event listener for real-time updates
   useEffect(() => {
     const handleWebSocketMessage = (message: WebSocketMessage) => {
-      if (message.type === 'mcp_status_update') {
+      if (message.type === 'MCP.statusUpdate') {
         const { serverName, status } = message.data
         console.log('[MCPSettings] Status update via WebSocket:', { serverName, status })
         setServers((prev) =>
           prev.map((server) => (server.name === serverName ? { ...server, status } : server)),
         )
-      } else if (message.type === 'mcp_servers_update') {
+      } else if (message.type === 'MCP.serversUpdate') {
         console.log('[MCPSettings] Full update via WebSocket:', message.data)
         setServers(message.data.servers)
       }
     }
 
-    const unsubscribe1 = ws.on('mcp_status_update', handleWebSocketMessage)
-    const unsubscribe2 = ws.on('mcp_servers_update', handleWebSocketMessage)
+    const unsubscribe1 = ws.on('MCP.statusUpdate', handleWebSocketMessage)
+    const unsubscribe2 = ws.on('MCP.serversUpdate', handleWebSocketMessage)
 
     return () => {
       unsubscribe1()

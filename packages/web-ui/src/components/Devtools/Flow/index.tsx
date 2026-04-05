@@ -1,4 +1,4 @@
-import { useEffect } from 'react'
+import { useEffect, useMemo } from 'react'
 import {
   ReactFlow,
   MiniMap,
@@ -11,14 +11,87 @@ import {
   MarkerType,
 } from '@xyflow/react'
 import '@xyflow/react/dist/style.css'
-import { useDevtoolsStore } from '../../../stores/debug'
-import { BreakpointNode } from './BreakpointNode'
+import { useDevtoolsStore } from '../../../stores/devtools'
+import {
+  BREAKPOINT_CATEGORY_LABELS,
+  type Breakpoint,
+  type BreakpointCategory,
+} from '../../../types/debug'
+import {
+  BreakpointNode,
+  type BreakpointNodeCategory,
+  type BreakpointNodeData,
+} from './BreakpointNode'
 
 const nodeTypes = {
   custom: BreakpointNode,
 }
 
-const FLOW_NODES: { id: string; label: string; point: string; x: number; y: number; isVirtual?: boolean; category: string }[] = [
+const CATEGORY_ORDER: BreakpointCategory[] = [
+  'agent_work_loop',
+  'work_loop_injection',
+  'tool_executor',
+  'session_prompt_lifecycle',
+  'custom',
+]
+
+const CATEGORY_STYLES: Record<BreakpointCategory, string> = {
+  agent_work_loop: 'border-blue-200 bg-blue-50 text-blue-700',
+  work_loop_injection: 'border-cyan-200 bg-cyan-50 text-cyan-700',
+  tool_executor: 'border-orange-200 bg-orange-50 text-orange-700',
+  session_prompt_lifecycle: 'border-violet-200 bg-violet-50 text-violet-700',
+  custom: 'border-gray-200 bg-gray-50 text-gray-700',
+}
+
+function normalizeCategory(category?: Breakpoint['category']): BreakpointCategory {
+  return category ?? 'custom'
+}
+
+function aggregateCategoryStats(breakpoints: Breakpoint[]): Array<{
+  category: BreakpointCategory
+  total: number
+  enabled: number
+}> {
+  const stats = new Map<BreakpointCategory, { total: number; enabled: number }>()
+
+  for (const breakpoint of breakpoints) {
+    const category = normalizeCategory(breakpoint.category)
+    const current = stats.get(category)
+
+    if (current) {
+      current.total += 1
+      if (breakpoint.enabled) {
+        current.enabled += 1
+      }
+      continue
+    }
+
+    stats.set(category, {
+      total: 1,
+      enabled: breakpoint.enabled ? 1 : 0,
+    })
+  }
+
+  return Array.from(stats.entries())
+    .sort(([left], [right]) => CATEGORY_ORDER.indexOf(left) - CATEGORY_ORDER.indexOf(right))
+    .map(([category, item]) => ({
+      category,
+      total: item.total,
+      enabled: item.enabled,
+    }))
+}
+
+interface FlowNodeDefinition {
+  id: string
+  label: string
+  point: string
+  x: number
+  y: number
+  isVirtual?: boolean
+  category: BreakpointNodeCategory
+}
+
+const FLOW_NODES: FlowNodeDefinition[] = [
   // Session Init
   { id: '1', label: 'Session Start', point: 'session_create', x: 250, y: 50, category: 'session' },
   
@@ -94,9 +167,20 @@ const INITIAL_EDGES: Edge[] = [
 }))
 
 export function BreakpointFlow({ className }: { className?: string }) {
-  const { currentSnapshot, paused } = useDevtoolsStore()
+  const { breakpoints, currentSnapshot, paused } = useDevtoolsStore()
+
+  const categoryStats = useMemo(() => aggregateCategoryStats(breakpoints), [breakpoints])
+
+  const activeCategory = useMemo(() => {
+    if (!currentSnapshot?.point) {
+      return undefined
+    }
+
+    const current = breakpoints.find(item => item.point === currentSnapshot.point)
+    return normalizeCategory(current?.category)
+  }, [currentSnapshot?.point, breakpoints])
   
-  const initialNodes: Node[] = FLOW_NODES.map(node => ({
+  const initialNodes: Node<BreakpointNodeData>[] = FLOW_NODES.map(node => ({
     id: node.id,
     position: { x: node.x, y: node.y },
     data: { label: node.label, point: node.point, isVirtual: node.isVirtual ?? false, category: node.category },
@@ -132,6 +216,27 @@ export function BreakpointFlow({ className }: { className?: string }) {
 
   return (
     <div className={`h-full flex flex-col ${className || ''}`}>
+      {categoryStats.length > 0 && (
+        <div className="border-b border-gray-200 bg-white/95 px-2 py-1.5 flex flex-wrap gap-1">
+          {categoryStats.map((item) => {
+            const isActive = item.category === activeCategory
+
+            return (
+              <div
+                key={item.category}
+                className={`inline-flex items-center gap-1 rounded-full border px-2 py-0.5 text-[10px] font-medium ${CATEGORY_STYLES[item.category]} ${
+                  isActive ? 'ring-1 ring-amber-300' : ''
+                }`}
+                title={`${BREAKPOINT_CATEGORY_LABELS[item.category]}: ${item.enabled}/${item.total}`}
+              >
+                <span>{BREAKPOINT_CATEGORY_LABELS[item.category]}</span>
+                <span className="font-mono opacity-80">{item.enabled}/{item.total}</span>
+              </div>
+            )
+          })}
+        </div>
+      )}
+
       <div className="flex-1 w-full bg-slate-50 relative">
         <ReactFlow
           nodes={nodes}

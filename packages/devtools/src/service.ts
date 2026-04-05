@@ -4,21 +4,9 @@ import { fileURLToPath } from 'node:url'
 import { Worker } from 'node:worker_threads'
 import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
 
-import type { DebugSnapshot, PauseResult, PauseResumePayload, DebugCommand } from './protocol'
+import type { DebugSnapshot, PauseResult, DebugCommand, PauseResumePayload } from './protocol'
 import type { BreakpointPoint } from './protocol'
-import type { Breakpoints } from './tools/breakpoints'
-import {
-  WAKE_PENDING,
-  WAKE_RESUMED,
-  WAKE_WITH_PAYLOAD,
-  SAB_HEADER_SIZE,
-  SAB_DEFAULT_PAYLOAD_SIZE,
-  COMMAND_CONTINUE,
-  COMMAND_NEXT,
-  COMMAND_STEP,
-  COMMAND_OVER,
-  COMMAND_STOP,
-} from './protocol'
+import { Breakpoints } from './tools/breakpoints'
 
 const logger = createLogger('@vitamin/devtools:service')
 
@@ -27,11 +15,6 @@ const SERVICE_HOST = '127.0.0.1'
 function resolveWorkerPath(): string {
   const thisFile = fileURLToPath(import.meta.url)
   const thisDir = dirname(thisFile)
-
-  // 当前模块仍是 .ts 说明由 tsx / ts-node 直接运行，worker 同样使用 .ts
-  if (thisFile.endsWith('.ts')) {
-    return join(thisDir, 'service-worker.ts')
-  }
 
   return join(thisDir, 'service-worker.cjs')
 }
@@ -52,15 +35,20 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
   private port: number | undefined
   private worker: Worker | null = null
   private started = false
+  private workerStopped = false
   private breakpoints: Breakpoints
-  private initializeTask: Promise<void> | null = null
+  private initializedTask: Promise<void> | null = null
+  private stoppingTask: Promise<void> | null = null
+  private readonly pendingPauses = new Map<string, {
+    resolve: (result: PauseResult) => void
+  }>()
 
   public get serviceUrl(): string {
     return `http://${SERVICE_HOST}:${this.port}/${this.id}`
   }
 
   public get url(): string {
-    return `ws://${SERVICE_HOST}:${this.port}/${this.id}/ws`
+    return `ws://${SERVICE_HOST}:${this.port}/${this.id}/inspect`
   }
 
   constructor(
@@ -74,7 +62,7 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
   }
 
   broadcast(message: string): void {
-    this.worker?.postMessage({ type: 'broadcast', message })
+    this.worker?.postMessage({ type: 'Runtime.broadcast', message })
   }
 
   async start(): Promise<void> {
@@ -82,8 +70,8 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
       return Promise.resolve()
     }
 
-    if (this.initializeTask) {
-      return this.initializeTask
+    if (this.initializedTask) {
+      return this.initializedTask
     }
 
     this.worker = new Worker(resolveWorkerPath(), {
@@ -93,12 +81,13 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
         serviceId: this.id,
       }
     })
+    this.workerStopped = false
 
     this.worker.on('message', this.handleWorkerMessage)
     this.worker.on('error', error => this.emit('error', error as Error))
-    this.worker.on('exit',  () => this.dispose())
+    this.worker.on('exit', this.handleWorkerExit)
     
-    this.initializeTask = new Promise((resolve, reject) => {
+    this.initializedTask = new Promise((resolve, reject) => {
       this.once('Debugger.started', () => {
         logger.info('Agent debug service started and debugger enabled')
         this.started = true
@@ -111,88 +100,117 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
       })
     })
 
-    return this.initializeTask
+    return this.initializedTask
   }
 
   async stop(): Promise<void> {
-    await new Promise<void>(async (resolve) => {
-      this.once('Debugger.stopped', async () => {
-        this.dispose()
-        resolve()
-      })
+    if (this.stoppingTask) {
+      return this.stoppingTask
+    }
 
-      this.worker?.postMessage({ type: 'stop' })
+    if (!this.worker) {
+      this.dispose()
+      return Promise.resolve()
+    }
+
+    const worker = this.worker
+
+    this.stoppingTask = new Promise<void>((resolve) => {
+      let settled = false
+
+      const finish = () => {
+        if (settled) {
+          return
+        }
+
+        settled = true
+        clearTimeout(timeoutId)
+        this.off('Debugger.stopped', onStopped)
+        worker.off('exit', onExit)
+        this.dispose()
+        this.stoppingTask = null
+        resolve()
+      }
+
+      const onStopped = () => finish()
+      const onExit = () => finish()
+
+      this.on('Debugger.stopped', onStopped)
+      worker.on('exit', onExit)
+
+      const timeoutId = setTimeout(() => {
+        logger.warn('Timed out waiting for devtools worker to stop; forcing dispose')
+        finish()
+      }, 3_000)
+
+      try {
+        worker.postMessage({
+          type: 'Runtime.stop'
+        })
+      } catch (error) {
+        logger.warn({ error }, 'Failed to post Runtime.stop to devtools worker')
+        finish()
+      }
     })
+
+    return this.stoppingTask
   }
 
   dispose(): void {
-    this.worker?.terminate().then(() => {
-      this.worker = null
-      this.started = false
-      this.initializeTask = null
+    const worker = this.worker
+    this.worker = null
+    this.started = false
+    this.initializedTask = null
+    this.workerStopped = false
 
+    if (this.pendingPauses.size > 0) {
+      for (const [pauseId, pending] of this.pendingPauses) {
+        pending.resolve({
+          pauseId,
+          command: { type: 'stop', seq: 0, reason: 'devtools_disposed' },
+          payload: null,
+        })
+      }
+      this.pendingPauses.clear()
+    }
+
+    if (!worker) {
+      return
+    }
+
+    worker.terminate().then(() => {
       logger.info('Devtools worker terminated')
     }).catch(error => {
       logger.error({ error }, 'Failed to terminate devtools worker')
-    }) 
+    })
   }
 
   logger(message: unknown): void {
-    this.worker?.postMessage({ type: 'logger', message: JSON.stringify(message) })
-  }
-
-  session(message: unknown): void {
     this.worker?.postMessage({ 
-      type: 'session', 
+      type: 'Log.entryAdded', 
       message: JSON.stringify(message) 
     })
   }
 
-  pause(snapshot: DebugSnapshot): PauseResult {
-    const totalSize = SAB_HEADER_SIZE + SAB_DEFAULT_PAYLOAD_SIZE
-    const sab = new SharedArrayBuffer(totalSize)
-    const header = new Int32Array(sab, 0, 3)
-    const payloadRegion = new Uint8Array(sab, SAB_HEADER_SIZE)
-
-    this.worker?.postMessage({
-      type: 'paused',
-      snapshot,
-      shared: sab,
+  session(message: unknown): void {
+    this.worker?.postMessage({ 
+      type: 'Session.update', 
+      message: JSON.stringify(message) 
     })
-
-    Atomics.wait(header, 0, WAKE_PENDING)
-
-    const stateValue = Atomics.load(header, 0)
-
-    if (stateValue !== WAKE_RESUMED && stateValue !== WAKE_WITH_PAYLOAD) {
-      throw new Error(`Devtools pause resumed with unexpected state: ${stateValue}`)
-    }
-
-    const command = this.decodeCommand(Atomics.load(header, 1))
-
-    let payload: PauseResumePayload | null = null
-    if (stateValue === WAKE_WITH_PAYLOAD) {
-      const payloadLength = Atomics.load(header, 2)
-      if (payloadLength > 0) {
-        const jsonBytes = payloadRegion.slice(0, payloadLength)
-        const jsonStr = new TextDecoder().decode(jsonBytes)
-        payload = JSON.parse(jsonStr) as PauseResumePayload
-      }
-    }
-
-    return { command, payload }
   }
 
-  private decodeCommand(typeInt: number): DebugCommand {
-    const seq = Date.now()
-    switch (typeInt) {
-      case COMMAND_NEXT: return { type: 'next', seq }
-      case COMMAND_STEP: return { type: 'step', seq }
-      case COMMAND_OVER: return { type: 'over', seq, depth: 0 }
-      case COMMAND_STOP: return { type: 'stop', seq }
-      case COMMAND_CONTINUE:
-      default: return { type: 'continue', seq }
-    }
+  pause(snapshot: DebugSnapshot): Promise<PauseResult> {
+    const pauseId = randomUUID()
+
+    return new Promise<PauseResult>((resolve) => {
+      this.pendingPauses.set(pauseId, { resolve })
+
+      this.worker?.postMessage({
+        type: 'Debugger.paused',
+        pauseId,
+        snapshot,
+      })
+    })
   }
 
   private handleBreakpoints(requestId: string): void {
@@ -253,13 +271,47 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
         if (typeof payload.port === 'number') {
           this.port = payload.port
         }
+        this.workerStopped = false
         this.emit('Debugger.started')
         break
+      case 'Debugger.resumed': {
+        const resumePauseId = payload.pauseId as string
+        const pending = this.pendingPauses.get(resumePauseId)
+        if (pending) {
+          this.pendingPauses.delete(resumePauseId)
+          pending.resolve({
+            pauseId: resumePauseId,
+            command: payload.command as DebugCommand,
+            payload: (payload.payload as PauseResumePayload) ?? null,
+          })
+        }
+        break
+      }
       case 'Debugger.stopped':
-        this.emit('Debugger.stopped')
+        this.notifyWorkerStopped()
         break
       default:
         logger.warn({ payload }, 'Received unknown message from devtools worker')
     }
+  }
+
+  private handleWorkerExit = (): void => {
+    this.notifyWorkerStopped()
+    this.dispose()
+  }
+
+  private notifyWorkerStopped(): void {
+    if (this.workerStopped) {
+      return
+    }
+
+    this.workerStopped = true
+    this.emit('Debugger.stopped')
+  }
+}
+
+export class DevtoolsService extends Service {
+  constructor(options: ServiceOptions = {}, breakpoints: Breakpoints = new Breakpoints()) {
+    super(breakpoints, options)
   }
 }

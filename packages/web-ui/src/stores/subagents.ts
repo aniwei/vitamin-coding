@@ -139,7 +139,7 @@ export { formatToolVerb, formatToolArg }
 
 // ─── WebSocket Event Handlers ───────────────────────────────────────────────
 
-ws.on('subagent_start', (message) => {
+ws.on('Chat.subagentStart', (message) => {
   const d = asEventData(message.data)
   if (!d) return
 
@@ -183,7 +183,7 @@ ws.on('subagent_start', (message) => {
   })
 })
 
-ws.on('nested_tool_call', (message) => {
+ws.on('Chat.nestedToolCall', (message) => {
   const d = asEventData(message.data)
   if (!d) return
 
@@ -218,7 +218,7 @@ ws.on('nested_tool_call', (message) => {
   }
 })
 
-ws.on('nested_tool_result', (message) => {
+ws.on('Chat.nestedToolResult', (message) => {
   const d = asEventData(message.data)
   if (!d) return
 
@@ -270,7 +270,7 @@ ws.on('nested_tool_result', (message) => {
   }
 })
 
-ws.on('subagent_complete', (message) => {
+ws.on('Chat.subagentComplete', (message) => {
   const d = asEventData(message.data)
   if (!d) return
 
@@ -312,7 +312,7 @@ ws.on('subagent_complete', (message) => {
 })
 
 // Token updates (if backend sends them)
-ws.on('status_update', (message) => {
+ws.on('Session.statusUpdate', (message) => {
   const d = asEventData(message.data)
   const subagentId = d ? readString(d, 'subagentId') : undefined
   const tokenCount = d ? readNumber(d, 'tokenCount') : undefined

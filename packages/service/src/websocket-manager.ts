@@ -5,7 +5,7 @@ import type { IncomingMessage } from 'node:http'
 import type { Socket } from 'node:net'
 import type { WebSocketMessage, WebSocketClientMessage } from './types'
 
-const logger = createLogger('@vitamin/service:ws-manager')
+const logger = createLogger('@vitamin/service:websocket-manager')
 
 export type WebSocketClientHandler = (
   clientId: string,
@@ -93,7 +93,7 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
     this.clients.set(clientId, ws)
 
     logger.debug(`client connected: ${clientId}`)
-    this.sendToClient(clientId, { type: 'connected', data: { clientId } })
+    this.sendToClient(clientId, { type: 'Runtime.connected', data: { clientId } })
 
     ws.on('message', (raw: Buffer) => {
       try {
@@ -104,30 +104,7 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
           return
         }
 
-        if (message.type === 'Runtime.ping') {
-          this.sendToClient(clientId, {
-            type: 'pong',
-            data: { timestamp: Date.now() },
-          })
-          return
-        }
-
-        if (message.type === 'Session.subscribe') {
-          const sessionId = message.data.sessionId as string
-          if (sessionId) {
-            if (!this.sessionSubscriptions.has(sessionId)) {
-              this.sessionSubscriptions.set(sessionId, new Set())
-            }
-            this.sessionSubscriptions.get(sessionId)!.add(clientId)
-          }
-          return
-        }
-
-        if (message.type === 'Session.unsubscribe') {
-          const sessionId = message.data.sessionId as string
-          if (sessionId) {
-            this.sessionSubscriptions.get(sessionId)?.delete(clientId)
-          }
+        if (this.handleSystemClientMessage(clientId, message)) {
           return
         }
 
@@ -144,12 +121,67 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
       for (const [, subscribers] of this.sessionSubscriptions) {
         subscribers.delete(clientId)
       }
+      
       logger.debug(`client disconnected: ${clientId}`)
     })
 
     ws.on('error', (err) => {
       logger.warn(`client ${clientId} error: ${err.message}`)
     })
+  }
+
+  private handleSystemClientMessage(clientId: string, message: WebSocketClientMessage): boolean {
+    switch (message.type) {
+      case 'Runtime.ping':
+        this.handleRuntimePing(clientId)
+        return true
+      case 'Session.subscribe':
+        this.handleSessionSubscribe(clientId, message.data)
+        return true
+      case 'Session.unsubscribe':
+        this.handleSessionUnsubscribe(clientId, message.data)
+        return true
+      default:
+        return false
+    }
+  }
+
+  private handleRuntimePing(clientId: string): void {
+    this.sendToClient(clientId, {
+      type: 'Runtime.pong',
+      data: { timestamp: Date.now() },
+    })
+  }
+
+  private handleSessionSubscribe(clientId: string, data: Record<string, unknown>): void {
+    const sessionId = this.readSessionId(data)
+    if (!sessionId) {
+      return
+    }
+
+    if (!this.sessionSubscriptions.has(sessionId)) {
+      this.sessionSubscriptions.set(sessionId, new Set())
+    }
+
+    this.sessionSubscriptions.get(sessionId)?.add(clientId)
+  }
+
+  private handleSessionUnsubscribe(clientId: string, data: Record<string, unknown>): void {
+    const sessionId = this.readSessionId(data)
+    if (!sessionId) {
+      return
+    }
+
+    this.sessionSubscriptions.get(sessionId)?.delete(clientId)
+  }
+
+  private readSessionId(data: Record<string, unknown>): string | null {
+    const sessionId = data.sessionId
+    if (typeof sessionId !== 'string' || sessionId.length === 0) {
+      return null
+    }
+
+    return sessionId
   }
 
   private normalizeClientMessage(raw: unknown): WebSocketClientMessage | null {

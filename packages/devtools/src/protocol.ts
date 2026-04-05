@@ -1,35 +1,43 @@
+export type BreakpointCategory =
+  | 'agent_work_loop'
+  | 'work_loop_injection'
+  | 'tool_executor'
+  | 'session_prompt_lifecycle'
+  | 'custom'
+
 export const BREAKPOINT_POINTS = [
   // ─── Agent work-loop ───
-  'loop_start',
-  'model_before',
-  'model_after',
-  'tool_before',
-  'tool_after',
-  'loop_end',
-  'loop_cleanup',
-  'agent_aborted',
-  'agent_error',
-  'agent_done',
+  { point: 'loop_start', name: 'Loop Start', category: 'agent_work_loop' },
+  { point: 'model_before', name: 'Model Before', category: 'agent_work_loop' },
+  { point: 'model_after', name: 'Model After', category: 'agent_work_loop' },
+  { point: 'tool_before', name: 'Tool Before', category: 'agent_work_loop' },
+  { point: 'tool_after', name: 'Tool After', category: 'agent_work_loop' },
+  { point: 'loop_end', name: 'Loop End', category: 'agent_work_loop' },
+  { point: 'loop_cleanup', name: 'Loop Cleanup', category: 'agent_work_loop' },
+  { point: 'agent_aborted', name: 'Agent Aborted', category: 'agent_work_loop' },
+  { point: 'agent_error', name: 'Agent Error', category: 'agent_work_loop' },
+  { point: 'agent_done', name: 'Agent Done', category: 'agent_work_loop' },
   // ─── Work-loop 注入点 ───
-  'steering_check',
-  'follow_up_check',
-  'context_transform',
+  { point: 'steering_check', name: 'Steering Check', category: 'work_loop_injection' },
+  { point: 'follow_up_check', name: 'Follow Up Check', category: 'work_loop_injection' },
+  { point: 'context_transform', name: 'Context Transform', category: 'work_loop_injection' },
   // ─── Tool executor 内部 ───
-  'tool_resolve',
-  'tool_validate',
-  'tool_hook_before',
-  'tool_hook_after',
+  { point: 'tool_resolve', name: 'Tool Resolve', category: 'tool_executor' },
+  { point: 'tool_validate', name: 'Tool Validate', category: 'tool_executor' },
+  { point: 'tool_hook_before', name: 'Tool Hook Before', category: 'tool_executor' },
+  { point: 'tool_hook_after', name: 'Tool Hook After', category: 'tool_executor' },
   // ─── Prompt / Session 生命周期 ───
-  'prompt_before',
-  'prompt_after',
-  'context_build',
-  'messages_persist',
-  'session_create',
-  'session_fork',
-  'session_restore',
+  { point: 'prompt_before', name: 'Prompt Before', category: 'session_prompt_lifecycle' },
+  { point: 'prompt_after', name: 'Prompt After', category: 'session_prompt_lifecycle' },
+  { point: 'context_build', name: 'Context Build', category: 'session_prompt_lifecycle' },
+  { point: 'messages_persist', name: 'Messages Persist', category: 'session_prompt_lifecycle' },
+  { point: 'session_create', name: 'Session Create', category: 'session_prompt_lifecycle' },
+  { point: 'session_fork', name: 'Session Fork', category: 'session_prompt_lifecycle' },
+  { point: 'session_restore', name: 'Session Restore', category: 'session_prompt_lifecycle' },
 ] as const
 
-export type BreakpointPoint = (typeof BREAKPOINT_POINTS)[number]
+export type BreakpointPoint = (typeof BREAKPOINT_POINTS)[number]['point']
+export type BreakpointDefinition = (typeof BREAKPOINT_POINTS)[number]
 
 export interface MessageSummaryItem {
   index: number
@@ -74,27 +82,34 @@ export interface PauseResumePayload {
 }
 
 export interface PauseResult {
+  pauseId: string
   command: DebugCommand
   payload: PauseResumePayload | null
 }
 
-// ─── Shared memory constants ───
-export const WAKE_PENDING = 0
-export const WAKE_RESUMED = 1
-export const WAKE_WITH_PAYLOAD = 2
+// ─── CDP-style method → internal command type mapping ───
+export const CDP_METHOD_TO_COMMAND: Record<string, DebugCommand['type']> = {
+  'Debugger.resume': 'continue',
+  'Debugger.stepOver': 'next',
+  'Debugger.stepInto': 'step',
+  'Debugger.disable': 'stop',
+}
 
-export const COMMAND_CONTINUE = 0
-export const COMMAND_NEXT = 1
-export const COMMAND_STEP = 2
-export const COMMAND_OVER = 3
-export const COMMAND_STOP = 4
+export type CDPDebugMethod = keyof typeof CDP_METHOD_TO_COMMAND
 
-export const SAB_HEADER_SIZE = 12
-export const SAB_DEFAULT_PAYLOAD_SIZE = 64 * 1024
+// ─── Command rejection codes ───
+export type CommandRejectCode =
+  | 'STALE_OR_NO_PAUSE'
+  | 'INVALID_PARAMS'
+  | 'DEBUGGER_OFFLINE'
+  | 'BRIDGE_DISCONNECTED'
+
+
 
 export type DebuggerEvent =
   | {
-      type: 'Agent.debugger.paused'
+      type: 'Debugger.paused'
+      pauseId: string
       seq: number
       point: BreakpointPoint
       frameDepth: number
@@ -132,7 +147,7 @@ export function isDebuggerEvent(input: unknown): input is DebuggerEvent {
   if (!input || typeof input !== 'object') return false
   const value = input as Record<string, unknown>
 
-  if (value.type !== 'Agent.debugger.paused') {
+  if (value.type !== 'Debugger.paused') {
     return false
   }
 

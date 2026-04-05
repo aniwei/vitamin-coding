@@ -2,7 +2,7 @@
  * 例: Devtools + Web UI 服务
  *
  * DevtoolsService 使用 Worker 线程运行独立 HTTP/WS 服务，
- * 负责断点暂停/恢复通信（主线程 Atomics.wait() 阻塞时仍能响应）。
+ * 负责断点暂停/恢复通信（主线程通过异步 Promise 等待恢复指令）。
  *
  *   - 指定 port: devtools inspector 固定绑定到该端口
  *   - 不指定 port: 自动分配随机端口（内部使用，不对外暴露）

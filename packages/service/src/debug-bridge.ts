@@ -18,6 +18,7 @@ export interface LogEntry {
 interface DebugBridgeEvents extends Events {
   'Debugger.paused': (data: Record<string, unknown>) => void
   'Debugger.resumed': (data: Record<string, unknown>) => void
+  'Debugger.commandRejected': (data: Record<string, unknown>) => void
   'Log.entryAdded': (entry: LogEntry) => void
 }
 
@@ -52,6 +53,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
       this.timer = null
     }
 
+    
     this.socket?.close()
     this.socket = null
   }
@@ -69,6 +71,14 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
       this.socket.send(JSON.stringify({ ...command, payload }))
     } else {
       logger.warn('debug bridge not connected, command dropped')
+      this.ws.broadcast({
+        type: 'Debugger.commandRejected',
+        data: {
+          code: 'BRIDGE_DISCONNECTED',
+          command,
+          timestamp: new Date().toISOString(),
+        },
+      })
     }
   }
 
@@ -77,8 +87,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
   }
 
   private connect(): void {
-    const serviceUrl = this.devtools.service.serviceUrl
-    const inspectUrl = serviceUrl.replace('http://', 'ws://') + '/inspect'
+    const inspectUrl = this.devtools.service.url
 
     this.socket = new WebSocket(inspectUrl)
 
@@ -111,11 +120,12 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
 
   private handleDevtoolsEvent(event: Record<string, unknown>): void {
     switch (event.type) {
-      case 'Agent.debugger.paused':
+      case 'Debugger.paused':
         this.ws.broadcast({
           type: 'Debugger.paused',
           data: {
             reason: 'breakpoint',
+            pauseId: event.pauseId as string,
             point: (event.snapshot as Record<string, unknown>)?.point,
             snapshot: event.snapshot as Record<string, unknown>,
             timestamp: new Date().toISOString(),
@@ -123,15 +133,35 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
         })
         break
 
-      case 'Debugger.command':
+      case 'Debugger.resumed':
         this.ws.broadcast({
           type: 'Debugger.resumed',
           data: {
+            pauseId: event.pauseId as string,
             command: event.command as SendCommand,
             timestamp: new Date().toISOString(),
           },
         })
         break
+
+      case 'Debugger.commandRejected':
+        this.ws.broadcast({
+          type: 'Debugger.commandRejected',
+          data: {
+            code: event.code as string,
+            pauseId: event.pauseId as string | undefined,
+            command: event.command as SendCommand,
+            timestamp: new Date().toISOString(),
+          },
+        })
+        break
+
+      case 'Log.entryAdded': {
+        const raw = event.message
+        const parsed = typeof raw === 'string' ? JSON.parse(raw) : raw
+        this.handleLogMessage(parsed as Record<string, unknown>)
+        break
+      }
 
       default:
         this.handleLogMessage(event)
@@ -141,9 +171,16 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
 
   private handleLogMessage(event: Record<string, unknown>): void {
     if (typeof event.level !== 'undefined' || typeof event.msg === 'string') {
+      const rawTime = event.time
+      const timestamp =
+        typeof rawTime === 'number'
+          ? new Date(rawTime).toISOString()
+          : typeof rawTime === 'string'
+            ? rawTime
+            : new Date().toISOString()
       const entry: LogEntry = {
         id: ++this.logId,
-        timestamp: (event.time as string) ?? new Date().toISOString(),
+        timestamp,
         level: this.normalizeLevel(event.level),
         module: (event.name as string) ?? 'unknown',
         message: (event.msg as string) ?? JSON.stringify(event),

@@ -9,6 +9,10 @@ export class Debugger {
   public readonly breakpoints: Breakpoints
   private readonly service: Service
 
+  public get serviceUrl(): string {
+    return this.service.url
+  }
+
   constructor(
     service: Service, 
     breakpoints: Breakpoints
@@ -45,8 +49,7 @@ export class Debugger {
     this.breakpoints.disableAll()
   }
 
-  
-  pause(message: DebugSnapshot): PauseResult | undefined {
+  async pause(message: DebugSnapshot): Promise<PauseResult | undefined> {
     if (this.shouldPause(message.point)) {
       logger.debug({ message }, 'Pausing execution at breakpoint')
       return this.service.pause(message)

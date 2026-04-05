@@ -87,7 +87,7 @@ function readObject<T>(data: EventData, ...keys: string[]): T | undefined {
 }
 
 // Subscribe to WebSocket status events
-ws.on('status_update', (message) => {
+ws.on('Session.statusUpdate', (message) => {
   const d = asEventData(message.data)
   if (!d) return
 

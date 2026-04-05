@@ -1,7 +1,7 @@
 import { useEffect } from 'react'
 import { useChatStore } from '../stores/chat'
 
-export function ApprovalDialog() {
+export function Approval() {
   const pendingApproval = useChatStore((state) => {
     const sid = state.currentSessionId
     return sid ? (state.sessionStates[sid]?.pendingApproval ?? null) : null
@@ -30,9 +30,9 @@ export function ApprovalDialog() {
   // Debug log - MUST be before early return
   useEffect(() => {
     if (pendingApproval) {
-      console.log('[ApprovalDialog] Showing approval dialog:', pendingApproval)
+      console.log('[Approval] Showing approval dialog:', pendingApproval)
     } else {
-      console.log('[ApprovalDialog] No pending approval')
+      console.log('[Approval] No pending approval')
     }
   }, [pendingApproval])
 

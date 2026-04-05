@@ -24,7 +24,7 @@ export function createChatRoute(
 
     session.prompt(message).catch((err) => {
       service.ws.sendToSession(session!.id, {
-        type: 'error',
+        type: 'Runtime.error',
         data: { sessionId: session!.id, message: err.message },
       })
     })

@@ -2,7 +2,7 @@ import { Controls } from './Controls'
 import { SnapshotViewer } from './SnapshotViewer'
 import { ContextEditor } from './ContextEditor'
 import { BreakpointList } from './BreakpointList'
-import { useDevtoolsStore } from '../../../stores/debug'
+import { useDevtoolsStore } from '../../../stores/devtools'
 import { ChevronDown, ChevronRight } from 'lucide-react'
 import { useState } from 'react'
 

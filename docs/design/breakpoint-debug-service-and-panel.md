@@ -17,7 +17,7 @@
 |------|------|------|
 | 24 种断点类型 | `protocol.ts` | 覆盖 Agent 循环、Tool 执行、Session/Prompt 生命周期 |
 | `Breakpoints` 状态管理 | `tools/breakpoints.ts` | enable/disable/list/set per-point |
-| `DevtoolsDebugger` 公开 API | `tools/debugger.ts` | pause()、listBreakpoints()、shouldPause() |
+| `Debugger` 公开 API | `tools/debugger.ts` | pause()、listBreakpoints()、shouldPause() |
 | `DevtoolsService` Worker 线程 | `service.ts` + `service-worker.ts` | HTTP/WS 控制面，`Atomics.wait` 同步阻塞 |
 | `DebugSnapshot` 快照协议 | `protocol.ts` | turn / point / frameDepth / messagesCount / tokenUsage |
 | `DebugCommand` 控制指令 | `protocol.ts` | next / step / over / continue / stop |
@@ -65,7 +65,7 @@
                           ┌────────────────────────────┐
                           │     @vitamin/devtools       │
                           │  ┌──────────────────────┐  │
-                          │  │  DevtoolsDebugger     │  │
+                          │  │  Debugger     │  │
                           │  │  Breakpoints          │  │
                           │  │  DevtoolsService      │  │
                           │  │  (Worker + Atomics)    │  │
@@ -95,7 +95,7 @@
 
 | 决策 | 方案 | 理由 |
 |------|------|------|
-| 调试面板位置 | ChatPage 最右侧可折叠面板 | 与 Sessions Sidebar (左) 对称，不干扰主聊天区 |
+| 调试面板位置 | Chat 最右侧可折叠面板 | 与 Sessions Sidebar (左) 对称，不干扰主聊天区 |
 | 通信通道 | 复用 Service 的 `/ws` 通道 + REST | 避免客户端维护两条 WS 连接，降低复杂度 |
 | 断点管理 API | REST `/api/debug/breakpoints/*` | 断点操作是幂等的 CRUD，适合 REST |
 | 暂停/恢复控制 | WS 双向消息 | 实时性要求高，暂停事件需 push，控制指令需即时送达 |
@@ -105,7 +105,7 @@
 
 - **升级 Atomics 协议** — 从 1-int 信号量升级为结构化共享内存，支持携带回写 payload
 - **扩展 `DebugSnapshot`** — 增加 `messages` / `systemPrompt` / `context` 可编辑字段
-- **`DevtoolsDebugger.pause()` 返回值变更** — 从 `void` 变为 `PauseResult`，携带回写数据
+- **`Debugger.pause()` 返回值变更** — 从 `void` 变为 `PauseResult`，携带回写数据
 
 ### 2.3 不做
 
@@ -382,7 +382,7 @@ ws.on('message', (data: Buffer) => {
 })
 ```
 
-### 3.6 `DevtoolsDebugger.pause()` 返回值变更
+### 3.6 `Debugger.pause()` 返回值变更
 
 ```typescript
 // tools/debugger.ts
@@ -695,7 +695,7 @@ export class DebugBridge {
    */
   private handleDevtoolsEvent(event: Record<string, unknown>): void {
     switch (event.type) {
-      case 'Agent.debugger.paused':
+      case 'Debugger.paused':
         this.wsManager.broadcast({
           type: 'debug_paused',
           data: {
@@ -1052,7 +1052,7 @@ export const LOG_LEVEL_COLORS: Record<LogLevel, string> = {
 ```typescript
 const BASE = '/api/debug'
 
-export async function fetchDebugStatus(): Promise<{ enabled: boolean; connected: boolean }> {
+export async function fetchDevtoolsStatus(): Promise<{ enabled: boolean; connected: boolean }> {
   const res = await fetch(`${BASE}/status`)
   return res.json()
 }
@@ -1121,7 +1121,7 @@ import { create } from 'zustand'
 import type { Breakpoint, DebugSnapshot, DebugCommandType, PauseResumePayload } from '../types/debug'
 import * as debugApi from '../api/debug'
 
-interface DebugState {
+interface DevtoolsState {
   // 连接状态
   enabled: boolean
   connected: boolean
@@ -1172,7 +1172,7 @@ interface DebugState {
 
 const EMPTY_DRAFT: PauseResumePayload = {}
 
-export const useDebugStore = create<DebugState>((set, get) => ({
+export const useDebugStore = create<DevtoolsState>((set, get) => ({
   enabled: false,
   connected: false,
   panelOpen: false,
@@ -1190,7 +1190,7 @@ export const useDebugStore = create<DebugState>((set, get) => ({
   setActiveTab: (tab) => set({ activeTab: tab }),
 
   fetchStatus: async () => {
-    const status = await debugApi.fetchDebugStatus()
+    const status = await debugApi.fetchDevtoolsStatus()
     set({ enabled: status.enabled, connected: status.connected })
   },
 
@@ -1656,10 +1656,10 @@ wsClient.on('log_batch', (data) => {
 // Shift+F5 — Stop
 ```
 
-### 5.7 ChatPage 布局修改
+### 5.7 Chat 布局修改
 
 ```tsx
-export function ChatPage() {
+export function Chat() {
   const { panelOpen } = useDebugStore()
 
   return (
@@ -1831,7 +1831,7 @@ export function ChatPage() {
 | 2.15 | `web-ui/src/components/Debug/LogFilter.tsx` | 日志过滤栏 |
 | 2.16 | `web-ui/src/components/Debug/DebugPanel.tsx` | 面板容器 (Tab 切换) |
 | 2.17 | `web-ui/src/components/Debug/DebugStatusBadge.tsx` | TopBar 状态徽章 |
-| 2.18 | `web-ui/src/pages/ChatPage.tsx` | 集成 DebugPanel (右侧) |
+| 2.18 | `web-ui/src/pages/Chat.tsx` | 集成 DebugPanel (右侧) |
 | 2.19 | `web-ui/src/components/Layout/TopBar.tsx` | 集成 DebugStatusBadge |
 
 ### Phase 3: 联调与测试

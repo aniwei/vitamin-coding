@@ -44,7 +44,7 @@ const mockRepositories: Repository[] = [
   },
 ]
 
-export function CodeWikiPage() {
+export function CodeWiki() {
   const [searchQuery, setSearchQuery] = useState('')
 
   const handleAddRepository = () => {

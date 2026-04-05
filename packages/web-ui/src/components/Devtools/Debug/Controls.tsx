@@ -1,5 +1,5 @@
 import { Play, SkipForward, ArrowDownRight, Square } from 'lucide-react'
-import { useDevtoolsStore } from '../../../stores/debug'
+import { useDevtoolsStore } from '../../../stores/devtools'
 
 const ACTIONS = [
   { key: 'resume', icon: Play, label: 'Resume', shortcut: 'F5', color: 'text-emerald-500' },

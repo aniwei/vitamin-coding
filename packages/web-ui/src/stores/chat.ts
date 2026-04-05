@@ -418,7 +418,7 @@ function resolveSessionId(data: any): string | null {
 let connectionStableTimer: number | null = null
 let wasEverStable = false
 
-ws.on('connected', () => {
+ws.on('Runtime.connected', () => {
   useChatStore.getState().setConnected(true)
   if (wasEverStable) {
     useToastStore.getState().addToast('Reconnected to server', 'success')
@@ -428,7 +428,7 @@ ws.on('connected', () => {
   }, 2000)
 })
 
-ws.on('disconnected', () => {
+ws.on('Runtime.disconnected', () => {
   useChatStore.getState().setConnected(false)
   if (connectionStableTimer) {
     clearTimeout(connectionStableTimer)
@@ -439,7 +439,7 @@ ws.on('disconnected', () => {
   }
 })
 
-ws.on('user_message', (message) => {
+ws.on('Chat.userMessage', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   const content = message.data.content
@@ -462,7 +462,7 @@ ws.on('user_message', (message) => {
   }))
 })
 
-ws.on('message_start', (message) => {
+ws.on('Chat.messageStart', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   useChatStore.setState((state) => ({
@@ -484,7 +484,7 @@ function finalizeThinking(msgs: Message[]): Message[] {
   return msgs
 }
 
-ws.on('message_chunk', (message) => {
+ws.on('Chat.messageChunk', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   console.log('[Frontend] Received message_chunk:', message.data.content.substring(0, 100))
@@ -508,7 +508,7 @@ ws.on('message_chunk', (message) => {
   })
 })
 
-ws.on('message_complete', (message) => {
+ws.on('Chat.messageComplete', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   console.log('[Frontend] Received message_complete')
@@ -517,7 +517,7 @@ ws.on('message_complete', (message) => {
   }))
 })
 
-ws.on('error', (message) => {
+ws.on('Runtime.error', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   useChatStore.setState((state) => ({
@@ -529,7 +529,7 @@ ws.on('error', (message) => {
   useToastStore.getState().addToast(message.data.message || 'An error occurred', 'error')
 })
 
-ws.on('approval_required', (message) => {
+ws.on('Chat.approvalRequired', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   console.log('[Frontend] Received approval_required:', message.data)
@@ -538,7 +538,7 @@ ws.on('approval_required', (message) => {
   }))
 })
 
-ws.on('approval_resolved', (message) => {
+ws.on('Chat.approvalResolved', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   useChatStore.setState((state) => ({
@@ -546,7 +546,7 @@ ws.on('approval_resolved', (message) => {
   }))
 })
 
-ws.on('tool_call', (message) => {
+ws.on('Chat.toolCall', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
 
@@ -570,7 +570,7 @@ ws.on('tool_call', (message) => {
   })
 })
 
-ws.on('tool_result', (message) => {
+ws.on('Chat.toolResult', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
 
@@ -608,7 +608,7 @@ ws.on('tool_result', (message) => {
   })
 })
 
-ws.on('thinking_block', (message) => {
+ws.on('Chat.thinkingBlock', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   const action = message.data.action
@@ -663,7 +663,7 @@ ws.on('thinking_block', (message) => {
   })
 })
 
-ws.on('status_update', (message) => {
+ws.on('Session.statusUpdate', (message) => {
   const { status } = useChatStore.getState()
   const newStatus = {
     ...status,
@@ -675,7 +675,7 @@ ws.on('status_update', (message) => {
   })
 })
 
-ws.on('ask_user_required', (message) => {
+ws.on('Chat.askUserRequired', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   console.log('[Frontend] Received ask_user_required:', message.data)
@@ -684,7 +684,7 @@ ws.on('ask_user_required', (message) => {
   }))
 })
 
-ws.on('ask_user_resolved', (message) => {
+ws.on('Chat.askUserResolved', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   useChatStore.setState((state) => ({
@@ -692,7 +692,7 @@ ws.on('ask_user_resolved', (message) => {
   }))
 })
 
-ws.on('session_activity', (message) => {
+ws.on('Session.activity', (message) => {
   const { sessionId, status, running } = message.data
 
   const isRunning = running === true || status === 'running'
@@ -712,7 +712,7 @@ ws.on('session_activity', (message) => {
 
 // ─── Plan Approval Events ────────────────────────────────────────────────────
 
-ws.on('plan_approval_required', (message) => {
+ws.on('Chat.planApprovalRequired', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   console.log('[Frontend] Received plan_approval_required:', message.data)
@@ -721,7 +721,7 @@ ws.on('plan_approval_required', (message) => {
   }))
 })
 
-ws.on('plan_approval_resolved', (message) => {
+ws.on('Chat.planApprovalResolved', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   useChatStore.setState((state) => ({
@@ -731,7 +731,7 @@ ws.on('plan_approval_resolved', (message) => {
 
 // ─── Subagent Events ─────────────────────────────────────────────────────────
 
-ws.on('subagent_start', (message) => {
+ws.on('Chat.subagentStart', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   const { agentType, description, toolCallId } = message.data
@@ -752,7 +752,7 @@ ws.on('subagent_start', (message) => {
   })
 })
 
-ws.on('subagent_complete', (message) => {
+ws.on('Chat.subagentComplete', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   const { toolCallId, success } = message.data
@@ -781,7 +781,7 @@ ws.on('subagent_complete', (message) => {
   })
 })
 
-ws.on('task_completed', (message) => {
+ws.on('Chat.taskCompleted', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   console.log('[Frontend] Task completed:', message.data.summary)
@@ -789,7 +789,7 @@ ws.on('task_completed', (message) => {
 
 // ─── Progress Events ─────────────────────────────────────────────────────────
 
-ws.on('progress', (message) => {
+ws.on('Chat.progress', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   const { status, message: progressMsg } = message.data
@@ -807,7 +807,7 @@ ws.on('progress', (message) => {
 
 // ─── Nested Tool Events ──────────────────────────────────────────────────────
 
-ws.on('nested_tool_call', (message) => {
+ws.on('Chat.nestedToolCall', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   const { toolName, arguments: args, depth, parentToolCallId } = message.data
@@ -829,7 +829,7 @@ ws.on('nested_tool_call', (message) => {
   })
 })
 
-ws.on('nested_tool_result', (message) => {
+ws.on('Chat.nestedToolResult', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) return
   const { toolName, success, summary, depth } = message.data

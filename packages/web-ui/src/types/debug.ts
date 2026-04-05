@@ -1,25 +1,24 @@
-export const BREAKPOINT_CATEGORIES = {
-  'Agent 循环': [
-    'loop_start', 'model_before', 'model_after',
-    'tool_before', 'tool_after', 'loop_end',
-    'loop_cleanup', 'agent_aborted', 'agent_error', 'agent_done',
-  ],
-  '循环注入': [
-    'steering_check', 'follow_up_check', 'context_transform',
-  ],
-  'Tool 执行': [
-    'tool_resolve', 'tool_validate', 'tool_hook_before', 'tool_hook_after',
-  ],
-  'Session/Prompt': [
-    'prompt_before', 'prompt_after', 'context_build',
-    'messages_persist', 'session_create', 'session_fork', 'session_restore',
-  ],
-} as const
+export type BreakpointCategory =
+  | 'agent_work_loop'
+  | 'work_loop_injection'
+  | 'tool_executor'
+  | 'session_prompt_lifecycle'
+  | 'custom'
+
+export const BREAKPOINT_CATEGORY_LABELS: Record<BreakpointCategory, string> = {
+  agent_work_loop: 'Agent 循环',
+  work_loop_injection: '循环注入',
+  tool_executor: 'Tool 执行',
+  session_prompt_lifecycle: 'Session/Prompt',
+  custom: '自定义',
+}
 
 export type BreakpointPoint = string
 
 export interface Breakpoint {
   point: BreakpointPoint
+  name?: string
+  category?: BreakpointCategory
   enabled: boolean
 }
 
@@ -48,6 +47,12 @@ export interface DebugSnapshot {
   }
 }
 
+export type CommandRejectCode =
+  | 'STALE_OR_NO_PAUSE'
+  | 'INVALID_PARAMS'
+  | 'DEBUGGER_OFFLINE'
+  | 'BRIDGE_DISCONNECTED'
+
 export interface PauseResumePayload {
   systemPrompt?: string
   injectMessages?: { role: 'user' | 'system'; content: string }[]
@@ -61,3 +66,13 @@ export interface PauseResumePayload {
 }
 
 export type DebugCommandType = 'next' | 'step' | 'over' | 'continue' | 'stop'
+
+export type DebuggerCommandMethod =
+  | 'Debugger.resume'
+  | 'Debugger.stepOver'
+  | 'Debugger.stepInto'
+  | 'Debugger.disable'
+
+export interface DebuggerCommandParams {
+  payload?: PauseResumePayload
+}

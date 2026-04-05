@@ -49,7 +49,6 @@
     "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
-    "@vitamin/service": "workspace:*",
     "tsx": "^4.19.2"
   }
 }

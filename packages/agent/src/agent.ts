@@ -144,6 +144,7 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
       agentName: context.agentName,
       sessionId: context.sessionId,
       devtools: context.devtools,
+      approval: context.approval,
     })
 
     const stream: StreamFunction = this.stream ?? createDefaultStream()

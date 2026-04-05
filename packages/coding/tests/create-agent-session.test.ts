@@ -4,6 +4,7 @@ import { createEventStream, createProviderRegistry, type AssistantMessage, type 
 import { createHookRegistry } from '@vitamin/hooks'
 import { attachLogListener, createLogger } from '@vitamin/shared'
 import { createInMemorySessionStore } from '@vitamin/session'
+import type { Devtools } from '@vitamin/devtools'
 
 import { AgentSession } from '../src/session/agent-session'
 import { createAgentSession } from '../src/session/create-agent-session'
@@ -229,5 +230,75 @@ describe('createAgentSession', () => {
     expect(entries.some((entry) => entry.includes('prompt started'))).toBe(true)
     expect(entries.some((entry) => entry.includes('Executing tool'))).toBe(true)
     expect(entries.some((entry) => entry.includes('usage input='))).toBe(true)
+  })
+
+  it('applies debug payload updates before agent stream execution', async () => {
+    const hooks = createHookRegistry({ preset: 'none' })
+    const store = createInMemorySessionStore<AgentMessage>()
+    const sessionData = await store.createSession('debug-payload-e2e')
+
+    const streamContexts: StreamContext[] = []
+    const agent = new Agent({
+      stream: (context, signal) => {
+        streamContexts.push(context)
+        return makeStream()(context, signal)
+      },
+    })
+
+    const devtools = {
+      debugger: {
+        pause(snapshot: { point: string }) {
+          if (snapshot.point === 'prompt_before') {
+            return {
+              command: { type: 'continue' as const, seq: 1 },
+              payload: {
+                systemPrompt: 'debug prompt override',
+                llmParams: {
+                  temperature: 0.2,
+                  maxTokens: 256,
+                  thinkingLevel: 'low',
+                },
+              },
+            }
+          }
+
+          if (snapshot.point === 'context_build') {
+            return {
+              command: { type: 'continue' as const, seq: 2 },
+              payload: {
+                injectMessages: [
+                  { role: 'system' as const, content: 'debug injected context' },
+                ],
+              },
+            }
+          }
+
+          return {
+            command: { type: 'continue' as const, seq: 3 },
+            payload: null,
+          }
+        },
+      },
+    } as unknown as Devtools
+
+    const agentSession = new AgentSession(sessionData, agent, {
+      model: makeModel(),
+      systemPrompt: 'system',
+      hooks,
+      devtools,
+    })
+
+    await agentSession.prompt('hello world')
+
+    expect(streamContexts).toHaveLength(1)
+    expect(streamContexts[0]?.systemPrompt).toBe('debug prompt override')
+    expect(streamContexts[0]?.temperature).toBe(0.2)
+    expect(streamContexts[0]?.maxTokens).toBe(256)
+    expect(streamContexts[0]?.thinkingLevel).toBe('low')
+    expect(
+      streamContexts[0]?.messages.some(
+        (message) => message.role === 'system' && message.content === 'debug injected context',
+      ),
+    ).toBe(true)
   })
 })

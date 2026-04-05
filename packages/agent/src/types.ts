@@ -103,6 +103,8 @@ export interface AgentRunContext {
   temperature?: number
   // 开发工具
   devtools?: Devtools
+  // 工具审批门控回调 — 当 permission hook 判定 'ask' 时调用
+  approval?: (toolName: string, args: Record<string, unknown>, reason: string) => Promise<boolean>
 }
 
 // Agent 循环配置（内部使用，由 Agent.run() 从 AgentRunContext 构建）

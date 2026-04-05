@@ -207,18 +207,18 @@ Complete API documentation for OpenDev components, including REST endpoints, Web
 ## WebSocket API
 
 ### Message Types
-- \`query\` - Send user query to agent
-- \`approve\` - Respond to tool execution approval
-- \`ping\` - Connection health check
+- \`Chat.query\` - Send user query to agent
+- \`Chat.approval\` - Respond to tool execution approval
+- \`Runtime.ping\` - Connection health check
 
 ### Event Types
-- \`user_message\` - New user message
-- \`message_start\` - Agent response starting
-- \`message_chunk\` - Partial response content
-- \`message_complete\` - Full response received
-- \`tool_call\` - Tool execution started
-- \`tool_result\` - Tool execution completed
-- \`approval_required\` - User approval needed`,
+- \`Chat.userMessage\` - New user message
+- \`Chat.messageStart\` - Agent response starting
+- \`Chat.messageChunk\` - Partial response content
+- \`Chat.messageComplete\` - Full response received
+- \`Chat.toolCall\` - Tool execution started
+- \`Chat.toolResult\` - Tool execution completed
+- \`Chat.approvalRequired\` - User approval needed`,
     relatedFiles: [
       'opendev/web/routes/chat.py',
       'opendev/web/routes/sessions.py',

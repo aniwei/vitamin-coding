@@ -7,7 +7,13 @@ describe('Breakpoints', () => {
   it('initializes all predefined points as enabled', () => {
     const breakpoints = new Breakpoints()
 
-    expect(breakpoints.list().map(item => item.point)).toEqual(BREAKPOINT_POINTS)
+    expect(breakpoints.list().map(item => item.point)).toEqual(BREAKPOINT_POINTS.map(item => item.point))
+    expect(breakpoints.get('loop_start')).toMatchObject({
+      point: 'loop_start',
+      name: 'Loop Start',
+      category: 'agent_work_loop',
+      enabled: true,
+    })
     expect(breakpoints.list().every(item => item.enabled)).toBe(true)
   })
 

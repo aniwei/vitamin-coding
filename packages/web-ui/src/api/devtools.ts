@@ -2,7 +2,7 @@ import type { Breakpoint } from '../types/debug'
 
 const BASE = '/api/debug'
 
-export async function fetchDebugStatus(): Promise<{ enabled: boolean; connected: boolean }> {
+export async function fetchDevtoolsStatus(): Promise<{ enabled: boolean; connected: boolean }> {
   const res = await fetch(`${BASE}/status`)
   return res.json()
 }

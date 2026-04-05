@@ -35,7 +35,7 @@ export function LogFilter() {
       >
         {LEVELS.map((l) => (
           <option key={l} value={l}>
-            ≥{l}
+            {l}
           </option>
         ))}
       </select>

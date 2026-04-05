@@ -1,4 +1,4 @@
-import { useDevtoolsStore } from '../../../stores/debug'
+import { useDevtoolsStore } from '../../../stores/devtools'
 
 function formatNumber(n: number): string {
   return n.toLocaleString()

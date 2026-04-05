@@ -1,6 +1,6 @@
 import { useState } from 'react'
 import { ChevronDown, ChevronRight, RotateCcw, Plus } from 'lucide-react'
-import { useDevtoolsStore } from '../../../stores/debug'
+import { useDevtoolsStore } from '../../../stores/devtools'
 
 function Section({
   title,

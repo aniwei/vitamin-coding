@@ -1,20 +1,45 @@
 import { useEffect, useRef, useCallback, useState } from 'react'
 import { Terminal, PanelRightClose } from 'lucide-react'
-import { useDevtoolsStore } from '../../stores/debug'
+import { useDevtoolsStore } from '../../stores/devtools'
 import { Debug } from './Debug'
 import { Console } from './Console'
 import { BreakpointFlow } from './Flow/index'
-import { setupDebugWsHandlers } from '../../api/debug-dispatcher'
+import { setupDevtoolsHandle } from '../../api/devtools-dispatcher'
 
 export { DebugStatusBadge } from './DebugStatusBadge'
 
 const PANEL_MIN_W = 320
 const PANEL_MAX_W_RATIO = 0.7
 
+const PANEL_DEFAULT_W = 720
+const PANEL_STORAGE_W = 'vitamin.webui.devtools.panel.width'
+
 const TOP_MIN_H = 200
 const TOP_MAX_H_RATIO = 0.85
 
+const TOP_DEFAULT_H = 420
+const TOP_STORAGE_H = 'vitamin.webui.devtools.top.height'
+
 const FLOW_MIN_W = 160
+const FLOW_DEFAULT_W = 380
+const FLOW_STORAGE_W = 'vitamin.webui.devtools.flow.width'
+
+function readStoredNumber(key: string, fallback: number): number {
+  if (typeof window === 'undefined') return fallback
+
+  const raw = window.localStorage.getItem(key)
+  if (!raw) return fallback
+
+  const parsed = Number(raw)
+  if (!Number.isFinite(parsed) || parsed <= 0) return fallback
+
+  return parsed
+}
+
+function clampPanelWidth(width: number): number {
+  const maxW = typeof window === 'undefined' ? width : window.innerWidth * PANEL_MAX_W_RATIO
+  return Math.min(maxW, Math.max(PANEL_MIN_W, width))
+}
 
 export function Devtools() {
   const panelOpen = useDevtoolsStore((s) => s.panelOpen)
@@ -23,16 +48,30 @@ export function Devtools() {
   const fetchStatus = useDevtoolsStore((s) => s.fetchStatus)
   const fetchBreakpoints = useDevtoolsStore((s) => s.fetchBreakpoints)
 
-  const [panelWidth, setPanelWidth] = useState(720)
-  const [topHeight, setTopHeight] = useState(420)
-  const [flowWidth, setFlowWidth] = useState(380)
+  const [panelWidth, setPanelWidth] = useState(() =>
+    clampPanelWidth(readStoredNumber(PANEL_STORAGE_W, PANEL_DEFAULT_W)),
+  )
+  const [topHeight, setTopHeight] = useState(() => readStoredNumber(TOP_STORAGE_H, TOP_DEFAULT_H))
+  const [flowWidth, setFlowWidth] = useState(() => readStoredNumber(FLOW_STORAGE_W, FLOW_DEFAULT_W))
   const asideRef = useRef<HTMLElement>(null)
 
   useEffect(() => {
-    setupDebugWsHandlers()
+    setupDevtoolsHandle()
     fetchStatus()
     fetchBreakpoints()
   }, [fetchStatus, fetchBreakpoints])
+
+  useEffect(() => {
+    window.localStorage.setItem(PANEL_STORAGE_W, String(panelWidth))
+  }, [panelWidth])
+
+  useEffect(() => {
+    window.localStorage.setItem(TOP_STORAGE_H, String(topHeight))
+  }, [topHeight])
+
+  useEffect(() => {
+    window.localStorage.setItem(FLOW_STORAGE_W, String(flowWidth))
+  }, [flowWidth])
 
   // ── Panel left-edge horizontal resize ──
   const onPanelDragStart = useCallback(

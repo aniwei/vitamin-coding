@@ -16,7 +16,7 @@ export default defineConfig([
     entry: ['src/service-worker.ts'],
     format: ['cjs'],
     dts: false,
-    sourcemap: false,
+    sourcemap: true,
     target: 'node22',
     outDir: 'dist',
     splitting: false,

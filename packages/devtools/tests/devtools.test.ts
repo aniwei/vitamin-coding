@@ -16,7 +16,7 @@ describe('Devtools', () => {
     const devtools = createDevtools({ port: 3902 })
     const debuggerController = devtools.debugger as unknown as { serviceUrl: string }
 
-    expect(debuggerController.serviceUrl).toContain('http://127.0.0.1:3902/')
-    expect(debuggerController.serviceUrl.endsWith('/command/debugger/paused')).toBe(true)
+    expect(debuggerController.serviceUrl).toContain('ws://127.0.0.1:3902/')
+    expect(debuggerController.serviceUrl.endsWith('/inspect')).toBe(true)
   })
 })
