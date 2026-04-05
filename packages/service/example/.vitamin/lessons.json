@@ -12,7 +12,32 @@
       "id": "lesson_1",
       "createdAt": 1775390775313,
       "appliedCount": 0
+    },
+    {
+      "tags": [
+        "file_management",
+        "error_handling"
+      ],
+      "trigger": "Attempted to read a non-existent file (hello).",
+      "insight": "When reading a file that does not exist, inform the user clearly and confirm their intention to create it or specify another path.",
+      "sourceSessionId": "",
+      "id": "lesson_2",
+      "createdAt": 1775415153923,
+      "appliedCount": 0
+    },
+    {
+      "tags": [
+        "react",
+        "modular_design",
+        "best_practices"
+      ],
+      "trigger": "Building the Snake game project structure in the `my-react-app` folder.",
+      "insight": "When initializing a new feature (like the Snake game), breaking down components into independent functional units (e.g., MainMenu and GameBoard) and keeping styles, logic, and components modular within directories promotes clarity and reusability.",
+      "sourceSessionId": "",
+      "id": "lesson_3",
+      "createdAt": 1775417507723,
+      "appliedCount": 0
     }
   ],
-  "nextId": 2
+  "nextId": 4
 }

@@ -298,11 +298,24 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
       })
 
       if (se.type === 'start') {
+        this.notify({
+          type: 'streaming_start',
+          sessionId: this.id,
+          model: this.model.id,
+        })
+
         await this.hookRegistry.emit('stream.start', { 
           sessionId: this.id, 
           model: this.model.id 
         })
       } else if (se.type === 'done') {
+        this.notify({
+          type: 'streaming_end',
+          sessionId: this.id,
+          model: this.model.id,
+          stopReason: se.reason ?? 'end_turn',
+        })
+
         await this.hookRegistry.emit('stream.end', { 
           sessionId: this.id, 
           model: this.model.id, 
@@ -310,6 +323,51 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
           se.reason ?? 'end_turn' 
         })
       }
+    })
+
+    const unsubTurnStart = this.agent.on('turn_start', (...args: unknown[]) => {
+      const event = args[0] as { type: string; turnIndex: number }
+      this.notify({
+        type: 'turn_start',
+        sessionId: this.id,
+        turnIndex: event.turnIndex,
+      })
+    })
+
+    const unsubToolCallStart = this.agent.on('tool_call_start', (...args: unknown[]) => {
+      const event = args[0] as {
+        type: string
+        toolCall: { id: string; name: string; arguments: Record<string, unknown> }
+      }
+
+      this.notify({
+        type: 'tool_call_start',
+        sessionId: this.id,
+        toolCall: {
+          id: event.toolCall.id,
+          name: event.toolCall.name,
+          arguments: event.toolCall.arguments,
+        },
+      })
+    })
+
+    const unsubToolCallEnd = this.agent.on('tool_call_end', (...args: unknown[]) => {
+      const event = args[0] as {
+        type: string
+        toolCall: { id: string; name: string; arguments: Record<string, unknown> }
+        result?: { isError?: boolean }
+      }
+
+      this.notify({
+        type: 'tool_call_end',
+        sessionId: this.id,
+        toolCall: {
+          id: event.toolCall.id,
+          name: event.toolCall.name,
+          arguments: event.toolCall.arguments,
+        },
+        isError: event.result?.isError === true,
+      })
     })
 
     try {
@@ -413,6 +471,9 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
       throw error
     } finally {
       unsubStream()
+      unsubTurnStart()
+      unsubToolCallStart()
+      unsubToolCallEnd()
     }
   }
 

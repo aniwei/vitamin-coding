@@ -47,7 +47,7 @@ export class EventBridge {
     this.session.on('prompt_end', this.onPromptEnd)
     this.session.on('error', this.onError)
 
-    // Subscribe to session-level gate events (approval, askUser, planApproval)
+    // Subscribe to session-level events (gate + agent lifecycle)
     this.unsubscribeSession = this.session.subscribe((event) => {
       const sid = this.session.id
       switch (event.type) {
@@ -114,6 +114,15 @@ export class EventBridge {
             data: { sessionId: sid, requestId: event.requestId, action: event.action },
           })
           break
+        default: {
+          const messages = this.createMessageFromSessionEvent(sid, event)
+          if (messages) {
+            for (const msg of Array.isArray(messages) ? messages : [messages]) {
+              this.send(sid, msg)
+            }
+          }
+          break
+        }
       }
     })
   }

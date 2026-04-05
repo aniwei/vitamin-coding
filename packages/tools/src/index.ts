@@ -41,6 +41,10 @@ export { createLearn } from './orchestration/learn'
 export type { LearnCallback } from './orchestration/learn'
 
 
+// Web 工具
+export { createWebFetch } from './web/fetch'
+export { createWebSearch } from './web/search'
+
 // 会话管理
 export { createSessionManager } from './session/session-manager'
 export type { SessionManager } from './session/session-manager'
