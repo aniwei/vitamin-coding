@@ -8,7 +8,7 @@ export type {
   ToolPreset,
   PermissionMode,
   PermissionRuleConfig,
-  PermissionPolicyConfig,
+  PermissionPolicySetting,
   WorkflowSlot,
   SettingWarning,
   ConfigWarning,

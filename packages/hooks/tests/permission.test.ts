@@ -11,13 +11,13 @@ import {
   createDisabledToolsPolicy,
   createAgentBoundaryPolicy,
   createPermissionModePolicy,
-  compilePolicyFromConfig,
+  compilePolicyFromSetting,
 } from '../src/core/permission'
 
 import type {
   PermissionPolicy,
   PermissionContext,
-  PermissionPolicyConfig,
+  PermissionPolicySetting,
 } from '../src/core/permission'
 import type { ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from '../src/types'
 
@@ -545,11 +545,11 @@ describe('PermissionAuditLog', () => {
   })
 })
 
-// ═══ compilePolicyFromConfig ═══
+// ═══ compilePolicyFromSetting ═══
 
-describe('compilePolicyFromConfig', () => {
+describe('compilePolicyFromSetting', () => {
   it('compiles config into PermissionPolicy', () => {
-    const config: PermissionPolicyConfig = {
+    const config: PermissionPolicySetting = {
       name: 'user-policy',
       priority: 25,
       rules: [
@@ -558,7 +558,7 @@ describe('compilePolicyFromConfig', () => {
       ],
     }
 
-    const policy = compilePolicyFromConfig(config)
+    const policy = compilePolicyFromSetting(config)
     expect(policy.name).toBe('user-policy')
     expect(policy.priority).toBe(25)
     expect(policy.enabled).toBe(true)
@@ -568,26 +568,26 @@ describe('compilePolicyFromConfig', () => {
   })
 
   it('compiles path strings into RegExp[]', () => {
-    const config: PermissionPolicyConfig = {
+    const config: PermissionPolicySetting = {
       name: 'path-policy',
       rules: [
         { name: 'deny-configs', effect: 'deny', paths: ['\\.config\\.'] },
       ],
     }
 
-    const policy = compilePolicyFromConfig(config)
+    const policy = compilePolicyFromSetting(config)
     const pathPatterns = policy.rules[0]!.match.paths!
     expect(pathPatterns).toHaveLength(1)
     expect(pathPatterns[0]!.test('project.config.json')).toBe(true)
   })
 
   it('uses defaults for optional fields', () => {
-    const config: PermissionPolicyConfig = {
+    const config: PermissionPolicySetting = {
       name: 'minimal',
       rules: [{ name: 'r', effect: 'allow' }],
     }
 
-    const policy = compilePolicyFromConfig(config)
+    const policy = compilePolicyFromSetting(config)
     expect(policy.priority).toBe(50)
     expect(policy.enabled).toBe(true)
   })

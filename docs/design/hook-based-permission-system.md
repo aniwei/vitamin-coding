@@ -595,10 +595,10 @@ interface VitaminSettingFromSchema {
   permission_mode?: PermissionMode
 
   /** 自定义权限策略 */
-  permissions?: PermissionPolicyConfig[]
+  permissions?: PermissionPolicySetting[]
 }
 
-interface PermissionPolicyConfig {
+interface PermissionPolicySetting {
   name: string
   priority?: number
   enabled?: boolean
@@ -800,7 +800,7 @@ if (disabledTools.length > 0) {
 // 4. 注册用户自定义策略
 const userPolicies = settings.get('permissions') ?? []
 for (const config of userPolicies) {
-  policyRegistry.register(compilePolicyFromConfig(config))
+  policyRegistry.register(compilePolicyFromSetting(config))
 }
 
 // 5. 注册 hook
@@ -819,7 +819,7 @@ hookRegistry.register(createPermissionGuardHook(policyRegistry, auditLog))
 
 ### Phase 2: 配置集成
 - [ ] `VitaminSettingFromSchema` 增加 `permission_mode` 和 `permissions`
-- [ ] 实现 `compilePolicyFromConfig` (YAML → Policy)
+- [ ] 实现 `compilePolicyFromSetting` (YAML → Policy)
 - [ ] 连接 `disabled_tools` / `disabled_agents` 到策略引擎
 
 ### Phase 3: Agent 边界

@@ -89,7 +89,7 @@ export interface PermissionRuleConfig {
   ask_prompt?: string
 }
 
-export interface PermissionPolicyConfig {
+export interface PermissionPolicySetting {
   name: string
   priority?: number
   enabled?: boolean

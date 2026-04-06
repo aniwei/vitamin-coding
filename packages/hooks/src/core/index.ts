@@ -72,7 +72,7 @@ export {
   PermissionPolicyRegistry,
   PermissionAuditLog,
   PermissionGuardHook,
-  compilePolicyFromConfig,
+  compilePolicyFromSetting,
   createPermissionGuardHook,
   FILE_GUARD_POLICY,
   DESTRUCTIVE_COMMAND_POLICY,
@@ -92,5 +92,5 @@ export type {
   PermissionDecision,
   PermissionAuditEntry,
   PermissionRuleConfig,
-  PermissionPolicyConfig,
+  PermissionPolicySetting,
 } from './permission'

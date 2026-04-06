@@ -13,9 +13,9 @@ import {
   DESTRUCTIVE_COMMAND_POLICY,
   createPermissionModePolicy,
   createDisabledToolsPolicy,
-  compilePolicyFromConfig,
+  compilePolicyFromSetting,
 } from '@vitamin/hooks'
-import type { PermissionMode, PermissionPolicyConfig } from '@vitamin/hooks'
+import type { PermissionMode, PermissionPolicySetting } from '@vitamin/hooks'
 import {
   createToolRegistry,
   ToolRegistry,
@@ -68,7 +68,6 @@ function filterToolsByNames(tools: AgentTool[], names: string[]): AgentTool[] {
   const nameSet = new Set(names)
   return tools.filter((tool) => nameSet.has(tool.name))
 }
-
 
 export class VitaminApp implements VitaminContext {
   public readonly settings: SettingsManager
@@ -164,8 +163,8 @@ export class VitaminApp implements VitaminContext {
     })
 
     // 初始化权限系统
-    this.permissionRegistry = new PermissionPolicyRegistry()
     this.auditLog = new PermissionAuditLog()
+    this.permissionRegistry = new PermissionPolicyRegistry()
     this.registerBuiltinPermissionPolicies()
     this.hookRegistry.register(createPermissionGuardHook(this.permissionRegistry, this.auditLog))
     const defaultModel = _model ?? (options.modelId ? this.providerRegistry.resolveModel(options.modelId) : undefined)
@@ -187,14 +186,14 @@ export class VitaminApp implements VitaminContext {
       projectConfigPath,
     })
 
-    this.settings.on('change', (config) => {
+    this.settings.on('change', (setting) => {
       this.settingsLoaded = true
 
-      if (config.tool_preset) {
-        this.defaultToolPreset = config.tool_preset
+      if (setting.tool_preset) {
+        this.defaultToolPreset = setting.tool_preset
       }
 
-      this.syncPermissionPolicies(config)
+      this.updatePermissionPolicies(setting)
     })
 
     this.resourceManager = resourceManager ?? createResourceManager({
@@ -204,7 +203,7 @@ export class VitaminApp implements VitaminContext {
     // 初始化 FileStateManager 和 OperationalLearningStore
     this.fileStateManager = new FileStateManager()
     this.learningStore = new OperationalLearningStore({
-      filePath: `${this.workspaceDir}/.vitamin/lessons.json`,
+      path: `${this.workspaceDir}/.vitamin/lessons.json`,
     })
 
     // 初始化 PromptManager（默认使用内置 prompts 目录）
@@ -680,25 +679,25 @@ export class VitaminApp implements VitaminContext {
   }
 
   /** 根据 settings 变更同步权限策略 */
-  private syncPermissionPolicies(config: {
+  private updatePermissionPolicies(setting: {
     permission_mode?: PermissionMode
-    permissions?: PermissionPolicyConfig[]
+    permissions?: PermissionPolicySetting[]
     disabled_tools?: string[]
   }): void {
     // 1. permission_mode 变更 → 重新注册 mode 策略
-    if (config.permission_mode) {
+    if (setting.permission_mode) {
       this.permissionRegistry.unregister('mode:bypass')
       this.permissionRegistry.unregister('mode:auto')
       this.permissionRegistry.unregister('mode:confirm')
       this.permissionRegistry.unregister('mode:strict')
       this.permissionRegistry.unregister('mode:readonly')
-      this.permissionRegistry.register(createPermissionModePolicy(config.permission_mode))
+      this.permissionRegistry.register(createPermissionModePolicy(setting.permission_mode))
     }
 
     // 2. disabled_tools 变更 → 重新注册 disabled-tools 策略
-    if (config.disabled_tools && config.disabled_tools.length > 0) {
+    if (setting.disabled_tools && setting.disabled_tools.length > 0) {
       this.permissionRegistry.unregister('setting:disabled-tools')
-      this.permissionRegistry.register(createDisabledToolsPolicy(config.disabled_tools))
+      this.permissionRegistry.register(createDisabledToolsPolicy(setting.disabled_tools))
     } else {
       this.permissionRegistry.unregister('setting:disabled-tools')
     }
@@ -709,17 +708,15 @@ export class VitaminApp implements VitaminContext {
         this.permissionRegistry.unregister(p.name)
       }
     }
-    if (config.permissions) {
-      for (const pc of config.permissions) {
-        const policy = compilePolicyFromConfig({ ...pc, name: `user:${pc.name}` })
+
+    if (setting.permissions) {
+      for (const pc of setting.permissions) {
+        const policy = compilePolicyFromSetting({ ...pc, name: `user:${pc.name}` })
         this.permissionRegistry.register(policy)
       }
     }
 
-    this.logger.debug(
-      'Permission policies synced: %d policies active',
-      this.permissionRegistry.getAll().length,
-    )
+    this.logger.debug('Permission policies synced: %d policies active', this.permissionRegistry.getAll().length)
   }
 
   private ensureNotDisposed(): void {
