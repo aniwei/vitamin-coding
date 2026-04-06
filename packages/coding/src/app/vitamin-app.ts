@@ -14,6 +14,7 @@ import {
   createPermissionModePolicy,
   createDisabledToolsPolicy,
   compilePolicyFromSetting,
+  createPermissionRegistry,
 } from '@vitamin/hooks'
 import type { PermissionMode, PermissionPolicySetting } from '@vitamin/hooks'
 import {
@@ -93,9 +94,9 @@ export class VitaminApp implements VitaminContext {
 
   private readonly orchestrator: Orchestrator
   
-  private defaultToolPreset: 'minimal' | 'standard' | 'full' = 'full'
   private disposed = false
   private settingsLoaded = false
+  private defaultToolPreset: 'minimal' | 'standard' | 'full' = 'full'
 
   private readonly phaseTracker = new Map<string, string[]>()
   private readonly learningTriggeredSessions = new Set<string>()
@@ -149,7 +150,7 @@ export class VitaminApp implements VitaminContext {
     })
 
     const {
-      model: _model,
+      model,
       authStore,
       hookRegistry,
       modelRegistry,
@@ -164,10 +165,11 @@ export class VitaminApp implements VitaminContext {
 
     // 初始化权限系统
     this.auditLog = new PermissionAuditLog()
-    this.permissionRegistry = new PermissionPolicyRegistry()
-    this.registerBuiltinPermissionPolicies()
+    this.permissionRegistry = createPermissionRegistry()
+    
     this.hookRegistry.register(createPermissionGuardHook(this.permissionRegistry, this.auditLog))
-    const defaultModel = _model ?? (options.modelId ? this.providerRegistry.resolveModel(options.modelId) : undefined)
+    
+    const defaultModel = model ?? (options.modelId ? this.providerRegistry.resolveModel(options.modelId) : undefined)
     this.defaultModel = defaultModel
 
     if (inspect) {
@@ -671,14 +673,6 @@ export class VitaminApp implements VitaminContext {
     }, 50)
   }
 
-  /** 注册内置权限策略 (FILE_GUARD + DESTRUCTIVE_COMMAND + 默认 auto mode) */
-  private registerBuiltinPermissionPolicies(): void {
-    this.permissionRegistry.register(createPermissionModePolicy('auto'))
-    this.permissionRegistry.register(FILE_GUARD_POLICY)
-    this.permissionRegistry.register(DESTRUCTIVE_COMMAND_POLICY)
-  }
-
-  /** 根据 settings 变更同步权限策略 */
   private updatePermissionPolicies(setting: {
     permission_mode?: PermissionMode
     permissions?: PermissionPolicySetting[]
@@ -686,32 +680,32 @@ export class VitaminApp implements VitaminContext {
   }): void {
     // 1. permission_mode 变更 → 重新注册 mode 策略
     if (setting.permission_mode) {
-      this.permissionRegistry.unregister('mode:bypass')
-      this.permissionRegistry.unregister('mode:auto')
-      this.permissionRegistry.unregister('mode:confirm')
-      this.permissionRegistry.unregister('mode:strict')
-      this.permissionRegistry.unregister('mode:readonly')
+      this.permissionRegistry.unregister('mode::bypass')
+      this.permissionRegistry.unregister('mode::auto')
+      this.permissionRegistry.unregister('mode::confirm')
+      this.permissionRegistry.unregister('mode::strict')
+      this.permissionRegistry.unregister('mode::readonly')
       this.permissionRegistry.register(createPermissionModePolicy(setting.permission_mode))
     }
 
     // 2. disabled_tools 变更 → 重新注册 disabled-tools 策略
     if (setting.disabled_tools && setting.disabled_tools.length > 0) {
-      this.permissionRegistry.unregister('setting:disabled-tools')
+      this.permissionRegistry.unregister('setting::disabled-tools')
       this.permissionRegistry.register(createDisabledToolsPolicy(setting.disabled_tools))
     } else {
-      this.permissionRegistry.unregister('setting:disabled-tools')
+      this.permissionRegistry.unregister('setting::disabled-tools')
     }
 
-    // 3. 用户自定义策略 → 先清除旧的 user: 前缀策略，再编译注册
+    // 3. 用户自定义策略 → 先清除旧的 user:: 前缀策略，再编译注册
     for (const p of this.permissionRegistry.getAll()) {
-      if (p.name.startsWith('user:')) {
+      if (p.name.startsWith('user::')) {
         this.permissionRegistry.unregister(p.name)
       }
     }
 
     if (setting.permissions) {
       for (const pc of setting.permissions) {
-        const policy = compilePolicyFromSetting({ ...pc, name: `user:${pc.name}` })
+        const policy = compilePolicyFromSetting({ ...pc, name: `user::${pc.name}` })
         this.permissionRegistry.register(policy)
       }
     }

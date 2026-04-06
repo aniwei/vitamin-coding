@@ -41,7 +41,7 @@ const PROTECTED_PATH_PATTERNS = [
 ]
 
 export const FILE_GUARD_POLICY: PermissionPolicy = {
-  name: 'builtin:file-guard',
+  name: 'builtin::file-guard',
   priority: 10,
   enabled: true,
   scope: { agents: ['*'] },
@@ -61,7 +61,7 @@ export const FILE_GUARD_POLICY: PermissionPolicy = {
 const DESTRUCTIVE_PATTERN = /\b(rm\s+-rf|drop\s+table|git\s+push\s+--force|git\s+reset\s+--hard|truncate\s+table|git\s+clean\s+-fd)\b/i
 
 export const DESTRUCTIVE_COMMAND_POLICY: PermissionPolicy = {
-  name: 'builtin:destructive-guard',
+  name: 'builtin::destructive-guard',
   priority: 15,
   enabled: true,
   scope: { agents: ['*'] },
@@ -85,7 +85,7 @@ export const DESTRUCTIVE_COMMAND_POLICY: PermissionPolicy = {
 
 export function createDirectoryFreezePolicy(allowedDir: string): PermissionPolicy {
   return {
-    name: 'builtin:directory-freeze',
+    name: 'builtin::directory-freeze',
     // priority > FILE_GUARD_POLICY(10)：先由 file-guard 拦截系统路径，
     // 再由 directory-freeze 限制写入范围，避免 allowedDir 内的 .env 等被错误放行
     priority: 20,
@@ -117,7 +117,7 @@ export function createDirectoryFreezePolicy(allowedDir: string): PermissionPolic
 
 export function createDisabledToolsPolicy(disabledTools: string[]): PermissionPolicy {
   return {
-    name: 'setting:disabled-tools',
+    name: 'setting::disabled-tools',
     priority: 2,
     enabled: true,
     scope: { agents: ['*'] },
@@ -139,7 +139,7 @@ export function createAgentBoundaryPolicy(
   allowedTools: string[],
 ): PermissionPolicy {
   return {
-    name: `agent-boundary:${agentName}`,
+    name: `agent-boundary::${agentName}`,
     priority: 20,
     enabled: true,
     scope: { agents: [agentName] },
@@ -165,7 +165,7 @@ export function createPermissionModePolicy(mode: PermissionMode): PermissionPoli
   switch (mode) {
     case 'bypass':
       return {
-        name: 'mode:bypass',
+        name: 'mode::bypass',
         priority: 1,
         enabled: true,
         scope: { agents: ['*'] },
@@ -174,7 +174,7 @@ export function createPermissionModePolicy(mode: PermissionMode): PermissionPoli
 
     case 'readonly':
       return {
-        name: 'mode:readonly',
+        name: 'mode::readonly',
         priority: 1,
         enabled: true,
         scope: { agents: ['*'] },
@@ -195,7 +195,7 @@ export function createPermissionModePolicy(mode: PermissionMode): PermissionPoli
 
     case 'confirm':
       return {
-        name: 'mode:confirm',
+        name: 'mode::confirm',
         priority: 1,
         enabled: true,
         scope: { agents: ['*'] },
@@ -217,7 +217,7 @@ export function createPermissionModePolicy(mode: PermissionMode): PermissionPoli
 
     case 'strict':
       return {
-        name: 'mode:strict',
+        name: 'mode::strict',
         priority: 9999,
         enabled: true,
         scope: { agents: ['*'] },
@@ -234,7 +234,7 @@ export function createPermissionModePolicy(mode: PermissionMode): PermissionPoli
     case 'auto':
     default:
       return {
-        name: 'mode:auto',
+        name: 'mode::auto',
         priority: 1,
         enabled: true,
         scope: { agents: ['*'] },

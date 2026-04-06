@@ -130,7 +130,10 @@ export class AgentSession extends TypedEventEmitter<AgentSessionEvents> {
       thinkingLevel?: ThinkingLevel
     } = {}
 
-    const consume = (result: PauseResult | undefined, messages?: AgentMessage[]): void => {
+    const consume = (
+      result: PauseResult | undefined, 
+      messages?: AgentMessage[]
+    ): void => {
       if (!result?.payload) {
         return
       }

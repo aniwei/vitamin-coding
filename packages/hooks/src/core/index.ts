@@ -80,6 +80,7 @@ export {
   createDisabledToolsPolicy,
   createAgentBoundaryPolicy,
   createPermissionModePolicy,
+  createPermissionRegistry,
 } from './permission'
 export type {
   RuleEffect,

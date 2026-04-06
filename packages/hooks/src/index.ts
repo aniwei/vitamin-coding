@@ -1,9 +1,8 @@
-// @vitamin/hooks — 生命周期 Hook 注册器
 export { HookRegistry, createHookRegistry } from './hook-registry'
 export type { HookPreset, HookRegistryOptions } from './hook-registry'
+
 export { safeCreateHook, isHookEnabled, safeHookEnabled } from './safe-hook'
 
-// 核心 Hook
 export {
   createFirstMessageVariantHook,
   createSessionRecoveryHook,
@@ -63,6 +62,7 @@ export {
   createDisabledToolsPolicy,
   createAgentBoundaryPolicy,
   createPermissionModePolicy,
+  createPermissionRegistry,
 } from './core'
 export type {
   RuleEffect,
@@ -78,7 +78,6 @@ export type {
   PermissionPolicySetting,
 } from './core'
 
-// 类型导出
 export type {
   HookTiming,
   HookInput,
