@@ -473,6 +473,34 @@ interface OAuth {
 }
 ```
 
+### AuthStore — 统一凭据存储
+
+`AuthStore` 是统一的凭据管理层，同时支持 API Key 和 OAuth 两类凭据，并持久化到本地文件（默认 `~/.vitamin/auth.json`）：
+
+```ts
+import { createAuthStore, createDefaultAuthStore } from '@vitamin/ai'
+
+// 使用默认路径和 OAuthRegistry
+const store = createDefaultAuthStore()
+
+// 或手动配置
+const store = createAuthStore({
+  path: '/custom/path/auth.json',
+  env: { 'openai': 'MY_OPENAI_KEY' },   // 环境变量映射覆盖
+})
+
+// 读取凭据（优先顺序：文件 → 环境变量）
+const key = await store.getCredentialKey('openai')
+
+// 写入 API Key
+await store.setCredentialKey('anthropic', 'sk-ant-xxx')
+
+// 写入 OAuth
+await store.setCredentialKey('github-copilot', { accessToken: '...', ... })
+```
+
+类型：`AuthStoreOptions`, `ApiKeyEntry`, `OAuthEntry`, `AuthEntry`, `AuthFileData`
+
 ---
 
 ## 模型注册表
@@ -503,6 +531,24 @@ const allOpenAI = registry.getByProvider('openai')
 - pi-ai 使用自动生成的 `models.generated.ts`（351KB，包含全部已知模型定义），在模块加载时自动灌入 `Map<Provider, Map<id, Model>>`
 - vitamin 暂不自动生成，而是按需注册——初期更灵活，后续可引入代码生成
 
+### ModelSlot（工作流槽位路由）
+
+`ModelSlot` 将具名工作流槽位（如 `main`、`reviewer`）解析到实际 `Model`，支持 settings 覆写：
+
+```ts
+import { createModelSlot } from '@vitamin/ai'
+
+const slot = createModelSlot({
+  slot: 'main',
+  modelRegistry,
+  settingsManager,
+})
+
+const model = await slot.resolve()
+```
+
+类型：`WorkflowSlot`, `ModelSlotOptions`
+
 ---
 
 ## 费用精算
@@ -513,6 +559,7 @@ import { calculate, createCostTracker } from '@vitamin/ai'
 // 单次计算
 const breakdown = calculate(model, usage)
 // → { input: 0.003, output: 0.012, cacheRead: 0, cacheWrite: 0, total: 0.015 }
+// breakdown 类型为 CostBreakdown
 
 // 跟踪器
 const tracker = createCostTracker()
@@ -520,6 +567,65 @@ tracker.record(model, usage)
 tracker.total       // 总费用
 tracker.totalTokens // { input, output }
 tracker.byModel()   // 按模型分组
+```
+
+类型：`CostBreakdown`
+
+---
+
+## 工具函数
+
+### 消息工具
+
+```ts
+import {
+  isClaudeFamily,
+  isGPTFamily,
+  isGeminiFamily,
+  getToolCallsByAssistantMessage,
+  hasToolCalls,
+  emptyUsage,
+  mergeUsage,
+  getTokensFromUsage,
+} from '@vitamin/ai'
+
+// Provider 系列判断
+isClaudeFamily(model)   // → boolean
+isGPTFamily(model)      // → boolean
+isGeminiFamily(model)   // → boolean
+
+// Tool call 工具
+const calls = getToolCallsByAssistantMessage(message)
+const hasCalls = hasToolCalls(message)
+
+// Usage 工具
+const empty = emptyUsage()             // → { inputTokens: 0, ... }
+const merged = mergeUsage(u1, u2)      // 合并两个 Usage 对象
+const totalTokens = getTokensFromUsage(usage)  // 总 token 数
+```
+
+### Provider 工厂（GitHub Copilot）
+
+```ts
+import { createCopilotProvider } from '@vitamin/ai'
+
+const provider = createCopilotProvider({
+  credentialResolver: async () => await store.getCredentialKey('github-copilot'),
+})
+```
+
+类型：`CopilotCredentialResolver`, `CopilotProviderOptions`
+
+`createDefaultProviderRegistry()` 接受 `DefaultProviderRegistryOptions` 来自定义注册表行为。
+
+### EventStream 工厂
+
+```ts
+import { createEventStream } from '@vitamin/ai'
+
+const stream = createEventStream<StreamEvent, AssistantMessage>()
+stream.push({ type: 'start', partial: ... })
+stream.complete(message)
 ```
 
 ---

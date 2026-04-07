@@ -195,10 +195,13 @@ if (entries.length > 0) {
 
 - 管理器：`MemoryManager`, `createMemoryManager`
 - L1：`PersistentMemory`, `FileSystemMemoryStore`, `InMemoryMemoryStore`, `DEFAULT_MEMORY_SOURCES`
-- L2：`prune`, `findCutPoint`, `needsCompaction`, `prepareCompaction`, `compact`
-- L3：`createArchiveStorage`, `InMemoryArchiveStorage`, `LocalArchiveStorage`, `HttpArchiveStorage`, `createPersistenceArchiveStorage`, `PersistenceBackedArchiveStorage`
-- 默认值与估算：`computeMemoryDefaults`, `resolveContextSize`, `estimateContextTokens`, `estimateMessagesTokens`
-- Prompt 构建：`buildMemoryInjection`, `buildSummarizationPrompt`, `buildArchiveReference`
+- L2：`prune`, `findCutPoint`, `needsCompaction`, `isEligibleForManualCompact`, `prepareCompaction`, `compact`
+- L3：`createArchiveStorage`, `InMemoryArchiveStorage`, `LocalArchiveStorage`, `HttpArchiveStorage`, `createPersistenceArchiveStorage`, `PersistenceBackedArchiveStorage`, `formatArchive`
+- 默认值：`computeMemoryDefaults`, `resolveContextSize`, `DEFAULT_COMPACTION_CONFIG`, `DEFAULT_PRUNE_CONFIG`
+- Token 估算：`estimateTokens`, `estimateMessageTokens`, `estimateMessagesTokens`, `estimateContextTokens`, `getTokensFromUsage`, `messageToText`
+- Prompt 常量：`SUMMARIZATION_PROMPT`, `UPDATE_SUMMARIZATION_PROMPT`, `TURN_PREFIX_SUMMARIZATION_PROMPT`
+- Prompt 构建：`buildSummarizationPrompt`, `buildTurnPrefixPrompt`, `buildMemoryInjection`, `buildArchiveReference`
+- 类型：`ArchiveRecord`
 - 文件状态：`FileStateManager`
 - 经验学习：`OperationalLearningStore`
 

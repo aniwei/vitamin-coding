@@ -287,10 +287,62 @@ hooks.register(custom)
 3. 为什么抛错没有中断整个链路
 	 - `HookRegistry` 默认对单个 Hook 失败采取记录日志并继续执行的策略
 
-## 9. 设计文档
+## 9. Permission 系统
+
+`@vitamin/hooks` 内置了完整的权限策略系统，可在工具执行前进行权限检查。
+
+### 核心组件
+
+| Export | Description |
+|--------|-------------|
+| `PermissionPolicyRegistry` | 权限策略注册表 |
+| `PermissionAuditLog` | 权限审计日志 |
+| `PermissionGuardHook` | 权限守卫 Hook 类 |
+
+### 策略工厂
+
+| Export | Description |
+|--------|-------------|
+| `compilePolicyFromConfig(config)` | 从配置编译权限策略 |
+| `createPermissionGuardHook(options)` | 创建权限守卫 Hook |
+| `createDirectoryFreezePolicy(dirs)` | 冻结指定目录（禁止写入） |
+| `createDisabledToolsPolicy(tools)` | 禁用指定工具 |
+| `createAgentBoundaryPolicy(boundaries)` | Agent 边界策略 |
+| `createPermissionModePolicy(mode)` | 按权限模式创建策略 |
+
+### 内置策略常量
+
+| Export | Description |
+|--------|-------------|
+| `FILE_GUARD_POLICY` | 文件保护策略 |
+| `DESTRUCTIVE_COMMAND_POLICY` | 破坏性命令策略 |
+
+### 权限类型
+
+`RuleEffect`, `PermissionMode`, `PolicyScope`, `PermissionContext`, `RuleMatch`, `PermissionRule`, `PermissionPolicy`, `PermissionDecision`, `PermissionAuditEntry`, `PermissionRuleConfig`, `PermissionPolicyConfig`
+
+### 接入示例
+
+```ts
+import {
+  createPermissionGuardHook,
+  createDirectoryFreezePolicy,
+  createDisabledToolsPolicy,
+  PermissionPolicyRegistry,
+} from '@vitamin/hooks'
+
+const policyRegistry = new PermissionPolicyRegistry()
+policyRegistry.register(createDirectoryFreezePolicy(['/etc', '/usr']))
+policyRegistry.register(createDisabledToolsPolicy(['bash']))
+
+const guard = createPermissionGuardHook({ policyRegistry })
+hooks.register(guard)
+```
+
+## 10. 设计文档
 
 技术设计细节见 [DESIGN.md](./DESIGN.md)。
 
-## 10. License
+## 11. License
 
 See [root README](../../README.md) for details.

@@ -79,15 +79,20 @@ watcher.on('change', (cfg, path) => console.log('updated', path))
 | `createFileSettingStore` | Persistence-backed file store |
 | `createHttpSettingStore` | Persistence-backed HTTP store |
 | `VITAMIN_DEFAULT_CONFIG` | Built-in default configuration object |
-| `migrate`, `registerMigration` | Config version migration system |
+| `VITAMIN_SETTING_KEYS` | 所有配置键常量 |
+| `migrate`, `registerMigration`, `resetMigrations` | Config version migration system |
 | `createSettingWatcher`, `SettingWatcher` | File watcher for live reload |
 | `LOG_LEVELS`, `TOOL_PRESETS` | Built-in literal option sets |
+| `BUILTIN_REVIEWER_AGENTS` | 内置 reviewer agent 列表 |
+| `COMPACTION_STRATEGIES` | Compaction 策略常量 |
+| `PERMISSION_MODES` | 权限模式常量 |
+| `WORKFLOW_SLOTS` | 工作流槽位常量 |
 
 Presets: `BUILTIN_AGENT_PROFILES`, `COPILOT_MODELS`, `TASK_TYPE_PROFILE_MAP`
 
 ## Types
 
-`VitaminSetting`, `VitaminSettingFromSchema`, `VitaminSettingKey`, `AgentConfig`, `CategoryConfig`, `SettingWarning`, `ConfigWarning`, `LoadSettingOptions`, `LoadConfigOptions`, `SettingStore`, `StorageType`, `SettingStoreOptions`, `SettingWatcherOptions`, `Migration`
+`VitaminSetting`, `VitaminSettingFromSchema`, `VitaminSettingKey`, `AgentConfig`, `CategoryConfig`, `LogLevel`, `ToolPreset`, `PermissionMode`, `PermissionRuleConfig`, `PermissionPolicyConfig`, `WorkflowSlot`, `SettingWarning`, `ConfigWarning`, `LoadSettingOptions`, `LoadConfigOptions`, `SettingStore`, `StorageType`, `SettingStoreOptions`, `FileSettingStoreOptions`, `HttpSettingStoreOptions`, `InMemorySettingStoreOptions`, `SettingWatcherOptions`, `Migration`
 
 ## Merge Priority (low → high)
 

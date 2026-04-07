@@ -1,7 +1,9 @@
 import type { ToolCall } from '@vitamin/ai'
-import type { Devtools, PauseResumePayload } from '@vitamin/devtools'
+import type { Devtools, PauseResumePayload, DebugSnapshot, MessageSummaryItem } from '@vitamin/devtools'
 import type { AgentMessage, AgentTool, ToolResult } from './types'
 import { AbortError } from './errors'
+
+type SnapshotMetadata = Record<string, string | number | boolean | null>
 
 export interface ToolHookExecutor {
   executeBeforeHooks(input: {
@@ -81,6 +83,22 @@ class DefaultToolExecutor implements ToolExecutor {
   async execute(toolCall: ToolCall, signal: AbortSignal): Promise<ToolResult> {
     const { id, name } = toolCall
     const tool = this.tools.get(name)
+    const emptySummary: MessageSummaryItem[] = []
+    const pause = (
+      point: DebugSnapshot['point'],
+      metadata: SnapshotMetadata,
+    ) => this.devtools?.debugger.pause({
+      turn: 0,
+      point,
+      frameDepth: 2,
+      messagesCount: 0,
+      lastToolName: name,
+      tokenUsage: { input: 0, output: 0 },
+      metadata,
+      systemPrompt: '',
+      messagesSummary: emptySummary,
+      llmParams: {},
+    })
 
     const consume = (result: { command: { type: string }; payload: PauseResumePayload | null } | undefined): void => {
       if (!result) return
@@ -89,14 +107,7 @@ class DefaultToolExecutor implements ToolExecutor {
       }
     }
 
-    consume(await this.devtools?.debugger.pause({
-      turn: 0,
-      point: 'tool_resolve',
-      frameDepth: 2,
-      messagesCount: 0,
-      lastToolName: name,
-      metadata: { found: !!tool, toolCallId: id },
-    }))
+    consume(await pause('tool_resolve', { found: !!tool, toolCallId: id }))
 
     if (!tool) {
       return {
@@ -110,14 +121,7 @@ class DefaultToolExecutor implements ToolExecutor {
 
     try {
       if (this.hookExecutor) {
-        consume(await this.devtools?.debugger.pause({
-          turn: 0,
-          point: 'tool_hook_before',
-          frameDepth: 2,
-          messagesCount: 0,
-          lastToolName: name,
-          metadata: { toolCallId: id },
-        }))
+        consume(await pause('tool_hook_before', { toolCallId: id }))
 
         const beforeResult = await this.hookExecutor.executeBeforeHooks({
           toolName: name,
@@ -155,14 +159,7 @@ class DefaultToolExecutor implements ToolExecutor {
       const parsed = tool.parameters.safeParse(args)
       const { success, error } = parsed
 
-      consume(await this.devtools?.debugger.pause({
-        turn: 0,
-        point: 'tool_validate',
-        frameDepth: 2,
-        messagesCount: 0,
-        lastToolName: name,
-        metadata: { valid: success, toolCallId: id },
-      }))
+      consume(await pause('tool_validate', { valid: success, toolCallId: id }))
 
       if (!success) {
         return {
@@ -208,14 +205,7 @@ class DefaultToolExecutor implements ToolExecutor {
 
         result = afterResult.result
 
-        consume(await this.devtools?.debugger.pause({
-          turn: 0,
-          point: 'tool_hook_after',
-          frameDepth: 2,
-          messagesCount: 0,
-          lastToolName: name,
-          metadata: { toolCallId: id, durationMs: Date.now() - startTime },
-        }))
+        consume(await pause('tool_hook_after', { toolCallId: id, durationMs: Date.now() - startTime }))
       }
 
       if (signal.aborted) {

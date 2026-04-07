@@ -1,6 +1,3 @@
-// Skill Registry — 管理所有已发现 skill 的注册、加载、执行
-// 核心模块，作为 VitaminApp 的 skill 管理入口
-
 import { TypedEventEmitter, createLogger } from '@vitamin/shared'
 import { discoverSkills, getDefaultGlobalSkillDirs } from './skill-discovery'
 import { matchSkills } from './skill-matcher'
@@ -29,13 +26,15 @@ export interface SkillRegistryOptions {
 
 export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
   private skills = new Map<string, RegisteredSkill>()
-  private options: SkillRegistryOptions
+  private readonly workspaceDir: string
+  private readonly library?: SkillLibraryConfig
   private disabledSet: Set<string>
 
-  constructor(options: SkillRegistryOptions) {
+  constructor({ workspaceDir, library, disabled }: SkillRegistryOptions) {
     super()
-    this.options = options
-    this.disabledSet = new Set(options.disabled ?? options.library?.disabled ?? [])
+    this.workspaceDir = workspaceDir
+    this.library = library
+    this.disabledSet = new Set(disabled ?? library?.disabled ?? [])
   }
 
   /**
@@ -44,12 +43,12 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
    */
   async discover(): Promise<void> {
     const config: SkillLibraryConfig = {
-      projectDirs: this.options.library?.projectDirs ?? ['.vitamin/skills'],
-      globalDirs: this.options.library?.globalDirs ?? getDefaultGlobalSkillDirs(),
+      projectDirs: this.library?.projectDirs ?? ['.vitamin/skills'],
+      globalDirs: this.library?.globalDirs ?? getDefaultGlobalSkillDirs(),
       disabled: [...this.disabledSet],
     }
 
-    const discovered = await discoverSkills(config, this.options.workspaceDir)
+    const discovered = await discoverSkills(config, this.workspaceDir)
 
     for (const [name, { definition, source }] of discovered) {
       const status: SkillStatus = this.disabledSet.has(name) ? 'disabled' : 'available'
@@ -60,7 +59,7 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
         status,
       })
 
-      this.emit('skill.discovered', { source, count: 1 })
+      this.emit('skill_discovered', { source, count: 1 })
     }
 
     logger.info(
@@ -88,7 +87,7 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
   unregister(name: string): boolean {
     const had = this.skills.delete(name)
     if (had) {
-      this.emit('skill.unloaded', { name })
+      this.emit('skill_unloaded', { name })
     }
     return had
   }
@@ -132,7 +131,7 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
     registered.status = 'loaded'
     registered.loadedAt = Date.now()
 
-    this.emit('skill.loaded', { name, source: registered.source })
+    this.emit('skill_loaded', { name, source: registered.source })
 
     return {
       success: true,
@@ -140,9 +139,6 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
     }
   }
 
-  /**
-   * 执行 skill — 返回 skill 的正文内容用于注入 agent context
-   */
   execute(context: SkillExecutionContext): SkillExecutionResult {
     const startTime = Date.now()
     const registered = this.skills.get(context.skillName)
@@ -162,7 +158,7 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
     }
 
     const durationMs = Date.now() - startTime
-    this.emit('skill.executed', { name: context.skillName, success: true, durationMs })
+    this.emit('skill_executed', { name: context.skillName, success: true, durationMs })
 
     return {
       success: true,
@@ -171,9 +167,6 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
     }
   }
 
-  /**
-   * 搜索匹配 skill
-   */
   match(
     query: string,
     options?: { maxResults?: number; minRelevance?: number },

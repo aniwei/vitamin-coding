@@ -93,20 +93,6 @@ export class CodingSessionManager {
   private systemPrompt: string
   private thinkingLevel: ThinkingLevel
   
-  static inMemory(options: InMemoryShorthandOptions = {}): CodingSessionManager {
-    const hookRegistry = options.hooks ?? options.hookRegistry ?? createHookRegistry({ preset: 'none' })
-    const providerRegistry = options.providerRegistry ?? createProviderRegistry()
-    const workspaceDir = options.workspaceDir ?? process.cwd()
-    const logger = options.logger ?? createLogger('coding-session-manager')
-
-    return createInMemoryCodingSessionManager({
-      ...options,
-      hookRegistry,
-      providerRegistry,
-      workspaceDir,
-      logger,
-    })
-  }
   private workspaceDir: string
   private promptRefresh?: PromptRefresh
 

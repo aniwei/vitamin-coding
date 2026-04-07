@@ -2,31 +2,26 @@ import { TypedEventEmitter } from './event-emitter'
 import type { Events } from './event-emitter'
 
 type UnSubscribe = () => void
+type SubscribeEvent = Events
 
-interface SubscribeEvent extends Events {
-  [event: string]: (...args: unknown[]) => void
-}
-
-export class Subscription extends TypedEventEmitter<SubscribeEvent> {
-  publish(event: Record<string, unknown[]>) {    
+export class Subscription<T extends SubscribeEvent = SubscribeEvent> extends TypedEventEmitter<T> {
+  publish(event: Record<string, unknown[]>): void {
+    const emit = (type: string, ...args: unknown[]) => (this.emit as unknown as (event: string, ...args: unknown[]) => void)(type, ...args)
     for (const [type, args] of Object.entries(event)) {
-      this.emit(type, ...args)
-      this.emit('*', type, ...args)
+      emit(type, ...args)
+      emit('*', type, ...args)
     }
   }
 
-  subscribe<K extends keyof SubscribeEvent>(
+  subscribe<K extends keyof T>(
     type: K,
-    callback: SubscribeEvent[K],
+    callback: T[K],
     once: boolean = false,
   ): UnSubscribe {
-    once ? this.once(type, callback) : this.on(type, callback)
-    return () => {
-      this.off(type, callback)
-    }
+    return once ? this.once(type, callback) : this.on(type, callback)
   }
 
-  subscribeAll(callback: (...args: unknown[]) => void): () => void {
-    return this.subscribe('*', callback)
+  subscribeAll(callback: (...args: unknown[]) => void): UnSubscribe {
+    return this.subscribe('*', callback as unknown as T[keyof T])
   }
 }

@@ -169,6 +169,7 @@ session path
 - `AgentSessionEvent`
 - `AgentSessionEventType`
 - `AgentSessionSubscriber`
+- `AskUserQuestion`
 - `CreateAgentSessionOptions`
 - `PromptOptions`
 
@@ -196,11 +197,9 @@ session path
 - `injectPhaseContext`
 - `extractPhaseFromMessage`
 - `buildLessonInjection`
-- `SESSION_END_LEARNING_PROMPT`
 - `PromptEntry`
 - `PromptProvider`
 - `PromptProviderOptions`
-- `AssembleOptions`
 - `PhaseAnnotation`
 - `Lesson`
 

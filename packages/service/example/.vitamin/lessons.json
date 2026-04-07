@@ -2,42 +2,17 @@
   "lessons": [
     {
       "tags": [
-        "data_access",
-        "reliability",
-        "communication"
-      ],
-      "trigger": "When dealing with questions requiring real-time or external information that isn't accessible during the session.",
-      "insight": "When real-time or dynamically changing data (e.g., GitHub stars) cannot be accessed, redirect users to trusted sources like the system's official page. Avoid assumptions that can lead to inaccuracies.",
-      "sourceSessionId": "",
-      "id": "lesson_1",
-      "createdAt": 1775390775313,
-      "appliedCount": 0
-    },
-    {
-      "tags": [
-        "file_management",
+        "web_search",
+        "web_fetch",
         "error_handling"
       ],
-      "trigger": "Attempted to read a non-existent file (hello).",
-      "insight": "When reading a file that does not exist, inform the user clearly and confirm their intention to create it or specify another path.",
+      "trigger": "When fetching data from web sources and encountering restricted access or connection issues.",
+      "insight": "Always prioritize using `web_search` to identify multiple credible sources before relying on a specific URL for fetching content. Additionally, plan for fallback options in case access to a site is restricted (e.g., HTTP errors).",
       "sourceSessionId": "",
-      "id": "lesson_2",
-      "createdAt": 1775415153923,
-      "appliedCount": 0
-    },
-    {
-      "tags": [
-        "react",
-        "modular_design",
-        "best_practices"
-      ],
-      "trigger": "Building the Snake game project structure in the `my-react-app` folder.",
-      "insight": "When initializing a new feature (like the Snake game), breaking down components into independent functional units (e.g., MainMenu and GameBoard) and keeping styles, logic, and components modular within directories promotes clarity and reusability.",
-      "sourceSessionId": "",
-      "id": "lesson_3",
-      "createdAt": 1775417507723,
+      "id": "lesson_1",
+      "createdAt": 1775534161828,
       "appliedCount": 0
     }
   ],
-  "nextId": 4
+  "nextId": 2
 }

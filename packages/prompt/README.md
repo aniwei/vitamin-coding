@@ -6,12 +6,53 @@ Vitamin 主/子 Agent 系统提示词管理与运行时装配引擎。
 
 ## 目录
 
-1. [架构概览](#架构概览)
-2. [当前实现边界](#当前实现边界)
-3. [Main Agent (Lead) Prompt v1](#main-agent-lead-prompt-v1)
-4. [Sub Agent (Worker) Prompt v1](#sub-agent-worker-prompt-v1)
-5. [运行时装配流程](#运行时装配流程)
-6. [与外部框架的关键差异](#与外部框架的关键差异)
+1. [主要导出](#主要导出)
+2. [架构概览](#架构概览)
+3. [当前实现边界](#当前实现边界)
+4. [Main Agent (Lead) Prompt v1](#main-agent-lead-prompt-v1)
+5. [Sub Agent (Worker) Prompt v1](#sub-agent-worker-prompt-v1)
+6. [运行时装配流程](#运行时装配流程)
+7. [与外部框架的关键差异](#与外部框架的关键差异)
+
+---
+
+## 主要导出
+
+### Provider 与管理器
+
+- `LocalPromptProvider` — 从本地文件系统加载 prompt 文件
+- `RemotePromptProvider` — 从远端 HTTP 接口加载 prompt 文件
+- `createPromptProvider` — 按配置创建 provider 实例
+- `PromptManager` — 核心管理器，管理 preset 的加载、缓存与组装
+- `PromptCache` — prompt 内容缓存层
+- `BUILTIN_PROMPTS_DIR` — 内置 prompt 目录路径常量
+
+### Phase 与 Lesson
+
+- `injectPhaseContext` — 向消息注入当前执行阶段上下文
+- `extractPhaseFromMessage` — 从消息中提取 phase 注解
+- `buildLessonInjection` — 构建运行时经验教训注入文本
+
+### 子 Agent 装配
+
+- `assembleGenericSubAgentPrompt` — 组装通用子 Agent 系统提示词
+- `assembleSubAgentPrompt` — 按 profile 组装专属子 Agent 系统提示词
+- `resolveAgentProfile` — 解析 Agent profile 定义
+- `resolveAgentToolNames` — 解析 Agent 可用工具名列表
+
+### 环境上下文
+
+- `collectEnvironment` — 收集当前运行环境快照（OS、shell、cwd 等）
+- `formatEnvironmentBlock` — 格式化环境快照为注入文本块
+
+### 类型
+
+- `PromptManagerOptions`, `PromptPreset`, `PromptPresetOptions`
+- `AgentProfile`, `SubAgentPromptContext`
+- `EnvironmentSnapshot`
+- `PromptEntry`, `PromptProvider`, `PromptProviderOptions`
+- `LocalProviderOptions`, `RemoteProviderOptions`
+- `PhaseAnnotation`, `Lesson`
 
 ---
 

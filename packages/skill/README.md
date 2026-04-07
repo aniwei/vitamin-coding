@@ -76,3 +76,30 @@ console.log(result.content) // skill body 内容
 | `skill-discovery.ts` | 文件系统 skill 发现 |
 | `skill-matcher.ts` | 关键词匹配引擎 |
 | `skill-registry.ts` | SkillRegistry 核心注册表 |
+
+## 主要导出
+
+### 注册表
+
+- `SkillRegistry` — 核心注册表类
+- `createSkillRegistry` — 创建注册表实例
+
+### 解析与发现
+
+- `parseSkillContent` — 解析 SKILL.md 文件（YAML frontmatter + Markdown body）
+- `discoverSkills` — 扫描目录批量发现 skill
+- `getDefaultGlobalSkillDirs` — 获取默认全局 skill 目录列表
+- `resolveSourceType` — 解析 skill 来源类型（`local` | `global` | `url`）
+
+### 匹配
+
+- `matchSkills` — 根据查询字符串按关键词匹配 skill 列表
+
+### 类型
+
+- `SkillRegistryOptions`
+- `SkillMetadata`, `SkillDefinition`, `RegisteredSkill`
+- `SkillStatus`, `SkillSourceType`, `SkillSource`
+- `SkillLibraryConfig`, `SkillMatch`
+- `SkillExecutionContext`, `SkillExecutionResult`
+- `SkillEvents`

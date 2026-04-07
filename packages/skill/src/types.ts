@@ -115,9 +115,9 @@ export interface SkillExecutionResult {
 // ─── Events ───
 
 export interface SkillEvents extends Events {
-  'skill.discovered': (info: { source: SkillSource; count: number }) => void
-  'skill.loaded': (info: { name: string; source: SkillSource }) => void
-  'skill.unloaded': (info: { name: string }) => void
-  'skill.error': (info: { name: string; error: string }) => void
-  'skill.executed': (info: { name: string; success: boolean; durationMs: number }) => void
+  'skill_discovered': (info: { source: SkillSource; count: number }) => void
+  'skill_loaded': (info: { name: string; source: SkillSource }) => void
+  'skill_unloaded': (info: { name: string }) => void
+  'skill_error': (info: { name: string; error: string }) => void
+  'skill_executed': (info: { name: string; success: boolean; durationMs: number }) => void
 }

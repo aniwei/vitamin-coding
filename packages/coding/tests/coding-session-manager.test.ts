@@ -4,7 +4,7 @@ import { createDefaultProviderRegistry, createEventStream, type AssistantMessage
 import { createHookRegistry } from '@vitamin/hooks'
 import { attachLogListener, createLogger } from '@vitamin/shared'
 
-import { CodingSessionManager as SessionManager } from '../src/session/coding-session-manager'
+import { CodingSessionManager as SessionManager, createInMemoryCodingSessionManager } from '../src/session/coding-session-manager'
 import { AgentSession } from '../src/session/agent-session'
 
 const defaultProviderRegistry = createDefaultProviderRegistry()
@@ -70,11 +70,13 @@ async function flushLogs(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 20))
 }
 
-function createManager(overrides: Record<string, unknown> = {}) {
-  return SessionManager.inMemory({
+function createManager(overrides: Partial<Parameters<typeof createInMemoryCodingSessionManager>[0]> = {}) {
+  return createInMemoryCodingSessionManager({
     model: makeModel(),
-    hooks: createHookRegistry({ preset: 'none' }),
+    hookRegistry: createHookRegistry({ preset: 'none' }),
     providerRegistry: defaultProviderRegistry,
+    logger: createLogger('test-session-manager'),
+    workspaceDir: process.cwd(),
     ...overrides,
   })
 }

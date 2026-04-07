@@ -47,6 +47,23 @@ describe('extended tools', () => {
       expect(text).toContain('README.md')
     })
 
+    it('returns informative message for empty directory', async () => {
+      const emptyDir = await mkdtemp(join(tmpdir(), 'vitamin-tools-ext-empty-'))
+      try {
+        const tool = createLs(emptyDir)
+        const result = await tool.execute({
+          id: 'ls-empty',
+          params: { path: '.', limit: 200 },
+          signal,
+        })
+        const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
+        expect(result.isError).toBeUndefined()
+        expect(text).toContain('Directory is empty.')
+      } finally {
+        await rm(emptyDir, { recursive: true, force: true })
+      }
+    })
+
     it('throws when path does not exist', async () => {
       const tool = createLs(testDir)
       await expect(tool.execute({
@@ -89,6 +106,15 @@ describe('extended tools', () => {
       const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
       expect(result.isError).toBeUndefined()
       expect(text).toContain('No files found matching pattern')
+    })
+
+    it('throws when neither glob nor fd executor is available', async () => {
+      const tool = createFind(testDir, {})
+      await expect(tool.execute({
+        id: 'find-no-exec',
+        params: { pattern: '*.ts', limit: 100 },
+        signal,
+      })).rejects.toThrow('Find tool requires a glob implementation or fd binary available')
     })
   })
 

@@ -8,6 +8,7 @@ import {
   createEventStream,
 } from '../../ai/src/index'
 import { describe, expect, it } from 'vitest'
+import { createLogger } from '../../shared/src/index'
 
 import { workLoop } from '../src/work-loop'
 import { AbortError, MaxToolTurnsError } from '../src/errors'
@@ -89,6 +90,7 @@ function createRuntime(overrides?: Partial<AgentLoopContext>): AgentLoopContext 
   return {
     model: makeModel(),
     systemPrompt: 'you are helpful',
+    logger: createLogger('agent-loop-test', { level: 'silent' }),
     convertToLLM: async (messages) => messages as Message[],
     getSteeringMessages: async () => [],
     getFollowUpMessages: async () => [],
@@ -306,7 +308,7 @@ describe('workLoop', () => {
 
   describe('#given initial status is completed', () => {
     describe('#when loop transitions to streaming', () => {
-      it('#then emits status_change from completed to streaming', async () => {
+      it('#then emits statuschange from completed to streaming', async () => {
         const events: AgentEvent[] = []
 
         await workLoop({

@@ -16,7 +16,7 @@ import {
   compilePolicyFromConfig,
 } from '@vitamin/hooks'
 import type { ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from '@vitamin/hooks'
-import { Agent } from '@vitamin/agent'
+import { Agent, type AgentMessage } from '@vitamin/agent'
 import {
   createEventStream,
   createProviderRegistry,
@@ -27,6 +27,7 @@ import {
   type ToolCall,
 } from '@vitamin/ai'
 import { createInMemorySessionStore } from '@vitamin/session'
+import { createLogger } from '@vitamin/shared'
 import { AgentSession } from '../src/session/agent-session'
 import { createVitamin } from '../src/app/vitamin-app'
 
@@ -79,7 +80,7 @@ function createTestTool(name: string, readonly = false) {
     description: `${name} tool`,
     readonly,
     parameters: createSchema<Record<string, unknown>>() as never,
-    async execute(ctx: { params: Record<string, unknown> }) {
+    async execute() {
       return { content: [{ type: 'text' as const, text: `${name}:ok` }] }
     },
   }
@@ -190,7 +191,7 @@ describe('Permission guard in AgentSession tool execution', () => {
     hooks.register(createPermissionGuardHook(permRegistry))
 
     const bashTool = createTestTool('bash')
-    const sessionStore = createInMemorySessionStore()
+    const sessionStore = createInMemorySessionStore<AgentMessage>()
     const session = await sessionStore.createSession('perm-test-1')
     const agent = new Agent({ stream })
 
@@ -199,6 +200,7 @@ describe('Permission guard in AgentSession tool execution', () => {
       systemPrompt: 'test',
       tools: [bashTool],
       hookRegistry: hooks,
+      logger: createLogger('perm-test', { level: 'info', destination: 'stdout' }),
     })
 
     await agentSession.prompt('run bash')
@@ -240,7 +242,7 @@ describe('Permission guard in AgentSession tool execution', () => {
     hooks.register(createPermissionGuardHook(permRegistry))
 
     const readTool = createTestTool('read', true)
-    const sessionStore = createInMemorySessionStore()
+    const sessionStore = createInMemorySessionStore<AgentMessage>()
     const session = await sessionStore.createSession('perm-test-2')
     const agent = new Agent({ stream })
 
@@ -249,6 +251,7 @@ describe('Permission guard in AgentSession tool execution', () => {
       systemPrompt: 'test',
       tools: [readTool],
       hookRegistry: hooks,
+      logger: createLogger('perm-test', { level: 'info', destination: 'stdout' }),
     })
 
     await agentSession.prompt('read file')

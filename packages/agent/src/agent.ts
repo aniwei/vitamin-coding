@@ -17,7 +17,11 @@ import type {
   AgentRunContext,
   AgentState,
   AgentStatus,
+  ToolCallEvent,
+  ToolResult,
 } from './types'
+import type { Events } from '@vitamin/shared'
+import type { StreamEvent } from '@vitamin/ai'
 
 const logger = createLogger('@vitamin/agent')
 
@@ -32,16 +36,30 @@ const VALID_TRANSITIONS: Record<AgentStatus, Set<AgentStatus>> = {
 }
 
 // Agent 事件映射
-type AgentEvents = {
-  [key: string]: (...args: unknown[]) => void
+interface AgentEvents extends Events {
+  status_change: (event: { from: AgentStatus; to: AgentStatus }) => void
+  turn_start: (event: { turnIndex: number }) => void
+  turn_end: (event: { turnIndex: number; message: AssistantMessage }) => void
+  stream_event: (event: StreamEvent) => void
+  streaming_start: (event: { model: string }) => void
+  streaming_end: (event: { model: string; stopReason: string }) => void
+  tool_call_start: (event: { toolCall: ToolCallEvent }) => void
+  tool_call_end: (event: { toolCall: ToolCallEvent; result: ToolResult }) => void
+  tool_result_received: (event: { toolCallId: string; isError: boolean }) => void
+  messages_updated: (event: { count: number }) => void
+  steering_injected: (event: { messages: AgentMessage[] }) => void
+  follow_up_start: (event: { messages: AgentMessage[] }) => void
+  error: (error: Error ) => void
+  abort: () => void
+  compaction_needed: (event: { tokenCount: number; threshold: number }) => void
 }
 
 export class Agent extends TypedEventEmitter<AgentEvents> {
   private state: AgentState
   private abortController: AbortController | null = null
-  private readonly stream: StreamFunction | undefined
   private steeringQueue: AgentMessage[] = []
   private followUpQueue: AgentMessage[] = []
+  private readonly stream: StreamFunction | undefined
 
   get status(): AgentStatus {
     return this.state.status
@@ -205,7 +223,53 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
     }
 
     // 转发事件给外部订阅者
-    this.emit(event.type, event)
+    switch (event.type) {
+      case 'status_change':        
+        this.emit('status_change', event)
+        break
+      case 'turn_start':           
+        this.emit('turn_start', event)
+        break
+      case 'turn_end':             
+        this.emit('turn_end', event)
+        break
+      case 'stream_event':         
+        this.emit('stream_event', event.event)
+        break
+      case 'streaming_start':      
+        this.emit('streaming_start', event)
+        break
+      case 'streaming_end':        
+        this.emit('streaming_end', event)
+        break
+      case 'tool_call_start':      
+        this.emit('tool_call_start', event)
+        break
+      case 'tool_call_end':        
+        this.emit('tool_call_end', event)
+        break
+      case 'tool_result_received': 
+        this.emit('tool_result_received', event)
+        break
+      case 'messages_updated':     
+        this.emit('messages_updated', event)
+        break
+      case 'steering_injected':    
+        this.emit('steering_injected', event)
+        break
+      case 'follow_up_start':      
+        this.emit('follow_up_start', event)
+        break
+      case 'error':                
+        this.emit('error', event.error)
+        break
+      case 'abort':                
+        this.emit('abort')
+        break
+      case 'compaction_needed':    
+        this.emit('compaction_needed', event)
+        break
+    }
   }
 
   private transitionTo(to: AgentStatus): void {

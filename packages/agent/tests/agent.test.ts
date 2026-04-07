@@ -2,6 +2,7 @@
 import { describe, expect, it } from 'vitest'
 import { Agent } from '../src/agent'
 import { createEventStream } from '../../ai/src/index'
+import { createLogger } from '@vitamin/shared'
 
 import type { AssistantMessage, Model, StreamContext, StreamEvent, ToolCall } from '../../ai/src/index'
 import type { AgentTool, ToolHookExecutor } from '../src/types'
@@ -179,6 +180,7 @@ describe('Agent', () => {
           systemPrompt: 'test',
           tools: [],
           messages,
+          logger: createLogger('test-agent'),
         })
 
         expect(result.content[0]).toEqual({ type: 'text', text: 'done' })
@@ -252,6 +254,7 @@ describe('Agent', () => {
           toolHookExecutor: hookExecutor,
           agentName: 'primary',
           sessionId: 'session-1',
+          logger: createLogger('test-agent'),
         })
 
         expect(hookCalls).toEqual([

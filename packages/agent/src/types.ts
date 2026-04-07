@@ -85,7 +85,7 @@ export interface AgentRunContext {
   systemPrompt: string
   messages: AgentMessage[]
   tools: AgentTool[]
-  logger?: Logger
+  logger: Logger
   toolHookExecutor?: ToolHookExecutor
   agentName?: string
   sessionId?: string
@@ -107,11 +107,10 @@ export interface AgentRunContext {
   approval?: (toolName: string, args: Record<string, unknown>, reason: string) => Promise<boolean>
 }
 
-// Agent 循环配置（内部使用，由 Agent.run() 从 AgentRunContext 构建）
 export interface AgentLoopContext {
   model: Model
   systemPrompt: string
-  logger?: Logger
+  logger: Logger
   // AgentMessage[] → LLM Message[] 转换
   convertToLLM: (messages: AgentMessage[]) => Message[] | Promise<Message[]>
   

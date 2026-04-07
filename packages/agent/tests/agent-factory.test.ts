@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { Agent, createAgentWithRegistry } from '../src/index'
 import { createEventStream } from '../../ai/src/index'
+import { createLogger } from '@vitamin/shared'
 
 import type {
   AssistantMessage,
@@ -98,6 +99,7 @@ describe('createAgentWithRegistry', () => {
       systemPrompt: 'test',
       tools: [],
       messages,
+      logger: createLogger('test-agent-factory'),
     })
 
     expect(agent).toBeInstanceOf(Agent)
@@ -124,6 +126,7 @@ describe('createAgentWithRegistry', () => {
       systemPrompt: 'test',
       tools: [],
       messages,
+      logger: createLogger('test-agent-factory'),
     })
 
     expect(registryRequested).toBe(false)

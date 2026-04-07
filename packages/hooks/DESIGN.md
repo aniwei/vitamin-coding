@@ -55,7 +55,7 @@ Core methods:
 
 `src/types.ts` defines:
 
-- `HookTiming`: 28 lifecycle timings
+- `HookTiming`: 31 lifecycle timings
 - `HookPayloadMap`: timing to `{ input, output }` mapping
 - `HookInput<T>` / `HookOutput<T>` generic extraction
 - `HookHandle<T>` typed handler signature
@@ -198,7 +198,39 @@ Typical runtime wiring:
 Note:
 - `clearBackgroundTaskHistory()` is global (process scope), not session-scoped.
 
-## 13. Testing Coverage Summary
+## 13. Permission System
+
+`@vitamin/hooks` includes a built-in permission policy system for tool execution guards.
+
+### 13.1 Core Components
+
+- `PermissionPolicyRegistry` — registry for composable permission policies
+- `PermissionAuditLog` — audit trail for permission decisions
+- `PermissionGuardHook` — hook implementation that evaluates policies at `tool.execute.before`
+
+### 13.2 Built-in Policy Factories
+
+- `compilePolicyFromConfig(config)` — compile PermissionPolicyConfig to runtime policy
+- `createDirectoryFreezePolicy(dirs)` — prevent writes to specified directories
+- `createDisabledToolsPolicy(tools)` — block specific tools
+- `createAgentBoundaryPolicy(boundaries)` — enforce agent scope boundaries
+- `createPermissionModePolicy(mode)` — create policy by permission mode (`strict`, `default`, `permissive`)
+
+### 13.3 Built-in Policy Constants
+
+- `FILE_GUARD_POLICY` — default file protection policy
+- `DESTRUCTIVE_COMMAND_POLICY` — guards against destructive shell commands
+
+### 13.4 Decision Model
+
+Each permission evaluation produces a `PermissionDecision`:
+- `effect`: `allow` | `deny` | `ask`
+- `rule`: matching rule reference
+- `reason`: human-readable explanation
+
+Policies are evaluated in registration order; first matching rule wins.
+
+## 14. Testing Coverage Summary
 
 Current tests cover:
 
@@ -210,14 +242,14 @@ Current tests cover:
 - Safe hook factory behavior
 - Additional timing coverage including `system-prompt.transform`
 
-## 14. Known Constraints
+## 15. Known Constraints
 
 - `HookTiming` union and runtime `HOOK_TIMINGS` list are both maintained manually
 - In-memory tracking maps can grow if integrator never clears per-session state
 - Output truncation measures text length, not exact UTF-8 byte count
 - File guard patterns are mostly Unix-path oriented
 
-## 15. Evolution Directions
+## 16. Evolution Directions
 
 - Optional pre-sorted insertion to reduce repeated sort cost
 - Optional TTL-based cleanup for long-lived state maps

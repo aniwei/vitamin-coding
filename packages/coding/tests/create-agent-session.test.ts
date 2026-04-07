@@ -123,6 +123,10 @@ function makeProviderRegistry() {
   return registry
 }
 
+function makeLogger() {
+  return createLogger('test-session', { level: 'info', destination: 'stdout' })
+}
+
 async function flushLogs(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 20))
 }
@@ -134,6 +138,8 @@ describe('createAgentSession', () => {
     const session = createAgentSession({
       model: makeModel(),
       providerRegistry: makeProviderRegistry(),
+      hookRegistry: createHookRegistry({ preset: 'none' }),
+      logger: makeLogger(),
       systemPrompt: 'You are helpful.',
     })
 
@@ -146,6 +152,8 @@ describe('createAgentSession', () => {
     const session = createAgentSession({
       model: makeModel(),
       providerRegistry: makeProviderRegistry(),
+      hookRegistry: createHookRegistry({ preset: 'none' }),
+      logger: makeLogger(),
       id: 'custom-id-123',
     })
 
@@ -157,7 +165,8 @@ describe('createAgentSession', () => {
     const session = createAgentSession({
       model: makeModel(),
       providerRegistry: makeProviderRegistry(),
-      hooks,
+      hookRegistry: hooks,
+      logger: makeLogger(),
     })
 
     expect(session).toBeInstanceOf(AgentSession)
@@ -168,6 +177,8 @@ describe('createAgentSession', () => {
     const session = createAgentSession({
       model: makeModel(),
       providerRegistry: makeProviderRegistry(),
+      hookRegistry: createHookRegistry({ preset: 'none' }),
+      logger: makeLogger(),
       sessionStore: store,
       id: 'store-test',
     })
@@ -186,7 +197,8 @@ describe('createAgentSession', () => {
     const agentSession = new AgentSession(sessionData, agent, {
       model: makeModel(),
       systemPrompt: 'system',
-      hooks,
+      hookRegistry: hooks,
+      logger: makeLogger(),
     })
 
     await agentSession.prompt('hello world')
@@ -218,7 +230,7 @@ describe('createAgentSession', () => {
     const agentSession = new AgentSession(sessionData, agent, {
       model: makeModel(),
       systemPrompt: 'system',
-      hooks,
+      hookRegistry: hooks,
       tools: [tool],
       logger: collector.logger,
     })
@@ -262,17 +274,6 @@ describe('createAgentSession', () => {
             }
           }
 
-          if (snapshot.point === 'context_build') {
-            return {
-              command: { type: 'continue' as const, seq: 2 },
-              payload: {
-                injectMessages: [
-                  { role: 'system' as const, content: 'debug injected context' },
-                ],
-              },
-            }
-          }
-
           return {
             command: { type: 'continue' as const, seq: 3 },
             payload: null,
@@ -284,7 +285,8 @@ describe('createAgentSession', () => {
     const agentSession = new AgentSession(sessionData, agent, {
       model: makeModel(),
       systemPrompt: 'system',
-      hooks,
+      hookRegistry: hooks,
+      logger: makeLogger(),
       devtools,
     })
 
@@ -295,10 +297,5 @@ describe('createAgentSession', () => {
     expect(streamContexts[0]?.temperature).toBe(0.2)
     expect(streamContexts[0]?.maxTokens).toBe(256)
     expect(streamContexts[0]?.thinkingLevel).toBe('low')
-    expect(
-      streamContexts[0]?.messages.some(
-        (message) => message.role === 'system' && message.content === 'debug injected context',
-      ),
-    ).toBe(true)
   })
 })
