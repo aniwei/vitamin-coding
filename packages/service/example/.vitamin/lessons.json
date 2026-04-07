@@ -12,7 +12,20 @@
       "id": "lesson_1",
       "createdAt": 1775534161828,
       "appliedCount": 0
+    },
+    {
+      "tags": [
+        "web_fetch",
+        "error_handling",
+        "weather_data"
+      ],
+      "trigger": "Fetching Shenzhen's weather data from an external website returned incomplete content.",
+      "insight": "When retrieving weather data from web sources, ensure the fetched content contains the expected information. Otherwise, revert to the original source link or try alternative sources. Ensure fallback mechanisms are in place for incomplete results.",
+      "sourceSessionId": "",
+      "id": "lesson_2",
+      "createdAt": 1775534575475,
+      "appliedCount": 0
     }
   ],
-  "nextId": 2
+  "nextId": 3
 }

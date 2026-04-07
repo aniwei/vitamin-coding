@@ -2,8 +2,6 @@
 
 统一多 Provider LLM 流式对话 API，为 vitamin-coding 生态提供底层 AI 能力。
 
-> **参考实现**: [pi-mono/packages/ai](https://github.com/badlogic/pi-mono/tree/main/packages/ai) (`@mariozechner/pi-ai`)
-
 ---
 
 ## 目录
@@ -30,7 +28,6 @@
   - [OAuth 注册表](#oauth-注册表)
 - [模型注册表](#模型注册表)
 - [费用精算](#费用精算)
-- [与 pi-ai 的对比及差异决策](#与-pi-ai-的对比及差异决策)
 - [Provider 实现指南](#provider-实现指南)
 - [开发指南](#开发指南)
 
@@ -169,10 +166,6 @@ interface Model<T = Api> {
 }
 ```
 
-**与 pi-ai 对比**:
-- pi-ai `Model` 的 `compat` 类型通过条件类型 `TApi extends "openai-completions" ? OpenAICompletionsCompat : …` 做了编译期约束；vitamin 当前用统一 `Compat` 占位，后续可按需细化。
-- pi-ai `Model` 有 `headers` 字段（自定义请求头），vitamin 暂未引入，可按需追加。
-
 ### Message
 
 三种角色的联合类型：
@@ -216,12 +209,6 @@ interface ToolResultMessage<T = unknown> {
 | `ImageContent` | `type: 'image'`, `mime`, `source` | Base64 图像数据 |
 | `ToolCall` | `type: 'tool_call'`, `id`, `name`, `arguments` | 工具调用 |
 
-**与 pi-ai 对比**:
-- pi-ai 使用 `toolCall` / `toolResult` 作为 `type` 值（camelCase），vitamin 使用 `tool_call` / `tool_result`（snake_case）
-- pi-ai `ThinkingContent.thinking` 字段名，vitamin 使用 `ThinkingContent.text`——语义一致但字段不同
-- pi-ai `ImageContent` 字段为 `data`（base64）+ `mimeType`；vitamin 为 `source` + `mime`
-- pi-ai `AssistantMessage` 有 `errorMessage?` 和 `timestamp`；vitamin 不在 AssistantMessage 上携带错误信息，而是通过 `StreamEvent.error` 分离错误流
-
 ### StreamEvent
 
 基于可区分联合的流式事件协议：
@@ -246,12 +233,7 @@ type StreamEvent =
 - 每个增量事件都附带 `partial: AssistantMessage`（累积快照），方便 UI 在任意时刻拿到完整状态
 - `index` 标识内容块索引（支持并行的多个 text/thinking/toolcall 块）
 - `done` 携带 `StopReason`（`end_turn` | `max_tokens` | `tool_use` | `stop_sequence`）
-- `error` 变体只含 `Error`，与 pi-ai 的 "error 携带 AssistantMessage" 不同——vitamin 将错误通道与正常消息通道分离
-
-**与 pi-ai 对比**:
-- pi-ai 使用 `contentIndex` 命名；vitamin 使用 `index`
-- pi-ai `done.reason` 使用 `"stop"` | `"length"` | `"toolUse"`；vitamin 使用 `"end_turn"` | `"max_tokens"` | `"tool_use"` 风格
-- pi-ai `error` 事件包含 `reason: "aborted" | "error"` + `error: AssistantMessage`；vitamin 简化为仅 `error: Error`
+- `error` 变体只含 `Error`，错误通道与正常消息通道分离
 
 ### ToolDefinition
 
@@ -264,9 +246,7 @@ interface ToolDefinition<TArgs = unknown> {
 }
 ```
 
-**与 pi-ai 对比**:
-- pi-ai 使用 `@sinclair/typebox` 的 `TSchema`；vitamin 使用自定义 `ZodType` 接口（带 `toJSONSchema()` 方法），避免直接依赖 Zod
-- vitamin 额外提供 `visibility` 控制工具暴露策略
+`parameters` 使用自定义 `ZodType` 接口（带 `toJSONSchema()` 方法），Zod 兼容。`visibility` 控制工具暴露策略。
 
 ### Usage & Cost
 
@@ -286,8 +266,7 @@ interface Cost {        // 每百万 token 的美元费率
 }
 ```
 
-**与 pi-ai 对比**:
-- pi-ai 将 `cost` 内嵌在 `Usage` 中（`usage.cost.total` 运行时计算）；vitamin 将费率定义在 `Model.cost`，运行时通过 `calculate(model, usage)` 得到 `CostBreakdown`——关注点分离更清晰
+费率定义在 `Model.cost`，运行时通过 `calculate(model, usage)` 得到 `CostBreakdown`。
 
 ---
 
@@ -318,10 +297,6 @@ interface ProviderStream {
 }
 ```
 
-**与 pi-ai 方案差异**:
-- pi-ai 使用函数式 `StreamFunction`（`(model, context, options?) => AssistantMessageEventStream`），Provider 不作为对象实例
-- vitamin 采用面向对象的 `ProviderStream` 接口，便于承载 `resolveKey`、`healthCheck` 等生命周期方法
-
 ### API 注册表
 
 `ProviderRegistry` 以 `Api` 协议类型为 key，管理工厂函数和缓存实例：
@@ -337,17 +312,9 @@ registry.register('custom-api', () => new CustomProvider())
 const provider = registry.get('github-copilot')
 ```
 
-**与 pi-ai 对比**:
-- pi-ai 使用模块级 `Map<string, RegisteredApiProvider>` 全局单例（`registerApiProvider()` / `getApiProvider()`）
-- vitamin 使用实例化的 `ProviderRegistry` 类——可在测试中独立创建、在多会话中隔离
-
 ### Provider 懒加载
 
-基于 pi-ai 的懒加载模式，Provider 适配器应按如下方式注册：
-
-```ts
-// 注册时传入工厂函数（闭包中包含 dynamic import）
-registry.register('anthropic-messages', () => {
+Provider 适配器应按如下方式注册：
   // 首次调用时才 import 适配器模块
   return createAnthropicProvider()
 })
@@ -388,15 +355,6 @@ for await (const event of eventStream) {
 const message = await complete(model, provider, context, options)
 ```
 
-**与 pi-ai EventStream 对比**:
-
-| 维度 | pi-ai | vitamin |
-|------|-------|---------|
-| 完成判定 | 构造器注入 `isComplete` / `extractResult` 回调 | 显式 `complete(result)` / `fail(error)` 调用 |
-| 专用子类 | `AssistantMessageEventStream extends EventStream` | 直接使用 `EventStream<StreamEvent, AssistantMessage>` 泛型 |
-| 错误传播 | `end(result)` 统一结束 | `fail(error)` 独立错误路径，reject promise 并通知迭代器 |
-| 取消 | 无内置 abort | 内置 `AbortController` 关联 |
-
 ### stream / complete / simple
 
 三个编排入口函数：
@@ -428,7 +386,7 @@ function simple(model, provider, context, options): EventStream<StreamEvent, Ass
 
 ### 环境变量 Key 解析
 
-基于 pi-ai `env-api-keys.ts` 模式，`@vitamin/ai` 在 Provider 层内做环境变量候选解析：
+`@vitamin/ai` 在 Provider 层内做环境变量候选解析：
 
 ```ts
 function resolveProviderEnvKey(provider: KnownProvider): string | undefined
@@ -527,10 +485,6 @@ const model = registry.get('github-copilot/gpt-4.1')
 const allOpenAI = registry.getByProvider('openai')
 ```
 
-**与 pi-ai 对比**:
-- pi-ai 使用自动生成的 `models.generated.ts`（351KB，包含全部已知模型定义），在模块加载时自动灌入 `Map<Provider, Map<id, Model>>`
-- vitamin 暂不自动生成，而是按需注册——初期更灵活，后续可引入代码生成
-
 ### ModelSlot（工作流槽位路由）
 
 `ModelSlot` 将具名工作流槽位（如 `main`、`reviewer`）解析到实际 `Model`，支持 settings 覆写：
@@ -627,22 +581,6 @@ const stream = createEventStream<StreamEvent, AssistantMessage>()
 stream.push({ type: 'start', partial: ... })
 stream.complete(message)
 ```
-
----
-
-## 与 pi-ai 的对比及差异决策
-
-| 维度 | pi-ai | @vitamin/ai | 决策理由 |
-|------|-------|-------------|----------|
-| **Provider 模式** | 函数式 `StreamFunction` | 面向对象 `ProviderStream` 接口 | 便于承载 resolveKey、healthCheck 生命周期 |
-| **注册表** | 模块级全局 `Map` | 实例化类（`new ProviderRegistry`） | 零全局状态，便于测试隔离和多会话 |
-| **EventStream 完成判定** | 构造器注入回调 | 显式 `complete()` / `fail()` | 更直观，错误路径独立 |
-| **错误事件** | `error: AssistantMessage`（含 `errorMessage`） | `error: Error` | 关注点分离：错误通道不混入消息结构 |
-| **StopReason** | `"stop"` / `"length"` / `"toolUse"` | `"end_turn"` / `"max_tokens"` / `"tool_use"` | 更贴近 Anthropic/OpenAI 原始语义 |
-| **Schema 工具** | `@sinclair/typebox` | 自定义 `ZodType` 接口（Zod 兼容） | 避免 typebox 硬依赖，Zod 在 TypeScript 生态更普及 |
-| **模型数据** | 自动生成 `models.generated.ts` | 按需手动注册 | 初期灵活，后续可引入代码生成 |
-| **compat** | 条件类型 `TApi extends … ? …` | 统一 `Compat` 占位 | 减少初期类型复杂度，后续按需细化 |
-| **依赖** | `openai`, `@anthropic-ai/sdk`, `@google/genai`, `@sinclair/typebox` 等 | 仅 `@vitamin/shared` + `eventsource-parser` | 最小依赖策略，Provider SDK 留给具体适配器按需引入 |
 
 ---
 
