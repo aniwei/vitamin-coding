@@ -168,7 +168,7 @@ export interface PermissionRuleConfig {
   ask_prompt?: string
 }
 
-export interface PermissionPolicyConfig {
+export interface PermissionPolicySetting {
   name: string
   priority?: number
   enabled?: boolean
@@ -200,7 +200,7 @@ export interface VitaminSettingFromSchema {
   disabled_hooks?: string[]
   disabled_tools?: string[]
   permission_mode?: PermissionMode
-  permissions?: PermissionPolicyConfig[]
+  permissions?: PermissionPolicySetting[]
   _migrations?: string[]
   [key: string]: unknown
 }

@@ -1,4 +1,3 @@
-// Compaction Logger Hook — 压缩事件日志记录
 import { createLogger } from '@vitamin/shared'
 import type { HookRegistration } from '../../types'
 

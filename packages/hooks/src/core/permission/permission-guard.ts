@@ -1,4 +1,3 @@
-// 权限守卫 Hook — tool.execute.before 拦截
 import { ToolError } from '@vitamin/shared'
 
 import type {
@@ -14,7 +13,7 @@ export class PermissionGuardHook implements HookRegistration<'tool.execute.befor
   readonly name = 'permission-guard'
   readonly timing = 'tool.execute.before' as const
   readonly priority = 5
-  enabled = true
+  public enabled = true
 
   private readonly registry: PermissionPolicyRegistry
   private readonly auditLog?: PermissionAuditLog

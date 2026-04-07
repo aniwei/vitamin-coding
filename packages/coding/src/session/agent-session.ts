@@ -214,7 +214,10 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
       thinkingLevel?: ThinkingLevel
     } = {}
 
-    const consume = (result: PauseResult | undefined, messages?: AgentMessage[]): void => {
+    const consume = (
+      result: PauseResult | undefined, 
+      messages?: AgentMessage[]
+    ): void => {
       if (!result?.payload) {
         return
       }

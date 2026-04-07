@@ -1,4 +1,3 @@
-// Background Tracker Hook — 后台任务生命周期追踪
 import { createLogger } from '@vitamin/shared'
 import type { HookRegistration } from '../../types'
 

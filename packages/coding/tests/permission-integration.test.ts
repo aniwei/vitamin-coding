@@ -13,7 +13,7 @@ import {
   createDisabledToolsPolicy,
   createDirectoryFreezePolicy,
   createAgentBoundaryPolicy,
-  compilePolicyFromConfig,
+  compilePolicyFromSetting,
 } from '@vitamin/hooks'
 import type { ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from '@vitamin/hooks'
 import { Agent, type AgentMessage } from '@vitamin/agent'
@@ -487,8 +487,8 @@ describe('Combined permission pipeline scenarios', () => {
     expect(output.cancelReason).toMatch(/^\[CONFIRM\]/)
   })
 
-  it('compilePolicyFromConfig integrates with registry evaluate', async () => {
-    const policy = compilePolicyFromConfig({
+  it('compilePolicyFromSetting integrates with registry evaluate', async () => {
+    const policy = compilePolicyFromSetting({
       name: 'yaml-policy',
       priority: 25,
       rules: [

@@ -73,3 +73,10 @@ devtools.debugger.pause({
 1. 把调试命令映射进 `@vitamin/agent` 的中止和单步状态机。
 2. 为 `pause()` 增加跨线程端到端测试，覆盖真实异步恢复流程。
 3. 为 logger/session/debugger 统一 schema 和版本化协议。
+
+## 主要导出
+
+- `createDevtools` — 创建 `Devtools` 实例（含 debugger + DevtoolsService）
+- `DevtoolsService` — 独立 Worker 线程中的 WebSocket inspect 服务
+- `Breakpoints` — 断点管理类，支持 `list()`, `get(point)`, `shouldPause(point)`, `set(point, enabled)` 操作
+- 类型：`Devtools`, `DebugSnapshot`, `PauseResult`, `DevtoolsOptions`

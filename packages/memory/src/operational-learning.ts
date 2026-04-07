@@ -22,17 +22,17 @@ export interface LessonFilter {
 }
 
 export interface LearningStoreOptions {
-  filePath?: string
+  path?: string
 }
 
 export class OperationalLearningStore {
   private lessons = new Map<string, Lesson>()
   private nextId = 1
-  private readonly filePath: string | undefined
   private loaded = false
+  private readonly path: string | undefined
 
   constructor(options?: LearningStoreOptions) {
-    this.filePath = options?.filePath
+    this.path = options?.path
   }
 
   async save(input: LessonInput): Promise<Lesson> {
@@ -122,13 +122,13 @@ export class OperationalLearningStore {
   }
 
   private async ensureLoaded(): Promise<void> {
-    if (this.loaded || !this.filePath) {
+    if (this.loaded || !this.path) {
       this.loaded = true
       return
     }
 
     try {
-      const raw = await readFile(this.filePath, 'utf-8')
+      const raw = await readFile(this.path, 'utf-8')
       const data = JSON.parse(raw) as { lessons: Lesson[]; nextId: number }
 
       for (const lesson of data.lessons) {
@@ -143,14 +143,14 @@ export class OperationalLearningStore {
   }
 
   private async persist(): Promise<void> {
-    if (!this.filePath) return
+    if (!this.path) return
 
     const data = {
       lessons: [...this.lessons.values()],
       nextId: this.nextId,
     }
 
-    await mkdir(dirname(this.filePath), { recursive: true })
-    await writeFile(this.filePath, JSON.stringify(data, null, 2), 'utf-8')
+    await mkdir(dirname(this.path), { recursive: true })
+    await writeFile(this.path, JSON.stringify(data, null, 2), 'utf-8')
   }
 }
