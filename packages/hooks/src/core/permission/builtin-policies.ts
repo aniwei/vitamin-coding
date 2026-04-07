@@ -1,33 +1,65 @@
-// 内置权限策略集
 import type { PermissionPolicy, PermissionMode } from './types'
 
-const READONLY_TOOLS = new Set([
-  'read', 
-  'glob', 
-  'grep', 
-  'list-dir', 
-  'search', 
-  'view-image',
-  'list_dir', 
-  'semantic_search', 
-  'file_search', 
-  'grep_search',
-])
+export interface PermissionToolDescriptor {
+  name: string
+  readonly?: boolean
+  metadata?: {
+    category?: string
+  }
+}
 
-// 写入类工具 (含 bash，用于 mode 策略的写操作分类)
-const WRITE_TOOLS = new Set([
-  'write', 'edit', 'edit-diff', 'bash',
-  'delete', 'rename', 'move', 'create',
-])
+export interface PermissionToolSets {
+  readonlyTools: Set<string>
+  writeTools: Set<string>
+  fileWriteTools: Set<string>
+}
 
-// 基于文件路径参数的写入工具 (不含 bash)
-// bash 的路径隐含在 args.command 字符串中，extractPath 无法提取，
-// 所以 FILE_GUARD_POLICY 的 paths 规则对 bash 无效。
-// bash 的破坏性命令由 DESTRUCTIVE_COMMAND_POLICY 负责。
-const FILE_WRITE_TOOLS = new Set([
-  'write', 'edit', 'edit-diff',
-  'delete', 'rename', 'move', 'create',
-])
+export interface PermissionToolSetsInput {
+  readonlyTools?: Iterable<string>
+  writeTools?: Iterable<string>
+  fileWriteTools?: Iterable<string>
+}
+
+function resolvePermissionToolSets(toolSets?: PermissionToolSetsInput): PermissionToolSets {
+  return {
+    readonlyTools: new Set(toolSets?.readonlyTools ?? []),
+    writeTools: new Set(toolSets?.writeTools ?? []),
+    fileWriteTools: new Set(toolSets?.fileWriteTools ?? []),
+  }
+}
+
+export function createPermissionToolSetsFromRegistry(
+  tools: Iterable<PermissionToolDescriptor>,
+): PermissionToolSets {
+  const readonlyTools = new Set<string>()
+  const writeTools = new Set<string>()
+  const fileWriteTools = new Set<string>()
+
+  for (const tool of tools) {
+    if (!tool.name) continue
+
+    if (tool.readonly === true) {
+      readonlyTools.add(tool.name)
+      continue
+    }
+
+    if (tool.name === 'bash') {
+      writeTools.add(tool.name)
+      continue
+    }
+
+    if (tool.metadata?.category === 'fs') {
+      writeTools.add(tool.name)
+      fileWriteTools.add(tool.name)
+    }
+  }
+
+  return {
+    readonlyTools,
+    writeTools,
+    fileWriteTools,
+  }
+}
 
 const PROTECTED_PATH_PATTERNS = [
   /^\/etc\//,
@@ -41,21 +73,29 @@ const PROTECTED_PATH_PATTERNS = [
 ]
 
 export const FILE_GUARD_POLICY: PermissionPolicy = {
-  name: 'builtin::file-guard',
-  priority: 10,
-  enabled: true,
-  scope: { agents: ['*'] },
-  rules: [{
-    name: 'protect-system-paths',
-    effect: 'deny',
-    match: {
-      // 仅对能直接传递路径参数的写入工具做 paths 匹配
-      // bash 不在此列，bash 的破坏性命令由 DESTRUCTIVE_COMMAND_POLICY 拦截
-      tools: [...FILE_WRITE_TOOLS],
-      paths: PROTECTED_PATH_PATTERNS,
-    },
-    denyReason: 'Write to protected system path is not allowed',
-  }],
+  ...createFileGuardPolicy(),
+}
+
+export function createFileGuardPolicy(toolSets?: PermissionToolSetsInput): PermissionPolicy {
+  const { fileWriteTools } = resolvePermissionToolSets(toolSets)
+
+  return {
+    name: 'builtin::file-guard',
+    priority: 10,
+    enabled: true,
+    scope: { agents: ['*'] },
+    rules: [{
+      name: 'protect-system-paths',
+      effect: 'deny',
+      match: {
+        // 仅对能直接传递路径参数的写入工具做 paths 匹配
+        // bash 不在此列，bash 的破坏性命令由 DESTRUCTIVE_COMMAND_POLICY 拦截
+        tools: [...fileWriteTools],
+        paths: PROTECTED_PATH_PATTERNS,
+      },
+      denyReason: 'Write to protected system path is not allowed',
+    }],
+  }
 }
 
 const DESTRUCTIVE_PATTERN = /\b(rm\s+-rf|drop\s+table|git\s+push\s+--force|git\s+reset\s+--hard|truncate\s+table|git\s+clean\s+-fd)\b/i
@@ -81,9 +121,12 @@ export const DESTRUCTIVE_COMMAND_POLICY: PermissionPolicy = {
   ],
 }
 
-// ═══ 3. Directory Freeze 策略 (动态创建) ═══
+export function createDirectoryFreezePolicy(
+  allowedDir: string,
+  toolSets?: PermissionToolSetsInput,
+): PermissionPolicy {
+  const { fileWriteTools } = resolvePermissionToolSets(toolSets)
 
-export function createDirectoryFreezePolicy(allowedDir: string): PermissionPolicy {
   return {
     name: 'builtin::directory-freeze',
     // priority > FILE_GUARD_POLICY(10)：先由 file-guard 拦截系统路径，
@@ -96,7 +139,7 @@ export function createDirectoryFreezePolicy(allowedDir: string): PermissionPolic
         name: 'allow-within-directory',
         effect: 'allow',
         match: {
-          tools: [...FILE_WRITE_TOOLS],
+          tools: [...fileWriteTools],
           condition: (ctx) => {
             const filePath = ctx.filePath ?? ''
             return filePath.startsWith(allowedDir)
@@ -106,14 +149,12 @@ export function createDirectoryFreezePolicy(allowedDir: string): PermissionPolic
       {
         name: 'deny-outside-directory',
         effect: 'deny',
-        match: { tools: [...FILE_WRITE_TOOLS] },
+        match: { tools: [...fileWriteTools] },
         denyReason: `Edits frozen to directory: ${allowedDir}`,
       },
     ],
   }
 }
-
-// ═══ 4. Disabled Tools 策略 (从 setting 的 disabled_tools 生成) ═══
 
 export function createDisabledToolsPolicy(disabledTools: string[]): PermissionPolicy {
   return {
@@ -131,8 +172,6 @@ export function createDisabledToolsPolicy(disabledTools: string[]): PermissionPo
     ],
   }
 }
-
-// ═══ 5. Agent Boundary 策略 (限制 agent 只能用声明的工具) ═══
 
 export function createAgentBoundaryPolicy(
   agentName: string,
@@ -159,9 +198,12 @@ export function createAgentBoundaryPolicy(
   }
 }
 
-// ═══ 6. Permission Mode 策略 ═══
+export function createPermissionModePolicy(
+  mode: PermissionMode,
+  toolSets?: PermissionToolSetsInput,
+): PermissionPolicy {
+  const { readonlyTools, writeTools } = resolvePermissionToolSets(toolSets)
 
-export function createPermissionModePolicy(mode: PermissionMode): PermissionPolicy {
   switch (mode) {
     case 'bypass':
       return {
@@ -182,7 +224,7 @@ export function createPermissionModePolicy(mode: PermissionMode): PermissionPoli
           {
             name: 'allow-reads',
             effect: 'allow',
-            match: { condition: (ctx) => READONLY_TOOLS.has(ctx.toolName) },
+            match: { condition: (ctx) => readonlyTools.has(ctx.toolName) },
           },
           {
             name: 'deny-writes',
@@ -203,13 +245,13 @@ export function createPermissionModePolicy(mode: PermissionMode): PermissionPoli
           {
             name: 'allow-reads',
             effect: 'allow',
-            match: { condition: (ctx) => READONLY_TOOLS.has(ctx.toolName) },
+            match: { condition: (ctx) => readonlyTools.has(ctx.toolName) },
           },
           {
-            // match 限定在 WRITE_TOOLS，避免对 web-search / task 等非写入工具误发确认请求
+            // match 限定在 writeTools，避免对 web-search / task 等非写入工具误发确认请求
             name: 'ask-writes',
             effect: 'ask',
-            match: { tools: [...WRITE_TOOLS] },
+            match: { tools: [...writeTools] },
             askPrompt: 'Confirm write operation?',
           },
         ],
@@ -242,7 +284,7 @@ export function createPermissionModePolicy(mode: PermissionMode): PermissionPoli
           {
             name: 'allow-reads',
             effect: 'allow',
-            match: { condition: (ctx) => READONLY_TOOLS.has(ctx.toolName) },
+            match: { condition: (ctx) => readonlyTools.has(ctx.toolName) },
           },
           // 写操作 → 交由后续策略判定
         ],

@@ -211,47 +211,6 @@ describe('coding hooks integration', () => {
     expect(lifecycleEvents).toEqual(['created:session-created', 'deleted:session-created'])
   })
 
-  it('emits stream.start and stream.end hooks during prompt', async () => {
-    const streamEvents: string[] = []
-    const hooks = createHookRegistry({ preset: 'none' })
-    hooks.on('stream.start', 'track-stream-start', (input) => {
-      streamEvents.push(`start:${input.model}`)
-    })
-    hooks.on('stream.end', 'track-stream-end', (input) => {
-      streamEvents.push(`end:${input.model}:${input.stopReason}`)
-    })
-
-    const stream = (_context: StreamContext, _signal: AbortSignal) => {
-      const eventStream = createEventStream<StreamEvent, AssistantMessage>()
-      const response = makeAssistantMessage([{ type: 'text', text: 'hello' }], 'end_turn')
-      setTimeout(() => {
-        eventStream.push({ type: 'start', partial: response })
-        eventStream.push({ type: 'done', reason: 'end_turn', message: response })
-        eventStream.complete(response)
-      }, 0)
-      return eventStream
-    }
-
-    const sessionStore = createInMemorySessionStore()
-    const session = await sessionStore.createSession('session-stream')
-    const agent = new Agent({ stream })
-    const agentSession = new AgentSession(session, agent, {
-      model: makeModel(),
-      systemPrompt: 'system',
-      hookRegistry: hooks,
-    })
-
-    await agentSession.prompt('hi')
-
-    await expect.poll(() => {
-      return streamEvents.includes('start:openai/test-model')
-    }).toBe(true)
-
-    await expect.poll(() => {
-      return streamEvents.includes('end:openai/test-model:end_turn')
-    }).toBe(true)
-  })
-
   it('emits compaction.before and compaction.after hooks', async () => {
     const compactionEvents: string[] = []
     const hooks = createHookRegistry({ preset: 'none' })

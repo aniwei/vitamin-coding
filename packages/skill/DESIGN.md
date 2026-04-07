@@ -1,38 +1,96 @@
 # @vitamin/skill 设计说明
 
 ## 设计目标
-- 提供 Skill 注册、发现、匹配与解析能力。
-- 保持包边界清晰，避免跨包耦合回流。
-- 通过稳定入口与类型导出，支持 monorepo 内部复用。
+
+- 管理 SKILL.md 技能文件的发现、解析、匹配与注册。
+- 支持本地（项目级 + 用户级）技能自动发现。
+- 提供多因子评分的技能匹配算法。
 
 ## 非目标
-- 不在本包内实现业务编排层之外的跨域职责。
-- 不在该包内承担与其职责无关的运行时装配。
+
+- 不直接影响模型输出（仅提供技能内容注入到系统提示）。
+- 不实现技能的执行逻辑。
+
+## 实现原理
+
+### SkillRegistry（skill-registry.ts）
+
+技能的注册与生命周期管理：
+- `register(skill)` / `unregister(name)` / `get(name)` / `list()`
+- `discover()` → 扫描目录自动发现
+- `match(query)` → 根据查询匹配最佳技能
+- 事件发射：`skill_discovered` / `skill_loaded` / `skill_unloaded` / `skill_error` / `skill_executed`
+
+### 技能发现（skill-discovery.ts）
+
+自动扫描技能文件：
+- 项目级：`.vitamin/skills/` 目录
+- 用户级：`~/.vitamin/skills/` 目录
+- 递归扫描 `*.md` 文件
+- 返回 `DiscoveredSkill[]`（路径 + 元信息）
+
+### 技能解析器（skill-parser.ts）
+
+解析 SKILL.md 文件结构：
+- YAML frontmatter 提取：`name`、`description`、`tags`、`version`、`applyTo` 等
+- Markdown body 提取：技能指令内容
+- 校验必要字段
+
+### 技能匹配器（skill-matcher.ts）
+
+多因子评分匹配算法：
+- **名称匹配**（权重 0.3）：精确 / 前缀 / 包含
+- **描述匹配**（权重 0.5）：关键词命中率
+- **标签匹配**（权重 0.2）：标签交集
+- 阈值过滤：评分低于阈值的排除
+- 返回排序后的匹配结果
+
+### 执行上下文（skill-context.ts）
+
+为技能执行提供上下文注入：
+- 当前文件路径、语言
+- 工作空间信息
+- 用户消息摘要
+
+## 实现流程
+
+```
+VitaminApp.init()
+       |
+  SkillRegistry.discover()
+       |
+  扫描 .vitamin/skills/ + ~/.vitamin/skills/
+       |
+  遍历 *.md → SkillParser.parse() → Skill 对象
+       |
+  SkillRegistry.register(skill)
+       |
+  Agent 运行时 → SkillRegistry.match(userMessage)
+       |
+  SkillMatcher 多因子评分 → 排序
+       |
+  匹配技能的内容注入系统提示
+```
 
 ## 模块分层
-- `src/index.ts`：index.ts 模块实现。
-- `src/skill-discovery.ts`：skill-discovery.ts 模块实现。
-- `src/skill-matcher.ts`：skill-matcher.ts 模块实现。
-- `src/skill-parser.ts`：skill-parser.ts 模块实现。
-- `src/skill-registry.ts`：skill-registry.ts 模块实现。
-- `src/types.ts`：types.ts 模块实现。
+
+| 文件 | 职责 |
+|------|------|
+| `src/types.ts` | Skill / DiscoveredSkill / SkillMatch 类型 |
+| `src/skill-registry.ts` | 注册 + 发现 + 事件 |
+| `src/skill-discovery.ts` | 目录扫描 |
+| `src/skill-parser.ts` | SKILL.md 解析 |
+| `src/skill-matcher.ts` | 多因子匹配 |
+| `src/skill-context.ts` | 执行上下文 |
+| `src/index.ts` | barrel 导出 |
 
 ## 入口与依赖
-- 入口：`src/index.ts`
-- 内部依赖：
-  - `@vitamin/env`
-  - `@vitamin/shared`
 
-## 执行流程（抽象）
-- 调用方通过包入口导入能力。
-- 入口将调用分发到 `src/` 下具体模块。
-- 模块内按职责完成处理并返回结构化结果。
-- 若存在 Hook/事件机制，则通过回调实现扩展。
+- **入口**：`src/index.ts`
+- **内部依赖**：`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **外部依赖**：无
 
 ## 测试策略
-- 当前未提供测试文件，建议至少补齐入口行为与错误路径测试。
 
-## 文档维护约定
-- 每次新增/删除公开导出时，同步更新 README 的“公开导出”章节。
-- 每次目录结构调整时，同步更新本设计文档“模块分层”章节。
-- 同步日期：2026-04-07
+- 测试文件数：5
+- 覆盖：技能发现、YAML 解析、名称/描述/标签匹配、注册生命周期

@@ -1,43 +1,111 @@
 # @vitamin/orchestrator 设计说明
 
 ## 设计目标
-- 提供多智能体编排执行器、任务存储与治理能力。
-- 保持包边界清晰，避免跨包耦合回流。
-- 通过稳定入口与类型导出，支持 monorepo 内部复用。
+
+- 管理多 Agent 任务的创建、调度、重试与生命周期。
+- 提供 TaskStore（任务存储）+ TaskExecutor（任务执行器）+ CircuitBreaker（熔断器）组合。
+- 支持同步/后台混合任务调度。
 
 ## 非目标
-- 不在本包内实现业务编排层之外的跨域职责。
-- 不在该包内承担与其职责无关的运行时装配。
+
+- 不实现 Agent 本身（由 `@vitamin/agent` 完成）。
+- 不管理 Agent 间协作拓扑（由 `@vitamin/swarm` 完成）。
+
+## 实现原理
+
+### TaskStore（task-store.ts）
+
+基于内存 Map 的任务 CRUD 存储：
+- `create(task)` / `get(id)` / `update(id, patch)` / `delete(id)` / `list(filter?)`
+- 任务状态：`pending` → `running` → `completed` / `failed` / `cancelled`
+- 支持 `result` / `error` / `retryCount` / `createdAt` / `updatedAt` 跟踪
+
+### TaskExecutor（task-executor.ts）
+
+任务执行引擎：
+- `dispatch(task)`：根据任务类型选择同步或后台执行
+- `maxActiveTasks`：并发限制
+- **同步执行**：直接等待 Agent 执行结果
+- **后台执行**：交给 BackgroundManager 异步处理
+- 自动重试：失败时按 RetryPolicy 决定是否重试
+
+### RetryPolicy（retry-policy.ts）
+
+- `shouldRetry(error, retryCount)`：基于错误类型和重试次数判断
+- `getDelay(retryCount)`：指数退避 + 随机抖动
+- `maxRetries`：最大重试次数
+
+### CircuitBreaker（circuit-breaker.ts）
+
+断路器模式，防止级联失败：
+- **CLOSED**：正常状态，失败计数
+- **OPEN**：连续失败超阈值，拒绝所有请求
+- **HALF_OPEN**：超时后尝试单次请求，成功→CLOSED，失败→OPEN
+- `consecutiveFailureThreshold`：触发阈值
+- `resetTimeoutMs`：OPEN 到 HALF_OPEN 的超时
+
+### Orchestrator（orchestrator.ts）
+
+顶层协调器，暴露业务友好的 API：
+- `dispatchTask(options)` → 创建任务 + dispatch
+- `callAgent(profile, message)` → 委托给指定 Agent
+- `writeTodos(todos)` → 创建/更新任务列表
+- `clarifyRequest(question)` → 向用户提问
+- 所有操作发射 Hook 事件
+
+### BackgroundManager（background-manager.ts）
+
+管理后台异步任务：
+- `submit(task, executor)` → 异步执行 + 状态更新
+- `cancel(taskId)` → 中止任务
+- `getStatus(taskId)` → 查询状态
+- 内部维护运行中任务的 Map + AbortController
+
+## 实现流程
+
+```
+调用方 --> Orchestrator.dispatchTask(options)
+               |
+          TaskStore.create(task)
+               |
+          CircuitBreaker.guard() --> OPEN? → 拒绝
+               |
+          TaskExecutor.dispatch(task)
+             /          \
+        同步执行      后台执行
+            |           |
+        Agent.run()   BackgroundManager.submit()
+            |           |
+        结果/错误      异步结果/错误
+            |           |
+        TaskStore.update(status)
+            |
+        失败? → RetryPolicy.shouldRetry()
+            |
+        是 → 计算 delay → 重新 dispatch
+        否 → CircuitBreaker.recordFailure()
+```
 
 ## 模块分层
-- `src/background-manager.ts`：background-manager.ts 模块实现。
-- `src/executor.ts`：executor.ts 模块实现。
-- `src/index.ts`：index.ts 模块实现。
-- `src/orchestrator.ts`：orchestrator.ts 模块实现。
-- `src/retry.ts`：retry.ts 模块实现。
-- `src/task-store.ts`：task-store.ts 模块实现。
-- `src/types.ts`：types.ts 模块实现。
+
+| 文件 | 职责 |
+|------|------|
+| `src/types.ts` | Task / TaskStatus / OrchestratorConfig 类型 |
+| `src/task-store.ts` | 任务存储 CRUD |
+| `src/task-executor.ts` | 任务执行引擎 |
+| `src/retry-policy.ts` | 指数退避重试策略 |
+| `src/circuit-breaker.ts` | 断路器（CLOSED/OPEN/HALF_OPEN） |
+| `src/orchestrator.ts` | 顶层协调器 |
+| `src/background-manager.ts` | 后台任务管理 |
+| `src/index.ts` | barrel 导出 |
 
 ## 入口与依赖
-- 入口：`src/index.ts`
-- 内部依赖：
-  - `@vitamin/agent`
-  - `@vitamin/hooks`
-  - `@vitamin/setting`
-  - `@vitamin/shared`
-  - `@vitamin/tools`
 
-## 执行流程（抽象）
-- 调用方通过包入口导入能力。
-- 入口将调用分发到 `src/` 下具体模块。
-- 模块内按职责完成处理并返回结构化结果。
-- 若存在 Hook/事件机制，则通过回调实现扩展。
+- **入口**：`src/index.ts`
+- **内部依赖**：`@vitamin/agent`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **外部依赖**：无
 
 ## 测试策略
-- 当前测试文件数：5。
-- 测试以行为断言为主，优先覆盖公开接口与关键分支。
 
-## 文档维护约定
-- 每次新增/删除公开导出时，同步更新 README 的“公开导出”章节。
-- 每次目录结构调整时，同步更新本设计文档“模块分层”章节。
-- 同步日期：2026-04-07
+- 测试文件数：6
+- 覆盖：TaskStore CRUD、执行器调度、重试策略、断路器状态机、后台管理器、协调器编排

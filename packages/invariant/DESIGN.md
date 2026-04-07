@@ -1,34 +1,67 @@
 # @vitamin/invariant 设计说明
 
 ## 设计目标
+
 - 提供断言工具与构建期 invariant 清理能力。
-- 保持包边界清晰，避免跨包耦合回流。
-- 通过稳定入口与类型导出，支持 monorepo 内部复用。
+- 支持开发期精确断言 + 生产构建自动剥离，实现零运行时开销。
 
 ## 非目标
-- 不在本包内实现业务编排层之外的跨域职责。
-- 不在该包内承担与其职责无关的运行时装配。
+
+- 不在本包内实现业务逻辑。
+- 不做运行时日志采集（仅条件输出到 console）。
+
+## 实现原理
+
+### 断言函数（invariant.ts）
+
+`invariant(condition, message?)` 提供带 TypeScript `asserts` 子句的运行时断言：
+- 条件为 falsy 时抛出 `InvariantError`（携带 `framesToPop = 1` 用于栈清理）。
+- 支持布尔值或函数型条件、字符串或数字消息。
+
+命名空间方法 `invariant.debug()` / `.log()` / `.warn()` / `.error()` 根据当前 verbosity 级别条件输出到 console。`setVerbosity(level)` 动态切换级别，返回旧值以便测试恢复。
+
+### 构建期剥离插件（tsup-strip-invariant-plugin.ts）
+
+`createStripInvariantInProductionPlugin(options)` 是 tsup/esbuild 插件，在构建阶段自动移除开发断言代码：
+1. 检测 `if (process.env.NODE_ENV !== 'production') { ... }` 守卫块。
+2. 扫描块内是否包含 `invariant()` 调用（支持 import alias）。
+3. 有 invariant 调用则移除整个 if 块，保留 else 分支。
+4. 若 import 语句中 invariant 已无引用，移除该 import。
+
+基于 TypeScript AST 实现精确变换，不依赖正则。
+
+## 实现流程
+
+```
+开发时：
+  invariant(condition, message) --> 条件检查 --> 失败抛出 InvariantError
+
+生产构建：
+  tsup 加载 stripInvariantPlugin
+       |
+  扫描 process.env.NODE_ENV 守卫块
+       |
+  检测 invariant() 调用 --> 移除守卫块 + 清理未用 import
+       |
+  产物中不含断言代码
+```
 
 ## 模块分层
-- `src/index.ts`：index.ts 模块实现。
-- `src/invariant.ts`：invariant.ts 模块实现。
-- `src/tsup-strip-invariant-plugin.ts`：tsup-strip-invariant-plugin.ts 模块实现。
+
+| 文件 | 职责 |
+|------|------|
+| `src/invariant.ts` | invariant 断言函数 + InvariantError + verbosity 控制 |
+| `src/tsup-strip-invariant-plugin.ts` | 构建期 AST 剥离插件 |
+| `src/index.ts` | barrel 导出 |
 
 ## 入口与依赖
-- 入口：`src/index.ts`
-- 内部依赖：无。
 
-## 执行流程（抽象）
-- 调用方通过包入口导入能力。
-- 入口将调用分发到 `src/` 下具体模块。
-- 模块内按职责完成处理并返回结构化结果。
-- 若存在 Hook/事件机制，则通过回调实现扩展。
+- **入口**：`src/index.ts`
+- **内部依赖**：无
+- **外部依赖**：`typescript`（用于 AST 解析）
 
 ## 测试策略
-- 当前测试文件数：2。
-- 测试以行为断言为主，优先覆盖公开接口与关键分支。
 
-## 文档维护约定
-- 每次新增/删除公开导出时，同步更新 README 的“公开导出”章节。
-- 每次目录结构调整时，同步更新本设计文档“模块分层”章节。
-- 同步日期：2026-04-07
+- 测试文件数：2
+- `invariant.test.ts`：断言行为、错误类型、verbosity 控制
+- `tsup-strip-invariant-plugin.test.ts`：9 种 AST 变换场景

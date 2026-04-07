@@ -1,41 +1,71 @@
 # @vitamin/cli
 
 ## 模块定位
-提供命令行入口与参数路由，驱动 Vitamin 运行时。
 
-## 当前状态（基于源码）
-- 包目录：`packages/cli`
-- 源码文件数：3
-- 测试文件数：1
-- 入口文件：`src/index.ts`
+Vitamin 命令行入口，解析参数并分发到 Print / JSON / Interactive / RPC 运行模式。
+
+## 使用方式
+
+```bash
+# Print 模式（单次执行）
+vitamin "fix the bug" -p
+
+# Interactive 模式（REPL）
+vitamin -i
+
+# JSON 模式
+vitamin "summarize this file" --json
+
+# 指定模型
+vitamin "explain this" -m claude-sonnet-4
+
+# 启用调试
+vitamin -i --inspect
+
+# 子命令
+vitamin doctor    # 环境诊断
+vitamin config    # 配置管理
+vitamin auth      # 认证管理
+```
+
+## 参数
+
+| 参数 | 说明 |
+|------|------|
+| `-p` / `--print` | Print 模式 |
+| `-i` / `--interactive` | Interactive 模式 |
+| `--json` | JSON 模式 |
+| `--rpc` | RPC 模式 |
+| `-m` / `--model` | 指定模型 |
+| `-c` / `--config` | 配置文件路径 |
+| `-d` / `--dir` | 工作目录 |
+| `-v` / `--verbose` | 详细日志 |
+| `--max-tokens` | 最大 token |
+| `--continue` | 继续上次会话 |
+| `--inspect` | 启用调试 |
 
 ## 目录概览
-- `src/`
-  - `cli.ts`
-  - `index.ts`
-  - `types.ts`
-- `tests/`
-  - `cli.test.ts`
 
-## 公开导出
-```ts
-export { runCli }
+```
+bin/
+  vitamin           # 二进制入口
+src/
+  types.ts          # 核心类型
+  parse-cli.ts      # 参数解析
+  run-cli.ts        # 主执行入口
+  commands/         # 子命令
+  index.ts
+tests/              # 3 个测试文件
 ```
 
 ## 开发命令
-- `pnpm --filter @vitamin/cli build`
-- `pnpm --filter @vitamin/cli typecheck:project`
-- `pnpm --filter @vitamin/cli typecheck:file`
-- `pnpm --filter @vitamin/cli typecheck`
-- `pnpm --filter @vitamin/cli clean`
 
-## 关联 Vitamin 包
-- `@vitamin/ai`
-- `@vitamin/coding`
-- `@vitamin/hooks`
-- `@vitamin/setting`
-- `@vitamin/tools`
+```bash
+pnpm --filter @vitamin/cli build
+pnpm --filter @vitamin/cli typecheck
+pnpm --filter @vitamin/cli clean
+```
 
-## 维护说明
-- 本文档已按当前源码结构同步更新。
-- 同步日期：2026-04-07
+## 关联包
+
+`@vitamin/coding`、`@vitamin/shared`、`@vitamin/env`

@@ -1,27 +1,22 @@
 # @vitamin/assistant-ui
 
 ## 模块定位
-承载助手前端 UI 的包位；当前仓库内主要保留构建元数据。
 
-## 当前状态（基于源码）
-- 包目录：`packages/assistant-ui`
-- 源码文件数：0
-- 测试文件数：0
-- 入口文件：无（当前包未提供 `src/index.ts`）
+预留的可嵌入助手 UI 组件库。与 `@vitamin/web-ui`（完整 Web 应用）互补，提供可嵌入到第三方应用的智能助手界面组件。
 
-## 目录概览
-- 当前包无 `src/` 目录或目录为空。
-- 当前包无 `tests/` 目录或目录为空。
+## 当前状态
 
-## 公开导出
-当前包未在 `src/index.ts` 中声明导出。
+已初始化为 Vite + React + TypeScript 项目，包含基础入口与构建配置。
 
 ## 开发命令
+
 - `pnpm --filter @vitamin/assistant-ui dev`
 - `pnpm --filter @vitamin/assistant-ui build`
 - `pnpm --filter @vitamin/assistant-ui preview`
-- `pnpm --filter @vitamin/assistant-ui lint`
 
-## 维护说明
-- 本文档已按当前源码结构同步更新。
-- 同步日期：2026-04-07
+## 后续规划
+
+- `<AssistantPanel />`：可嵌入聊天面板
+- `<AssistantButton />`：浮动触发按钮
+- 主题定制支持
+- WebSocket 通信集成

@@ -6,7 +6,9 @@ import {
   PermissionAuditLog,
   createPermissionGuardHook,
   FILE_GUARD_POLICY,
+  createFileGuardPolicy,
   DESTRUCTIVE_COMMAND_POLICY,
+  createPermissionToolSetsFromRegistry,
   createDirectoryFreezePolicy,
   createDisabledToolsPolicy,
   createAgentBoundaryPolicy,
@@ -32,6 +34,13 @@ function makeContext(overrides: Partial<PermissionContext> = {}): PermissionCont
     ...overrides,
   }
 }
+
+const TEST_TOOL_SETS = createPermissionToolSetsFromRegistry([
+  { name: 'read', readonly: true, metadata: { category: 'fs' } },
+  { name: 'write', metadata: { category: 'fs' } },
+  { name: 'edit', metadata: { category: 'fs' } },
+  { name: 'bash', metadata: { category: 'shell' } },
+])
 
 // ═══ PermissionPolicyRegistry ═══
 
@@ -271,8 +280,47 @@ describe('PermissionPolicyRegistry', () => {
 // ═══ Built-in Policies ═══
 
 describe('Built-in Policies', () => {
+  describe('createPermissionToolSetsFromRegistry', () => {
+    it('derives readonly/write/file-write sets from tool descriptors', () => {
+      const toolSets = createPermissionToolSetsFromRegistry([
+        { name: 'read', readonly: true, metadata: { category: 'fs' } },
+        { name: 'ls', readonly: true, metadata: { category: 'search' } },
+        { name: 'write', metadata: { category: 'fs' } },
+        { name: 'bash', metadata: { category: 'shell' } },
+        { name: 'task_delegate', metadata: { category: 'orchestration' } },
+      ])
+
+      expect(toolSets.readonlyTools.has('read')).toBe(true)
+      expect(toolSets.readonlyTools.has('ls')).toBe(true)
+      expect(toolSets.writeTools.has('write')).toBe(true)
+      expect(toolSets.fileWriteTools.has('write')).toBe(true)
+      expect(toolSets.writeTools.has('bash')).toBe(true)
+      expect(toolSets.fileWriteTools.has('bash')).toBe(false)
+      expect(toolSets.writeTools.has('task_delegate')).toBe(false)
+    })
+  })
+
+  describe('createFileGuardPolicy', () => {
+    it('uses injected file-write tools for path protection', () => {
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createFileGuardPolicy({ fileWriteTools: ['apply_patch'] }))
+
+      const denied = registry.evaluate(makeContext({
+        toolName: 'apply_patch',
+        filePath: '/etc/passwd',
+      }))
+      expect(denied.effect).toBe('deny')
+
+      const allowed = registry.evaluate(makeContext({
+        toolName: 'write',
+        filePath: '/etc/passwd',
+      }))
+      expect(allowed.effect).toBe('allow')
+    })
+  })
+
   describe('FILE_GUARD_POLICY', () => {
-    it('denies writing to protected paths', () => {
+    it('does not deny writes without injected write-tool sets', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(FILE_GUARD_POLICY)
 
@@ -280,10 +328,10 @@ describe('Built-in Policies', () => {
         toolName: 'write',
         filePath: '/etc/passwd',
       }))
-      expect(decision.effect).toBe('deny')
+      expect(decision.effect).toBe('allow')
     })
 
-    it('denies writing to node_modules', () => {
+    it('does not deny edits without injected write-tool sets', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(FILE_GUARD_POLICY)
 
@@ -291,7 +339,7 @@ describe('Built-in Policies', () => {
         toolName: 'edit',
         filePath: '/project/node_modules/pkg/index.js',
       }))
-      expect(decision.effect).toBe('deny')
+      expect(decision.effect).toBe('allow')
     })
 
     it('allows writing to normal paths', () => {
@@ -355,7 +403,7 @@ describe('Built-in Policies', () => {
   describe('createDirectoryFreezePolicy', () => {
     it('allows edits within the frozen directory', () => {
       const registry = new PermissionPolicyRegistry()
-      registry.register(createDirectoryFreezePolicy('/project/src'))
+      registry.register(createDirectoryFreezePolicy('/project/src', TEST_TOOL_SETS))
 
       const decision = registry.evaluate(makeContext({
         toolName: 'edit',
@@ -366,7 +414,7 @@ describe('Built-in Policies', () => {
 
     it('denies edits outside the frozen directory', () => {
       const registry = new PermissionPolicyRegistry()
-      registry.register(createDirectoryFreezePolicy('/project/src'))
+      registry.register(createDirectoryFreezePolicy('/project/src', TEST_TOOL_SETS))
 
       const decision = registry.evaluate(makeContext({
         toolName: 'edit',
@@ -436,7 +484,7 @@ describe('Built-in Policies', () => {
 
     it('readonly mode allows reads and denies writes', () => {
       const registry = new PermissionPolicyRegistry()
-      registry.register(createPermissionModePolicy('readonly'))
+      registry.register(createPermissionModePolicy('readonly', TEST_TOOL_SETS))
 
       const readDecision = registry.evaluate(makeContext({ toolName: 'read' }))
       expect(readDecision.effect).toBe('allow')
@@ -447,7 +495,7 @@ describe('Built-in Policies', () => {
 
     it('confirm mode asks for writes', () => {
       const registry = new PermissionPolicyRegistry()
-      registry.register(createPermissionModePolicy('confirm'))
+      registry.register(createPermissionModePolicy('confirm', TEST_TOOL_SETS))
 
       const readDecision = registry.evaluate(makeContext({ toolName: 'read' }))
       expect(readDecision.effect).toBe('allow')
@@ -467,7 +515,7 @@ describe('Built-in Policies', () => {
 
     it('auto mode allows reads and falls through for writes', () => {
       const registry = new PermissionPolicyRegistry()
-      registry.register(createPermissionModePolicy('auto'))
+      registry.register(createPermissionModePolicy('auto', TEST_TOOL_SETS))
 
       const readDecision = registry.evaluate(makeContext({ toolName: 'read' }))
       expect(readDecision.effect).toBe('allow')
@@ -475,6 +523,22 @@ describe('Built-in Policies', () => {
       // write falls through auto mode (no rule matched) → default allow
       const writeDecision = registry.evaluate(makeContext({ toolName: 'write' }))
       expect(writeDecision.effect).toBe('allow')
+    })
+
+    it('supports registry-derived tool sets for readonly mode', () => {
+      const toolSets = createPermissionToolSetsFromRegistry([
+        { name: 'ls', readonly: true, metadata: { category: 'search' } },
+        { name: 'edit', metadata: { category: 'fs' } },
+      ])
+
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createPermissionModePolicy('readonly', toolSets))
+
+      const lsDecision = registry.evaluate(makeContext({ toolName: 'ls' }))
+      expect(lsDecision.effect).toBe('allow')
+
+      const editDecision = registry.evaluate(makeContext({ toolName: 'edit' }))
+      expect(editDecision.effect).toBe('deny')
     })
   })
 })
@@ -671,7 +735,7 @@ describe('createPermissionGuardHook', () => {
 
   it('sets cancelReason with [CONFIRM] prefix for ask decisions', () => {
     const registry = new PermissionPolicyRegistry()
-    registry.register(createPermissionModePolicy('confirm'))
+    registry.register(createPermissionModePolicy('confirm', TEST_TOOL_SETS))
     const hook = createPermissionGuardHook(registry)
 
     const input: ToolExecuteBeforeInput = {
@@ -697,8 +761,8 @@ describe('createPermissionGuardHook', () => {
 describe('Combined Policy Scenarios', () => {
   it('permission mode + file guard + destructive guard', () => {
     const registry = new PermissionPolicyRegistry()
-    registry.register(createPermissionModePolicy('auto'))
-    registry.register(FILE_GUARD_POLICY)
+    registry.register(createPermissionModePolicy('auto', TEST_TOOL_SETS))
+    registry.register(createFileGuardPolicy(TEST_TOOL_SETS))
     registry.register(DESTRUCTIVE_COMMAND_POLICY)
 
     // Read allowed by auto mode
@@ -731,8 +795,8 @@ describe('Combined Policy Scenarios', () => {
 
   it('agent boundary combined with global policies', () => {
     const registry = new PermissionPolicyRegistry()
-    registry.register(createPermissionModePolicy('auto'))
-    registry.register(FILE_GUARD_POLICY)
+    registry.register(createPermissionModePolicy('auto', TEST_TOOL_SETS))
+    registry.register(createFileGuardPolicy(TEST_TOOL_SETS))
     registry.register(createAgentBoundaryPolicy('searcher', ['web-search', 'read']))
 
     // searcher can use allowed tools

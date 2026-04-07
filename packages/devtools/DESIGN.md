@@ -1,40 +1,123 @@
 # @vitamin/devtools 设计说明
 
 ## 设计目标
-- 提供调试服务、断点与调试协议，实现可观测执行链路。
-- 保持包边界清晰，避免跨包耦合回流。
-- 通过稳定入口与类型导出，支持 monorepo 内部复用。
+
+- 提供 Agent 调试基础设施：断点、快照、步进控制。
+- 通过 Worker 线程隔离检测服务，不干扰主执行流。
+- 支持 23 个断点位置覆盖 Agent 执行的各关键阶段。
 
 ## 非目标
-- 不在本包内实现业务编排层之外的跨域职责。
-- 不在该包内承担与其职责无关的运行时装配。
+
+- 不实现前端调试 UI（由 `@vitamin/web-ui` 完成）。
+- 不替代日志系统（与 `@vitamin/shared` logger 互补）。
+
+## 实现原理
+
+### Devtools（devtools.ts）
+
+顶层组合类，封装所有调试子系统的初始化与协调：
+- `Devtools` 组合 Service + Breakpoints + Debugger + Logger
+- `start()` → 启动 Worker 线程 + 初始化断点
+- `stop()` → 清理所有资源
+- `getSnapshot()` → 当前调试状态快照
+
+### 断点系统（breakpoints.ts）
+
+23 个断点位置分 5 个类别：
+
+| 类别 | 断点 |
+|------|------|
+| Agent 生命周期 | `agent:init` / `agent:start` / `agent:end` / `agent:error` |
+| 回合控制 | `turn:start` / `turn:end` / `turn:model_before` / `turn:model_after` |
+| 工具执行 | `tool:before` / `tool:after` / `tool:validate` / `tool:error` |
+| 消息处理 | `message:before` / `message:after` / `message:transform` |
+| 系统 | `compaction:before` / `compaction:after` / `session:save` / `session:load` / 等 |
+
+每个断点可启用/禁用，支持条件表达式（如仅在特定工具触发时暂停）。
+
+### DebugSnapshot（debug-snapshot.ts）
+
+调试快照数据结构：
+```ts
+interface DebugSnapshot {
+  turn: number
+  point: BreakpointName
+  messages: AgentMessage[]
+  tokens: { input: number; output: number }
+  params?: Record<string, unknown>
+  timestamp: number
+}
+```
+
+### 调试命令（debugger.ts）
+
+`Debugger` 提供步进控制：
+- `next()` → 继续到下一个断点
+- `step()` → 单步执行
+- `over()` → 跳过当前工具调用
+- `continue()` → 继续执行直到下一个断点
+- `stop()` → 停止执行
+
+### PauseResumePayload
+
+断点暂停时可修改状态：
+- 修改系统提示
+- 修改工具参数
+- 注入额外消息
+- 修改模型参数
+
+### Service（Worker 线程）
+
+`InspectorService` 在独立 Worker 线程中运行：
+- 通过 `worker_threads` 隔离
+- WebSocket 协议与主线程通信
+- 避免调试操作阻塞 Agent 执行
+
+## 实现流程
+
+```
+VitaminApp 初始化
+       |
+  Devtools.start()
+       |
+  启动 Worker（InspectorService）
+       |
+  注册 23 个断点到 HookRegistry
+       |
+  Agent 执行 → 触发断点
+       |
+  断点启用? → 暂停执行
+       |
+  创建 DebugSnapshot
+       |
+  通过 Worker → WebSocket 推送到调试客户端
+       |
+  等待调试命令（next/step/over/continue/stop）
+       |
+  可选：应用 PauseResumePayload 修改
+       |
+  恢复执行
+```
 
 ## 模块分层
-- `src/devtools.ts`：devtools.ts 模块实现。
-- `src/index.ts`：index.ts 模块实现。
-- `src/protocol.ts`：protocol.ts 模块实现。
-- `src/service-worker.ts`：service-worker.ts 模块实现。
-- `src/service.ts`：service.ts 模块实现。
-- `src/tools/`：tools 相关实现。
-- `src/types.ts`：types.ts 模块实现。
+
+| 文件 | 职责 |
+|------|------|
+| `src/types.ts` | BreakpointName / DebugSnapshot / DebugCommand 类型 |
+| `src/devtools.ts` | 顶层组合类 |
+| `src/breakpoints.ts` | 23 个断点 + 条件系统 |
+| `src/debug-snapshot.ts` | 快照数据结构 |
+| `src/debugger.ts` | 步进控制命令 |
+| `src/service.ts` | Worker 线程检测服务 |
+| `src/index.ts` | barrel 导出 |
 
 ## 入口与依赖
-- 入口：`src/index.ts`
-- 内部依赖：
-  - `@vitamin/invariant`
-  - `@vitamin/shared`
 
-## 执行流程（抽象）
-- 调用方通过包入口导入能力。
-- 入口将调用分发到 `src/` 下具体模块。
-- 模块内按职责完成处理并返回结构化结果。
-- 若存在 Hook/事件机制，则通过回调实现扩展。
+- **入口**：`src/index.ts`
+- **内部依赖**：`@vitamin/hooks`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **外部依赖**：无（仅 Node.js worker_threads）
 
 ## 测试策略
-- 当前测试文件数：5。
-- 测试以行为断言为主，优先覆盖公开接口与关键分支。
 
-## 文档维护约定
-- 每次新增/删除公开导出时，同步更新 README 的“公开导出”章节。
-- 每次目录结构调整时，同步更新本设计文档“模块分层”章节。
-- 同步日期：2026-04-07
+- 测试文件数：4
+- 覆盖：断点注册/启用/条件、快照生成、步进控制、Worker 通信

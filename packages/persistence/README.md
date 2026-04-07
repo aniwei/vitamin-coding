@@ -1,58 +1,42 @@
 # @vitamin/persistence
 
 ## 模块定位
-提供本地/远端持久化适配器与存储工厂。
 
-## 当前状态（基于源码）
-- 包目录：`packages/persistence`
-- 源码文件数：9
-- 测试文件数：5
-- 入口文件：`src/index.ts`
+提供统一的快照式持久化抽象，支持内存、磁盘、远程三种后端。
+
+## 核心功能
+
+| 模块 | 功能 |
+|------|------|
+| Snapshot<T> | 带版本号和元信息的数据快照 |
+| MemoryPersistence | 内存后端（Map） |
+| DiskPersistence | 磁盘后端（原子写入 .tmp -> rename） |
+| RemotePersistence | HTTP REST 后端（Bearer Token + ETag） |
+| Codec<T,S> | 编解码器抽象 |
+| createPersistence() | 工厂函数 |
 
 ## 目录概览
-- `src/`
-  - `disk-persistence.ts`
-  - `errors.ts`
-  - `file-persistence.ts`
-  - `http-persistence.ts`
-  - `index.ts`
-  - `memory-persistence.ts`
-  - `remote-persistence.ts`
-  - `storage-factory.ts`
-  - `types.ts`
-- `tests/`
-  - `disk-persistence.test.ts`
-  - `errors.test.ts`
-  - `memory-persistence.test.ts`
-  - `remote-persistence.test.ts`
-  - `storage-factory.test.ts`
 
-## 公开导出
-```ts
-export { MemoryPersistence } from './memory-persistence'
-export { DiskPersistence, } from './disk-persistence'
-export type { DiskPersistenceOptions } from './disk-persistence'
-export { RemotePersistence, } from './remote-persistence'
-export type { RemotePersistenceOptions } from './remote-persistence'
-export { FilePersistence, } from './file-persistence'
-export type { FilePersistenceOptions } from './file-persistence'
-export { HttpPersistence, } from './http-persistence'
-export type { HttpPersistenceOptions } from './http-persistence'
-export { PersistenceError, RemotePersistenceError, } from './errors'
-export { createPersistence } from './storage-factory'
-export type { Snapshot, Metadata, Codec, Persistence, PaginationOptions, PaginatedResult, StorageOptions, } from './types'
+```
+src/
+  types.ts               # 核心类型
+  snapshot.ts             # Snapshot 工厂
+  memory-persistence.ts   # 内存后端
+  disk-persistence.ts     # 磁盘后端
+  remote-persistence.ts   # 远程后端
+  create-persistence.ts   # 工厂
+  index.ts                # barrel 导出
+tests/                    # 4 个测试文件
 ```
 
 ## 开发命令
-- `pnpm --filter @vitamin/persistence build`
-- `pnpm --filter @vitamin/persistence typecheck:project`
-- `pnpm --filter @vitamin/persistence typecheck:file`
-- `pnpm --filter @vitamin/persistence typecheck`
-- `pnpm --filter @vitamin/persistence clean`
 
-## 关联 Vitamin 包
-- `@vitamin/env`
+```bash
+pnpm --filter @vitamin/persistence build
+pnpm --filter @vitamin/persistence typecheck
+pnpm --filter @vitamin/persistence clean
+```
 
-## 维护说明
-- 本文档已按当前源码结构同步更新。
-- 同步日期：2026-04-07
+## 关联包
+
+`@vitamin/shared`、`@vitamin/invariant`

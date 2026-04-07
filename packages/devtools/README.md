@@ -1,50 +1,51 @@
 # @vitamin/devtools
 
 ## 模块定位
-提供调试服务、断点与调试协议，实现可观测执行链路。
 
-## 当前状态（基于源码）
-- 包目录：`packages/devtools`
-- 源码文件数：9
-- 测试文件数：5
-- 入口文件：`src/index.ts`
+提供 Agent 调试基础设施：23 个断点、快照捕获、步进控制，通过 Worker 线程隔离。
+
+## 核心功能
+
+| 模块 | 功能 |
+|------|------|
+| Devtools | 顶层组合（Service + Breakpoints + Debugger + Logger） |
+| Breakpoints | 23 个断点位置 × 5 类（Agent/回合/工具/消息/系统） |
+| Debugger | 步进控制（next/step/over/continue/stop） |
+| DebugSnapshot | 调试快照（turn/point/messages/tokens/params） |
+| InspectorService | Worker 线程隔离的检测服务 |
+
+## 调试命令
+
+| 命令 | 说明 |
+|------|------|
+| `next()` | 到下一个断点 |
+| `step()` | 单步 |
+| `over()` | 跳过 |
+| `continue()` | 继续 |
+| `stop()` | 停止 |
 
 ## 目录概览
-- `src/`
-  - `devtools.ts`
-  - `index.ts`
-  - `protocol.ts`
-  - `service-worker.ts`
-  - `service.ts`
-  - `tools/`
-  - `types.ts`
-- `tests/`
-  - `breakpoints.test.ts`
-  - `debugger-controller.test.ts`
-  - `devtools.test.ts`
-  - `sab-writeback.test.ts`
-  - `service.test.ts`
 
-## 公开导出
-```ts
-export * from './devtools'
-export * from './protocol'
-export * from './service'
-export * from './tools/debugger'
-export * from './tools/breakpoints'
+```
+src/
+  types.ts           # 核心类型
+  devtools.ts        # 顶层组合
+  breakpoints.ts     # 断点系统
+  debug-snapshot.ts  # 快照结构
+  debugger.ts        # 步进控制
+  service.ts         # Worker 服务
+  index.ts
+tests/               # 4 个测试文件
 ```
 
 ## 开发命令
-- `pnpm --filter @vitamin/devtools build`
-- `pnpm --filter @vitamin/devtools typecheck:project`
-- `pnpm --filter @vitamin/devtools typecheck:file`
-- `pnpm --filter @vitamin/devtools typecheck`
-- `pnpm --filter @vitamin/devtools clean`
 
-## 关联 Vitamin 包
-- `@vitamin/invariant`
-- `@vitamin/shared`
+```bash
+pnpm --filter @vitamin/devtools build
+pnpm --filter @vitamin/devtools typecheck
+pnpm --filter @vitamin/devtools clean
+```
 
-## 维护说明
-- 本文档已按当前源码结构同步更新。
-- 同步日期：2026-04-07
+## 关联包
+
+`@vitamin/hooks`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`

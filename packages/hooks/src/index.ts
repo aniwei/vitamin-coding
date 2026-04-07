@@ -58,6 +58,8 @@ export {
   createPermissionGuardHook,
   FILE_GUARD_POLICY,
   DESTRUCTIVE_COMMAND_POLICY,
+  createFileGuardPolicy,
+  createPermissionToolSetsFromRegistry,
   createDirectoryFreezePolicy,
   createDisabledToolsPolicy,
   createAgentBoundaryPolicy,
@@ -76,6 +78,9 @@ export type {
   PermissionAuditEntry,
   PermissionRuleConfig,
   PermissionPolicySetting,
+  PermissionToolDescriptor,
+  PermissionToolSets,
+  PermissionToolSetsInput,
 } from './core'
 
 export type {

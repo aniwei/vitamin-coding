@@ -1,38 +1,55 @@
 # @vitamin/web-ui
 
 ## 模块定位
-承载 Web UI 前端工程与构建配置。
 
-## 当前状态（基于源码）
-- 包目录：`packages/web-ui`
-- 源码文件数：133
-- 测试文件数：0
-- 入口文件：无（当前包未提供 `src/index.ts`）
+Vitamin 的 Web 前端界面，基于 React 18 + Vite + Tailwind CSS 构建，提供聊天、代码百科、追踪分析三大页面。
+
+## 核心功能
+
+| 页面 | 功能 |
+|------|------|
+| Chat | 聊天界面（消息流、工具调用展示、任务列表） |
+| CodeWiki | 代码文档可视化 |
+| TraceAnalysis | Agent 执行追踪分析（@xyflow/react 流图） |
+
+## 技术栈
+
+- **框架**: React 18 + TypeScript
+- **构建**: Vite
+- **样式**: Tailwind CSS
+- **状态**: Zustand（9 个模块化 store）
+- **通信**: HTTP API + WebSocket（自动重连）
+- **可视化**: @xyflow/react
 
 ## 目录概览
-- `src/`
-  - `api/`
-  - `App.tsx`
-  - `components/`
-  - `constants/`
-  - `index.css`
-  - `main.tsx`
-  - `pages/`
-  - `stores/`
-  - `types/`
-  - `utils/`
-  - `vite-env.d.ts`
-- 当前包无 `tests/` 目录或目录为空。
 
-## 公开导出
-当前包未在 `src/index.ts` 中声明导出。
+```
+src/
+  main.tsx              # 应用入口
+  pages/                # 3 个核心页面
+  components/
+    Chat/               # 聊天组件
+    CodeWiki/           # 代码百科
+    Devtools/           # 调试面板
+    Layout/             # 布局
+    Settings/           # 设置
+    TraceAnalysis/      # 追踪分析
+    ui/                 # 基础组件
+  stores/               # Zustand 状态管理
+  api/                  # HTTP + WebSocket 客户端
+  hooks/                # React Hooks
+  utils/                # 工具函数
+  types/                # 类型定义
+```
 
 ## 开发命令
-- `pnpm --filter @vitamin/web-ui dev`
-- `pnpm --filter @vitamin/web-ui build`
-- `pnpm --filter @vitamin/web-ui preview`
-- `pnpm --filter @vitamin/web-ui lint`
 
-## 维护说明
-- 本文档已按当前源码结构同步更新。
-- 同步日期：2026-04-07
+```bash
+pnpm --filter @vitamin/web-ui dev       # Vite 开发服务器
+pnpm --filter @vitamin/web-ui build     # 生产构建
+pnpm --filter @vitamin/web-ui preview   # 预览构建产物
+```
+
+## 关联包
+
+通过 HTTP/WebSocket 与 `@vitamin/service` 通信。

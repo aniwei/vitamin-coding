@@ -1,5 +1,6 @@
 import { createLogger } from '@vitamin/shared'
 import { registerBuiltinPolicies } from './register-builtin'
+import type { RegisterBuiltinPoliciesOptions } from './register-builtin'
 import type { PermissionPolicySetting } from './types'
 import type {
   PermissionPolicy,
@@ -125,9 +126,11 @@ export class PermissionPolicyRegistry {
   }
 }
 
-export function createPermissionRegistry(): PermissionPolicyRegistry {
+export function createPermissionRegistry(
+  options: RegisterBuiltinPoliciesOptions = {},
+): PermissionPolicyRegistry {
   const registry = new PermissionPolicyRegistry()
-  registerBuiltinPolicies(registry)
+  registerBuiltinPolicies(registry, options)
   return registry
 }
 

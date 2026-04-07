@@ -9,6 +9,7 @@ import {
   PermissionPolicyRegistry,
   PermissionAuditLog,
   createPermissionGuardHook,
+  createPermissionToolSetsFromRegistry,
   createPermissionModePolicy,
   createDisabledToolsPolicy,
   compilePolicyFromSetting,
@@ -161,12 +162,6 @@ export class VitaminApp implements VitaminContext {
       modelRegistry,
     })
 
-    // 初始化权限系统
-    this.auditLog = new PermissionAuditLog()
-    this.permissionRegistry = createPermissionRegistry()
-    
-    this.hookRegistry.register(createPermissionGuardHook(this.permissionRegistry, this.auditLog))
-    
     const defaultModel = model ?? (options.modelId ? this.providerRegistry.resolveModel(options.modelId) : undefined)
     this.defaultModel = defaultModel
 
@@ -366,6 +361,12 @@ export class VitaminApp implements VitaminContext {
     if (skillTools.length > 0) {
       this.toolRegistry.unregister(skillTools)
     }
+
+    // 初始化权限系统（基于当前 toolRegistry 动态推导读/写工具集合）
+    const permissionToolSets = createPermissionToolSetsFromRegistry(this.toolRegistry.getAll())
+    this.auditLog = new PermissionAuditLog()
+    this.permissionRegistry = createPermissionRegistry({ toolSets: permissionToolSets })
+    this.hookRegistry.register(createPermissionGuardHook(this.permissionRegistry, this.auditLog))
 
     // 注册 hooks
     this.registerHooks()
@@ -676,6 +677,8 @@ export class VitaminApp implements VitaminContext {
     permissions?: PermissionPolicySetting[]
     disabled_tools?: string[]
   }): void {
+    const permissionToolSets = createPermissionToolSetsFromRegistry(this.toolRegistry.getAll())
+
     // 1. permission_mode 变更 → 重新注册 mode 策略
     if (setting.permission_mode) {
       this.permissionRegistry.unregister('mode::bypass')
@@ -683,7 +686,7 @@ export class VitaminApp implements VitaminContext {
       this.permissionRegistry.unregister('mode::confirm')
       this.permissionRegistry.unregister('mode::strict')
       this.permissionRegistry.unregister('mode::readonly')
-      this.permissionRegistry.register(createPermissionModePolicy(setting.permission_mode))
+      this.permissionRegistry.register(createPermissionModePolicy(setting.permission_mode, permissionToolSets))
     }
 
     // 2. disabled_tools 变更 → 重新注册 disabled-tools 策略

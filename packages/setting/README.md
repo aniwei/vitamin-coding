@@ -1,65 +1,45 @@
 # @vitamin/setting
 
 ## 模块定位
-提供设置仓库、监听器、迁移器与配置读取流程。
 
-## 当前状态（基于源码）
-- 包目录：`packages/setting`
-- 源码文件数：14
-- 测试文件数：6
-- 入口文件：`src/index.ts`
+提供 Vitamin 配置的加载、合并、校验、迁移与监控能力，支持文件/远程/内存三种配置源。
+
+## 核心功能
+
+| 模块 | 功能 |
+|------|------|
+| SettingLoader | 多源加载 + 深度合并 + 校验 |
+| SettingWatcher | fs.watch 文件变化监控 + 防抖 |
+| MigrationRunner | 版本迁移系统（semver 链式迁移） |
+| FileSettingStore | 文件配置存储 |
+| RemoteSettingStore | HTTP 远程配置 |
+| InMemorySettingStore | 内存配置（测试用） |
+| Agent Profiles | 8 个内置 Agent 配置预设 |
+| Copilot Models | 9 个模型定义 |
 
 ## 目录概览
-- `src/`
-  - `data/`
-  - `file-store.ts`
-  - `http-store.ts`
-  - `index.ts`
-  - `memory-store.ts`
-  - `migrator.ts`
-  - `persistence-store.ts`
-  - `presets.ts`
-  - `setting.ts`
-  - `store.ts`
-  - `types.ts`
-  - `watcher.ts`
-- `tests/`
-  - `loader.test.ts`
-  - `manager.test.ts`
-  - `migrator.test.ts`
-  - `schema.test.ts`
-  - `store.test.ts`
-  - `watcher.test.ts`
 
-## 公开导出
-```ts
-export type { VitaminSetting, VitaminSettingFromSchema, VitaminSettingKey, AgentConfig, CategoryConfig, LogLevel, ToolPreset, PermissionMode, PermissionRuleConfig, PermissionPolicySetting, WorkflowSlot, SettingWarning, ConfigWarning, LoadSettingOptions, LoadConfigOptions, } from './types'
-export { BUILTIN_REVIEWER_AGENTS, COMPACTION_STRATEGIES, LOG_LEVELS, PERMISSION_MODES, TOOL_PRESETS, VITAMIN_DEFAULT_CONFIG, VITAMIN_SETTING_KEYS, WORKFLOW_SLOTS, } from './types'
-export { migrate, registerMigration, resetMigrations } from './migrator'
-export type { Migration } from './migrator'
-export { loadSetting, SettingLoader } from './setting'
-export { createSettingWatcher, SettingWatcher, } from './watcher'
-export type { SettingWatcherOptions, } from './watcher'
-export { createSettingStore } from './store'
-export type { SettingStore, StorageType, SettingStoreOptions, FileSettingStoreOptions, HttpSettingStoreOptions, InMemorySettingStoreOptions } from './store'
-export { FileSettingStore } from './file-store'
-export { RemoteSettingStore } from './http-store'
-export { InMemorySettingStore } from './memory-store'
-export { createFileSettingStore, createHttpSettingStore, } from './persistence-store'
-export { BUILTIN_AGENT_PROFILES, COPILOT_MODELS, TASK_TYPE_PROFILE_MAP } from './presets'
+```
+src/
+  types.ts              # 核心类型
+  setting-loader.ts     # 配置加载器
+  setting-watcher.ts    # 配置监控
+  migration.ts          # 迁移系统
+  deep-merge.ts         # 深度合并
+  stores/               # 3 种存储后端
+  presets/              # 内置预设
+  index.ts
+tests/                  # 5 个测试文件
 ```
 
 ## 开发命令
-- `pnpm --filter @vitamin/setting build`
-- `pnpm --filter @vitamin/setting typecheck:project`
-- `pnpm --filter @vitamin/setting typecheck:file`
-- `pnpm --filter @vitamin/setting typecheck`
-- `pnpm --filter @vitamin/setting clean`
 
-## 关联 Vitamin 包
-- `@vitamin/persistence`
-- `@vitamin/shared`
+```bash
+pnpm --filter @vitamin/setting build
+pnpm --filter @vitamin/setting typecheck
+pnpm --filter @vitamin/setting clean
+```
 
-## 维护说明
-- 本文档已按当前源码结构同步更新。
-- 同步日期：2026-04-07
+## 关联包
+
+`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`

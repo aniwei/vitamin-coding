@@ -1,53 +1,52 @@
 # @vitamin/resources
 
 ## 模块定位
-提供资源管理器与设置/模板/记忆资源源适配。
 
-## 当前状态（基于源码）
-- 包目录：`packages/resources`
-- 源码文件数：6
-- 测试文件数：4
-- 入口文件：`src/index.ts`
+协调配置（settings）、记忆（memory）和提示模板（prompt）三大资源来源，提供统一的加载和冲突检测。
+
+## 核心功能
+
+| 模块 | 功能 |
+|------|------|
+| DefaultResourceManager | 多源并行加载 → 合并 → 冲突检测 |
+| SettingsManager | @vitamin/setting 封装 + 事件通知 |
+| PersistentMemorySource | AGENTS.md 记忆注入 |
+| FilesystemPromptTemplateSource | 提示模板文件扫描 |
+| CollisionDetection | 同名资源冲突检测 |
+
+## LoadedResources
+
+```ts
+interface LoadedResources {
+  memories: MemoryContext[]
+  agentInstructions: string[]
+  promptTemplates: PromptTemplate[]
+  diagnostics: Diagnostic[]
+}
+```
 
 ## 目录概览
-- `src/`
-  - `index.ts`
-  - `memory-source.ts`
-  - `prompt-template-source.ts`
-  - `resource-manager.ts`
-  - `settings-manager.ts`
-  - `types.ts`
-- `tests/`
-  - `memory-source.test.ts`
-  - `prompt-template-source.test.ts`
-  - `resource-manager.test.ts`
-  - `settings-manager.test.ts`
 
-## 公开导出
-```ts
-export { SettingsManager, createSettingsManager } from './settings-manager'
-export type { SettingsOptions, SettingsManagerOptions } from './settings-manager'
-export { DefaultResourceManager, createResourceManager, createInMemoryResourceManager, } from './resource-manager'
-export type { ResourceManager, ResourceManagerOptions, LoadedResources, ResourceDiagnostic, PromptTemplate, } from './resource-manager'
-export type { MemoryInjectionSource, MemoryInjectionResult, PromptTemplateSource, PromptTemplateResult, } from './types'
-export { PersistentMemorySource, InMemoryMemorySource } from './memory-source'
-export type { PersistentMemorySourceOptions } from './memory-source'
-export { FilesystemPromptTemplateSource, InMemoryPromptTemplateSource } from './prompt-template-source'
-export type { FilesystemPromptTemplateSourceOptions } from './prompt-template-source'
+```
+src/
+  types.ts                    # 核心接口
+  resource-manager.ts         # 多源协调
+  settings-manager.ts         # 配置封装
+  memory-source.ts            # 记忆源
+  prompt-template-source.ts   # 模板源
+  collision-detection.ts      # 冲突检测
+  index.ts
+tests/                        # 4 个测试文件
 ```
 
 ## 开发命令
-- `pnpm --filter @vitamin/resources build`
-- `pnpm --filter @vitamin/resources typecheck:project`
-- `pnpm --filter @vitamin/resources typecheck`
-- `pnpm --filter @vitamin/resources clean`
 
-## 关联 Vitamin 包
-- `@vitamin/env`
-- `@vitamin/memory`
-- `@vitamin/setting`
-- `@vitamin/shared`
+```bash
+pnpm --filter @vitamin/resources build
+pnpm --filter @vitamin/resources typecheck
+pnpm --filter @vitamin/resources clean
+```
 
-## 维护说明
-- 本文档已按当前源码结构同步更新。
-- 同步日期：2026-04-07
+## 关联包
+
+`@vitamin/setting`、`@vitamin/memory`、`@vitamin/prompt`、`@vitamin/shared`、`@vitamin/env`

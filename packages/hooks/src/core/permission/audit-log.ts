@@ -1,4 +1,3 @@
-// 权限审计日志 — 内存 ring buffer
 import type {
   PermissionContext,
   PermissionDecision,

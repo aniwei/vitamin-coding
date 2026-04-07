@@ -1,54 +1,54 @@
 # @vitamin/swarm
 
 ## 模块定位
-提供多 Agent 协作（Swarm）路由、交接与上下文控制。
 
-## 当前状态（基于源码）
-- 包目录：`packages/swarm`
-- 源码文件数：12
-- 测试文件数：4
-- 入口文件：`src/index.ts`
+提供多 Agent 协作的 5 种编排模式和 5 种路由策略，通过 SwarmContext 实现跨 Agent 共享状态。
+
+## 核心功能
+
+| 模块 | 功能 |
+|------|------|
+| Handoff | Agent 间直接转交控制权（含深度限制） |
+| Sequential | 管道串行，上游输出→下游输入 |
+| Parallel | 并发执行 + maxConcurrency + 结果聚合 |
+| Hierarchical | Supervisor-Worker 层级协作 |
+| Router | 动态任务路由（5 种策略） |
+| SwarmContext | 跨 Agent 共享状态容器 |
+
+## 路由策略
+
+| 策略 | 说明 |
+|------|------|
+| `llm` | LLM 分析任务选择 Agent |
+| `rule` | 正则/关键词规则匹配 |
+| `round-robin` | 轮询分发 |
+| `random` | 随机选择 |
+| `custom` | 自定义回调 |
 
 ## 目录概览
-- `src/`
-  - `context.ts`
-  - `errors.ts`
-  - `handoff.ts`
-  - `index.ts`
-  - `patterns/`
-  - `router.ts`
-  - `swarm.ts`
-  - `types.ts`
-- `tests/`
-  - `context.test.ts`
-  - `handoff.test.ts`
-  - `router.test.ts`
-  - `swarm.test.ts`
 
-## 公开导出
-```ts
-export { Swarm, createSwarm } from './swarm'
-export type { SwarmRunResult } from './swarm'
-export { SwarmRouter, createRouter } from './router'
-export { createHandoffTool, validateHandoff } from './handoff'
-export { createSwarmContext, buildCallGraph } from './context'
-export { executeSequential, executeParallel, executeHierarchical, executeAgentTurn, } from './patterns'
-export { HandoffTargetError, HandoffDepthError, HandoffNotAllowedError, RoutingError, PipelineError, AgentNotFoundError, SwarmConfigError, } from './errors'
-export type {
+```
+src/
+  types.ts           # 核心类型
+  swarm.ts           # 入口 + 模式分发
+  handoff.ts         # Handoff 模式
+  sequential.ts      # Sequential 模式
+  parallel.ts        # Parallel 模式
+  hierarchical.ts    # Hierarchical 模式
+  router.ts          # Router 模式
+  swarm-router.ts    # 路由策略
+  swarm-context.ts   # 共享状态
+  index.ts
 ```
 
 ## 开发命令
-- `pnpm --filter @vitamin/swarm build`
-- `pnpm --filter @vitamin/swarm typecheck:project`
-- `pnpm --filter @vitamin/swarm typecheck:file`
-- `pnpm --filter @vitamin/swarm typecheck`
-- `pnpm --filter @vitamin/swarm clean`
 
-## 关联 Vitamin 包
-- `@vitamin/agent`
-- `@vitamin/ai`
-- `@vitamin/shared`
+```bash
+pnpm --filter @vitamin/swarm build
+pnpm --filter @vitamin/swarm typecheck
+pnpm --filter @vitamin/swarm clean
+```
 
-## 维护说明
-- 本文档已按当前源码结构同步更新。
-- 同步日期：2026-04-07
+## 关联包
+
+`@vitamin/agent`、`@vitamin/ai`、`@vitamin/shared`、`@vitamin/invariant`

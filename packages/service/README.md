@@ -1,47 +1,50 @@
 # @vitamin/service
 
 ## 模块定位
-提供 HTTP/WebSocket 服务封装与事件桥接。
 
-## 当前状态（基于源码）
-- 包目录：`packages/service`
-- 源码文件数：13
-- 测试文件数：0
-- 入口文件：`src/index.ts`
+提供 Vitamin 的网络传输层：基于 Hono 的 HTTP API + WebSocket 实时通信 + 事件桥接。
+
+## 核心功能
+
+| 模块 | 功能 |
+|------|------|
+| CodingService | Hono HTTP 路由（health/chat/sessions/setting/debug/logs） |
+| WebSocketManager | WebSocket 连接管理 + 会话订阅 + 广播 |
+| EventBridge | AgentSession 事件 → WebSocket 协议映射（40+ 事件） |
+| DebugBridge | 调试协议桥接到 HTTP/WebSocket |
+
+## HTTP API
+
+| 路由 | 方法 | 功能 |
+|------|------|------|
+| `/api/health` | GET | 健康检查 |
+| `/api/chat` | POST | 发送消息（SSE 流式响应） |
+| `/api/sessions` | GET/POST | 会话列表/创建 |
+| `/api/sessions/:id` | GET/DELETE | 单会话操作 |
+| `/api/setting` | GET/PUT | 配置读写 |
+| `/api/debug` | GET/POST | 调试操作 |
 
 ## 目录概览
-- `src/`
-  - `coding-service.ts`
-  - `create-app.ts`
-  - `debug-bridge.ts`
-  - `event-bridge.ts`
-  - `index.ts`
-  - `routes/`
-  - `types.ts`
-  - `websocket-manager.ts`
-- 当前包无 `tests/` 目录或目录为空。
 
-## 公开导出
-```ts
-export { CodingService, createCodingService } from './coding-service'
-export { WebSocketManager } from './websocket-manager'
-export { EventBridge } from './event-bridge'
-export { DebugBridge } from './debug-bridge'
-export type { LogEntry } from './debug-bridge'
-export type { CodingServiceOptions, WebSocketMessage, WebSocketEventType, WebSocketClientMessage, WebSocketClientMessageType, EventBridgeMapper, } from './types'
+```
+src/
+  types.ts               # 核心类型
+  coding-service.ts      # Hono HTTP 路由
+  websocket-manager.ts   # WebSocket 管理
+  event-bridge.ts        # 事件桥接
+  debug-bridge.ts        # 调试桥接
+  index.ts
+example/                 # 集成示例
 ```
 
 ## 开发命令
-- `pnpm --filter @vitamin/service build`
-- `pnpm --filter @vitamin/service typecheck`
-- `pnpm --filter @vitamin/service clean`
 
-## 关联 Vitamin 包
-- `@vitamin/ai`
-- `@vitamin/coding`
-- `@vitamin/devtools`
-- `@vitamin/shared`
+```bash
+pnpm --filter @vitamin/service build
+pnpm --filter @vitamin/service typecheck
+pnpm --filter @vitamin/service clean
+```
 
-## 维护说明
-- 本文档已按当前源码结构同步更新。
-- 同步日期：2026-04-07
+## 关联包
+
+`@vitamin/coding`、`@vitamin/devtools`、`@vitamin/shared`、`@vitamin/env`

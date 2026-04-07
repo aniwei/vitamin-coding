@@ -1,7 +1,7 @@
 import { createLogger } from '@vitamin/shared'
 import type { HookRegistration } from '../../types'
 
-const log = createLogger('@vitamin/hooks:compaction')
+const logger = createLogger('@vitamin/hooks:compaction')
 
 // 每 session 的压缩统计
 const compactionStats = new Map<string, CompactionStats>()
@@ -29,7 +29,7 @@ export function createCompactionLoggerHook(): HookRegistration<'compaction.befor
       stats.lastCompactionTime = Date.now()
       compactionStats.set(input.sessionId, stats)
 
-      log.info(
+      logger.info(
         'Compaction started: session=%s messageCount=%d compaction#%d',
         input.sessionId,
         input.messageCount,
@@ -50,7 +50,7 @@ export function createCompactionAfterHook(): HookRegistration<'compaction.after'
       if (stats) {
         const duration = Date.now() - stats.lastCompactionTime
         stats.totalCompacted += input.retainedCount
-        log.info(
+        logger.info(
           'Compaction finished: session=%s retained=%d duration=%dms totalCompactions=%d',
           input.sessionId,
           input.retainedCount,

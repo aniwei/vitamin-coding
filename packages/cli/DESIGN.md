@@ -1,39 +1,103 @@
 # @vitamin/cli 设计说明
 
 ## 设计目标
-- 提供命令行入口与参数路由，驱动 Vitamin 运行时。
-- 保持包边界清晰，避免跨包耦合回流。
-- 通过稳定入口与类型导出，支持 monorepo 内部复用。
+
+- 提供 Vitamin 的命令行入口，解析参数并分发到对应运行模式。
+- 支持多种输出模式：Print / JSON / Interactive / RPC。
+- 支持子命令：run / doctor / config / auth。
 
 ## 非目标
-- 不在本包内实现业务编排层之外的跨域职责。
-- 不在该包内承担与其职责无关的运行时装配。
+
+- 不实现业务逻辑（由 `@vitamin/coding` VitaminApp 提供）。
+- 不负责网络传输（由 `@vitamin/service` 完成）。
+
+## 实现原理
+
+### 参数解析（parse-cli.ts）
+
+`parseCLI(argv)` 解析命令行参数：
+- `-p` / `--print`：Print 模式（单次执行文本输出）
+- `-i` / `--interactive`：Interactive 模式（REPL）
+- `--json`：JSON 模式
+- `--rpc`：JSON-RPC 模式
+- `-m` / `--model`：指定模型
+- `-c` / `--config`：指定配置文件路径
+- `-d` / `--dir`：指定工作目录
+- `-v` / `--verbose`：详细日志
+- `--max-tokens`：最大 token 数
+- `--continue`：继续上次会话
+- `--inspect`：启用调试（连接 devtools）
+- 子命令：`run`（默认）/ `doctor`（环境诊断）/ `config`（配置管理）/ `auth`（认证管理）
+
+### 运行入口（run-cli.ts）
+
+`runCli(options)` 是主执行入口：
+1. 解析参数 → CLI config
+2. 创建 VitaminApp（装配所有子系统）
+3. 根据模式分发到对应 Runner：
+   - Print → `PrintRunner`
+   - JSON → `JsonRunner`
+   - Interactive → `InteractiveRunner`
+   - RPC → `RpcRunner`
+4. Runner 执行完毕 → 清理资源
+
+### 子命令
+
+- `doctor`：检查环境（Node 版本、依赖、认证状态、模型可用性）
+- `config`：查看/编辑配置
+- `auth`：登录/登出/状态查看
+
+### 二进制入口（bin/vitamin）
+
+```
+#!/usr/bin/env node
+require('../dist/index.js')
+```
+
+## 实现流程
+
+```
+用户 --> vitamin "fix the bug" -p
+            |
+       bin/vitamin → 加载 cli/index.js
+            |
+       parseCLI(process.argv)
+            |
+       { mode: 'print', message: 'fix the bug', ... }
+            |
+       runCli(options)
+            |
+       VitaminApp.create(config)
+            |
+       PrintRunner.run(app, message)
+            |
+       app.createSession() → session.chat(message)
+            |
+       输出结果到 stdout
+            |
+       清理资源 → 退出
+```
 
 ## 模块分层
-- `src/cli.ts`：cli.ts 模块实现。
-- `src/index.ts`：index.ts 模块实现。
-- `src/types.ts`：types.ts 模块实现。
+
+| 文件 | 职责 |
+|------|------|
+| `src/types.ts` | CLIOptions / CLIConfig 类型 |
+| `src/parse-cli.ts` | 参数解析 |
+| `src/run-cli.ts` | 主执行入口 + 模式分发 |
+| `src/commands/doctor.ts` | doctor 子命令 |
+| `src/commands/config.ts` | config 子命令 |
+| `src/commands/auth.ts` | auth 子命令 |
+| `bin/vitamin` | 二进制入口 |
+| `src/index.ts` | barrel 导出 |
 
 ## 入口与依赖
-- 入口：`src/index.ts`
-- 内部依赖：
-  - `@vitamin/ai`
-  - `@vitamin/coding`
-  - `@vitamin/hooks`
-  - `@vitamin/setting`
-  - `@vitamin/tools`
 
-## 执行流程（抽象）
-- 调用方通过包入口导入能力。
-- 入口将调用分发到 `src/` 下具体模块。
-- 模块内按职责完成处理并返回结构化结果。
-- 若存在 Hook/事件机制，则通过回调实现扩展。
+- **入口**：`src/index.ts`、`bin/vitamin`
+- **内部依赖**：`@vitamin/coding`、`@vitamin/shared`、`@vitamin/env`
+- **外部依赖**：无
 
 ## 测试策略
-- 当前测试文件数：1。
-- 测试以行为断言为主，优先覆盖公开接口与关键分支。
 
-## 文档维护约定
-- 每次新增/删除公开导出时，同步更新 README 的“公开导出”章节。
-- 每次目录结构调整时，同步更新本设计文档“模块分层”章节。
-- 同步日期：2026-04-07
+- 测试文件数：3
+- 覆盖：参数解析边界、模式分发、子命令基本行为

@@ -5,6 +5,8 @@ export { PermissionGuardHook, createPermissionGuardHook } from './permission-gua
 export {
   FILE_GUARD_POLICY,
   DESTRUCTIVE_COMMAND_POLICY,
+  createFileGuardPolicy,
+  createPermissionToolSetsFromRegistry,
   createDirectoryFreezePolicy,
   createDisabledToolsPolicy,
   createAgentBoundaryPolicy,
@@ -24,3 +26,9 @@ export type {
   PermissionRuleConfig,
   PermissionPolicySetting,
 } from './types'
+
+export type {
+  PermissionToolDescriptor,
+  PermissionToolSets,
+  PermissionToolSetsInput,
+} from './builtin-policies'

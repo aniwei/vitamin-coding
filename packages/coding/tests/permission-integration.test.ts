@@ -7,7 +7,8 @@ import {
   PermissionPolicyRegistry,
   PermissionAuditLog,
   createPermissionGuardHook,
-  FILE_GUARD_POLICY,
+  createFileGuardPolicy,
+  createPermissionToolSetsFromRegistry,
   DESTRUCTIVE_COMMAND_POLICY,
   createPermissionModePolicy,
   createDisabledToolsPolicy,
@@ -101,6 +102,13 @@ function makeBeforeOutput(args: Record<string, unknown> = {}): ToolExecuteBefore
   return { args, cancelled: false }
 }
 
+const TEST_TOOL_SETS = createPermissionToolSetsFromRegistry([
+  { name: 'read', readonly: true, metadata: { category: 'fs' } },
+  { name: 'write', metadata: { category: 'fs' } },
+  { name: 'edit', metadata: { category: 'fs' } },
+  { name: 'bash', metadata: { category: 'shell' } },
+])
+
 // ═══ Permission Guard integrated with HookRegistry ═══
 
 describe('Permission guard through HookRegistry', () => {
@@ -136,7 +144,7 @@ describe('Permission guard through HookRegistry', () => {
 
   it('audit log records all permission decisions', async () => {
     const registry = new PermissionPolicyRegistry()
-    registry.register(FILE_GUARD_POLICY)
+    registry.register(createFileGuardPolicy(TEST_TOOL_SETS))
 
     const auditLog = new PermissionAuditLog()
     const hooks = createHookRegistry({ preset: 'none' })
@@ -237,8 +245,8 @@ describe('Permission guard in AgentSession tool execution', () => {
 
     const hooks = createHookRegistry({ preset: 'none' })
     const permRegistry = new PermissionPolicyRegistry()
-    permRegistry.register(createPermissionModePolicy('auto'))
-    permRegistry.register(FILE_GUARD_POLICY)
+    permRegistry.register(createPermissionModePolicy('auto', TEST_TOOL_SETS))
+    permRegistry.register(createFileGuardPolicy(TEST_TOOL_SETS))
     hooks.register(createPermissionGuardHook(permRegistry))
 
     const readTool = createTestTool('read', true)
@@ -388,8 +396,8 @@ describe('VitaminApp permission policy wiring', () => {
 describe('Combined permission pipeline scenarios', () => {
   it('readonly mode + file guard: reads succeed, writes rejected', async () => {
     const registry = new PermissionPolicyRegistry()
-    registry.register(createPermissionModePolicy('readonly'))
-    registry.register(FILE_GUARD_POLICY)
+    registry.register(createPermissionModePolicy('readonly', TEST_TOOL_SETS))
+    registry.register(createFileGuardPolicy(TEST_TOOL_SETS))
 
     const hooks = createHookRegistry({ preset: 'none' })
     const auditLog = new PermissionAuditLog()
@@ -414,7 +422,7 @@ describe('Combined permission pipeline scenarios', () => {
 
   it('agent boundary restricts undeclared tool access', async () => {
     const registry = new PermissionPolicyRegistry()
-    registry.register(createPermissionModePolicy('auto'))
+    registry.register(createPermissionModePolicy('auto', TEST_TOOL_SETS))
     registry.register(createAgentBoundaryPolicy('web-agent', ['web-search', 'web-fetch', 'read']))
 
     const hooks = createHookRegistry({ preset: 'none' })
@@ -447,9 +455,9 @@ describe('Combined permission pipeline scenarios', () => {
 
   it('directory freeze limits write scope', async () => {
     const registry = new PermissionPolicyRegistry()
-    registry.register(createPermissionModePolicy('auto'))
-    registry.register(FILE_GUARD_POLICY)
-    registry.register(createDirectoryFreezePolicy('/project/src'))
+    registry.register(createPermissionModePolicy('auto', TEST_TOOL_SETS))
+    registry.register(createFileGuardPolicy(TEST_TOOL_SETS))
+    registry.register(createDirectoryFreezePolicy('/project/src', TEST_TOOL_SETS))
 
     const hooks = createHookRegistry({ preset: 'none' })
     hooks.register(createPermissionGuardHook(registry))
@@ -473,7 +481,7 @@ describe('Combined permission pipeline scenarios', () => {
 
   it('confirm mode sets [CONFIRM] prefix for writes', async () => {
     const registry = new PermissionPolicyRegistry()
-    registry.register(createPermissionModePolicy('confirm'))
+    registry.register(createPermissionModePolicy('confirm', TEST_TOOL_SETS))
 
     const hooks = createHookRegistry({ preset: 'none' })
     hooks.register(createPermissionGuardHook(registry))

@@ -1,32 +1,69 @@
 # @vitamin/env 设计说明
 
 ## 设计目标
-- 管理运行环境变量与环境读取工具。
-- 保持包边界清晰，避免跨包耦合回流。
-- 通过稳定入口与类型导出，支持 monorepo 内部复用。
+
+- 集中管理运行环境变量、路径常量与阈值配置。
+- 零运行时依赖，作为整个 monorepo 的配置基底。
+- 通过导出常量的方式，确保全局一致的默认值。
 
 ## 非目标
-- 不在本包内实现业务编排层之外的跨域职责。
-- 不在该包内承担与其职责无关的运行时装配。
+
+- 不做运行时配置热更新。
+- 不承担业务逻辑。
+
+## 实现原理
+
+### 环境变量标准化（normalizeEnv）
+
+`normalizeEnv(value, defaultValue)` 将字符串环境变量安全转换为正整数。对 `undefined`、非数字、零值和负值均返回默认值并记录警告日志。
+
+### 路径常量
+
+基于 `process.env` 和 `os.homedir()` 计算 Vitamin 约定路径：
+- `VITAMIN_HOME`：用户级 Vitamin 主目录（默认 `~/.vitamin`）
+- `VITAMIN_PROJECT_DIR`：项目级 `.vitamin` 目录
+- `SESSION_DIR` / `CHECKPOINT_DIR`：会话和检查点存储目录
+- 所有路径经 `normalizePath()` 统一为正斜杠格式。
+
+### 阈值与限制
+
+按域划分导出常量：
+- **工具配置**：`TOOLS_MAX_OUTPUT_LINES` / `TOOLS_MAX_OUTPUT_BYTES` / `TOOLS_EXECUTE_TIMEOUT_MS` 等
+- **Agent 配置**：`AGENT_TOOLS_MAX_TURNS`
+- **内存管理**：`MEMORY_COMPACTION_*` / `MEMORY_PRUNE_*` 系列（触发比例、保护比例、最小 token 数）
+- **会话管理**：`SESSION_IDLE_TIMEOUT_MS` / `SESSION_MAX` / `SESSION_PAGE_SIZE`
+- **工具名称常量**：`MEMORY_TOOL_WRITE` / `MEMORY_TOOL_READ` / `MEMORY_LEGACY_TOOL_*` 等
+
+### GitHub 认证
+
+导出 `GITHUB_CLIENT_ID`（base64 编码）、`GITHUB_SCOPE`、`GITHUB_COPILOT_USER_AGENT` 等认证相关常量。
+
+## 实现流程
+
+```
+@vitamin/env 模块加载
+       |
+  读取 process.env + os.homedir()
+       |
+  normalizeEnv() 安全转换
+       |
+  导出为 const 常量供其他包消费
+```
+
+单文件实现（`src/index.ts`），模块加载时一次性计算所有常量。
 
 ## 模块分层
-- `src/index.ts`：index.ts 模块实现。
+
+| 文件 | 职责 |
+|------|------|
+| `src/index.ts` | 所有环境常量定义与导出 |
 
 ## 入口与依赖
-- 入口：`src/index.ts`
-- 内部依赖：无。
 
-## 执行流程（抽象）
-- 调用方通过包入口导入能力。
-- 入口将调用分发到 `src/` 下具体模块。
-- 模块内按职责完成处理并返回结构化结果。
-- 若存在 Hook/事件机制，则通过回调实现扩展。
+- **入口**：`src/index.ts`
+- **内部依赖**：无
+- **外部依赖**：无（仅 Node.js 内置模块）
 
 ## 测试策略
-- 当前测试文件数：1。
-- 测试以行为断言为主，优先覆盖公开接口与关键分支。
 
-## 文档维护约定
-- 每次新增/删除公开导出时，同步更新 README 的“公开导出”章节。
-- 每次目录结构调整时，同步更新本设计文档“模块分层”章节。
-- 同步日期：2026-04-07
+- 测试文件数：1（`env.test.ts`，覆盖 normalizeEnv 的 6 种边界情况）

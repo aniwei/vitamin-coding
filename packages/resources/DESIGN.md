@@ -1,41 +1,101 @@
 # @vitamin/resources 设计说明
 
 ## 设计目标
-- 提供资源管理器与设置/模板/记忆资源源适配。
-- 保持包边界清晰，避免跨包耦合回流。
-- 通过稳定入口与类型导出，支持 monorepo 内部复用。
+
+- 协调配置管理（settings）、记忆注入（memory）和提示模板（prompt）三大资源来源。
+- 提供统一的 ResourceManager 接口，封装多源资源加载和冲突检测。
+- 支持可扩展的 Source 抽象。
 
 ## 非目标
-- 不在本包内实现业务编排层之外的跨域职责。
-- 不在该包内承担与其职责无关的运行时装配。
+
+- 不实现具体的配置/记忆/提示逻辑（由对应子包完成）。
+- 不做运行时缓存（由各 Source 自行管理）。
+
+## 实现原理
+
+### SettingsManager（settings-manager.ts）
+
+封装 `@vitamin/setting` 的 SettingLoader，增加事件通知：
+- `load()` → 加载配置
+- `get(key)` → 读取配置项
+- `onChanged(callback)` → 配置变化通知
+- 将 SettingWatcher 事件转换为本地事件
+
+### DefaultResourceManager（resource-manager.ts）
+
+组合多个 Source 提供统一加载接口：
+- `loadAll()` → 并行加载所有 Source → 合并为 `LoadedResources`
+- `getMemories()` → 记忆注入内容
+- `getPromptTemplates()` → 提示模板列表
+- `getDiagnostics()` → 加载诊断信息
+
+### 记忆注入源
+
+- `PersistentMemorySource`：基于 `@vitamin/memory` PersistentMemory 加载 AGENTS.md
+- `InMemoryMemorySource`：纯内存（测试用）
+
+### 提示模板源
+
+- `FilesystemPromptTemplateSource`：从文件系统扫描 `.vitamin/prompts/`
+- `InMemoryPromptTemplateSource`：纯内存（测试用）
+
+### LoadedResources（types.ts）
+
+```ts
+interface LoadedResources {
+  memories: MemoryContext[]
+  agentInstructions: string[]
+  promptTemplates: PromptTemplate[]
+  diagnostics: Diagnostic[]
+}
+```
+
+### 冲突检测（collision-detection.ts）
+
+检测多个 Source 加载同名资源的情况：
+- `detectCollisions(templates)` → 按名称分组，报告重复
+- 记录到 diagnostics 供上层展示
+
+## 实现流程
+
+```
+VitaminApp.init()
+       |
+  createResourceManager(config)
+       |
+  DefaultResourceManager
+    ├── PersistentMemorySource (AGENTS.md)
+    ├── FilesystemPromptTemplateSource (prompts/)
+    └── SettingsManager (setting)
+       |
+  resourceManager.loadAll()
+       |
+  并行加载 → 合并结果
+       |
+  冲突检测 → diagnostics
+       |
+  返回 LoadedResources
+```
 
 ## 模块分层
-- `src/index.ts`：index.ts 模块实现。
-- `src/memory-source.ts`：memory-source.ts 模块实现。
-- `src/prompt-template-source.ts`：prompt-template-source.ts 模块实现。
-- `src/resource-manager.ts`：resource-manager.ts 模块实现。
-- `src/settings-manager.ts`：settings-manager.ts 模块实现。
-- `src/types.ts`：types.ts 模块实现。
+
+| 文件 | 职责 |
+|------|------|
+| `src/types.ts` | ResourceManager / LoadedResources / Source 接口 |
+| `src/resource-manager.ts` | DefaultResourceManager 多源协调 |
+| `src/settings-manager.ts` | 配置管理封装 |
+| `src/memory-source.ts` | PersistentMemorySource / InMemoryMemorySource |
+| `src/prompt-template-source.ts` | 文件/内存提示模板源 |
+| `src/collision-detection.ts` | 资源名冲突检测 |
+| `src/index.ts` | barrel 导出 |
 
 ## 入口与依赖
-- 入口：`src/index.ts`
-- 内部依赖：
-  - `@vitamin/env`
-  - `@vitamin/memory`
-  - `@vitamin/setting`
-  - `@vitamin/shared`
 
-## 执行流程（抽象）
-- 调用方通过包入口导入能力。
-- 入口将调用分发到 `src/` 下具体模块。
-- 模块内按职责完成处理并返回结构化结果。
-- 若存在 Hook/事件机制，则通过回调实现扩展。
+- **入口**：`src/index.ts`
+- **内部依赖**：`@vitamin/setting`、`@vitamin/memory`、`@vitamin/prompt`、`@vitamin/shared`、`@vitamin/env`
+- **外部依赖**：无
 
 ## 测试策略
-- 当前测试文件数：4。
-- 测试以行为断言为主，优先覆盖公开接口与关键分支。
 
-## 文档维护约定
-- 每次新增/删除公开导出时，同步更新 README 的“公开导出”章节。
-- 每次目录结构调整时，同步更新本设计文档“模块分层”章节。
-- 同步日期：2026-04-07
+- 测试文件数：4
+- 覆盖：资源加载合并、冲突检测、Settings 事件转发、Source 接口

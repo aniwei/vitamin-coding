@@ -1,58 +1,63 @@
 # @vitamin/hooks
 
 ## 模块定位
-提供 Hook 注册、调度与核心策略扩展点。
 
-## 当前状态（基于源码）
-- 包目录：`packages/hooks`
-- 源码文件数：40
-- 测试文件数：12
-- 入口文件：`src/index.ts`
+提供 Agent 生命周期各阶段可插拔的拦截和变换机制，内置权限策略体系。
+
+## 核心功能
+
+| 模块 | 功能 |
+|------|------|
+| HookRegistry | 31 种时机的 Hook 注册、优先级排序、执行引擎 |
+| PermissionPolicyRegistry | 权限策略注册与评估（allow/deny/escalate） |
+| PermissionAuditLog | 权限决策审计轨迹 |
+| PermissionGuardHook | 权限 -> tool:guard 集成 |
+| 内置策略 | FILE_GUARD / DESTRUCTIVE_COMMAND / 模式策略 / 冻结 / 黑白名单 |
+| 预设 | default / strict / minimal / none 四种权限模式 |
+| 23+ 内置 Hooks | 会话 / 工具防护 / 变换 / 质量 / 流 / 压缩 / 后台 |
+
+## Hook 时机（31 种）
+
+**会话**：`session:before` / `session:after` / `message:before` / `message:after` / `turn:before` / `turn:after`
+**工具**：`tool:before` / `tool:after` / `tool:validate` / `tool:guard` / `tool:fallback` / `tool:retry`
+**变换**：`context:transform` / `prompt:transform` / `response:transform` / `output:transform`
+**质量**：`quality:review` / `quality:verify` / `quality:reflect`
+**流**：`stream:chunk` / `stream:error`
+**压缩**：`compaction:before` / `compaction:after`
+**后台**：`background:start` / `background:end`
 
 ## 目录概览
-- `src/`
-  - `core/`
-  - `hook-registry.ts`
-  - `index.ts`
-  - `safe-hook.ts`
-  - `types.ts`
-- `tests/`
-  - `background-tasks.test.ts`
-  - `core-hooks-coverage.test.ts`
-  - `core-hooks.test.ts`
-  - `error-recovery.test.ts`
-  - `hook-registry-extended.test.ts`
-  - `hook-registry.test.ts`
-  - `idle-continuation.test.ts`
-  - `permission.test.ts`
-  - `rules-injector.test.ts`
-  - `safe-hook.test.ts`
-  - `token-usage.test.ts`
-  - `tool-error-tracker.test.ts`
 
-## 公开导出
-```ts
-export { HookRegistry, createHookRegistry } from './hook-registry'
-export type { HookPreset, HookRegistryOptions } from './hook-registry'
-export { safeCreateHook, isHookEnabled, safeHookEnabled } from './safe-hook'
-export { createFirstMessageVariantHook, createSessionRecoveryHook, createKeywordDetectionHook, createSessionHistoryHook, createIdleContinuationHook, createErrorRecoveryHook, resetErrorRecoveryCounter, createFileGuardHook, createLabelTruncatorHook, createRulesInjectorHook, createOutputTruncationHook, createContextInjectorHook, createThinkingValidatorHook, createAnthropicEffortHook, createCommentCheckerHook, createBabysittingHook, createRalphLoopHook,
-export type { ContextInjectorConfig, ContextProvider, IdleContinuationConfig, ErrorRecoveryConfig, ToolErrorTrackerConfig, TokenBudgetConfig } from './core'
-export { PermissionPolicyRegistry, PermissionAuditLog, PermissionGuardHook, compilePolicyFromSetting, createPermissionGuardHook, FILE_GUARD_POLICY, DESTRUCTIVE_COMMAND_POLICY, createDirectoryFreezePolicy, createDisabledToolsPolicy, createAgentBoundaryPolicy, createPermissionModePolicy, createPermissionRegistry, } from './core'
-export type { RuleEffect, PermissionMode, PolicyScope, PermissionContext, RuleMatch, PermissionRule, PermissionPolicy, PermissionDecision, PermissionAuditEntry, PermissionRuleConfig, PermissionPolicySetting, } from './core'
-export type { HookTiming, HookInput, HookOutput, HookHandle, HookRegistration, HookPayloadMap, ChatMessageInput, ChatMessageOutput, ToolExecuteBeforeInput, ToolExecuteBeforeOutput, ToolExecuteAfterInput, ToolExecuteAfterOutput, MessagesTransformInput, MessagesTransformOutput, ChatParamsInput, ChatParamsOutput, SystemPromptTransformInput, SystemPromptTransformOutput, SessionEventInput, } from './types'
+```
+src/
+  types.ts                  # 核心类型
+  hook-registry.ts          # Hook 注册与执行
+  permission/
+    permission-policy-registry.ts
+    permission-audit-log.ts
+    permission-guard-hook.ts
+    builtin-policies.ts
+    presets.ts
+  builtin-hooks/
+    session/                # 6 个会话 Hook
+    tool-guard/             # 6 个工具防护 Hook
+    transform/              # 4 个变换 Hook
+    quality/                # 3 个质量 Hook
+    stream/                 # 2 个流 Hook
+    compaction/             # 2 个压缩 Hook
+    background/             # 2 个后台 Hook
+  index.ts
+tests/                      # 7 个测试文件
 ```
 
 ## 开发命令
-- `pnpm --filter @vitamin/hooks build`
-- `pnpm --filter @vitamin/hooks typecheck:project`
-- `pnpm --filter @vitamin/hooks typecheck:file`
-- `pnpm --filter @vitamin/hooks typecheck`
-- `pnpm --filter @vitamin/hooks clean`
 
-## 关联 Vitamin 包
-- `@vitamin/agent`
-- `@vitamin/shared`
+```bash
+pnpm --filter @vitamin/hooks build
+pnpm --filter @vitamin/hooks typecheck
+pnpm --filter @vitamin/hooks clean
+```
 
-## 维护说明
-- 本文档已按当前源码结构同步更新。
-- 同步日期：2026-04-07
+## 关联包
+
+`@vitamin/shared`、`@vitamin/invariant`、`@vitamin/env`

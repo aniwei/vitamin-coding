@@ -1,43 +1,40 @@
 # @vitamin/skill
 
 ## 模块定位
-提供 Skill 注册、发现、匹配与解析能力。
 
-## 当前状态（基于源码）
-- 包目录：`packages/skill`
-- 源码文件数：6
-- 测试文件数：0
-- 入口文件：`src/index.ts`
+管理 SKILL.md 技能文件的发现、解析、匹配与注册。支持项目级和用户级技能自动发现。
+
+## 核心功能
+
+| 模块 | 功能 |
+|------|------|
+| SkillRegistry | 技能注册/发现/生命周期事件 |
+| SkillDiscovery | .vitamin/skills/ + ~/.vitamin/skills/ 扫描 |
+| SkillParser | SKILL.md YAML frontmatter + Markdown 解析 |
+| SkillMatcher | 多因子评分（名称 0.3 + 描述 0.5 + 标签 0.2） |
 
 ## 目录概览
-- `src/`
-  - `index.ts`
-  - `skill-discovery.ts`
-  - `skill-matcher.ts`
-  - `skill-parser.ts`
-  - `skill-registry.ts`
-  - `types.ts`
-- 当前包无 `tests/` 目录或目录为空。
 
-## 公开导出
-```ts
-export { SkillRegistry, createSkillRegistry } from './skill-registry'
-export type { SkillRegistryOptions } from './skill-registry'
-export { parseSkillContent } from './skill-parser'
-export { discoverSkills, getDefaultGlobalSkillDirs, resolveSourceType, } from './skill-discovery'
-export { matchSkills } from './skill-matcher'
-export type { SkillMetadata, SkillDefinition, SkillStatus, RegisteredSkill, SkillSourceType, SkillSource, SkillLibraryConfig, SkillMatch, SkillExecutionContext, SkillExecutionResult, SkillEvents, } from './types'
+```
+src/
+  types.ts           # 核心类型
+  skill-registry.ts  # 注册表
+  skill-discovery.ts # 自动发现
+  skill-parser.ts    # 解析器
+  skill-matcher.ts   # 匹配器
+  skill-context.ts   # 执行上下文
+  index.ts
+tests/
 ```
 
 ## 开发命令
-- `pnpm --filter @vitamin/skill build`
-- `pnpm --filter @vitamin/skill dev`
-- `pnpm --filter @vitamin/skill typecheck`
 
-## 关联 Vitamin 包
-- `@vitamin/env`
-- `@vitamin/shared`
+```bash
+pnpm --filter @vitamin/skill build
+pnpm --filter @vitamin/skill typecheck
+pnpm --filter @vitamin/skill clean
+```
 
-## 维护说明
-- 本文档已按当前源码结构同步更新。
-- 同步日期：2026-04-07
+## 关联包
+
+`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
