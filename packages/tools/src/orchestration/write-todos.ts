@@ -52,7 +52,7 @@ export function createWriteTodos(writeTodos?: WriteTodos): AgentTool<WriteTodosA
 
   return {
     name: 'write_todos',
-    description: 'Track progress with a lightweight todo list for UI visibility and memory. Use "set" to replace all todos, "update" to merge changes by id. This is a planning aid — it does not drive execution.',
+    description: 'Track progress with a lightweight todo list. Use "set" to replace all todos, "update" to merge changes by id.',
     parameters: WriteTodosArgsSchema,
     visibility: 'always',
 

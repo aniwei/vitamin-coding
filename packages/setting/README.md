@@ -1,107 +1,65 @@
 # @vitamin/setting
 
-Type-driven configuration definition, multi-layer merging, automatic migration, persistent storage (memory/file/http), and file watcher for live reloading.
+## 模块定位
+提供设置仓库、监听器、迁移器与配置读取流程。
 
-## Installation
+## 当前状态（基于源码）
+- 包目录：`packages/setting`
+- 源码文件数：14
+- 测试文件数：6
+- 入口文件：`src/index.ts`
 
-```bash
-pnpm add @vitamin/setting
+## 目录概览
+- `src/`
+  - `data/`
+  - `file-store.ts`
+  - `http-store.ts`
+  - `index.ts`
+  - `memory-store.ts`
+  - `migrator.ts`
+  - `persistence-store.ts`
+  - `presets.ts`
+  - `setting.ts`
+  - `store.ts`
+  - `types.ts`
+  - `watcher.ts`
+- `tests/`
+  - `loader.test.ts`
+  - `manager.test.ts`
+  - `migrator.test.ts`
+  - `schema.test.ts`
+  - `store.test.ts`
+  - `watcher.test.ts`
+
+## 公开导出
+```ts
+export type { VitaminSetting, VitaminSettingFromSchema, VitaminSettingKey, AgentConfig, CategoryConfig, LogLevel, ToolPreset, PermissionMode, PermissionRuleConfig, PermissionPolicySetting, WorkflowSlot, SettingWarning, ConfigWarning, LoadSettingOptions, LoadConfigOptions, } from './types'
+export { BUILTIN_REVIEWER_AGENTS, COMPACTION_STRATEGIES, LOG_LEVELS, PERMISSION_MODES, TOOL_PRESETS, VITAMIN_DEFAULT_CONFIG, VITAMIN_SETTING_KEYS, WORKFLOW_SLOTS, } from './types'
+export { migrate, registerMigration, resetMigrations } from './migrator'
+export type { Migration } from './migrator'
+export { loadSetting, SettingLoader } from './setting'
+export { createSettingWatcher, SettingWatcher, } from './watcher'
+export type { SettingWatcherOptions, } from './watcher'
+export { createSettingStore } from './store'
+export type { SettingStore, StorageType, SettingStoreOptions, FileSettingStoreOptions, HttpSettingStoreOptions, InMemorySettingStoreOptions } from './store'
+export { FileSettingStore } from './file-store'
+export { RemoteSettingStore } from './http-store'
+export { InMemorySettingStore } from './memory-store'
+export { createFileSettingStore, createHttpSettingStore, } from './persistence-store'
+export { BUILTIN_AGENT_PROFILES, COPILOT_MODELS, TASK_TYPE_PROFILE_MAP } from './presets'
 ```
 
-## Usage
+## 开发命令
+- `pnpm --filter @vitamin/setting build`
+- `pnpm --filter @vitamin/setting typecheck:project`
+- `pnpm --filter @vitamin/setting typecheck:file`
+- `pnpm --filter @vitamin/setting typecheck`
+- `pnpm --filter @vitamin/setting clean`
 
-```typescript
-import {
-  loadSetting,
-  createSettingStore,
-  createSettingWatcher,
-  VITAMIN_DEFAULT_CONFIG,
-} from '@vitamin/setting'
+## 关联 Vitamin 包
+- `@vitamin/persistence`
+- `@vitamin/shared`
 
-// 1. 纯内存加载（无文件读取）
-const setting = await loadSetting()
-
-// 2. 从本地文件加载（直接文件路径）
-const settingStore = createSettingStore({ type: 'local' })
-const setting = await loadSetting({
-  store: settingStore,
-  configPaths: [
-    '~/.config/vitamin/config.jsonc',
-    './.vitamin/config.jsonc',
-  ],
-})
-
-// 3. 从远程服务加载（自定义 Config API）
-const remoteStore = createSettingStore({
-  type: 'remote',
-  baseUrl: 'https://api.example.com',
-  getAuth: async () => ({ token: await getToken() }),
-})
-const setting = await loadSetting({
-  store: remoteStore,
-  configPaths: ['user-config'],
-})
-
-// 4. 基于 @vitamin/persistence 的 file/http 后端
-const persistentFileStore = createSettingStore({
-  type: 'file',
-  baseDir: './.vitamin/settings',
-})
-
-const persistentHttpStore = createSettingStore({
-  type: 'http',
-  baseUrl: 'https://api.example.com/settings',
-  getAuth: async () => ({ token: await getToken() }),
-  fetch,
-})
-
-// 5. 文件监听
-const watcher = createSettingWatcher({
-  paths: ['./.vitamin/config.jsonc'],
-  reload: async (path: string) => {
-    const content = await settingStore.read(path)
-    return content ? JSON.parse(content) : {}
-  },
-})
-watcher.on('change', (cfg, path) => console.log('updated', path))
-```
-
-## Key Exports
-
-| Export | Description |
-|--------|-------------|
-| `loadSetting` | Load and validate setting with multi-layer merging |
-| `SettingLoader` | Class-based loader with `load()` and `save()` |
-| `createSettingStore` | Factory: create local/remote/memory/file/http store |
-| `FileSettingStore` | File-system JSONC setting store |
-| `RemoteSettingStore` | HTTP REST setting store (path-based API) |
-| `InMemorySettingStore` | In-memory store (testing) |
-| `createFileSettingStore` | Persistence-backed file store |
-| `createHttpSettingStore` | Persistence-backed HTTP store |
-| `VITAMIN_DEFAULT_CONFIG` | Built-in default configuration object |
-| `VITAMIN_SETTING_KEYS` | 所有配置键常量 |
-| `migrate`, `registerMigration`, `resetMigrations` | Config version migration system |
-| `createSettingWatcher`, `SettingWatcher` | File watcher for live reload |
-| `LOG_LEVELS`, `TOOL_PRESETS` | Built-in literal option sets |
-| `BUILTIN_REVIEWER_AGENTS` | 内置 reviewer agent 列表 |
-| `COMPACTION_STRATEGIES` | Compaction 策略常量 |
-| `PERMISSION_MODES` | 权限模式常量 |
-| `WORKFLOW_SLOTS` | 工作流槽位常量 |
-
-Presets: `BUILTIN_AGENT_PROFILES`, `COPILOT_MODELS`, `TASK_TYPE_PROFILE_MAP`
-
-## Types
-
-`VitaminSetting`, `VitaminSettingFromSchema`, `VitaminSettingKey`, `AgentConfig`, `CategoryConfig`, `LogLevel`, `ToolPreset`, `PermissionMode`, `PermissionRuleConfig`, `PermissionPolicyConfig`, `WorkflowSlot`, `SettingWarning`, `ConfigWarning`, `LoadSettingOptions`, `LoadConfigOptions`, `SettingStore`, `StorageType`, `SettingStoreOptions`, `FileSettingStoreOptions`, `HttpSettingStoreOptions`, `InMemorySettingStoreOptions`, `SettingWatcherOptions`, `Migration`
-
-## Merge Priority (low → high)
-
-1. `VITAMIN_DEFAULT_CONFIG` (built-in defaults)
-2. File layers from `paths` (ordered low → high)
-3. Environment variables (`VITAMIN_MODEL`, `VITAMIN_THEME`, `VITAMIN_LOG_LEVEL`)
-
-`disabled_*` arrays are union-merged with deduplication; objects are deep-merged; other values are overwritten.
-
-## License
-
-See [root README](../../README.md) for details.
+## 维护说明
+- 本文档已按当前源码结构同步更新。
+- 同步日期：2026-04-07

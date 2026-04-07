@@ -407,7 +407,7 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
         logger: this.logger,
         maxToolTurns: this.maxToolTurns,
         messages,
-        thinkingLevel: paramsOutput.thinkingLevel as ThinkingLevel | undefined,
+        thinkingLevel: paramsOutput.thinkingLevel as ThinkingLevel,
         temperature: paramsOutput.temperature,
         maxTokens: paramsOutput.maxTokens,
         transformContext: async (contextMessages, signal) => {

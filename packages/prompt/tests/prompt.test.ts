@@ -4,7 +4,7 @@ import { fileURLToPath } from 'node:url'
 import { dirname } from 'node:path'
 import {
   LocalPromptProvider,
-  RemotePromptProvider,
+  HttpPromptProvider,
   PromptManager,
   PromptCache,
   createPromptProvider,
@@ -62,7 +62,7 @@ describe('LocalPromptProvider', () => {
   })
 })
 
-describe('RemotePromptProvider', () => {
+describe('HttpPromptProvider', () => {
   function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
     if (!headers) return {}
     if (headers instanceof Headers) {
@@ -110,7 +110,7 @@ describe('RemotePromptProvider', () => {
       return new Response('', { status: 404 })
     }
 
-    const provider = new RemotePromptProvider({
+    const provider = new HttpPromptProvider({
       baseUrl: 'https://prompt.api',
       getAuth: async () => ({ token: 'secret-token' }),
       getHeaders: async () => ({ 'X-Debug': 'on' }),
@@ -159,7 +159,7 @@ describe('RemotePromptProvider', () => {
       return new Response('', { status: 404 })
     }
 
-    const provider = new RemotePromptProvider({
+    const provider = new HttpPromptProvider({
       baseUrl: 'https://prompt.api',
       fetch: fetchImpl,
     })
@@ -290,7 +290,7 @@ describe('createPromptProvider factory', () => {
 
   it('creates a remote provider', () => {
     const provider = createPromptProvider({ type: 'remote', baseUrl: 'https://prompt.api' })
-    expect(provider).toBeInstanceOf(RemotePromptProvider)
+    expect(provider).toBeInstanceOf(HttpPromptProvider)
   })
 
   it('throws on unknown type', () => {

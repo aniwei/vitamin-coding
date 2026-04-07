@@ -26,7 +26,7 @@ export function createCaptureFileState(
 ): AgentTool<CaptureFileStateArgs> {
   return {
     name: 'capture_file_state',
-    description: 'Capture a snapshot of the current workspace file state. Use this when the conversation is long and you need to refresh your understanding of file changes.',
+    description: 'Capture a snapshot of the current workspace file state.',
     parameters: CaptureFileStateArgsSchema,
     visibility: 'always',
     readonly: true,

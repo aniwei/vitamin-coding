@@ -118,6 +118,7 @@ export function registerBuiltinTools(
       'Prefer edit over write for modifying existing files — edit replaces exact text and is safer against accidental overwrites.',
       'Use write only for creating new files or when the entire file content needs replacement.',
       'Always verify file existence with read or ls before editing to avoid operating on stale assumptions.',
+      'For edit: provide enough surrounding context to avoid ambiguous matches.',
     ].join('\n'),
   })
 
@@ -129,10 +130,13 @@ export function registerBuiltinTools(
     category: 'shell',
     builtin: true,
     guideline: [
-      'Use bash for build commands, test execution, git operations, and system tasks that have no dedicated tool.',
+      'Use bash for running tests, installing dependencies, build commands, git operations, and system tasks that have no dedicated tool.',
+      'Avoid long-running blocking service processes and programs requiring interactive input.',
       'Prefer dedicated tools (read, write, edit, grep, find) over shell equivalents (cat, sed, grep) for file operations.',
       'Avoid destructive commands (rm -rf, git reset --hard, DROP TABLE) without explicit user approval.',
       'Set reasonable timeouts for long-running commands. Kill stale processes rather than waiting indefinitely.',
+      'Always check the exit code; on failure, inspect stdout/stderr before deciding next steps.',
+      'Prefer non-interactive flags, e.g. git --no-pager, --non-interactive.',
     ].join('\n'),
   })
 
@@ -154,6 +158,7 @@ export function registerBuiltinTools(
       'Use find to locate files by name or glob pattern; use grep to search file contents by text or regex.',
       'Start broad (ls → find) then narrow (grep → read) to efficiently navigate unfamiliar codebases.',
       'Combine grep results with read to understand full context around matches.',
+      'grep should use precise patterns; prefer regex alternation for multiple candidates rather than many separate searches.',
     ].join('\n'),
   })
 
@@ -182,8 +187,8 @@ export function registerBuiltinTools(
     category: 'orchestration', 
     builtin: true,
     guideline: [
-      'Use task_delegate to dispatch self-contained subtasks to a sub-agent. Provide clear, complete context — sub-agents start with a blank slate.',
-      'Use write_todos to track multi-step work for UI visibility and progress reporting, not to drive execution.',
+      'Use task_delegate to route tasks to more suitable sub-agents by category — useful for tasks requiring specialization or lifecycle management. Provide clear, complete context — sub-agents start with a blank slate.',
+      'Use write_todos for complex tasks to build and maintain a step list first — for UI visibility and memory aid, not to drive execution.',
       'Break complex tasks into small, independently verifiable subtasks (2-5 minutes each) before delegating.',
       'Do not delegate tasks that require the current conversation context or interactive clarification.',
     ].join('\n'),
@@ -223,8 +228,9 @@ export function registerBuiltinTools(
     category: 'orchestration', 
     builtin: true,
     guideline: [
-      'Use review_call for synchronous, isolated second opinions (code review, design critique). Use agent_task for background or stateful execution.',
-      'Use clarify_request only when genuinely blocked — missing context, conflicting constraints, or needing explicit approval. Include all available context.',
+      'Use agent_call / agent_task when you already know exactly which agent to call. Use agent_task for background or stateful execution.',
+      'Use review_call for synchronous, isolated second opinions (code review, design critique).',
+      'Use clarify_request to clarify ambiguous requirements with the user rather than guessing. Only use when genuinely blocked — missing context, conflicting constraints, or needing explicit approval. Include all available context.',
       'Use capture_file_state when conversation is long and you need to refresh understanding of workspace changes.',
       'Use learn to record reusable insights (patterns, mistakes, strategies) — not routine progress notes.',
       'Check task status with task_get/task_list before creating duplicate tasks. Cancel stale tasks with task_update.',

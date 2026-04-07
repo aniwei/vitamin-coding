@@ -1,6 +1,6 @@
 // Provider abstractions and implementations
 export { LocalPromptProvider } from './local-provider'
-export { RemotePromptProvider } from './remote-provider'
+export { HttpPromptProvider } from './http-provider'
 export { createPromptProvider } from './prompt-factory'
 
 // Core classes
@@ -22,7 +22,7 @@ export {
 } from './sub-agent-prompt'
 export type { AgentProfile, SubAgentPromptContext } from './sub-agent-prompt'
 export { collectEnvironment, formatEnvironmentBlock } from './environment-context'
-export type { EnvironmentSnapshot } from './environment-context'
+export type { Environment } from './environment-context'
 
 // Types
 export type {

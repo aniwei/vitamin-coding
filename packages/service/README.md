@@ -1,80 +1,47 @@
 # @vitamin/service
 
-基于 Hono 的 HTTP + WebSocket 服务层，将 `@vitamin/coding` 的 `VitaminApp` 和 `AgentSession` 暴露为 Web 服务。
+## 模块定位
+提供 HTTP/WebSocket 服务封装与事件桥接。
 
-## 安装
+## 当前状态（基于源码）
+- 包目录：`packages/service`
+- 源码文件数：13
+- 测试文件数：0
+- 入口文件：`src/index.ts`
 
-```bash
-pnpm add @vitamin/service
+## 目录概览
+- `src/`
+  - `coding-service.ts`
+  - `create-app.ts`
+  - `debug-bridge.ts`
+  - `event-bridge.ts`
+  - `index.ts`
+  - `routes/`
+  - `types.ts`
+  - `websocket-manager.ts`
+- 当前包无 `tests/` 目录或目录为空。
+
+## 公开导出
+```ts
+export { CodingService, createCodingService } from './coding-service'
+export { WebSocketManager } from './websocket-manager'
+export { EventBridge } from './event-bridge'
+export { DebugBridge } from './debug-bridge'
+export type { LogEntry } from './debug-bridge'
+export type { CodingServiceOptions, WebSocketMessage, WebSocketEventType, WebSocketClientMessage, WebSocketClientMessageType, EventBridgeMapper, } from './types'
 ```
 
-## 核心概念
+## 开发命令
+- `pnpm --filter @vitamin/service build`
+- `pnpm --filter @vitamin/service typecheck`
+- `pnpm --filter @vitamin/service clean`
 
-- **CodingService** — HTTP/WebSocket 服务容器，基于 Hono + Node HTTP Server
-- **WebSocketManager** — WebSocket 连接管理，支持 CDP 风格的消息协议
-- **EventBridge** — 将 `AgentSession` 事件桥接为 WebSocket 消息
-- **DebugBridge** — 可选的调试桥接，连接 `@vitamin/devtools`
+## 关联 Vitamin 包
+- `@vitamin/ai`
+- `@vitamin/coding`
+- `@vitamin/devtools`
+- `@vitamin/shared`
 
-## 快速开始
-
-```typescript
-import { createVitamin } from '@vitamin/coding'
-import { createCodingService } from '@vitamin/service'
-
-const vitamin = await createVitamin({ /* ... */ })
-await vitamin.start()
-
-const service = createCodingService(vitamin.context, {
-  port: 3000,
-  host: '0.0.0.0',
-  cors: true,
-})
-
-await service.start()
-```
-
-## HTTP 端点
-
-| 路径 | 说明 |
-|------|------|
-| `/api/health` | 健康检查 |
-| `/api/chat` | 聊天/查询 |
-| `/api/sessions` | Session 管理 |
-| `/api/setting` | 配置管理 |
-| `/api/debug` | 调试命令（需启用 devtools） |
-| `/api/logs` | 日志访问 |
-| `/ws` | WebSocket 升级（CDP 风格协议） |
-| `/*` | 静态文件服务（需配置 `staticDir`） |
-
-## WebSocket 协议
-
-### 客户端 → 服务端
-
-- `Runtime.ping` — 心跳
-- `Chat.query` — 发起聊天
-- `Chat.approval` / `Chat.askUserResponse` / `Chat.planApprovalResponse` — 交互响应
-- `Session.subscribe` / `Session.unsubscribe` — 会话订阅
-- `Debugger.resume` / `Debugger.stepOver` / `Debugger.setBreakpoint` — 调试控制
-- `Log.enable` / `Log.disable` / `Log.clear` — 日志控制
-
-### 服务端 → 客户端
-
-Chat 事件、Session 更新、Debugger 事件（`Debugger.paused`）、运行时错误（`Runtime.error`）、日志条目。
-
-## Key Exports
-
-| Export | Description |
-|--------|-------------|
-| `CodingService` | HTTP/WS 服务类 |
-| `createCodingService` | 工厂函数 |
-| `WebSocketManager` | WebSocket 连接管理器 |
-| `EventBridge` | 会话事件桥接器 |
-| `DebugBridge` | 调试桥接器 |
-
-## Types
-
-`CodingServiceOptions`, `WebSocketMessage`, `WebSocketEventType`, `WebSocketClientMessage`, `WebSocketClientMessageType`, `EventBridgeMapper`, `LogEntry`
-
-## License
-
-See [root README](../../README.md) for details.
+## 维护说明
+- 本文档已按当前源码结构同步更新。
+- 同步日期：2026-04-07

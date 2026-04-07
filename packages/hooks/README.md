@@ -1,348 +1,58 @@
 # @vitamin/hooks
 
-运行时生命周期 Hook 模块接入指南。
+## 模块定位
+提供 Hook 注册、调度与核心策略扩展点。
 
-## 1. 安装
+## 当前状态（基于源码）
+- 包目录：`packages/hooks`
+- 源码文件数：40
+- 测试文件数：12
+- 入口文件：`src/index.ts`
 
-```bash
-pnpm add @vitamin/hooks
-```
+## 目录概览
+- `src/`
+  - `core/`
+  - `hook-registry.ts`
+  - `index.ts`
+  - `safe-hook.ts`
+  - `types.ts`
+- `tests/`
+  - `background-tasks.test.ts`
+  - `core-hooks-coverage.test.ts`
+  - `core-hooks.test.ts`
+  - `error-recovery.test.ts`
+  - `hook-registry-extended.test.ts`
+  - `hook-registry.test.ts`
+  - `idle-continuation.test.ts`
+  - `permission.test.ts`
+  - `rules-injector.test.ts`
+  - `safe-hook.test.ts`
+  - `token-usage.test.ts`
+  - `tool-error-tracker.test.ts`
 
-## 2. 你会接入什么
-
-`@vitamin/hooks` 提供两类调用能力：
-
-- 链式 Hook: `execute(timing, input, output)`
-- 事件 Hook: `emit(timing, input)`
-
-推荐入口 API：
-
-- `createHookRegistry(options?)`
-- `HookRegistry`
-
-## 3. 快速接入（最小可用）
-
+## 公开导出
 ```ts
-import { createHookRegistry } from '@vitamin/hooks'
-
-const hooks = createHookRegistry({ preset: 'minimal' })
-
-// 在工具执行前
-await hooks.execute(
-	'tool.execute.before',
-	{
-		toolName: 'write',
-		toolCallId: 'call-1',
-		args: { path: 'src/a.ts', content: 'hello' },
-		agentName: 'coding',
-		sessionId: 's1',
-	},
-	{
-		args: { path: 'src/a.ts', content: 'hello' },
-		cancelled: false,
-	},
-)
+export { HookRegistry, createHookRegistry } from './hook-registry'
+export type { HookPreset, HookRegistryOptions } from './hook-registry'
+export { safeCreateHook, isHookEnabled, safeHookEnabled } from './safe-hook'
+export { createFirstMessageVariantHook, createSessionRecoveryHook, createKeywordDetectionHook, createSessionHistoryHook, createIdleContinuationHook, createErrorRecoveryHook, resetErrorRecoveryCounter, createFileGuardHook, createLabelTruncatorHook, createRulesInjectorHook, createOutputTruncationHook, createContextInjectorHook, createThinkingValidatorHook, createAnthropicEffortHook, createCommentCheckerHook, createBabysittingHook, createRalphLoopHook,
+export type { ContextInjectorConfig, ContextProvider, IdleContinuationConfig, ErrorRecoveryConfig, ToolErrorTrackerConfig, TokenBudgetConfig } from './core'
+export { PermissionPolicyRegistry, PermissionAuditLog, PermissionGuardHook, compilePolicyFromSetting, createPermissionGuardHook, FILE_GUARD_POLICY, DESTRUCTIVE_COMMAND_POLICY, createDirectoryFreezePolicy, createDisabledToolsPolicy, createAgentBoundaryPolicy, createPermissionModePolicy, createPermissionRegistry, } from './core'
+export type { RuleEffect, PermissionMode, PolicyScope, PermissionContext, RuleMatch, PermissionRule, PermissionPolicy, PermissionDecision, PermissionAuditEntry, PermissionRuleConfig, PermissionPolicySetting, } from './core'
+export type { HookTiming, HookInput, HookOutput, HookHandle, HookRegistration, HookPayloadMap, ChatMessageInput, ChatMessageOutput, ToolExecuteBeforeInput, ToolExecuteBeforeOutput, ToolExecuteAfterInput, ToolExecuteAfterOutput, MessagesTransformInput, MessagesTransformOutput, ChatParamsInput, ChatParamsOutput, SystemPromptTransformInput, SystemPromptTransformOutput, SessionEventInput, } from './types'
 ```
 
-## 4. 生产接入（推荐）
-
-### 4.1 初始化
-
-```ts
-import {
-	createHookRegistry,
-	createRulesInjectorHook,
-	createToolErrorTrackerHook,
-	createTokenBudgetHook,
-} from '@vitamin/hooks'
-
-const hooks = createHookRegistry({ preset: 'default' })
-
-// 按需追加业务 Hook
-hooks.register(createRulesInjectorHook(process.cwd()))
-hooks.register(createToolErrorTrackerHook({ circuitBreakerThreshold: 5 }))
-hooks.register(createTokenBudgetHook({ maxOutputTokens: 8192 }))
-```
-
-### 4.2 在聊天管线中调用
-
-```ts
-import type {
-	ChatMessageInput,
-	ChatMessageOutput,
-	MessagesTransformInput,
-	MessagesTransformOutput,
-	ChatParamsInput,
-	ChatParamsOutput,
-} from '@vitamin/hooks'
-
-async function beforeChatMessage(hooks: ReturnType<typeof createHookRegistry>, input: ChatMessageInput) {
-	const output: ChatMessageOutput = {
-		message: input.message,
-		cancelled: false,
-		metadata: {},
-	}
-	await hooks.execute('chat.message.before', input, output)
-	return output
-}
-
-async function transformMessages(hooks: ReturnType<typeof createHookRegistry>, input: MessagesTransformInput) {
-	const output: MessagesTransformOutput = { messages: input.messages }
-	await hooks.execute('messages.transform', input, output)
-	return output
-}
-
-async function patchChatParams(hooks: ReturnType<typeof createHookRegistry>, input: ChatParamsInput) {
-	const output: ChatParamsOutput = { metadata: {} }
-	await hooks.execute('chat.params', input, output)
-	return output
-}
-```
-
-### 4.3 在工具管线中调用
-
-```ts
-import type {
-	ToolExecuteBeforeInput,
-	ToolExecuteBeforeOutput,
-	ToolExecuteAfterInput,
-	ToolExecuteAfterOutput,
-} from '@vitamin/hooks'
-
-async function beforeTool(hooks: ReturnType<typeof createHookRegistry>, input: ToolExecuteBeforeInput) {
-	const output: ToolExecuteBeforeOutput = {
-		args: { ...input.args },
-		cancelled: false,
-	}
-
-	await hooks.execute('tool.execute.before', input, output)
-
-	if (output.cancelled) {
-		return { blocked: true, reason: output.cancelReason }
-	}
-	return { blocked: false, args: output.args }
-}
-
-async function afterTool(hooks: ReturnType<typeof createHookRegistry>, input: ToolExecuteAfterInput) {
-	const output: ToolExecuteAfterOutput = {
-		result: input.result,
-		metadata: {},
-	}
-	await hooks.execute('tool.execute.after', input, output)
-	return output
-}
-```
-
-### 4.4 在系统提示词变换中调用
-
-```ts
-import type {
-	SystemPromptTransformInput,
-	SystemPromptTransformOutput,
-} from '@vitamin/hooks'
-
-async function transformSystemPrompt(hooks: ReturnType<typeof createHookRegistry>, input: SystemPromptTransformInput) {
-	const output: SystemPromptTransformOutput = { systemPrompt: input.systemPrompt }
-	await hooks.execute('system-prompt.transform', input, output)
-	return output.systemPrompt
-}
-```
-
-> `VitaminApp` 默认注册了以下 `system-prompt.transform` Hook（按 priority 顺序）：
-> - `tool-guidance-injection`（priority 20）：提示词工具使用指南注入
-> - `environment-injection`（priority 25）：运行环境上下文注入
-> - `phase-injection`（priority 30）：当前阶段上下文注入
-> - `lesson-injection`（priority 40）：运行经验教训注入
-
-### 4.5 在事件节点调用
-
-```ts
-await hooks.emit('session.created', { sessionId: 's1', metadata: {} })
-await hooks.emit('stream.start', { sessionId: 's1', model: 'gpt-5.2' })
-await hooks.emit('stream.end', { sessionId: 's1', model: 'gpt-5.2', stopReason: 'end_turn' })
-await hooks.emit('compaction.before', { sessionId: 's1', messageCount: 120 })
-await hooks.emit('compaction.after', { sessionId: 's1', retainedCount: 40 })
-await hooks.emit('background.start', { taskId: 'bg-1', agentName: 'coding' })
-await hooks.emit('background.end', { taskId: 'bg-1', agentName: 'coding', success: true })
-```
-
-## 5. 预设选择建议
-
-| Preset | 内容 | 场景 |
-| --- | --- | --- |
-| `minimal` | `file-guard` + `output-truncation` | 先上线基础安全边界 |
-| `default` | 安全、质量、观测、预算等常用 Hook | 常规生产默认选项 |
-| `strict` | `default` + `comment-checker` | 对代码注释质量要求更高 |
-| `none` | 不自动注册内置 Hook | 完全自定义 |
-
-## 6. 高级 Hook
-
-### 错误恢复
-
-```ts
-import { createErrorRecoveryHook, resetErrorRecoveryCounter } from '@vitamin/hooks'
-
-const errorRecovery = createErrorRecoveryHook({
-  maxRetries: 3,
-  recoverablePatterns: [/rate limit/i, /timeout/i],
-  recover: (sessionId, error) => { /* 恢复逻辑 */ },
-})
-hooks.register(errorRecovery)
-
-// 手动重置重试计数
-resetErrorRecoveryCounter('session-1')
-```
-
-### 空闲续作
-
-```ts
-import { createIdleContinuationHook } from '@vitamin/hooks'
-
-const idleContinuation = createIdleContinuationHook({
-  hasPendingWork: (sessionId) => checkPendingTasks(sessionId),
-  resumeWork: (sessionId) => resumeSession(sessionId),
-})
-hooks.register(idleContinuation)
-```
-
-### 工具错误断路器
-
-```ts
-import { createToolErrorTrackerHook, getToolErrors, clearToolErrors } from '@vitamin/hooks'
-
-const toolTracker = createToolErrorTrackerHook({
-  circuitBreakerThreshold: 5,    // 连续错误 5 次后触发
-  decayWindowMs: 120_000,         // 2 分钟衰减窗口
-})
-hooks.register(toolTracker)
-```
-
-### 后台任务追踪
-
-```ts
-import {
-  createBackgroundStartHook,
-  createBackgroundEndHook,
-  getActiveBackgroundTasks,
-  getCompletedBackgroundTasks,
-  clearBackgroundTaskHistory,
-} from '@vitamin/hooks'
-
-hooks.register(createBackgroundStartHook())
-hooks.register(createBackgroundEndHook())
-```
-
-### Token 用量追踪
-
-```ts
-import { trackTokenUsage, getTokenUsage, clearTokenUsage } from '@vitamin/hooks'
-
-trackTokenUsage('session-1', 'gpt-4', 1000, 500)
-const usage = getTokenUsage('session-1')
-// { model: 'gpt-4', totalInput: 1000, totalOutput: 500 }
-```
-
-## 7. 自定义 Hook 写法
-
-```ts
-import { createHookRegistry, type HookRegistration } from '@vitamin/hooks'
-
-const hooks = createHookRegistry({ preset: 'none' })
-
-const custom: HookRegistration<'chat.message.before'> = {
-	name: 'my-metadata-hook',
-	timing: 'chat.message.before',
-	priority: 25,
-	enabled: true,
-	handler(input, output) {
-		output.metadata.sessionId = input.sessionId
-		output.metadata.customTag = 'demo'
-	},
-}
-
-hooks.register(custom)
-```
-
-## 7. 运行期运维建议
-
-- 使用 `disable(name)` / `enable(name)` 做灰度开关
-- 使用 `getRegistered()` 对齐最终生效的 Hook 列表
-- 会话结束时建议清理会话级状态：
-	- `clearToolErrors(sessionId)`
-	- `clearTokenUsage(sessionId)`
-	- `clearStreamMetrics(sessionId)`
-	- `clearCompactionStats(sessionId)`
-- `clearBackgroundTaskHistory()` 是进程级清理，会清空所有会话/任务的后台历史，不建议在单会话结束时调用。
-
-## 8. 常见接入问题
-
-1. Hook 没有执行
-	 - 检查 timing 是否匹配
-	 - 检查 `enabled` 是否为 `true`
-	 - 检查是否被 `disable(name)` 运行期禁用
-
-2. Hook 执行顺序不符合预期
-	 - 检查 `priority`，数值越小越早执行
-
-3. 为什么抛错没有中断整个链路
-	 - `HookRegistry` 默认对单个 Hook 失败采取记录日志并继续执行的策略
-
-## 9. Permission 系统
-
-`@vitamin/hooks` 内置了完整的权限策略系统，可在工具执行前进行权限检查。
-
-### 核心组件
-
-| Export | Description |
-|--------|-------------|
-| `PermissionPolicyRegistry` | 权限策略注册表 |
-| `PermissionAuditLog` | 权限审计日志 |
-| `PermissionGuardHook` | 权限守卫 Hook 类 |
-
-### 策略工厂
-
-| Export | Description |
-|--------|-------------|
-| `compilePolicyFromConfig(config)` | 从配置编译权限策略 |
-| `createPermissionGuardHook(options)` | 创建权限守卫 Hook |
-| `createDirectoryFreezePolicy(dirs)` | 冻结指定目录（禁止写入） |
-| `createDisabledToolsPolicy(tools)` | 禁用指定工具 |
-| `createAgentBoundaryPolicy(boundaries)` | Agent 边界策略 |
-| `createPermissionModePolicy(mode)` | 按权限模式创建策略 |
-
-### 内置策略常量
-
-| Export | Description |
-|--------|-------------|
-| `FILE_GUARD_POLICY` | 文件保护策略 |
-| `DESTRUCTIVE_COMMAND_POLICY` | 破坏性命令策略 |
-
-### 权限类型
-
-`RuleEffect`, `PermissionMode`, `PolicyScope`, `PermissionContext`, `RuleMatch`, `PermissionRule`, `PermissionPolicy`, `PermissionDecision`, `PermissionAuditEntry`, `PermissionRuleConfig`, `PermissionPolicyConfig`
-
-### 接入示例
-
-```ts
-import {
-  createPermissionGuardHook,
-  createDirectoryFreezePolicy,
-  createDisabledToolsPolicy,
-  PermissionPolicyRegistry,
-} from '@vitamin/hooks'
-
-const policyRegistry = new PermissionPolicyRegistry()
-policyRegistry.register(createDirectoryFreezePolicy(['/etc', '/usr']))
-policyRegistry.register(createDisabledToolsPolicy(['bash']))
-
-const guard = createPermissionGuardHook({ policyRegistry })
-hooks.register(guard)
-```
-
-## 10. 设计文档
-
-技术设计细节见 [DESIGN.md](./DESIGN.md)。
-
-## 11. License
-
-See [root README](../../README.md) for details.
+## 开发命令
+- `pnpm --filter @vitamin/hooks build`
+- `pnpm --filter @vitamin/hooks typecheck:project`
+- `pnpm --filter @vitamin/hooks typecheck:file`
+- `pnpm --filter @vitamin/hooks typecheck`
+- `pnpm --filter @vitamin/hooks clean`
+
+## 关联 Vitamin 包
+- `@vitamin/agent`
+- `@vitamin/shared`
+
+## 维护说明
+- 本文档已按当前源码结构同步更新。
+- 同步日期：2026-04-07

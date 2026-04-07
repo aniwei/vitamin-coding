@@ -718,7 +718,7 @@ describe('Combined Policy Scenarios', () => {
       filePath: '/project/node_modules/pkg/index.js',
     }))
     expect(protectedWrite.effect).toBe('deny')
-    expect(protectedWrite.policyName).toBe('builtin:file-guard')
+    expect(protectedWrite.policyName).toBe('builtin::file-guard')
 
     // Destructive bash → ask
     const destructive = registry.evaluate(makeContext({
@@ -726,7 +726,7 @@ describe('Combined Policy Scenarios', () => {
       args: { command: 'rm -rf /tmp/build' },
     }))
     expect(destructive.effect).toBe('ask')
-    expect(destructive.policyName).toBe('builtin:destructive-guard')
+    expect(destructive.policyName).toBe('builtin::destructive-guard')
   })
 
   it('agent boundary combined with global policies', () => {

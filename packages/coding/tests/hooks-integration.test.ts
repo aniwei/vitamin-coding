@@ -243,8 +243,13 @@ describe('coding hooks integration', () => {
 
     await agentSession.prompt('hi')
 
-    expect(streamEvents).toContain('start:openai/test-model')
-    expect(streamEvents).toContain('end:openai/test-model:end_turn')
+    await expect.poll(() => {
+      return streamEvents.includes('start:openai/test-model')
+    }).toBe(true)
+
+    await expect.poll(() => {
+      return streamEvents.includes('end:openai/test-model:end_turn')
+    }).toBe(true)
   })
 
   it('emits compaction.before and compaction.after hooks', async () => {

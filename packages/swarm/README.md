@@ -1,114 +1,54 @@
 # @vitamin/swarm
 
-多 Agent 协作框架 — 支持 Handoff 交接、路由策略、多种编排模式（顺序、并行、层级）。
+## 模块定位
+提供多 Agent 协作（Swarm）路由、交接与上下文控制。
 
-## 安装
+## 当前状态（基于源码）
+- 包目录：`packages/swarm`
+- 源码文件数：12
+- 测试文件数：4
+- 入口文件：`src/index.ts`
 
-```bash
-pnpm add @vitamin/swarm
+## 目录概览
+- `src/`
+  - `context.ts`
+  - `errors.ts`
+  - `handoff.ts`
+  - `index.ts`
+  - `patterns/`
+  - `router.ts`
+  - `swarm.ts`
+  - `types.ts`
+- `tests/`
+  - `context.test.ts`
+  - `handoff.test.ts`
+  - `router.test.ts`
+  - `swarm.test.ts`
+
+## 公开导出
+```ts
+export { Swarm, createSwarm } from './swarm'
+export type { SwarmRunResult } from './swarm'
+export { SwarmRouter, createRouter } from './router'
+export { createHandoffTool, validateHandoff } from './handoff'
+export { createSwarmContext, buildCallGraph } from './context'
+export { executeSequential, executeParallel, executeHierarchical, executeAgentTurn, } from './patterns'
+export { HandoffTargetError, HandoffDepthError, HandoffNotAllowedError, RoutingError, PipelineError, AgentNotFoundError, SwarmConfigError, } from './errors'
+export type {
 ```
 
-## 核心概念
+## 开发命令
+- `pnpm --filter @vitamin/swarm build`
+- `pnpm --filter @vitamin/swarm typecheck:project`
+- `pnpm --filter @vitamin/swarm typecheck:file`
+- `pnpm --filter @vitamin/swarm typecheck`
+- `pnpm --filter @vitamin/swarm clean`
 
-- **Swarm** — 多 Agent 协作容器，管理 Agent 定义、路由和执行
-- **SwarmRouter** — 路由器，根据策略和规则决定下一个执行的 Agent
-- **Handoff** — Agent 间的任务交接机制
-- **编排模式** — 支持顺序、并行、层级三种编排模式
+## 关联 Vitamin 包
+- `@vitamin/agent`
+- `@vitamin/ai`
+- `@vitamin/shared`
 
-## 快速开始
-
-```typescript
-import { createSwarm, createRouter, createHandoffTool } from '@vitamin/swarm'
-
-const swarm = createSwarm({
-  agents: {
-    planner: {
-      name: 'planner',
-      instructions: 'You plan tasks.',
-      tools: [],
-      handoffs: ['executor'],
-    },
-    executor: {
-      name: 'executor',
-      instructions: 'You execute tasks.',
-      tools: [],
-      handoffs: [],
-    },
-  },
-  defaultAgent: 'planner',
-})
-
-const result = await swarm.run({
-  messages: [{ role: 'user', content: [{ type: 'text', text: 'Plan and execute this task' }] }],
-})
-```
-
-## 编排模式
-
-### 顺序执行
-
-```typescript
-import { executeSequential } from '@vitamin/swarm'
-
-const result = await executeSequential(steps, context)
-```
-
-### 并行执行
-
-```typescript
-import { executeParallel } from '@vitamin/swarm'
-
-const results = await executeParallel(tasks, context)
-```
-
-### 层级执行
-
-```typescript
-import { executeHierarchical } from '@vitamin/swarm'
-
-const result = await executeHierarchical(task, context)
-```
-
-## Key Exports
-
-### 核心类
-
-| Export | Description |
-|--------|-------------|
-| `Swarm`, `createSwarm` | Swarm 容器类和工厂函数 |
-| `SwarmRouter`, `createRouter` | 路由器类和工厂函数 |
-
-### Handoff
-
-| Export | Description |
-|--------|-------------|
-| `createHandoffTool` | 创建 Handoff 工具 |
-| `validateHandoff` | 验证 Handoff 请求 |
-
-### 编排模式
-
-| Export | Description |
-|--------|-------------|
-| `executeSequential` | 顺序执行 |
-| `executeParallel` | 并行执行 |
-| `executeHierarchical` | 层级执行 |
-| `executeAgentTurn` | 单 Agent 轮次执行 |
-
-### 上下文
-
-| Export | Description |
-|--------|-------------|
-| `createSwarmContext` | 创建 Swarm 上下文 |
-| `buildCallGraph` | 构建调用图 |
-
-### 错误类型
-
-`HandoffTargetError`, `HandoffDepthError`, `HandoffNotAllowedError`, `RoutingError`, `PipelineError`, `AgentNotFoundError`, `SwarmConfigError`
-
-## Types
-
-`SwarmAgentId`, `SwarmAgentDef`, `HandoffRequest`, `HandoffResult`, `RoutingStrategy`, `RoutingDecision`, `RouteRule`, `RouterConfig`, `OrchestrationPattern`, `PipelineStepResult`, `ParallelTask`, `ParallelResult`, `HierarchicalTask`, `HierarchicalResult`, `SwarmContext`, `SwarmTurnResult`, `SwarmConfig`, `SwarmRunContextFactory`, `SwarmEvent`, `SwarmEventHandler`
-
-## License
-
-See [root README](../../README.md) for details.
+## 维护说明
+- 本文档已按当前源码结构同步更新。
+- 同步日期：2026-04-07

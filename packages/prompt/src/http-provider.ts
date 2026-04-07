@@ -1,26 +1,17 @@
 import type { RemoteProviderOptions, PromptEntry, PromptProvider } from './types'
 
-/**
- * Remote HTTP prompt provider
- * Fetches prompt content from a remote API
- *
- * API contract:
- *   GET {baseUrl}/prompts         → string[]          (list)
- *   GET {baseUrl}/prompts/{key}   → PromptEntry       (load)
- *   POST {baseUrl}/prompts/batch  → PromptEntry[]     (loadMany)
- */
-export class RemotePromptProvider implements PromptProvider {
+export class HttpPromptProvider implements PromptProvider {
   private readonly baseUrl: string
   private readonly getAuth?: () => Promise<{ token: string }>
   private readonly getHeaders?: () => Promise<Record<string, string>>
-  private readonly _fetch: typeof globalThis.fetch
+  private readonly fetch: typeof globalThis.fetch
   private readonly timeoutMs: number
 
   constructor(options: Omit<RemoteProviderOptions, 'type'>) {
     this.baseUrl = options.baseUrl.replace(/\/+$/, '')
     this.getAuth = options.getAuth
     this.getHeaders = options.getHeaders
-    this._fetch = options.fetch ?? globalThis.fetch
+    this.fetch = options.fetch ?? globalThis.fetch
     this.timeoutMs = options.timeoutMs ?? 10_000
   }
 
@@ -88,7 +79,7 @@ export class RemotePromptProvider implements PromptProvider {
     const timer = setTimeout(() => controller.abort(), this.timeoutMs)
 
     try {
-      return await this._fetch(`${this.baseUrl}${path}`, {
+      return await this.fetch(`${this.baseUrl}${path}`, {
         ...init,
         headers: { ...headers, ...init?.headers as Record<string, string> },
         signal: controller.signal,

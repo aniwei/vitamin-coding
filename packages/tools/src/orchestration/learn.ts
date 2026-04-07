@@ -28,7 +28,7 @@ export function createLearn(
 ): AgentTool<LearnArgs> {
   return {
     name: 'learn',
-    description: 'Record an operational lesson learned during this session. Use this to capture insights about patterns, mistakes, or effective strategies for future reference.',
+    description: 'Record an operational lesson learned during this session for future reference.',
     parameters: LearnArgsSchema,
     visibility: 'always',
 

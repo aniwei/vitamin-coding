@@ -1,7 +1,20 @@
-import type { AgentMessage, AgentTool, ToolCallEvent } from '@vitamin/agent'
-import type { Model, ProviderRegistry, StreamEvent, ThinkingLevel, WorkflowSlot } from '@vitamin/ai'
+import type { 
+  AgentMessage, 
+  AgentTool, 
+  ToolCallEvent 
+} from '@vitamin/agent'
+import type { 
+  Model, 
+  ProviderRegistry, 
+  StreamEvent, 
+  ThinkingLevel, 
+  WorkflowSlot 
+} from '@vitamin/ai'
 import type { HookRegistry } from '@vitamin/hooks'
-import type { PromptPreset, SubAgentPromptContext } from '@vitamin/prompt'
+import type { 
+  PromptPreset, 
+  SubAgentPromptContext 
+} from '@vitamin/prompt'
 import type { Logger } from '@vitamin/shared'
 import type { Devtools } from '@vitamin/devtools'
 import type { SessionStore } from '@vitamin/session'

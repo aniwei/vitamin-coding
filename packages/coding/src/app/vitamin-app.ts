@@ -9,8 +9,6 @@ import {
   PermissionPolicyRegistry,
   PermissionAuditLog,
   createPermissionGuardHook,
-  FILE_GUARD_POLICY,
-  DESTRUCTIVE_COMMAND_POLICY,
   createPermissionModePolicy,
   createDisabledToolsPolicy,
   compilePolicyFromSetting,

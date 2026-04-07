@@ -222,54 +222,7 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
       this.state.currentStreamMessage = event.event.partial
     }
 
-    // 转发事件给外部订阅者
-    switch (event.type) {
-      case 'status_change':        
-        this.emit('status_change', event)
-        break
-      case 'turn_start':           
-        this.emit('turn_start', event)
-        break
-      case 'turn_end':             
-        this.emit('turn_end', event)
-        break
-      case 'stream_event':         
-        this.emit('stream_event', event.event)
-        break
-      case 'streaming_start':      
-        this.emit('streaming_start', event)
-        break
-      case 'streaming_end':        
-        this.emit('streaming_end', event)
-        break
-      case 'tool_call_start':      
-        this.emit('tool_call_start', event)
-        break
-      case 'tool_call_end':        
-        this.emit('tool_call_end', event)
-        break
-      case 'tool_result_received': 
-        this.emit('tool_result_received', event)
-        break
-      case 'messages_updated':     
-        this.emit('messages_updated', event)
-        break
-      case 'steering_injected':    
-        this.emit('steering_injected', event)
-        break
-      case 'follow_up_start':      
-        this.emit('follow_up_start', event)
-        break
-      case 'error':                
-        this.emit('error', event.error)
-        break
-      case 'abort':                
-        this.emit('abort')
-        break
-      case 'compaction_needed':    
-        this.emit('compaction_needed', event)
-        break
-    }
+    this.emit(event.type, event as never)
   }
 
   private transitionTo(to: AgentStatus): void {

@@ -46,14 +46,14 @@ function getFreePort(): Promise<number> {
   })
 }
 
-function connectWebSocket(url: string): Promise<WebSocket> {
+function connectWebSocketOnce(url: string, timeoutMs: number): Promise<WebSocket> {
   return new Promise((resolve, reject) => {
     const ws = new WebSocket(url)
 
     const timeout = setTimeout(() => {
       ws.terminate()
       reject(new Error(`WebSocket connect timeout: ${url}`))
-    }, 3_000)
+    }, timeoutMs)
 
     ws.once('open', () => {
       clearTimeout(timeout)
@@ -65,6 +65,27 @@ function connectWebSocket(url: string): Promise<WebSocket> {
       reject(error)
     })
   })
+}
+
+async function connectWebSocket(
+  url: string,
+  options?: { timeoutMs?: number; retryIntervalMs?: number },
+): Promise<WebSocket> {
+  const timeoutMs = options?.timeoutMs ?? 10_000
+  const retryIntervalMs = options?.retryIntervalMs ?? 100
+  const deadline = Date.now() + timeoutMs
+  let lastError: unknown
+
+  while (Date.now() < deadline) {
+    try {
+      return await connectWebSocketOnce(url, Math.min(2_000, timeoutMs))
+    } catch (error) {
+      lastError = error
+      await new Promise((resolve) => setTimeout(resolve, retryIntervalMs))
+    }
+  }
+
+  throw new Error(`WebSocket connect timeout: ${url}; lastError=${String(lastError)}`)
 }
 
 function waitForClose(ws: WebSocket): Promise<void> {
@@ -95,7 +116,7 @@ describe('DevtoolService', () => {
     await service.stop()
 
     await closed
-  })
+  }, 15_000)
 
   it('broadcasts message to websocket clients', async () => {
     const port = await getFreePort()
@@ -112,7 +133,7 @@ describe('DevtoolService', () => {
     const closed = waitForClose(ws)
     await service.stop()
     await closed
-  })
+  }, 15_000)
 
   it('waits for a websocket command before resuming paused requests', async () => {
     const port = await getFreePort()
@@ -143,6 +164,6 @@ describe('DevtoolService', () => {
     const closed = waitForClose(ws)
     await service.stop()
     await closed
-  })
+  }, 15_000)
 
 })

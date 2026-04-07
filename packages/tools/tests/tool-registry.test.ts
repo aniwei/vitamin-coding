@@ -221,4 +221,60 @@ describe('ToolRegistry', () => {
       expect(result.content[0]?.text).toBe('ran')
     })
   })
+
+  describe('#buildToolGuidance', () => {
+    it('#then includes guideline text for tools with guideline', () => {
+      const registry = new ToolRegistry()
+      registry.register(makeTool('read'), {
+        preset: 'minimal',
+        guideline: 'Always read before editing.',
+      })
+
+      const guidance = registry.buildToolGuidance('minimal')
+      expect(guidance).toContain('### Tool Usage Guidelines')
+      expect(guidance).toContain('#### read')
+      expect(guidance).toContain('Always read before editing.')
+    })
+
+    it('#then includes snippet when provided', () => {
+      const registry = new ToolRegistry()
+      registry.register(makeTool('bash'), {
+        preset: 'minimal',
+        snippet: 'bash ls -la',
+      })
+
+      const guidance = registry.buildToolGuidance('minimal')
+      expect(guidance).toContain('#### bash')
+      expect(guidance).toContain('bash ls -la')
+      expect(guidance).toContain('Example')
+    })
+
+    it('#then falls back to tool description when no guideline or snippet', () => {
+      const registry = new ToolRegistry()
+      registry.register(makeTool('custom_tool'), { preset: 'minimal' })
+
+      const guidance = registry.buildToolGuidance('minimal')
+      expect(guidance).toContain('#### custom_tool')
+      expect(guidance).toContain('Tool: custom_tool')
+    })
+
+    it('#then respects preset filtering', () => {
+      const registry = new ToolRegistry()
+      registry.register(makeTool('a'), { preset: 'minimal', guideline: 'A tip' })
+      registry.register(makeTool('b'), { preset: 'full', guideline: 'B tip' })
+
+      const minGuidance = registry.buildToolGuidance('minimal')
+      expect(minGuidance).toContain('#### a')
+      expect(minGuidance).not.toContain('#### b')
+
+      const fullGuidance = registry.buildToolGuidance('full')
+      expect(fullGuidance).toContain('#### a')
+      expect(fullGuidance).toContain('#### b')
+    })
+
+    it('#then returns empty string for empty registry', () => {
+      const registry = new ToolRegistry()
+      expect(registry.buildToolGuidance('minimal')).toBe('')
+    })
+  })
 })

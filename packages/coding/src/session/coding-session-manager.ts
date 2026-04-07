@@ -10,17 +10,14 @@ import {
   type AgentTool 
 } from '@vitamin/agent'
 import { 
-  createProviderRegistry,
   type Model, 
   type ProviderRegistry, 
   type ThinkingLevel 
 } from '@vitamin/ai'
 import { 
-  createHookRegistry,
   type HookRegistry 
 } from '@vitamin/hooks'
 import { 
-  createLogger,
   type Logger 
 } from '@vitamin/shared'
 

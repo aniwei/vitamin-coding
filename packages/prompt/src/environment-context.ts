@@ -1,9 +1,5 @@
-/**
- * Collect runtime environment info and inject it at the end of the system prompt.
- * Similar to opendev's EnvironmentContext and open-agent-sdk's getSystemContext.
- */
-export interface EnvironmentSnapshot {
-  workingDirectory: string
+export interface Environment {
+  workspaceDir: string
   date: string
   platform: string
   gitBranch?: string
@@ -13,9 +9,9 @@ export interface EnvironmentSnapshot {
 export async function collectEnvironment(
   workspaceDir: string,
   exec?: (cmd: string, cwd: string) => Promise<string>,
-): Promise<EnvironmentSnapshot> {
-  const snapshot: EnvironmentSnapshot = {
-    workingDirectory: workspaceDir,
+): Promise<Environment> {
+  const snapshot: Environment = {
+    workspaceDir,
     date: new Date().toISOString().split('T')[0] ?? new Date().toLocaleDateString(),
     platform: `${process.platform}/${process.arch}`,
   }
@@ -44,10 +40,10 @@ export async function collectEnvironment(
   return snapshot
 }
 
-export function formatEnvironmentBlock(env: EnvironmentSnapshot): string {
+export function formatEnvironmentBlock(env: Environment): string {
   const lines = [
     '### Runtime Environment',
-    `- Working directory: ${env.workingDirectory}`,
+    `- Working directory: ${env.workspaceDir}`,
     `- Date: ${env.date}`,
     `- Platform: ${env.platform}`,
   ]

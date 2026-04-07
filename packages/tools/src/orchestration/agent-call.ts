@@ -57,7 +57,7 @@ export function createAgentCall(
 ): AgentTool<CallAgentArgs> {
   return createIsolatedAgentCallTool(
     'agent_call',
-    'Backward-compatible alias for review_call. Call a specific agent synchronously as an isolated collaborator for exploration, planning, or review. Use agent_task or task_delegate for background, stateful, or plan-task execution.',
+    'Call a specific agent synchronously as an isolated collaborator. Returns the agent response directly.',
     call,
   )
 }
@@ -68,7 +68,7 @@ export function createReviewCall(
 ): AgentTool<CallAgentArgs> {
   return createIsolatedAgentCallTool(
     'review_call',
-    'Ask a reviewer or collaborator agent for a synchronous isolated second opinion. Use agent_task or task_delegate for task-governed execution.',
+    'Ask a reviewer or collaborator agent for a synchronous isolated second opinion.',
     call,
   )
 }

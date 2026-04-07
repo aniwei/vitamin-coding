@@ -40,22 +40,3 @@ export type {
   CreateAgentSessionOptions,
   PromptOptions,
 } from './session/types'
-
-export {
-  PromptCache,
-  PromptManager,
-  LocalPromptProvider,
-  RemotePromptProvider,
-  createPromptProvider,
-  BUILTIN_PROMPTS_DIR,
-  injectPhaseContext,
-  extractPhaseFromMessage,
-  buildLessonInjection,
-} from '@vitamin/prompt'
-export type {
-  PromptEntry,
-  PromptProvider,
-  PromptProviderOptions,
-  PhaseAnnotation,
-  Lesson,
-} from '@vitamin/prompt'

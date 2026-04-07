@@ -1,60 +1,53 @@
 # @vitamin/resources
 
-统一资源管理模块，负责加载和组装运行时所需的配置、记忆注入和 Prompt 模板。
+## 模块定位
+提供资源管理器与设置/模板/记忆资源源适配。
 
-## 安装
+## 当前状态（基于源码）
+- 包目录：`packages/resources`
+- 源码文件数：6
+- 测试文件数：4
+- 入口文件：`src/index.ts`
 
-```bash
-pnpm add @vitamin/resources
-```
+## 目录概览
+- `src/`
+  - `index.ts`
+  - `memory-source.ts`
+  - `prompt-template-source.ts`
+  - `resource-manager.ts`
+  - `settings-manager.ts`
+  - `types.ts`
+- `tests/`
+  - `memory-source.test.ts`
+  - `prompt-template-source.test.ts`
+  - `resource-manager.test.ts`
+  - `settings-manager.test.ts`
 
-## 核心概念
-
-- `ResourceManager`：统一入口，一次性加载 setting、memory 和 prompt template 三类资源
-- `SettingsManager`：Setting 同步管理器，基于 `@vitamin/setting` 的 `loadSetting`
-- `PersistentMemorySource` / `InMemoryMemorySource`：记忆注入数据源
-- `FilesystemPromptTemplateSource` / `InMemoryPromptTemplateSource`：Prompt 模板数据源
-
-## 快速接入
-
+## 公开导出
 ```ts
-import { createResourceManager, createSettingsManager } from '@vitamin/resources'
-
-const settings = createSettingsManager()
-await settings.load()
-
-const resources = createResourceManager({
-  settingsManager: settings,
-})
-
-const loaded = await resources.load()
-// loaded.setting — 合并后的 VitaminSetting
-// loaded.memoryInjection — 格式化的记忆注入文本
-// loaded.promptTemplates — Prompt 模板 Map
-// loaded.diagnostics — 加载期间的警告信息
+export { SettingsManager, createSettingsManager } from './settings-manager'
+export type { SettingsOptions, SettingsManagerOptions } from './settings-manager'
+export { DefaultResourceManager, createResourceManager, createInMemoryResourceManager, } from './resource-manager'
+export type { ResourceManager, ResourceManagerOptions, LoadedResources, ResourceDiagnostic, PromptTemplate, } from './resource-manager'
+export type { MemoryInjectionSource, MemoryInjectionResult, PromptTemplateSource, PromptTemplateResult, } from './types'
+export { PersistentMemorySource, InMemoryMemorySource } from './memory-source'
+export type { PersistentMemorySourceOptions } from './memory-source'
+export { FilesystemPromptTemplateSource, InMemoryPromptTemplateSource } from './prompt-template-source'
+export type { FilesystemPromptTemplateSourceOptions } from './prompt-template-source'
 ```
 
-## 导出总览
+## 开发命令
+- `pnpm --filter @vitamin/resources build`
+- `pnpm --filter @vitamin/resources typecheck:project`
+- `pnpm --filter @vitamin/resources typecheck`
+- `pnpm --filter @vitamin/resources clean`
 
-### 管理器
+## 关联 Vitamin 包
+- `@vitamin/env`
+- `@vitamin/memory`
+- `@vitamin/setting`
+- `@vitamin/shared`
 
-| Export | Description |
-|--------|-------------|
-| `DefaultResourceManager` | 默认 ResourceManager 实现 |
-| `createResourceManager` | 工厂函数 |
-| `createInMemoryResourceManager` | 纯内存 ResourceManager（测试用） |
-| `SettingsManager` | Setting 同步管理器 |
-| `createSettingsManager` | SettingsManager 工厂 |
-
-### 数据源
-
-| Export | Description |
-|--------|-------------|
-| `PersistentMemorySource` | 基于文件系统的记忆数据源 |
-| `InMemoryMemorySource` | 纯内存记忆数据源（测试用） |
-| `FilesystemPromptTemplateSource` | 文件系统 Prompt 模板源 |
-| `InMemoryPromptTemplateSource` | 纯内存 Prompt 模板源（测试用） |
-
-### 类型
-
-`ResourceManager`, `ResourceManagerOptions`, `LoadedResources`, `ResourceDiagnostic`, `PromptTemplate`, `MemoryInjectionSource`, `MemoryInjectionResult`, `PromptTemplateSource`, `PromptTemplateResult`, `SettingsOptions`, `SettingsManagerOptions`, `PersistentMemorySourceOptions`, `FilesystemPromptTemplateSourceOptions`
+## 维护说明
+- 本文档已按当前源码结构同步更新。
+- 同步日期：2026-04-07

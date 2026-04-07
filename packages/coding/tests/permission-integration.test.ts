@@ -310,9 +310,9 @@ describe('VitaminApp permission policy wiring', () => {
     const policies = app.permissionRegistry.getAll()
     const policyNames = policies.map(p => p.name)
 
-    expect(policyNames).toContain('mode:auto')
-    expect(policyNames).toContain('builtin:file-guard')
-    expect(policyNames).toContain('builtin:destructive-guard')
+    expect(policyNames).toContain('mode::auto')
+    expect(policyNames).toContain('builtin::file-guard')
+    expect(policyNames).toContain('builtin::destructive-guard')
   })
 
   it('exposes auditLog for querying permission decisions', () => {
@@ -327,14 +327,14 @@ describe('VitaminApp permission policy wiring', () => {
 
     // Default is auto mode
     let policies = app.permissionRegistry.getAll()
-    expect(policies.some(p => p.name === 'mode:auto')).toBe(true)
+    expect(policies.some(p => p.name === 'mode::auto')).toBe(true)
 
     // Update to readonly mode
     await app.settings.update({ permission_mode: 'readonly' })
 
     policies = app.permissionRegistry.getAll()
-    expect(policies.some(p => p.name === 'mode:readonly')).toBe(true)
-    expect(policies.some(p => p.name === 'mode:auto')).toBe(false)
+    expect(policies.some(p => p.name === 'mode::readonly')).toBe(true)
+    expect(policies.some(p => p.name === 'mode::auto')).toBe(false)
 
     await app.stop()
   })
@@ -344,15 +344,15 @@ describe('VitaminApp permission policy wiring', () => {
     await app.start()
 
     // No disabled tools initially
-    expect(app.permissionRegistry.has('setting:disabled-tools')).toBe(false)
+    expect(app.permissionRegistry.has('setting::disabled-tools')).toBe(false)
 
     // Disable bash
     await app.settings.update({ disabled_tools: ['bash', 'web-search'] })
-    expect(app.permissionRegistry.has('setting:disabled-tools')).toBe(true)
+    expect(app.permissionRegistry.has('setting::disabled-tools')).toBe(true)
 
     // Clear disabled tools
     await app.settings.update({ disabled_tools: [] })
-    expect(app.permissionRegistry.has('setting:disabled-tools')).toBe(false)
+    expect(app.permissionRegistry.has('setting::disabled-tools')).toBe(false)
 
     await app.stop()
   })
@@ -373,11 +373,11 @@ describe('VitaminApp permission policy wiring', () => {
       ],
     })
 
-    expect(app.permissionRegistry.has('user:my-project-rules')).toBe(true)
+    expect(app.permissionRegistry.has('user::my-project-rules')).toBe(true)
 
     // Remove user policies
     await app.settings.update({ permissions: [] })
-    expect(app.permissionRegistry.has('user:my-project-rules')).toBe(false)
+    expect(app.permissionRegistry.has('user::my-project-rules')).toBe(false)
 
     await app.stop()
   })

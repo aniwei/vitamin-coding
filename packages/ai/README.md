@@ -1,661 +1,76 @@
 # @vitamin/ai
 
-统一多 Provider LLM 流式对话 API，为 vitamin-coding 生态提供底层 AI 能力。
+## 模块定位
+提供模型抽象、Provider 适配、流事件与 Token 统计等 AI 基础能力。
 
----
+## 当前状态（基于源码）
+- 包目录：`packages/ai`
+- 源码文件数：13
+- 测试文件数：13
+- 入口文件：`src/index.ts`
 
-## 目录
+## 目录概览
+- `src/`
+  - `auth-store.ts`
+  - `cost.ts`
+  - `event-stream.ts`
+  - `index.ts`
+  - `model-registry.ts`
+  - `model-slot-resolver.ts`
+  - `models/`
+  - `oauth/`
+  - `oauth-registry.ts`
+  - `provider/`
+  - `provider-registry.ts`
+  - `stream.ts`
+- `tests/`
+  - `api-key-resolver.test.ts`
+  - `cost-calculator.test.ts`
+  - `event-stream.test.ts`
+  - `fallback-chain.test.ts`
+  - `github-copilot-oauth.test.ts`
+  - `github-copilot-provider.test.ts`
+  - `model-registry.test.ts`
+  - `model-resolver.test.ts`
+  - `model-slot.test.ts`
+  - `provider-registry.test.ts`
+  - `stream.test.ts`
+  - `token-counter.test.ts`
 
-- [设计目标](#设计目标)
-- [架构总览](#架构总览)
-- [职责边界](#职责边界)
-- [源码结构](#源码结构)
-- [核心类型](#核心类型)
-  - [Model](#model)
-  - [Message](#message)
-  - [StreamEvent](#streamevent)
-  - [ToolDefinition](#tooldefinition)
-  - [Usage & Cost](#usage--cost)
-- [Provider 适配层](#provider-适配层)
-  - [ProviderStream 接口](#providerstream-接口)
-  - [API 注册表](#api-注册表)
-  - [Provider 懒加载](#provider-懒加载)
-- [流式引擎](#流式引擎)
-  - [EventStream](#eventstream)
-  - [stream / complete / simple](#stream--complete--simple)
-- [鉴权与 API Key](#鉴权与-api-key)
-  - [环境变量 Key 解析](#环境变量-key-解析)
-  - [OAuth 注册表](#oauth-注册表)
-- [模型注册表](#模型注册表)
-- [费用精算](#费用精算)
-- [Provider 实现指南](#provider-实现指南)
-- [开发指南](#开发指南)
-
----
-
-## 设计目标
-
-| 目标 | 说明 |
-|------|------|
-| **协议统一** | 将 OpenAI Completions/Responses、Anthropic Messages、Google Generative AI、Bedrock ConverseStream 等异构协议归一为统一的 `StreamEvent` 流 |
-| **零全局状态** | 所有注册表通过实例传递，避免模块级单例——便于测试和多会话隔离 |
-| **懒加载 Provider** | 各 Provider 适配器按需 `import()`，不增加首屏加载开销 |
-| **类型安全** | `Model<TApi>` 泛型确保 API 协议与 Provider 兼容性设置联动 |
-| **成本可审计** | 内嵌 token 计费与 `CostTracker`，无需外部依赖即可追踪支出 |
-| **最小依赖** | 核心仅依赖 `@vitamin/shared`（错误类、日志、HTTP SSE）和 `eventsource-parser` |
-
----
-
-## 架构总览
-
-```
-┌─────────────────────────────────────────────────────────────────┐
-│                        @vitamin/ai                              │
-│                                                                 │
-│  ┌──────────┐   ┌──────────────┐   ┌────────────────────────┐  │
-│  │ stream() │──▶│ ProviderReg  │──▶│ Provider 适配器        │  │
-│  │ complete()│   │ (按 api 索引) │   │ ┌──────────────────┐  │  │
-│  │ simple() │   └──────────────┘   │ │ github-copilot   │  │  │
-│  └────┬─────┘                      │ │ openai-compl.    │  │  │
-│       │                            │ │ anthropic-msg.   │  │  │
-│       ▼                            │ │ google-gen-ai    │  │  │
-│  ┌──────────┐                      │ │ ...              │  │  │
-│  │EventStream│◀── StreamEvent ────│ └──────────────────┘  │  │
-│  │<E, R>    │                      └────────────────────────┘  │
-│  └──────────┘                                                   │
-│       │                                                         │
-│       ├── for-await-of (逐事件消费)                              │
-│       └── .result() (等待完整 AssistantMessage)                  │
-│                                                                 │
-│  ┌──────────────┐  ┌──────────────┐  ┌─────────────────────┐   │
-│  │ ModelRegistry │  │ OAuthRegistry│  │ CostTracker         │   │
-│  │ (id → Model)  │  │ (api → OAuth)│  │ (record + byModel)  │   │
-│  └──────────────┘  └──────────────┘  └─────────────────────┘   │
-└─────────────────────────────────────────────────────────────────┘
-        ▲                      ▲
-        │                      │
-   @vitamin/shared         环境变量 / OAuth 令牌
-   (ProviderError,
-    OAuthError,
-    stream() SSE,
-    createLogger)
-```
-
----
-
-## 职责边界
-
-`@vitamin/ai` 的职责是 **统一模型协议、Provider 适配、流式事件、usage 归一化与费用精算**。它不负责会话持久化、上下文压缩策略或运行期 Hook 策略。
-
-与其他包的边界约定如下：
-
-| 包 | 职责 | 与 `@vitamin/ai` 的关系 |
-|----|------|-------------------------|
-| `@vitamin/shared` | 错误类型、日志、HTTP/SSE、通用事件工具 | `@vitamin/ai` 直接复用，不重复实现底层传输 |
-| `@vitamin/setting` | 静态配置加载与 schema 校验 | 负责 `model`/`temperature`/`max_tokens` 等配置来源，运行时再映射到 `StreamContext` |
-| `@vitamin/hooks` | 运行期参数改写、预算控制、质量策略 | 可在 `chat.params` 阶段调整 `maxTokens`/`thinkingLevel`，但不负责 Provider 协议适配 |
-| `@vitamin/session` | 会话生命周期、分支、持久化 | 管理多轮消息状态，`@vitamin/ai` 只消费调用时的消息切片 |
-| `@vitamin/memory` | 剪枝、压缩、归档、token 估算 | 提供上下文管理与近似 token 估算，不承担精确计费 |
-| `@vitamin/agent` | 工具循环、跟进/steer、Agent 生命周期 | 建立在 `stream()` 之上消费模型输出，不重做 AI 调用层 |
-
-### Token 相关能力分工
-
-Token 相关能力在仓库中分散存在，但职责并不相同：
-
-| 能力 | 所属包 | 说明 |
-|------|--------|------|
-| **精确 usage** | `@vitamin/ai` | 来自 Provider 返回的 `Usage`，用于账单与结果归档 |
-| **费用精算** | `@vitamin/ai` | `calculate()` / `CostTracker` 基于模型费率计算美元成本 |
-| **预算约束** | `@vitamin/hooks` | `createTokenBudgetHook()` 在运行期限制 `maxTokens` 并发出阈值警告 |
-| **近似估算** | `@vitamin/memory` | `estimateTokens()` / `estimateContextTokens()` 用于压缩和上下文控制 |
-
-因此，`CostTracker` 仅负责 **费用审计**，不承担上下文压缩决策，也不替代 Hook 层的 token 预算策略。
-
----
-
-## 源码结构
-
-```
-packages/ai/
-├── src/
-│   ├── index.ts               # 公共 API barrel
-│   ├── types.ts               # 核心类型: Model, Message, StreamEvent, ProviderStream, OAuth …
-│   ├── event-stream.ts        # EventStream<E, R> — 双模式异步可迭代流
-│   ├── stream.ts              # 编排入口: stream() / complete() / simple()
-│   ├── model-registry.ts      # ModelRegistry — 模型 CRUD 注册表
-│   ├── model-slot-resolver.ts # ModelSlot — 按工作流 Slot 解析模型（normal/thinking/compact/critique/vision）
-│   ├── provider-registry.ts   # ProviderRegistry — Provider 工厂 + 惰性单例
-│   ├── oauth-registry.ts      # OAuthRegistry — OAuth 工厂 + 惰性单例
-│   ├── cost.ts                # calculate() + CostTracker
-│   ├── provider/
-│   │   └── github-copilot.ts  # GitHub Copilot (OpenAI Completions 兼容) 适配器
-│   └── oauth/
-│       └── github-copilot.ts  # GitHub Copilot OAuth 流程 (TODO)
-└── tests/
-    ├── event-stream.test.ts
-    ├── stream.test.ts
-    ├── model-registry.test.ts
-    ├── provider-registry.test.ts
-    ├── cost-calculator.test.ts
-    └── ...
-```
-
----
-
-## 核心类型
-
-> 完整定义见 `src/types.ts`。
-
-### Model
-
+## 公开导出
 ```ts
-interface Model<T = Api> {
-  id: string               // e.g. "github-copilot/gpt-4.1"
-  name: string             // 显示名
-  api: T                   // 协议类型: "openai-completions" | "anthropic-messages" | …
-  provider: Provider       // 供应商: "openai" | "github-copilot" | …
-  baseUrl: string          // API 端点
-  reasoning: boolean       // 是否支持思考/推理
-  input: ('text'|'image')[]
-  cost: Cost               // 每百万 token 费率
-  contextWindow: number
-  maxOutputTokens: number
-  thinkingLevels?: ThinkingLevel[]
-  transport?: 'sse' | 'websocket' | 'auto'
-  compat?: Compat          // Provider 兼容性覆盖
-}
+export type { Api, KnownProvider, Provider, ProviderStream, Model, ModelSpec, Cost, ThinkingLevel, Compat, TextContent, ImageContent, ThinkingContent, ToolCall, ContentPart, UserMessage, AssistantMessage, ToolResultMessage, Message, StopReason, Usage, StreamEvent, ZodType, ToolDefinition, StreamContext, StreamOptions, OAuthCredentials, OAuthProvider, OAuthLoginOptions, OAuthRefreshTokenOptions, OAuthInfo, OAuthPrompt, OAuthProviderId, } from './types'
+export { isClaudeFamily, isGPTFamily, isGeminiFamily, getToolCallsByAssistantMessage, hasToolCalls, emptyUsage, mergeUsage, getTokensFromUsage, } from './types'
+export { EventStream, createEventStream } from './event-stream'
+export { ModelRegistry, createModelRegistry, createDefaultModelRegistry } from './model-registry'
+export { ModelSlot, createModelSlot } from './model-slot-resolver'
+export type { WorkflowSlot, ModelSlotOptions } from './model-slot-resolver'
+export { createCopilotProvider } from './provider/github-copilot'
+export type { CopilotCredentialResolver, CopilotProviderOptions } from './provider/github-copilot'
+export { ProviderRegistry, createProviderRegistry, createDefaultProviderRegistry, } from './provider-registry'
+export type { DefaultProviderRegistryOptions } from './provider-registry'
+export { AuthStore, createAuthStore, createDefaultAuthStore, } from './auth-store'
+export type { AuthStoreOptions, ApiKeyEntry, OAuthEntry, AuthEntry, AuthFileData, } from './auth-store'
+export { GitHubCopilotOAuthProvider } from './oauth/github-copilot'
+export { OAuthRegistry, createOAuthRegistry, createDefaultOAuthRegistry, } from './oauth-registry'
+export { stream, complete, simple } from './stream'
+export { calculate, CostTracker, createCostTracker } from './cost'
+export type { CostBreakdown } from './cost'
 ```
 
-### Message
-
-三种角色的联合类型：
-
-```ts
-type Message = UserMessage | AssistantMessage | ToolResultMessage
-
-interface UserMessage {
-  role: 'user'
-  content: string | ContentPart[]
-  timestamp: number
-}
-
-interface AssistantMessage {
-  role: 'assistant'
-  content: (TextContent | ThinkingContent | ToolCall)[]
-  api: Api
-  provider: Provider
-  model: string
-  usage: Usage
-  stopReason: StopReason
-}
-
-interface ToolResultMessage<T = unknown> {
-  role: 'tool_result'
-  toolCallId: string
-  toolName: string
-  content: (TextContent | ImageContent)[]
-  details: T
-  isError: boolean
-  timestamp: number
-}
-```
-
-**内容部分**:
-
-| 类型 | 字段 | 说明 |
-|------|------|------|
-| `TextContent` | `type: 'text'`, `text`, `signature?` | 文本内容 |
-| `ThinkingContent` | `type: 'thinking'`, `text`, `signature?` | 推理过程 |
-| `ImageContent` | `type: 'image'`, `mime`, `source` | Base64 图像数据 |
-| `ToolCall` | `type: 'tool_call'`, `id`, `name`, `arguments` | 工具调用 |
-
-### StreamEvent
-
-基于可区分联合的流式事件协议：
-
-```ts
-type StreamEvent =
-  | { type: 'start';          partial: AssistantMessage }
-  | { type: 'text_start';     index: number; partial: AssistantMessage }
-  | { type: 'text_delta';     index: number; delta: string; partial: AssistantMessage }
-  | { type: 'text_end';       index: number; content: string; partial: AssistantMessage }
-  | { type: 'thinking_start'; index: number; partial: AssistantMessage }
-  | { type: 'thinking_delta'; index: number; delta: string; partial: AssistantMessage }
-  | { type: 'thinking_end';   index: number; content: string; partial: AssistantMessage }
-  | { type: 'tool_call_start';index: number; partial: AssistantMessage }
-  | { type: 'tool_call_delta';index: number; delta: string; partial: AssistantMessage }
-  | { type: 'tool_call_end';  index: number; toolCall: ToolCall; partial: AssistantMessage }
-  | { type: 'done';           reason: StopReason; message: AssistantMessage }
-  | { type: 'error';          error: Error }
-```
-
-**设计要点**:
-- 每个增量事件都附带 `partial: AssistantMessage`（累积快照），方便 UI 在任意时刻拿到完整状态
-- `index` 标识内容块索引（支持并行的多个 text/thinking/toolcall 块）
-- `done` 携带 `StopReason`（`end_turn` | `max_tokens` | `tool_use` | `stop_sequence`）
-- `error` 变体只含 `Error`，错误通道与正常消息通道分离
-
-### ToolDefinition
-
-```ts
-interface ToolDefinition<TArgs = unknown> {
-  name: string
-  description: string
-  parameters: ZodType<TArgs>     // Zod-compatible schema
-  visibility?: 'always' | 'when-enabled' | 'when-requested'
-}
-```
-
-`parameters` 使用自定义 `ZodType` 接口（带 `toJSONSchema()` 方法），Zod 兼容。`visibility` 控制工具暴露策略。
-
-### Usage & Cost
-
-```ts
-interface Usage {
-  inputTokens: number
-  outputTokens: number
-  cacheReadTokens: number
-  cacheWriteTokens: number
-}
-
-interface Cost {        // 每百万 token 的美元费率
-  input: number
-  output: number
-  cacheRead: number
-  cacheWrite: number
-}
-```
-
-费率定义在 `Model.cost`，运行时通过 `calculate(model, usage)` 得到 `CostBreakdown`。
-
----
-
-## Provider 适配层
-
-### ProviderStream 接口
-
-每个 LLM 供应商需要实现的核心合约：
-
-```ts
-interface ProviderStream {
-  readonly id: string
-  readonly displayName: string
-
-  // 解析 API Key（可选，由 OAuthRegistry 或环境变量驱动）
-  resolveKey?(model: Model): Promise<string>
-
-  // 核心方法：将统一的 Context 转成供应商 API 调用，返回 StreamEvent 异步迭代器
-  converse(
-    model: Model<Api>,
-    context: StreamContext,
-    options: StreamOptions,
-    signal: AbortSignal,
-  ): AsyncIterable<StreamEvent>
-
-  // 供应商健康检查（可选）
-  healthCheck?(token: string): Promise<boolean>
-}
-```
-
-### API 注册表
-
-`ProviderRegistry` 以 `Api` 协议类型为 key，管理工厂函数和缓存实例：
-
-```ts
-const oauthRegistry = createDefaultOAuthRegistry()
-const registry = createDefaultProviderRegistry({ oauthRegistry })
-
-// 需要时可以继续注册自定义 provider
-registry.register('custom-api', () => new CustomProvider())
-
-// 获取（惰性创建 + 单例缓存）
-const provider = registry.get('github-copilot')
-```
-
-### Provider 懒加载
-
-Provider 适配器应按如下方式注册：
-  // 首次调用时才 import 适配器模块
-  return createAnthropicProvider()
-})
-```
-
-实际运行时，只有真正使用某个 API 协议时才会加载对应的 Provider 模块，避免启动时加载全部依赖。
-
----
-
-## 流式引擎
-
-### EventStream
-
-`EventStream<E, R>` 是核心的双模式异步流：
-
-```ts
-class EventStream<E, R> implements AsyncIterable<E> {
-  push(event: E): void           // 生产者推送事件
-  complete(result: R): void      // 标记完成（resolve promise）
-  fail(error: Error): void       // 标记失败（reject promise）
-  abort(): void                  // 取消流
-
-  result(): Promise<R>           // 等待最终结果
-  [Symbol.asyncIterator]()       // for-await-of 消费
-}
-```
-
-**消费模式**:
-
-```ts
-// 模式 A：逐事件消费（UI 渲染）
-const eventStream = stream(model, provider, context, options)
-for await (const event of eventStream) {
-  if (event.type === 'text_delta') render(event.delta)
-}
-
-// 模式 B：一次性获取结果
-const message = await complete(model, provider, context, options)
-```
-
-### stream / complete / simple
-
-三个编排入口函数：
-
-```ts
-// 底层流式 API
-function stream(model, provider, context, options): EventStream<StreamEvent, AssistantMessage>
-
-// 一次性完成（await 结果）
-async function complete(model, provider, context, options): Promise<AssistantMessage>
-
-// 语法糖（thinkingLevel 可选参数隔离）
-function simple(model, provider, context, options): EventStream<StreamEvent, AssistantMessage>
-```
-
-`stream()` 内部编排流程：
-
-1. 创建 `EventStream` + `AbortController`
-2. 合并外部 `signal`（`AbortSignal.any`）
-3. 异步遍历 `provider.converse()` 的 `StreamEvent`
-4. 将事件 push 到 EventStream
-5. 遇到 `done` → `stream.complete(message)`
-6. 遇到 `error` → `stream.fail(error)`
-7. 遍历结束但无 `done` → fail `PROVIDER_INCOMPLETE_STREAM`
-
----
-
-## 鉴权与 API Key
-
-### 环境变量 Key 解析
-
-`@vitamin/ai` 在 Provider 层内做环境变量候选解析：
-
-```ts
-function resolveProviderEnvKey(provider: KnownProvider): string | undefined
-```
-
-环境变量映射规则：
-
-| Provider | 环境变量 |
-|----------|----------|
-| `openai` | `OPENAI_API_KEY` |
-| `anthropic` | `ANTHROPIC_API_KEY` |
-| `google` | `GEMINI_API_KEY` |
-| `github-copilot` | `COPILOT_GITHUB_TOKEN` / `GH_TOKEN` / `GITHUB_TOKEN` |
-| `groq` | `GROQ_API_KEY` |
-| `xai` | `XAI_API_KEY` |
-| `openrouter` | `OPENROUTER_API_KEY` |
-| `deepseek` | `DEEPSEEK_API_KEY` |
-| `moonshot` | `MOONSHOT_API_KEY` |
-
-### OAuth 注册表
-
-`OAuthRegistry` 管理需要 OAuth 授权流程的供应商（如 GitHub Copilot）：
-
-```ts
-const oauthRegistry = createDefaultOAuthRegistry()
-
-const oauth = oauthRegistry.get('github-copilot')
-const token = await oauth.resolve()  // 获取有效 access token
-```
-
-`OAuth` 接口：
-
-```ts
-interface OAuth {
-  readonly id: string
-  readonly displayName: string
-  credentials: OAuthCredentials | undefined
-
-  authorize(model: Model): Promise<OAuthCredentials>
-  refresh(): Promise<void>
-  resolve(): Promise<string>    // 获取有效 token（自动续期）
-}
-```
-
-### AuthStore — 统一凭据存储
-
-`AuthStore` 是统一的凭据管理层，同时支持 API Key 和 OAuth 两类凭据，并持久化到本地文件（默认 `~/.vitamin/auth.json`）：
-
-```ts
-import { createAuthStore, createDefaultAuthStore } from '@vitamin/ai'
-
-// 使用默认路径和 OAuthRegistry
-const store = createDefaultAuthStore()
-
-// 或手动配置
-const store = createAuthStore({
-  path: '/custom/path/auth.json',
-  env: { 'openai': 'MY_OPENAI_KEY' },   // 环境变量映射覆盖
-})
-
-// 读取凭据（优先顺序：文件 → 环境变量）
-const key = await store.getCredentialKey('openai')
-
-// 写入 API Key
-await store.setCredentialKey('anthropic', 'sk-ant-xxx')
-
-// 写入 OAuth
-await store.setCredentialKey('github-copilot', { accessToken: '...', ... })
-```
-
-类型：`AuthStoreOptions`, `ApiKeyEntry`, `OAuthEntry`, `AuthEntry`, `AuthFileData`
-
----
-
-## 模型注册表
-
-`ModelRegistry` 以 `model.id` 为 key 管理模型定义：
-
-```ts
-const registry = createModelRegistry()
-
-registry.register({
-  id: 'github-copilot/gpt-4.1',
-  name: 'GPT-4.1',
-  api: 'openai-completions',
-  provider: 'github-copilot',
-  baseUrl: 'https://api.githubcopilot.com',
-  reasoning: false,
-  input: ['text', 'image'],
-  cost: { input: 3, output: 12, cacheRead: 1.5, cacheWrite: 3 },
-  contextWindow: 1048576,
-  maxOutputTokens: 32768,
-})
-
-const model = registry.get('github-copilot/gpt-4.1')
-const allOpenAI = registry.getByProvider('openai')
-```
-
-### ModelSlot（工作流槽位路由）
-
-`ModelSlot` 将具名工作流槽位（如 `main`、`reviewer`）解析到实际 `Model`，支持 settings 覆写：
-
-```ts
-import { createModelSlot } from '@vitamin/ai'
-
-const slot = createModelSlot({
-  slot: 'main',
-  modelRegistry,
-  settingsManager,
-})
-
-const model = await slot.resolve()
-```
-
-类型：`WorkflowSlot`, `ModelSlotOptions`
-
----
-
-## 费用精算
-
-```ts
-import { calculate, createCostTracker } from '@vitamin/ai'
-
-// 单次计算
-const breakdown = calculate(model, usage)
-// → { input: 0.003, output: 0.012, cacheRead: 0, cacheWrite: 0, total: 0.015 }
-// breakdown 类型为 CostBreakdown
-
-// 跟踪器
-const tracker = createCostTracker()
-tracker.record(model, usage)
-tracker.total       // 总费用
-tracker.totalTokens // { input, output }
-tracker.byModel()   // 按模型分组
-```
-
-类型：`CostBreakdown`
-
----
-
-## 工具函数
-
-### 消息工具
-
-```ts
-import {
-  isClaudeFamily,
-  isGPTFamily,
-  isGeminiFamily,
-  getToolCallsByAssistantMessage,
-  hasToolCalls,
-  emptyUsage,
-  mergeUsage,
-  getTokensFromUsage,
-} from '@vitamin/ai'
-
-// Provider 系列判断
-isClaudeFamily(model)   // → boolean
-isGPTFamily(model)      // → boolean
-isGeminiFamily(model)   // → boolean
-
-// Tool call 工具
-const calls = getToolCallsByAssistantMessage(message)
-const hasCalls = hasToolCalls(message)
-
-// Usage 工具
-const empty = emptyUsage()             // → { inputTokens: 0, ... }
-const merged = mergeUsage(u1, u2)      // 合并两个 Usage 对象
-const totalTokens = getTokensFromUsage(usage)  // 总 token 数
-```
-
-### Provider 工厂（GitHub Copilot）
-
-```ts
-import { createCopilotProvider } from '@vitamin/ai'
-
-const provider = createCopilotProvider({
-  credentialResolver: async () => await store.getCredentialKey('github-copilot'),
-})
-```
-
-类型：`CopilotCredentialResolver`, `CopilotProviderOptions`
-
-`createDefaultProviderRegistry()` 接受 `DefaultProviderRegistryOptions` 来自定义注册表行为。
-
-### EventStream 工厂
-
-```ts
-import { createEventStream } from '@vitamin/ai'
-
-const stream = createEventStream<StreamEvent, AssistantMessage>()
-stream.push({ type: 'start', partial: ... })
-stream.complete(message)
-```
-
----
-
-## Provider 实现指南
-
-### 实现新 Provider 的步骤
-
-1. **在 `src/provider/` 下新建文件**，如 `anthropic.ts`
-
-2. **实现 `ProviderStream` 接口**：
-
-```ts
-import type { ProviderStream, Model, StreamContext, StreamOptions, StreamEvent } from '../types'
-
-class AnthropicStream implements ProviderStream {
-  id = 'anthropic-messages'
-  displayName = 'Anthropic'
-
-  async *converse(model, context, options, signal): AsyncIterable<StreamEvent> {
-    // 1. 解析 API Key
-    // 2. 构建请求体（转换 Message → Anthropic 格式）
-    // 3. 发起 SSE 请求
-    // 4. 解析 SSE 事件，yield StreamEvent
-    // 5. yield { type: 'done', reason, message }
-  }
-}
-
-export function createAnthropicProvider(): ProviderStream {
-  return new AnthropicStream()
-}
-```
-
-3. **注册到 ProviderRegistry**：
-
-```ts
-registry.register('anthropic-messages', () => createAnthropicProvider())
-```
-
-4. **在 `index.ts` 中导出工厂函数**
-
-5. **编写测试**：使用预录制的 SSE fixture 测试 `converse` 流
-
-### 消息协议转换要点
-
-| vitamin 类型 | OpenAI 格式 | Anthropic 格式 |
-|------------|-------------|----------------|
-| `UserMessage` | `{ role: 'user', content: … }` | `{ role: 'user', content: [{type:'text',text:…}] }` |
-| `AssistantMessage` | `{ role: 'assistant', content, tool_calls }` | `{ role: 'assistant', content: [{type:'text',text:…}] }` |
-| `ToolResultMessage` | `{ role: 'tool', tool_call_id, content }` | `{ role: 'user', content: [{type:'tool_result', tool_use_id, content}] }` |
-| `ToolCall` | `tool_calls: [{ function: {name, arguments} }]` | `content: [{ type: 'tool_use', id, name, input }]` |
-
----
-
-## 开发指南
-
-### 构建
-
-```bash
-pnpm build          # tsup 构建 ESM + dts
-pnpm typecheck      # tsc --noEmit 类型检查
-```
-
-### 测试
-
-```bash
-# 运行全部测试
-pnpm vitest run packages/ai/tests/
-
-# 运行单个测试
-pnpm vitest run packages/ai/tests/stream.test.ts
-```
-
-### 代码规范
-
-- 测试不使用 mock/spy，优先真实执行和集成式断言
-- 新 Provider 需附带使用预录制 SSE fixture 的 `converse` 流测试
-- 所有公共 API 通过 `src/index.ts` 统一导出
-- 类型定义集中在 `src/types.ts`
+## 开发命令
+- `pnpm --filter @vitamin/ai build`
+- `pnpm --filter @vitamin/ai typecheck:project`
+- `pnpm --filter @vitamin/ai typecheck:file`
+- `pnpm --filter @vitamin/ai typecheck`
+- `pnpm --filter @vitamin/ai clean`
+- `pnpm --filter @vitamin/ai generate:models`
+
+## 关联 Vitamin 包
+- `@vitamin/env`
+- `@vitamin/setting`
+- `@vitamin/shared`
+
+## 维护说明
+- 本文档已按当前源码结构同步更新。
+- 同步日期：2026-04-07

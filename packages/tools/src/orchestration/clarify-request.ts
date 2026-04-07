@@ -34,7 +34,7 @@ export function createClarifyRequest(
 
   return {
     name: 'clarify_request',
-    description: 'Request clarification from the parent task or lead agent when missing context, facing conflicting constraints, or needing approval. Per-task usage is limited; include all available context in your result if the limit is reached.',
+    description: 'Request clarification from the parent task or lead agent. Returns the answer or an escalation.',
     parameters: ClarifyRequestArgsSchema,
     visibility: 'always',
 

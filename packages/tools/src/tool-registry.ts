@@ -144,16 +144,21 @@ export class ToolRegistry {
 
     for (const tool of tools) {
       const { snippet, guideline } = tool.metadata
-      if (!snippet && !guideline) continue
-
       const lines: string[] = [`#### ${tool.name}`]
-      if (guideline) lines.push(guideline)
-      if (snippet) lines.push(`示例：\n\`\`\`\n${snippet}\n\`\`\``)
+
+      if (guideline) {
+        lines.push(guideline)
+      } else if (!snippet) {
+        // fallback: ensure every tool has at least a description line
+        lines.push(tool.description)
+      }
+
+      if (snippet) lines.push(`Example:\n\`\`\`\n${snippet}\n\`\`\``)
       parts.push(lines.join('\n'))
     }
 
     if (parts.length === 0) return ''
-    return `### 工具专项指引\n\n${parts.join('\n\n')}`
+    return `### Tool Usage Guidelines\n\n${parts.join('\n\n')}`
   }
 
   clear(): void {

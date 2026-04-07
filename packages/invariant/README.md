@@ -1,72 +1,38 @@
 # @vitamin/invariant
 
-Invariant assertions, verbosity-controlled console, and build-time stripping plugin.
+## 模块定位
+提供断言工具与构建期 invariant 清理能力。
 
-## Installation
+## 当前状态（基于源码）
+- 包目录：`packages/invariant`
+- 源码文件数：3
+- 测试文件数：2
+- 入口文件：`src/index.ts`
 
-```bash
-pnpm add @vitamin/invariant
-```
+## 目录概览
+- `src/`
+  - `index.ts`
+  - `invariant.ts`
+  - `tsup-strip-invariant-plugin.ts`
+- `tests/`
+  - `invariant.test.ts`
+  - `tsup-strip-invariant-plugin.test.ts`
 
-## Runtime Usage
-
+## 公开导出
 ```ts
-import { invariant } from '@vitamin/invariant'
-
-invariant(user != null, 'user is required')
-
-// Function callback support
-invariant(() => count > 0, 'count must be positive')
+export { invariant, InvariantError, setVerbosity } from './invariant'
+export { invariant as default } from './invariant'
+export type { VerbosityLevel, ConsoleFunctionName } from './invariant'
+export { createStripInvariantInProductionPlugin } from './tsup-strip-invariant-plugin'
 ```
 
-## Console Override API
+## 开发命令
+- `pnpm --filter @vitamin/invariant build`
+- `pnpm --filter @vitamin/invariant typecheck:project`
+- `pnpm --filter @vitamin/invariant typecheck:file`
+- `pnpm --filter @vitamin/invariant typecheck`
+- `pnpm --filter @vitamin/invariant clean`
 
-```ts
-import { invariant, setVerbosity } from '@vitamin/invariant'
-
-const prev = setVerbosity('warn')
-invariant.debug('this will not print')  // below 'warn' level
-invariant.warn('this will print')
-invariant.error('this will also print')
-setVerbosity(prev)  // restore
-```
-
-Verbosity levels: `'debug'` | `'log'` | `'warn'` | `'error'` | `'silent'`
-
-## API
-
-| Export | Description |
-|--------|-------------|
-| `invariant(condition, message?)` | Runtime assertion, throws `InvariantError` on failure |
-| `InvariantError` | Custom error class (`name: 'Invariant Violation'`, `framesToPop: 1`) |
-| `setVerbosity(level)` | Set console output level, returns previous level |
-| `invariant.debug/log/warn/error` | Conditional console output controlled by verbosity |
-| `createStripInvariantInProductionPlugin(options)` | Build plugin for AST-based stripping |
-
-## Types
-
-| Type | Description |
-|------|-------------|
-| `VerbosityLevel` | `'debug' \| 'log' \| 'warn' \| 'error' \| 'silent'` |
-| `ConsoleFunctionName` | `Exclude<VerbosityLevel, 'silent'>` |
-
-## Build Plugin (AST)
-
-```ts
-import { createStripInvariantInProductionPlugin } from '@vitamin/invariant'
-
-const isProduction = process.env.NODE_ENV === 'production'
-
-export default defineConfig({
-  esbuildPlugins: isProduction
-    ? [createStripInvariantInProductionPlugin({ filter: /\/src\/agent\.ts$/ })]
-    : [],
-})
-```
-
-The plugin removes `invariant` import and `if (process.env.NODE_ENV !== 'production') { ...invariant(...)... }` blocks using TypeScript AST.
-
-Behavior details:
-- If the development guard contains an `invariant` call, the whole `if` branch is removed.
-- If an `else` branch exists, the `else` branch is preserved.
-- Development guards without `invariant` calls are left unchanged.
+## 维护说明
+- 本文档已按当前源码结构同步更新。
+- 同步日期：2026-04-07

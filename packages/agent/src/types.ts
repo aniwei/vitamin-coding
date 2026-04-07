@@ -94,9 +94,9 @@ export interface AgentRunContext {
   // 上下文转换（压缩/裁剪/注入）— 由外部 MemoryManager 驱动
   transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>
   // 最大连续工具调用轮次（安全阀）
-  maxToolTurns?: number
+  maxToolTurns: number
   // 思维级别
-  thinkingLevel?: ThinkingLevel
+  thinkingLevel: ThinkingLevel
   // 最大输出 token
   maxTokens?: number
   // 温度
@@ -124,10 +124,10 @@ export interface AgentLoopContext {
   getFollowUpMessages?: () => Promise<AgentMessage[]>
   
   // 最大连续工具调用轮次（安全阀）
-  maxToolTurns?: number
+  maxToolTurns: number
   
   // 思维级别
-  thinkingLevel?: ThinkingLevel
+  thinkingLevel: ThinkingLevel
   
   // 最大输出 token
   maxTokens?: number

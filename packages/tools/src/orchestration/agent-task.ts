@@ -21,7 +21,7 @@ export function createAgentTask(
 ): AgentTool<AgentTaskArgs> {
   return {
     name: 'agent_task',
-    description: 'Run a named agent through the task runtime with retries, background execution, and optional sticky session reuse. Use review_call for synchronous isolated review or advice.',
+    description: 'Run a named agent through the task runtime with retries, background execution, and optional sticky session reuse.',
     parameters: AgentTaskArgsSchema,
     visibility: 'always',
 

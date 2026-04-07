@@ -1,5 +1,5 @@
 import { LocalPromptProvider } from './local-provider'
-import { RemotePromptProvider } from './remote-provider'
+import { HttpPromptProvider } from './http-provider'
 import type { PromptProvider, PromptProviderOptions } from './types'
 
 /**
@@ -14,7 +14,7 @@ export function createPromptProvider(options: PromptProviderOptions): PromptProv
         extension: options.extension,
       })
     case 'remote':
-      return new RemotePromptProvider({
+      return new HttpPromptProvider({
         baseUrl: options.baseUrl,
         getAuth: options.getAuth,
         getHeaders: options.getHeaders,
