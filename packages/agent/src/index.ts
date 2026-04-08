@@ -41,3 +41,11 @@ export type {
   AgentConfig,
   AgentLoopContext,
 } from './types'
+
+// Session 事件类型（供 @vitamin/service 等中间层使用，避免循环依赖）
+export type {
+  AgentSessionEvent,
+  AgentSessionEventType,
+  AgentSessionSubscriber,
+  AskUserQuestion,
+} from './session-events'

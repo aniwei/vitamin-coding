@@ -10,7 +10,7 @@ import { DebugBridge } from './debug-bridge'
 import { createApp } from './create-app'
 import type { CodingServiceOptions } from './types'
 import type { Socket } from 'node:net'
-import type { VitaminContext, AgentSession } from '@vitamin/coding'
+import type { IServiceContext, IServiceSession } from './service-types'
 
 
 const logger = createLogger('@vitamin/service')
@@ -44,7 +44,7 @@ export class CodingService {
   }
 
   constructor(
-    public readonly vitamin: VitaminContext,
+    public readonly vitamin: IServiceContext,
     options: CodingServiceOptions,
   ) {
     this.host = options.host ?? '127.0.0.1'
@@ -58,7 +58,7 @@ export class CodingService {
     }
 
     this.app = createApp(this, { 
-      cors: options.cors, 
+      corsOrigin: options.corsOrigin, 
       devtools: vitamin.devtools ?? undefined, 
       staticDir: options.staticDir,
       debug: this.bridge,
@@ -72,11 +72,11 @@ export class CodingService {
     this.ws.on('message', this.onMessage)
   }
 
-  getSession(sessionId: string): AgentSession | undefined {
+  getSession(sessionId: string): IServiceSession | undefined {
     return this.vitamin.getSession(sessionId)
   }
 
-  getActiveSession(): AgentSession | undefined {
+  getActiveSession(): IServiceSession | undefined {
     return this.vitamin.sessionManager.active
   }
 
@@ -130,7 +130,7 @@ export class CodingService {
     })
   }
 
-  attachSession(session: AgentSession): void {
+  attachSession(session: IServiceSession): void {
     if (this.bridges.has(session.id)) return
 
     const bridge = new EventBridge(session, this.ws)
@@ -331,7 +331,7 @@ export class CodingService {
 }
 
 export function createCodingService(
-  context: VitaminContext,
+  context: IServiceContext,
   options: CodingServiceOptions,
 ): CodingService {
   return new CodingService(context, options)

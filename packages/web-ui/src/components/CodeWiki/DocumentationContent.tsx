@@ -56,8 +56,8 @@ export function DocumentationContent({ wikiPage }: DocumentationContentProps) {
 
       {/* Main Content with Enhanced Typography */}
       <article className="prose prose-lg max-w-none">
+        <div className="text-gray-800 leading-relaxed">
         <ReactMarkdown
-          className="text-gray-800 leading-relaxed"
           components={{
             h1: ({ children, ...props }) => (
               <h1 className="text-3xl font-bold text-gray-900 mt-10 mb-6 leading-tight" {...props}>
@@ -132,6 +132,7 @@ export function DocumentationContent({ wikiPage }: DocumentationContentProps) {
         >
           {wikiPage.content}
         </ReactMarkdown>
+        </div>
       </article>
 
       {/* Related Content Sections */}

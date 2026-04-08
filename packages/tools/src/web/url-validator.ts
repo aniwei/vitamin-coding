@@ -14,15 +14,15 @@ const BLOCKED_HOSTS = new Set([
 
 function isPrivateIP(hostname: string): boolean {
   // IPv4 private ranges
-  if (/^10\./.test(hostname)) return true
+  if (hostname.startsWith('10.')) return true
   if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)) return true
-  if (/^192\.168\./.test(hostname)) return true
+  if (hostname.startsWith('192.168.')) return true
 
   // Link-local
-  if (/^169\.254\./.test(hostname)) return true
+  if (hostname.startsWith('169.254.')) return true
 
   // Loopback
-  if (/^127\./.test(hostname)) return true
+  if (hostname.startsWith('127.')) return true
 
   // IPv6 private/loopback
   if (hostname === '::1' || hostname === '[::1]') return true

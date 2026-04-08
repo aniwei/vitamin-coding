@@ -1,5 +1,5 @@
 import { TypedEventEmitter, createLogger } from '@vitamin/shared'
-import { type FSWatcher, watch as watch } from 'node:fs'
+import { type FSWatcher, watch } from 'node:fs'
 import type { Disposable, Events } from '@vitamin/shared'
 import type { VitaminSetting } from './types'
 

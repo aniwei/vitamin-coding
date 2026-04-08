@@ -6,32 +6,25 @@
     "dev": "vite",
     "build": "tsc && vite build",
     "preview": "vite preview",
-    "lint": "eslint . --ext ts,tsx --report-unused-disable-directives --max-warnings 0"
+    "lint": "oxlint src/"
   },
   "dependencies": {
-    "@heroicons/react": "^2.2.0",
-    "@xyflow/react": "^12.10.1",
-    "lucide-react": "^0.553.0",
-    "react": "^18.3.1",
-    "react-dom": "^18.3.1",
-    "react-markdown": "^9.0.1",
-    "react-router-dom": "^7.9.5",
-    "zustand": "^4.5.0"
+    "@heroicons/react": "2.2.0",
+    "@xyflow/react": "12.10.2",
+    "lucide-react": "1.7.0",
+    "react": "19.2.4",
+    "react-dom": "19.2.4",
+    "react-markdown": "10.1.0",
+    "react-router-dom": "7.14.0",
+    "zustand": "5.0.12"
   },
   "devDependencies": {
-    "@types/react": "^18.3.3",
-    "@types/react-dom": "^18.3.0",
-    "@types/react-router-dom": "^5.3.3",
-    "@typescript-eslint/eslint-plugin": "^6.21.0",
-    "@typescript-eslint/parser": "^6.21.0",
-    "@vitejs/plugin-react": "^4.2.1",
-    "autoprefixer": "^10.4.17",
-    "eslint": "^8.57.0",
-    "eslint-plugin-react-hooks": "^4.6.0",
-    "eslint-plugin-react-refresh": "^0.4.5",
-    "postcss": "^8.4.35",
-    "tailwindcss": "^3.4.1",
-    "typescript": "^5.4.2",
-    "vite": "^5.1.4"
+    "@tailwindcss/postcss": "4.2.2",
+    "@types/react": "19.2.14",
+    "@types/react-dom": "19.2.3",
+    "@vitejs/plugin-react": "6.0.1",
+    "postcss": "8.5.9",
+    "tailwindcss": "4.2.2",
+    "vite": "8.0.7"
   }
 }

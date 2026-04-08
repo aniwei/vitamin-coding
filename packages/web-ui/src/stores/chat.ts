@@ -582,7 +582,7 @@ ws.on('Chat.toolResult', (message) => {
     const success =
       typeof message.data.success === 'boolean'
         ? message.data.success
-        : !Boolean(message.data.isError)
+        : !message.data.isError
     const toolResultData =
       message.data.rawResult ??
       message.data.output ??

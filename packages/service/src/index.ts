@@ -11,3 +11,4 @@ export type {
   WebSocketClientMessageType,
   EventBridgeMapper,
 } from './types'
+export type { IServiceContext, IServiceSession } from './service-types'

@@ -23,23 +23,22 @@
   "dependencies": {
     "@vitamin/invariant": "workspace:*",
     "@vitamin/env": "workspace:*",
-    "eventsource-parser": "^3.0.6",
-    "jsonc-parser": "^3.3.1",
-    "mime-types": "^3.0.2",
-    "pino": "^9.6.0",
-    "remark-frontmatter": "^5.0.0",
-    "remark-gfm": "^4.0.0",
-    "remark-parse": "^11.0.0",
-    "safe-stable-stringify": "^2.5.0",
-    "unified": "^11.0.0",
-    "uuid": "^13.0.0"
+    "eventsource-parser": "3.0.6",
+    "jsonc-parser": "3.3.1",
+    "mime-types": "3.0.2",
+    "pino": "10.3.1",
+    "remark-frontmatter": "5.0.0",
+    "remark-gfm": "4.0.1",
+    "remark-parse": "11.0.0",
+    "safe-stable-stringify": "2.5.0",
+    "unified": "11.0.5",
+    "uuid": "13.0.0"
   },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
-    "@types/mime-types": "^3.0.1",
-    "@types/node": "^25.3.5"
+    "@types/mime-types": "3.0.1"
   }
 }

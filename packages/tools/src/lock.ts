@@ -1,7 +1,3 @@
-import { createLogger } from '@vitamin/shared'
-
-const logger = createLogger('@vitamin/tools:lock')
-
 export class Lock {
   private locks: Map<string, Promise<void>> = new Map()
 

@@ -11,21 +11,21 @@ import type { CodingService } from './coding-service'
 import type { DebugBridge } from './debug-bridge'
 
 interface AppOptions {
-  cors?: string
+  corsOrigin?: string
   devtools?: Devtools
   staticDir?: string
   debug?: DebugBridge | null
 }
 
 export function createApp(
-  context: CodingService, 
+  context: CodingService,
   options: AppOptions = {}
 ): Hono {
   const app = new Hono()
 
-  if (options.cors) {
+  if (options.corsOrigin) {
     app.use('/api/*', cors({
-      origin: options.cors,
+      origin: options.corsOrigin,
       allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
       allowHeaders: ['Content-Type', 'Authorization'],
     }))

@@ -1,14 +1,15 @@
-import type { AgentSessionEvent, AgentSession } from '@vitamin/coding'
+import type { AgentSessionEvent } from '@vitamin/agent'
 import type { StreamEvent, TextContent } from '@vitamin/ai'
 import type { WebSocketMessage } from './types'
 import type { WebSocketManager } from './websocket-manager'
+import type { IServiceSession } from './service-types'
 
 
 export class EventBridge {
   private unsubscribeSession?: () => void
 
   constructor(
-    private readonly session: AgentSession,
+    private readonly session: IServiceSession,
     private readonly ws: WebSocketManager,
   ) {}
 

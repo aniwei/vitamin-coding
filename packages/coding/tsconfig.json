@@ -2,24 +2,9 @@
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
     "outDir": "dist",
-    "rootDir": "..",
-    "baseUrl": ".",
-    "paths": {
-      "@vitamin/agent": ["../agent/src/index.ts"],
-      "@vitamin/ai": ["../ai/src/index.ts"],
-      "@vitamin/setting": ["../setting/src/index.ts"],
-      "@vitamin/devtools": ["../devtools/src/index.ts"],
-      "@vitamin/env": ["../env/src/index.ts"],
-      "@vitamin/hooks": ["../hooks/src/index.ts"],
-      "@vitamin/invariant": ["../invariant/src/index.ts"],
-      "@vitamin/memory": ["../memory/src/index.ts"],
-      "@vitamin/orchestrator": ["../orchestrator/src/index.ts"],
-      "@vitamin/resources": ["../resources/src/index.ts"],
-      "@vitamin/session": ["../session/src/index.ts"],
-      "@vitamin/shared": ["../shared/src/index.ts"],
-      "@vitamin/tools": ["../tools/src/index.ts"],
-      "@vitamin/prompt": ["../prompt/src/index.ts"]
-    }
+    "rootDir": "src"
   },
-  "include": ["src"]
+  "include": [
+    "src"
+  ]
 }
