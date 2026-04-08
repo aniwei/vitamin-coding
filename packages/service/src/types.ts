@@ -75,7 +75,7 @@ export interface CodingServiceOptions {
   host?: string
   port: number
   staticDir?: string
-  corsOrigin?: string
+  cors?: string
 }
 
 // ─── Event bridge: maps internal events → WS events ───

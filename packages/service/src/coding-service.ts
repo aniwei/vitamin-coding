@@ -59,7 +59,7 @@ export class CodingService {
     }
 
     this.app = createApp(this, { 
-      corsOrigin: options.corsOrigin, 
+      corsOrigin: options.cors, 
       devtools: vitamin.devtools ?? undefined, 
       staticDir: options.staticDir,
       debug: this.bridge,
@@ -71,6 +71,27 @@ export class CodingService {
 
     this.server.on('upgrade', this.onUpgrade)
     this.ws.on('message', this.onMessage)
+
+     this.registerHooks(this.vitamin)
+  }
+
+  registerHooks(vitamin: VitaminContext): void {
+    vitamin.hookRegistry.register({
+      name: 'service_session_attach',
+      timing: 'session.created',
+      priority: 5,
+      enabled: true,
+      handle: ({ sessionId }) => {
+        const session = this.getSession(sessionId)
+        if (session) {
+          this.attachSession(session)
+        }
+      },
+    })
+  }
+
+  unregisterHooks(vitamin: VitaminContext): void {
+    vitamin.hookRegistry.unregister('service_session_attach')
   }
 
   getSession(sessionId: string): AgentSession | undefined {
@@ -110,6 +131,17 @@ export class CodingService {
     })
   }
 
+  dispose(): void {
+    this.unregisterHooks(this.vitamin)
+    this.bridge?.dispose()
+    for (const [, bridge] of this.bridges) {
+      bridge.dispose()
+    }
+
+    this.bridges.clear()
+    logger.info('service disposed')
+  }
+
   async stop(): Promise<void> {
     if (!this.started) return
 
@@ -125,6 +157,7 @@ export class CodingService {
     return new Promise<void>((resolve) => {
       this.server.close(() => {
         this.started = false
+
         logger.info('service stopped')
         resolve()
       })

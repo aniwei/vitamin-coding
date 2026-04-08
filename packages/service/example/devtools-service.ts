@@ -39,13 +39,6 @@ async function main() {
     cors: 'http://127.0.0.1:5173',
   })
 
-  const originalCreate = vitamin.createSession.bind(vitamin)
-  vitamin.createSession = async (options) => {
-    const session = await originalCreate(options)
-    service.attachSession(session)
-    return session
-  }
-
   await service.start()
   console.log('[devtools-service] Web UI service on http://127.0.0.1:8080')
   console.log('[devtools-service] Devtools inspector on ws://127.0.0.1:9229/{id}/inspect')
