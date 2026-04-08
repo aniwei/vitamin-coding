@@ -1,0 +1,18 @@
+{
+  "lessons": [
+    {
+      "tags": [
+        "web_search",
+        "weather",
+        "data_sourcing"
+      ],
+      "trigger": "A user asked for weather information, and the response involved general web search with no concrete weather details returned.",
+      "insight": "Consider using official weather websites or trusted APIs to fetch localized weather information instead of relying on general search or scraper approaches.",
+      "sourceSessionId": "",
+      "id": "lesson_1",
+      "createdAt": 1775635230156,
+      "appliedCount": 0
+    }
+  ],
+  "nextId": 2
+}

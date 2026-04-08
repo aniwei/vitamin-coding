@@ -69,8 +69,8 @@ export class CodingService {
       fetch: this.app.fetch,
     }) as Server
 
-    this.server.on('upgrade', this.onUpgrade)
     this.ws.on('message', this.onMessage)
+    this.server.on('upgrade', this.onUpgrade)
 
      this.registerHooks(this.vitamin)
   }
