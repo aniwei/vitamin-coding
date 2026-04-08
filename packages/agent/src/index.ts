@@ -6,7 +6,7 @@ export { createAgent } from './agent'
 
 // Agent 工厂（带 ProviderRegistry 便捷创建）
 export { createAgent as createAgentWithRegistry } from './agent-factory'
-export type { AgentFactoryConfig } from './agent-factory'
+export type { AgentFactoryOptions } from './agent-factory'
 
 // Agent 循环
 export type { StreamFunction } from './work-loop'
@@ -38,6 +38,14 @@ export type {
   AgentRunContext,
   AgentTool,
   ToolResult,
-  AgentConfig,
+  AgentOptions,
   AgentLoopContext,
 } from './types'
+
+// Session 事件类型（供 @vitamin/service 等中间层使用，避免循环依赖）
+export type {
+  AgentSessionEvent,
+  AgentSessionEventType,
+  AgentSessionSubscriber,
+  AskUserQuestion,
+} from './session-events'

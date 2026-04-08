@@ -1,4 +1,4 @@
-import { type IncomingMessage, type Server } from 'node:http'
+
 import { readFileSync, existsSync } from 'node:fs'
 import { join, extname } from 'node:path'
 import { Hono } from 'hono'
@@ -8,9 +8,10 @@ import { WebSocketManager } from './websocket-manager'
 import { EventBridge } from './event-bridge'
 import { DebugBridge } from './debug-bridge'
 import { createApp } from './create-app'
+import { type IncomingMessage, type Server } from 'node:http'
 import type { CodingServiceOptions } from './types'
 import type { Socket } from 'node:net'
-import type { VitaminContext, AgentSession } from '@vitamin/coding'
+import type { AgentSession, VitaminContext } from '@vitamin/coding'
 
 
 const logger = createLogger('@vitamin/service')
@@ -58,7 +59,7 @@ export class CodingService {
     }
 
     this.app = createApp(this, { 
-      cors: options.cors, 
+      corsOrigin: options.corsOrigin, 
       devtools: vitamin.devtools ?? undefined, 
       staticDir: options.staticDir,
       debug: this.bridge,

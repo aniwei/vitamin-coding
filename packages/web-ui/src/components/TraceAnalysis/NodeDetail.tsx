@@ -19,7 +19,7 @@ function toYaml(val: unknown, depth = 0): string {
         .join('\n')}`
     }
     const needsQuote =
-      /^[\s:#\-\[\]{},&*!|>'"%@`?]/.test(val) ||
+      /^[\s:#\-[\]{},&*!|>'"%@`?]/.test(val) ||
       /^(true|false|null|yes|no|on|off|\d)/.test(val) ||
       /\s$/.test(val)
     return needsQuote ? JSON.stringify(val) : val

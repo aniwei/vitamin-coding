@@ -23,16 +23,16 @@
   "dependencies": {
     "@vitamin/shared": "workspace:*",
     "@vitamin/invariant": "workspace:*",
-    "eventsource-parser": "^3.0.6",
-    "hono": "^4.12.7",
-    "uuid": "^13.0.0",
-    "ws": "^8.19.0"
+    "eventsource-parser": "3.0.6",
+    "hono": "4.12.12",
+    "uuid": "13.0.0",
+    "ws": "8.20.0"
   },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
-    "@types/ws": "^8.18.1"
+    "@types/ws": "8.18.1"
   }
 }

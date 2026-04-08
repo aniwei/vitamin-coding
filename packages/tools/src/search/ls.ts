@@ -88,7 +88,7 @@ async function ls(
   const truncation = truncateHead(raw, { maxLines: TOOLS_MAX_OUTPUT_LINES, maxBytes: TOOLS_MAX_OUTPUT_BYTES })
 
   let output = truncation.content
-  let details: Record<string, unknown> = {}
+  const details: Record<string, unknown> = {}
 
   const notices: string[] = []
 

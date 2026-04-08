@@ -154,7 +154,7 @@ export function InputBox() {
   return (
     <div className="bg-bg-000 p-4">
       <div className="w-full relative">
-        <div className="rounded-lg border-0.5 border-border-300/15 bg-bg-000/60 focus-within:bg-bg-000 focus-within:shadow-sm transition-all">
+        <div className="rounded-lg border-[0.5px] border-border-300/15 bg-bg-000/60 focus-within:bg-bg-000 focus-within:shadow-sm transition-all">
           <div className="flex gap-2 p-2">
             <textarea
               ref={textareaRef}

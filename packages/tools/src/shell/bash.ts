@@ -60,7 +60,7 @@ async function bash(
   signal?: AbortSignal
 ): Promise<ToolResult> {
   const maxOutputBytes = TOOLS_MAX_OUTPUT_BYTES * 2
-  let output: Buffer[] = []
+  const output: Buffer[] = []
   let totalBytes = 0
   let outputBytes = 0
   let outputPath: string | undefined

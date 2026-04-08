@@ -16,7 +16,7 @@ import {
   BREAKPOINT_CATEGORY_LABELS,
   type Breakpoint,
   type BreakpointCategory,
-} from '../../../types/debug'
+} from '../../../types/devtools'
 import {
   BreakpointNode,
   type BreakpointNodeCategory,
@@ -167,8 +167,11 @@ const INITIAL_EDGES: Edge[] = [
 }))
 
 export function BreakpointFlow({ className }: { className?: string }) {
-  const { breakpoints, currentSnapshot, paused } = useDevtoolsStore()
-
+  const { 
+    breakpoints, 
+    currentSnapshot, 
+    paused 
+  } = useDevtoolsStore()
   const categoryStats = useMemo(() => aggregateCategoryStats(breakpoints), [breakpoints])
 
   const activeCategory = useMemo(() => {

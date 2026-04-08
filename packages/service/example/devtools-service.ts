@@ -36,7 +36,7 @@ async function main() {
   const service = createCodingService(vitamin, {
     port: 8080,
     host: '127.0.0.1',
-    cors: 'http://localhost:5173',
+    cors: 'http://127.0.0.1:5173',
   })
 
   const originalCreate = vitamin.createSession.bind(vitamin)

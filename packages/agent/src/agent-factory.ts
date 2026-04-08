@@ -3,10 +3,10 @@ import { Agent } from './agent'
 
 import type { Model, ProviderRegistry, ProviderStream, StreamContext } from '@vitamin/ai'
 import type { StreamFunction } from './work-loop'
-import type { AgentConfig } from './types'
+import type { AgentOptions } from './types'
 
 // 工厂配置
-export interface AgentFactoryConfig extends AgentConfig {
+export interface AgentFactoryOptions extends AgentOptions {
   model?: Model
   providerRegistry?: ProviderRegistry
 }
@@ -22,14 +22,14 @@ function createStreamFromRegistry(
 }
 
 // 工厂函数 — 创建 Agent
-export function createAgent(config: AgentFactoryConfig = {}): Agent {
-  let stream = config.stream
-  const devtools = config.devtools
+export function createAgent(options: AgentFactoryOptions = {}): Agent {
+  let stream = options.stream
+  const devtools = options.devtools
 
   if (!stream) {
-    if (config.model && config.providerRegistry) {
-      const provider = config.providerRegistry.get(config.model.api)
-      stream = createStreamFromRegistry(config.model, provider)
+    if (options.model && options.providerRegistry) {
+      const provider = options.providerRegistry.get(options.model.api)
+      stream = createStreamFromRegistry(options.model, provider)
     }
   }
 

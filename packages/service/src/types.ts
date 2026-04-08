@@ -1,4 +1,4 @@
-import type { AgentSessionEvent } from '@vitamin/coding'
+import type { AgentSessionEvent } from '@vitamin/agent'
 
 export type WebSocketEventType =
   | 'Runtime.connected'
@@ -75,7 +75,7 @@ export interface CodingServiceOptions {
   host?: string
   port: number
   staticDir?: string
-  cors?: string
+  corsOrigin?: string
 }
 
 // ─── Event bridge: maps internal events → WS events ───

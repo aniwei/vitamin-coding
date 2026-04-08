@@ -1,13 +1,8 @@
 {
-  "name": "@vitamin/web-ui",
+  "name": "@vitamin/assistant-ui",
   "version": "0.1.0",
   "type": "module",
-  "scripts": {
-    "dev": "vite",
-    "build": "tsc && vite build",
-    "preview": "vite preview",
-    "lint": "oxlint src/"
-  },
+  "scripts": {},
   "dependencies": {
     "@heroicons/react": "2.2.0",
     "@xyflow/react": "12.10.2",

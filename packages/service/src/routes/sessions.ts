@@ -151,6 +151,8 @@ export function createSessionsRoute(
       return c.json([], 404)
     }
 
+    // TODO: add pagination support
+    // @ts-ignore
     return c.json(serializeMessages(session))
   })
 

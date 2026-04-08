@@ -5,7 +5,7 @@ import {
   BREAKPOINT_CATEGORY_LABELS,
   type Breakpoint,
   type BreakpointCategory,
-} from '../../../types/debug'
+} from '../../../types/devtools'
 
 const CATEGORY_ORDER: BreakpointCategory[] = [
   'agent_work_loop',

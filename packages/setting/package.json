@@ -23,13 +23,13 @@
   "dependencies": {
     "@vitamin/persistence": "workspace:*",
     "@vitamin/shared": "workspace:*",
-    "semver": "^7.7.4"
+    "semver": "7.7.4"
   },
   "publishConfig": {
     "access": "public",
     "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
-    "@types/semver": "^7.7.1"
+    "@types/semver": "7.7.1"
   }
 }

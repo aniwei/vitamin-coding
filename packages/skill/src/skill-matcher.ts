@@ -121,6 +121,6 @@ function scoreSkill(
 
 function tokenize(text: string): string[] {
   return text
-    .split(/[\s,.:;!?()\[\]{}"'`\-/\\]+/)
+    .split(/[\s,.:;!?()[\]{}"'`\-/\\]+/)
     .filter((w) => w.length >= 2)
 }

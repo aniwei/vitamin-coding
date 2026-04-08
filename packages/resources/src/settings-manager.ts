@@ -42,7 +42,7 @@ export class SettingsManager extends TypedEventEmitter<SettingsEvents> {
     super()
     this.watch = false
     this.paths = buildSettingPaths(options)
-    this.overrides = { ...(options.overrides ?? {}) }
+    this.overrides = { ...options.overrides }
   }
 
   get<K extends keyof VitaminSetting>(key: K): VitaminSetting[K] {

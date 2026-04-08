@@ -5,7 +5,7 @@ import type {
   PauseResumePayload,
   DebuggerCommandMethod,
   CommandRejectCode,
-} from '../types/debug'
+} from '../types/devtools'
 import * as debugApi from '../api/devtools'
 import { ws } from '../api/websocket'
 

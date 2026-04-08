@@ -1,13 +1,10 @@
 {
   "extends": "../../tsconfig.base.json",
   "compilerOptions": {
-    "outDir": "dist",
-    "rootDir": "..",
-    "baseUrl": ".",
-    "paths": {
-      "@vitamin/persistence": ["../persistence/src/index.ts"],
-      "@vitamin/shared": ["../shared/src/index.ts"]
-    }
+    "outDir": "dist"
   },
-  "include": ["src", "tests"]
+  "include": [
+    "src",
+    "tests"
+  ]
 }

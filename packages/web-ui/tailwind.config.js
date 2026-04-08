@@ -1,56 +1,52 @@
-import type { Config } from 'tailwindcss'
-
+/** @type {import('tailwindcss').Config} */
 export default {
-  content: [
-    "./index.html",
-    "./src/**/*.{js,ts,jsx,tsx}",
-  ],
+  content: ['./index.html', './src/**/*.{js,ts,jsx,tsx}'],
   theme: {
     extend: {
       colors: {
         // Claude-style semantic tokens
         bg: {
-          '000': 'hsl(var(--bg-000) / <alpha-value>)',
-          '100': 'hsl(var(--bg-100) / <alpha-value>)',
-          '200': 'hsl(var(--bg-200) / <alpha-value>)',
-          '300': 'hsl(var(--bg-300) / <alpha-value>)',
-          '400': 'hsl(var(--bg-400) / <alpha-value>)',
-          '500': 'hsl(var(--bg-500) / <alpha-value>)',
+          '000': 'hsl(var(--bg-000))',
+          100: 'hsl(var(--bg-100))',
+          200: 'hsl(var(--bg-200))',
+          300: 'hsl(var(--bg-300))',
+          400: 'hsl(var(--bg-400))',
+          500: 'hsl(var(--bg-500))',
         },
         text: {
-          '000': 'hsl(var(--text-000) / <alpha-value>)',
-          '100': 'hsl(var(--text-100) / <alpha-value>)',
-          '200': 'hsl(var(--text-200) / <alpha-value>)',
-          '300': 'hsl(var(--text-300) / <alpha-value>)',
-          '400': 'hsl(var(--text-400) / <alpha-value>)',
-          '500': 'hsl(var(--text-500) / <alpha-value>)',
+          '000': 'hsl(var(--text-000))',
+          100: 'hsl(var(--text-100))',
+          200: 'hsl(var(--text-200))',
+          300: 'hsl(var(--text-300))',
+          400: 'hsl(var(--text-400))',
+          500: 'hsl(var(--text-500))',
         },
         border: {
-          '100': 'hsl(var(--border-100) / <alpha-value>)',
-          '200': 'hsl(var(--border-200) / <alpha-value>)',
-          '300': 'hsl(var(--border-300) / <alpha-value>)',
-          '400': 'hsl(var(--border-400) / <alpha-value>)',
+          100: 'hsl(var(--border-100))',
+          200: 'hsl(var(--border-200))',
+          300: 'hsl(var(--border-300))',
+          400: 'hsl(var(--border-400))',
         },
         accent: {
           main: {
-            '100': 'hsl(var(--accent-main-100) / <alpha-value>)',
-            '200': 'hsl(var(--accent-main-200) / <alpha-value>)',
+            100: 'hsl(var(--accent-main-100))',
+            200: 'hsl(var(--accent-main-200))',
           },
           secondary: {
-            '100': 'hsl(var(--accent-secondary-100) / <alpha-value>)',
-            '900': 'hsl(var(--accent-secondary-900) / <alpha-value>)',
+            100: 'hsl(var(--accent-secondary-100))',
+            900: 'hsl(var(--accent-secondary-900))',
           },
         },
         danger: {
-          '000': 'hsl(var(--danger-000) / <alpha-value>)',
-          '100': 'hsl(var(--danger-100) / <alpha-value>)',
+          '000': 'hsl(var(--danger-000))',
+          100: 'hsl(var(--danger-100))',
         },
         success: {
-          '000': 'hsl(var(--success-000) / <alpha-value>)',
-          '100': 'hsl(var(--success-100) / <alpha-value>)',
+          '000': 'hsl(var(--success-000))',
+          100: 'hsl(var(--success-100))',
         },
         warning: {
-          '100': 'hsl(var(--warning-100) / <alpha-value>)',
+          100: 'hsl(var(--warning-100))',
         },
         // Keep gray palette for backward compatibility
         gray: {
@@ -66,27 +62,35 @@ export default {
           900: '#111827',
         },
       },
-      borderWidth: {
-        '0.5': '0.5px',
-      },
       fontFamily: {
-        sans: ['-apple-system', 'BlinkMacSystemFont', 'Inter', 'Segoe UI', 'Helvetica Neue', 'Arial', 'sans-serif'],
-        mono: ['JetBrains Mono', 'Fira Code', 'Monaco', 'Courier New', 'monospace'],
+        sans: [
+          '-apple-system',
+          'BlinkMacSystemFont',
+          'Inter',
+          'Segoe UI',
+          'Helvetica Neue',
+          'Arial',
+          'sans-serif',
+        ],
+        mono: [
+          'JetBrains Mono',
+          'Fira Code',
+          'Monaco',
+          'Courier New',
+          'monospace',
+        ],
       },
       spacing: {
-        '18': '4.5rem',
-        '88': '22rem',
-      },
-      maxWidth: {
-        '4.5xl': '58rem',
+        18: '4.5rem',
+        88: '22rem',
       },
       animation: {
         'slide-up': 'slide-up 0.3s ease-out',
         'fade-in': 'fade-in 0.2s ease-out',
-        'breathe': 'breathe 4s ease-in-out infinite',
+        breathe: 'breathe 4s ease-in-out infinite',
         'spin-slow': 'spin-slow 40s linear infinite',
         'scale-in': 'scale-in 0.2s cubic-bezier(0.16, 1, 0.3, 1)',
-        'shimmer': 'shimmer 2.5s ease-in-out infinite',
+        shimmer: 'shimmer 2.5s ease-in-out infinite',
         'border-breathe': 'border-breathe 2.5s ease-in-out infinite',
         'pulse-dot': 'pulse-dot 1.4s ease-in-out infinite',
         'content-fade': 'content-fade 0.15s ease-out',
@@ -100,7 +104,7 @@ export default {
           '0%': { opacity: '0' },
           '100%': { opacity: '1' },
         },
-        'breathe': {
+        breathe: {
           '0%, 100%': { opacity: '0.04' },
           '50%': { opacity: '0.10' },
         },
@@ -112,7 +116,7 @@ export default {
           '0%': { opacity: '0', transform: 'scale(0.95)' },
           '100%': { opacity: '1', transform: 'scale(1)' },
         },
-        'shimmer': {
+        shimmer: {
           '0%': { backgroundPosition: '-200% 0' },
           '100%': { backgroundPosition: '200% 0' },
         },
@@ -132,4 +136,4 @@ export default {
     },
   },
   plugins: [],
-} satisfies Config
+}

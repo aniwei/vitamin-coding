@@ -25,8 +25,8 @@
     "@vitamin/setting": "workspace:*",
     "@vitamin/env": "workspace:*",
     "@vitamin/shared": "workspace:*",
-    "eventsource-parser": "^3.0.6",
-    "zod": "^4.0.0"
+    "eventsource-parser": "3.0.6",
+    "zod": "4.3.6"
   },
   "publishConfig": {
     "access": "public",

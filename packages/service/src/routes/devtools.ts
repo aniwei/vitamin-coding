@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import type { Devtools, BreakpointPoint } from '@vitamin/devtools'
 import type { CodingService } from '../coding-service'
 
-export function createDebugRoute(
+export function createDevtoolsRoute(
   context: CodingService,
   devtools: Devtools | null
 ): Hono {

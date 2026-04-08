@@ -10,7 +10,7 @@ import { createToolExecutor } from './tool-executor'
 import type { AssistantMessage, Message as LlmMessage } from '@vitamin/ai'
 import type { StreamFunction } from './work-loop'
 import type {
-  AgentConfig,
+  AgentOptions,
   AgentEvent,
   AgentLoopContext,
   AgentMessage,
@@ -69,7 +69,7 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
     return this.state.turnCount
   }
 
-  constructor(config: AgentConfig = {}) {
+  constructor(config: AgentOptions = {}) {
     super()
 
     this.stream = config.stream as StreamFunction | undefined
@@ -263,11 +263,11 @@ function defaultConvertToLLM(messages: AgentMessage[]) {
 // 默认 stream — 抛错提示需要注入
 function createDefaultStream(): StreamFunction {
   return () => {
-    throw new Error('No stream function provided. Pass a stream in AgentConfig or via AgentRunContext.')
+    throw new Error('No stream function provided. Pass a stream in AgentOptions or via AgentRunContext.')
   }
 }
 
 // 工厂函数
-export function createAgent(config: AgentConfig = {}): Agent {
+export function createAgent(config: AgentOptions = {}): Agent {
   return new Agent(config)
 }

@@ -1,7 +1,8 @@
-import type { AgentSessionEvent, AgentSession } from '@vitamin/coding'
+import type { AgentSessionEvent } from '@vitamin/agent'
 import type { StreamEvent, TextContent } from '@vitamin/ai'
 import type { WebSocketMessage } from './types'
 import type { WebSocketManager } from './websocket-manager'
+import type { AgentSession } from '@vitamin/coding'
 
 
 export class EventBridge {

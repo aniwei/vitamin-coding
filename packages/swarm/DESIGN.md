@@ -72,7 +72,7 @@ Agent 间直接转交控制权：
 
 ```ts
 interface SwarmConfig {
-  agents: AgentConfig[]
+  agents: AgentOptions[]
   mode: 'handoff' | 'sequential' | 'parallel' | 'hierarchical' | 'router'
   router?: RouterConfig
   maxConcurrency?: number

@@ -2,7 +2,7 @@ export type {
   VitaminSetting,
   VitaminSettingFromSchema,
   VitaminSettingKey,
-  AgentConfig,
+  AgentOptions,
   CategoryConfig,
   LogLevel,
   ToolPreset,

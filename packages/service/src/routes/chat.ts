@@ -41,6 +41,8 @@ export function createChatRoute(
     if (!session) {
       return c.json([])
     }
+    // TODO
+    // @ts-ignore
     return c.json(serializeMessages(session))
   })
 

@@ -1,7 +1,7 @@
 import { ws } from './websocket'
 import { useDevtoolsStore } from '../stores/devtools'
 import { useLogStore } from '../stores/logs'
-import type { Breakpoint, CommandRejectCode, DebugSnapshot } from '../types/debug'
+import type { Breakpoint, CommandRejectCode, DebugSnapshot } from '../types/devtools'
 import type { LogEntry } from '../types/logs'
 
 let initialized = false

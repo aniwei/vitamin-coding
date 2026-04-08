@@ -67,7 +67,7 @@ class WebSocketClient {
     // In dev, connect directly to backend to avoid Vite HMR WebSocket conflicts
     // In prod, use the same host (since static files are served by backend)
     const wsUrl = isDev
-      ? 'ws://localhost:8080/ws' // Direct connection in dev
+      ? 'ws://127.0.0.1:8080/ws' // Direct connection in dev
       : `${protocol}//${window.location.host}/ws` // Relative in prod
 
     console.log('Connecting to WebSocket:', wsUrl, `(dev mode: ${isDev})`)

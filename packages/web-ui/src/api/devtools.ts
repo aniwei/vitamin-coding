@@ -1,6 +1,6 @@
-import type { Breakpoint } from '../types/debug'
+import type { Breakpoint } from '../types/devtools'
 
-const BASE = '/api/debug'
+const BASE = '/api/devtools'
 
 export async function fetchDevtoolsStatus(): Promise<{ enabled: boolean; connected: boolean }> {
   const res = await fetch(`${BASE}/status`)

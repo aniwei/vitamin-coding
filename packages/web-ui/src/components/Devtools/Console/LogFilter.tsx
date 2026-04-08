@@ -16,7 +16,7 @@ export function LogFilter() {
   const toggleAutoScroll = useLogStore((s) => s.toggleAutoScroll)
   const clear = useLogStore((s) => s.clear)
 
-  const searchTimerRef = useRef<ReturnType<typeof setTimeout>>()
+  const searchTimerRef = useRef<ReturnType<typeof setTimeout> | undefined>(undefined)
 
   const handleSearchChange = useCallback(
     (value: string) => {

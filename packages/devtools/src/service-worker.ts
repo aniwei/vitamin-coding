@@ -90,7 +90,7 @@ export class ServiceWorker {
     return new Promise((resolve, reject) => {
       const requestId = randomUUID()
       this.pendingRequests.set(requestId, { resolve, reject })
-      workerPort.postMessage({ type, requestId, ...(payload ?? {}) })
+      workerPort.postMessage({ type, requestId, ...payload })
     })
   }
 

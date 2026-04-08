@@ -10,7 +10,7 @@ export const WORKFLOW_SLOTS = [
 
 export type WorkflowSlot = (typeof WORKFLOW_SLOTS)[number]
 
-export interface AgentConfig {
+export interface AgentOptions {
   // 模型名称
   model?: string
   description?: string
@@ -28,10 +28,10 @@ export interface AgentConfig {
   [key: string]: unknown
 }
 
-export type AgentsConfig = Record<string, AgentConfig>
+export type AgentsConfig = Record<string, AgentOptions>
 
 /** 内置 reviewer agent 预设 */
-export const BUILTIN_REVIEWER_AGENTS: Record<string, AgentConfig> = {
+export const BUILTIN_REVIEWER_AGENTS: Record<string, AgentOptions> = {
   'spec-reviewer': {
     description: 'Reviews implementation against specification requirements',
     categories: ['review'],

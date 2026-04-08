@@ -1,7 +1,7 @@
 import { memo } from 'react'
 import { Handle, Position } from '@xyflow/react'
 import { useDevtoolsStore } from '../../../stores/devtools'
-import type { BreakpointCategory } from '../../../types/debug'
+import type { BreakpointCategory } from '../../../types/devtools'
 
 type LegacyCategory = 'session' | 'prompt' | 'loop' | 'model' | 'tool'
 type Category = BreakpointCategory | LegacyCategory | 'virtual'

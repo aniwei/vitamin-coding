@@ -168,8 +168,7 @@ export interface ToolResult {
 }
 
 // Agent 配置（创建时仅需 stream 函数，其余通过 run() 传入）
-export interface AgentConfig {
-  /** stream 函数（LLM 调用实现） */
+export interface AgentOptions {
   stream?: (
     context: StreamContext,
     signal: AbortSignal,

@@ -94,7 +94,7 @@ while true:
 
 | 文件 | 职责 |
 |------|------|
-| `src/types.ts` | AgentTool / AgentConfig / AgentEvent / AgentState 等核心类型 |
+| `src/types.ts` | AgentTool / AgentOptions / AgentEvent / AgentState 等核心类型 |
 | `src/agent.ts` | Agent 状态机 + 事件发射 |
 | `src/agent-factory.ts` | 基于 Registry 的 Agent 工厂 |
 | `src/work-loop.ts` | 核心执行循环算法 |
