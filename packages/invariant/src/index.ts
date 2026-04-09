@@ -7,4 +7,4 @@ export {
 export { invariant as default } from './invariant'
 export type { VerbosityLevel, ConsoleFunctionName } from './invariant'
 
-export { createStripInvariantInProductionPlugin } from './tsup-strip-invariant-plugin'
+export { createStripInvariantInProductionPlugin } from './tsdown-strip-invariant-plugin'
