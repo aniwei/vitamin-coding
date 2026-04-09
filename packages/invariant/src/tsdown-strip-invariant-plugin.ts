@@ -1,22 +1,8 @@
-import { readFile } from 'node:fs/promises'
 import ts from 'typescript'
 
-type OnLoadArgs = {
-  path: string
-}
-
-type OnLoadResult = {
-  contents: string
-  loader: 'ts'
-}
-
-type EsbuildLike = {
-  onLoad(options: { filter: RegExp }, callback: (args: OnLoadArgs) => Promise<OnLoadResult>): void
-}
-
-type Plugin = {
+type RolldownPlugin = {
   name: string
-  setup(build: EsbuildLike): void
+  transform(code: string, id: string): { code: string } | null
 }
 
 type StripInvariantPluginOptions = {
@@ -173,21 +159,16 @@ function transformSource(source: string, fileName: string, invariantImportSource
 
 export function createStripInvariantInProductionPlugin(
   options: StripInvariantPluginOptions,
-): Plugin {
+): RolldownPlugin {
   const invariantImportSource = options.invariantImportSource ?? '@vitamin/invariant'
 
   return {
     name: 'strip-invariant-in-production',
-    setup(build) {
-      build.onLoad({ filter: options.filter }, async (args) => {
-        const source = await readFile(args.path, 'utf8')
-        const transformed = transformSource(source, args.path, invariantImportSource)
+    transform(code, id) {
+      if (!options.filter.test(id)) return null
 
-        return {
-          contents: transformed,
-          loader: 'ts',
-        }
-      })
+      const transformed = transformSource(code, id, invariantImportSource)
+      return { code: transformed }
     },
   }
 }

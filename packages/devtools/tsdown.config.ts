@@ -1,5 +1,5 @@
-import { defineConfig } from 'tsup'
-import { baseConfig } from '../../tsup.config.base'
+import { defineConfig } from 'tsdown'
+import { baseConfig } from '../../tsdown.config.ts'
 
 export default defineConfig([
   { ...baseConfig },
@@ -10,8 +10,7 @@ export default defineConfig([
     sourcemap: true,
     target: 'node22',
     outDir: 'dist',
-    splitting: false,
     treeshake: true,
-    noExternal: [/.*/],
+    deps: { alwaysBundle: [/.*/] },
   },
 ])

@@ -17,7 +17,7 @@
     "vitamin": "./bin/vitamin.js"
   },
   "scripts": {
-    "build": "tsup",
+    "build": "tsdown",
     "typecheck:project": "tsc -p tsconfig.json --noEmit",
     "typecheck:file": "tsc src/index.ts --noEmit --target ES2024 --module ESNext --moduleResolution bundler --esModuleInterop --skipLibCheck",
     "typecheck": "tsc --noEmit",
