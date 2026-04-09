@@ -114,9 +114,7 @@ const Modal = ({
               variant="primary"
               onClick={onConfirm}
               disabled={disabled}
-            >
-              {confirmButtonText || 'Save'}
-            </Button>
+            >{confirmButtonText || 'Save'}</Button>
           </div>
         </div>
         {!!bottomSlot && (
