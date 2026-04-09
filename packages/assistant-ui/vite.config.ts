@@ -16,7 +16,6 @@ export default defineConfig({
   ],
   resolve: {
     alias: [
-      // @/ → assistant-ui/src/ (self-contained, no cross-project alias)
       { find: /^@\//, replacement: `${srcRoot}/` }
     ],
   },
