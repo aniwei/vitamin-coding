@@ -3,7 +3,7 @@ import {
   RiHammerFill,
   RiHammerLine,
 } from '@remixicon/react'
-import { Link } from 'react-router-dom'
+import { Link, useMatch } from 'react-router-dom'
 
 type ToolsNavProps = {
   className?: string
@@ -12,10 +12,8 @@ type ToolsNavProps = {
 const ToolsNav = ({
   className,
 }: ToolsNavProps) => {
-  // const selectedSegment = useSelectedLayoutSegment()
-  const selectedSegment = 'tools'
-  const activated = selectedSegment === 'tools'
-
+  const activated = useMatch('/tools/*')
+  
   return (
     <Link
       to="/tools"

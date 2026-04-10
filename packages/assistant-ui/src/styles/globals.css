@@ -6,12 +6,12 @@
 @import '../themes/manual-dark.css' layer(base);
 @import './monaco-sticky-fix.css' layer(base);
 
-@import '../components/action-button/index.css';
-@import '../components/badge/index.css';
+/* @import '../components/action-button/index.css'; */
+/* @import '../components/badge/index.css'; */
 @import '../components/button/index.css';
 @import '../components/modal/index.css' layer(base);
-@import '../components/premium-badge/index.css';
-@import '../components/segmented-control/index.css';
+/* @import '../components/premium-badge/index.css'; */
+/* @import '../components/segmented-control/index.css'; */
 
 @import 'tailwindcss';
 

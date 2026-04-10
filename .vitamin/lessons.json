@@ -12,7 +12,46 @@
       "id": "lesson_1",
       "createdAt": 1775635230156,
       "appliedCount": 0
+    },
+    {
+      "tags": [
+        "ai-models",
+        "strategy",
+        "ReAct"
+      ],
+      "trigger": "Researching whether new AI models still rely on the ReAct framework",
+      "insight": "While exploring AI models and their use of ReAct, modern systems can use enhanced task orchestration and dynamic modeling capabilities to achieve the same objectives without explicitly using ReAct-style architectures. These systems rely on better integration with external tools and automated decision-making.",
+      "sourceSessionId": "",
+      "id": "lesson_2",
+      "createdAt": 1775758542062,
+      "appliedCount": 0
+    },
+    {
+      "tags": [
+        "typescript",
+        "game-development",
+        "best-practices"
+      ],
+      "trigger": "Implementing a Snake game in TypeScript while adhering to strict typing and reusable logic design.",
+      "insight": "When recreating interactive games like Snake in TypeScript, using strict typing for game entities (e.g., positions, direction, and state) significantly improves code safety and readability. Encapsulation in functions and interfaces prevents coupling and makes the code flexible for expansion.",
+      "sourceSessionId": "",
+      "id": "lesson_3",
+      "createdAt": 1775808769637,
+      "appliedCount": 0
+    },
+    {
+      "tags": [
+        "web_fetch",
+        "documentation",
+        "data_extraction"
+      ],
+      "trigger": "When attempting to fetch structured documentation from external sources like Taro official pages.",
+      "insight": "Use diverse sources or alternative query strategies when primary sources fail to fetch complete data. Additionally, rely on fallback documentation or structured knowledge integration if web fetching is unreliable.",
+      "sourceSessionId": "",
+      "id": "lesson_4",
+      "createdAt": 1775811298642,
+      "appliedCount": 0
     }
   ],
-  "nextId": 2
+  "nextId": 5
 }

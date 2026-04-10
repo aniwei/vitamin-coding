@@ -25,7 +25,7 @@ vi.mock('@/context/provider-context', async (importOriginal) => {
 vi.mock('@/service/common', () => ({
   switchWorkspace: vi.fn(),
 }))
-vi.mock('@/app/components/base/ui/toast', () => ({
+vi.mock('@/components/ui/toast', () => ({
   default: {
     notify: (args: unknown) => toastMocks.mockNotify(args),
   },

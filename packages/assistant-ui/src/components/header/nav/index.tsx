@@ -1,14 +1,10 @@
-'use client'
-
-import type { INavSelectorProps } from './nav-selector'
+import clsx from 'clsx'
 import { useState } from 'react'
 import * as React from 'react'
-import { useStore as useAppStore } from '@/app/components/app/store'
-import { ArrowNarrowLeft } from '@/app/components/base/icons/src/vender/line/arrows'
-import Link from '@/next/link'
-import { useSelectedLayoutSegment } from '@/next/navigation'
-import clsx from 'clsx'
+import { ArrowNarrowLeft } from '@/components/icons/src/vender/line/arrows'
+import type { INavSelectorProps } from './nav-selector'
 import NavSelector from './nav-selector'
+import { Link } from 'react-router-dom'
 
 type INavProps = {
   icon: React.ReactNode
@@ -33,9 +29,8 @@ const Nav = ({
   isLoadingMore,
   isApp,
 }: INavProps) => {
-  const setAppDetail = useAppStore(state => state.setAppDetail)
   const [hovered, setHovered] = useState(false)
-  const segment = useSelectedLayoutSegment()
+  const segment = ''
   const isActivated = Array.isArray(activeSegment) ? activeSegment.includes(segment!) : segment === activeSegment
 
   return (
@@ -45,15 +40,15 @@ const Nav = ({
       ${!curNav && !isActivated && 'hover:bg-components-main-nav-nav-button-bg-hover'}
     `}
     >
-      <Link href={link}>
+      <Link to={link}>
         <div
           onClick={(e) => {
             // Don't clear state if opening in new tab/window
             if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0)
               return
-            setAppDetail()
+            // setAppDetail()
           }}
-          className={cn('flex h-7 cursor-pointer items-center radius-lg px-2.5', isActivated ? 'text-components-main-nav-nav-button-text-active' : 'text-components-main-nav-nav-button-text', curNav && isActivated && 'hover:bg-components-main-nav-nav-button-bg-active-hover')}
+          className={clsx('flex h-7 cursor-pointer items-center radius-lg px-2.5', isActivated ? 'text-components-main-nav-nav-button-text-active' : 'text-components-main-nav-nav-button-text', curNav && isActivated && 'hover:bg-components-main-nav-nav-button-bg-active-hover')}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >

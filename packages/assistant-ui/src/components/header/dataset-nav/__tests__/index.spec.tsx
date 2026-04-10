@@ -35,11 +35,11 @@ vi.mock('@remixicon/react', () => ({
   RiAddLine: () => <div data-testid="add-icon" />,
 }))
 
-vi.mock('@/app/components/base/loading', () => ({
+vi.mock('@/components/loading', () => ({
   default: () => <div data-testid="loading" />,
 }))
 
-vi.mock('@/app/components/base/app-icon', () => ({
+vi.mock('@/components/app-icon', () => ({
   default: () => <div data-testid="app-icon" />,
 }))
 
@@ -47,11 +47,11 @@ vi.mock('@/app/components/app/type-selector', () => ({
   AppTypeIcon: () => <div data-testid="app-type-icon" />,
 }))
 
-vi.mock('@/app/components/base/icons/src/vender/line/arrows', () => ({
+vi.mock('@/components/icons/src/vender/line/arrows', () => ({
   ArrowNarrowLeft: () => <div data-testid="arrow-left-icon" />,
 }))
 
-vi.mock('@/app/components/base/icons/src/vender/line/files', () => ({
+vi.mock('@/components/icons/src/vender/line/files', () => ({
   FileArrow01: () => <div data-testid="file-arrow-icon" />,
   FilePlus01: () => <div data-testid="file-plus-1-icon" />,
   FilePlus02: () => <div data-testid="file-plus-2-icon" />,

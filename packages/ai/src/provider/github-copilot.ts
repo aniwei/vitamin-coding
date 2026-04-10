@@ -345,7 +345,7 @@ class GitHubCopilotStream implements ProviderStream {
       try {
         const data = JSON.parse(event.data) as Record<string, unknown>
 
-        // 处理 usage（参照 pi-mono：解析 cached_tokens / reasoning_tokens）
+        // 处理 usage
         if (data.usage) {
           const usage = data.usage as Record<string, unknown>
           const promptTokens = (usage.prompt_tokens as number) ?? 0

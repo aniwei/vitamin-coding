@@ -1,9 +1,10 @@
+import clsx from 'clsx'
 import {
   RiPlanetFill,
   RiPlanetLine,
 } from '@remixicon/react'
-import clsx from 'clsx'
 import { Link } from 'react-router-dom'
+import { useMatch } from 'react-router-dom'
 
 type ExploreNavProps = {
   className?: string
@@ -12,14 +13,11 @@ type ExploreNavProps = {
 const ExploreNav = ({
   className,
 }: ExploreNavProps) => {
-  // TODO
-  // const selectedSegment = useSelectedLayoutSegment()
-  const selectedSegment = 'explore'
-  const activated = selectedSegment === 'explore'
+  const activated = useMatch('/explore/*')
 
   return (
     <Link
-      to="/explore/apps"
+      to="/explore"
       className={clsx(className, 'group', activated && 'bg-components-main-nav-nav-button-bg-active shadow-md', activated ? 'text-components-main-nav-nav-button-text-active' : 'text-components-main-nav-nav-button-text hover:bg-components-main-nav-nav-button-bg-hover')}
     >
       {

@@ -24,7 +24,7 @@
     "run:example:service": "tsx example/web-service.ts",
     "run:example:devtools-service": "tsx example/devtools-service.ts",
     "run:example:compare": "tsx example/model-compare.ts",
-    "build": "tsup",
+    "build": "tsdown",
     "typecheck:project": "tsc -p tsconfig.json --noEmit",
     "typecheck:file": "tsc src/index.ts --noEmit --target ES2024 --module ESNext --moduleResolution bundler --esModuleInterop --skipLibCheck",
     "typecheck": "tsc --noEmit",

@@ -2,8 +2,8 @@
 import type { LangGeniusVersionResponse } from '@/models/common'
 import { RiCloseLine } from '@remixicon/react'
 import dayjs from 'dayjs'
-import Button from '@/app/components/base/button'
-import DifyLogo from '@/app/components/base/logo/dify-logo'
+import Button from '@/components/button'
+import DifyLogo from '@/components/logo/dify-logo'
 import Modal from '@/components/modal'
 
 import Link from '@/next/link'

@@ -1,20 +1,30 @@
 import { lazy } from 'react'
 import { Navigate, createBrowserRouter } from 'react-router-dom'
-import CommonLayout from '@/layouts/common-layout'
+import { CommonLayout } from '@/layouts/common-layout'
 
-const Apps = lazy(() => import('@/pages/apps'))
+const Session = lazy(() => import('@/pages/session'))
+const Tools = lazy(() => import('@/pages/tools'))
 
 export const router = createBrowserRouter([
   {
     path: '/',
-    element: <Navigate to="/apps" replace />,
+    element: <Navigate to="/session" replace />,
   },
   {
     element: <CommonLayout />,
     children: [
       {
-        path: '/apps',
-        element: <Apps />,
+        path: '/session',
+        element: <Session />,
+      },
+    ],
+  },
+  {
+    element: <CommonLayout />,
+    children: [
+      {
+        path: '/tools',
+        element: <Tools />,
       },
     ],
   },

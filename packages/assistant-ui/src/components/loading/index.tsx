@@ -1,5 +1,5 @@
 import clsx from 'clsx'
-import './style.css'
+import './style.module.css'
 
 type ILoadingProps = {
   type?: 'area' | 'app'

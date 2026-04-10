@@ -6,13 +6,7 @@ import {
 import { flatten } from 'es-toolkit/compat'
 import { produce } from 'immer'
 import { useCallback, useEffect, useState } from 'react'
-import { useTranslation } from 'react-i18next'
-import { useStore as useAppStore } from '@/app/components/app/store'
 import { useAppContext } from '@/context/app-context'
-import dynamic from '@/next/dynamic'
-import { useParams } from '@/next/navigation'
-import { useInfiniteAppList } from '@/service/use-apps'
-import { AppModeEnum } from '@/types/app'
 import Nav from '../nav'
 
 const CreateAppTemplateDialog = dynamic(() => import('@/app/components/app/create-app-dialog'), { ssr: false })

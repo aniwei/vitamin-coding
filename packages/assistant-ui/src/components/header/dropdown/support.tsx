@@ -1,6 +1,6 @@
 import { useTranslation } from 'react-i18next'
-import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLinkItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/app/components/base/ui/dropdown-menu'
-import { toggleZendeskWindow } from '@/app/components/base/zendesk/utils'
+import { DropdownMenuGroup, DropdownMenuItem, DropdownMenuLinkItem, DropdownMenuSub, DropdownMenuSubContent, DropdownMenuSubTrigger } from '@/components/ui/dropdown-menu'
+import { toggleZendeskWindow } from '@/components/zendesk/utils'
 import { Plan } from '@/app/components/billing/type'
 import { SUPPORT_EMAIL_ADDRESS, ZENDESK_WIDGET_KEY } from '@/config'
 import { useAppContext } from '@/context/app-context'

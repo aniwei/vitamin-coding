@@ -1,10 +1,7 @@
-// GENERATE BY script
-// DON NOT EDIT IT MANUALLY
-
-import type { IconData } from '@/app/components/base/icons/IconBase'
-import * as React from 'react'
-import IconBase from '@/app/components/base/icons/IconBase'
+import IconBase from '@/components/icons/IconBase'
 import data from './Variable02.json'
+import * as React from 'react'
+import type { IconData } from '@/components/icons/IconBase'
 
 const Icon = (
   {

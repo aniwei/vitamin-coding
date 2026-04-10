@@ -1,6 +1,7 @@
 import { TerminalSquare } from '@/components/icons/src/vender/solid/development'
 import { Beaker02 } from '@/components/icons/src/vender/solid/education'
 import { useAppContext } from '@/context/app-context'
+import { current } from 'immer'
 
 const headerEnvClassName: { [k: string]: string } = {
   DEVELOPMENT: 'bg-[#FEC84B] border-[#FDB022] text-[#93370D]',
@@ -8,8 +9,11 @@ const headerEnvClassName: { [k: string]: string } = {
 }
 
 const EnvNav = () => {
-  const { langGeniusVersionInfo } = useAppContext()
-  const showEnvTag = langGeniusVersionInfo.current_env === 'TESTING' || langGeniusVersionInfo.current_env === 'DEVELOPMENT'
+  // const { versionInfo } = useAppContext()
+  const context = {
+    current_env: 'DEVELOPMENT',
+  }
+  const showEnvTag = context.current_env === 'TESTING' || context.current_env === 'DEVELOPMENT'
 
   if (!showEnvTag)
     return null
@@ -17,11 +21,11 @@ const EnvNav = () => {
   return (
     <div className={`
       mr-1 flex h-[22px] items-center rounded-md border px-2 text-xs font-medium
-      ${headerEnvClassName[langGeniusVersionInfo.current_env]}
+      ${headerEnvClassName[context.current_env]}
     `}
     >
       {
-        langGeniusVersionInfo.current_env === 'TESTING' && (
+        context.current_env === 'TESTING' && (
           <>
             <Beaker02 className="h-3 w-3" />
             <div className="ml-1 max-[1280px]:hidden">Testing</div>
@@ -29,7 +33,7 @@ const EnvNav = () => {
         )
       }
       {
-        langGeniusVersionInfo.current_env === 'DEVELOPMENT' && (
+        context.current_env === 'DEVELOPMENT' && (
           <>
             <TerminalSquare className="h-3 w-3" />
             <div className="ml-1 max-[1280px]:hidden">Development</div>

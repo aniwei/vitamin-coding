@@ -1,5 +1,5 @@
 import { useTheme as useBaseTheme } from 'next-themes'
-import { Theme } from '@/types/app'
+import { Theme } from '@/types'
 
 const useTheme = () => {
   const { theme, resolvedTheme, ...rest } = useBaseTheme()
