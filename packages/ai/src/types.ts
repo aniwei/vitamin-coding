@@ -162,6 +162,7 @@ export interface ToolDefinition<TArgs = unknown> {
 }
 
 export interface StreamContext {
+  model: Model
   systemPrompt: string
   messages: Message[]
   tools?: ToolDefinition[]

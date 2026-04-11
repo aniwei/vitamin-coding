@@ -1,29 +1,9 @@
 import type { ToolCall } from '@vitamin/ai'
 import type { Devtools, PauseResumePayload, DebugSnapshot, MessageSummaryItem } from '@vitamin/devtools'
-import type { AgentMessage, AgentTool, ToolResult } from './types'
+import type { AgentMessage, AgentTool, ToolHookExecutor, ToolResult } from './types'
 import { AbortError } from './errors'
 
 type SnapshotMetadata = Record<string, string | number | boolean | null>
-
-export interface ToolHookExecutor {
-  executeBeforeHooks(input: {
-    toolName: string
-    toolCallId: string
-    args: Record<string, unknown>
-    agentName: string
-    sessionId: string
-  }): Promise<{ args: Record<string, unknown>; cancelled: boolean; cancelReason?: string }>
-
-  executeAfterHooks(input: {
-    toolName: string
-    toolCallId: string
-    args: Record<string, unknown>
-    result: ToolResult
-    agentName: string
-    sessionId: string
-    durationMs: number
-  }): Promise<{ result: ToolResult; metadata: Record<string, unknown> }>
-}
 
 // 工具执行器接口
 export interface ToolExecutor {

@@ -4,35 +4,36 @@ import { createToolHookExecutor } from './hooks'
 import { calculate, type AssistantMessage } from '@vitamin/ai'
 import { createHookRegistry } from '@vitamin/hooks'
 import { createLogger, type Logger } from '@vitamin/shared'
-import type {
-  Agent,
-  AgentMessage,
-  AgentTool,
-  ToolCallEvent,
-  ToolResult,
+import {
+  createAgent,
+  type Agent,
+  type AgentMessage,
+  type AgentTool,
+  type ToolCallEvent,
+  type ToolResult,
 } from '@vitamin/agent'
 import type { HookRegistry } from '@vitamin/hooks'
 import type { Session } from '@vitamin/session'
-import type { 
-  Message, 
-  Model, 
-  StreamEvent, 
-  ThinkingLevel, 
-  Usage 
+import type {
+  Message,
+  Model,
+  StreamEvent,
+  ThinkingLevel,
+  Usage
 } from '@vitamin/ai'
-import type { 
-  Devtools, 
+import type {
+  Devtools,
   PauseResult,
   DebugSnapshot,
   MessageSummaryItem,
 } from '@vitamin/devtools'
-import type { 
-  AgentSessionOptions, 
+import type {
+  AgentSessionOptions,
   AgentSessionEvent,
   AgentSessionSubscriber,
   AskUserQuestion,
-  PromptRefresh, 
-  PromptOptions 
+  PromptRefresh,
+  PromptOptions
 } from './types'
 
 
@@ -97,12 +98,10 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
 
   constructor(
     session: Session<AgentMessage>,
-    agent: Agent,
     options: AgentSessionOptions,
   ) {
     super()
     this.session = session
-    this.agent = agent
 
     const hookRegistry = options.hookRegistry ?? createHookRegistry({ preset: 'default' })
     const logger = options.logger ?? createLogger(`agent-session:${session.id}`, {
@@ -116,7 +115,7 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
     const thinkingLevel = options.thinkingLevel ?? 'medium'
     const maxToolTurns = options.maxToolTurns ?? 25
     const workspaceDir = options.workspaceDir ?? process.cwd()
-    
+
     const { model, devtools, agentName } = options
 
     this.model = model
@@ -125,11 +124,27 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
     this.thinkingLevel = thinkingLevel
     this.maxToolTurns = maxToolTurns
     this.hookRegistry = hookRegistry
-    this.agentName = agentName ?? 'agent' // TODO
+    this.agentName = agentName ?? 'agent'
     this.devtools = devtools
     this.logger = logger
     this.workspaceDir = workspaceDir
     this.promptRefresh = promptRefresh
+
+    // Agent 在 AgentSession 内部创建，持有基础设施配置，跨所有 run() 共享
+    this.agent = createAgent({
+      stream: options.stream,
+      logger,
+      maxToolTurns,
+      agentName: this.agentName,
+      sessionId: session.id,
+      toolHookExecutor: createToolHookExecutor({
+        hookRegistry,
+        agentName: this.agentName,
+        sessionId: session.id,
+      }),
+      devtools,
+      approval: (toolName, args, reason) => this.requestApproval(toolName, args, reason),
+    })
 
     this.agentUnsubs.push(this.agent.on('stream_event', this.onStreamEvent))
     this.agentUnsubs.push(this.agent.on('turn_start', this.onTurnStart))
@@ -404,8 +419,6 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
         model: this.model,
         systemPrompt: effectiveSystemPrompt,
         tools: this.tools,
-        logger: this.logger,
-        maxToolTurns: this.maxToolTurns,
         messages,
         thinkingLevel: paramsOutput.thinkingLevel as ThinkingLevel,
         temperature: paramsOutput.temperature,
@@ -426,15 +439,6 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
 
           return output.messages
         },
-        toolHookExecutor: createToolHookExecutor({
-          hookRegistry: this.hookRegistry,
-          agentName: this.agentName,
-          sessionId: this.id,
-        }),
-        agentName: this.agentName,
-        sessionId: this.id,
-        devtools: this.devtools,
-        approval: (toolName, args, reason) => this.requestApproval(toolName, args, reason),
       })
 
       // 4. 将 workLoop 追加的新消息持久化回 Session

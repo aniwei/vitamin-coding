@@ -4,9 +4,7 @@ import type { CopilotCredentialResolver } from './provider/github-copilot'
 import { createAnthropicProvider } from './provider/anthropic'
 import type { AnthropicCredentialResolver } from './provider/anthropic'
 
-import {
-  createDefaultAuthStore,
-} from './auth-store'
+import { createDefaultAuthStore } from './auth-store'
 import type { AuthStore } from './auth-store'
 
 import { ModelRegistry, createDefaultModelRegistry } from './model-registry'
@@ -79,7 +77,6 @@ export class ProviderRegistry {
     this.authStore = store
   }
 
-
   getAuthStore(): AuthStore {
     return this.authStore
   }
@@ -122,31 +119,38 @@ export class ProviderRegistry {
       return spec as Model
     }
 
-    throw new ProviderError('No ModelRegistry configured; cannot resolve model spec', {
-      code: 'PROVIDER_MODEL_NOT_FOUND',
-    })
+    throw new ProviderError(
+      'No ModelRegistry configured; cannot resolve model spec',
+      {
+        code: 'PROVIDER_MODEL_NOT_FOUND',
+      },
+    )
   }
 }
 
 // 创建空的 Provider 注册表
-export function createProviderRegistry(options: ProviderRegistryOptions = {}): ProviderRegistry {
+export function createProviderRegistry(
+  options: ProviderRegistryOptions = {},
+): ProviderRegistry {
   return new ProviderRegistry(options)
 }
 
-
 export function createDefaultProviderRegistry(
-  options: DefaultProviderRegistryOptions = {}
+  options: DefaultProviderRegistryOptions = {},
 ): ProviderRegistry {
   const registry = createProviderRegistry(options)
 
   registry.register('github-copilot', () => {
-    const resolveOAuthAccessKey: CopilotCredentialResolver = () => registry.resolveAccessKey('github-copilot').then(k => k ?? undefined)
+    const resolveOAuthAccessKey: CopilotCredentialResolver = () =>
+      registry.resolveAccessKey('github-copilot').then((k) => k ?? undefined)
     return createCopilotProvider({ resolveOAuthAccessKey })
   })
 
   registry.register('anthropic-messages', () => {
-    const resolveKey: AnthropicCredentialResolver = () => registry.resolveAccessKey('anthropic').then(k => k ?? undefined)
-    const resolveBaseUrl = () => registry.resolveBaseUrl('anthropic').then(u => u ?? undefined)
+    const resolveKey: AnthropicCredentialResolver = () =>
+      registry.resolveAccessKey('anthropic').then((k) => k ?? undefined)
+    const resolveBaseUrl = () =>
+      registry.resolveBaseUrl('anthropic').then((u) => u ?? undefined)
     return createAnthropicProvider({ resolveKey, resolveBaseUrl })
   })
 
@@ -154,4 +158,3 @@ export function createDefaultProviderRegistry(
 }
 
 export type { AuthStore }
-

@@ -9,8 +9,8 @@ import {
   SESSION_IDLE_TIMEOUT_MS,
   SESSION_SNAPSHOT_VERSION,
 } from '@vitamin/env'
-import { createAgentWithRegistry, type AgentMessage } from '@vitamin/agent'
-import { type ProviderRegistry } from '@vitamin/ai'
+import { stream as aiStream, type ProviderRegistry } from '@vitamin/ai'
+import type { AgentMessage, StreamFunction } from '@vitamin/agent'
 import { type HookRegistry } from '@vitamin/hooks'
 import { type Logger } from '@vitamin/shared'
 
@@ -49,6 +49,15 @@ export interface RemoteSessionManagerOptions extends CodingSessionManagerOptions
   sessionUrl: string
 }
 
+// 组合层：将 ProviderRegistry + aiStream 组装成 StreamFunction
+// @vitamin/agent 不感知具体 LLM 实现，由此处注入
+function makeStream(registry: ProviderRegistry): StreamFunction {
+  return (context, signal) => {
+    const provider = registry.get(context.model.api)
+    return aiStream(context.model, provider, context, { signal })
+  }
+}
+
 export class CodingSessionManager {
   // 单一数据源：sessions Map 就是所有在线 session 的权威状态
   private readonly sessions = new Map<string, AgentSession>()
@@ -67,7 +76,7 @@ export class CodingSessionManager {
   private activeSessionId?: string
 
   // 跨切面依赖
-  private readonly providerRegistry: ProviderRegistry
+  private readonly stream: StreamFunction
   private readonly hookRegistry: HookRegistry
   private readonly logger: Logger
   private readonly devtools?: Devtools
@@ -79,7 +88,7 @@ export class CodingSessionManager {
     options: CodingSessionManagerOptions,
     persistence: SessionPersistence<AgentMessage>,
   ) {
-    this.providerRegistry = options.providerRegistry
+    this.stream = makeStream(options.providerRegistry)
     this.hookRegistry = options.hookRegistry
     this.logger = options.logger
     this.devtools = options.devtools
@@ -113,12 +122,7 @@ export class CodingSessionManager {
     rawSession: Session<AgentMessage>,
     config: ResolvedSessionConfig,
   ): AgentSession {
-    const agent = createAgentWithRegistry({
-      model: config.model,
-      providerRegistry: this.providerRegistry,
-    })
-
-    return new AgentSession(rawSession, agent, {
+    return new AgentSession(rawSession, {
       model: config.model,
       agentName: config.agentName,
       systemPrompt: config.systemPrompt,
@@ -128,7 +132,7 @@ export class CodingSessionManager {
       promptRefresh: config.promptRefresh,
       workspaceDir: config.workspaceDir,
       hookRegistry: this.hookRegistry,
-      providerRegistry: this.providerRegistry,
+      stream: this.stream,
       logger: this.logger.child({ sessionId: rawSession.id }),
       devtools: this.devtools,
     })

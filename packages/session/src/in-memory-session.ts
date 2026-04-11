@@ -1,14 +1,14 @@
-import type { 
-  Session, 
-  SessionContext, 
-  SessionEntry, 
-  SessionMetadata 
+import type {
+  Session,
+  SessionContext,
+  SessionEntry,
+  SessionMetadata,
 } from './types'
 
 export class InMemorySession<T = unknown> implements Session<T> {
   private readonly sessionEntries: SessionEntry<T>[] = []
   private readonly entryMap = new Map<string, SessionEntry<T>>()
-  
+
   private readonly meta: SessionMetadata
 
   constructor(
@@ -100,14 +100,23 @@ export class InMemorySession<T = unknown> implements Session<T> {
 
     if (lastCompactionIndex === -1) {
       return {
-        messages: branch.filter((e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message').map((e) => e.message),
+        messages: branch
+          .filter(
+            (e): e is SessionEntry<T> & { type: 'message' } =>
+              e.type === 'message',
+          )
+          .map((e) => e.message),
       }
     }
 
-    const compactionEntry = branch[lastCompactionIndex] as SessionEntry<T> & { type: 'compaction' }
+    const compactionEntry = branch[lastCompactionIndex] as SessionEntry<T> & {
+      type: 'compaction'
+    }
     const messagesAfter = branch
       .slice(lastCompactionIndex + 1)
-      .filter((e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message')
+      .filter(
+        (e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message',
+      )
       .map((e) => e.message)
 
     return {
@@ -118,7 +127,9 @@ export class InMemorySession<T = unknown> implements Session<T> {
 
   messages(): ReadonlyArray<T> {
     return this.walkBranch()
-      .filter((e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message')
+      .filter(
+        (e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message',
+      )
       .map((e) => e.message)
   }
 
@@ -153,15 +164,17 @@ export class InMemorySession<T = unknown> implements Session<T> {
       this.entryMap.set(entry.id, entry)
     }
     Object.assign(this.meta, meta)
-    this._leafId = restoredLeafId ?? (
-      entries.length > 0 
-        ? entries[entries.length - 1]!.id 
-        : undefined
-    )
+    this._leafId =
+      restoredLeafId ??
+      (entries.length > 0 ? entries[entries.length - 1]!.id : undefined)
   }
 
   // 导出快照
-  toSnapshot(): { entries: SessionEntry<T>[]; metadata: SessionMetadata; leafId?: string } {
+  toSnapshot(): {
+    entries: SessionEntry<T>[]
+    metadata: SessionMetadata
+    leafId?: string
+  } {
     return {
       entries: [...this.sessionEntries],
       metadata: this.metadata(),
@@ -178,7 +191,9 @@ export class InMemorySession<T = unknown> implements Session<T> {
 
     while (current) {
       path.push(current)
-      current = current.parentId ? this.entryMap.get(current.parentId) : undefined
+      current = current.parentId
+        ? this.entryMap.get(current.parentId)
+        : undefined
     }
 
     path.reverse()
@@ -186,7 +201,9 @@ export class InMemorySession<T = unknown> implements Session<T> {
   }
 
   // 内部: 获取当前分支上未压缩的 message 条目
-  private getBranchMessageEntries(): Array<SessionEntry<T> & { type: 'message' }> {
+  private getBranchMessageEntries(): Array<
+    SessionEntry<T> & { type: 'message' }
+  > {
     const branch = this.walkBranch()
 
     let lastCompactionIndex = -1
@@ -199,6 +216,8 @@ export class InMemorySession<T = unknown> implements Session<T> {
 
     return branch
       .slice(lastCompactionIndex + 1)
-      .filter((e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message')
+      .filter(
+        (e): e is SessionEntry<T> & { type: 'message' } => e.type === 'message',
+      )
   }
 }

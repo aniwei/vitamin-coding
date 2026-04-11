@@ -1,6 +1,7 @@
 import type {
   AgentMessage,
   AgentTool,
+  StreamFunction,
 } from '@vitamin/agent'
 import type {
   Model,
@@ -55,14 +56,18 @@ export interface AgentSessionOptions {
   maxToolTurns?: number
   workspaceDir?: string
   hookRegistry: HookRegistry
-  providerRegistry?: ProviderRegistry
+  stream: StreamFunction
   logger: Logger
   devtools?: Devtools
   promptRefresh?: PromptRefresh
 }
 
-export interface CreateAgentSessionOptions extends AgentSessionOptions {
+// CreateAgentSessionOptions 是便捷函数接口，stream 由 providerRegistry 内部推导
+// 调用方无需手动组装 StreamFunction
+export interface CreateAgentSessionOptions extends Omit<AgentSessionOptions, 'stream'> {
   sessionStore?: SessionStore<AgentMessage>
+  providerRegistry?: ProviderRegistry
+  stream?: StreamFunction
 }
 
 export interface AgentSessionInfo {
