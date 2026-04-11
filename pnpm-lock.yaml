@@ -68,9 +68,6 @@ importers:
       '@vitamin/env':
         specifier: workspace:*
         version: link:../env
-      '@vitamin/setting':
-        specifier: workspace:*
-        version: link:../setting
       '@vitamin/shared':
         specifier: workspace:*
         version: link:../shared
@@ -349,9 +346,15 @@ importers:
 
   packages/setting:
     dependencies:
+      '@vitamin/ai':
+        specifier: workspace:*
+        version: link:../ai
       '@vitamin/persistence':
         specifier: workspace:*
         version: link:../persistence
+      '@vitamin/prompt':
+        specifier: workspace:*
+        version: link:../prompt
       '@vitamin/shared':
         specifier: workspace:*
         version: link:../shared
@@ -453,6 +456,9 @@ importers:
       '@vitamin/mcp':
         specifier: workspace:*
         version: link:../mcp
+      '@vitamin/setting':
+        specifier: workspace:*
+        version: link:../setting
       '@vitamin/shared':
         specifier: workspace:*
         version: link:../shared

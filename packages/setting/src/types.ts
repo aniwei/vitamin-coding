@@ -1,14 +1,7 @@
 import type { SettingStore } from './store'
-
-export const WORKFLOW_SLOTS = [
-  'normal',
-  'thinking',
-  'compact',
-  'critique',
-  'vision',
-] as const
-
-export type WorkflowSlot = (typeof WORKFLOW_SLOTS)[number]
+import type { WorkflowSlot } from '@vitamin/ai'
+export type { WorkflowSlot } from '@vitamin/ai'
+export { WORKFLOW_SLOTS } from '@vitamin/ai'
 
 export interface AgentOptions {
   // 模型名称

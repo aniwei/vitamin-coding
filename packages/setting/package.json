@@ -21,7 +21,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@vitamin/ai": "workspace:*",
     "@vitamin/persistence": "workspace:*",
+    "@vitamin/prompt": "workspace:*",
     "@vitamin/shared": "workspace:*",
     "semver": "7.7.4"
   },

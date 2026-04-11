@@ -14,7 +14,8 @@
 import { createVitamin } from '@vitamin/coding'
 import { createCodingService } from '../src/coding-service'
 
-const modelId = process.env.CODING_EXAMPLE_MODEL_ID ?? 'github-copilot/gpt-4o'
+const modelId =
+  process.env.CODING_EXAMPLE_MODEL_ID ?? 'anthropic/claude-opus-4-6'
 
 async function main() {
   const vitamin = createVitamin({

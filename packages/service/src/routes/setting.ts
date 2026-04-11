@@ -19,11 +19,11 @@ export function createSettingRoute(service: CodingService): Hono {
   })
 
   app.get('/providers', (c) => {
-    const providers = service.vitamin.providerRegistry.list()
+    const providerApis = service.vitamin.providerRegistry.list()
     return c.json(
-      providers.map((p: any) => ({
-        id: p.id,
-        name: p.displayName ?? p.id,
+      providerApis.map((api) => ({
+        id: api,
+        name: api,
         models: [],
       })),
     )

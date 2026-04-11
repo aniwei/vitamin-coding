@@ -1,6 +1,6 @@
 import type { AgentTool } from '@vitamin/agent'
-
-export type ToolPreset = 'minimal' | 'standard' | 'full'
+import type { ToolPreset } from '@vitamin/setting'
+export type { ToolPreset } from '@vitamin/setting'
 
 export interface ToolMetadata {
   preset: ToolPreset

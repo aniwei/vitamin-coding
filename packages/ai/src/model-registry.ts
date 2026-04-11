@@ -1,8 +1,6 @@
 import { ProviderError } from '@vitamin/shared'
-import {
-  COPILOT_MODELS as _copilotModels,
-  ANTHROPIC_MODELS as _anthropicModels,
-} from '@vitamin/setting'
+import _copilotModels from './data/copilot-models.json' with { type: 'json' }
+import _anthropicModels from './data/anthropic-models.json' with { type: 'json' }
 import type { Provider, Model, ModelSpec, Api } from './types'
 
 // 将 ModelSpec 规范化为字符串 id
@@ -147,8 +145,8 @@ export function createModelRegistry(models?: Model[]): ModelRegistry {
 
 // ═══ 默认模型集 ═══
 
-const COPILOT_MODELS: Model[] = _copilotModels as Model[]
-const ANTHROPIC_MODELS: Model[] = _anthropicModels as Model[]
+const COPILOT_MODELS = _copilotModels as unknown as Model[]
+const ANTHROPIC_MODELS = _anthropicModels as unknown as Model[]
 
 // 创建带默认模型集的注册表
 export function createDefaultModelRegistry(

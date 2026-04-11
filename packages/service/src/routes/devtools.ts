@@ -4,10 +4,9 @@ import type { CodingService } from '../coding-service'
 
 export function createDevtoolsRoute(
   context: CodingService,
-  devtools: Devtools | null
+  devtools: Devtools | null,
 ): Hono {
   const app = new Hono()
-  const bridge = context.bridge
 
   app.get('/status', (c) => {
     return c.json({
@@ -22,6 +21,7 @@ export function createDevtoolsRoute(
     }
 
     await next()
+    return
   })
 
   app.get('/breakpoints', (c) => {

@@ -63,7 +63,6 @@ export class CodingSessionManager {
 
   private readonly providerRegistry: ProviderRegistry
   private readonly hookRegistry: HookRegistry
-  private readonly workspaceDir: string
   private readonly logger: Logger
   private readonly devtools?: Devtools
   private readonly defaultSessionConfig?: ResolvedSessionConfig
@@ -75,7 +74,6 @@ export class CodingSessionManager {
     this.sessionManager = sessionManager
     this.providerRegistry = options.providerRegistry
     this.hookRegistry = options.hookRegistry
-    this.workspaceDir = options.workspaceDir
     this.logger = options.logger
     this.devtools = options.devtools
     this.defaultSessionConfig = options.defaultSessionConfig

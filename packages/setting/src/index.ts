@@ -56,7 +56,5 @@ export {
 // Presets (JSON data)
 export {
   BUILTIN_AGENT_PROFILES,
-  ANTHROPIC_MODELS,
-  COPILOT_MODELS,
   TASK_TYPE_PROFILE_MAP,
 } from './presets'

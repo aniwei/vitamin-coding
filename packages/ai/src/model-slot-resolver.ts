@@ -1,7 +1,15 @@
 import type { Model, ModelSpec } from './types'
 import type { ModelRegistry } from './model-registry'
 
-export type WorkflowSlot = 'normal' | 'thinking' | 'compact' | 'critique' | 'vision'
+export const WORKFLOW_SLOTS = [
+  'normal',
+  'thinking',
+  'compact',
+  'critique',
+  'vision',
+] as const
+
+export type WorkflowSlot = (typeof WORKFLOW_SLOTS)[number]
 
 export interface ModelSlotOptions {
   slots: Partial<Record<WorkflowSlot, ModelSpec | ModelSpec[]>>
