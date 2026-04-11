@@ -54,7 +54,6 @@ export interface AgentSessionOptions {
   thinkingLevel?: ThinkingLevel
   maxToolTurns?: number
   workspaceDir?: string
-  hooks?: HookRegistry
   hookRegistry: HookRegistry
   providerRegistry?: ProviderRegistry
   logger: Logger
