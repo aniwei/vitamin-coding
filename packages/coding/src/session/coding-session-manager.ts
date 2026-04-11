@@ -1,42 +1,33 @@
 import {
-  SessionManager,
-  createDiskSessionManager,
-  createInMemorySessionManager,
-  createRemoteSessionManager,
+  InMemorySession,
+  InMemorySessionPersistence,
+  FileSessionPersistence,
+  RemoteSessionPersistence,
 } from '@vitamin/session'
 import {
-  createAgentWithRegistry,
-  type AgentMessage,
-} from '@vitamin/agent'
-import {
-  type ProviderRegistry,
-} from '@vitamin/ai'
-import {
-  type HookRegistry
-} from '@vitamin/hooks'
-import {
-  type Logger
-} from '@vitamin/shared'
+  SESSION_MAX,
+  SESSION_IDLE_TIMEOUT_MS,
+  SESSION_SNAPSHOT_VERSION,
+} from '@vitamin/env'
+import { createAgentWithRegistry, type AgentMessage } from '@vitamin/agent'
+import { type ProviderRegistry } from '@vitamin/ai'
+import { type HookRegistry } from '@vitamin/hooks'
+import { type Logger } from '@vitamin/shared'
 
 import { AgentSession } from './agent-session'
 
-import type { Session } from '@vitamin/session'
+import type { Session, SessionPersistence } from '@vitamin/session'
 import type { Devtools } from '@vitamin/devtools'
-import type {
-  AgentSessionInfo,
-  ResolvedSessionConfig,
-} from './types'
-import type { SessionManagerOptions } from '@vitamin/session'
+import type { AgentSessionInfo, ResolvedSessionConfig } from './types'
 
 /**
  * Manager 只持有基础设施配置（持久化、网络、日志）。
  * 业务配置（model、systemPrompt、tools 等）由 VitaminApp 解析后通过
  * ResolvedSessionConfig 传入 createSession，Manager 不做二次 merge。
  */
-export interface CodingSessionManagerOptions extends Omit<SessionManagerOptions<AgentMessage>, 'store'> {
+export interface CodingSessionManagerOptions {
   hookRegistry: HookRegistry
   providerRegistry: ProviderRegistry
-  workspaceDir: string
   maxSessions?: number
   idleTimeoutMs?: number
   threshold?: number
@@ -45,8 +36,9 @@ export interface CodingSessionManagerOptions extends Omit<SessionManagerOptions<
   /**
    * 仅用于 restore / restoreAll 场景。
    * 正常 createSession 路径必须传入完整 ResolvedSessionConfig，不使用此字段。
+   * 使用 factory function 而非静态快照，确保每次 restore 拿到最新配置。
    */
-  defaultSessionConfig?: ResolvedSessionConfig
+  configProvider?: () => ResolvedSessionConfig
 }
 
 export interface DiskSessionManagerOptions extends CodingSessionManagerOptions {
@@ -58,54 +50,67 @@ export interface RemoteSessionManagerOptions extends CodingSessionManagerOptions
 }
 
 export class CodingSessionManager {
-  private readonly sessionManager: SessionManager<AgentMessage>
-  private readonly agentSessions = new Map<string, AgentSession>()
+  // 单一数据源：sessions Map 就是所有在线 session 的权威状态
+  private readonly sessions = new Map<string, AgentSession>()
+  // 记录每个 session 的配置，供 forkSession 复用
+  private readonly configs = new Map<string, ResolvedSessionConfig>()
 
+  // 持久化层（统一接口，内存 / 磁盘 / 远端三种实现）
+  private readonly persistence: SessionPersistence<AgentMessage>
+
+  // Capacity 管理
+  private readonly maxSessions: number
+  private readonly idleTimeoutMs: number
+  private readonly threshold: number
+
+  // 活跃 session 跟踪
+  private activeSessionId?: string
+
+  // 跨切面依赖
   private readonly providerRegistry: ProviderRegistry
   private readonly hookRegistry: HookRegistry
   private readonly logger: Logger
   private readonly devtools?: Devtools
-  private readonly defaultSessionConfig?: ResolvedSessionConfig
+
+  // restore / restoreAll 路径使用的配置工厂（非静态快照）
+  private readonly configProvider?: () => ResolvedSessionConfig
 
   constructor(
-    sessionManager: SessionManager<AgentMessage>,
     options: CodingSessionManagerOptions,
+    persistence: SessionPersistence<AgentMessage>,
   ) {
-    this.sessionManager = sessionManager
     this.providerRegistry = options.providerRegistry
     this.hookRegistry = options.hookRegistry
     this.logger = options.logger
     this.devtools = options.devtools
-    this.defaultSessionConfig = options.defaultSessionConfig
+    this.configProvider = options.configProvider
+    this.persistence = persistence
+
+    const resolvedMax = options.maxSessions ?? SESSION_MAX
+    this.maxSessions = resolvedMax
+    this.idleTimeoutMs = options.idleTimeoutMs ?? SESSION_IDLE_TIMEOUT_MS
+    this.threshold = Math.max(
+      0,
+      Math.min(options.threshold ?? resolvedMax, resolvedMax),
+    )
   }
 
   get active(): AgentSession | undefined {
-    this.updateAgentSessionsWithStore()
-
-    const rawActive = this.sessionManager.active
-    if (!rawActive) return undefined
-
-    return this.agentSessions.get(rawActive.id)
+    return this.activeSessionId
+      ? this.sessions.get(this.activeSessionId)
+      : undefined
   }
 
-  private updateAgentSessionsWithStore(): void {
-    const liveSessions = new Map(this.sessionManager.list().map((session) => [session.id, session]))
-
-    for (const [id, agentSession] of this.agentSessions) {
-      const liveSession = liveSessions.get(id)
-      if (!liveSession || liveSession !== agentSession.session) {
-        agentSession.dispose()
-        this.agentSessions.delete(id)
-      }
+  setActive(id: string): AgentSession | undefined {
+    const session = this.sessions.get(id)
+    if (session) {
+      this.activeSessionId = id
     }
+    return session
   }
 
-  /**
-   * 从已解析的配置创建 AgentSession，不做任何 merge 或默认值填充。
-   * logger 由 Manager 统一创建（带 sessionId child）。
-   */
-  private createManagedAgentSession(
-    session: Session<AgentMessage>,
+  private buildAgentSession(
+    rawSession: Session<AgentMessage>,
     config: ResolvedSessionConfig,
   ): AgentSession {
     const agent = createAgentWithRegistry({
@@ -113,7 +118,7 @@ export class CodingSessionManager {
       providerRegistry: this.providerRegistry,
     })
 
-    return new AgentSession(session, agent, {
+    return new AgentSession(rawSession, agent, {
       model: config.model,
       agentName: config.agentName,
       systemPrompt: config.systemPrompt,
@@ -124,7 +129,7 @@ export class CodingSessionManager {
       workspaceDir: config.workspaceDir,
       hookRegistry: this.hookRegistry,
       providerRegistry: this.providerRegistry,
-      logger: this.logger.child({ sessionId: session.id }),
+      logger: this.logger.child({ sessionId: rawSession.id }),
       devtools: this.devtools,
     })
   }
@@ -133,55 +138,64 @@ export class CodingSessionManager {
    * 使用由 VitaminApp 完整解析好的配置创建 session。
    * Manager 层不再进行任何业务默认值填充。
    */
-  async createSession(config: ResolvedSessionConfig & { id?: string }): Promise<AgentSession> {
+  async createSession(
+    config: ResolvedSessionConfig & { id?: string },
+  ): Promise<AgentSession> {
     const id = config.id ?? crypto.randomUUID()
 
-    if (this.agentSessions.has(id)) {
+    if (this.sessions.has(id)) {
       throw new Error(`Session with ID ${id} already exists.`)
     }
 
-    const session = await this.sessionManager.create(id)
-    this.updateAgentSessionsWithStore()
+    this.prepareCapacity(id)
 
-    const agentSession = this.createManagedAgentSession(session, config)
-    this.agentSessions.set(session.id, agentSession)
+    const rawSession = new InMemorySession<AgentMessage>(id)
+    const agentSession = this.buildAgentSession(rawSession, config)
 
-    await this.hookRegistry.emit('session.created', { sessionId: session.id, metadata: {} })
-    this.logger.info('Session %s created', session.id)
+    this.sessions.set(id, agentSession)
+    this.configs.set(id, config)
+    this.activeSessionId = id
+
+    await this.hookRegistry.emit('session.created', {
+      sessionId: id,
+      metadata: {},
+    })
+    this.logger.info('Session %s created', id)
 
     return agentSession
   }
 
   getSession(id: string): AgentSession | undefined {
-    this.updateAgentSessionsWithStore()
-    return this.agentSessions.get(id)
+    return this.sessions.get(id)
   }
 
   listSessions(): AgentSessionInfo[] {
-    this.updateAgentSessionsWithStore()
-
-    const result: AgentSessionInfo[] = []
-    for (const [id, agentSession] of this.agentSessions) {
-      result.push({
-        id,
-        messageCount: agentSession.session.messages().length,
-        createdAt: new Date(),
-        status: agentSession.status,
-      })
-    }
-    return result
+    return Array.from(this.sessions.values()).map((agentSession) => ({
+      id: agentSession.id,
+      messageCount: agentSession.session.messages().length,
+      createdAt: new Date(),
+      status: agentSession.status,
+    }))
   }
 
   async removeSession(id: string): Promise<boolean> {
-    const agentSession = this.agentSessions.get(id)
+    const agentSession = this.sessions.get(id)
     if (!agentSession) return false
 
     agentSession.dispose()
-    this.agentSessions.delete(id)
+    this.sessions.delete(id)
+    this.configs.delete(id)
 
-    await this.sessionManager.delete(id)
-    await this.hookRegistry.emit('session.deleted', { sessionId: id, metadata: {} })
+    if (this.activeSessionId === id) {
+      this.activeSessionId = undefined
+    }
 
+    await this.persistence.delete(id)
+
+    await this.hookRegistry.emit('session.deleted', {
+      sessionId: id,
+      metadata: {},
+    })
     this.logger.info('Session %s removed', id)
 
     return true
@@ -189,143 +203,249 @@ export class CodingSessionManager {
 
   /**
    * fork 直接复用 source session 自身的已解析配置，
-   * 而不是退回到 Manager 层的任何默认值。
+   * 消息通过复制 snapshot entries 完整迁移。
    */
   async forkSession(
     sourceId: string,
-    id?: string,
+    newId?: string,
   ): Promise<AgentSession | undefined> {
-    const source = this.agentSessions.get(sourceId)
-    if (!source) return undefined
+    const sourceSession = this.sessions.get(sourceId)
+    const sourceConfig = this.configs.get(sourceId)
+    if (!sourceSession || !sourceConfig) return undefined
 
-    const forked = await this.sessionManager.fork(sourceId, id)
-    if (!forked) return undefined
+    const sourceRaw = sourceSession.session
+    if (!(sourceRaw instanceof InMemorySession)) return undefined
 
-    const agentSession = this.createManagedAgentSession(forked, {
-      model: source.model,
-      agentName: source.agentName !== 'agent' ? source.agentName : undefined,
-      systemPrompt: source.systemPrompt,
-      tools: source.tools,
-      thinkingLevel: source.thinkingLevel,
-      maxToolTurns: source.maxToolTurns,
-      promptRefresh: source.promptRefresh,
-      workspaceDir: source.workspaceDir,
-    })
+    const id = newId ?? crypto.randomUUID()
+    this.prepareCapacity(id)
 
-    this.agentSessions.set(forked.id, agentSession)
-    this.logger.info('Session %s forked from %s', forked.id, sourceId)
+    const snapshot = sourceRaw.toSnapshot()
+    const forkedRaw = new InMemorySession<AgentMessage>(
+      id,
+      sourceId,
+      snapshot.entries.length,
+    )
+    forkedRaw.restoreEntries(
+      [...snapshot.entries],
+      {
+        ...snapshot.metadata,
+        createdAt: Date.now(),
+        lastActiveAt: Date.now(),
+        parentSessionId: sourceId,
+        forkPoint: snapshot.entries.length,
+        tags: [...snapshot.metadata.tags, 'fork'],
+      },
+      snapshot.leafId,
+    )
 
+    const forkedConfig: ResolvedSessionConfig = {
+      model: sourceSession.model,
+      agentName:
+        sourceSession.agentName !== 'agent'
+          ? sourceSession.agentName
+          : undefined,
+      systemPrompt: sourceSession.systemPrompt,
+      tools: sourceSession.tools,
+      thinkingLevel: sourceSession.thinkingLevel,
+      maxToolTurns: sourceSession.maxToolTurns,
+      promptRefresh: sourceSession.promptRefresh,
+      workspaceDir: sourceSession.workspaceDir,
+    }
+
+    const agentSession = this.buildAgentSession(forkedRaw, forkedConfig)
+    this.sessions.set(id, agentSession)
+    this.configs.set(id, forkedConfig)
+
+    this.logger.info('Session %s forked from %s', id, sourceId)
     return agentSession
   }
 
-  setActive(id: string): AgentSession | undefined {
-    this.updateAgentSessionsWithStore()
-    this.sessionManager.setActive(id)
-    return this.agentSessions.get(id)
+  async save(id: string): Promise<void> {
+    const agentSession = this.sessions.get(id)
+    if (!agentSession) return
+
+    const rawSession = agentSession.session
+    if (rawSession instanceof InMemorySession) {
+      const snapshot = rawSession.toSnapshot()
+      await this.persistence.save({
+        version: SESSION_SNAPSHOT_VERSION,
+        id: rawSession.id,
+        ...snapshot,
+      })
+    }
   }
 
-  async save(id: string): Promise<void> {
-    await this.sessionManager.save(id)
+  async saveAll(): Promise<void> {
+    for (const id of this.sessions.keys()) {
+      await this.save(id)
+    }
   }
 
   /**
    * 从持久化存储恢复单个 session。
-   * 若未提供 defaultSessionConfig 则返回 null。
+   * 若未提供 configProvider 则返回 null。
    */
   async restore(id: string): Promise<AgentSession | null> {
-    const session = await this.sessionManager.restore(id)
-    if (!session) return null
+    if (!this.configProvider) return null
 
-    this.updateAgentSessionsWithStore()
+    const existing = this.sessions.get(id)
+    if (existing) return existing
 
-    // 已经存在的 AgentSession 直接返回
-    if (this.agentSessions.has(session.id)) {
-      return this.agentSessions.get(session.id)!
+    const snapshot = await this.persistence.load(id)
+    if (!snapshot) return null
+
+    if (!this.canAccommodate(id)) {
+      throw new Error(
+        `Max sessions (${this.maxSessions}) reached, cannot restore ${id}.`,
+      )
     }
 
-    if (!this.defaultSessionConfig) return null
+    const rawSession = new InMemorySession<AgentMessage>(snapshot.id)
+    rawSession.restoreEntries(
+      snapshot.entries,
+      snapshot.metadata,
+      snapshot.leafId,
+    )
 
-    const agentSession = this.createManagedAgentSession(session, this.defaultSessionConfig)
-    this.agentSessions.set(session.id, agentSession)
-    this.logger.info('Session %s restored', session.id)
+    const config = this.configProvider()
+    const agentSession = this.buildAgentSession(rawSession, config)
+    this.sessions.set(id, agentSession)
+    this.configs.set(id, config)
 
+    this.logger.info('Session %s restored', id)
     return agentSession
-  }
-
-  async saveAll(): Promise<void> {
-    await this.sessionManager.saveAll()
   }
 
   /**
    * 从持久化存储批量恢复所有 session。
-   * 若未提供 defaultSessionConfig 则直接返回 0。
+   * 若未提供 configProvider 则直接返回 0。
    */
   async restoreAll(): Promise<number> {
-    if (!this.defaultSessionConfig) return 0
+    if (!this.configProvider) return 0
 
-    const count = await this.sessionManager.restoreAll()
-    this.updateAgentSessionsWithStore()
+    const ids = await this.persistence.list()
+    let restored = 0
 
-    for (const rawSession of this.sessionManager.list()) {
-      if (!this.agentSessions.has(rawSession.id)) {
-        const agentSession = this.createManagedAgentSession(rawSession, this.defaultSessionConfig)
-        this.agentSessions.set(rawSession.id, agentSession)
+    for (const id of ids) {
+      if (this.sessions.has(id)) continue
+
+      const snapshot = await this.persistence.load(id)
+      if (!snapshot) continue
+
+      if (!this.canAccommodate(id)) break
+
+      const rawSession = new InMemorySession<AgentMessage>(snapshot.id)
+      rawSession.restoreEntries(
+        snapshot.entries,
+        snapshot.metadata,
+        snapshot.leafId,
+      )
+
+      const config = this.configProvider()
+      const agentSession = this.buildAgentSession(rawSession, config)
+      this.sessions.set(id, agentSession)
+      this.configs.set(id, config)
+      restored++
+    }
+
+    this.logger.info('Restored %d session(s)', restored)
+    return restored
+  }
+
+  // ── Capacity management ────────────────────────────────────────────────────
+
+  private collectIdle(): string[] {
+    const now = Date.now()
+    const removed: string[] = []
+
+    for (const [id, agentSession] of this.sessions) {
+      const meta = agentSession.session.metadata()
+      if (now - meta.lastActiveAt > this.idleTimeoutMs) {
+        agentSession.dispose()
+        this.sessions.delete(id)
+        this.configs.delete(id)
+
+        if (this.activeSessionId === id) {
+          this.activeSessionId = undefined
+        }
+
+        removed.push(id)
       }
     }
-    return count
+
+    return removed
+  }
+
+  private prepareCapacity(incomingId: string): void {
+    if (this.sessions.has(incomingId)) return
+
+    if (this.sessions.size + 1 > this.threshold) {
+      this.collectIdle()
+    }
+
+    if (this.sessions.size >= this.maxSessions) {
+      throw new Error(`Max sessions (${this.maxSessions}) reached.`)
+    }
+  }
+
+  private canAccommodate(incomingId: string): boolean {
+    if (this.sessions.has(incomingId)) return true
+
+    if (this.sessions.size + 1 > this.threshold) {
+      this.collectIdle()
+    }
+
+    return this.sessions.size < this.maxSessions
   }
 
   dispose(): void {
-    for (const [, agentSession] of this.agentSessions) {
+    for (const agentSession of this.sessions.values()) {
       agentSession.dispose()
     }
-
-    this.agentSessions.clear()
-    this.sessionManager.dispose()
+    this.sessions.clear()
+    this.configs.clear()
+    this.activeSessionId = undefined
   }
 }
 
-export function createDiskCodingSessionManager(options: DiskSessionManagerOptions): CodingSessionManager {
+export function createDiskCodingSessionManager(
+  options: DiskSessionManagerOptions,
+): CodingSessionManager {
   const { sessionDir } = options
   if (!sessionDir) {
     throw new Error('sessionDir is required for DiskSessionManager')
   }
 
-  const { maxSessions, idleTimeoutMs, threshold } = options
-  const sm = createDiskSessionManager<AgentMessage>(sessionDir, {
-    maxSessions,
-    idleTimeoutMs,
-    threshold,
+  const persistence = new FileSessionPersistence<AgentMessage>({
+    baseDir: sessionDir,
   })
-
-  return new CodingSessionManager(sm, options)
+  return new CodingSessionManager(options, persistence)
 }
 
-export function createRemoteCodingSessionManager(options: RemoteSessionManagerOptions): CodingSessionManager {
+export function createRemoteCodingSessionManager(
+  options: RemoteSessionManagerOptions,
+): CodingSessionManager {
   const { sessionUrl } = options
   if (!sessionUrl) {
     throw new Error('sessionUrl is required for RemoteSessionManager')
   }
 
-  const { maxSessions, idleTimeoutMs, threshold } = options
-  const sm = createRemoteSessionManager<AgentMessage>(sessionUrl, {
-    maxSessions,
-    idleTimeoutMs,
-    threshold,
+  const persistence = new RemoteSessionPersistence<AgentMessage>({
+    baseUrl: sessionUrl,
+    fetch() {
+      throw new Error(
+        'Fetch implementation is required for RemoteSessionPersistence',
+      )
+    },
+    getAuth: async () => ({ token: '' }),
+    timeoutMs: 30_000,
   })
 
-  return new CodingSessionManager(sm, options)
+  return new CodingSessionManager(options, persistence)
 }
 
 export function createInMemoryCodingSessionManager(
   options: CodingSessionManagerOptions,
 ): CodingSessionManager {
-  const { maxSessions, idleTimeoutMs, threshold } = options
-  const sm = createInMemorySessionManager<AgentMessage>({
-    maxSessions,
-    idleTimeoutMs,
-    threshold,
-  })
-
-  return new CodingSessionManager(sm, options)
+  return new CodingSessionManager(options, new InMemorySessionPersistence())
 }

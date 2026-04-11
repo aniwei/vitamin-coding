@@ -243,29 +243,30 @@ export class VitaminApp implements VitaminContext {
 
     this.promptManager = new PromptManager({ provider: promptProvider })
 
-    // defaultSessionConfig 仅供 restore / restoreAll 路径使用；
+    // configProvider 仅供 restore / restoreAll 路径使用；
     // 正常 createSession 路径会通过 resolveSessionConfig 完整解析。
-    const defaultSessionConfig: ResolvedSessionConfig | undefined = defaultModel
-      ? {
-          model: defaultModel,
-          systemPrompt: '',
-          tools: [],
-          thinkingLevel: 'medium',
-          maxToolTurns: this.maxToolTurns,
-          promptRefresh: () =>
-            this.promptManager.assemblePreset({ preset: 'main' }),
-          workspaceDir: this.workspaceDir,
-        }
-      : undefined
+    // 使用 factory function 而非静态快照，确保每次 restore 拿到最新配置。
+    const configProvider: (() => ResolvedSessionConfig) | undefined =
+      defaultModel
+        ? () => ({
+            model: defaultModel,
+            systemPrompt: '',
+            tools: [],
+            thinkingLevel: 'medium' as const,
+            maxToolTurns: this.maxToolTurns,
+            promptRefresh: () =>
+              this.promptManager.assemblePreset({ preset: 'main' }),
+            workspaceDir: this.workspaceDir,
+          })
+        : undefined
 
     const managerOptions = {
       maxSessions,
       hookRegistry: this.hookRegistry,
       providerRegistry: this.providerRegistry,
-      workspaceDir: this.workspaceDir,
       logger: this.logger,
       devtools: this.devtools ?? undefined,
-      defaultSessionConfig,
+      configProvider,
     }
 
     if (sessionDir) {
