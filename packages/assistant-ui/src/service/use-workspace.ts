@@ -1,9 +1,7 @@
 import { useMutation, useQuery } from '@tanstack/react-query'
+import { workspace } from './workspace'
+import { Workspace } from '@/types'
 
-type IWorkspace = {
-  data: {}
-}
-
-export const useWorkspaces = (): IWorkspace => {
-  throw new Error('useWorkspaces is not implemented yet')
+export const useWorkspaces = (): Workspace => {
+  return {}
 }

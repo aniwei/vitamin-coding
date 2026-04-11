@@ -7,6 +7,8 @@ import { defineConfig } from 'vite-plus'
 const projectRoot = fileURLToPath(new URL('.', import.meta.url))
 const srcRoot = path.resolve(projectRoot, 'src')
 
+const api = process.env.VITE_API_URL || 'http://127.0.0.1:8080'
+
 export default defineConfig({
   root: projectRoot,
   publicDir: path.resolve('..', 'public'),
@@ -25,12 +27,19 @@ export default defineConfig({
       allow: [projectRoot, path.resolve(projectRoot, '..')],
     },
     proxy: {
-      '/console/api': {
-        target: 'http://localhost:5001',
+      '/ws': {
+        target: api.replace('http', 'ws'),
+        ws: true,
         changeOrigin: true,
+        // Add logging to debug proxy
+        configure: (proxy, _options) => {
+          proxy.on('proxyReq', (proxyReq, req, _res) => {
+            console.log('[Vite Proxy] Forwarding WebSocket:', req.url, 'to', apiUrl);
+          });
+        },
       },
       '/api': {
-        target: 'http://localhost:5001',
+        target: 'http://127.0.0.1:8080',
         changeOrigin: true,
       },
     },

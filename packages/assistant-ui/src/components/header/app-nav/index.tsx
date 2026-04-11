@@ -1,4 +1,3 @@
-import type { NavItem } from '../nav/nav-selector'
 import {
   RiRobot2Fill,
   RiRobot2Line,
@@ -8,13 +7,13 @@ import { produce } from 'immer'
 import { useCallback, useEffect, useState } from 'react'
 import { useAppContext } from '@/context/app-context'
 import Nav from '../nav'
+import type { NavItem } from '../nav/nav-selector'
 
-const CreateAppTemplateDialog = dynamic(() => import('@/app/components/app/create-app-dialog'), { ssr: false })
-const CreateAppModal = dynamic(() => import('@/app/components/app/create-app-modal'), { ssr: false })
-const CreateFromDSLModal = dynamic(() => import('@/app/components/app/create-from-dsl-modal'), { ssr: false })
+const CreateAppTemplateDialog = dynamic(() => import('@/app/components/app/create-app-dialog'))
+const CreateAppModal = dynamic(() => import('@/app/components/app/create-app-modal'))
+const CreateFromDSLModal = dynamic(() => import('@/app/components/app/create-from-dsl-modal'))
 
 const AppNav = () => {
-  const { t } = useTranslation()
   const { appId } = useParams()
   const { isCurrentWorkspaceEditor } = useAppContext()
   const appDetail = useAppStore(state => state.appDetail)

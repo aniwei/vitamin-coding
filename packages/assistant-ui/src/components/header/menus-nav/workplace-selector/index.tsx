@@ -1,17 +1,18 @@
-import type { Plan } from '@/app/components/billing/type'
-import { Menu, MenuButton, MenuItems, Transition } from '@headlessui/react'
+import { 
+  Menu, 
+  MenuButton, 
+  MenuItems, 
+  Transition 
+} from '@headlessui/react'
 import { RiArrowDownSLine } from '@remixicon/react'
 import { Fragment } from 'react'
-import { useTranslation } from 'react-i18next'
 import { toast } from '@/components/ui/toast'
-import PlanBadge from '@/app/components/header/plan-badge'
 import { useWorkspacesContext } from '@/context/workspace-context'
 import { switchWorkspace } from '@/service/common'
-import clsx from 'clsx'
-import { basePath } from '@/utils/var'
+import { clsx } from 'clsx'
+
 
 const WorkplaceSelector = () => {
-  const { t } = useTranslation()
   const { workspaces } = useWorkspacesContext()
   const currentWorkspace = workspaces.find(v => v.current)
   const handleSwitchWorkspace = async (tenant_id: string) => {
@@ -30,10 +31,10 @@ const WorkplaceSelector = () => {
     <Menu as="div" className="min-w-0">
       {({ open }) => (
         <>
-          <MenuButton className={cn(`
-                group flex w-full cursor-pointer items-center
-                p-0.5 hover:bg-state-base-hover ${open && 'bg-state-base-hover'} rounded-[10px]
-              `)}
+          <MenuButton className={clsx(`
+            group flex w-full cursor-pointer items-center
+            p-0.5 hover:bg-state-base-hover ${open && 'bg-state-base-hover'} rounded-[10px]
+          `)}
           >
             <div className="mr-1.5 flex h-6 w-6 shrink-0 items-center justify-center rounded-md bg-components-icon-bg-blue-solid text-[13px] max-[800px]:mr-0">
               <span className="h-6 bg-gradient-to-r from-components-avatar-shape-fill-stop-0 to-components-avatar-shape-fill-stop-100 bg-clip-text align-middle font-semibold uppercase leading-6 text-shadow-shadow-1 opacity-90">{currentWorkspace?.name[0]?.toLocaleUpperCase()}</span>

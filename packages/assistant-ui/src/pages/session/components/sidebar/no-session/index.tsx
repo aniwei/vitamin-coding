@@ -1,9 +1,9 @@
-import type { FC } from 'react'
 import useTheme from '@/hooks/use-theme'
 import { Theme } from '@/types'
 import { clsx } from 'clsx'
 import * as React from 'react'
-import s from './style.module.css'
+import type { FC } from 'react'
+import s from './index.module.css'
 
 
 const NoSession: FC = () => {

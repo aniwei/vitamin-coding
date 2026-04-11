@@ -1,4 +1,11 @@
-import { Menu, MenuButton, MenuItem, MenuItems, Transition } from '@headlessui/react'
+import Loading from '@/components/loading'
+import { 
+  Menu, 
+  MenuButton, 
+  MenuItem, 
+  MenuItems, 
+  Transition 
+} from '@headlessui/react'
 import {
   RiAddLine,
   RiArrowDownSLine,
@@ -6,13 +13,11 @@ import {
 } from '@remixicon/react'
 import { debounce } from 'es-toolkit/compat'
 import { Fragment, useCallback } from 'react'
-import Loading from '@/components/loading'
-import { useAppContext } from '@/context/app-context'
 import { useNavigate } from 'react-router-dom'
-import clsx from 'clsx'
+import { clsx } from 'clsx'
 import { FileArrow01, FilePlus01, FilePlus02 } from '@/components/icons/src/vender/line/files'
 
-export type NavItem = {
+export interface NavItem {
   id: string
   name: string
   link: string
@@ -22,17 +27,25 @@ export type NavItem = {
   icon_url: string | null
   // mode?: AppModeEnum
 }
-export type INavSelectorProps = {
+export interface NavSelectorProps {
   navigationItems: NavItem[]
-  curNav?: Omit<NavItem, 'link'>
+  current?: Omit<NavItem, 'link'>
   createText: string
   isApp?: boolean
   onCreate: (state: string) => void
   onLoadMore?: () => void
-  isLoadingMore?: boolean
+  loadingMore?: boolean
 }
 
-const NavSelector = ({ curNav, navigationItems, createText, isApp, onCreate, onLoadMore, isLoadingMore }: INavSelectorProps) => {
+const NavSelector: React.FC<NavSelectorProps> = ({ 
+  current, 
+  navigationItems, 
+  createText, 
+  isApp, 
+  onCreate, 
+  onLoadMore, 
+  loadingMore 
+}: NavSelectorProps) => {
   const navigate = useNavigate()
  
   const onScroll = () => {}
@@ -46,7 +59,7 @@ const NavSelector = ({ curNav, navigationItems, createText, isApp, onCreate, onL
             open && 'bg-components-main-nav-nav-button-bg-active',
           )}
           >
-            <div className="max-w-[157px] truncate" title={curNav?.name}>{curNav?.name}</div>
+            <div className="max-w-[157px] truncate" title={current?.name}>{current?.name}</div>
             <RiArrowDownSLine
               className={clsx('ml-1 h-3 w-3 shrink-0 opacity-50 group-hover:opacity-100', open && 'opacity-100!')}
               aria-hidden="true"
@@ -66,10 +79,10 @@ const NavSelector = ({ curNav, navigationItems, createText, isApp, onCreate, onL
                     <div
                       className="flex w-full cursor-pointer items-center truncate rounded-lg px-3 py-[6px] text-[14px] font-normal text-text-secondary hover:bg-state-base-hover"
                       onClick={() => {
-                        if (curNav?.id === nav.id) {
+                        if (current?.id === nav.id) {
                           return
                         }
-                        
+
                         navigate(nav.link)
                       }}
                       title={nav.name}
@@ -93,7 +106,7 @@ const NavSelector = ({ curNav, navigationItems, createText, isApp, onCreate, onL
                   </MenuItem>
                 ))
               }
-              {isLoadingMore && (
+              {loadingMore && (
                 <div className="flex justify-center py-2">
                   <Loading />
                 </div>

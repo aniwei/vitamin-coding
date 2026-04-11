@@ -12,6 +12,10 @@ export const defaultSystemFeatures: SystemFeatures = {
   
 }
 
+export interface Workspace {
+  
+}
+
 export interface Session {
   id: string
   pinned: boolean

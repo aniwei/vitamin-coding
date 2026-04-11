@@ -1,12 +1,12 @@
 import clsx from 'clsx'
 import './style.module.css'
 
-type ILoadingProps = {
+interface LoadingProps {
   type?: 'area' | 'app'
   className?: string
 }
 
-const Loading = (props?: ILoadingProps) => {
+export const Loading = (props?: LoadingProps) => {
   const { type = 'area', className } = props || {}
 
   return (

@@ -1,6 +1,4 @@
-'use client'
-
-import clsx from 'clsx'
+import { clsx } from 'clsx'
 import { Tooltip as BaseTooltip } from '@base-ui/react/tooltip'
 import * as React from 'react'
 import type { Placement } from '../../placement'
@@ -18,7 +16,7 @@ type TooltipContentProps = {
   variant?: TooltipContentVariant
 } & Omit<React.ComponentPropsWithoutRef<typeof BaseTooltip.Popup>, 'children' | 'className'>
 
-export function TooltipContent({
+export const TooltipContent: React.FC<TooltipContentProps> = ({
   children,
   placement = 'top',
   sideOffset = 8,
@@ -27,7 +25,7 @@ export function TooltipContent({
   popupClassName,
   variant = 'default',
   ...props
-}: TooltipContentProps) {
+}) => {
   const { side, align } = parsePlacement(placement)
 
   return (
@@ -57,3 +55,5 @@ export function TooltipContent({
 export const TooltipProvider = BaseTooltip.Provider
 export const Tooltip = BaseTooltip.Root
 export const TooltipTrigger = BaseTooltip.Trigger
+
+export default Tooltip

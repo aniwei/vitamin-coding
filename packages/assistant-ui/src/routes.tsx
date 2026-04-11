@@ -3,6 +3,7 @@ import { Navigate, createBrowserRouter } from 'react-router-dom'
 import { CommonLayout } from '@/layouts/common-layout'
 
 const Session = lazy(() => import('@/pages/session'))
+const Workflow = lazy(() => import('@/pages/workflow'))
 const Tools = lazy(() => import('@/pages/tools'))
 
 export const router = createBrowserRouter([
@@ -16,6 +17,15 @@ export const router = createBrowserRouter([
       {
         path: '/session',
         element: <Session />,
+      },
+    ],
+  },
+  {
+    element: <CommonLayout />,
+    children: [
+      {
+        path: '/workflow/:conversationId',
+        element: <Workflow />,
       },
     ],
   },

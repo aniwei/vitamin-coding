@@ -21,13 +21,13 @@ interface AlertContentProps {
   backdropProps?: Omit<React.ComponentPropsWithoutRef<typeof AlertDialogBackdrop>, 'className'>
 }
 
-export function AlertDialogContent({
+export const AlertContent: React.FC<AlertContentProps> = ({
   children,
   className,
   overlayClassName,
   popupProps,
   backdropProps,
-}: AlertContentProps) {
+}) => {
   return (
     <AlertDialogPortal>
       <AlertDialogBackdrop
@@ -52,9 +52,12 @@ export function AlertDialogContent({
   )
 }
 
-interface AlertDialogActionsProps extends React.ComponentPropsWithoutRef<'div'> {}
+interface AlertActionsProps extends React.ComponentPropsWithoutRef<'div'> {}
 
-export function AlertDialogActions({ className, ...props }: AlertDialogActionsProps) {
+export const AlertActions: React.FC<AlertActionsProps> = ({ 
+  className, 
+  ...props 
+}) => {
   return (
     <div
       className={clsx('flex items-start justify-end gap-2 self-stretch p-6', className)}
@@ -63,16 +66,16 @@ export function AlertDialogActions({ className, ...props }: AlertDialogActionsPr
   )
 }
 
-interface AlertDialogCancelButtonProps extends Omit<ButtonProps, 'children'> {
+interface AlertCancelButtonProps extends Omit<ButtonProps, 'children'> {
   children: React.ReactNode
   closeProps?: Omit<React.ComponentPropsWithoutRef<typeof AlertDialogClose>, 'children' | 'render'>
 }
 
-export function AlertDialogCancelButton({
+export const AlertCancelButton: React.FC<AlertCancelButtonProps> = ({
   children,
   closeProps,
   ...buttonProps
-}: AlertDialogCancelButtonProps) {
+}) => {
   return (
     <AlertDialogClose
       {...closeProps}
@@ -83,13 +86,13 @@ export function AlertDialogCancelButton({
   )
 }
 
-interface AlertDialogConfirmButtonProps extends ButtonProps {}
+interface AlertConfirmButtonProps extends ButtonProps {}
 
-export function AlertDialogConfirmButton({
+export const AlertConfirmButton: React.FC<AlertConfirmButtonProps> = ({
   variant = 'primary',
   destructive = true,
   ...props
-}: AlertDialogConfirmButtonProps) {
+}) => {
   return (
     <Button
       variant={variant}
@@ -97,4 +100,15 @@ export function AlertDialogConfirmButton({
       {...props}
     />
   )
+}
+
+export default {
+  AlertTrigger: AlertDialogTrigger,
+  AlertTitle: AlertDialogTitle,
+  AlertDescription: AlertDialogDescription,
+  AlertClose: AlertDialogClose,
+  AlertContent,
+  AlertActions,
+  AlertCancelButton,
+  AlertConfirmButton,
 }

@@ -44,8 +44,9 @@ const Nav = ({
         <div
           onClick={(e) => {
             // Don't clear state if opening in new tab/window
-            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0)
+            if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) {
               return
+            }
             // setAppDetail()
           }}
           className={clsx('flex h-7 cursor-pointer items-center radius-lg px-2.5', isActivated ? 'text-components-main-nav-nav-button-text-active' : 'text-components-main-nav-nav-button-text', curNav && isActivated && 'hover:bg-components-main-nav-nav-button-bg-active-hover')}

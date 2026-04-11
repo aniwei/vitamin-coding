@@ -1,8 +1,9 @@
 import clsx from 'clsx'
 // import WorkplaceSelector from '@/components/header/dropdown/workplace-selector'
-// import Menus from './dropdown'
+import MenusNav from './menus-nav'
 // import AppNav from './app-nav'
 // import DatasetNav from './dataset-nav'
+import Logo from '@/components/logo'
 import EnvNav from './env-nav'
 import ExploreNav from './explore-nav'
 import ToolsNav from './tools-nav'
@@ -13,13 +14,7 @@ import { useState } from 'react'
 import { useEventBusContext } from '@/context/event-bus'
 import s from './index.module.css'
 
-const Logo = () => (
-  <h1>
-    <Link to="/apps" className="flex h-8 shrink-0 items-center justify-center overflow-hidden whitespace-nowrap px-0.5 indent-[-9999px]">
-      VITAMIN
-    </Link>
-  </h1>
-)
+
 
 const Header = () => {
   const pathname = useLocation().pathname
@@ -42,12 +37,13 @@ const Header = () => {
         <div className="flex min-w-0 flex-1 items-center pl-3 pr-2 min-[1280px]:pr-3">
           <Logo />
           <div className="mx-1.5 shrink-0 font-light text-divider-deep">/</div>
-          {/* <WorkspaceProvider>
-            <WorkplaceSelector />
-          </WorkspaceProvider> */}
+          <WorkspaceProvider>
+            <div>111</div>
+            {/* <WorkplaceSelector /> */}
+          </WorkspaceProvider>
         </div>
         <div className="flex items-center space-x-2">
-          <ExploreNav className="flex items-center relative px-3 h-8 rounded-xl font-medium text-sm cursor-pointer" />
+          {/* <ExploreNav className="flex items-center relative px-3 h-8 rounded-xl font-medium text-sm cursor-pointer" /> */}
           <SessionNav className="flex items-center relative px-3 h-8 rounded-xl font-medium text-sm cursor-pointer" />
           {/* <AppNav /> */}
           {/* <DatasetNav /> */}
@@ -59,7 +55,7 @@ const Header = () => {
           {/* <div className="mr-2">
             <PluginsNav />
           </div> */}
-          {/* <Menus /> */}
+          <MenusNav />
         </div>
       </div>
     </div>
