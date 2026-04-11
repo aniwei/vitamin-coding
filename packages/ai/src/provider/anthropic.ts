@@ -266,9 +266,11 @@ class AnthropicStream implements ProviderStream {
         }))
       : []
 
+    const effectiveMaxTokens = context.maxTokens ?? model.maxOutputTokens
+
     const requestParams: Anthropic.MessageStreamParams = {
       model: model.name,
-      max_tokens: context.maxTokens ?? model.maxOutputTokens,
+      max_tokens: effectiveMaxTokens,
       ...(context.systemPrompt ? { system: context.systemPrompt } : {}),
       messages: buildAnthropicMessages(context.messages),
       ...(tools.length > 0 ? { tools } : {}),
@@ -279,7 +281,7 @@ class AnthropicStream implements ProviderStream {
         ? {
             thinking: {
               type: 'enabled' as const,
-              budget_tokens: toBudgetTokens(context.thinkingLevel, model.maxOutputTokens),
+              budget_tokens: toBudgetTokens(context.thinkingLevel, effectiveMaxTokens),
             },
           }
         : {}),

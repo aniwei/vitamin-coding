@@ -1,11 +1,15 @@
-export { 
-  InMemorySession 
+export {
+  InMemorySession
 } from './in-memory-session'
 
-export { 
-  InMemorySessionStore, 
-  createInMemorySessionStore 
+export {
+  InMemorySessionStore,
+  createInMemorySessionStore
 } from './store'
+
+export {
+  InMemorySessionPersistence,
+} from './memory-persistence'
 
 export {
   FileSessionPersistence,
