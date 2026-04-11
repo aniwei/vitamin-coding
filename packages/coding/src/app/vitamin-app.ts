@@ -58,6 +58,7 @@ import type { HookRegistry } from '@vitamin/hooks'
 import type {
   AgentSessionInfo,
   AgentSessionOptions,
+  ResolvedSessionConfig,
 } from '../session/types'
 
 import type { VitaminAppOptions, VitaminContext } from '../types'
@@ -208,22 +209,31 @@ export class VitaminApp implements VitaminContext {
         baseDir: BUILTIN_PROMPTS_DIR,
       },
     )
-    
+
     this.promptManager = new PromptManager({ provider: promptProvider })
-    const promptRefresh = () => this.promptManager.assemblePreset({ preset: 'main' })
+
+    // defaultSessionConfig 仅供 restore / restoreAll 路径使用；
+    // 正常 createSession 路径会通过 resolveSessionConfig 完整解析。
+    const defaultSessionConfig: ResolvedSessionConfig | undefined = defaultModel
+      ? {
+          model: defaultModel,
+          systemPrompt: '',
+          tools: [],
+          thinkingLevel: 'medium',
+          maxToolTurns: this.maxToolTurns,
+          promptRefresh: () => this.promptManager.assemblePreset({ preset: 'main' }),
+          workspaceDir: this.workspaceDir,
+        }
+      : undefined
 
     const managerOptions = {
-      model: defaultModel,
-      systemPrompt: ``,
-      tools: [] as AgentTool[],
       maxSessions,
-      maxToolTurns,
       hookRegistry: this.hookRegistry,
       providerRegistry: this.providerRegistry,
       workspaceDir: this.workspaceDir,
       logger: this.logger,
       devtools: this.devtools ?? undefined,
-      promptRefresh,
+      defaultSessionConfig,
     }
 
     if (sessionDir) {
@@ -381,28 +391,26 @@ export class VitaminApp implements VitaminContext {
     this.settingsLoaded = true
   }
 
+  /**
+   * 将 slot / modelTier 映射为最终的 WorkflowSlot。
+   * agentName 不再传入——调用方应通过 resolveAgentDefaults 将
+   * agentConfig.default_workflow_slot 作为 modelTier 传进来，避免重复读 settings。
+   */
   private resolveWorkflowSlot(
-    agentName?: string,
-    slot?: WorkflowSlot,
-    modelTier?: string,
+    callerSlot?: WorkflowSlot,
+    agentSlot?: WorkflowSlot,
+    profileTier?: string,
   ): WorkflowSlot | undefined {
-    if (slot) {
-      return slot
-    }
+    if (callerSlot) return callerSlot
+    if (agentSlot) return agentSlot
 
-    if (agentName) {
-      const settingsSlot = this.settings.get('agents')?.[agentName]?.default_workflow_slot
-      if (settingsSlot) return settingsSlot
-    }
-
-    // 从 agent profile 的 preferredModelTier 映射到 workflow slot
-    if (modelTier) {
+    if (profileTier) {
       const tierToSlot: Record<string, WorkflowSlot> = {
         fast: 'compact',
         standard: 'normal',
         powerful: 'thinking',
       }
-      return tierToSlot[modelTier]
+      return tierToSlot[profileTier]
     }
 
     return undefined
@@ -425,9 +433,9 @@ export class VitaminApp implements VitaminContext {
 
   private async resolveSessionModel(options: {
     model?: Model
-    agentName?: string
     slot?: WorkflowSlot
-    modelTier?: string
+    agentSlot?: WorkflowSlot
+    profileTier?: string
   }): Promise<Model> {
     if (options.model) {
       return options.model
@@ -435,7 +443,7 @@ export class VitaminApp implements VitaminContext {
 
     await this.ensureSettingsLoaded()
 
-    const workflowSlot = this.resolveWorkflowSlot(options.agentName, options.slot, options.modelTier)
+    const workflowSlot = this.resolveWorkflowSlot(options.slot, options.agentSlot, options.profileTier)
     const slotModel = this.resolveModelFromSlot(workflowSlot)
     if (slotModel) {
       return slotModel
@@ -492,42 +500,90 @@ export class VitaminApp implements VitaminContext {
     this.ensureNotDisposed()
     await this.ensureSettingsLoaded()
 
-    // 读取 per-agent 配置（system_prompt / tools / max_tool_turns）
-    const agentConfig = options.agentName
-      ? this.settings.get('agents')?.[options.agentName]
+    const config = await this.resolveSessionConfig(options)
+    const agentSession = await this.codingSessionManager.createSession(config)
+
+    this.logger.info('Session created: %s', agentSession.id)
+    return agentSession
+  }
+
+  /**
+   * 从用户配置文件和内置 agent profile 中提取针对某个 agent 的默认值。
+   * 职责单一：只读取配置，不做异步 IO。
+   */
+  private resolveAgentDefaults(
+    agentName: string | undefined,
+    promptPreset: 'main' | 'subagent',
+  ): {
+    agentSlot?: WorkflowSlot
+    profileTier?: string
+    systemPrompt?: string
+    toolNames?: string[]
+    maxToolTurns?: number
+    agentProfile?: AgentProfile
+  } {
+    const userSetting = agentName
+      ? this.settings.get('agents')?.[agentName]
       : undefined
 
+    const agentProfile =
+      promptPreset === 'subagent' && agentName
+        ? resolveAgentProfile(BUILTIN_AGENT_PROFILES, agentName)
+        : undefined
+
+    return {
+      // 两者类型不同，分开传递：agentSlot 已是 WorkflowSlot，profileTier 需映射
+      agentSlot: userSetting?.default_workflow_slot,
+      profileTier: agentProfile?.preferredModelTier,
+      systemPrompt: userSetting?.system_prompt,
+      toolNames: userSetting?.tools ?? resolveAgentToolNames(agentProfile?.defaultTools),
+      maxToolTurns: userSetting?.max_tool_turns ?? agentProfile?.defaultMaxToolTurns,
+      agentProfile,
+    }
+  }
+
+  /**
+   * 将调用方传入的 Partial<AgentSessionOptions> 解析为完整的 ResolvedSessionConfig。
+   * 这是整个系统中唯一做优先级 merge 的地方。
+   *
+   * 优先级（高 → 低）：
+   *   model:        options.model > slot(model_slots) > settings.model > defaultModel
+   *   tools:        options.tools > agentConfig.tools 过滤 > agentProfile.defaultTools 过滤 > 全量
+   *   systemPrompt: options.systemPrompt > agentConfig.system_prompt > promptRefresh()
+   *   maxToolTurns: options.maxToolTurns > agentConfig > agentProfile > VitaminApp.maxToolTurns
+   */
+  private async resolveSessionConfig(
+    options: Partial<AgentSessionOptions>,
+  ): Promise<ResolvedSessionConfig & { id?: string }> {
     const promptPreset = options.promptPreset ?? (options.agentName ? 'subagent' : 'main')
-    const agentProfile = promptPreset === 'subagent' && options.agentName
-      ? resolveAgentProfile(BUILTIN_AGENT_PROFILES as AgentProfile[], options.agentName)
-      : undefined
+    const agentDefaults = this.resolveAgentDefaults(options.agentName, promptPreset)
 
+    // ── Model ─────────────────────────────────────────────────────────────
     const model = await this.resolveSessionModel({
       model: options.model,
-      agentName: options.agentName,
       slot: options.slot,
-      modelTier: agentProfile?.preferredModelTier,
+      agentSlot: agentDefaults.agentSlot,
+      profileTier: agentDefaults.profileTier,
     })
 
-    const agentSystemPrompt = agentConfig?.system_prompt
-    const agentMaxToolTurns = agentConfig?.max_tool_turns ?? agentProfile?.defaultMaxToolTurns
-    const agentToolNames = agentConfig?.tools ?? resolveAgentToolNames(agentProfile?.defaultTools)
+    // ── Tools ─────────────────────────────────────────────────────────────
+    const allTools = options.tools ?? this.tools
+    const tools =
+      !options.tools && agentDefaults.toolNames?.length
+        ? filterToolsByNames(allTools, agentDefaults.toolNames)
+        : allTools
 
-    // 如果 agent 配置了 tools 白名单，则过滤工具列表
-    let tools = options.tools ?? this.tools
-    if (!options.tools && agentToolNames && agentToolNames.length > 0) {
-      tools = filterToolsByNames(tools, agentToolNames)
-    }
-
-    const resolvedPromptRefresh = options.promptRefresh ?? (async () => {
+    // ── Prompt ────────────────────────────────────────────────────────────
+    // promptRefresh 在每次 session.prompt() 时被调用，动态更新 systemPrompt。
+    const promptRefresh = options.promptRefresh ?? (async () => {
       if (options.systemPrompt !== undefined) return options.systemPrompt
-      if (agentSystemPrompt !== undefined) return agentSystemPrompt
+      if (agentDefaults.systemPrompt !== undefined) return agentDefaults.systemPrompt
 
       if (promptPreset === 'subagent' && options.agentName) {
         return this.promptManager.assemblePreset({
           preset: 'subagent',
           agentName: options.agentName,
-          profile: agentProfile,
+          profile: agentDefaults.agentProfile,
           context: options.promptContext,
         })
       }
@@ -535,27 +591,20 @@ export class VitaminApp implements VitaminContext {
       return this.promptManager.assemblePreset({ preset: 'main' })
     })
 
-    const initialSystemPrompt = options.systemPrompt
-      ?? agentSystemPrompt
-      ?? await resolvedPromptRefresh()
+    const initialSystemPrompt =
+      options.systemPrompt ?? agentDefaults.systemPrompt ?? await promptRefresh()
 
-    const agentSession = await this.codingSessionManager.createSession({
-      ...options,
+    return {
+      id: options.id,
       model,
-      systemPrompt: initialSystemPrompt,
+      agentName: options.agentName,
+      systemPrompt: initialSystemPrompt ?? '',
       tools,
+      thinkingLevel: options.thinkingLevel ?? 'medium',
+      maxToolTurns: options.maxToolTurns ?? agentDefaults.maxToolTurns ?? this.maxToolTurns,
+      promptRefresh,
       workspaceDir: options.workspaceDir ?? this.workspaceDir,
-      hookRegistry: this.hookRegistry,
-      providerRegistry: this.providerRegistry,
-      logger: this.logger.child({ sessionId: options.id }),
-      devtools: this.devtools ?? undefined,
-      promptRefresh: resolvedPromptRefresh,
-      maxToolTurns: options.maxToolTurns ?? agentMaxToolTurns ?? this.maxToolTurns,
-    })
-
-    this.logger.info('Session created: %s', agentSession.id)
-
-    return agentSession
+    }
   }
 
   getSession(id: string): AgentSession | undefined {

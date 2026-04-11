@@ -5,7 +5,6 @@ import type { ModelRegistry } from '@vitamin/ai'
 import type { HookRegistry, PermissionPolicyRegistry, PermissionAuditLog } from '@vitamin/hooks'
 import type { ToolRegistry } from '@vitamin/tools'
 import type { PromptProviderOptions } from '@vitamin/prompt'
-
 import type { ResourceManager } from '@vitamin/resources'
 import type { SettingsManager } from '@vitamin/resources'
 import type { CodingSessionManager } from './session/coding-session-manager'
@@ -51,11 +50,9 @@ export interface VitaminAppOptions {
   
   model?: Model
   modelId?: string
-  modelRegistry?: ModelRegistry 
-  tools?: AgentTool[]
+  modelRegistry?: ModelRegistry
   authStore?: AuthStore
   providerRegistry?: ProviderRegistry
-  systemPrompt?: string
   hookRegistry?: HookRegistry
   workspaceDir?: string
   projectConfigPath?: string

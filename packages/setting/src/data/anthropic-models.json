@@ -1,0 +1,40 @@
+[
+  {
+    "id": "anthropic/claude-opus-4-6",
+    "name": "claude-opus-4-6",
+    "api": "anthropic-messages",
+    "provider": "anthropic",
+    "baseUrl": "https://api.anthropic.com",
+    "reasoning": true,
+    "input": ["text", "image"],
+    "cost": { "input": 15, "output": 75, "cacheRead": 1.5, "cacheWrite": 18.75 },
+    "contextWindow": 200000,
+    "maxOutputTokens": 32000,
+    "thinkingLevels": ["minimal", "low", "medium", "high", "xhigh"]
+  },
+  {
+    "id": "anthropic/claude-sonnet-4-6",
+    "name": "claude-sonnet-4-6",
+    "api": "anthropic-messages",
+    "provider": "anthropic",
+    "baseUrl": "https://api.anthropic.com",
+    "reasoning": true,
+    "input": ["text", "image"],
+    "cost": { "input": 3, "output": 15, "cacheRead": 0.3, "cacheWrite": 3.75 },
+    "contextWindow": 200000,
+    "maxOutputTokens": 64000,
+    "thinkingLevels": ["minimal", "low", "medium", "high", "xhigh"]
+  },
+  {
+    "id": "anthropic/claude-haiku-4-5",
+    "name": "claude-haiku-4-5",
+    "api": "anthropic-messages",
+    "provider": "anthropic",
+    "baseUrl": "https://api.anthropic.com",
+    "reasoning": false,
+    "input": ["text", "image"],
+    "cost": { "input": 0.8, "output": 4, "cacheRead": 0.08, "cacheWrite": 1 },
+    "contextWindow": 200000,
+    "maxOutputTokens": 16000
+  }
+]

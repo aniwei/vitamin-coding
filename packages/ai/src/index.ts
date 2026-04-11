@@ -55,6 +55,8 @@ export type { WorkflowSlot, ModelSlotOptions } from './model-slot-resolver'
 // Provider
 export { createCopilotProvider } from './provider/github-copilot'
 export type { CopilotCredentialResolver, CopilotProviderOptions } from './provider/github-copilot'
+export { createAnthropicProvider } from './provider/anthropic'
+export type { AnthropicCredentialResolver, AnthropicProviderOptions } from './provider/anthropic'
 export {
   ProviderRegistry,
   createProviderRegistry,

@@ -4,21 +4,18 @@ import {
   createInMemorySessionManager,
   createRemoteSessionManager,
 } from '@vitamin/session'
-import { 
-  createAgentWithRegistry, 
-  type AgentMessage, 
-  type AgentTool 
+import {
+  createAgentWithRegistry,
+  type AgentMessage,
 } from '@vitamin/agent'
-import { 
-  type Model, 
-  type ProviderRegistry, 
-  type ThinkingLevel 
+import {
+  type ProviderRegistry,
 } from '@vitamin/ai'
-import { 
-  type HookRegistry 
+import {
+  type HookRegistry
 } from '@vitamin/hooks'
-import { 
-  type Logger 
+import {
+  type Logger
 } from '@vitamin/shared'
 
 import { AgentSession } from './agent-session'
@@ -26,18 +23,17 @@ import { AgentSession } from './agent-session'
 import type { Session } from '@vitamin/session'
 import type { Devtools } from '@vitamin/devtools'
 import type {
-  AgentSessionOptions,
   AgentSessionInfo,
-  PromptRefresh,
+  ResolvedSessionConfig,
 } from './types'
 import type { SessionManagerOptions } from '@vitamin/session'
 
+/**
+ * Manager 只持有基础设施配置（持久化、网络、日志）。
+ * 业务配置（model、systemPrompt、tools 等）由 VitaminApp 解析后通过
+ * ResolvedSessionConfig 传入 createSession，Manager 不做二次 merge。
+ */
 export interface CodingSessionManagerOptions extends Omit<SessionManagerOptions<AgentMessage>, 'store'> {
-  model?: Model
-  systemPrompt?: string
-  tools?: AgentTool[]
-  thinkingLevel?: ThinkingLevel
-  maxToolTurns?: number
   hookRegistry: HookRegistry
   providerRegistry: ProviderRegistry
   workspaceDir: string
@@ -46,25 +42,11 @@ export interface CodingSessionManagerOptions extends Omit<SessionManagerOptions<
   threshold?: number
   logger: Logger
   devtools?: Devtools
-  promptRefresh?: PromptRefresh
-}
-
-export interface InMemoryShorthandOptions {
-  model?: Model
-  systemPrompt?: string
-  tools?: AgentTool[]
-  thinkingLevel?: ThinkingLevel
-  maxToolTurns?: number
-  hooks?: HookRegistry
-  hookRegistry?: HookRegistry
-  providerRegistry?: ProviderRegistry
-  workspaceDir?: string
-  logger?: Logger
-  devtools?: Devtools
-  promptRefresh?: PromptRefresh
-  maxSessions?: number
-  idleTimeoutMs?: number
-  threshold?: number
+  /**
+   * 仅用于 restore / restoreAll 场景。
+   * 正常 createSession 路径必须传入完整 ResolvedSessionConfig，不使用此字段。
+   */
+  defaultSessionConfig?: ResolvedSessionConfig
 }
 
 export interface DiskSessionManagerOptions extends CodingSessionManagerOptions {
@@ -79,52 +61,24 @@ export class CodingSessionManager {
   private readonly sessionManager: SessionManager<AgentMessage>
   private readonly agentSessions = new Map<string, AgentSession>()
 
-  private providerRegistry: ProviderRegistry
-  private hookRegistry: HookRegistry
-  private logger: Logger
-  private devtools?: Devtools
-
-  private model?: Model
-  private tools: AgentTool[]
-  private maxToolTurns: number
-  private systemPrompt: string
-  private thinkingLevel: ThinkingLevel
-  
-  private workspaceDir: string
-  private promptRefresh?: PromptRefresh
+  private readonly providerRegistry: ProviderRegistry
+  private readonly hookRegistry: HookRegistry
+  private readonly workspaceDir: string
+  private readonly logger: Logger
+  private readonly devtools?: Devtools
+  private readonly defaultSessionConfig?: ResolvedSessionConfig
 
   constructor(
     sessionManager: SessionManager<AgentMessage>,
     options: CodingSessionManagerOptions,
   ) {
-    const { 
-      model, 
-      systemPrompt, 
-      tools, 
-      thinkingLevel, 
-      maxToolTurns, 
-      providerRegistry, 
-      hookRegistry, 
-      logger, 
-      workspaceDir, 
-      promptRefresh 
-    } = options
-
-
-    this.model = model
-    this.systemPrompt = systemPrompt ?? ''
-    this.workspaceDir = workspaceDir
-    this.tools = tools ?? []
-    this.thinkingLevel = thinkingLevel ?? 'medium'
-    this.maxToolTurns = maxToolTurns ?? 25
-    this.promptRefresh = promptRefresh
-
-    this.hookRegistry = hookRegistry
     this.sessionManager = sessionManager
-    this.providerRegistry = providerRegistry
-
-    this.logger = logger
+    this.providerRegistry = options.providerRegistry
+    this.hookRegistry = options.hookRegistry
+    this.workspaceDir = options.workspaceDir
+    this.logger = options.logger
     this.devtools = options.devtools
+    this.defaultSessionConfig = options.defaultSessionConfig
   }
 
   get active(): AgentSession | undefined {
@@ -148,76 +102,50 @@ export class CodingSessionManager {
     }
   }
 
+  /**
+   * 从已解析的配置创建 AgentSession，不做任何 merge 或默认值填充。
+   * logger 由 Manager 统一创建（带 sessionId child）。
+   */
   private createManagedAgentSession(
     session: Session<AgentMessage>,
-    options: Required<Pick<AgentSessionOptions, 'model' | 'systemPrompt' | 'tools' | 'thinkingLevel' | 'maxToolTurns'>>
-      & Pick<AgentSessionOptions, 'agentName' | 'workspaceDir' | 'promptRefresh'>,
+    config: ResolvedSessionConfig,
   ): AgentSession {
-    const {
-      model,
-      systemPrompt,
-      tools,
-      thinkingLevel,
-      maxToolTurns,
-      agentName,
-      workspaceDir,
-      promptRefresh,
-    } = options
-
     const agent = createAgentWithRegistry({
-      model,
+      model: config.model,
       providerRegistry: this.providerRegistry,
     })
 
     return new AgentSession(session, agent, {
-      model,
-      agentName,
-      systemPrompt,
-      tools,
-      thinkingLevel,
-      maxToolTurns,
-      providerRegistry: this.providerRegistry,
+      model: config.model,
+      agentName: config.agentName,
+      systemPrompt: config.systemPrompt,
+      tools: config.tools,
+      thinkingLevel: config.thinkingLevel,
+      maxToolTurns: config.maxToolTurns,
+      promptRefresh: config.promptRefresh,
+      workspaceDir: config.workspaceDir,
       hookRegistry: this.hookRegistry,
-      workspaceDir: workspaceDir ?? this.workspaceDir,
+      providerRegistry: this.providerRegistry,
+      logger: this.logger.child({ sessionId: session.id }),
       devtools: this.devtools,
-      logger: this.logger,
-      promptRefresh: promptRefresh ?? this.promptRefresh,
     })
   }
 
-  async createSession(options: Partial<AgentSessionOptions> = {}): Promise<AgentSession> {
-    const model = options.model ?? this.model
-    if (!model) {
-      throw new Error('No model specified. Provide model in createSession options or CodingSessionManager options.')
-    }
-
-    const id = options.id ?? crypto.randomUUID()
+  /**
+   * 使用由 VitaminApp 完整解析好的配置创建 session。
+   * Manager 层不再进行任何业务默认值填充。
+   */
+  async createSession(config: ResolvedSessionConfig & { id?: string }): Promise<AgentSession> {
+    const id = config.id ?? crypto.randomUUID()
 
     if (this.agentSessions.has(id)) {
       throw new Error(`Session with ID ${id} already exists.`)
     }
 
-    const sessionId = id
-    const session = await this.sessionManager.create(sessionId)
+    const session = await this.sessionManager.create(id)
     this.updateAgentSessionsWithStore()
 
-    const tools = options.tools ?? this.tools
-    const systemPrompt = options.systemPrompt ?? this.systemPrompt
-    const thinkingLevel = options.thinkingLevel ?? this.thinkingLevel
-    const maxToolTurns = options.maxToolTurns ?? this.maxToolTurns
-    const promptRefresh = options.promptRefresh ?? this.promptRefresh
-
-    const agentSession = this.createManagedAgentSession(session, {
-      model,
-      agentName: options.agentName,
-      systemPrompt,
-      tools,
-      thinkingLevel,
-      maxToolTurns,
-      promptRefresh,
-      workspaceDir: options.workspaceDir,
-    })
-
+    const agentSession = this.createManagedAgentSession(session, config)
     this.agentSessions.set(session.id, agentSession)
 
     await this.hookRegistry.emit('session.created', { sessionId: session.id, metadata: {} })
@@ -261,6 +189,10 @@ export class CodingSessionManager {
     return true
   }
 
+  /**
+   * fork 直接复用 source session 自身的已解析配置，
+   * 而不是退回到 Manager 层的任何默认值。
+   */
   async forkSession(
     sourceId: string,
     id?: string,
@@ -271,18 +203,13 @@ export class CodingSessionManager {
     const forked = await this.sessionManager.fork(sourceId, id)
     if (!forked) return undefined
 
-    const model = this.model
-    if (!model) {
-      throw new Error('No model available to create agent for forked session.')
-    }
-
     const agentSession = this.createManagedAgentSession(forked, {
-      model,
-      agentName: source.agentName,
-      systemPrompt: this.systemPrompt,
-      tools: this.tools,
-      thinkingLevel: this.thinkingLevel,
-      maxToolTurns: this.maxToolTurns,
+      model: source.model,
+      agentName: source.agentName !== 'agent' ? source.agentName : undefined,
+      systemPrompt: source.systemPrompt,
+      tools: source.tools,
+      thinkingLevel: source.thinkingLevel,
+      maxToolTurns: source.maxToolTurns,
       promptRefresh: source.promptRefresh,
       workspaceDir: source.workspaceDir,
     })
@@ -299,24 +226,14 @@ export class CodingSessionManager {
     return this.agentSessions.get(id)
   }
 
-  updateDefaults(options: Partial<CodingSessionManagerOptions>): void {
-    if (options.model) this.model = options.model
-    if (options.systemPrompt) this.systemPrompt = options.systemPrompt
-    if (options.tools) this.tools = options.tools
-    if (options.thinkingLevel) this.thinkingLevel = options.thinkingLevel
-    if (options.maxToolTurns) this.maxToolTurns = options.maxToolTurns
-    if (options.providerRegistry) this.providerRegistry = options.providerRegistry
-    if (options.workspaceDir) this.workspaceDir = options.workspaceDir
-    if (options.promptRefresh) this.promptRefresh = options.promptRefresh
-    if (options.devtools) this.devtools = options.devtools
-    if (options.logger) this.logger = options.logger
-    if (options.hookRegistry) this.hookRegistry = options.hookRegistry
-  }
-
   async save(id: string): Promise<void> {
     await this.sessionManager.save(id)
   }
 
+  /**
+   * 从持久化存储恢复单个 session。
+   * 若未提供 defaultSessionConfig 则返回 null。
+   */
   async restore(id: string): Promise<AgentSession | null> {
     const session = await this.sessionManager.restore(id)
     if (!session) return null
@@ -328,17 +245,9 @@ export class CodingSessionManager {
       return this.agentSessions.get(session.id)!
     }
 
-    const model = this.model
-    if (!model) return null
+    if (!this.defaultSessionConfig) return null
 
-    const agentSession = this.createManagedAgentSession(session, {
-      model,
-      systemPrompt: this.systemPrompt,
-      tools: this.tools,
-      thinkingLevel: this.thinkingLevel,
-      maxToolTurns: this.maxToolTurns,
-    })
-
+    const agentSession = this.createManagedAgentSession(session, this.defaultSessionConfig)
     this.agentSessions.set(session.id, agentSession)
     this.logger.info('Session %s restored', session.id)
 
@@ -349,23 +258,19 @@ export class CodingSessionManager {
     await this.sessionManager.saveAll()
   }
 
+  /**
+   * 从持久化存储批量恢复所有 session。
+   * 若未提供 defaultSessionConfig 则直接返回 0。
+   */
   async restoreAll(): Promise<number> {
+    if (!this.defaultSessionConfig) return 0
+
     const count = await this.sessionManager.restoreAll()
     this.updateAgentSessionsWithStore()
-    
+
     for (const rawSession of this.sessionManager.list()) {
       if (!this.agentSessions.has(rawSession.id)) {
-        const model = this.model
-        if (!model) continue
-
-        const agentSession = this.createManagedAgentSession(rawSession, {
-          model,
-          systemPrompt: this.systemPrompt,
-          tools: this.tools,
-          thinkingLevel: this.thinkingLevel,
-          maxToolTurns: this.maxToolTurns,
-        })
-
+        const agentSession = this.createManagedAgentSession(rawSession, this.defaultSessionConfig)
         this.agentSessions.set(rawSession.id, agentSession)
       }
     }
@@ -389,14 +294,13 @@ export function createDiskCodingSessionManager(options: DiskSessionManagerOption
   }
 
   const { maxSessions, idleTimeoutMs, threshold } = options
-
   const sm = createDiskSessionManager<AgentMessage>(sessionDir, {
     maxSessions,
     idleTimeoutMs,
     threshold,
   })
 
-  return new CodingSessionManager(sm, { ...options })
+  return new CodingSessionManager(sm, options)
 }
 
 export function createRemoteCodingSessionManager(options: RemoteSessionManagerOptions): CodingSessionManager {
@@ -404,15 +308,15 @@ export function createRemoteCodingSessionManager(options: RemoteSessionManagerOp
   if (!sessionUrl) {
     throw new Error('sessionUrl is required for RemoteSessionManager')
   }
-  const { maxSessions, idleTimeoutMs, threshold } = options
 
+  const { maxSessions, idleTimeoutMs, threshold } = options
   const sm = createRemoteSessionManager<AgentMessage>(sessionUrl, {
     maxSessions,
     idleTimeoutMs,
     threshold,
   })
 
-  return new CodingSessionManager(sm, { ...options })
+  return new CodingSessionManager(sm, options)
 }
 
 export function createInMemoryCodingSessionManager(
@@ -427,5 +331,3 @@ export function createInMemoryCodingSessionManager(
 
   return new CodingSessionManager(sm, options)
 }
-
-

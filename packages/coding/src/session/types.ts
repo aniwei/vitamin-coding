@@ -17,6 +17,22 @@ import type { Logger } from '@vitamin/shared'
 import type { Devtools } from '@vitamin/devtools'
 import type { SessionStore } from '@vitamin/session'
 
+/**
+ * 经过 VitaminApp 完整解析后的 session 配置。
+ * 所有业务字段均已确定，无需再做 merge。
+ * Manager 层只接受此类型来创建 session，不持有业务默认值。
+ */
+export interface ResolvedSessionConfig {
+  model: Model
+  agentName?: string
+  systemPrompt: string
+  tools: AgentTool[]
+  thinkingLevel: ThinkingLevel
+  maxToolTurns: number
+  promptRefresh?: PromptRefresh
+  workspaceDir: string
+}
+
 // Re-export event types from @vitamin/agent so downstream packages import from there,
 // but coding-internal code (agent-session.ts etc.) can still import from this file.
 export type {

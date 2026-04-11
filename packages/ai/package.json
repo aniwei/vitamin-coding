@@ -22,8 +22,9 @@
     "generate:models": "tsx scripts/generate-models.ts"
   },
   "dependencies": {
-    "@vitamin/setting": "workspace:*",
+    "@anthropic-ai/sdk": "0.88.0",
     "@vitamin/env": "workspace:*",
+    "@vitamin/setting": "workspace:*",
     "@vitamin/shared": "workspace:*",
     "eventsource-parser": "3.0.6",
     "zod": "4.3.6"
