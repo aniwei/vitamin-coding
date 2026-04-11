@@ -1,6 +1,8 @@
 import { ProviderError } from '@vitamin/shared'
 import { createCopilotProvider } from './provider/github-copilot'
 import type { CopilotCredentialResolver } from './provider/github-copilot'
+import { createAnthropicProvider } from './provider/anthropic'
+import type { AnthropicCredentialResolver } from './provider/anthropic'
 
 import {
   createDefaultAuthStore,
@@ -92,6 +94,11 @@ export class ProviderRegistry {
     return this.authStore.getCredentialKey(api)
   }
 
+  async resolveBaseUrl(api: Api): Promise<string | null> {
+    if (!this.authStore) return null
+    return this.authStore.getBaseUrl(api)
+  }
+
   async storeAccessKey(api: Api, key: string): Promise<void> {
     if (!this.authStore) return
     this.authStore.setCredentialKey(api, key)
@@ -135,6 +142,12 @@ export function createDefaultProviderRegistry(
   registry.register('github-copilot', () => {
     const resolveOAuthAccessKey: CopilotCredentialResolver = () => registry.resolveAccessKey('github-copilot').then(k => k ?? undefined)
     return createCopilotProvider({ resolveOAuthAccessKey })
+  })
+
+  registry.register('anthropic-messages', () => {
+    const resolveKey: AnthropicCredentialResolver = () => registry.resolveAccessKey('anthropic').then(k => k ?? undefined)
+    const resolveBaseUrl = () => registry.resolveBaseUrl('anthropic').then(u => u ?? undefined)
+    return createAnthropicProvider({ resolveKey, resolveBaseUrl })
   })
 
   return registry

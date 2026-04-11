@@ -49,12 +49,14 @@ export { EventStream, createEventStream } from './event-stream'
 
 // 模型注册表
 export { ModelRegistry, createModelRegistry, createDefaultModelRegistry } from './model-registry'
-export { ModelSlot, createModelSlot } from './model-slot-resolver'
+export { ModelSlot, createModelSlot, WORKFLOW_SLOTS } from './model-slot-resolver'
 export type { WorkflowSlot, ModelSlotOptions } from './model-slot-resolver'
 
 // Provider
 export { createCopilotProvider } from './provider/github-copilot'
 export type { CopilotCredentialResolver, CopilotProviderOptions } from './provider/github-copilot'
+export { createAnthropicProvider } from './provider/anthropic'
+export type { AnthropicCredentialResolver, AnthropicProviderOptions } from './provider/anthropic'
 export {
   ProviderRegistry,
   createProviderRegistry,

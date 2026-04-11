@@ -18,7 +18,7 @@ const modelId = process.env.CODING_EXAMPLE_MODEL_ID ?? 'github-copilot/gpt-4o'
 
 async function main() {
   const vitamin = createVitamin({
-    port: 9229,  // devtools inspector port
+    port: 9229, // devtools inspector port
     inspect: true,
     logger: {
       name: 'devtools-service',
@@ -41,7 +41,9 @@ async function main() {
 
   await service.start()
   console.log('[devtools-service] Web UI service on http://127.0.0.1:8080')
-  console.log('[devtools-service] Devtools inspector on ws://127.0.0.1:9229/{id}/inspect')
+  console.log(
+    '[devtools-service] Devtools inspector on ws://127.0.0.1:9229/{id}/inspect',
+  )
 
   // Graceful shutdown
   const shutdown = async () => {

@@ -1,7 +1,8 @@
-import { 
-  getToolCallsByAssistantMessage, 
-  hasToolCalls 
+import {
+  getToolCallsByAssistantMessage,
+  hasToolCalls,
 } from '@vitamin/ai'
+import type { ThinkingLevel, ToolResultMessage } from '@vitamin/ai'
 import { 
   AbortError, 
   MaxToolTurnsError 
@@ -165,7 +166,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
           getMaxTokens: () => maxTokens,
           setMaxTokens: (v) => { maxTokens = v },
           getThinkingLevel: () => thinkingLevel,
-          setThinkingLevel: (v) => { thinkingLevel = v as any },
+          setThinkingLevel: (v) => { thinkingLevel = v as ThinkingLevel },
           messages,
         })
         
@@ -178,7 +179,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
 
         const assistantMessage = await es.result()
         lastAssistantMessage = assistantMessage
-        messages.push(assistantMessage as AgentMessage)
+        messages.push(assistantMessage)
         lastTokenUsage = {
           input: assistantMessage.usage.inputTokens,
           output: assistantMessage.usage.outputTokens,
@@ -245,10 +246,13 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
             const toolResultMessage = {
               role: 'tool_result' as const,
               toolCallId: toolCall.id,
+              toolName: toolCall.name,
               content: result.content,
               isError: result.isError ?? false,
+              details: result.details ?? {},
+              timestamp: Date.now(),
             }
-            messages.push(toolResultMessage as AgentMessage)
+            messages.push(toolResultMessage)
 
             emit({
               type: 'tool_call_end',
@@ -391,7 +395,7 @@ function summarizeMessages(messages: AgentMessage[], lastN: number): MessageSumm
     preview: typeof msg.content === 'string'
       ? msg.content.slice(0, 200)
       : JSON.stringify(msg.content).slice(0, 200),
-    toolName: msg.role === 'tool_result' ? (msg as any).toolCallId : undefined,
+    toolName: msg.role === 'tool_result' ? (msg as ToolResultMessage).toolName : undefined,
     tokenEstimate: Math.ceil(
       (typeof msg.content === 'string' ? msg.content.length : JSON.stringify(msg.content).length) / 4,
     ),
@@ -432,7 +436,10 @@ function consume(result: PauseResult | undefined, target: PayloadApplyTarget): v
 
   if (payload?.injectMessages?.length) {
     for (const msg of payload.injectMessages) {
-      target.messages.push({ role: msg.role, content: msg.content } as AgentMessage)
+      // Devtools can inject 'user' messages; 'system' is not an agent message role
+      if (msg.role === 'user') {
+        target.messages.push({ role: 'user', content: msg.content, timestamp: Date.now() })
+      }
     }
   }
 

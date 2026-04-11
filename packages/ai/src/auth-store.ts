@@ -2,20 +2,14 @@ import { createLogger } from '@vitamin/shared'
 import { readFile, writeFile, mkdir, chmod } from 'node:fs/promises'
 import { dirname } from 'node:path'
 import { AUTH_PATH } from '@vitamin/env'
-import { 
-  OAuthRegistry, 
-  createDefaultOAuthRegistry 
-} from './oauth-registry'
+import { OAuthRegistry, createDefaultOAuthRegistry } from './oauth-registry'
 
-import type { 
-  OAuthCredentials, 
-  OAuthLoginOptions, 
-  Provider 
-} from './types'
+import type { OAuthCredentials, OAuthLoginOptions, Provider } from './types'
 
 export type ApiKeyEntry = {
   type: 'api_key'
   key: string
+  baseUrl?: string
 }
 
 export type OAuthEntry = {
@@ -55,7 +49,8 @@ export class AuthStore {
     const entry = this.cache.get(provider)
 
     if (entry?.type === 'api_key') return entry.key
-    if (entry?.type === 'oauth') return this.resolveOAuthAccessKey(provider, entry)
+    if (entry?.type === 'oauth')
+      return this.resolveOAuthAccessKey(provider, entry)
 
     const env = this.env.get(provider)
     if (env) {
@@ -74,16 +69,31 @@ export class AuthStore {
     return !!(env && process.env[env])
   }
 
+  async getBaseUrl(provider: Provider): Promise<string | null> {
+    await this.ensureInitialized()
+    const entry = this.cache.get(provider)
+    if (entry?.type === 'api_key' && entry.baseUrl) return entry.baseUrl
+    return null
+  }
+
   async setCredentialKey(provider: Provider, credentials: string): Promise<void>
-  async setCredentialKey(provider: Provider, credentials: OAuthCredentials): Promise<void>
-  async setCredentialKey(provider: Provider, credentials: string | OAuthCredentials): Promise<void> {
+  async setCredentialKey(
+    provider: Provider,
+    credentials: OAuthCredentials,
+  ): Promise<void>
+  async setCredentialKey(
+    provider: Provider,
+    credentials: string | OAuthCredentials,
+  ): Promise<void> {
     await this.ensureInitialized()
 
-    this.cache.set(provider, typeof credentials === 'string' 
-      ? { type: 'api_key', key: credentials } 
-      : { type: 'oauth', ...credentials }
+    this.cache.set(
+      provider,
+      typeof credentials === 'string'
+        ? { type: 'api_key', key: credentials }
+        : { type: 'oauth', ...credentials },
     )
-    
+
     this.dirty = true
   }
 
@@ -94,7 +104,7 @@ export class AuthStore {
 
   async login(
     provider: Provider,
-    options: OAuthLoginOptions
+    options: OAuthLoginOptions,
   ): Promise<OAuthCredentials> {
     const oauth = this.oauth.get(provider)
     if (!oauth) {
@@ -127,7 +137,9 @@ export class AuthStore {
 
     try {
       await chmod(this.path, 0o600)
-    } catch { }
+    } catch {
+      //
+    }
 
     this.dirty = false
   }
@@ -180,11 +192,13 @@ export function createAuthStore(options: AuthStoreOptions = {}): AuthStore {
   return new AuthStore(options)
 }
 
-export function createDefaultAuthStore(options: AuthStoreOptions = {}): AuthStore {
+export function createDefaultAuthStore(
+  options: AuthStoreOptions = {},
+): AuthStore {
   return new AuthStore({
     env: {
-      'anthropic':      'ANTHROPIC_API_KEY',
-      'openai':         'OPENAI_API_KEY',
+      anthropic: 'ANTHROPIC_API_KEY',
+      openai: 'OPENAI_API_KEY',
       'github-copilot': 'COPILOT_GITHUB_TOKEN',
       ...options.env,
     },

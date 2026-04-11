@@ -1,9 +1,10 @@
 import { Hono } from 'hono'
+import type { AgentSession } from '@vitamin/coding'
+import type { AgentMessage } from '@vitamin/agent'
+import type { TextContent, ToolCall } from '@vitamin/ai'
 import type { CodingService } from '../coding-service'
 
-export function createChatRoute(
-  service: CodingService
-): Hono {
+export function createChatRoute(service: CodingService): Hono {
   const app = new Hono()
 
   app.post('/query', async (c) => {
@@ -41,8 +42,6 @@ export function createChatRoute(
     if (!session) {
       return c.json([])
     }
-    // TODO
-    // @ts-ignore
     return c.json(serializeMessages(session))
   })
 
@@ -68,24 +67,28 @@ export function createChatRoute(
   return app
 }
 
-function serializeMessages(session: { session: { messages(): unknown[] } }) {
-  const messages = session.session.messages()
-  return messages.map((msg: any) => ({
+function serializeMessages(session: AgentSession) {
+  const messages = session.session.messages() as AgentMessage[]
+  return messages.map((msg) => ({
     role: msg.role,
     content: serializeContent(msg),
-    timestamp: msg.timestamp,
-    toolCalls: msg.content?.filter?.((b: any) => b.type === 'tool_call') ?? [],
+    timestamp: 'timestamp' in msg ? msg.timestamp : undefined,
+    toolCalls: Array.isArray((msg as { content?: unknown }).content)
+      ? (msg as { content: unknown[] }).content.filter(
+          (b): b is ToolCall => (b as ToolCall).type === 'tool_call',
+        )
+      : [],
   }))
 }
 
-function serializeContent(msg: any): string {
+function serializeContent(msg: AgentMessage): string {
   if (typeof msg.content === 'string') {
     return msg.content
   }
   if (Array.isArray(msg.content)) {
-    return msg.content
-      .filter((b: any) => b.type === 'text')
-      .map((b: any) => b.text)
+    return (msg.content as unknown[])
+      .filter((b): b is TextContent => (b as TextContent).type === 'text')
+      .map((b) => b.text)
       .join('')
   }
   return ''

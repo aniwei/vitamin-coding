@@ -27,22 +27,13 @@ export {
   WORKFLOW_SLOTS,
 } from './types'
 
-export { 
-  migrate, 
-  registerMigration, 
-  resetMigrations 
-} from './migrator'
+export { migrate, registerMigration, resetMigrations } from './migrator'
 export type { Migration } from './migrator'
 
 export { loadSetting, SettingLoader } from './setting'
 
-export { 
-  createSettingWatcher,
-  SettingWatcher,
-} from './watcher'
-export type {
-  SettingWatcherOptions,
-} from './watcher'
+export { createSettingWatcher, SettingWatcher } from './watcher'
+export type { SettingWatcherOptions } from './watcher'
 
 export { createSettingStore } from './store'
 export type {
@@ -51,7 +42,7 @@ export type {
   SettingStoreOptions,
   FileSettingStoreOptions,
   HttpSettingStoreOptions,
-  InMemorySettingStoreOptions
+  InMemorySettingStoreOptions,
 } from './store'
 
 export { FileSettingStore } from './file-store'
@@ -63,4 +54,7 @@ export {
 } from './persistence-store'
 
 // Presets (JSON data)
-export { BUILTIN_AGENT_PROFILES, COPILOT_MODELS, TASK_TYPE_PROFILE_MAP } from './presets'
+export {
+  BUILTIN_AGENT_PROFILES,
+  TASK_TYPE_PROFILE_MAP,
+} from './presets'

@@ -8,9 +8,14 @@ import { AgentSession } from './agent-session'
 
 import type { CreateAgentSessionOptions } from './types'
 
-export function createAgentSession(options: CreateAgentSessionOptions): AgentSession {
+export function createAgentSession(
+  options: CreateAgentSessionOptions,
+): AgentSession {
   const sessionId = options.id ?? crypto.randomUUID()
-  const sessionStore = options.sessionStore ?? createInMemorySessionStore<AgentMessage>()
+
+  const sessionStore =
+    options.sessionStore ?? createInMemorySessionStore<AgentMessage>()
+
   void sessionStore.createSession(sessionId)
 
   const session = sessionStore.getSession(sessionId)
@@ -18,12 +23,16 @@ export function createAgentSession(options: CreateAgentSessionOptions): AgentSes
     throw new Error(`Failed to create session ${sessionId}`)
   }
 
-  const providerRegistry = options.providerRegistry ?? createDefaultProviderRegistry()
-  const hookRegistry = options.hookRegistry ?? options.hooks ?? createHookRegistry({ preset: 'default' })
-  const logger = options.logger ?? createLogger(`coding-agent-session:${sessionId}`, {
-    level: 'info',
-    destination: 'stdout',
-  })
+  const providerRegistry =
+    options.providerRegistry ?? createDefaultProviderRegistry()
+  const hookRegistry =
+    options.hookRegistry ?? createHookRegistry({ preset: 'default' })
+  const logger =
+    options.logger ??
+    createLogger(`coding-agent-session:${sessionId}`, {
+      level: 'info',
+      destination: 'stdout',
+    })
 
   const agent = createAgentWithRegistry({
     model: options.model,
