@@ -39,10 +39,7 @@ export async function runPrintMode(
   return response
 }
 
-export async function runJsonMode(
-  session: AgentSession,
-  prompt: string,
-): Promise<JsonModeResult> {
+export async function runJsonMode(session: AgentSession, prompt: string): Promise<JsonModeResult> {
   await session.prompt(prompt)
   return {
     sessionId: session.id,
@@ -52,10 +49,7 @@ export async function runJsonMode(
   }
 }
 
-export async function runRpcMode(
-  session: AgentSession,
-  request: RpcRequest,
-): Promise<RpcResponse> {
+export async function runRpcMode(session: AgentSession, request: RpcRequest): Promise<RpcResponse> {
   try {
     if (request.method === 'prompt') {
       const result = await runJsonMode(session, request.params.text)
@@ -136,7 +130,10 @@ export class InteractiveMode {
 
 export function getLastAssistantText(messages: readonly AgentMessage[]): string {
   for (let i = messages.length - 1; i >= 0; i--) {
-    const message = messages[i] as { role?: string; content?: Array<{ type?: string; text?: string }> }
+    const message = messages[i] as {
+      role?: string
+      content?: Array<{ type?: string; text?: string }>
+    }
     if (message?.role !== 'assistant') {
       continue
     }

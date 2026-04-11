@@ -1,11 +1,7 @@
 import { InMemorySession } from './in-memory-session'
 import { InMemorySessionStore } from './store'
 import { FileSessionPersistence } from './file-persistence'
-import { 
-  SESSION_MAX,
-  SESSION_IDLE_TIMEOUT_MS, 
-  SESSION_SNAPSHOT_VERSION,
-} from '@vitamin/env'
+import { SESSION_MAX, SESSION_IDLE_TIMEOUT_MS, SESSION_SNAPSHOT_VERSION } from '@vitamin/env'
 import { RemoteSessionPersistence } from './remote-persistence'
 import type {
   PaginatedResult,
@@ -20,7 +16,6 @@ import type {
   SessionStore,
 } from './types'
 
-
 export class SessionManager<T = unknown> {
   private readonly store: SessionStore<T>
   private readonly persistence: SessionPersistence<T> | null
@@ -30,12 +25,7 @@ export class SessionManager<T = unknown> {
   private activeSessionId: string | undefined
 
   constructor(options: SessionManagerOptions<T>) {
-    const { 
-      store, 
-      persistence, 
-      idleTimeoutMs, 
-      maxSessions 
-    } = options
+    const { store, persistence, idleTimeoutMs, maxSessions } = options
 
     const resolvedMaxSessions = maxSessions ?? SESSION_MAX
 
@@ -43,13 +33,14 @@ export class SessionManager<T = unknown> {
     this.persistence = persistence ?? null
     this.idleTimeoutMs = idleTimeoutMs ?? SESSION_IDLE_TIMEOUT_MS
     this.maxSessions = resolvedMaxSessions
-    this.threshold = Math.max(0, Math.min(options.threshold ?? resolvedMaxSessions, resolvedMaxSessions))
+    this.threshold = Math.max(
+      0,
+      Math.min(options.threshold ?? resolvedMaxSessions, resolvedMaxSessions),
+    )
   }
 
   get active(): Session<T> | undefined {
-    return this.activeSessionId
-      ? this.store.getSession(this.activeSessionId)
-      : undefined
+    return this.activeSessionId ? this.store.getSession(this.activeSessionId) : undefined
   }
 
   // 设置活跃会话
@@ -88,10 +79,7 @@ export class SessionManager<T = unknown> {
     return session
   }
 
-  async create(
-    id?: string, 
-    title?: string
-  ): Promise<Session<T>> {
+  async create(id?: string, title?: string): Promise<Session<T>> {
     this.prepareForNewSession(id)
 
     const session = await this.store.createSession(id)
@@ -142,8 +130,10 @@ export class SessionManager<T = unknown> {
       }
 
       // 其他元数据过滤
-      if (criteria.createdAfter !== undefined && meta.createdAt < criteria.createdAfter) return false
-      if (criteria.createdBefore !== undefined && meta.createdAt > criteria.createdBefore) return false
+      if (criteria.createdAfter !== undefined && meta.createdAt < criteria.createdAfter)
+        return false
+      if (criteria.createdBefore !== undefined && meta.createdAt > criteria.createdBefore)
+        return false
       if (criteria.hasParent !== undefined) {
         const hasParent = meta.parentSessionId !== undefined
         if (criteria.hasParent !== hasParent) return false
@@ -162,11 +152,7 @@ export class SessionManager<T = unknown> {
     criteria: SessionFilter,
     options: PaginationOptions,
   ): PaginatedResult<Session<T>> {
-    const { 
-      page, 
-      sortBy = 'lastActiveAt', 
-      order = 'desc' 
-    } = options
+    const { page, sortBy = 'lastActiveAt', order = 'desc' } = options
     const pageSize = options.pageSize ?? 50
 
     const filtered = this.filter(criteria)
@@ -197,10 +183,7 @@ export class SessionManager<T = unknown> {
     }
   }
 
-  async fork(
-    sourceId: string, 
-    newId?: string
-  ): Promise<Session<T> | undefined> {
+  async fork(sourceId: string, newId?: string): Promise<Session<T> | undefined> {
     const source = this.store.getSession(sourceId)
     if (!source) {
       return undefined
@@ -218,8 +201,8 @@ export class SessionManager<T = unknown> {
   }
 
   private async genericFork(
-    source: Session<T>, 
-    newId: string = crypto.randomUUID() as string
+    source: Session<T>,
+    newId: string = crypto.randomUUID() as string,
   ): Promise<Session<T> | undefined> {
     const target = await this.store.createSession(newId)
     const context = source.buildContext()
@@ -269,7 +252,7 @@ export class SessionManager<T = unknown> {
     if (!this.persistence) return 0
 
     const ids = await this.persistence.list()
-    
+
     let restored = 0
     for (const id of ids) {
       const snapshot = await this.persistence.load(id)
@@ -310,10 +293,8 @@ export class SessionManager<T = unknown> {
     return removed
   }
 
-  // 清理资源 
-  dispose(): void {
-    
-  }
+  // 清理资源
+  dispose(): void {}
 
   private prepareForNewSession(id?: string): void {
     this.collectIdleIfNeeded(1)
@@ -364,7 +345,7 @@ export class SessionManager<T = unknown> {
   }
 
   private async restoreWithSnapshot(snapshot: SessionSnapshot<T>): Promise<Session<T>> {
-    const session = await this.store.createSession(snapshot.id) as InMemorySession<T>
+    const session = (await this.store.createSession(snapshot.id)) as InMemorySession<T>
     if (session instanceof InMemorySession) {
       session.restoreEntries(snapshot.entries, snapshot.metadata, snapshot.leafId)
     }
@@ -377,7 +358,9 @@ export class SessionManager<T = unknown> {
   }
 }
 
-export interface CreateSessionManagerOptions<T> extends Partial<Omit<SessionManagerOptions<T>, 'store' | 'persistence'>> { }
+export interface CreateSessionManagerOptions<T> extends Partial<
+  Omit<SessionManagerOptions<T>, 'store' | 'persistence'>
+> {}
 
 export function createInMemorySessionManager<T = unknown>(
   options?: CreateSessionManagerOptions<T>,
@@ -408,19 +391,18 @@ export function createRemoteSessionManager<T = unknown>(
   options?: CreateSessionManagerOptions<T>,
 ): SessionManager<T> {
   const store = new InMemorySessionStore<T>()
-  const persistence = new RemoteSessionPersistence<T>({ 
+  const persistence = new RemoteSessionPersistence<T>({
     baseUrl: endpoint,
-    fetch () {
+    fetch() {
       throw new Error('Fetch implementation is required for RemoteSessionPersistence')
     },
     getAuth: async () => ({ token: '' }),
     timeoutMs: 30_000,
   })
-  
+
   return new SessionManager<T>({
     store,
     persistence,
     ...options,
   })
 }
-

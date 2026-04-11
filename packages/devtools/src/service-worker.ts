@@ -45,10 +45,13 @@ export class ServiceWorker {
   private readonly serviceId: string
   private readonly pauses: PendingPause[] = []
   private readonly clients = new Set<WebSocket>()
-  private readonly pendingRequests = new Map<string, {
-    resolve: (value: unknown) => void
-    reject: (error: Error) => void
-  }>()
+  private readonly pendingRequests = new Map<
+    string,
+    {
+      resolve: (value: unknown) => void
+      reject: (error: Error) => void
+    }
+  >()
   private readonly base: string
   private readonly server
   private readonly wss
@@ -84,7 +87,10 @@ export class ServiceWorker {
   }
 
   breakpoints(type: 'Debugger.breakpoints.list'): Promise<unknown>
-  breakpoints(type: 'Debugger.breakpoints.set', payload: { point: string; enabled: boolean }): Promise<unknown>
+  breakpoints(
+    type: 'Debugger.breakpoints.set',
+    payload: { point: string; enabled: boolean },
+  ): Promise<unknown>
   breakpoints(type: 'Debugger.breakpoints.setAll', payload: { enabled: boolean }): Promise<unknown>
   breakpoints(type: string, payload?: Record<string, unknown>): Promise<unknown> {
     return new Promise((resolve, reject) => {
@@ -126,16 +132,16 @@ export class ServiceWorker {
   private handleBreakpointResponse(message: Record<string, unknown>): void {
     const requestId = message.requestId as string
     const pending = this.pendingRequests.get(requestId)
-    
+
     if (pending) {
       this.pendingRequests.delete(requestId)
       const response = message as unknown as BreakpointResponse
-  
+
       if (response.success) {
         pending.resolve(response.payload)
         return
       }
-  
+
       pending.reject(new Error(response.error ?? 'Breakpoint request failed'))
     }
   }
@@ -156,10 +162,7 @@ export class ServiceWorker {
 
   private handlePausedMessage(message: Record<string, unknown>): void {
     const pauseId = message.pauseId as string
-    this.queue(
-      { type: 'Debugger.paused', pauseId, snapshot: message.snapshot },
-      { pauseId },
-    )
+    this.queue({ type: 'Debugger.paused', pauseId, snapshot: message.snapshot }, { pauseId })
   }
 
   private handleStopMessage(): void {
@@ -214,9 +217,7 @@ export class ServiceWorker {
   }
 
   private resolve(command: DebugCommand, pauseId?: string, payload?: PauseResumePayload): void {
-    const pause = pauseId
-      ? this.findPause(pauseId)
-      : this.pauses.shift()
+    const pause = pauseId ? this.findPause(pauseId) : this.pauses.shift()
 
     if (!pause) {
       this.broadcastCommandRejected('STALE_OR_NO_PAUSE', command, pauseId)
@@ -230,15 +231,17 @@ export class ServiceWorker {
       payload: payload ?? null,
     })
 
-    this.broadcast(JSON.stringify({
-      type: 'Debugger.resumed',
-      pauseId: pause.pauseId,
-      command,
-    }))
+    this.broadcast(
+      JSON.stringify({
+        type: 'Debugger.resumed',
+        pauseId: pause.pauseId,
+        command,
+      }),
+    )
   }
 
   private findPause(pauseId: string): PendingPause | undefined {
-    const idx = this.pauses.findIndex(p => p.pauseId === pauseId)
+    const idx = this.pauses.findIndex((p) => p.pauseId === pauseId)
     if (idx === -1) return undefined
     return this.pauses.splice(idx, 1)[0]
   }
@@ -248,12 +251,14 @@ export class ServiceWorker {
     command: DebugCommand,
     pauseId?: string,
   ): void {
-    this.broadcast(JSON.stringify({
-      type: 'Debugger.commandRejected',
-      code,
-      command,
-      pauseId,
-    }))
+    this.broadcast(
+      JSON.stringify({
+        type: 'Debugger.commandRejected',
+        code,
+        command,
+        pauseId,
+      }),
+    )
   }
 
   private queue(event: Record<string, unknown>, pause: PendingPause): void {
@@ -354,11 +359,7 @@ export class ServiceWorker {
     return undefined
   }
 
-  private onUpgrade = (
-    request: IncomingMessage, 
-    socket: Socket, 
-    head: Buffer
-  ): void => {
+  private onUpgrade = (request: IncomingMessage, socket: Socket, head: Buffer): void => {
     try {
       const url = new URL(request.url as string, `http://${this.host}:${this.port}`)
       if (url.pathname !== `${this.base}/inspect`) {

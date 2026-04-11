@@ -1,9 +1,4 @@
-import type {
-  PaginatedResult,
-  PaginationOptions,
-  Persistence,
-  Snapshot,
-} from './types'
+import type { PaginatedResult, PaginationOptions, Persistence, Snapshot } from './types'
 
 const DEFAULT_PAGE_SIZE = 20
 

@@ -2,17 +2,14 @@ import { createLogger } from '@vitamin/shared'
 
 import { PersistentMemory, FileSystemMemoryStore } from './persistent-memory'
 import { prune } from './prune'
-import { 
-  needsCompaction, 
-  isEligibleForManualCompact, 
-  prepareCompaction, 
-  compact 
+import {
+  needsCompaction,
+  isEligibleForManualCompact,
+  prepareCompaction,
+  compact,
 } from './compaction'
 import { InMemoryArchiveStorage } from './archive'
-import {
-  estimateTokens as defaultEstimateTokens,
-  estimateMessagesTokens,
-} from './token-estimator'
+import { estimateTokens as defaultEstimateTokens, estimateMessagesTokens } from './token-estimator'
 import {
   computeMemoryDefaults,
   resolveContextSize,
@@ -59,10 +56,7 @@ export class MemoryManager {
 
     // L1 Persistent Memory
     const store = config.memoryStore ?? new FileSystemMemoryStore()
-    this.persistent = new PersistentMemory(
-      store,
-      config.sources,
-    )
+    this.persistent = new PersistentMemory(store, config.sources)
   }
 
   // 加载所有知识 sources 到内存
@@ -104,7 +98,12 @@ export class MemoryManager {
 
   // 手动压缩资格评估
   isEligibleForManualCompact(messages: readonly Message[]): boolean {
-    return isEligibleForManualCompact(messages, this.contextWindow, this.compactionConfig, this.estimateTokens)
+    return isEligibleForManualCompact(
+      messages,
+      this.contextWindow,
+      this.compactionConfig,
+      this.estimateTokens,
+    )
   }
 
   // 准备 compaction（计算切点、分离消息）
@@ -124,12 +123,7 @@ export class MemoryManager {
     sessionId?: string,
     signal?: AbortSignal,
   ): Promise<CompactionResult> {
-    const result = await compact(
-      preparation,
-      this.summarize,
-      this.compactionConfig,
-      signal,
-    )
+    const result = await compact(preparation, this.summarize, this.compactionConfig, signal)
 
     // L3: 归档被压缩的消息
     if (sessionId) {
@@ -179,7 +173,9 @@ export class MemoryManager {
       if (pruneResult.changed) {
         current = pruneResult.messages
         pruned = true
-        logger.info(`Prune: removed ${pruneResult.prunedCount} tool outputs, saved ~${pruneResult.tokensSaved} tokens`)
+        logger.info(
+          `Prune: removed ${pruneResult.prunedCount} tool outputs, saved ~${pruneResult.tokensSaved} tokens`,
+        )
       }
     }
 
@@ -206,7 +202,9 @@ export class MemoryManager {
 
         current = [summaryMessage, ...preparation.preservedMessages]
 
-        logger.info(`Compaction: ${preparation.messagesToSummarize.length} messages → summary, kept ${preparation.preservedMessages.length}`)
+        logger.info(
+          `Compaction: ${preparation.messagesToSummarize.length} messages → summary, kept ${preparation.preservedMessages.length}`,
+        )
       }
     }
 

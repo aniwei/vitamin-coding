@@ -30,8 +30,8 @@ export class PermissionAuditLog {
 
   getEntries(filter?: { sessionId?: string; effect?: RuleEffect }): PermissionAuditEntry[] {
     let result = this.entries
-    if (filter?.sessionId) result = result.filter(e => e.sessionId === filter.sessionId)
-    if (filter?.effect) result = result.filter(e => e.decision.effect === filter.effect)
+    if (filter?.sessionId) result = result.filter((e) => e.sessionId === filter.sessionId)
+    if (filter?.effect) result = result.filter((e) => e.decision.effect === filter.effect)
     return result
   }
 
@@ -45,7 +45,7 @@ export class PermissionAuditLog {
 
   clear(sessionId?: string): void {
     if (sessionId) {
-      this.entries = this.entries.filter(e => e.sessionId !== sessionId)
+      this.entries = this.entries.filter((e) => e.sessionId !== sessionId)
     } else {
       this.entries = []
     }

@@ -22,13 +22,12 @@ interface DebugBridgeEvents extends Events {
   'Log.entryAdded': (entry: LogEntry) => void
 }
 
-interface SendCommand { 
-  type: string; 
-  seq: number; 
-  depth?: number, 
-  [extra: string]: unknown 
+interface SendCommand {
+  type: string
+  seq: number
+  depth?: number
+  [extra: string]: unknown
 }
-
 
 export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
   private logId = 0
@@ -53,7 +52,6 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
       this.timer = null
     }
 
-    
     this.socket?.close()
     this.socket = null
   }
@@ -63,10 +61,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
     this.removeAllListeners()
   }
 
-  send(
-    command: SendCommand,
-    payload?: PauseResumePayload,
-  ): void {
+  send(command: SendCommand, payload?: PauseResumePayload): void {
     if (this.socket?.readyState === WebSocket.OPEN) {
       this.socket.send(JSON.stringify({ ...command, payload }))
     } else {
@@ -109,7 +104,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
       this.reconnect()
     })
 
-    this.socket.on('error', err => {
+    this.socket.on('error', (err) => {
       logger.warn(`debug bridge error: ${err.message}`)
     })
   }

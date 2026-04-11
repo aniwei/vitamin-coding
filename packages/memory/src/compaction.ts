@@ -21,21 +21,11 @@ import {
   estimateMessagesTokens,
   estimateTokens as defaultEstimateTokens,
 } from './token-estimator'
-import { 
-  resolveContextSize, 
-  DEFAULT_COMPACTION_CONFIG } from './defaults'
-import { 
-  buildSummarizationPrompt, 
-  buildTurnPrefixPrompt 
-} from './prompts'
+import { resolveContextSize, DEFAULT_COMPACTION_CONFIG } from './defaults'
+import { buildSummarizationPrompt, buildTurnPrefixPrompt } from './prompts'
 
 import type { Message } from '@vitamin/ai'
-import type {
-  CompactionConfig,
-  CompactionPreparation,
-  CompactionResult,
-  CutPoint,
-} from './types'
+import type { CompactionConfig, CompactionPreparation, CompactionResult, CutPoint } from './types'
 
 const logger = createLogger('@vitamin/memory:compaction')
 
@@ -199,7 +189,10 @@ export function prepareCompaction(
  */
 export async function compact(
   preparation: CompactionPreparation,
-  summarize: (prompt: string, options?: { maxTokens?: number; signal?: AbortSignal }) => Promise<string>,
+  summarize: (
+    prompt: string,
+    options?: { maxTokens?: number; signal?: AbortSignal },
+  ) => Promise<string>,
   config: Partial<CompactionConfig> = {},
   signal?: AbortSignal,
 ): Promise<CompactionResult> {
@@ -208,9 +201,7 @@ export async function compact(
   logger.info(`Compacting ${preparation.messagesToSummarize.length} messages`)
 
   // 构建消息文本
-  const messagesText = preparation.messagesToSummarize
-    .map(formatMessageForSummary)
-    .join('\n\n')
+  const messagesText = preparation.messagesToSummarize.map(formatMessageForSummary).join('\n\n')
 
   // 构建摘要 prompt
   const prompt = buildSummarizationPrompt(
@@ -236,9 +227,7 @@ export async function compact(
 
   // Split turn — 生成 turn prefix 摘要
   if (preparation.isSplitTurn && preparation.turnPrefixMessages.length > 0) {
-    const prefixText = preparation.turnPrefixMessages
-      .map(formatMessageForSummary)
-      .join('\n\n')
+    const prefixText = preparation.turnPrefixMessages.map(formatMessageForSummary).join('\n\n')
     const prefixPrompt = buildTurnPrefixPrompt(prefixText)
     const prefixSummary = await summarize(prefixPrompt, { signal })
     summary = `${summary}\n\n---\n\n${prefixSummary}`
@@ -255,11 +244,8 @@ export async function compact(
 
 // 格式化单条消息用于摘要
 function formatMessageForSummary(msg: Message): string {
-  const roleLabel = msg.role === 'user' 
-    ? 'Human'
-      : msg.role === 'assistant' 
-        ? 'Assistant'
-        : `Tool[${msg.toolName}]`
+  const roleLabel =
+    msg.role === 'user' ? 'Human' : msg.role === 'assistant' ? 'Assistant' : `Tool[${msg.toolName}]`
 
   const content = messageToText(msg)
   return `${roleLabel}: ${content}`

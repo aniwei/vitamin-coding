@@ -84,21 +84,24 @@ export function createFileGuardPolicy(toolSets?: PermissionToolSetsInput): Permi
     priority: 10,
     enabled: true,
     scope: { agents: ['*'] },
-    rules: [{
-      name: 'protect-system-paths',
-      effect: 'deny',
-      match: {
-        // 仅对能直接传递路径参数的写入工具做 paths 匹配
-        // bash 不在此列，bash 的破坏性命令由 DESTRUCTIVE_COMMAND_POLICY 拦截
-        tools: [...fileWriteTools],
-        paths: PROTECTED_PATH_PATTERNS,
+    rules: [
+      {
+        name: 'protect-system-paths',
+        effect: 'deny',
+        match: {
+          // 仅对能直接传递路径参数的写入工具做 paths 匹配
+          // bash 不在此列，bash 的破坏性命令由 DESTRUCTIVE_COMMAND_POLICY 拦截
+          tools: [...fileWriteTools],
+          paths: PROTECTED_PATH_PATTERNS,
+        },
+        denyReason: 'Write to protected system path is not allowed',
       },
-      denyReason: 'Write to protected system path is not allowed',
-    }],
+    ],
   }
 }
 
-const DESTRUCTIVE_PATTERN = /\b(rm\s+-rf|drop\s+table|git\s+push\s+--force|git\s+reset\s+--hard|truncate\s+table|git\s+clean\s+-fd)\b/i
+const DESTRUCTIVE_PATTERN =
+  /\b(rm\s+-rf|drop\s+table|git\s+push\s+--force|git\s+reset\s+--hard|truncate\s+table|git\s+clean\s+-fd)\b/i
 
 export const DESTRUCTIVE_COMMAND_POLICY: PermissionPolicy = {
   name: 'builtin::destructive-guard',

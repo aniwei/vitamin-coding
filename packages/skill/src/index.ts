@@ -5,11 +5,7 @@ export type { SkillRegistryOptions } from './skill-registry'
 
 export { parseSkillContent } from './skill-parser'
 
-export {
-  discoverSkills,
-  getDefaultGlobalSkillDirs,
-  resolveSourceType,
-} from './skill-discovery'
+export { discoverSkills, getDefaultGlobalSkillDirs, resolveSourceType } from './skill-discovery'
 
 export { matchSkills } from './skill-matcher'
 

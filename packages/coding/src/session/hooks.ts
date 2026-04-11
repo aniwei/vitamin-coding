@@ -18,11 +18,15 @@ export function createToolHookExecutor(options: ToolHookOptions): ToolHookExecut
         cancelReason: undefined as string | undefined,
       }
 
-      await hookRegistry.execute('tool.execute.before', {
-        ...input,
-        agentName,
-        sessionId,
-      }, output)
+      await hookRegistry.execute(
+        'tool.execute.before',
+        {
+          ...input,
+          agentName,
+          sessionId,
+        },
+        output,
+      )
 
       return output
     },
@@ -33,11 +37,15 @@ export function createToolHookExecutor(options: ToolHookOptions): ToolHookExecut
         metadata: {},
       }
 
-      await hookRegistry.execute('tool.execute.after', {
-        ...input,
-        agentName,
-        sessionId,
-      }, output)
+      await hookRegistry.execute(
+        'tool.execute.after',
+        {
+          ...input,
+          agentName,
+          sessionId,
+        },
+        output,
+      )
 
       return output
     },

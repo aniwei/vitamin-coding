@@ -10,7 +10,9 @@ import type { HookRegistration, ToolExecuteBeforeInput, ToolExecuteBeforeOutput 
 let cachedRules: string | null = null
 let cacheProjectRoot: string | null = null
 
-export function createRulesInjectorHook(projectRoot: string): HookRegistration<'tool.execute.before'> {
+export function createRulesInjectorHook(
+  projectRoot: string,
+): HookRegistration<'tool.execute.before'> {
   return {
     name: 'rules-injector',
     timing: 'tool.execute.before',

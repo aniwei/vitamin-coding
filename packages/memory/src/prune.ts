@@ -1,5 +1,9 @@
 import { createLogger } from '@vitamin/shared'
-import { estimateTokens as defaultEstimateTokens, estimateMessagesTokens, messageToText } from './token-estimator'
+import {
+  estimateTokens as defaultEstimateTokens,
+  estimateMessagesTokens,
+  messageToText,
+} from './token-estimator'
 import { resolveContextSize, DEFAULT_PRUNE_CONFIG } from './defaults'
 
 import type { Message, ToolResultMessage } from '@vitamin/ai'
@@ -7,14 +11,14 @@ import type { PruneConfig, PruneResult } from './types'
 
 const log = createLogger('@vitamin/memory:prune')
 
- // Prune — 裁剪旧 tool call 输出，释放 token 空间。
- // 不需要 LLM 调用，是 Compaction 前的轻量优化。
- // 策略:
- // 1. 从尾部倒序扫描消息
- // 2. 保护最近 `protect` 范围内的 tool 输出不动
- // 3. 超出保护范围后，将 tool_result 的 content 替换为占位文本
- // 4. 对 truncateTools 列表中的 tool call，额外截断 arguments
- // 5. 累计裁剪量不足 minimum 则不执行
+// Prune — 裁剪旧 tool call 输出，释放 token 空间。
+// 不需要 LLM 调用，是 Compaction 前的轻量优化。
+// 策略:
+// 1. 从尾部倒序扫描消息
+// 2. 保护最近 `protect` 范围内的 tool 输出不动
+// 3. 超出保护范围后，将 tool_result 的 content 替换为占位文本
+// 4. 对 truncateTools 列表中的 tool call，额外截断 arguments
+// 5. 累计裁剪量不足 minimum 则不执行
 export function prune(
   messages: readonly Message[],
   contextWindow: number,
@@ -95,19 +99,19 @@ function pruneToolResult(
   msg: ToolResultMessage,
   estimator: (text: string) => number,
 ): ToolResultMessage {
-  const originalText = msg.content
-    .map((c) => c.type === 'text' ? c.text : '')
-    .join('')
+  const originalText = msg.content.map((c) => (c.type === 'text' ? c.text : '')).join('')
   const originalTokens = estimator(originalText)
 
   if (originalTokens < 100) return msg // 小输出不值得裁剪
 
   return {
     ...msg,
-    content: [{
-      type: 'text' as const,
-      text: `[output pruned — ${originalTokens} tokens]`,
-    }],
+    content: [
+      {
+        type: 'text' as const,
+        text: `[output pruned — ${originalTokens} tokens]`,
+      },
+    ],
   }
 }
 
@@ -130,7 +134,10 @@ function pruneAssistantToolCalls(
     changed = true
     return {
       ...part,
-      arguments: { _truncated: `${argsStr.slice(0, maxLength)}...(truncated)` } as Record<string, unknown>,
+      arguments: { _truncated: `${argsStr.slice(0, maxLength)}...(truncated)` } as Record<
+        string,
+        unknown
+      >,
     }
   })
 

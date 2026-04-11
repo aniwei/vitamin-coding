@@ -2,11 +2,7 @@ import { createPersistence } from '@vitamin/persistence'
 import { safeStringify } from '@vitamin/shared'
 
 import type { Persistence, Snapshot } from '@vitamin/persistence'
-import type {
-  SettingStore,
-  FileSettingStoreOptions,
-  HttpSettingStoreOptions,
-} from './store'
+import type { SettingStore, FileSettingStoreOptions, HttpSettingStoreOptions } from './store'
 import type { VitaminSetting } from './types'
 
 interface StoredSetting {

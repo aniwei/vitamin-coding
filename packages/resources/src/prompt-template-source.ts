@@ -2,14 +2,8 @@ import { readdir, readFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
 import { VITAMIN_HOME } from '@vitamin/env'
 
-import type { 
-  PromptTemplate, 
-  ResourceDiagnostic 
-} from './resource-manager'
-import type { 
-  PromptTemplateSource, 
-  PromptTemplateResult 
-} from './types'
+import type { PromptTemplate, ResourceDiagnostic } from './resource-manager'
+import type { PromptTemplateSource, PromptTemplateResult } from './types'
 
 export interface FilesystemPromptTemplateSourceOptions {
   workspaceDir?: string

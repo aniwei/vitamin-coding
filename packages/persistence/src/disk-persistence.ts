@@ -1,13 +1,5 @@
 import { join } from 'node:path'
-import {
-  readFile,
-  writeFile,
-  readdir,
-  unlink,
-  mkdir,
-  stat,
-  rename,
-} from 'node:fs/promises'
+import { readFile, writeFile, readdir, unlink, mkdir, stat, rename } from 'node:fs/promises'
 import { randomUUID } from 'node:crypto'
 import { PersistenceError } from './errors'
 import type { PaginatedResult, Codec } from './types'
@@ -107,9 +99,7 @@ export abstract class DiskPersistence<S> {
         }),
       )
 
-      withStats.sort((a, b) =>
-        order === 'asc' ? a.mtime - b.mtime : b.mtime - a.mtime,
-      )
+      withStats.sort((a, b) => (order === 'asc' ? a.mtime - b.mtime : b.mtime - a.mtime))
 
       const total = withStats.length
       const totalPages = Math.max(1, Math.ceil(total / pageSize))
@@ -153,5 +143,10 @@ export abstract class DiskPersistence<S> {
 }
 
 function isEnoent(error: unknown): boolean {
-  return typeof error === 'object' && error !== null && 'code' in error && (error as { code: string }).code === 'ENOENT'
+  return (
+    typeof error === 'object' &&
+    error !== null &&
+    'code' in error &&
+    (error as { code: string }).code === 'ENOENT'
+  )
 }

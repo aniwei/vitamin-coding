@@ -36,12 +36,12 @@ export class EventStream<E, R> implements AsyncIterable<E> {
 
   push(event: E): void {
     if (this.done) return
-    
+
     if (this.waiters.length > 0) {
       const waiter = this.waiters.shift()
       if (waiter) {
         waiter.resolve({ value: event, done: false })
-      } 
+      }
 
       // TODO warn no waiter to receive event
     } else {
@@ -55,7 +55,7 @@ export class EventStream<E, R> implements AsyncIterable<E> {
     this.done = true
     this.cachedResult = result
     this.resolve?.(result)
-    
+
     for (const waiter of this.waiters) {
       waiter.resolve({ value: undefined as never, done: true })
     }
@@ -103,7 +103,7 @@ export class EventStream<E, R> implements AsyncIterable<E> {
           }
           return Promise.resolve({ value: undefined as never, done: true })
         }
-        
+
         return new Promise<IteratorResult<E>>((resolve, reject) => {
           this.waiters.push({ resolve, reject })
         })

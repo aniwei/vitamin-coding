@@ -1,7 +1,4 @@
-export { 
-  createVitamin, 
-  VitaminApp 
-} from './app/vitamin-app'
+export { createVitamin, VitaminApp } from './app/vitamin-app'
 export type { VitaminAppOptions, VitaminContext } from './types'
 
 export { AgentSession } from './session/agent-session'

@@ -29,13 +29,15 @@ export function createBackgroundCancelTool(
       const cancelled = await cancel(params.id)
       if (cancelled.success) {
         return {
-          content: [{
-            type: 'text',
-            text: `Task ${params.id} cancelled successfully`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Task ${params.id} cancelled successfully`,
+            },
+          ],
           isError: false,
         }
-      } 
+      }
 
       return {
         content: [{ type: 'text', text: cancelled.error ?? `Failed to cancel task ${params.id}` }],

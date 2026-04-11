@@ -76,8 +76,8 @@ export class TaskExecutor {
       slot: args.slot,
     })
 
-    await this.hookRegistry.emit('task.created', { 
-      task: { ...task } as unknown as Record<string, unknown> 
+    await this.hookRegistry.emit('task.created', {
+      task: { ...task } as unknown as Record<string, unknown>,
     })
 
     // 后台模式：不等待完成
@@ -211,5 +211,5 @@ export class TaskExecutor {
 }
 
 function sleep(ms: number): Promise<void> {
-  return new Promise(resolve => setTimeout(resolve, ms))
+  return new Promise((resolve) => setTimeout(resolve, ms))
 }

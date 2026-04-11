@@ -6,12 +6,12 @@
 
 ## 核心功能
 
-| 模块 | 功能 |
-|------|------|
-| Agent | 状态机驱动的执行引擎，15 种生命周期事件 |
-| WorkLoop | 核心执行循环（readonly 并行 + mutation 串行 + steering 检查） |
+| 模块         | 功能                                                             |
+| ------------ | ---------------------------------------------------------------- |
+| Agent        | 状态机驱动的执行引擎，15 种生命周期事件                          |
+| WorkLoop     | 核心执行循环（readonly 并行 + mutation 串行 + steering 检查）    |
 | ToolExecutor | 工具执行管线（beforeHooks -> validate -> execute -> afterHooks） |
-| AgentFactory | 基于 Registry 的 Agent 创建工厂 |
+| AgentFactory | 基于 Registry 的 Agent 创建工厂                                  |
 
 ## AgentTool 接口
 
@@ -21,7 +21,7 @@ interface AgentTool<Params = unknown> {
   description: string
   parameters: ZodType<Params>
   visibility?: 'always' | 'when-enabled' | 'when-requested'
-  readonly?: boolean          // true 时可并行执行
+  readonly?: boolean // true 时可并行执行
   execute: (ctx: ToolCallContext<Params>) => Promise<ToolResult>
 }
 ```

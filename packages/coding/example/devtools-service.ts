@@ -17,7 +17,7 @@ const modelId = process.env.CODING_EXAMPLE_MODEL_ID ?? 'github-copilot/gpt-4o'
 
 async function main() {
   const vitamin = createVitamin({
-    port: 9229,  // devtools inspector port
+    port: 9229, // devtools inspector port
     inspect: true,
     logger: {
       name: 'devtools-service',

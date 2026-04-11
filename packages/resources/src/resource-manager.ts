@@ -1,15 +1,9 @@
-import { 
-  PersistentMemorySource, 
-  InMemoryMemorySource 
-} from './memory-source'
-import { 
-  FilesystemPromptTemplateSource, 
-  InMemoryPromptTemplateSource 
+import { PersistentMemorySource, InMemoryMemorySource } from './memory-source'
+import {
+  FilesystemPromptTemplateSource,
+  InMemoryPromptTemplateSource,
 } from './prompt-template-source'
-import type { 
-  MemoryInjectionSource, 
-  PromptTemplateSource 
-} from './types'
+import type { MemoryInjectionSource, PromptTemplateSource } from './types'
 
 export interface PromptTemplate {
   name: string

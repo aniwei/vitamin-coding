@@ -16,6 +16,7 @@
 ### TaskStore（task-store.ts）
 
 基于内存 Map 的任务 CRUD 存储：
+
 - `create(task)` / `get(id)` / `update(id, patch)` / `delete(id)` / `list(filter?)`
 - 任务状态：`pending` → `running` → `completed` / `failed` / `cancelled`
 - 支持 `result` / `error` / `retryCount` / `createdAt` / `updatedAt` 跟踪
@@ -23,6 +24,7 @@
 ### TaskExecutor（task-executor.ts）
 
 任务执行引擎：
+
 - `dispatch(task)`：根据任务类型选择同步或后台执行
 - `maxActiveTasks`：并发限制
 - **同步执行**：直接等待 Agent 执行结果
@@ -38,6 +40,7 @@
 ### CircuitBreaker（circuit-breaker.ts）
 
 断路器模式，防止级联失败：
+
 - **CLOSED**：正常状态，失败计数
 - **OPEN**：连续失败超阈值，拒绝所有请求
 - **HALF_OPEN**：超时后尝试单次请求，成功→CLOSED，失败→OPEN
@@ -47,6 +50,7 @@
 ### Orchestrator（orchestrator.ts）
 
 顶层协调器，暴露业务友好的 API：
+
 - `dispatchTask(options)` → 创建任务 + dispatch
 - `callAgent(profile, message)` → 委托给指定 Agent
 - `writeTodos(todos)` → 创建/更新任务列表
@@ -56,6 +60,7 @@
 ### BackgroundManager（background-manager.ts）
 
 管理后台异步任务：
+
 - `submit(task, executor)` → 异步执行 + 状态更新
 - `cancel(taskId)` → 中止任务
 - `getStatus(taskId)` → 查询状态
@@ -88,16 +93,16 @@
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | Task / TaskStatus / OrchestratorConfig 类型 |
-| `src/task-store.ts` | 任务存储 CRUD |
-| `src/task-executor.ts` | 任务执行引擎 |
-| `src/retry-policy.ts` | 指数退避重试策略 |
-| `src/circuit-breaker.ts` | 断路器（CLOSED/OPEN/HALF_OPEN） |
-| `src/orchestrator.ts` | 顶层协调器 |
-| `src/background-manager.ts` | 后台任务管理 |
-| `src/index.ts` | barrel 导出 |
+| 文件                        | 职责                                        |
+| --------------------------- | ------------------------------------------- |
+| `src/types.ts`              | Task / TaskStatus / OrchestratorConfig 类型 |
+| `src/task-store.ts`         | 任务存储 CRUD                               |
+| `src/task-executor.ts`      | 任务执行引擎                                |
+| `src/retry-policy.ts`       | 指数退避重试策略                            |
+| `src/circuit-breaker.ts`    | 断路器（CLOSED/OPEN/HALF_OPEN）             |
+| `src/orchestrator.ts`       | 顶层协调器                                  |
+| `src/background-manager.ts` | 后台任务管理                                |
+| `src/index.ts`              | barrel 导出                                 |
 
 ## 入口与依赖
 

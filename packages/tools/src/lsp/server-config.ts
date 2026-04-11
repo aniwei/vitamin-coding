@@ -211,7 +211,8 @@ export function findServerForExtension(ext: string): ServerLookupResult {
   for (const server of servers) {
     if (server.extensions.includes(ext)) {
       const installHint =
-        LSP_INSTALL_HINTS[server.id] || `Install '${server.command[0]}' and ensure it's in your PATH`
+        LSP_INSTALL_HINTS[server.id] ||
+        `Install '${server.command[0]}' and ensure it's in your PATH`
       return {
         status: 'not_installed',
         server: {

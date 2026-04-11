@@ -57,8 +57,8 @@ export class InMemorySessionStore<T = unknown> implements SessionStore<T> {
   }
 
   async forkSession(
-    sourceId: string, 
-    newId: string = crypto.randomUUID()
+    sourceId: string,
+    newId: string = crypto.randomUUID(),
   ): Promise<Session<T> | undefined> {
     const source = this.sessions.get(sourceId)
     if (!source) return undefined

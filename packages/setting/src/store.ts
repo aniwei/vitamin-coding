@@ -1,4 +1,3 @@
-
 import { InMemorySettingStore } from './memory-store'
 import { createFileSettingStore, createHttpSettingStore } from './persistence-store'
 import type { VitaminSetting } from './types'
@@ -37,7 +36,6 @@ export type SettingStoreOptions =
   | HttpSettingStoreOptions
   | InMemorySettingStoreOptions
 
-
 export function createSettingStore(options: SettingStoreOptions): SettingStore {
   switch (options.type) {
     case 'file':
@@ -48,4 +46,3 @@ export function createSettingStore(options: SettingStoreOptions): SettingStore {
       return new InMemorySettingStore(options.initial)
   }
 }
-

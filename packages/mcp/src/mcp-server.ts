@@ -33,10 +33,7 @@ export class VitaminMcpServer {
   private tools: AgentTool[]
   private options: McpServerOptions
 
-  constructor(
-    tools: AgentTool[],
-    options: McpServerOptions,
-  ) {
+  constructor(tools: AgentTool[], options: McpServerOptions) {
     this.tools = tools
     this.options = options
   }
@@ -89,10 +86,7 @@ export class VitaminMcpServer {
     })
   }
 
-  private async handleRequest(
-    request: JsonRpcRequest,
-    stdout: NodeJS.WriteStream,
-  ): Promise<void> {
+  private async handleRequest(request: JsonRpcRequest, stdout: NodeJS.WriteStream): Promise<void> {
     let response: JsonRpcResponse
 
     try {
@@ -160,7 +154,9 @@ export class VitaminMcpServer {
   }
 
   private async handleToolsCall(request: JsonRpcRequest): Promise<JsonRpcResponse> {
-    const params = request.params as { name: string; arguments?: Record<string, unknown> } | undefined
+    const params = request.params as
+      | { name: string; arguments?: Record<string, unknown> }
+      | undefined
     if (!params?.name) {
       return {
         jsonrpc: '2.0',
@@ -211,7 +207,11 @@ export class VitaminMcpServer {
   }
 
   /** 简化 Zod → JSON Schema 转换（仅用于 server 暴露工具定义） */
-  private zodToJsonSchema(_tool: AgentTool): { type: string; properties?: Record<string, McpJsonSchemaProperty>; required?: string[] } {
+  private zodToJsonSchema(_tool: AgentTool): {
+    type: string
+    properties?: Record<string, McpJsonSchemaProperty>
+    required?: string[]
+  } {
     // 基础实现：输出 object + 空 properties
     // 完整 Zod→JSON Schema 转换建议使用 zod-to-json-schema 库
     return {
@@ -231,9 +231,6 @@ export class VitaminMcpServer {
 /**
  * 创建一个 MCP Server，将 vitamin 工具暴露给外部客户端
  */
-export function createMcpServer(
-  tools: AgentTool[],
-  options: McpServerOptions,
-): VitaminMcpServer {
+export function createMcpServer(tools: AgentTool[], options: McpServerOptions): VitaminMcpServer {
   return new VitaminMcpServer(tools, options)
 }

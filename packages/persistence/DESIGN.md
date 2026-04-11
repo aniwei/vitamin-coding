@@ -16,6 +16,7 @@
 ### 快照（snapshot.ts）
 
 `Snapshot<T>` 是核心数据载体：
+
 - `id`：唯一标识
 - `version`：版本号（乐观并发控制）
 - `data`：泛型负载
@@ -30,6 +31,7 @@
 #### DiskPersistence（disk-persistence.ts）
 
 基于文件系统的持久化：
+
 - `save()`：写入 `.tmp` 临时文件后 `rename()`，确保原子性
 - `load()` / `remove()`：标准读删操作
 - `list()`：扫描目录，按 `.json` 后缀筛选
@@ -38,6 +40,7 @@
 #### RemotePersistence（remote-persistence.ts）
 
 基于 HTTP REST API 的远程持久化：
+
 - RESTful 接口：`PUT /key` / `GET /key` / `DELETE /key` / `GET /`
 - Bearer Token 认证
 - ETag 条件请求（If-Match）
@@ -67,6 +70,7 @@
 ```
 
 磁盘写入原子性流程：
+
 ```
 save(key, data)
      |
@@ -79,15 +83,15 @@ save(key, data)
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | Persistence / Snapshot / Codec / PaginatedResult 类型 |
-| `src/snapshot.ts` | Snapshot 工厂与辅助函数 |
-| `src/memory-persistence.ts` | 内存后端 |
-| `src/disk-persistence.ts` | 磁盘后端（原子写入） |
-| `src/remote-persistence.ts` | HTTP 远程后端 |
-| `src/create-persistence.ts` | 工厂函数 |
-| `src/index.ts` | barrel 导出 |
+| 文件                        | 职责                                                  |
+| --------------------------- | ----------------------------------------------------- |
+| `src/types.ts`              | Persistence / Snapshot / Codec / PaginatedResult 类型 |
+| `src/snapshot.ts`           | Snapshot 工厂与辅助函数                               |
+| `src/memory-persistence.ts` | 内存后端                                              |
+| `src/disk-persistence.ts`   | 磁盘后端（原子写入）                                  |
+| `src/remote-persistence.ts` | HTTP 远程后端                                         |
+| `src/create-persistence.ts` | 工厂函数                                              |
+| `src/index.ts`              | barrel 导出                                           |
 
 ## 入口与依赖
 

@@ -1,13 +1,10 @@
-import { createBinaryToolExecutorRegistry, type BinaryToolExecutorRegistry } from './binary/binary-executor-registry'
+import {
+  createBinaryToolExecutorRegistry,
+  type BinaryToolExecutorRegistry,
+} from './binary/binary-executor-registry'
 import { registerBuiltinTools, type RegisterBuiltinOptions } from './register-builtin'
 import type { AgentTool } from '@vitamin/agent'
-import type { 
-  RegisteredTool, 
-  ToolMetadata, 
-  ToolPreset, 
-  ToolRegistrationOptions 
-} from './types'
-
+import type { RegisteredTool, ToolMetadata, ToolPreset, ToolRegistrationOptions } from './types'
 
 const PRESET_INCLUDES: Record<ToolPreset, Set<ToolPreset>> = {
   minimal: new Set(['minimal']),
@@ -22,9 +19,9 @@ function isAgentTool(value: unknown): value is AgentTool<unknown> {
 
   const candidate = value as Partial<AgentTool<unknown>>
   return (
-    typeof candidate.name === 'string' && 
-    typeof candidate.description === 'string' && 
-    typeof candidate.execute === 'function' && 
+    typeof candidate.name === 'string' &&
+    typeof candidate.description === 'string' &&
+    typeof candidate.execute === 'function' &&
     candidate.parameters !== undefined
   )
 }
@@ -51,10 +48,7 @@ export class ToolRegistry {
 
   register(tool: unknown, options?: ToolRegistrationOptions): void
   register(tools: unknown[], options?: ToolRegistrationOptions): void
-  register(
-    tools: unknown | unknown[],
-    options: ToolRegistrationOptions = {},
-  ): void {
+  register(tools: unknown | unknown[], options: ToolRegistrationOptions = {}): void {
     const metadata: ToolMetadata = {
       preset: options.preset ?? 'full',
       category: options.category,
@@ -91,13 +85,13 @@ export class ToolRegistry {
 
       if (allDeleted) this.version++
       return allDeleted
-    } 
+    }
 
     const deleted = this.tools.delete(name)
     if (deleted) this.version++
     return deleted
   }
-  
+
   getByNames(names: string[]): RegisteredTool[] {
     const set = new Set(names)
     return this.getAll().filter((tool) => set.has(tool.name))
@@ -179,18 +173,14 @@ export class ToolRegistry {
 
 export const createToolRegistry = (
   workspaceDir: string,
-  options: RegisterBuiltinOptions
+  options: RegisterBuiltinOptions,
 ): ToolRegistry => {
   const registry = new ToolRegistry()
 
   const binaryRegistry = createBinaryToolExecutorRegistry(workspaceDir)
   registry.setBinaryToolExecutors(binaryRegistry)
-  
-  registerBuiltinTools(
-    registry, 
-    workspaceDir, 
-    options
-  )
+
+  registerBuiltinTools(registry, workspaceDir, options)
 
   return registry
 }

@@ -1,13 +1,7 @@
 import type { Model, ModelSpec } from './types'
 import type { ModelRegistry } from './model-registry'
 
-export const WORKFLOW_SLOTS = [
-  'normal',
-  'thinking',
-  'compact',
-  'critique',
-  'vision',
-] as const
+export const WORKFLOW_SLOTS = ['normal', 'thinking', 'compact', 'critique', 'vision'] as const
 
 export type WorkflowSlot = (typeof WORKFLOW_SLOTS)[number]
 
@@ -50,9 +44,6 @@ export class ModelSlot {
   }
 }
 
-export function createModelSlot(
-  options: ModelSlotOptions,
-  registry: ModelRegistry,
-): ModelSlot {
+export function createModelSlot(options: ModelSlotOptions, registry: ModelRegistry): ModelSlot {
   return new ModelSlot(options, registry)
 }

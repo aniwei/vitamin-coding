@@ -1,6 +1,9 @@
 {
   "name": "@vitamin/skill",
   "version": "0.0.1",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,17 +13,14 @@
       "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
   "scripts": {
     "build": "tsdown",
     "dev": "tsdown --watch",
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@vitamin/shared": "workspace:*",
     "@vitamin/env": "workspace:*",
+    "@vitamin/shared": "workspace:*",
     "yaml": "2.8.3"
   }
 }

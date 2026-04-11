@@ -1,8 +1,4 @@
-import { 
-  createTempLoggerPath, 
-  formatBytes, 
-  truncateTail 
-} from '@vitamin/shared'
+import { createTempLoggerPath, formatBytes, truncateTail } from '@vitamin/shared'
 import {
   TOOLS_EXECUTE_TIMEOUT_MS,
   TOOLS_MAX_OUTPUT_BYTES,
@@ -29,7 +25,7 @@ type ProgressCallback = (result: ToolResult) => void
 // 创建 bash 工具
 export function createBash(
   projectRoot: string,
-  onProgress?: ProgressCallback
+  onProgress?: ProgressCallback,
 ): AgentTool<BashArgs> {
   return {
     name: 'bash',
@@ -41,14 +37,8 @@ export function createBash(
       const targetDir = resolve(projectRoot, params.targetDir ?? '.')
       const timeout = params.timeout ?? TOOLS_EXECUTE_TIMEOUT_MS
 
-      return await bash(
-        params.command, 
-        targetDir, 
-        timeout, 
-        onProgress, 
-        signal
-      )
-    }
+      return await bash(params.command, targetDir, timeout, onProgress, signal)
+    },
   }
 }
 
@@ -57,7 +47,7 @@ async function bash(
   targetDir: string,
   timeout: number,
   onProgress?: ProgressCallback,
-  signal?: AbortSignal
+  signal?: AbortSignal,
 ): Promise<ToolResult> {
   const maxOutputBytes = TOOLS_MAX_OUTPUT_BYTES * 2
   const output: Buffer[] = []
@@ -76,12 +66,15 @@ async function bash(
       outputBytes += chunk.byteLength
 
       const text = Buffer.concat(output).toString('utf-8')
-      const truncation = truncateTail(text, { maxLines: TOOLS_MAX_OUTPUT_LINES, maxBytes: TOOLS_MAX_OUTPUT_BYTES })
+      const truncation = truncateTail(text, {
+        maxLines: TOOLS_MAX_OUTPUT_LINES,
+        maxBytes: TOOLS_MAX_OUTPUT_BYTES,
+      })
 
       if (totalBytes > TOOLS_MAX_OUTPUT_BYTES && !outputPath) {
         outputPath = createTempLoggerPath()
         outputStream = createWriteStream(outputPath)
-        
+
         for (const buf of output) {
           outputStream.write(buf)
         }
@@ -100,12 +93,12 @@ async function bash(
 
       onProgress?.({
         content: [{ type: 'text', text: truncation.content || '' }],
-        details: { 
+        details: {
           truncation,
-          outputPath
+          outputPath,
         },
       })
-    }
+    },
   })
 
   outputStream?.end()
@@ -113,12 +106,15 @@ async function bash(
   const buffer = Buffer.concat(output)
   const fullOutput = buffer.toString('utf-8')
 
-  const truncation = truncateTail(fullOutput, { maxLines: TOOLS_MAX_OUTPUT_LINES, maxBytes: TOOLS_MAX_OUTPUT_BYTES })
+  const truncation = truncateTail(fullOutput, {
+    maxLines: TOOLS_MAX_OUTPUT_LINES,
+    maxBytes: TOOLS_MAX_OUTPUT_BYTES,
+  })
   let text = truncation.content || '(no output)'
 
   const details = {
     truncation,
-    outputPath
+    outputPath,
   }
 
   if (truncation.truncated) {
@@ -126,7 +122,9 @@ async function bash(
     const end = truncation.totalLines
 
     if (truncation.lastLinePartial) {
-      const lastLineSize = formatBytes(Buffer.byteLength(fullOutput.split('\n').pop() || '', 'utf-8'))
+      const lastLineSize = formatBytes(
+        Buffer.byteLength(fullOutput.split('\n').pop() || '', 'utf-8'),
+      )
       text += `\n\n(Showing last ${formatBytes(truncation.outputBytes)} of line ${end} (line is ${lastLineSize}). Full output: ${outputPath})`
     } else if (truncation.truncatedBy === 'lines') {
       text += `\n\n(Showing lines ${start}-${end} of ${truncation.totalLines}. Full output: ${outputPath})`
@@ -140,7 +138,7 @@ async function bash(
     return {
       content: [{ type: 'text', text }],
       isError: true,
-      details
+      details,
     }
   } else {
     return { content: [{ type: 'text', text }], details }

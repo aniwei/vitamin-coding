@@ -28,7 +28,7 @@ export abstract class RemotePersistence<S> {
     this.getAuth = options.getAuth
     this.getHeaders = options.getHeaders ?? (async () => ({}))
     this.fetch = options.fetch
-    
+
     this.timeoutMs = options.timeoutMs
     this.defaultPageSize = options.defaultPageSize ?? 20
     this.defaultSortBy = options.defaultSortBy ?? 'updatedAt'
@@ -103,8 +103,8 @@ export abstract class RemotePersistence<S> {
 
     const headers: Record<string, string> = {
       ...(await this.getHeaders()),
-      ...(auth.token ? { 'Authorization': `Bearer ${auth.token}` } : {}),
-      'Accept': 'application/json',
+      ...(auth.token ? { Authorization: `Bearer ${auth.token}` } : {}),
+      Accept: 'application/json',
     }
 
     if (init.body) {
@@ -123,7 +123,10 @@ export abstract class RemotePersistence<S> {
       })
 
       if (!response.ok && response.status !== 404) {
-        throw new RemotePersistenceError(`Remote persistence API error: ${response.status} ${response.statusText}`, response.status)
+        throw new RemotePersistenceError(
+          `Remote persistence API error: ${response.status} ${response.statusText}`,
+          response.status,
+        )
       }
 
       return response

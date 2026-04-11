@@ -21,7 +21,10 @@ export type AnthropicCredentialResolver = () => Promise<string | undefined>
 export type AnthropicBaseUrlResolver = () => Promise<string | undefined>
 
 // baseUrl 解析器：优先级 env > auth.json > model.baseUrl
-async function resolveBaseUrl(modelBaseUrl: string, resolver?: AnthropicBaseUrlResolver): Promise<string> {
+async function resolveBaseUrl(
+  modelBaseUrl: string,
+  resolver?: AnthropicBaseUrlResolver,
+): Promise<string> {
   const envUrl = process.env['ANTHROPIC_BASE_URL']
   if (envUrl) return envUrl
   if (resolver) {
@@ -34,11 +37,16 @@ async function resolveBaseUrl(modelBaseUrl: string, resolver?: AnthropicBaseUrlR
 // 将 ThinkingLevel 映射为 Anthropic budget_tokens
 function toBudgetTokens(level: string, maxOutputTokens: number): number {
   switch (level) {
-    case 'minimal': return Math.floor(maxOutputTokens * 0.1)
-    case 'low':     return Math.floor(maxOutputTokens * 0.25)
-    case 'high':    return Math.floor(maxOutputTokens * 0.75)
-    case 'xhigh':   return maxOutputTokens
-    default:        return Math.floor(maxOutputTokens * 0.5) // medium
+    case 'minimal':
+      return Math.floor(maxOutputTokens * 0.1)
+    case 'low':
+      return Math.floor(maxOutputTokens * 0.25)
+    case 'high':
+      return Math.floor(maxOutputTokens * 0.75)
+    case 'xhigh':
+      return maxOutputTokens
+    default:
+      return Math.floor(maxOutputTokens * 0.5) // medium
   }
 }
 
@@ -137,11 +145,16 @@ function buildAnthropicMessages(messages: Message[]): Anthropic.MessageParam[] {
 // 映射 Anthropic stop_reason → 内部 StopReason
 function mapStopReason(reason: string | null | undefined): StopReason {
   switch (reason) {
-    case 'end_turn':      return 'end_turn'
-    case 'max_tokens':   return 'max_tokens'
-    case 'tool_use':     return 'tool_use'
-    case 'stop_sequence': return 'stop_sequence'
-    default:             return 'end_turn'
+    case 'end_turn':
+      return 'end_turn'
+    case 'max_tokens':
+      return 'max_tokens'
+    case 'tool_use':
+      return 'tool_use'
+    case 'stop_sequence':
+      return 'stop_sequence'
+    default:
+      return 'end_turn'
   }
 }
 
@@ -304,7 +317,8 @@ class AnthropicStream implements ProviderStream {
             state.inputTokens = u.input_tokens
             state.outputTokens = u.output_tokens
             if (u.cache_read_input_tokens != null) state.cacheReadTokens = u.cache_read_input_tokens
-            if (u.cache_creation_input_tokens != null) state.cacheWriteTokens = u.cache_creation_input_tokens
+            if (u.cache_creation_input_tokens != null)
+              state.cacheWriteTokens = u.cache_creation_input_tokens
             break
           }
 
@@ -321,7 +335,11 @@ class AnthropicStream implements ProviderStream {
               currentBlockType = 'tool_use'
               const toolIndex = state.toolCalls.size
               state.toolCalls.set(toolIndex, { id: block.id, name: block.name, inputJson: '' })
-              yield { type: 'tool_call_start', index: toolIndex, partial: buildAssistantMessage(state) }
+              yield {
+                type: 'tool_call_start',
+                index: toolIndex,
+                partial: buildAssistantMessage(state),
+              }
             }
             break
           }
@@ -331,10 +349,20 @@ class AnthropicStream implements ProviderStream {
 
             if (delta.type === 'text_delta') {
               state.textContent += delta.text
-              yield { type: 'text_delta', index: 0, delta: delta.text, partial: buildAssistantMessage(state) }
+              yield {
+                type: 'text_delta',
+                index: 0,
+                delta: delta.text,
+                partial: buildAssistantMessage(state),
+              }
             } else if (delta.type === 'thinking_delta') {
               state.thinkingText += delta.thinking
-              yield { type: 'thinking_delta', index: 0, delta: delta.thinking, partial: buildAssistantMessage(state) }
+              yield {
+                type: 'thinking_delta',
+                index: 0,
+                delta: delta.thinking,
+                partial: buildAssistantMessage(state),
+              }
             } else if (delta.type === 'signature_delta') {
               state.thinkingSignature += delta.signature
             } else if (delta.type === 'input_json_delta') {
@@ -342,7 +370,12 @@ class AnthropicStream implements ProviderStream {
               const tc = state.toolCalls.get(toolIndex)
               if (tc) {
                 tc.inputJson += delta.partial_json
-                yield { type: 'tool_call_delta', index: toolIndex, delta: delta.partial_json, partial: buildAssistantMessage(state) }
+                yield {
+                  type: 'tool_call_delta',
+                  index: toolIndex,
+                  delta: delta.partial_json,
+                  partial: buildAssistantMessage(state),
+                }
               }
             }
             break
@@ -350,9 +383,19 @@ class AnthropicStream implements ProviderStream {
 
           case 'content_block_stop': {
             if (currentBlockType === 'text') {
-              yield { type: 'text_end', index: 0, content: state.textContent, partial: buildAssistantMessage(state) }
+              yield {
+                type: 'text_end',
+                index: 0,
+                content: state.textContent,
+                partial: buildAssistantMessage(state),
+              }
             } else if (currentBlockType === 'thinking') {
-              yield { type: 'thinking_end', index: 0, content: state.thinkingText, partial: buildAssistantMessage(state) }
+              yield {
+                type: 'thinking_end',
+                index: 0,
+                content: state.thinkingText,
+                partial: buildAssistantMessage(state),
+              }
             } else if (currentBlockType === 'tool_use') {
               const toolIndex = state.toolCalls.size - 1
               const tc = state.toolCalls.get(toolIndex)
@@ -401,7 +444,9 @@ class AnthropicStream implements ProviderStream {
       } else {
         yield {
           type: 'error',
-          error: new ProviderError('Unknown Anthropic stream error', { code: 'PROVIDER_STREAM_ERROR' }),
+          error: new ProviderError('Unknown Anthropic stream error', {
+            code: 'PROVIDER_STREAM_ERROR',
+          }),
         }
       }
     }

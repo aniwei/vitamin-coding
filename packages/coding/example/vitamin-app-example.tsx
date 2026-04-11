@@ -232,11 +232,11 @@ async function exampleRunModes() {
 async function exampleDevtools() {
   const vitamin = createVitamin({
     ...baseOptions,
-    inspect: true,     // 启用 devtools
-    port: 3001,        // devtools 端口
+    inspect: true, // 启用 devtools
+    port: 3001, // devtools 端口
     logger: {
       ...baseOptions.logger,
-      level: 'trace',  // 调试时建议使用 trace 级别
+      level: 'trace', // 调试时建议使用 trace 级别
       destination: 'vitamin-debug.log',
     },
   })

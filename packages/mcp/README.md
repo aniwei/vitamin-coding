@@ -6,14 +6,14 @@
 
 ## 核心功能
 
-| 模块 | 功能 |
-|------|------|
-| McpClient | MCP 客户端（callTool / readResource / getPrompt） |
-| McpManager | 多服务器生命周期管理 + 工具/资源聚合 |
-| StdioTransport | 子进程 stdin/stdout 传输 |
-| SseTransport | HTTP SSE 传输 + 断线重连 |
-| Tool Adapter | MCP 工具 → AgentTool 适配（JSON Schema → Zod） |
-| VitaminMcpServer | 将本地 AgentTool 暴露为 MCP 服务端 |
+| 模块             | 功能                                              |
+| ---------------- | ------------------------------------------------- |
+| McpClient        | MCP 客户端（callTool / readResource / getPrompt） |
+| McpManager       | 多服务器生命周期管理 + 工具/资源聚合              |
+| StdioTransport   | 子进程 stdin/stdout 传输                          |
+| SseTransport     | HTTP SSE 传输 + 断线重连                          |
+| Tool Adapter     | MCP 工具 → AgentTool 适配（JSON Schema → Zod）    |
+| VitaminMcpServer | 将本地 AgentTool 暴露为 MCP 服务端                |
 
 ## 目录概览
 

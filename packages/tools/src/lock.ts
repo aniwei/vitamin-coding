@@ -17,14 +17,11 @@ export class Lock {
     throw new Error(`Resource ${key} is currently locked. Please try again later.`)
   }
 
-  async withLock<T>(
-    key: string, 
-    execute: () => Promise<T>
-  ): Promise<T> {
+  async withLock<T>(key: string, execute: () => Promise<T>): Promise<T> {
     const currentLock = this.locks.get(key) ?? Promise.resolve()
     let release: () => void = () => {}
 
-    const nextLock = new Promise<void>((resolve) => release = resolve)
+    const nextLock = new Promise<void>((resolve) => (release = resolve))
     const chained = currentLock.then(() => nextLock)
 
     this.locks.set(key, chained)
@@ -40,7 +37,7 @@ export class Lock {
     }
   }
 }
-  
+
 export function createLock(): Lock {
   return new Lock()
 }

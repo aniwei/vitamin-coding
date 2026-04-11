@@ -1,4 +1,8 @@
-import { stream as aiStream, createDefaultProviderRegistry, type ProviderRegistry } from '@vitamin/ai'
+import {
+  stream as aiStream,
+  createDefaultProviderRegistry,
+  type ProviderRegistry,
+} from '@vitamin/ai'
 import { createHookRegistry } from '@vitamin/hooks'
 import { createLogger } from '@vitamin/shared'
 import { createInMemorySessionStore } from '@vitamin/session'
@@ -16,13 +20,10 @@ function makeStream(registry: ProviderRegistry): StreamFunction {
   }
 }
 
-export function createAgentSession(
-  options: CreateAgentSessionOptions,
-): AgentSession {
+export function createAgentSession(options: CreateAgentSessionOptions): AgentSession {
   const sessionId = options.id ?? crypto.randomUUID()
 
-  const sessionStore =
-    options.sessionStore ?? createInMemorySessionStore<AgentMessage>()
+  const sessionStore = options.sessionStore ?? createInMemorySessionStore<AgentMessage>()
 
   void sessionStore.createSession(sessionId)
 
@@ -31,10 +32,8 @@ export function createAgentSession(
     throw new Error(`Failed to create session ${sessionId}`)
   }
 
-  const providerRegistry =
-    options.providerRegistry ?? createDefaultProviderRegistry()
-  const hookRegistry =
-    options.hookRegistry ?? createHookRegistry({ preset: 'default' })
+  const providerRegistry = options.providerRegistry ?? createDefaultProviderRegistry()
+  const hookRegistry = options.hookRegistry ?? createHookRegistry({ preset: 'default' })
   const logger =
     options.logger ??
     createLogger(`coding-agent-session:${sessionId}`, {

@@ -49,8 +49,7 @@ export class AuthStore {
     const entry = this.cache.get(provider)
 
     if (entry?.type === 'api_key') return entry.key
-    if (entry?.type === 'oauth')
-      return this.resolveOAuthAccessKey(provider, entry)
+    if (entry?.type === 'oauth') return this.resolveOAuthAccessKey(provider, entry)
 
     const env = this.env.get(provider)
     if (env) {
@@ -77,10 +76,7 @@ export class AuthStore {
   }
 
   async setCredentialKey(provider: Provider, credentials: string): Promise<void>
-  async setCredentialKey(
-    provider: Provider,
-    credentials: OAuthCredentials,
-  ): Promise<void>
+  async setCredentialKey(provider: Provider, credentials: OAuthCredentials): Promise<void>
   async setCredentialKey(
     provider: Provider,
     credentials: string | OAuthCredentials,
@@ -102,10 +98,7 @@ export class AuthStore {
     this.dirty = true
   }
 
-  async login(
-    provider: Provider,
-    options: OAuthLoginOptions,
-  ): Promise<OAuthCredentials> {
+  async login(provider: Provider, options: OAuthLoginOptions): Promise<OAuthCredentials> {
     const oauth = this.oauth.get(provider)
     if (!oauth) {
       throw new Error(`No OAuth provider registered for: ${provider}`)
@@ -192,9 +185,7 @@ export function createAuthStore(options: AuthStoreOptions = {}): AuthStore {
   return new AuthStore(options)
 }
 
-export function createDefaultAuthStore(
-  options: AuthStoreOptions = {},
-): AuthStore {
+export function createDefaultAuthStore(options: AuthStoreOptions = {}): AuthStore {
   return new AuthStore({
     env: {
       anthropic: 'ANTHROPIC_API_KEY',

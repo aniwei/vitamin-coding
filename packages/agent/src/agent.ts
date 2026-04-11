@@ -1,7 +1,4 @@
-import {
-  createLogger,
-  TypedEventEmitter,
-} from '@vitamin/shared'
+import { createLogger, TypedEventEmitter } from '@vitamin/shared'
 
 import { workLoop } from './work-loop'
 import { AbortError } from './errors'
@@ -66,7 +63,11 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
   private readonly sessionId: string
   private readonly toolHookExecutor?: import('./types').ToolHookExecutor
   private readonly devtools?: import('@vitamin/devtools').Devtools
-  private readonly approval?: (toolName: string, args: Record<string, unknown>, reason: string) => Promise<boolean>
+  private readonly approval?: (
+    toolName: string,
+    args: Record<string, unknown>,
+    reason: string,
+  ) => Promise<boolean>
 
   get status(): AgentStatus {
     return this.state.status

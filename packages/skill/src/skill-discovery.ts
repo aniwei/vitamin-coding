@@ -5,12 +5,7 @@ import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { createLogger } from '@vitamin/shared'
 import { parseSkillContent } from './skill-parser'
-import type {
-  SkillDefinition,
-  SkillSource,
-  SkillSourceType,
-  SkillLibraryConfig,
-} from './types'
+import type { SkillDefinition, SkillSource, SkillSourceType, SkillLibraryConfig } from './types'
 
 const logger = createLogger('@vitamin/skill:discovery')
 
@@ -136,11 +131,7 @@ async function tryParseSkill(
 
     return { definition, source }
   } catch (err) {
-    logger.warn(
-      'Failed to parse skill at "%s": %s',
-      skillFile,
-      (err as Error).message,
-    )
+    logger.warn('Failed to parse skill at "%s": %s', skillFile, (err as Error).message)
     return null
   }
 }
@@ -150,7 +141,8 @@ async function tryParseSkill(
  */
 function listSupportingFiles(skillDir: string): string[] {
   try {
-    return fs.readdirSync(skillDir)
+    return fs
+      .readdirSync(skillDir)
       .filter((name) => name !== SKILL_FILENAME)
       .map((name) => path.join(skillDir, name))
   } catch {
@@ -165,9 +157,7 @@ export function getDefaultGlobalSkillDirs(): string[] {
   const home = process.env['HOME'] ?? process.env['USERPROFILE'] ?? ''
   if (!home) return []
 
-  return [
-    path.join(home, '.vitamin', 'skills'),
-  ]
+  return [path.join(home, '.vitamin', 'skills')]
 }
 
 /**

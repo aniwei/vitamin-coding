@@ -15,9 +15,7 @@ export function createChatRoute(service: CodingService): Hono {
       return c.json({ status: 'error', message: 'message is required' }, 400)
     }
 
-    const session = sessionId
-      ? service.getSession(sessionId)
-      : service.getActiveSession()
+    const session = sessionId ? service.getSession(sessionId) : service.getActiveSession()
 
     if (!session) {
       return c.json({ status: 'error', message: 'no active session' }, 404)

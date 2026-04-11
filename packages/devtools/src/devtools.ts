@@ -10,7 +10,7 @@ interface DevtoolsOptions {
 export class Devtools {
   public readonly service: Service
   private breakpoints: Breakpoints
-  
+
   public debugger: Debugger
   public logger: Logger
 

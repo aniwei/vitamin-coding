@@ -27,11 +27,7 @@ export class PersistenceBackedArchiveStorage implements ArchiveStorage {
     this.type = type
   }
 
-  async archive(
-    sessionId: string,
-    messages: Message[],
-    summary: string,
-  ): Promise<string> {
+  async archive(sessionId: string, messages: Message[], summary: string): Promise<string> {
     const timestamp = Date.now()
     const id = `${sessionId}/compaction-${timestamp}`
     const content = formatArchive(messages, summary, timestamp)

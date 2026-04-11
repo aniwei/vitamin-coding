@@ -119,19 +119,14 @@ export class ProviderRegistry {
       return spec as Model
     }
 
-    throw new ProviderError(
-      'No ModelRegistry configured; cannot resolve model spec',
-      {
-        code: 'PROVIDER_MODEL_NOT_FOUND',
-      },
-    )
+    throw new ProviderError('No ModelRegistry configured; cannot resolve model spec', {
+      code: 'PROVIDER_MODEL_NOT_FOUND',
+    })
   }
 }
 
 // 创建空的 Provider 注册表
-export function createProviderRegistry(
-  options: ProviderRegistryOptions = {},
-): ProviderRegistry {
+export function createProviderRegistry(options: ProviderRegistryOptions = {}): ProviderRegistry {
   return new ProviderRegistry(options)
 }
 
@@ -149,8 +144,7 @@ export function createDefaultProviderRegistry(
   registry.register('anthropic-messages', () => {
     const resolveKey: AnthropicCredentialResolver = () =>
       registry.resolveAccessKey('anthropic').then((k) => k ?? undefined)
-    const resolveBaseUrl = () =>
-      registry.resolveBaseUrl('anthropic').then((u) => u ?? undefined)
+    const resolveBaseUrl = () => registry.resolveBaseUrl('anthropic').then((u) => u ?? undefined)
     return createAnthropicProvider({ resolveKey, resolveBaseUrl })
   })
 

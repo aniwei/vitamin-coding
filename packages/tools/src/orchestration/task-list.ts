@@ -3,7 +3,9 @@ import { z } from 'zod'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const TaskListArgsSchema = z.object({
-  status: z.enum(['all', 'pending', 'running', 'completed', 'error']).optional()
+  status: z
+    .enum(['all', 'pending', 'running', 'completed', 'error'])
+    .optional()
     .default('all')
     .describe('Filter tasks by status (default: all)'),
 })
@@ -26,7 +28,7 @@ export interface TaskListOptions {
 
 export function createTaskList(
   _projectRoot: string,
-  options: TaskListOptions
+  options: TaskListOptions,
 ): AgentTool<TaskListArgs> {
   const { list } = options
 
@@ -51,11 +53,13 @@ export function createTaskList(
           return { content: [{ type: 'text', text: 'No tasks found.' }] }
         }
 
-        const text = tasks.map((t) => `- [${t.status}] ${t.id}: ${t.prompt.slice(0, 80)}`).join('\n')
+        const text = tasks
+          .map((t) => `- [${t.status}] ${t.id}: ${t.prompt.slice(0, 80)}`)
+          .join('\n')
 
         return { content: [{ type: 'text', text }] }
       }
-      
+
       throw new Error(result.error ?? 'Unknown error listing tasks')
     },
   }

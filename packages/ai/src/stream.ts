@@ -17,17 +17,15 @@ async function start<T extends Api>(
   provider: ProviderStream,
   context: StreamContext,
   options: StreamOptions,
-  stream: EventStream<StreamEvent, AssistantMessage>
+  stream: EventStream<StreamEvent, AssistantMessage>,
 ): Promise<void> {
   const { signal } = options
 
   const controller = new AbortController()
   stream.setAbortController(controller)
 
-  const combinedSignal = signal 
-    ? AbortSignal.any([signal, controller.signal]) 
-    : controller.signal
-    
+  const combinedSignal = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal
+
   const streamOptions: StreamOptions = {
     ...options,
     signal: combinedSignal,
@@ -36,12 +34,7 @@ async function start<T extends Api>(
   let lastMessage: AssistantMessage | undefined
 
   try {
-    for await (const event of provider.converse(
-      model, 
-      context, 
-      streamOptions, 
-      combinedSignal)
-    ) {
+    for await (const event of provider.converse(model, context, streamOptions, combinedSignal)) {
       stream.push(event)
 
       switch (event.type) {
@@ -57,28 +50,31 @@ async function start<T extends Api>(
     if (lastMessage) {
       stream.complete(lastMessage)
     } else {
-      stream.fail(new ProviderError('Stream ended without done event', {
-        code: 'PROVIDER_INCOMPLETE_STREAM',
-      }))
+      stream.fail(
+        new ProviderError('Stream ended without done event', {
+          code: 'PROVIDER_INCOMPLETE_STREAM',
+        }),
+      )
     }
   } catch (error) {
     if (error instanceof Error) {
       stream.fail(error)
     } else {
-      stream.fail(new ProviderError('Stream failed', {
-        code: 'PROVIDER_STREAM_ERROR',
-        cause: new Error(String(error)),
-      }))
+      stream.fail(
+        new ProviderError('Stream failed', {
+          code: 'PROVIDER_STREAM_ERROR',
+          cause: new Error(String(error)),
+        }),
+      )
     }
   }
 }
-
 
 export function stream(
   model: Model,
   provider: ProviderStream,
   context: StreamContext,
-  options: StreamOptions
+  options: StreamOptions,
 ): EventStream<StreamEvent, AssistantMessage> {
   const stream = createEventStream<StreamEvent, AssistantMessage>()
 
@@ -104,8 +100,7 @@ export function simple(
   model: Model,
   provider: ProviderStream,
   context: Omit<StreamContext, 'thinkingLevel'> & { thinkingLevel?: ThinkingLevel },
-  options: StreamOptions
+  options: StreamOptions,
 ): EventStream<StreamEvent, AssistantMessage> {
   return stream(model, provider, context as StreamContext, options)
 }
-

@@ -1,6 +1,9 @@
 {
   "name": "@vitamin/setting",
   "version": "0.0.1",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,9 +13,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "scripts": {
     "build": "tsdown",
     "typecheck:project": "tsc -p tsconfig.json --noEmit",
@@ -26,10 +30,6 @@
     "@vitamin/prompt": "workspace:*",
     "@vitamin/shared": "workspace:*",
     "semver": "7.7.4"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
     "@types/semver": "7.7.1"

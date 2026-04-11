@@ -4,12 +4,7 @@ import { createLogger } from '@vitamin/shared'
 import { messageToText } from './token-estimator'
 
 import type { Message } from '@vitamin/ai'
-import type { 
-  ArchiveStorage, 
-  ArchiveEntry, 
-  StorageType, 
-  StorageOptions
-} from './types'
+import type { ArchiveStorage, ArchiveEntry, StorageType, StorageOptions } from './types'
 
 const logger = createLogger('@vitamin/memory:archive')
 
@@ -19,11 +14,7 @@ export class InMemoryArchiveStorage implements ArchiveStorage {
   private archives = new Map<string, { content: string; entry: ArchiveEntry }>()
   private sessionIndex = new Map<string, string[]>()
 
-  async archive(
-    sessionId: string, 
-    messages: Message[], 
-    summary: string
-  ): Promise<string> {
+  async archive(sessionId: string, messages: Message[], summary: string): Promise<string> {
     const timestamp = Date.now()
     const path = `memory://archives/${sessionId}/compaction-${timestamp}.md`
     const content = formatArchive(messages, summary, timestamp)
@@ -54,7 +45,9 @@ export class InMemoryArchiveStorage implements ArchiveStorage {
 
   async list(sessionId: string): Promise<ArchiveEntry[]> {
     const paths = this.sessionIndex.get(sessionId) ?? []
-    return paths.map(p => this.archives.get(p)?.entry).filter((e): e is ArchiveEntry => e !== undefined)
+    return paths
+      .map((p) => this.archives.get(p)?.entry)
+      .filter((e): e is ArchiveEntry => e !== undefined)
   }
 }
 
@@ -63,11 +56,7 @@ export class LocalArchiveStorage implements ArchiveStorage {
 
   constructor(private readonly baseDir: string) {}
 
-  async archive(
-    sessionId: string, 
-    messages: Message[], 
-    summary: string
-  ): Promise<string> {
+  async archive(sessionId: string, messages: Message[], summary: string): Promise<string> {
     const timestamp = Date.now()
     const dir = join(this.baseDir, sessionId)
     const filename = `compaction-${timestamp}.md`
@@ -118,17 +107,16 @@ export class LocalArchiveStorage implements ArchiveStorage {
 export class HttpArchiveStorage implements ArchiveStorage {
   readonly type: StorageType = 'http'
 
-  constructor(private readonly options: {
-    baseUrl: string
-    getAuth: () => Promise<{ token: string }>
-    timeout?: number
-    fetch?: typeof globalThis.fetch
-  }) {}
+  constructor(
+    private readonly options: {
+      baseUrl: string
+      getAuth: () => Promise<{ token: string }>
+      timeout?: number
+      fetch?: typeof globalThis.fetch
+    },
+  ) {}
 
-  private async request(
-    path: string, 
-    init?: RequestInit
-  ): Promise<Response> {
+  private async request(path: string, init?: RequestInit): Promise<Response> {
     const fetchFn = this.options.fetch ?? globalThis.fetch
     const auth = await this.options.getAuth()
     const url = `${this.options.baseUrl}${path}`
@@ -137,12 +125,12 @@ export class HttpArchiveStorage implements ArchiveStorage {
       ...init,
       headers: {
         'Content-Type': 'application/json',
-        'Authorization': `Bearer ${auth.token}`,
+        Authorization: `Bearer ${auth.token}`,
         ...init?.headers,
       },
-      signal: init?.signal ?? (this.options.timeout
-        ? AbortSignal.timeout(this.options.timeout)
-        : undefined),
+      signal:
+        init?.signal ??
+        (this.options.timeout ? AbortSignal.timeout(this.options.timeout) : undefined),
     })
 
     if (!response.ok) {
@@ -161,7 +149,7 @@ export class HttpArchiveStorage implements ArchiveStorage {
       body: JSON.stringify({ content, summary, messageCount: messages.length, timestamp }),
     })
 
-    const { path } = await response.json() as { path: string }
+    const { path } = (await response.json()) as { path: string }
     logger.info(`Archived ${messages.length} messages → ${path}`)
 
     return path
@@ -169,13 +157,13 @@ export class HttpArchiveStorage implements ArchiveStorage {
 
   async read(archivePath: string): Promise<string> {
     const response = await this.request(`/archives/content?path=${encodeURIComponent(archivePath)}`)
-    const { content } = await response.json() as { content: string }
+    const { content } = (await response.json()) as { content: string }
     return content
   }
 
   async list(sessionId: string): Promise<ArchiveEntry[]> {
     const response = await this.request(`/archives/${encodeURIComponent(sessionId)}`)
-    const { entries } = await response.json() as { entries: ArchiveEntry[] }
+    const { entries } = (await response.json()) as { entries: ArchiveEntry[] }
     return entries
   }
 }
@@ -183,7 +171,9 @@ export class HttpArchiveStorage implements ArchiveStorage {
 export function createArchiveStorage(options: StorageOptions): ArchiveStorage {
   switch (options.type) {
     case 'file': {
-      const baseDir = options.baseDir ?? `${process.env['VITAMIN_HOME'] ?? `${process.env['HOME']}/.vitamin`}/agent/archives`
+      const baseDir =
+        options.baseDir ??
+        `${process.env['VITAMIN_HOME'] ?? `${process.env['HOME']}/.vitamin`}/agent/archives`
       return new LocalArchiveStorage(baseDir)
     }
 
@@ -197,7 +187,9 @@ export function createArchiveStorage(options: StorageOptions): ArchiveStorage {
     case 'memory':
       return new InMemoryArchiveStorage()
     default:
-      throw new Error(`Unsupported archive storage type: ${String((options as { type: string }).type)}`)
+      throw new Error(
+        `Unsupported archive storage type: ${String((options as { type: string }).type)}`,
+      )
   }
 }
 
@@ -213,19 +205,21 @@ export function formatArchive(messages: Message[], summary: string, timestamp: n
   ]
 
   for (const msg of messages) {
-    const role = msg.role === 'user' 
-      ? 'Human'
-      : msg.role === 'assistant' 
-        ? 'Assistant'
-        : `Tool[${msg.toolName}]`
+    const role =
+      msg.role === 'user'
+        ? 'Human'
+        : msg.role === 'assistant'
+          ? 'Assistant'
+          : `Tool[${msg.toolName}]`
 
     const content = messageToText(msg)
-    
+
     // 限制单条消息在归档中的长度
-    const truncated = content.length > 2000
-      ? `${content.slice(0, 2000)}\n...(truncated, ${content.length} chars total)`
-      : content
-      
+    const truncated =
+      content.length > 2000
+        ? `${content.slice(0, 2000)}\n...(truncated, ${content.length} chars total)`
+        : content
+
     parts.push(`\n**${role}**: ${truncated}`)
   }
 

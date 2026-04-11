@@ -4,7 +4,9 @@ import { z } from 'zod'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const SessionManagerArgsSchema = z.object({
-  action: z.enum(['list', 'create', 'remove', 'compact']).describe('Session management action to perform'),
+  action: z
+    .enum(['list', 'create', 'remove', 'compact'])
+    .describe('Session management action to perform'),
   sessionId: z.string().optional().describe('Session ID (required for remove/compact)'),
   title: z.string().optional().describe('New session title (optional when creating)'),
 })
@@ -23,7 +25,9 @@ interface SessionManagerOptions {
   sessionManager?: SessionManager
 }
 
-export function createSessionManager(options: SessionManagerOptions): AgentTool<SessionManagerArgs> {
+export function createSessionManager(
+  options: SessionManagerOptions,
+): AgentTool<SessionManagerArgs> {
   const { sessionManager } = options
 
   return {
@@ -37,12 +41,7 @@ export function createSessionManager(options: SessionManagerOptions): AgentTool<
         throw new Error('SessionManager is not provided in options')
       }
 
-      return await execute(
-        params.action,
-        sessionManager,
-        params.sessionId,
-        params.title
-      )
+      return await execute(params.action, sessionManager, params.sessionId, params.title)
     },
   }
 }
@@ -56,10 +55,11 @@ async function execute(
   switch (action) {
     case 'list': {
       const sessions = await sessionManager.list()
-      
-      const text = sessions.length === 0
-        ? 'No sessions found.'
-        : sessions.map((s) => `- ${s.id}: ${s.title} (${s.messageCount} messages)`).join('\n')
+
+      const text =
+        sessions.length === 0
+          ? 'No sessions found.'
+          : sessions.map((s) => `- ${s.id}: ${s.title} (${s.messageCount} messages)`).join('\n')
       return { content: [{ type: 'text', text }] }
     }
 
@@ -72,10 +72,12 @@ async function execute(
       if (!sessionId) {
         throw new Error('sessionId required for remove')
       }
-      
+
       const removed = await sessionManager.remove(sessionId)
       return {
-        content: [{ type: 'text', text: removed ? `Session ${sessionId} removed` : 'Session not found' }],
+        content: [
+          { type: 'text', text: removed ? `Session ${sessionId} removed` : 'Session not found' },
+        ],
         isError: !removed,
       }
     }
@@ -86,7 +88,9 @@ async function execute(
       const compacted = await sessionManager.compact(sessionId)
 
       return {
-        content: [{ type: 'text', text: compacted ? `Session ${sessionId} compacted` : 'Compact failed' }],
+        content: [
+          { type: 'text', text: compacted ? `Session ${sessionId} compacted` : 'Compact failed' },
+        ],
         isError: !compacted,
       }
     }

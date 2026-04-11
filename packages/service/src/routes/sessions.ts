@@ -4,9 +4,7 @@ import { resolve, dirname, join } from 'node:path'
 import { homedir } from 'node:os'
 import type { CodingService } from '../coding-service'
 
-export function createSessionsRoute(
-  context: CodingService
-): Hono {
+export function createSessionsRoute(context: CodingService): Hono {
   const app = new Hono()
 
   app.get('/', (c) => {
@@ -115,12 +113,12 @@ export function createSessionsRoute(
         directories,
         error: null,
       })
-    } catch (err: any) {
+    } catch (err: unknown) {
       return c.json({
         currentPath: resolved,
         parentPath: dirname(resolved),
         directories: [],
-        error: err.message,
+        error: (err as Error).message,
       })
     }
   })
@@ -172,7 +170,7 @@ export function createSessionsRoute(
     if (!session) {
       return c.json({ status: 'error', message: 'session not found' }, 404)
     }
-    
+
     return c.json({
       id: session.id,
       messages: session.session.messages(),
@@ -182,7 +180,7 @@ export function createSessionsRoute(
 
   app.get('/:id/model', (c) => {
     const session = context.getSession(c.req.param('id'))
-    
+
     if (!session) {
       return c.json({}, 404)
     }
@@ -194,39 +192,49 @@ export function createSessionsRoute(
   app.put('/:id/model', async (c) => {
     await c.req.json()
 
-    return c.json({ 
-      status: 'ok', 
-      message: 'model overlay updated' 
+    return c.json({
+      status: 'ok',
+      message: 'model overlay updated',
     })
   })
 
   app.delete('/:id/model', (c) => {
-    return c.json({ 
+    return c.json({
       status: 'ok',
-      message: 'model overlay cleared' 
+      message: 'model overlay cleared',
     })
   })
 
   return app
 }
 
+type RawContent = {
+  type: string
+  text?: string
+  id?: string
+  name?: string
+  arguments?: Record<string, unknown>
+}
+type RawMessage = { role: string; content: string | RawContent[]; timestamp?: unknown }
+
 function serializeMessages(session: { session: { messages(): unknown[] } }) {
-  const messages = session.session.messages()
-  return messages.map((msg: any) => ({
+  const messages = session.session.messages() as RawMessage[]
+  return messages.map((msg) => ({
     role: msg.role,
-    content: typeof msg.content === 'string'
-      ? msg.content
-      : Array.isArray(msg.content)
+    content:
+      typeof msg.content === 'string'
         ? msg.content
-            .filter((b: any) => b.type === 'text')
-            .map((b: any) => b.text)
-            .join('')
-        : '',
+        : Array.isArray(msg.content)
+          ? msg.content
+              .filter((b) => b.type === 'text')
+              .map((b) => b.text)
+              .join('')
+          : '',
     timestamp: msg.timestamp,
     toolCalls: Array.isArray(msg.content)
       ? msg.content
-          .filter((b: any) => b.type === 'tool_call')
-          .map((b: any) => ({
+          .filter((b) => b.type === 'tool_call')
+          .map((b) => ({
             id: b.id,
             name: b.name,
             parameters: b.arguments ?? {},

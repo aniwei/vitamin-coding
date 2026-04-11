@@ -1,17 +1,10 @@
-import { 
-  GITHUB_CLIENT_ID, 
-  GITHUB_COPILOT_USER_AGENT, 
-  GITHUB_SCOPE, 
-} from '@vitamin/env'
-import { 
-  createLogger, 
-  OAuthError 
-} from '@vitamin/shared'
-import type { 
+import { GITHUB_CLIENT_ID, GITHUB_COPILOT_USER_AGENT, GITHUB_SCOPE } from '@vitamin/env'
+import { createLogger, OAuthError } from '@vitamin/shared'
+import type {
   OAuthLoginOptions,
-  OAuthCredentials, 
-  OAuthProvider, 
-  OAuthRefreshTokenOptions
+  OAuthCredentials,
+  OAuthProvider,
+  OAuthRefreshTokenOptions,
 } from '../types'
 
 const logger = createLogger('@vitamin/ai:oauth:github-copilot')
@@ -42,18 +35,21 @@ export class GitHubCopilotOAuthProvider implements OAuthProvider {
   readonly name = 'GitHub Copilot'
 
   async refreshToken(options: OAuthRefreshTokenOptions): Promise<OAuthCredentials> {
-    const response = await fetch(`https://api.${options.domain ?? 'github.com'}/copilot_internal/v2/token`, {
-      headers: {
-        'Accept': 'application/json',
-        'Authorization': `Bearer ${options.refresh}`,
-        'User-Agent': GITHUB_COPILOT_USER_AGENT
+    const response = await fetch(
+      `https://api.${options.domain ?? 'github.com'}/copilot_internal/v2/token`,
+      {
+        headers: {
+          Accept: 'application/json',
+          Authorization: `Bearer ${options.refresh}`,
+          'User-Agent': GITHUB_COPILOT_USER_AGENT,
+        },
       },
-    })
+    )
 
-    const data = await response.json() as RefreshTokenResponse
+    const data = (await response.json()) as RefreshTokenResponse
     if (!data.token) {
       throw new OAuthError('Invalid Copilot token response fields.', {
-        code: 'OAUTH_REFRESH_FAILED'
+        code: 'OAUTH_REFRESH_FAILED',
       })
     }
 
@@ -76,15 +72,16 @@ export class GitHubCopilotOAuthProvider implements OAuthProvider {
     }
 
     const trimmed = input.trim() || 'github.com'
-    const url = trimmed.startsWith('http://') || trimmed.startsWith('https://') 
-      ? new URL(trimmed) 
-      : new URL(`https://${trimmed}`)
+    const url =
+      trimmed.startsWith('http://') || trimmed.startsWith('https://')
+        ? new URL(trimmed)
+        : new URL(`https://${trimmed}`)
 
     const device = await this.oauth(url.hostname)
     await options.onAuth({
-      url: device.verification_uri, 
+      url: device.verification_uri,
       code: device.user_code,
-      instructions: `Enter code: ${device.user_code}`
+      instructions: `Enter code: ${device.user_code}`,
     })
 
     const refreshToken = await this.pollingAccessToken(
@@ -92,7 +89,7 @@ export class GitHubCopilotOAuthProvider implements OAuthProvider {
       device.device_code,
       device.interval,
       device.expires_in,
-      options.signal
+      options.signal,
     )
 
     const credentials = await this.refreshToken({
@@ -117,9 +114,9 @@ export class GitHubCopilotOAuthProvider implements OAuthProvider {
     const response = await fetch(`https://${domain}/login/device/code`, {
       method: 'POST',
       headers: {
-        'Accept': 'application/json',
+        Accept: 'application/json',
         'Content-Type': 'application/x-www-form-urlencoded',
-        'User-Agent': GITHUB_COPILOT_USER_AGENT
+        'User-Agent': GITHUB_COPILOT_USER_AGENT,
       },
       body: new URLSearchParams({
         client_id: GITHUB_CLIENT_ID,
@@ -127,7 +124,7 @@ export class GitHubCopilotOAuthProvider implements OAuthProvider {
       }),
     })
 
-    const data = await response.json() as DeviceResponse
+    const data = (await response.json()) as DeviceResponse
 
     if (!data.device_code) {
       throw new OAuthError('GitHub device authorization returned invalid response fields.', {
@@ -138,20 +135,21 @@ export class GitHubCopilotOAuthProvider implements OAuthProvider {
     return data
   }
 
-  private abortableSleep(
-    timeout: number, 
-    signal?: AbortSignal
-  ): Promise<void> {
+  private abortableSleep(timeout: number, signal?: AbortSignal): Promise<void> {
     return new Promise((resolve, reject) => {
       if (signal?.aborted) {
         reject(new OAuthError('Login cancelled', { code: 'OAUTH_CANCELLED' }))
       } else {
         const timeoutId = setTimeout(resolve, timeout)
 
-        signal?.addEventListener('abort', () => {
-          clearTimeout(timeoutId)
-          reject(new OAuthError('Login cancelled', { code: 'OAUTH_CANCELLED' }))
-        }, { once: true })
+        signal?.addEventListener(
+          'abort',
+          () => {
+            clearTimeout(timeoutId)
+            reject(new OAuthError('Login cancelled', { code: 'OAUTH_CANCELLED' }))
+          },
+          { once: true },
+        )
       }
     })
   }
@@ -166,10 +164,7 @@ export class GitHubCopilotOAuthProvider implements OAuthProvider {
     const deadline = Date.now() + expiresIn * 1000
 
     const sleep = async (timeout: number) => {
-      const remain = Math.min(
-        Math.max(1000, Math.floor(timeout * 1000)), 
-        deadline - Date.now()
-      )
+      const remain = Math.min(Math.max(1000, Math.floor(timeout * 1000)), deadline - Date.now())
 
       await this.abortableSleep(remain, signal)
     }
@@ -182,9 +177,9 @@ export class GitHubCopilotOAuthProvider implements OAuthProvider {
       const response = await fetch(`https://${domain}/login/oauth/access_token`, {
         method: 'POST',
         headers: {
-          'Accept': 'application/json',
+          Accept: 'application/json',
           'Content-Type': 'application/x-www-form-urlencoded',
-          'User-Agent': GITHUB_COPILOT_USER_AGENT
+          'User-Agent': GITHUB_COPILOT_USER_AGENT,
         },
         body: new URLSearchParams({
           client_id: GITHUB_CLIENT_ID,
@@ -193,21 +188,24 @@ export class GitHubCopilotOAuthProvider implements OAuthProvider {
         }),
       })
 
-      const data = await response.json() as AccessTokenResponse
-      
+      const data = (await response.json()) as AccessTokenResponse
+
       if (data.error) {
         const error = data.error
         if (error === 'authorization_pending') {
           await sleep(delay)
           continue
         } else if (error === 'slow_down') {
-          await sleep(delay = delay + 5)
+          await sleep((delay = delay + 5))
           continue
         }
 
-        throw new OAuthError(`Authorize failed: ${error}${data.error_description ? `: ${data.error_description}` : ''}`, {
-          code: 'OAUTH_AUTHORIZE_FAILED',
-        })
+        throw new OAuthError(
+          `Authorize failed: ${error}${data.error_description ? `: ${data.error_description}` : ''}`,
+          {
+            code: 'OAUTH_AUTHORIZE_FAILED',
+          },
+        )
       }
 
       return data.access_token as string

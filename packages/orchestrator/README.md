@@ -6,14 +6,14 @@
 
 ## 核心功能
 
-| 模块 | 功能 |
-|------|------|
-| TaskStore | 任务 CRUD + 状态追踪（pending/running/completed/failed） |
-| TaskExecutor | 同步/后台混合调度 + 并发限制 |
-| RetryPolicy | 指数退避 + 抖动重试策略 |
-| CircuitBreaker | 断路器（CLOSED/OPEN/HALF_OPEN） |
-| Orchestrator | 业务级 API（dispatchTask/callAgent/writeTodos/clarifyRequest） |
-| BackgroundManager | 后台异步任务生命周期 |
+| 模块              | 功能                                                           |
+| ----------------- | -------------------------------------------------------------- |
+| TaskStore         | 任务 CRUD + 状态追踪（pending/running/completed/failed）       |
+| TaskExecutor      | 同步/后台混合调度 + 并发限制                                   |
+| RetryPolicy       | 指数退避 + 抖动重试策略                                        |
+| CircuitBreaker    | 断路器（CLOSED/OPEN/HALF_OPEN）                                |
+| Orchestrator      | 业务级 API（dispatchTask/callAgent/writeTodos/clarifyRequest） |
+| BackgroundManager | 后台异步任务生命周期                                           |
 
 ## 目录概览
 

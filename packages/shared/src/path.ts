@@ -1,4 +1,4 @@
-import { VITAMIN_PROJECT_DIR, VITAMIN_HOME  } from '@vitamin/env'
+import { VITAMIN_PROJECT_DIR, VITAMIN_HOME } from '@vitamin/env'
 import { normalize, resolve, join, sep } from 'node:path'
 import { tmpdir } from 'node:os'
 import { v5 } from 'uuid'
@@ -40,12 +40,11 @@ export function getThirdPartyToolBinaryDir(toolName: string, version: string = '
 }
 
 export function createTempLoggerDir(): string {
-  const id = v5(Date.now().toString(), v5.URL);
-  return join(tmpdir(), `vitamin-coding-${id}.log`);
+  const id = v5(Date.now().toString(), v5.URL)
+  return join(tmpdir(), `vitamin-coding-${id}.log`)
 }
 
 // Backward compatibility: historical name used by tools/tests.
 export function createTempLoggerPath(): string {
   return createTempLoggerDir()
 }
-

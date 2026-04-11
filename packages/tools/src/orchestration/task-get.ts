@@ -23,7 +23,7 @@ export interface TaskGetOptions {
 
 export function createTaskGet(
   _projectRoot: string,
-  options: TaskGetOptions
+  options: TaskGetOptions,
 ): AgentTool<TaskGetArgs> {
   const { get } = options
 
@@ -52,7 +52,9 @@ export function createTaskGet(
         task.prompt ? `Prompt: ${task.prompt}` : undefined,
         `Output: ${task.output ?? 'N/A'}`,
         task.error ? `Error: ${task.error}` : undefined,
-      ].filter((line): line is string => Boolean(line)).join('\n')
+      ]
+        .filter((line): line is string => Boolean(line))
+        .join('\n')
 
       return {
         content: [{ type: 'text', text }],

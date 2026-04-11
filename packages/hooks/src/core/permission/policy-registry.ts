@@ -35,7 +35,7 @@ function matchesRule(match: RuleMatch, ctx: PermissionContext): boolean {
   // paths 匹配
   if (match.paths && match.paths.length > 0) {
     if (!ctx.filePath) return false
-    const pathMatched = match.paths.some(pattern => pattern.test(ctx.filePath!))
+    const pathMatched = match.paths.some((pattern) => pattern.test(ctx.filePath!))
     if (!pathMatched) return false
   }
   // 自定义条件
@@ -60,7 +60,9 @@ export class PermissionPolicyRegistry {
     this.unregister(policy.name)
     this.policies.push(policy)
     this.policies.sort((a, b) => a.priority - b.priority)
-    logger.debug(`Permission policy registered: ${policy.name} (priority=${policy.priority}, rules=${policy.rules.length})`)
+    logger.debug(
+      `Permission policy registered: ${policy.name} (priority=${policy.priority}, rules=${policy.rules.length})`,
+    )
   }
 
   registerAll(policies: PermissionPolicy[]): void {
@@ -68,7 +70,7 @@ export class PermissionPolicyRegistry {
   }
 
   unregister(name: string): boolean {
-    const idx = this.policies.findIndex(p => p.name === name)
+    const idx = this.policies.findIndex((p) => p.name === name)
     if (idx >= 0) {
       this.policies.splice(idx, 1)
       logger.debug(`Permission policy unregistered: ${name}`)
@@ -78,7 +80,7 @@ export class PermissionPolicyRegistry {
   }
 
   has(name: string): boolean {
-    return this.policies.some(p => p.name === name)
+    return this.policies.some((p) => p.name === name)
   }
 
   evaluate(context: PermissionContext): PermissionDecision {
@@ -111,9 +113,7 @@ export class PermissionPolicyRegistry {
   }
 
   getEffective(agentName: string): PermissionPolicy[] {
-    return this.policies.filter(p =>
-      p.enabled && matchesScopeAgent(p.scope, agentName),
-    )
+    return this.policies.filter((p) => p.enabled && matchesScopeAgent(p.scope, agentName))
   }
 
   getAll(): PermissionPolicy[] {
@@ -134,14 +134,13 @@ export function createPermissionRegistry(
   return registry
 }
 
-
 export function compilePolicyFromSetting(setting: PermissionPolicySetting): PermissionPolicy {
-  const rules: PermissionRule[] = setting.rules.map(rc => ({
+  const rules: PermissionRule[] = setting.rules.map((rc) => ({
     name: rc.name,
     effect: rc.effect,
     match: {
       tools: rc.tools,
-      paths: rc.paths?.map(p => new RegExp(p)),
+      paths: rc.paths?.map((p) => new RegExp(p)),
     },
     denyReason: rc.deny_reason,
     askPrompt: rc.ask_prompt,
@@ -158,4 +157,3 @@ export function compilePolicyFromSetting(setting: PermissionPolicySetting): Perm
     rules,
   }
 }
-

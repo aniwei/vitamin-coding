@@ -8,9 +8,23 @@ const AgentTaskArgsSchema = z.object({
   agent: z.string().describe('Agent name to execute the task with (e.g. "explore", "reviewer")'),
   prompt: z.string().describe('Task description to send to the agent'),
   mode: z.enum(['sync', 'background']).optional().default('sync').describe('Execution mode'),
-  sessionId: z.string().optional().describe('Optional child session ID. When used with sticky mode, later calls can reuse the same child context.'),
-  sessionMode: z.enum(['ephemeral', 'sticky']).optional().default('ephemeral').describe('Child session lifecycle. ephemeral deletes the child session after the task; sticky keeps it for later reuse.'),
-  slot: z.enum(['normal', 'thinking', 'compact', 'critique', 'vision']).optional().describe('Model slot to use for this task'),
+  sessionId: z
+    .string()
+    .optional()
+    .describe(
+      'Optional child session ID. When used with sticky mode, later calls can reuse the same child context.',
+    ),
+  sessionMode: z
+    .enum(['ephemeral', 'sticky'])
+    .optional()
+    .default('ephemeral')
+    .describe(
+      'Child session lifecycle. ephemeral deletes the child session after the task; sticky keeps it for later reuse.',
+    ),
+  slot: z
+    .enum(['normal', 'thinking', 'compact', 'critique', 'vision'])
+    .optional()
+    .describe('Model slot to use for this task'),
 })
 
 type AgentTaskArgs = z.infer<typeof AgentTaskArgsSchema>
@@ -21,7 +35,8 @@ export function createAgentTask(
 ): AgentTool<AgentTaskArgs> {
   return {
     name: 'agent_task',
-    description: 'Run a named agent through the task runtime with retries, background execution, and optional sticky session reuse.',
+    description:
+      'Run a named agent through the task runtime with retries, background execution, and optional sticky session reuse.',
     parameters: AgentTaskArgsSchema,
     visibility: 'always',
 

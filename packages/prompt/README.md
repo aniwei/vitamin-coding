@@ -6,15 +6,15 @@
 
 ## 核心功能
 
-| 模块 | 功能 |
-|------|------|
-| PromptManager | 系统提示组装与缓存 |
-| LocalPromptProvider | 文件系统模板加载 |
-| HttpPromptProvider | HTTP 远程模板加载 |
-| ProfileResolver | Agent Profile 精确/模糊解析 |
-| EnvironmentContext | 工作空间 + Git + OS 信息收集 |
-| LessonInjector | 经验格式化与注入 |
-| PhaseContext | 阶段标记注入/提取 |
+| 模块                | 功能                         |
+| ------------------- | ---------------------------- |
+| PromptManager       | 系统提示组装与缓存           |
+| LocalPromptProvider | 文件系统模板加载             |
+| HttpPromptProvider  | HTTP 远程模板加载            |
+| ProfileResolver     | Agent Profile 精确/模糊解析  |
+| EnvironmentContext  | 工作空间 + Git + OS 信息收集 |
+| LessonInjector      | 经验格式化与注入             |
+| PhaseContext        | 阶段标记注入/提取            |
 
 ## 目录概览
 

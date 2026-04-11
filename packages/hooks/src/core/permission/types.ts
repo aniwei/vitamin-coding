@@ -6,11 +6,11 @@ import type { HookTiming } from '../../types'
 export type RuleEffect = 'allow' | 'deny' | 'ask'
 
 export type PermissionMode =
-  | 'bypass'      // 跳过所有权限检查 (开发模式)
-  | 'auto'        // 读操作放行, 写操作按策略
-  | 'confirm'     // 所有写操作需人工确认
-  | 'strict'      // 无匹配则 deny
-  | 'readonly'    // 仅允许读取类工具
+  | 'bypass' // 跳过所有权限检查 (开发模式)
+  | 'auto' // 读操作放行, 写操作按策略
+  | 'confirm' // 所有写操作需人工确认
+  | 'strict' // 无匹配则 deny
+  | 'readonly' // 仅允许读取类工具
 
 export interface PolicyScope {
   /** 适用的 agent 名称, '*' 或缺省表示所有 */

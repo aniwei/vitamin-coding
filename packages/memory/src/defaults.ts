@@ -1,8 +1,4 @@
-import type { 
-  MemoryDefaults, 
-  CompactionConfig, 
-  PruneConfig 
-} from './types'
+import type { MemoryDefaults, CompactionConfig, PruneConfig } from './types'
 import {
   MEMORY_COMPACTION_TRIGGER_FRACTION,
   MEMORY_COMPACTION_KEEP_RECENT_FRACTION,
@@ -75,6 +71,6 @@ export function resolveContextSize(
     case 'fraction':
       return Math.floor(contextWindow * value)
     case 'messages':
-      return value 
+      return value
   }
 }

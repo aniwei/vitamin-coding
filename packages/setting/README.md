@@ -6,16 +6,16 @@
 
 ## 核心功能
 
-| 模块 | 功能 |
-|------|------|
-| SettingLoader | 多源加载 + 深度合并 + 校验 |
-| SettingWatcher | fs.watch 文件变化监控 + 防抖 |
-| MigrationRunner | 版本迁移系统（semver 链式迁移） |
-| FileSettingStore | 文件配置存储 |
-| RemoteSettingStore | HTTP 远程配置 |
-| InMemorySettingStore | 内存配置（测试用） |
-| Agent Profiles | 8 个内置 Agent 配置预设 |
-| Copilot Models | 9 个模型定义 |
+| 模块                 | 功能                            |
+| -------------------- | ------------------------------- |
+| SettingLoader        | 多源加载 + 深度合并 + 校验      |
+| SettingWatcher       | fs.watch 文件变化监控 + 防抖    |
+| MigrationRunner      | 版本迁移系统（semver 链式迁移） |
+| FileSettingStore     | 文件配置存储                    |
+| RemoteSettingStore   | HTTP 远程配置                   |
+| InMemorySettingStore | 内存配置（测试用）              |
+| Agent Profiles       | 8 个内置 Agent 配置预设         |
+| Copilot Models       | 9 个模型定义                    |
 
 ## 目录概览
 

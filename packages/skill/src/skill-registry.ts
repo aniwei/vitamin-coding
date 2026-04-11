@@ -167,10 +167,7 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
     }
   }
 
-  match(
-    query: string,
-    options?: { maxResults?: number; minRelevance?: number },
-  ): SkillMatch[] {
+  match(query: string, options?: { maxResults?: number; minRelevance?: number }): SkillMatch[] {
     return matchSkills(query, this.skills, options)
   }
 

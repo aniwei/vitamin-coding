@@ -13,7 +13,7 @@ interface WatcherEvents extends Events {
 export interface SettingWatcherOptions {
   paths: string[]
   reload: (path: string) => Promise<Partial<VitaminSetting>>
-  debounceMs?: number 
+  debounceMs?: number
 }
 
 export function createSettingWatcher(options: SettingWatcherOptions): SettingWatcher {
@@ -58,22 +58,25 @@ export class SettingWatcher extends TypedEventEmitter<WatcherEvents> implements 
     const existing = this.debounceTimers.get(path)
     if (existing) clearTimeout(existing)
 
-    this.debounceTimers.set(path, setTimeout(async () => {
-      this.debounceTimers.delete(path)
+    this.debounceTimers.set(
+      path,
+      setTimeout(async () => {
+        this.debounceTimers.delete(path)
 
-      try {
-        const config = await this.reload(path)
-        this.emit('change', config, path)
-        
-        logger.info({ path }, 'Setting reloaded')
-      } catch (error) {
-        const err = error instanceof Error ? error : new Error(String(error))
-        this.emit('error', err)
-        
-        logger.error({ path, err }, 'Failed to reload setting')
-      }
-    }, this.debounceMs))
-  }
+        try {
+          const config = await this.reload(path)
+          this.emit('change', config, path)
+
+          logger.info({ path }, 'Setting reloaded')
+        } catch (error) {
+          const err = error instanceof Error ? error : new Error(String(error))
+          this.emit('error', err)
+
+          logger.error({ path, err }, 'Failed to reload setting')
+        }
+      }, this.debounceMs),
+    )
+  };
 
   [Symbol.dispose](): void {
     for (const watcher of this.watchers) {

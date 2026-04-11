@@ -11,17 +11,17 @@ import { executeAgentTurn } from './shared'
 
 /**
  * 层级模式 — 上级 Agent (Supervisor) 分解任务，下级 Agent (Worker) 执行。
- * 
+ *
  * 灵感来自：
  * - InfiAgent (MLA) 树形多级 Agent 系统（Level 3 → Level 2 → Level 1）
  * - Superpowers subagent-driven-development
  * - gstack role-based 流程（CEO → Eng Manager → Developer）
- * 
+ *
  * 流程：
  * 1. Supervisor 分析输入，生成子任务分配方案
  * 2. 各 Worker 并行或顺序执行子任务
  * 3. Supervisor 汇总结果，生成最终输出
- * 
+ *
  * 适用场景：
  * - 大型代码重构（Architect 规划 → 多 Developer 各负责模块）
  * - 研究任务（Lead 规划 → 多 Researcher 分别搜索 → Lead 综合）
@@ -37,10 +37,8 @@ export async function executeHierarchical(options: {
   emit: SwarmEventHandler
   maxConcurrency?: number
 }): Promise<HierarchicalResult> {
-  const {
-    supervisorId, agents, input, context,
-    createRunContext, signal, emit, maxConcurrency,
-  } = options
+  const { supervisorId, agents, input, context, createRunContext, signal, emit, maxConcurrency } =
+    options
 
   const supervisor = agents.get(supervisorId)
   if (!supervisor) {
@@ -98,7 +96,12 @@ export async function executeHierarchical(options: {
     }
 
     const workerDef = agents.get(workerId)!
-    emit({ type: 'hierarchy_delegate', supervisor: supervisorId, worker: workerId, task: task.description })
+    emit({
+      type: 'hierarchy_delegate',
+      supervisor: supervisorId,
+      worker: workerId,
+      task: task.description,
+    })
     emit({ type: 'agent_start', agentId: workerId })
 
     const taskStart = Date.now()
@@ -156,8 +159,9 @@ export async function executeHierarchical(options: {
   // 阶段 3：Supervisor 汇总
   emit({ type: 'agent_start', agentId: supervisorId })
 
-  const summaryParts = taskResults.map((r) =>
-    `## ${r.task.description} (by ${r.agentId})\n${r.output.text}`)
+  const summaryParts = taskResults.map(
+    (r) => `## ${r.task.description} (by ${r.agentId})\n${r.output.text}`,
+  )
   const synthesisPrompt = [
     'The subtasks have been completed. Here are the results:',
     '',
@@ -191,10 +195,7 @@ export async function executeHierarchical(options: {
 }
 
 /** 从 Supervisor 输出中解析任务计划 */
-function parsePlan(
-  text: string,
-  agents: Map<string, SwarmAgentDef>,
-): HierarchicalTask[] {
+function parsePlan(text: string, agents: Map<string, SwarmAgentDef>): HierarchicalTask[] {
   // 尝试提取 JSON 块
   const jsonMatch = text.match(/```(?:json)?\s*([\s\S]*?)```/)
   const raw = jsonMatch ? jsonMatch[1]! : text
@@ -207,9 +208,10 @@ function parsePlan(
 
     return parsed.map((item: Record<string, unknown>) => ({
       description: String(item.description ?? ''),
-      assignedTo: typeof item.assignedTo === 'string' && agents.has(item.assignedTo)
-        ? item.assignedTo
-        : undefined,
+      assignedTo:
+        typeof item.assignedTo === 'string' && agents.has(item.assignedTo)
+          ? item.assignedTo
+          : undefined,
     }))
   } catch {
     // JSON 解析失败 — 回退到简单拆分

@@ -1,7 +1,4 @@
-import {
-  getToolCallsByAssistantMessage,
-  hasToolCalls,
-} from '@vitamin/ai'
+import { getToolCallsByAssistantMessage, hasToolCalls } from '@vitamin/ai'
 import type {
   AssistantMessage,
   StreamContext,
@@ -13,13 +10,7 @@ import type {
 import type { DebugSnapshot, PauseResult } from '@vitamin/devtools'
 import { AbortError, MaxToolTurnsError } from './errors'
 import type { ToolExecutor } from './tool-executor'
-import type {
-  AgentEvent,
-  AgentMessage,
-  AgentStatus,
-  AgentTool,
-  StreamFunction,
-} from './types'
+import type { AgentEvent, AgentMessage, AgentStatus, AgentTool, StreamFunction } from './types'
 import type { MessageSummaryItem } from '@vitamin/devtools'
 
 type Emit = (event: AgentEvent) => void
@@ -34,7 +25,9 @@ export interface WorkLoopContext {
   thinkingLevel: ThinkingLevel
   maxTokens?: number
   temperature?: number
-  convertToLLM: (messages: AgentMessage[]) => import('@vitamin/ai').Message[] | Promise<import('@vitamin/ai').Message[]>
+  convertToLLM: (
+    messages: AgentMessage[],
+  ) => import('@vitamin/ai').Message[] | Promise<import('@vitamin/ai').Message[]>
   transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>
   // 配置（来自 AgentConfig）
   maxToolTurns: number
@@ -79,22 +72,23 @@ async function runTurn(
       lastToolName?: string
       metadata?: SnapshotMetadata
     } = {},
-  ) => devtools?.debugger.pause({
-    turn: turnIndex,
-    point,
-    frameDepth,
-    messagesCount: options.messagesCount ?? ctx.messages.length,
-    lastToolName: options.lastToolName,
-    tokenUsage: lastTokenUsage ?? { input: 0, output: 0 },
-    metadata: options.metadata ?? {},
-    systemPrompt: params.systemPrompt ?? '',
-    messagesSummary: summarizeMessages(options.summarySource ?? ctx.messages, 10),
-    llmParams: {
-      temperature: params.temperature,
-      maxTokens: params.maxTokens,
-      thinkingLevel: params.thinkingLevel,
-    },
-  })
+  ) =>
+    devtools?.debugger.pause({
+      turn: turnIndex,
+      point,
+      frameDepth,
+      messagesCount: options.messagesCount ?? ctx.messages.length,
+      lastToolName: options.lastToolName,
+      tokenUsage: lastTokenUsage ?? { input: 0, output: 0 },
+      metadata: options.metadata ?? {},
+      systemPrompt: params.systemPrompt ?? '',
+      messagesSummary: summarizeMessages(options.summarySource ?? ctx.messages, 10),
+      llmParams: {
+        temperature: params.temperature,
+        maxTokens: params.maxTokens,
+        thinkingLevel: params.thinkingLevel,
+      },
+    })
 
   // 1. 上下文转换（压缩/裁剪/注入）
   let contextMessages = [...ctx.messages]
@@ -138,13 +132,21 @@ async function runTurn(
   // 3. devtools model_before pause — 可修改 params 与 messages（影响后续 turn）
   consume(await pause('model_before', 0), {
     getSystemPrompt: () => params.systemPrompt,
-    setSystemPrompt: (v) => { params.systemPrompt = v },
+    setSystemPrompt: (v) => {
+      params.systemPrompt = v
+    },
     getTemperature: () => params.temperature,
-    setTemperature: (v) => { params.temperature = v },
+    setTemperature: (v) => {
+      params.temperature = v
+    },
     getMaxTokens: () => params.maxTokens,
-    setMaxTokens: (v) => { params.maxTokens = v },
+    setMaxTokens: (v) => {
+      params.maxTokens = v
+    },
     getThinkingLevel: () => params.thinkingLevel,
-    setThinkingLevel: (v) => { params.thinkingLevel = v as ThinkingLevel },
+    setThinkingLevel: (v) => {
+      params.thinkingLevel = v as ThinkingLevel
+    },
     messages: ctx.messages,
   })
 
@@ -190,24 +192,25 @@ async function runTools(
       lastToolName?: string
       metadata?: SnapshotMetadata
     } = {},
-  ) => devtools?.debugger.pause({
-    turn: turnIndex,
-    point,
-    frameDepth,
-    messagesCount: messages.length,
-    lastToolName: options.lastToolName,
-    tokenUsage: lastTokenUsage ?? { input: 0, output: 0 },
-    metadata: options.metadata ?? {},
-    systemPrompt: '',
-    messagesSummary: [],
-    llmParams: {},
-  })
+  ) =>
+    devtools?.debugger.pause({
+      turn: turnIndex,
+      point,
+      frameDepth,
+      messagesCount: messages.length,
+      lastToolName: options.lastToolName,
+      tokenUsage: lastTokenUsage ?? { input: 0, output: 0 },
+      metadata: options.metadata ?? {},
+      systemPrompt: '',
+      messagesSummary: [],
+      llmParams: {},
+    })
 
   const toolCalls = getToolCallsByAssistantMessage(assistantMessage)
   const toolDefs = toolExecutor.list()
-  const readonlySet = new Set(toolDefs.filter(t => t.readonly).map(t => t.name))
-  const readOnlyCalls = toolCalls.filter(tc => readonlySet.has(tc.name))
-  const mutationCalls = toolCalls.filter(tc => !readonlySet.has(tc.name))
+  const readonlySet = new Set(toolDefs.filter((t) => t.readonly).map((t) => t.name))
+  const readOnlyCalls = toolCalls.filter((tc) => readonlySet.has(tc.name))
+  const mutationCalls = toolCalls.filter((tc) => !readonlySet.has(tc.name))
 
   // steering 检查：在任何工具执行前检查一次
   const steeringMessages = await getSteeringMessages()
@@ -265,11 +268,7 @@ async function runTools(
       result,
     })
 
-    logger.info(
-      'Tool %s completed%s',
-      toolCall.name,
-      result.isError ? ' with error' : '',
-    )
+    logger.info('Tool %s completed%s', toolCall.name, result.isError ? ' with error' : '')
 
     await pause('tool_after', 1, { lastToolName: toolCall.name })
   }
@@ -325,24 +324,29 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
       summarySource?: AgentMessage[]
       metadata?: SnapshotMetadata
     } = {},
-  ) => devtools?.debugger.pause({
-    turn: turnIndex,
-    point,
-    frameDepth,
-    messagesCount: options.messagesCount ?? messages.length,
-    tokenUsage: lastTokenUsage ?? { input: 0, output: 0 },
-    metadata: options.metadata ?? {},
-    systemPrompt: params.systemPrompt ?? '',
-    messagesSummary: summarizeMessages(options.summarySource ?? messages, 10),
-    llmParams: {
-      temperature: params.temperature,
-      maxTokens: params.maxTokens,
-      thinkingLevel: params.thinkingLevel,
-    },
-  })
+  ) =>
+    devtools?.debugger.pause({
+      turn: turnIndex,
+      point,
+      frameDepth,
+      messagesCount: options.messagesCount ?? messages.length,
+      tokenUsage: lastTokenUsage ?? { input: 0, output: 0 },
+      metadata: options.metadata ?? {},
+      systemPrompt: params.systemPrompt ?? '',
+      messagesSummary: summarizeMessages(options.summarySource ?? messages, 10),
+      llmParams: {
+        temperature: params.temperature,
+        maxTokens: params.maxTokens,
+        thinkingLevel: params.thinkingLevel,
+      },
+    })
 
   try {
-    logger.info('Agent loop started for model %s with %d messages', context.model.id, messages.length)
+    logger.info(
+      'Agent loop started for model %s with %d messages',
+      context.model.id,
+      messages.length,
+    )
 
     await pause('loop_start', 0)
 
@@ -455,12 +459,14 @@ function summarizeMessages(messages: AgentMessage[], lastN: number): MessageSumm
   return messages.slice(start).map((msg, i) => ({
     index: start + i,
     role: msg.role as MessageSummaryItem['role'],
-    preview: typeof msg.content === 'string'
-      ? msg.content.slice(0, 200)
-      : JSON.stringify(msg.content).slice(0, 200),
+    preview:
+      typeof msg.content === 'string'
+        ? msg.content.slice(0, 200)
+        : JSON.stringify(msg.content).slice(0, 200),
     toolName: msg.role === 'tool_result' ? (msg as ToolResultMessage).toolName : undefined,
     tokenEstimate: Math.ceil(
-      (typeof msg.content === 'string' ? msg.content.length : JSON.stringify(msg.content).length) / 4,
+      (typeof msg.content === 'string' ? msg.content.length : JSON.stringify(msg.content).length) /
+        4,
     ),
   }))
 }

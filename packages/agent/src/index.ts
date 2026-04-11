@@ -8,12 +8,7 @@ export { createToolExecutor } from './tool-executor'
 export type { ToolExecutor } from './tool-executor'
 
 // 错误类型
-export {
-  AgentLoopError,
-  ToolExecutionError,
-  AbortError,
-  MaxToolTurnsError,
-} from './errors'
+export { AgentLoopError, ToolExecutionError, AbortError, MaxToolTurnsError } from './errors'
 
 // 核心类型
 export type {

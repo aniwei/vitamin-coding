@@ -16,6 +16,7 @@
 ### McpClient（mcp-client.ts）
 
 MCP 协议客户端：
+
 - `connect(transport)` → 建立连接
 - `callTool(name, args)` → 调用远程工具
 - `readResource(uri)` → 读取远程资源
@@ -26,6 +27,7 @@ MCP 协议客户端：
 ### McpManager（mcp-manager.ts）
 
 多 MCP 服务器生命周期管理：
+
 - `addServer(config)` → 创建并连接 McpClient
 - `removeServer(name)` → 断开并清理
 - `getAllTools()` → 聚合所有服务器的工具
@@ -38,6 +40,7 @@ MCP 协议客户端：
 #### StdioTransport（stdio-transport.ts）
 
 基于子进程的 stdin/stdout 传输：
+
 - `spawn(command, args)` → 启动子进程
 - 消息通过 JSON 行（newline-delimited JSON）传输
 - 支持 stderr 捕获用于诊断
@@ -46,6 +49,7 @@ MCP 协议客户端：
 #### SseTransport（sse-transport.ts）
 
 基于 HTTP SSE 的传输：
+
 - `connect(url)` → 建立 SSE 连接
 - 发送请求通过 POST，接收响应通过 SSE 事件流
 - 支持断线重连
@@ -53,6 +57,7 @@ MCP 协议客户端：
 ### 工具适配器（tool-adapter.ts）
 
 将 MCP 工具定义转换为 AgentTool：
+
 - `mcpSchemaToZod(jsonSchema)` → JSON Schema 到 Zod schema 转换
 - `createMcpToolAdapters(client)` → 从 McpClient 批量创建 AgentTool 适配器
 - 每个适配器的 `execute()` 委托到 `client.callTool()`
@@ -60,6 +65,7 @@ MCP 协议客户端：
 ### VitaminMcpServer（mcp-server.ts）
 
 将 Vitamin AgentTool 暴露为 MCP 服务端：
+
 - `tools/list` → 导出所有已注册工具
 - `tools/call` → 执行工具并返回结果
 - `resources/read` → 暴露资源
@@ -100,16 +106,16 @@ MCP 协议客户端：
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | McpServerConfig / McpToolDefinition / Transport 类型 |
-| `src/mcp-client.ts` | MCP 客户端（JSON-RPC 2.0） |
-| `src/mcp-manager.ts` | 多服务器管理 |
-| `src/transports/stdio-transport.ts` | Stdio 传输 |
-| `src/transports/sse-transport.ts` | SSE 传输 |
-| `src/tool-adapter.ts` | MCP → AgentTool 适配 |
-| `src/mcp-server.ts` | VitaminMcpServer（本地工具暴露） |
-| `src/index.ts` | barrel 导出 |
+| 文件                                | 职责                                                 |
+| ----------------------------------- | ---------------------------------------------------- |
+| `src/types.ts`                      | McpServerConfig / McpToolDefinition / Transport 类型 |
+| `src/mcp-client.ts`                 | MCP 客户端（JSON-RPC 2.0）                           |
+| `src/mcp-manager.ts`                | 多服务器管理                                         |
+| `src/transports/stdio-transport.ts` | Stdio 传输                                           |
+| `src/transports/sse-transport.ts`   | SSE 传输                                             |
+| `src/tool-adapter.ts`               | MCP → AgentTool 适配                                 |
+| `src/mcp-server.ts`                 | VitaminMcpServer（本地工具暴露）                     |
+| `src/index.ts`                      | barrel 导出                                          |
 
 ## 入口与依赖
 

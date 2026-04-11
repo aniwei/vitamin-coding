@@ -40,7 +40,9 @@ export function matchSkills(
   matches.sort((a, b) => {
     const relDiff = b.relevance - a.relevance
     if (Math.abs(relDiff) > 0.01) return relDiff
-    return (a.skill.definition.metadata.priority ?? 100) - (b.skill.definition.metadata.priority ?? 100)
+    return (
+      (a.skill.definition.metadata.priority ?? 100) - (b.skill.definition.metadata.priority ?? 100)
+    )
   })
 
   return matches.slice(0, maxResults)
@@ -120,7 +122,5 @@ function scoreSkill(
 }
 
 function tokenize(text: string): string[] {
-  return text
-    .split(/[\s,.:;!?()[\]{}"'`\-/\\]+/)
-    .filter((w) => w.length >= 2)
+  return text.split(/[\s,.:;!?()[\]{}"'`\-/\\]+/).filter((w) => w.length >= 2)
 }

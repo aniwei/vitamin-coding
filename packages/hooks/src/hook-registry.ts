@@ -12,7 +12,10 @@ import { createStreamMetricsHook } from './core/stream/stream-metrics'
 import { createCompactionLoggerHook } from './core/compaction/compaction-logger'
 import { createToolErrorTrackerHook } from './core/tool-guard/tool-error-tracker'
 import { createTokenBudgetHook } from './core/transform/token-budget'
-import { createBackgroundStartHook, createBackgroundEndHook } from './core/background/background-tracker'
+import {
+  createBackgroundStartHook,
+  createBackgroundEndHook,
+} from './core/background/background-tracker'
 
 import type { HookHandle, HookInput, HookOutput, HookRegistration, HookTiming } from './types'
 
@@ -37,7 +40,7 @@ const HOOK_TIMINGS: HookTiming[] = [
   'background.end',
   'extension.loaded',
   'extension.error',
-  
+
   // orchestrator
   'task.created',
   'task.started',
@@ -93,7 +96,7 @@ function createHookBuckets(): Record<HookTiming, RuntimeHook[]> {
     'background.end': [],
     'extension.loaded': [],
     'extension.error': [],
-    
+
     // orchestrator
     'task.created': [],
     'task.started': [],
@@ -134,7 +137,7 @@ export class HookRegistry {
   register<T extends HookTiming>(registration: HookRegistration<T>): void {
     const handle = registration.handle
     if (!handle) {
-      logger.warn(`Hook ${registration.name} skipped: missing handle`) 
+      logger.warn(`Hook ${registration.name} skipped: missing handle`)
       return
     }
 
@@ -158,7 +161,9 @@ export class HookRegistry {
       emit,
     })
 
-    logger.debug(`Hook registered: ${registration.name} (timing=${registration.timing}, priority=${registration.priority})`)
+    logger.debug(
+      `Hook registered: ${registration.name} (timing=${registration.timing}, priority=${registration.priority})`,
+    )
   }
 
   // 批量注册 Hook
@@ -169,18 +174,13 @@ export class HookRegistry {
   }
 
   // 便捷方法: 创建并注册
-  on<T extends HookTiming>(
-    timing: T,
-    name: string,
-    handle: HookHandle<T>,
-    priority = 50,
-  ): this {
-    this.register({ 
-      name, 
-      timing, 
-      priority, 
-      enabled: true, 
-      handle 
+  on<T extends HookTiming>(timing: T, name: string, handle: HookHandle<T>, priority = 50): this {
+    this.register({
+      name,
+      timing,
+      priority,
+      enabled: true,
+      handle,
     })
 
     return this
@@ -197,11 +197,11 @@ export class HookRegistry {
     for (const timing of HOOK_TIMINGS) {
       const list = this.hooks[timing]
       const filtered = list.filter((hook) => hook.name !== name)
-      
+
       if (filtered.length < list.length) {
         this.hooks[timing] = filtered
         removed = true
-        
+
         logger.debug(`Hook unregistered: ${name} (timing=${timing})`)
       }
     }
@@ -225,7 +225,7 @@ export class HookRegistry {
     if (timing) {
       return this.hooks[timing].map(toHookInfo)
     }
-    
+
     const all: RegisteredHookInfo[] = []
     for (const key of HOOK_TIMINGS) {
       all.push(...this.hooks[key].map(toHookInfo))
@@ -254,10 +254,7 @@ export class HookRegistry {
   }
 
   // 执行无输出的 Hook (event 类型)
-  async emit<T extends HookTiming>(
-    timing: T,
-    input: HookInput<T>,
-  ): Promise<void> {
+  async emit<T extends HookTiming>(timing: T, input: HookInput<T>): Promise<void> {
     const hooks = this.getSortedHooks(timing)
     if (hooks.length === 0) return
 
@@ -341,10 +338,7 @@ function getDefaultPresetHooks(): HookRegistration[] {
 }
 
 function getStrictPresetHooks(): HookRegistration[] {
-  return [
-    ...getDefaultPresetHooks(),
-    createCommentCheckerHook() as HookRegistration,
-  ]
+  return [...getDefaultPresetHooks(), createCommentCheckerHook() as HookRegistration]
 }
 
 function getMinimalPresetHooks(): HookRegistration[] {
@@ -353,7 +347,6 @@ function getMinimalPresetHooks(): HookRegistration[] {
     createOutputTruncationHook() as HookRegistration,
   ]
 }
-
 
 export function createHookRegistry(options?: HookRegistryOptions): HookRegistry {
   return new HookRegistry(options)

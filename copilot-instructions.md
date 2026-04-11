@@ -20,14 +20,14 @@
 
 本项目强制使用以下工具链，不得引入替代品：
 
-| 职责 | 工具 | 禁止替代 |
-|------|------|---------|
-| Monorepo 任务编排 | **Nx** | Turborepo、Lerna |
-| Lint | **oxlint** | ESLint |
-| 格式化 | **oxfmt** | Prettier |
-| 打包（库） | **tsup** | rollup、esbuild 直接调用 |
-| 前端打包 | **Vite** | webpack、Parcel |
-| 测试 | **vitest** | Jest |
+| 职责              | 工具       | 禁止替代                 |
+| ----------------- | ---------- | ------------------------ |
+| Monorepo 任务编排 | **Nx**     | Turborepo、Lerna         |
+| Lint              | **oxlint** | ESLint                   |
+| 格式化            | **oxfmt**  | Prettier                 |
+| 打包（库）        | **tsup**   | rollup、esbuild 直接调用 |
+| 前端打包          | **Vite**   | webpack、Parcel          |
+| 测试              | **vitest** | Jest                     |
 
 ### Nx 使用规范
 
@@ -129,14 +129,16 @@ import { createHookRegistry } from '@vitamin/hooks'
 `tsconfig.base.json` 已开启极严格模式，编写代码时须注意：
 
 - **`verbatimModuleSyntax`**：类型导入必须使用 `import type`，不得与值导入混写。
+
   ```ts
   // 正确
   import { foo } from './foo'
   import type { FooType } from './foo'
 
   // 错误
-  import { foo, type FooType } from './foo'  // 部分类型导入
+  import { foo, type FooType } from './foo' // 部分类型导入
   ```
+
 - **`noUncheckedIndexedAccess`**：数组/对象索引访问结果为 `T | undefined`，必须做判断。
 - **`noUnusedLocals` / `noUnusedParameters`**：不得存在未使用的变量或参数。
 - **`noImplicitReturns`**：所有分支必须有明确返回值。

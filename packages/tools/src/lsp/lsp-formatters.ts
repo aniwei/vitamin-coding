@@ -144,7 +144,8 @@ export function formatWorkspaceEdit(edit: WorkspaceEdit | null): string {
     for (const change of edit.documentChanges) {
       if ('kind' in change) {
         if (change.kind === 'create') lines.push(`Create: ${change.uri}`)
-        else if (change.kind === 'rename') lines.push(`Rename: ${change.oldUri} -> ${change.newUri}`)
+        else if (change.kind === 'rename')
+          lines.push(`Rename: ${change.oldUri} -> ${change.newUri}`)
         else if (change.kind === 'delete') lines.push(`Delete: ${change.uri}`)
       } else {
         const filePath = uriToPath(change.textDocument.uri)

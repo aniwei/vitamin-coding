@@ -1,8 +1,4 @@
-import { 
-  mkdir, 
-  rm, 
-  stat
-} from 'node:fs/promises'
+import { mkdir, rm, stat } from 'node:fs/promises'
 import { lookup } from 'mime-types'
 
 export async function mime(path: string): Promise<string> {

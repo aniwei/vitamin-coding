@@ -48,13 +48,7 @@ export type {
 export { FileSettingStore } from './file-store'
 export { RemoteSettingStore } from './http-store'
 export { InMemorySettingStore } from './memory-store'
-export {
-  createFileSettingStore,
-  createHttpSettingStore,
-} from './persistence-store'
+export { createFileSettingStore, createHttpSettingStore } from './persistence-store'
 
 // Presets (JSON data)
-export {
-  BUILTIN_AGENT_PROFILES,
-  TASK_TYPE_PROFILE_MAP,
-} from './presets'
+export { BUILTIN_AGENT_PROFILES, TASK_TYPE_PROFILE_MAP } from './presets'

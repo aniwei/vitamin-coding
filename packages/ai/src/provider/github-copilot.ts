@@ -20,10 +20,11 @@ const DEFAULT_COPILOT_INTEGRATION_ID = 'vscode-chat'
 
 // 构建 Copilot 专用静态请求头
 function buildCopilotHeaders(token: string): Record<string, string> {
-  const integrationId = process.env['VITAMIN_COPILOT_INTEGRATION_ID'] || DEFAULT_COPILOT_INTEGRATION_ID
+  const integrationId =
+    process.env['VITAMIN_COPILOT_INTEGRATION_ID'] || DEFAULT_COPILOT_INTEGRATION_ID
 
   return {
-    'authorization': `Bearer ${token}`,
+    authorization: `Bearer ${token}`,
     'copilot-integration-id': integrationId,
     'editor-version': `vitamin-coding/${PROVIDER_VERSION}`,
     'editor-plugin-version': `vitamin-coding/${PROVIDER_VERSION}`,
@@ -43,10 +44,10 @@ export function inferCopilotInitiator(messages: Message[]): 'user' | 'agent' {
 export function hasCopilotVisionInput(messages: Message[]): boolean {
   return messages.some((msg) => {
     if (msg.role === 'user' && Array.isArray(msg.content)) {
-      return msg.content.some(c => c.type === 'image')
+      return msg.content.some((c) => c.type === 'image')
     }
     if (msg.role === 'tool_result' && Array.isArray(msg.content)) {
-      return msg.content.some(c => c.type === 'image')
+      return msg.content.some((c) => c.type === 'image')
     }
     return false
   })
@@ -69,7 +70,10 @@ export function buildCopilotDynamicHeaders(params: {
 
 // 清理 Unicode 代理对（surrogate pairs）以避免 JSON 序列化问题
 function sanitizeSurrogates(text: string): string {
-  return text.replace(/[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g, '\uFFFD')
+  return text.replace(
+    /[\uD800-\uDBFF](?![\uDC00-\uDFFF])|(?<![\uD800-\uDBFF])[\uDC00-\uDFFF]/g,
+    '\uFFFD',
+  )
 }
 
 // 检查消息历史中是否包含工具调用或工具结果
@@ -78,7 +82,7 @@ function hasToolHistory(messages: Message[]): boolean {
   for (const msg of messages) {
     if (msg.role === 'tool_result') return true
     if (msg.role === 'assistant') {
-      if (msg.content.some(b => b.type === 'tool_call')) return true
+      if (msg.content.some((b) => b.type === 'tool_call')) return true
     }
   }
   return false
@@ -152,7 +156,6 @@ function buildOpenAIMessages(context: StreamContext): unknown[] {
 
   return result
 }
-
 
 // 将 ThinkingLevel 映射为 OpenAI reasoning_effort 参数值
 function toReasoningEffort(level: string): string {
@@ -242,16 +245,16 @@ function buildAssistantMessage(state: CopilotStreamState): AssistantMessage {
   const content: (TextContent | ThinkingContent | ToolCall)[] = []
 
   if (state.thinkingText) {
-    content.push({ 
-      type: 'thinking', 
-      text: state.thinkingText 
+    content.push({
+      type: 'thinking',
+      text: state.thinkingText,
     })
   }
 
   if (state.textContent) {
-    content.push({ 
-      type: 'text', 
-      text: state.textContent 
+    content.push({
+      type: 'text',
+      text: state.textContent,
     })
   }
 
@@ -303,8 +306,8 @@ class GitHubCopilotStream implements ProviderStream {
       if (key) return key
     }
 
-    throw new ProviderError('Missing GitHub Copilot token.', { 
-      code: 'PROVIDER_AUTH_MISSING' 
+    throw new ProviderError('Missing GitHub Copilot token.', {
+      code: 'PROVIDER_AUTH_MISSING',
     })
   }
 
@@ -351,7 +354,9 @@ class GitHubCopilotStream implements ProviderStream {
           const promptTokens = (usage.prompt_tokens as number) ?? 0
           const completionTokens = (usage.completion_tokens as number) ?? 0
           const promptDetails = usage.prompt_tokens_details as Record<string, number> | undefined
-          const completionDetails = usage.completion_tokens_details as Record<string, number> | undefined
+          const completionDetails = usage.completion_tokens_details as
+            | Record<string, number>
+            | undefined
           const cachedTokens = promptDetails?.cached_tokens ?? 0
           const reasoningTokens = completionDetails?.reasoning_tokens ?? 0
           state.inputTokens = promptTokens - cachedTokens
@@ -407,7 +412,12 @@ class GitHubCopilotStream implements ProviderStream {
           null
         if (reasoningText) {
           state.thinkingText += reasoningText
-          yield { type: 'thinking_delta', index: 0, delta: reasoningText, partial: buildAssistantMessage(state) }
+          yield {
+            type: 'thinking_delta',
+            index: 0,
+            delta: reasoningText,
+            partial: buildAssistantMessage(state),
+          }
         }
 
         // 工具调用 delta
@@ -432,7 +442,12 @@ class GitHubCopilotStream implements ProviderStream {
             if (fn?.arguments) {
               const argDelta = fn.arguments as string
               tc.argumentsJson += argDelta
-              yield { type: 'tool_call_delta', index: idx, delta: argDelta, partial: buildAssistantMessage(state) }
+              yield {
+                type: 'tool_call_delta',
+                index: idx,
+                delta: argDelta,
+                partial: buildAssistantMessage(state),
+              }
             }
           }
         }

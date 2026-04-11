@@ -7,10 +7,7 @@ import type { WebSocketMessage, WebSocketClientMessage } from './types'
 
 const logger = createLogger('@vitamin/service:websocket-manager')
 
-export type WebSocketClientHandler = (
-  clientId: string,
-  message: WebSocketClientMessage,
-) => void
+export type WebSocketClientHandler = (clientId: string, message: WebSocketClientMessage) => void
 
 interface WebSocketManagerEvents extends Events {
   message: (clientId: string, message: WebSocketClientMessage) => void
@@ -19,7 +16,7 @@ interface WebSocketManagerEvents extends Events {
 export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> {
   private readonly wss: WebSocketServer
   private readonly clients = new Map<string, WebSocket>()
-  private readonly sessionSubscriptions = new Map<string, Set<string>>() 
+  private readonly sessionSubscriptions = new Map<string, Set<string>>()
   private clientId = 0
 
   get clientCount(): number {
@@ -32,18 +29,13 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
     this.wss.on('connection', this.onConnection)
   }
 
-  handleUpgrade(
-    request: IncomingMessage,
-    socket: Socket,
-    head: Buffer,
-    pathname: string,
-  ): boolean {
+  handleUpgrade(request: IncomingMessage, socket: Socket, head: Buffer, pathname: string): boolean {
     if (pathname !== '/ws') {
       return false
     }
 
-    this.wss.handleUpgrade(request, socket, head, ws => this.wss.emit('connection', ws, request))
-    
+    this.wss.handleUpgrade(request, socket, head, (ws) => this.wss.emit('connection', ws, request))
+
     return true
   }
 
@@ -121,7 +113,7 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
       for (const [, subscribers] of this.sessionSubscriptions) {
         subscribers.delete(clientId)
       }
-      
+
       logger.debug(`client disconnected: ${clientId}`)
     })
 

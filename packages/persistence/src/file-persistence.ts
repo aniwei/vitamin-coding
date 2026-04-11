@@ -7,7 +7,10 @@ export interface FilePersistenceOptions<T = unknown> {
   codec?: Codec<Snapshot<T>>
 }
 
-export class FilePersistence<T = unknown> extends DiskPersistence<Snapshot<T>> implements Persistence<T> {
+export class FilePersistence<T = unknown>
+  extends DiskPersistence<Snapshot<T>>
+  implements Persistence<T>
+{
   constructor(options: FilePersistenceOptions<T>) {
     super({ baseDir: options.baseDir, extension: options.extension, codec: options.codec })
   }

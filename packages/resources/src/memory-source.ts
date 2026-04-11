@@ -1,8 +1,4 @@
-import {
-  PersistentMemory,
-  FileSystemMemoryStore,
-  DEFAULT_MEMORY_SOURCES,
-} from '@vitamin/memory'
+import { PersistentMemory, FileSystemMemoryStore, DEFAULT_MEMORY_SOURCES } from '@vitamin/memory'
 
 import type { MemorySource, MemoryStore } from '@vitamin/memory'
 import type { MemoryInjectionSource, MemoryInjectionResult } from './types'
@@ -18,10 +14,10 @@ export class PersistentMemorySource implements MemoryInjectionSource {
 
   constructor(options: PersistentMemorySourceOptions = {}) {
     const { workspaceDir, memorySource, memoryStore } = options
-    
+
     this.persistentMemory = new PersistentMemory(
-      memoryStore ?? new FileSystemMemoryStore(workspaceDir), 
-      memorySource ?? DEFAULT_MEMORY_SOURCES
+      memoryStore ?? new FileSystemMemoryStore(workspaceDir),
+      memorySource ?? DEFAULT_MEMORY_SOURCES,
     )
   }
 

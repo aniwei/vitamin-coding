@@ -1,10 +1,6 @@
 import { ToolError } from '@vitamin/shared'
 
-import type {
-  HookRegistration,
-  ToolExecuteBeforeInput,
-  ToolExecuteBeforeOutput,
-} from '../../types'
+import type { HookRegistration, ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from '../../types'
 import type { PermissionPolicyRegistry } from './policy-registry'
 import type { PermissionAuditLog } from './audit-log'
 import type { PermissionContext } from './types'
@@ -23,10 +19,7 @@ export class PermissionGuardHook implements HookRegistration<'tool.execute.befor
     this.auditLog = auditLog
   }
 
-  handle = (
-    input: ToolExecuteBeforeInput,
-    output: ToolExecuteBeforeOutput,
-  ): void => {
+  handle = (input: ToolExecuteBeforeInput, output: ToolExecuteBeforeOutput): void => {
     const context: PermissionContext = {
       timing: 'tool.execute.before',
       toolName: input.toolName,

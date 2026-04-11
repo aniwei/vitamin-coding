@@ -1,9 +1,7 @@
 import type { SwarmAgentDef, SwarmContext } from './types'
 
 /** 创建初始 SwarmContext */
-export function createSwarmContext(
-  initialVariables?: Record<string, unknown>,
-): SwarmContext {
+export function createSwarmContext(initialVariables?: Record<string, unknown>): SwarmContext {
   const variables = new Map<string, unknown>()
 
   if (initialVariables) {

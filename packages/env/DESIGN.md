@@ -20,6 +20,7 @@
 ### 路径常量
 
 基于 `process.env` 和 `os.homedir()` 计算 Vitamin 约定路径：
+
 - `VITAMIN_HOME`：用户级 Vitamin 主目录（默认 `~/.vitamin`）
 - `VITAMIN_PROJECT_DIR`：项目级 `.vitamin` 目录
 - `SESSION_DIR` / `CHECKPOINT_DIR`：会话和检查点存储目录
@@ -28,6 +29,7 @@
 ### 阈值与限制
 
 按域划分导出常量：
+
 - **工具配置**：`TOOLS_MAX_OUTPUT_LINES` / `TOOLS_MAX_OUTPUT_BYTES` / `TOOLS_EXECUTE_TIMEOUT_MS` 等
 - **Agent 配置**：`AGENT_TOOLS_MAX_TURNS`
 - **内存管理**：`MEMORY_COMPACTION_*` / `MEMORY_PRUNE_*` 系列（触发比例、保护比例、最小 token 数）
@@ -54,8 +56,8 @@
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
+| 文件           | 职责                   |
+| -------------- | ---------------------- |
 | `src/index.ts` | 所有环境常量定义与导出 |
 
 ## 入口与依赖

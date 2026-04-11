@@ -6,12 +6,12 @@
 
 ## 核心功能
 
-| 模块 | 功能 |
-|------|------|
-| SkillRegistry | 技能注册/发现/生命周期事件 |
-| SkillDiscovery | .vitamin/skills/ + ~/.vitamin/skills/ 扫描 |
-| SkillParser | SKILL.md YAML frontmatter + Markdown 解析 |
-| SkillMatcher | 多因子评分（名称 0.3 + 描述 0.5 + 标签 0.2） |
+| 模块           | 功能                                         |
+| -------------- | -------------------------------------------- |
+| SkillRegistry  | 技能注册/发现/生命周期事件                   |
+| SkillDiscovery | .vitamin/skills/ + ~/.vitamin/skills/ 扫描   |
+| SkillParser    | SKILL.md YAML frontmatter + Markdown 解析    |
+| SkillMatcher   | 多因子评分（名称 0.3 + 描述 0.5 + 标签 0.2） |
 
 ## 目录概览
 

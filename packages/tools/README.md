@@ -6,24 +6,24 @@
 
 ## 核心功能
 
-| 域 | 工具 |
-|----|------|
-| 文件系统 | `read_file` / `write_file` / `edit_file` / `multi_edit` |
-| 搜索 | `list_dir` / `find_file` / `grep` / `semantic_search` |
-| Shell | `bash` |
-| Web | `web_search` / `web_fetch` |
-| 编排 | `task_delegate` / `write_todos` / `agent_call` / `review_call` / `plan_call` / `ask_user` / `plan_approval` / `approval` / `abort_task` |
-| 会话 | `session_summary` / `session_history` |
-| 技能 | `load_skill` |
-| LSP | `lsp_definition` / `lsp_references` / `lsp_symbols` / `lsp_diagnostics` / `lsp_rename` |
+| 域       | 工具                                                                                                                                    |
+| -------- | --------------------------------------------------------------------------------------------------------------------------------------- |
+| 文件系统 | `read_file` / `write_file` / `edit_file` / `multi_edit`                                                                                 |
+| 搜索     | `list_dir` / `find_file` / `grep` / `semantic_search`                                                                                   |
+| Shell    | `bash`                                                                                                                                  |
+| Web      | `web_search` / `web_fetch`                                                                                                              |
+| 编排     | `task_delegate` / `write_todos` / `agent_call` / `review_call` / `plan_call` / `ask_user` / `plan_approval` / `approval` / `abort_task` |
+| 会话     | `session_summary` / `session_history`                                                                                                   |
+| 技能     | `load_skill`                                                                                                                            |
+| LSP      | `lsp_definition` / `lsp_references` / `lsp_symbols` / `lsp_diagnostics` / `lsp_rename`                                                  |
 
 ## 预设层级
 
-| 预设 | 说明 |
-|------|------|
-| `minimal` | 仅只读工具 |
+| 预设       | 说明           |
+| ---------- | -------------- |
+| `minimal`  | 仅只读工具     |
 | `standard` | 标准开发工具集 |
-| `full` | 全部工具 |
+| `full`     | 全部工具       |
 
 ## 目录概览
 

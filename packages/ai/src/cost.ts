@@ -9,10 +9,7 @@ export interface CostBreakdown {
   total: number
 }
 // 计算单次请求费用
-export function calculate(
-  model: Model<Api>, 
-  usage: Usage
-): CostBreakdown {
+export function calculate(model: Model<Api>, usage: Usage): CostBreakdown {
   const { cost } = model
   const input = (usage.inputTokens / 1_000_000) * cost.input
   const output = (usage.outputTokens / 1_000_000) * cost.output
@@ -50,14 +47,16 @@ export class CostTracker {
 
   // 总 token 使用量
   get totalTokens(): { input: number; output: number } {
-    return this.entries.reduce((acc, e) => ({
-      input: acc.input + e.usage.inputTokens,
-      output: acc.output + e.usage.outputTokens,
-    }),
-    { input: 0, output: 0 })
+    return this.entries.reduce(
+      (acc, e) => ({
+        input: acc.input + e.usage.inputTokens,
+        output: acc.output + e.usage.outputTokens,
+      }),
+      { input: 0, output: 0 },
+    )
   }
 
-    // 记录一次请求
+  // 记录一次请求
   record(model: Model<Api>, usage: Usage): CostBreakdown {
     const cost = calculate(model, usage)
 
@@ -74,7 +73,7 @@ export class CostTracker {
 
       existing.count++
       existing.cost += entry.cost.total
-      
+
       result[entry.model] = existing
     }
 
@@ -91,5 +90,3 @@ export class CostTracker {
 export function createCostTracker(): CostTracker {
   return new CostTracker()
 }
-
-

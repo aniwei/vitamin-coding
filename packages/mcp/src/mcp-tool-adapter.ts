@@ -148,10 +148,7 @@ export function createMcpToolAdapter(
 /**
  * 为一个 MCP Client 的所有工具创建适配器
  */
-export function createMcpToolAdapters(
-  client: McpClient,
-  serverName: string,
-): AgentTool[] {
+export function createMcpToolAdapters(client: McpClient, serverName: string): AgentTool[] {
   const tools = client.getTools()
   return tools.map((toolDef) => createMcpToolAdapter(client, toolDef, serverName))
 }

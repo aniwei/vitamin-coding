@@ -156,10 +156,10 @@ export class McpClient {
       this.status = 'error'
       const message = err instanceof Error ? err.message : String(err)
       logger.error('MCP server "%s" connection failed: %s', this.serverName, message)
-      throw new McpError(
-        `Failed to connect to MCP server "${this.serverName}": ${message}`,
-        { code: 'MCP_CONNECT_ERROR', cause: err instanceof Error ? err : undefined },
-      )
+      throw new McpError(`Failed to connect to MCP server "${this.serverName}": ${message}`, {
+        code: 'MCP_CONNECT_ERROR',
+        cause: err instanceof Error ? err : undefined,
+      })
     }
   }
 
@@ -184,13 +184,13 @@ export class McpClient {
       const result = await this.request<{ resources: McpResource[] }>('resources/list')
       this.resources = result.resources ?? []
 
-      logger.debug(
-        'MCP server "%s" provides %d resources',
-        this.serverName,
-        this.resources.length,
-      )
+      logger.debug('MCP server "%s" provides %d resources', this.serverName, this.resources.length)
     } catch (err) {
-      logger.debug('MCP server "%s" resources/list failed: %s', this.serverName, (err as Error).message)
+      logger.debug(
+        'MCP server "%s" resources/list failed: %s',
+        this.serverName,
+        (err as Error).message,
+      )
       this.resources = []
     }
 
@@ -199,7 +199,9 @@ export class McpClient {
 
   // 读取单个资源
   async readResource(uri: string): Promise<McpResourceContents[]> {
-    const result = await this.request<{ contents: McpResourceContents[] }>('resources/read', { uri })
+    const result = await this.request<{ contents: McpResourceContents[] }>('resources/read', {
+      uri,
+    })
     return result.contents ?? []
   }
 
@@ -209,13 +211,13 @@ export class McpClient {
       const result = await this.request<{ prompts: McpPrompt[] }>('prompts/list')
       this.prompts = result.prompts ?? []
 
-      logger.debug(
-        'MCP server "%s" provides %d prompts',
-        this.serverName,
-        this.prompts.length,
-      )
+      logger.debug('MCP server "%s" provides %d prompts', this.serverName, this.prompts.length)
     } catch (err) {
-      logger.debug('MCP server "%s" prompts/list failed: %s', this.serverName, (err as Error).message)
+      logger.debug(
+        'MCP server "%s" prompts/list failed: %s',
+        this.serverName,
+        (err as Error).message,
+      )
       this.prompts = []
     }
 
@@ -223,24 +225,32 @@ export class McpClient {
   }
 
   // 获取单个 prompt
-  async getPrompt(name: string, args?: Record<string, string>): Promise<{ description?: string; messages: McpPromptMessage[] }> {
-    const result = await this.request<{ description?: string; messages: McpPromptMessage[] }>('prompts/get', {
-      name,
-      arguments: args,
-    })
+  async getPrompt(
+    name: string,
+    args?: Record<string, string>,
+  ): Promise<{ description?: string; messages: McpPromptMessage[] }> {
+    const result = await this.request<{ description?: string; messages: McpPromptMessage[] }>(
+      'prompts/get',
+      {
+        name,
+        arguments: args,
+      },
+    )
     return result
   }
 
   // 调用 MCP 工具
   async callTool(params: McpToolCallParams): Promise<McpToolCallResult> {
     if (this.status !== 'ready') {
-      throw new McpError(
-        `MCP server "${this.serverName}" is not ready (status: ${this.status})`,
-        { code: 'MCP_NOT_READY' },
-      )
+      throw new McpError(`MCP server "${this.serverName}" is not ready (status: ${this.status})`, {
+        code: 'MCP_NOT_READY',
+      })
     }
 
-    const result = await this.request<McpToolCallResult>('tools/call', params as unknown as Record<string, unknown>)
+    const result = await this.request<McpToolCallResult>(
+      'tools/call',
+      params as unknown as Record<string, unknown>,
+    )
     return result
   }
 
@@ -278,17 +288,12 @@ export class McpClient {
     }
 
     if (this.config.command) {
-      return new StdioTransport(
-        this.config.command,
-        this.config.args ?? [],
-        this.config.env ?? {},
-      )
+      return new StdioTransport(this.config.command, this.config.args ?? [], this.config.env ?? {})
     }
 
-    throw new McpError(
-      `MCP server "${this.serverName}" has no command or url configured`,
-      { code: 'MCP_CONFIG_ERROR' },
-    )
+    throw new McpError(`MCP server "${this.serverName}" has no command or url configured`, {
+      code: 'MCP_CONFIG_ERROR',
+    })
   }
 
   private request<T>(method: string, params?: Record<string, unknown>): Promise<T> {
@@ -298,10 +303,11 @@ export class McpClient {
 
       const timer = setTimeout(() => {
         this.pending.delete(id)
-        reject(new McpError(
-          `MCP request "${method}" timed out after ${timeoutMs}ms`,
-          { code: 'MCP_TIMEOUT' },
-        ))
+        reject(
+          new McpError(`MCP request "${method}" timed out after ${timeoutMs}ms`, {
+            code: 'MCP_TIMEOUT',
+          }),
+        )
       }, timeoutMs)
 
       this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject, timer })
@@ -354,10 +360,11 @@ export class McpClient {
     this.pending.delete(response.id!)
 
     if (response.error) {
-      pending.reject(new McpError(
-        `MCP error: ${response.error.message} (code: ${response.error.code})`,
-        { code: 'MCP_SERVER_ERROR' },
-      ))
+      pending.reject(
+        new McpError(`MCP error: ${response.error.message} (code: ${response.error.code})`, {
+          code: 'MCP_SERVER_ERROR',
+        }),
+      )
     } else {
       pending.resolve(response.result)
     }

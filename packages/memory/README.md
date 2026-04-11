@@ -6,14 +6,14 @@
 
 ## 核心功能
 
-| 模块 | 功能 |
-|------|------|
-| MemoryManager | prune → compaction → archive 管线协调 |
-| PersistentMemory | 多源 AGENTS.md 加载（全局/项目/社区） |
-| TokenEstimator | 快速 token 估算（text.length / 4） |
-| OperationalLearningStore | 经验教训存储与检索 |
-| FileStateManager | 工作空间文件变更追踪 |
-| Archive | 归档存储（Memory / Local / HTTP） |
+| 模块                     | 功能                                  |
+| ------------------------ | ------------------------------------- |
+| MemoryManager            | prune → compaction → archive 管线协调 |
+| PersistentMemory         | 多源 AGENTS.md 加载（全局/项目/社区） |
+| TokenEstimator           | 快速 token 估算（text.length / 4）    |
+| OperationalLearningStore | 经验教训存储与检索                    |
+| FileStateManager         | 工作空间文件变更追踪                  |
+| Archive                  | 归档存储（Memory / Local / HTTP）     |
 
 ## 目录概览
 

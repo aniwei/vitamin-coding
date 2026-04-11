@@ -3,18 +3,33 @@ import { z } from 'zod'
 
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
-const DelegateTaskArgsSchema = z.object({
-  prompt: z.string().describe('Task description to delegate'),
-  subagent: z.string().optional().describe('Agent name to delegate the task to (e.g. "explore")'),
-  category: z.string().optional().describe('Task category (e.g. "quick", "deep", "search")'),
-  mode: z.enum(['sync', 'background']).optional().default('sync').describe('Execution mode'),
-  sessionId: z.string().optional().describe('Optional child session ID. When used with sticky mode, later calls can reuse the same child context.'),
-  sessionMode: z.enum(['ephemeral', 'sticky']).optional().default('ephemeral').describe('Child session lifecycle. ephemeral deletes the child session after the task; sticky keeps it for later reuse.'),
-  slot: z.enum(['normal', 'thinking', 'compact', 'critique', 'vision']).optional().describe('Model slot to use for this task'),
-}).refine(
-  (data) => data.subagent !== undefined || data.category !== undefined,
-  { message: 'Must provide subagent or category' },
-)
+const DelegateTaskArgsSchema = z
+  .object({
+    prompt: z.string().describe('Task description to delegate'),
+    subagent: z.string().optional().describe('Agent name to delegate the task to (e.g. "explore")'),
+    category: z.string().optional().describe('Task category (e.g. "quick", "deep", "search")'),
+    mode: z.enum(['sync', 'background']).optional().default('sync').describe('Execution mode'),
+    sessionId: z
+      .string()
+      .optional()
+      .describe(
+        'Optional child session ID. When used with sticky mode, later calls can reuse the same child context.',
+      ),
+    sessionMode: z
+      .enum(['ephemeral', 'sticky'])
+      .optional()
+      .default('ephemeral')
+      .describe(
+        'Child session lifecycle. ephemeral deletes the child session after the task; sticky keeps it for later reuse.',
+      ),
+    slot: z
+      .enum(['normal', 'thinking', 'compact', 'critique', 'vision'])
+      .optional()
+      .describe('Model slot to use for this task'),
+  })
+  .refine((data) => data.subagent !== undefined || data.category !== undefined, {
+    message: 'Must provide subagent or category',
+  })
 
 type DelegateTaskArgs = z.infer<typeof DelegateTaskArgsSchema>
 
@@ -37,14 +52,14 @@ export type TaskDispatch = (args: {
   slot?: 'normal' | 'thinking' | 'compact' | 'critique' | 'vision'
 }) => Promise<TaskDispatchResult>
 
-
 export function createTaskDelegate(
   _workspaceDir: string,
-  dispatch: TaskDispatch
+  dispatch: TaskDispatch,
 ): AgentTool<DelegateTaskArgs> {
   return {
     name: 'task_delegate',
-    description: 'Delegate a task to a sub-agent for execution. Provide prompt and subagent/category to dispatch a task.',
+    description:
+      'Delegate a task to a sub-agent for execution. Provide prompt and subagent/category to dispatch a task.',
     parameters: DelegateTaskArgsSchema,
     visibility: 'always',
 
@@ -81,7 +96,9 @@ export function createTaskDelegate(
       }
 
       return {
-        content: [{ type: 'text', text: `Task delegation failed: ${result.error ?? 'Unknown error'}` }],
+        content: [
+          { type: 'text', text: `Task delegation failed: ${result.error ?? 'Unknown error'}` },
+        ],
         isError: true,
       }
     },

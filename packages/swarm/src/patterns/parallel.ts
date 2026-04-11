@@ -11,12 +11,12 @@ import { executeAgentTurn } from './shared'
 
 /**
  * 并行模式 — 多个 Agent 同时执行，结果聚合。
- * 
+ *
  * 灵感来自：
  * - OpenDev Agent Fleet（Rust async 并行扇出）
  * - gstack Parallel Sprints（10-15 并行 sprint）
  * - Open Agent SDK TeamCreate（多 Agent 协同）
- * 
+ *
  * 适用场景：
  * - 多角度代码审查（安全 + 性能 + 逻辑 同时）
  * - 并行搜索/调研

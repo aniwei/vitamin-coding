@@ -20,7 +20,10 @@ import { TaskExecutor } from './executor'
 import { BackgroundManager } from './background-manager'
 import { RetryPolicy, CircuitBreaker } from './retry'
 
-export type OrchestratorDeps = Pick<OrchestratorOptions, 'hookRegistry' | 'runSession' | 'abortTask'>
+export type OrchestratorDeps = Pick<
+  OrchestratorOptions,
+  'hookRegistry' | 'runSession' | 'abortTask'
+>
 
 export class Orchestrator {
   readonly taskStore: TaskStore
@@ -35,13 +38,7 @@ export class Orchestrator {
   }
 
   constructor(options: OrchestratorOptions) {
-    const {
-      hookRegistry,
-      runSession,
-      abortTask,
-      workflowConfig,
-      maxActiveTasks = 10,
-    } = options
+    const { hookRegistry, runSession, abortTask, workflowConfig, maxActiveTasks = 10 } = options
 
     this.hookRegistry = hookRegistry
     this.taskStore = new TaskStore()
@@ -54,13 +51,10 @@ export class Orchestrator {
       retryPolicy,
       this.circuitBreaker,
       runSession,
-      maxActiveTasks
+      maxActiveTasks,
     )
 
-    this.backgroundManager = new BackgroundManager(
-      this.taskStore, 
-      abortTask
-    )
+    this.backgroundManager = new BackgroundManager(this.taskStore, abortTask)
   }
 
   // ── 核心回调 ──
@@ -119,15 +113,23 @@ export class Orchestrator {
   listTasks: ListTasks = async (status) => {
     const statusMap: Record<string, string> = { error: 'failed' }
 
-    const filter = status && status !== 'all'
-      ? { status: (statusMap[status] ?? status) as 'pending' | 'running' | 'completed' | 'failed' | 'cancelled' }
-      : undefined
+    const filter =
+      status && status !== 'all'
+        ? {
+            status: (statusMap[status] ?? status) as
+              | 'pending'
+              | 'running'
+              | 'completed'
+              | 'failed'
+              | 'cancelled',
+          }
+        : undefined
 
     const tasks = await this.taskStore.list(filter)
 
     return {
       success: true,
-      tasks: tasks.map(t => ({
+      tasks: tasks.map((t) => ({
         id: t.id,
         prompt: t.input.prompt,
         status: t.status === 'failed' ? 'error' : t.status,
@@ -152,7 +154,10 @@ export class Orchestrator {
 
     if (action === 'retry') {
       if (task.status !== 'failed') {
-        return { success: false, message: `Can only retry failed tasks. Current status: ${task.status}` }
+        return {
+          success: false,
+          message: `Can only retry failed tasks. Current status: ${task.status}`,
+        }
       }
       await this.taskStore.update(id, { status: 'pending', error: undefined })
       const result = await this.dispatchTask({
@@ -164,7 +169,10 @@ export class Orchestrator {
         sessionMode: task.input.sessionMode,
         slot: task.input.slot,
       })
-      return { success: result.success, message: result.output ?? result.error ?? 'Retry completed' }
+      return {
+        success: result.success,
+        message: result.output ?? result.error ?? 'Retry completed',
+      }
     }
 
     return { success: false, message: `Unknown action: ${action}` }
@@ -227,7 +235,7 @@ export class Orchestrator {
     if (action === 'set') {
       store = [...todos]
     } else {
-      const map = new Map(store.map(t => [t.id, t]))
+      const map = new Map(store.map((t) => [t.id, t]))
       for (const todo of todos) {
         map.set(todo.id, todo)
       }

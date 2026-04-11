@@ -1,6 +1,9 @@
 {
   "name": "@vitamin/shared",
   "version": "0.0.1",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,9 +13,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "scripts": {
     "build": "tsdown",
     "typecheck:project": "tsc -p tsconfig.json --noEmit",
@@ -21,8 +25,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/invariant": "workspace:*",
     "@vitamin/env": "workspace:*",
+    "@vitamin/invariant": "workspace:*",
     "eventsource-parser": "3.0.6",
     "jsonc-parser": "3.3.1",
     "mime-types": "3.0.2",
@@ -33,10 +37,6 @@
     "safe-stable-stringify": "2.5.0",
     "unified": "11.0.5",
     "uuid": "13.0.0"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
   },
   "devDependencies": {
     "@types/mime-types": "3.0.1"

@@ -33,18 +33,22 @@ export function createBackgroundOutputTool(
       const result = await output(params.id)
       if (result.success) {
         return {
-          content: [{ 
-            type: 'text', 
-            text: `Status: ${result.status}\nOutput:\n${result.output ?? '(no output)'}` 
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Status: ${result.status}\nOutput:\n${result.output ?? '(no output)'}`,
+            },
+          ],
           details: {
             status: result.status,
           },
         }
       }
-      
+
       return {
-        content: [{ type: 'text', text: result.error ?? `Failed to get output for task ${params.id}` }],
+        content: [
+          { type: 'text', text: result.error ?? `Failed to get output for task ${params.id}` },
+        ],
         isError: true,
       }
     },

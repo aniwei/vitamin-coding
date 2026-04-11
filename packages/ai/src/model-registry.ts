@@ -149,9 +149,7 @@ const COPILOT_MODELS = _copilotModels as unknown as Model[]
 const ANTHROPIC_MODELS = _anthropicModels as unknown as Model[]
 
 // 创建带默认模型集的注册表
-export function createDefaultModelRegistry(
-  extraModels?: Model[],
-): ModelRegistry {
+export function createDefaultModelRegistry(extraModels?: Model[]): ModelRegistry {
   const registry = new ModelRegistry([...COPILOT_MODELS, ...ANTHROPIC_MODELS])
   if (extraModels) {
     registry.registerMany(extraModels)

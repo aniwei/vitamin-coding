@@ -125,7 +125,13 @@ function stripInvariantFromImport(
 }
 
 function transformSource(source: string, fileName: string, invariantImportSource: string): string {
-  const sourceFile = ts.createSourceFile(fileName, source, ts.ScriptTarget.Latest, true, ts.ScriptKind.TS)
+  const sourceFile = ts.createSourceFile(
+    fileName,
+    source,
+    ts.ScriptTarget.Latest,
+    true,
+    ts.ScriptKind.TS,
+  )
   const invariantLocalNames = collectInvariantLocalNames(sourceFile, invariantImportSource)
   const transformed = ts.transform(sourceFile, [
     (context) => {

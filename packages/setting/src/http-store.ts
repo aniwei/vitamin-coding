@@ -32,11 +32,14 @@ export class RemoteSettingStore implements SettingStore {
 
   async read(path: string): Promise<string | undefined> {
     try {
-      const response = await this.fetch(`${this.baseUrl}/setting?path=${encodeURIComponent(path)}`, {
+      const response = await this.fetch(
+        `${this.baseUrl}/setting?path=${encodeURIComponent(path)}`,
+        {
           method: 'GET',
           headers: await this.headers(),
           signal: AbortSignal.timeout(this.timeout),
-      })
+        },
+      )
 
       if (response.status === 404) return undefined
       if (!response.ok) {
@@ -44,7 +47,7 @@ export class RemoteSettingStore implements SettingStore {
         return undefined
       }
 
-      const body = await response.json() as { content: string }
+      const body = (await response.json()) as { content: string }
       return body.content
     } catch (error) {
       logger.warn({ path, err: error }, 'Remote setting read error')
@@ -69,11 +72,14 @@ export class RemoteSettingStore implements SettingStore {
 
   async exists(path: string): Promise<boolean> {
     try {
-      const response = await this.fetch(`${this.baseUrl}/setting?path=${encodeURIComponent(path)}`, {
-        method: 'HEAD',
-        headers: await this.headers(),
-        signal: AbortSignal.timeout(this.timeout),
-      })
+      const response = await this.fetch(
+        `${this.baseUrl}/setting?path=${encodeURIComponent(path)}`,
+        {
+          method: 'HEAD',
+          headers: await this.headers(),
+          signal: AbortSignal.timeout(this.timeout),
+        },
+      )
       return response.ok
     } catch {
       return false

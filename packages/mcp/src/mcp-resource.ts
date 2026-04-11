@@ -26,10 +26,7 @@ export async function readMcpResource(
 /**
  * 按 URI 匹配查找资源（跨所有 server）
  */
-export function findMcpResource(
-  manager: McpManager,
-  uri: string,
-): McpResourceEntry | undefined {
+export function findMcpResource(manager: McpManager, uri: string): McpResourceEntry | undefined {
   const all = manager.getAllResources()
   return all.find((r) => r.uri === uri)
 }
@@ -37,10 +34,7 @@ export function findMcpResource(
 /**
  * 按名称或描述模糊搜索资源
  */
-export function searchMcpResources(
-  manager: McpManager,
-  query: string,
-): McpResourceEntry[] {
+export function searchMcpResources(manager: McpManager, query: string): McpResourceEntry[] {
   const lowerQuery = query.toLowerCase()
   const all = manager.getAllResources()
 

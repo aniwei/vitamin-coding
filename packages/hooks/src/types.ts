@@ -155,18 +155,40 @@ export interface HookPayloadMap {
   // 编排器事件 (orchestrator)
   'task.created': { input: { task: Record<string, unknown> }; output: void }
   'task.started': { input: { task: Record<string, unknown>; agent: string }; output: void }
-  'task.completed': { input: { task: Record<string, unknown>; result: Record<string, unknown>; subagentResult?: Record<string, unknown> }; output: void }
-  'task.failed': { input: { task: Record<string, unknown>; error: Record<string, unknown> }; output: void }
+  'task.completed': {
+    input: {
+      task: Record<string, unknown>
+      result: Record<string, unknown>
+      subagentResult?: Record<string, unknown>
+    }
+    output: void
+  }
+  'task.failed': {
+    input: { task: Record<string, unknown>; error: Record<string, unknown> }
+    output: void
+  }
   'task.cancelled': { input: { taskId: string }; output: void }
-  'task.recovered': { input: { task: Record<string, unknown>; fromCheckpoint: string }; output: void }
+  'task.recovered': {
+    input: { task: Record<string, unknown>; fromCheckpoint: string }
+    output: void
+  }
   'review.requested': { input: { taskId: string; reviewType: string }; output: void }
   'review.passed': { input: { taskId: string; reviewType: string }; output: void }
   'review.failed': { input: { taskId: string; reviewType: string; issues: string[] }; output: void }
   // Plan 事件
   'plan.created': { input: { plan: Record<string, unknown> }; output: void }
-  'plan.updated': { input: { planId: string; action: string; plan: Record<string, unknown> }; output: void }
-  'plan.task_updated': { input: { planId: string; taskId: string; patch: Record<string, unknown> }; output: void }
-  'system-prompt.transform': { input: SystemPromptTransformInput; output: SystemPromptTransformOutput }
+  'plan.updated': {
+    input: { planId: string; action: string; plan: Record<string, unknown> }
+    output: void
+  }
+  'plan.task_updated': {
+    input: { planId: string; taskId: string; patch: Record<string, unknown> }
+    output: void
+  }
+  'system-prompt.transform': {
+    input: SystemPromptTransformInput
+    output: SystemPromptTransformOutput
+  }
 }
 
 // Hook 输入/输出泛型提取

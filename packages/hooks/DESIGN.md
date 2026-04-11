@@ -16,6 +16,7 @@
 ### Hook 注册表（hook-registry.ts）
 
 `HookRegistry` 维护每个 `HookTiming` 到处理器列表的映射（Map<HookTiming, HookHandler[]>）：
+
 - `register(timing, handler, priority?)`：注册 hook，支持优先级排序
 - `execute(timing, context)`：按优先级顺序执行已注册的处理器
 - `executeWaterfall(timing, initialValue)`：瀑布式执行，上一个处理器输出作为下一个输入
@@ -52,6 +53,7 @@
 按类别组织 23+ 内置 Hook：
 
 **会话类（session/）**：
+
 - `SessionInitHook`：会话初始化
 - `SessionCleanupHook`：会话清理
 - `MessageValidationHook`：消息校验
@@ -60,6 +62,7 @@
 - `TurnEndHook`：回合结束
 
 **工具防护（tool-guard/）**：
+
 - `ToolPreExecutionHook`：工具执行前检查
 - `ToolPostExecutionHook`：工具执行后处理
 - `ToolValidationHook`：参数校验
@@ -68,12 +71,14 @@
 - `ToolGuardHook`：权限守卫
 
 **变换（transform/）**：
+
 - `ContextTransformHook`：上下文压缩/变换
 - `PromptTransformHook`：系统提示变换
 - `ResponseTransformHook`：响应变换
 - `OutputTransformHook`：输出格式化
 
 **质量（quality/）**：
+
 - `QualityReviewHook`：质量审查
 - `QualityVerifyHook`：结果校验
 - `QualityReflectHook`：自检反思
@@ -84,12 +89,12 @@
 
 ### 权限预设（presets.ts）
 
-| 预设 | 说明 |
-|------|------|
-| `default` | 标准模式，保护系统文件和破坏性命令 |
-| `strict` | 严格模式，额外限制网络和文件写入范围 |
-| `minimal` | 最小权限，仅允许只读操作 |
-| `none` | 无限制 |
+| 预设      | 说明                                 |
+| --------- | ------------------------------------ |
+| `default` | 标准模式，保护系统文件和破坏性命令   |
+| `strict`  | 严格模式，额外限制网络和文件写入范围 |
+| `minimal` | 最小权限，仅允许只读操作             |
+| `none`    | 无限制                               |
 
 ## 实现流程
 
@@ -121,22 +126,22 @@ Agent 执行循环中：
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | HookTiming / HookHandler / PermissionPolicy 等类型 |
-| `src/hook-registry.ts` | Hook 注册与执行引擎 |
-| `src/permission/permission-policy-registry.ts` | 策略注册与评估 |
-| `src/permission/permission-audit-log.ts` | 审计日志 |
-| `src/permission/permission-guard-hook.ts` | 权限 -> Hook 集成 |
-| `src/permission/builtin-policies.ts` | 7+ 内置策略 + 动态工具集 |
-| `src/permission/presets.ts` | 4 种权限预设 |
-| `src/builtin-hooks/session/` | 6 个会话 Hook |
-| `src/builtin-hooks/tool-guard/` | 6 个工具防护 Hook |
-| `src/builtin-hooks/transform/` | 4 个变换 Hook |
-| `src/builtin-hooks/quality/` | 3 个质量 Hook |
-| `src/builtin-hooks/stream/` | 2 个流 Hook |
-| `src/builtin-hooks/compaction/` | 2 个压缩 Hook |
-| `src/builtin-hooks/background/` | 2 个后台 Hook |
+| 文件                                           | 职责                                               |
+| ---------------------------------------------- | -------------------------------------------------- |
+| `src/types.ts`                                 | HookTiming / HookHandler / PermissionPolicy 等类型 |
+| `src/hook-registry.ts`                         | Hook 注册与执行引擎                                |
+| `src/permission/permission-policy-registry.ts` | 策略注册与评估                                     |
+| `src/permission/permission-audit-log.ts`       | 审计日志                                           |
+| `src/permission/permission-guard-hook.ts`      | 权限 -> Hook 集成                                  |
+| `src/permission/builtin-policies.ts`           | 7+ 内置策略 + 动态工具集                           |
+| `src/permission/presets.ts`                    | 4 种权限预设                                       |
+| `src/builtin-hooks/session/`                   | 6 个会话 Hook                                      |
+| `src/builtin-hooks/tool-guard/`                | 6 个工具防护 Hook                                  |
+| `src/builtin-hooks/transform/`                 | 4 个变换 Hook                                      |
+| `src/builtin-hooks/quality/`                   | 3 个质量 Hook                                      |
+| `src/builtin-hooks/stream/`                    | 2 个流 Hook                                        |
+| `src/builtin-hooks/compaction/`                | 2 个压缩 Hook                                      |
+| `src/builtin-hooks/background/`                | 2 个后台 Hook                                      |
 
 ## 入口与依赖
 

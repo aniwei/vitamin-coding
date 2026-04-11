@@ -13,10 +13,7 @@ export class Debugger {
     return this.service.url
   }
 
-  constructor(
-    service: Service, 
-    breakpoints: Breakpoints
-  ) {
+  constructor(service: Service, breakpoints: Breakpoints) {
     this.service = service
     this.breakpoints = breakpoints
   }
@@ -56,7 +53,7 @@ export class Debugger {
     }
     return undefined
   }
-  
+
   private shouldPause(point: BreakpointPoint): boolean {
     return this.breakpoints.shouldPause(point)
   }

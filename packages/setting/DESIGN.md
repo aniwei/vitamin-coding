@@ -16,6 +16,7 @@
 ### 配置模式（types.ts）
 
 `VitaminSetting` 定义完整配置结构：
+
 - `model`：默认模型 + 插槽配置
 - `agents`：Agent 配置文件列表
 - `permissions`：权限模式 + 自定义规则
@@ -28,6 +29,7 @@
 ### 配置加载器（setting-loader.ts）
 
 `SettingLoader` 实现多源加载和深度合并：
+
 1. 从 `SettingStore` 加载基础配置
 2. 从环境变量覆盖（`VITAMIN_MODEL` 等）
 3. `deepMerge()` 递归合并（数组替换、对象递归）
@@ -38,6 +40,7 @@
 ### 配置存储（stores/）
 
 三种存储后端：
+
 - `FileSettingStore`：从 `.vitamin/setting.json` 加载
 - `RemoteSettingStore`：从 HTTP 远程加载
 - `InMemorySettingStore`：纯内存（测试用）
@@ -45,6 +48,7 @@
 ### 配置监控（setting-watcher.ts）
 
 `SettingWatcher` 使用 `fs.watch()` 监控配置文件变化：
+
 - 防抖处理（默认 300ms）
 - 文件变化 → 重新加载 → 发射 `setting:changed` 事件
 - 支持 graceful stop
@@ -52,6 +56,7 @@
 ### 迁移系统（migration.ts）
 
 `MigrationRunner` 管理版本迁移：
+
 - 注册 `Migration`（fromVersion / toVersion / transform）
 - 按 semver 排序依次执行
 - 支持跨多版本链式迁移
@@ -61,6 +66,7 @@
 #### Agent Profiles（presets/agents.ts）
 
 8 个内置 Agent 配置：
+
 - `default` / `thinking` / `compact` / `review` / `plan` / `vision` / `critique` / `sub-agent`
 
 #### 模型定义（presets/models.ts）
@@ -100,20 +106,20 @@ VitaminApp 初始化
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | VitaminSetting / AgentProfile / PermissionConfig 等类型 |
-| `src/setting-loader.ts` | 多源加载 + 深度合并 + 校验 |
-| `src/setting-watcher.ts` | 文件监控 + 防抖 |
-| `src/migration.ts` | 版本迁移系统 |
-| `src/deep-merge.ts` | 递归深度合并 |
-| `src/stores/file-setting-store.ts` | 文件存储 |
-| `src/stores/remote-setting-store.ts` | 远程存储 |
-| `src/stores/in-memory-setting-store.ts` | 内存存储 |
-| `src/presets/agents.ts` | 8 个内置 Agent Profile |
-| `src/presets/models.ts` | 9 个 Copilot 模型 |
-| `src/presets/task-profiles.ts` | 任务映射 |
-| `src/index.ts` | barrel 导出 |
+| 文件                                    | 职责                                                    |
+| --------------------------------------- | ------------------------------------------------------- |
+| `src/types.ts`                          | VitaminSetting / AgentProfile / PermissionConfig 等类型 |
+| `src/setting-loader.ts`                 | 多源加载 + 深度合并 + 校验                              |
+| `src/setting-watcher.ts`                | 文件监控 + 防抖                                         |
+| `src/migration.ts`                      | 版本迁移系统                                            |
+| `src/deep-merge.ts`                     | 递归深度合并                                            |
+| `src/stores/file-setting-store.ts`      | 文件存储                                                |
+| `src/stores/remote-setting-store.ts`    | 远程存储                                                |
+| `src/stores/in-memory-setting-store.ts` | 内存存储                                                |
+| `src/presets/agents.ts`                 | 8 个内置 Agent Profile                                  |
+| `src/presets/models.ts`                 | 9 个 Copilot 模型                                       |
+| `src/presets/task-profiles.ts`          | 任务映射                                                |
+| `src/index.ts`                          | barrel 导出                                             |
 
 ## 入口与依赖
 

@@ -1,6 +1,9 @@
 {
   "name": "@vitamin/service",
   "version": "0.0.1",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,9 +13,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "scripts": {
     "build": "tsdown",
     "typecheck": "tsc --noEmit",
@@ -22,17 +26,13 @@
     "@hono/node-server": "1.19.13",
     "@vitamin/agent": "workspace:*",
     "@vitamin/ai": "workspace:*",
+    "@vitamin/coding": "workspace:*",
     "@vitamin/devtools": "workspace:*",
     "@vitamin/shared": "workspace:*",
-    "@vitamin/coding": "workspace:*",
     "hono": "4.12.12",
     "ws": "8.20.0"
   },
   "devDependencies": {
     "@types/ws": "8.18.1"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
   }
 }

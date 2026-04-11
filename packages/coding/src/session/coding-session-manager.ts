@@ -4,11 +4,7 @@ import {
   FileSessionPersistence,
   RemoteSessionPersistence,
 } from '@vitamin/session'
-import {
-  SESSION_MAX,
-  SESSION_IDLE_TIMEOUT_MS,
-  SESSION_SNAPSHOT_VERSION,
-} from '@vitamin/env'
+import { SESSION_MAX, SESSION_IDLE_TIMEOUT_MS, SESSION_SNAPSHOT_VERSION } from '@vitamin/env'
 import { stream as aiStream, type ProviderRegistry } from '@vitamin/ai'
 import type { AgentMessage, StreamFunction } from '@vitamin/agent'
 import { type HookRegistry } from '@vitamin/hooks'
@@ -84,10 +80,7 @@ export class CodingSessionManager {
   // restore / restoreAll 路径使用的配置工厂（非静态快照）
   private readonly configProvider?: () => ResolvedSessionConfig
 
-  constructor(
-    options: CodingSessionManagerOptions,
-    persistence: SessionPersistence<AgentMessage>,
-  ) {
+  constructor(options: CodingSessionManagerOptions, persistence: SessionPersistence<AgentMessage>) {
     this.stream = makeStream(options.providerRegistry)
     this.hookRegistry = options.hookRegistry
     this.logger = options.logger
@@ -98,16 +91,11 @@ export class CodingSessionManager {
     const resolvedMax = options.maxSessions ?? SESSION_MAX
     this.maxSessions = resolvedMax
     this.idleTimeoutMs = options.idleTimeoutMs ?? SESSION_IDLE_TIMEOUT_MS
-    this.threshold = Math.max(
-      0,
-      Math.min(options.threshold ?? resolvedMax, resolvedMax),
-    )
+    this.threshold = Math.max(0, Math.min(options.threshold ?? resolvedMax, resolvedMax))
   }
 
   get active(): AgentSession | undefined {
-    return this.activeSessionId
-      ? this.sessions.get(this.activeSessionId)
-      : undefined
+    return this.activeSessionId ? this.sessions.get(this.activeSessionId) : undefined
   }
 
   setActive(id: string): AgentSession | undefined {
@@ -142,9 +130,7 @@ export class CodingSessionManager {
    * 使用由 VitaminApp 完整解析好的配置创建 session。
    * Manager 层不再进行任何业务默认值填充。
    */
-  async createSession(
-    config: ResolvedSessionConfig & { id?: string },
-  ): Promise<AgentSession> {
+  async createSession(config: ResolvedSessionConfig & { id?: string }): Promise<AgentSession> {
     const id = config.id ?? crypto.randomUUID()
 
     if (this.sessions.has(id)) {
@@ -209,10 +195,7 @@ export class CodingSessionManager {
    * fork 直接复用 source session 自身的已解析配置，
    * 消息通过复制 snapshot entries 完整迁移。
    */
-  async forkSession(
-    sourceId: string,
-    newId?: string,
-  ): Promise<AgentSession | undefined> {
+  async forkSession(sourceId: string, newId?: string): Promise<AgentSession | undefined> {
     const sourceSession = this.sessions.get(sourceId)
     const sourceConfig = this.configs.get(sourceId)
     if (!sourceSession || !sourceConfig) return undefined
@@ -224,11 +207,7 @@ export class CodingSessionManager {
     this.prepareCapacity(id)
 
     const snapshot = sourceRaw.toSnapshot()
-    const forkedRaw = new InMemorySession<AgentMessage>(
-      id,
-      sourceId,
-      snapshot.entries.length,
-    )
+    const forkedRaw = new InMemorySession<AgentMessage>(id, sourceId, snapshot.entries.length)
     forkedRaw.restoreEntries(
       [...snapshot.entries],
       {
@@ -244,10 +223,7 @@ export class CodingSessionManager {
 
     const forkedConfig: ResolvedSessionConfig = {
       model: sourceSession.model,
-      agentName:
-        sourceSession.agentName !== 'agent'
-          ? sourceSession.agentName
-          : undefined,
+      agentName: sourceSession.agentName !== 'agent' ? sourceSession.agentName : undefined,
       systemPrompt: sourceSession.systemPrompt,
       tools: sourceSession.tools,
       thinkingLevel: sourceSession.thinkingLevel,
@@ -299,17 +275,11 @@ export class CodingSessionManager {
     if (!snapshot) return null
 
     if (!this.canAccommodate(id)) {
-      throw new Error(
-        `Max sessions (${this.maxSessions}) reached, cannot restore ${id}.`,
-      )
+      throw new Error(`Max sessions (${this.maxSessions}) reached, cannot restore ${id}.`)
     }
 
     const rawSession = new InMemorySession<AgentMessage>(snapshot.id)
-    rawSession.restoreEntries(
-      snapshot.entries,
-      snapshot.metadata,
-      snapshot.leafId,
-    )
+    rawSession.restoreEntries(snapshot.entries, snapshot.metadata, snapshot.leafId)
 
     const config = this.configProvider()
     const agentSession = this.buildAgentSession(rawSession, config)
@@ -339,11 +309,7 @@ export class CodingSessionManager {
       if (!this.canAccommodate(id)) break
 
       const rawSession = new InMemorySession<AgentMessage>(snapshot.id)
-      rawSession.restoreEntries(
-        snapshot.entries,
-        snapshot.metadata,
-        snapshot.leafId,
-      )
+      rawSession.restoreEntries(snapshot.entries, snapshot.metadata, snapshot.leafId)
 
       const config = this.configProvider()
       const agentSession = this.buildAgentSession(rawSession, config)
@@ -437,9 +403,7 @@ export function createRemoteCodingSessionManager(
   const persistence = new RemoteSessionPersistence<AgentMessage>({
     baseUrl: sessionUrl,
     fetch() {
-      throw new Error(
-        'Fetch implementation is required for RemoteSessionPersistence',
-      )
+      throw new Error('Fetch implementation is required for RemoteSessionPersistence')
     },
     getAuth: async () => ({ token: '' }),
     timeoutMs: 30_000,

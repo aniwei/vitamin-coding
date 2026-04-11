@@ -1,6 +1,10 @@
 {
   "name": "@vitamin/prompt",
   "version": "0.0.1",
+  "files": [
+    "dist",
+    "prompts"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,10 +14,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist",
-    "prompts"
-  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "scripts": {
     "build": "tsdown",
     "typecheck:project": "tsc -p tsconfig.json --noEmit",
@@ -23,9 +27,5 @@
   },
   "dependencies": {
     "@vitamin/shared": "workspace:*"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
   }
 }

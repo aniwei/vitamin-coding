@@ -1,11 +1,7 @@
 {
   "lessons": [
     {
-      "tags": [
-        "error_handling",
-        "web_scraping",
-        "user_support"
-      ],
+      "tags": ["error_handling", "web_scraping", "user_support"],
       "trigger": "Encountering a failed fetch while trying to access the Shenzhen weather webpage during a user query",
       "insight": "When fetching weather data from an official site fails, always provide the user with the direct link to the source as an alternative.",
       "sourceSessionId": "",
