@@ -56,7 +56,7 @@ const SwitchCredentialInLoadBalancing = ({
     const Item = (
       <Button
         variant="secondary"
-        className={cn(
+        className={clsx(
           'shrink-0 space-x-1',
           (authRemoved || unavailable) && 'text-components-button-destructive-secondary-text',
           empty && 'cursor-not-allowed opacity-50',

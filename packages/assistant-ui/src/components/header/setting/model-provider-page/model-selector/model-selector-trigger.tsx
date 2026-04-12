@@ -74,7 +74,7 @@ const ModelSelectorTrigger: FC<ModelSelectorTriggerProps> = ({
 
   return (
     <div
-      className={cn(
+      className={clsx(
         'group flex h-8 items-center gap-0.5 rounded-lg p-1',
         isDisabled
           ? 'bg-components-input-bg-disabled'
@@ -100,7 +100,7 @@ const ModelSelectorTrigger: FC<ModelSelectorTriggerProps> = ({
             />
           )}
 
-      <div className={cn('flex grow items-center gap-1 truncate px-1 py-[3px]', isDeprecated && deprecatedClassName)}>
+      <div className={clsx('flex grow items-center gap-1 truncate px-1 py-[3px]', isDeprecated && deprecatedClassName)}>
         {isSelected && (
           <ModelName
             className="grow"
@@ -126,7 +126,7 @@ const ModelSelectorTrigger: FC<ModelSelectorTriggerProps> = ({
               disabled={!tooltipLabel}
               render={(
                 <div
-                  className={cn(
+                  className={clsx(
                     'flex shrink-0 items-center gap-[3px] rounded-md border border-text-warning px-[5px] py-0.5',
                     isCreditsExhausted && 'min-w-[20px] justify-center bg-components-badge-bg-dimm',
                   )}

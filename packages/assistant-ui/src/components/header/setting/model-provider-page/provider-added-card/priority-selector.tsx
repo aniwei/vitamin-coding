@@ -35,7 +35,7 @@ const Selector: FC<SelectorProps> = ({
       <PopoverButton as="div">
         {
           ({ open }) => (
-            <Button className={cn(
+            <Button className={clsx(
               'h-6 w-6 rounded-md px-0',
               open && 'bg-components-button-secondary-bg-hover',
             )}

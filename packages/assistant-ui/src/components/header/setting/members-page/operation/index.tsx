@@ -76,13 +76,13 @@ const Operation = ({ member, operatorRole, onOperate }: IOperationProps) => {
   return (
     <PortalToFollowElem open={open} onOpenChange={setOpen} placement="bottom-end" offset={{ mainAxis: 4 }}>
       <PortalToFollowElemTrigger asChild onClick={() => setOpen(prev => !prev)}>
-        <div className={cn('group flex h-full w-full cursor-pointer items-center justify-between px-3 text-text-secondary system-sm-regular hover:bg-state-base-hover', open && 'bg-state-base-hover')}>
+        <div className={clsx('group flex h-full w-full cursor-pointer items-center justify-between px-3 text-text-secondary system-sm-regular hover:bg-state-base-hover', open && 'bg-state-base-hover')}>
           {RoleMap[member.role] || RoleMap.normal}
-          <ChevronDownIcon className={cn('h-4 w-4 shrink-0 group-hover:block', open ? 'block' : 'hidden')} />
+          <ChevronDownIcon className={clsx('h-4 w-4 shrink-0 group-hover:block', open ? 'block' : 'hidden')} />
         </div>
       </PortalToFollowElemTrigger>
       <PortalToFollowElemContent className="z-1002">
-        <div className={cn('inline-flex flex-col rounded-xl border-[0.5px] border-components-panel-border bg-components-panel-bg-blur shadow-lg backdrop-blur-xs')}>
+        <div className={clsx('inline-flex flex-col rounded-xl border-[0.5px] border-components-panel-border bg-components-panel-bg-blur shadow-lg backdrop-blur-xs')}>
           <div className="p-1">
             {roleList.map(role => (
               <div key={role} className="flex cursor-pointer rounded-lg px-3 py-2 hover:bg-state-base-hover" onClick={() => handleUpdateMemberRole(role)}>

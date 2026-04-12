@@ -74,7 +74,7 @@ const AgentModelTrigger: FC<AgentModelTriggerProps> = ({
 
   return (
     <div
-      className={cn(
+      className={clsx(
         'group relative flex grow cursor-pointer items-center gap-[2px] rounded-lg bg-components-input-bg-normal p-1 hover:bg-state-base-hover-alt',
       )}
     >

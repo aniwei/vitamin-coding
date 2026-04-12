@@ -252,7 +252,7 @@ function ParameterItem({
 
       return (
         <input
-          className={cn(isInWorkflow ? 'w-[150px]' : 'w-full', 'ml-4 flex h-8 appearance-none items-center rounded-lg bg-components-input-bg-normal px-3 text-components-input-text-filled outline-hidden system-sm-regular')}
+          className={clsx(isInWorkflow ? 'w-[150px]' : 'w-full', 'ml-4 flex h-8 appearance-none items-center rounded-lg bg-components-input-bg-normal px-3 text-components-input-text-filled outline-hidden system-sm-regular')}
           value={renderValue as string}
           onChange={handleStringInputChange}
         />
@@ -308,7 +308,7 @@ function ParameterItem({
 
     if (parameterRule.type === 'tag') {
       return (
-        <div className={cn('h-8! w-full')}>
+        <div className={clsx('h-8! w-full')}>
           <TagInput
             items={renderValue as string[]}
             onChange={handleTagChange}
@@ -326,7 +326,7 @@ function ParameterItem({
   return (
     <div className="mb-2 flex items-center justify-between">
       <div className="shrink-0 basis-1/2">
-        <div className={cn('flex w-full shrink-0 items-center')}>
+        <div className={clsx('flex w-full shrink-0 items-center')}>
           {
             !parameterRule.required && parameterRule.name !== 'stop' && (
               <div className="mr-2 w-7">
@@ -363,7 +363,7 @@ function ParameterItem({
         </div>
         {
           parameterRule.type === 'tag' && (
-            <div className={cn(!isInWorkflow && 'w-[150px]', 'text-text-tertiary system-xs-regular')}>
+            <div className={clsx(!isInWorkflow && 'w-[150px]', 'text-text-tertiary system-xs-regular')}>
               {parameterRule?.tagPlaceholder?.[language]}
             </div>
           )

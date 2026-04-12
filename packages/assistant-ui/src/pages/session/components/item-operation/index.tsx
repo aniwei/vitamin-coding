@@ -10,7 +10,7 @@ import { clsx } from 'clsx'
 import { Pin02 } from '@/components/icons/src/vender/line/general'
 import * as React from 'react'
 import type { FC } from 'react'
-import s from './style.module.css'
+import s from './index.module.css'
 
 interface ItemOperationProps {
   className?: string

@@ -1,3 +1,4 @@
+import CustomEdgeLinearGradientRender from './custom-edge-linear-gradient-render'
 import {
   memo,
   useMemo,
@@ -7,7 +8,6 @@ import {
   getBezierPath,
   Position,
 } from 'reactflow'
-import CustomEdgeLinearGradientRender from './custom-edge-linear-gradient-render'
 import { NodeRunningStatus, ErrorHandleTypeEnum } from '../types'
 import type { EdgeProps } from 'reactflow'
 

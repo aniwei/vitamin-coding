@@ -8,8 +8,8 @@
 
 /* @import '../components/action-button/index.css'; */
 /* @import '../components/badge/index.css'; */
-@import '../components/button/index.css';
-@import '../components/modal/index.css' layer(base);
+@import '../components/button/index.module.css';
+@import '../components/modal/index.module.css' layer(base);
 /* @import '../components/premium-badge/index.css'; */
 /* @import '../components/segmented-control/index.css'; */
 

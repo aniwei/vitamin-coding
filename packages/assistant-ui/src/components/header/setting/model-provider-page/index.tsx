@@ -131,9 +131,9 @@ const ModelProviderPage = ({ searchText }: Props) => {
 
   return (
     <div className="relative -mt-2 pt-1">
-      <div className={cn('mb-2 flex items-center')}>
+      <div className={clsx('mb-2 flex items-center')}>
         <div className="grow text-text-primary system-md-semibold">{t('modelProvider.models', { ns: 'common' })}</div>
-        <div className={cn(
+        <div className={clsx(
           'relative flex shrink-0 items-center justify-end gap-2 rounded-lg border border-transparent p-px',
           showWarning && 'border-components-panel-border bg-components-panel-bg-blur pl-2 shadow-xs',
         )}

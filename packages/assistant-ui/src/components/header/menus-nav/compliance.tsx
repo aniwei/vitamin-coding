@@ -47,7 +47,7 @@ function ComplianceDocActionVisual({
       <div
         aria-hidden
         data-disabled={isPending || undefined}
-        className={cn(
+        className={clsx(
           'btn btn-small btn-secondary pointer-events-none flex items-center gap-px',
           isPending && 'cursor-not-allowed',
         )}

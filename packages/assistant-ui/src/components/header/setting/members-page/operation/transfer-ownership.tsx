@@ -34,9 +34,9 @@ const TransferOwnership = ({ onOperate }: Props) => {
       {
         ({ open }) => (
           <>
-            <MenuButton className={cn('system-sm-regular group flex h-full w-full cursor-pointer items-center justify-between px-3 text-text-secondary hover:bg-state-base-hover', open && 'bg-state-base-hover')}>
+            <MenuButton className={clsx('system-sm-regular group flex h-full w-full cursor-pointer items-center justify-between px-3 text-text-secondary hover:bg-state-base-hover', open && 'bg-state-base-hover')}>
               {t('members.owner', { ns: 'common' })}
-              <RiArrowDownSLine className={cn('h-4 w-4 group-hover:block', open ? 'block' : 'hidden')} />
+              <RiArrowDownSLine className={clsx('h-4 w-4 group-hover:block', open ? 'block' : 'hidden')} />
             </MenuButton>
             <Transition
               as={Fragment}
@@ -48,7 +48,7 @@ const TransferOwnership = ({ onOperate }: Props) => {
               leaveTo="transform opacity-0 scale-95"
             >
               <MenuItems
-                className={cn('absolute right-0 top-[52px] z-10 origin-top-right rounded-xl border-[0.5px] border-components-panel-border bg-components-panel-bg-blur shadow-lg backdrop-blur-xs')}
+                className={clsx('absolute right-0 top-[52px] z-10 origin-top-right rounded-xl border-[0.5px] border-components-panel-border bg-components-panel-bg-blur shadow-lg backdrop-blur-xs')}
               >
                 <div className="p-1">
                   <MenuItem>

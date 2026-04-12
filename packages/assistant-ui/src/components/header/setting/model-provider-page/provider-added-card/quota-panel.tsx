@@ -88,14 +88,14 @@ const QuotaPanel: FC<QuotaPanelProps> = ({
   }
 
   return (
-    <div className={cn(
+    <div className={clsx(
       'relative my-2 min-w-[72px] shrink-0 overflow-hidden rounded-xl border-[0.5px] pb-2.5 pl-4 pr-2.5 pt-3 shadow-xs',
       isExhausted
         ? 'border-state-destructive-border hover:bg-state-destructive-hover'
         : 'border-components-panel-border bg-third-party-model-bg-default',
     )}
     >
-      <div className={cn('pointer-events-none absolute inset-0', styles.gridBg)} />
+      <div className={clsx('pointer-events-none absolute inset-0', styles.gridBg)} />
       <div className="relative">
         <div className="mb-2 flex h-4 items-center text-text-tertiary system-xs-medium-uppercase">
           {t('modelProvider.quota', { ns: 'common' })}
@@ -153,7 +153,7 @@ const QuotaPanel: FC<QuotaPanelProps> = ({
                     delay={0}
                     render={(
                       <div
-                        className={cn('relative h-6 w-6', !providerType && 'cursor-pointer hover:opacity-80')}
+                        className={clsx('relative h-6 w-6', !providerType && 'cursor-pointer hover:opacity-80')}
                         onClick={() => handleIconClick(key)}
                       >
                         <Icon className="h-6 w-6 rounded-lg" />

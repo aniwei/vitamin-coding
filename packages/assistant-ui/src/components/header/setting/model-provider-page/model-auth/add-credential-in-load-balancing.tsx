@@ -46,7 +46,7 @@ const AddCredentialInLoadBalancing = ({
 
   const renderTrigger = useCallback((open?: boolean) => {
     const Item = (
-      <div className={cn(
+      <div className={clsx(
         'system-sm-medium flex h-8 items-center rounded-lg px-3 text-text-accent hover:bg-state-base-hover',
         open && 'bg-state-base-hover',
       )}

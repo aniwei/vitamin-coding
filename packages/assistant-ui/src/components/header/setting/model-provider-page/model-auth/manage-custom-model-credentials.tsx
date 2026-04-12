@@ -37,7 +37,7 @@ const ManageCustomModelCredentials = ({
       <Button
         variant="ghost"
         size="small"
-        className={cn(
+        className={clsx(
           'mr-0.5 text-text-tertiary',
           open && 'bg-components-button-ghost-bg-hover',
         )}

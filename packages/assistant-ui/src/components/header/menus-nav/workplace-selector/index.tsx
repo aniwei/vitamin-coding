@@ -47,7 +47,7 @@ const WorkplaceSelector = () => {
           <Transition as={Fragment} enter="transition ease-out duration-100" enterFrom="transform opacity-0 scale-95" enterTo="transform opacity-100 scale-100" leave="transition ease-in duration-75" leaveFrom="transform opacity-100 scale-100" leaveTo="transform opacity-0 scale-95">
             <MenuItems
               anchor="bottom start"
-              className={cn(`
+              className={clsx(`
                     shadows-shadow-lg absolute left-[-15px] z-[1000] mt-1 flex max-h-[400px] w-[280px] flex-col items-start overflow-y-auto
                     rounded-xl bg-components-panel-bg-blur backdrop-blur-[5px]
                   `)}

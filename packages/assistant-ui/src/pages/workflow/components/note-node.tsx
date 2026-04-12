@@ -2,18 +2,18 @@ import {
   memo,
   useRef,
 } from 'react'
-import { THEME_MAP } from '@/app/components/workflow/note-node/constants'
+import { THEME_MAP } from '../constants'
 import {
   NoteEditor,
   NoteEditorContextProvider,
-} from '@/app/components/workflow/note-node/note-editor'
+} from './note-editor'
 import { clsx } from 'clsx'
 import type { NodeProps } from 'reactflow'
-import type { NoteNodeType } from '@/app/components/workflow/note-node/types'
+import type { NoteNodeType } from '../types'
 
-const NoteNode = ({
-  data,
-}: NodeProps<NoteNodeType>) => {
+const NoteNode: React.FC<NodeProps<NoteNodeType>> = memo(({
+  data
+}) => {
   const ref = useRef<HTMLDivElement | null>(null)
   const theme = data.theme
 
@@ -36,14 +36,14 @@ const NoteNode = ({
       >
         <>
           <div
-            className={cn(
+            className={clsx(
               'h-2 shrink-0 rounded-t-md opacity-50',
               THEME_MAP[theme].title,
             )}
           >
           </div>
           <div className="grow overflow-y-auto px-3 py-2.5">
-            <div className={cn(
+            <div className={clsx(
               data.selected && 'nodrag nopan nowheel cursor-text',
             )}
             >
@@ -64,6 +64,6 @@ const NoteNode = ({
       </NoteEditorContextProvider>
     </div>
   )
-}
+})
 
-export default memo(NoteNode)
+export default NoteNode

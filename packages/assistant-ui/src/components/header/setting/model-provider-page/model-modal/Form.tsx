@@ -160,8 +160,8 @@ function Form<
 
       const disabled = readonly || (isEditMode && (variable === '__model_type' || variable === '__model_name'))
       return (
-        <div key={variable} className={cn(itemClassName, 'py-3')}>
-          <div className={cn(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
+        <div key={variable} className={clsx(itemClassName, 'py-3')}>
+          <div className={clsx(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
             {label[language] || label.en_US}
             {required && (
               <span className="ml-1 text-red-500">*</span>
@@ -169,7 +169,7 @@ function Form<
             {tooltipContent}
           </div>
           <Input
-            className={cn(inputClassName, `${disabled && 'cursor-not-allowed opacity-60'}`)}
+            className={clsx(inputClassName, `${disabled && 'cursor-not-allowed opacity-60'}`)}
             value={(isShowDefaultValue && ((value[variable] as string) === '' || value[variable] === undefined || value[variable] === null)) ? formSchema.default : value[variable]}
             onChange={val => handleFormChange(variable, val)}
             validated={validatedSuccess}
@@ -203,8 +203,8 @@ function Form<
       const disabled = isEditMode && (variable === '__model_type' || variable === '__model_name')
 
       return (
-        <div key={variable} className={cn(itemClassName, 'py-3')}>
-          <div className={cn(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
+        <div key={variable} className={clsx(itemClassName, 'py-3')}>
+          <div className={clsx(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
             {label[language] || label.en_US}
             {required && (
               <span className="ml-1 text-red-500">*</span>
@@ -212,7 +212,7 @@ function Form<
             {tooltipContent}
           </div>
           {/* eslint-disable-next-line tailwindcss/no-unknown-classes */}
-          <div className={cn('grid gap-3', `grid-cols-${options?.length}`)}>
+          <div className={clsx('grid gap-3', `grid-cols-${options?.length}`)}>
             {options.filter((option) => {
               if (option.show_on.length)
                 return option.show_on.every(showOnItem => value[showOnItem.variable] === showOnItem.value)
@@ -254,8 +254,8 @@ function Form<
         return null
 
       return (
-        <div key={variable} className={cn(itemClassName, 'py-3')}>
-          <div className={cn(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
+        <div key={variable} className={clsx(itemClassName, 'py-3')}>
+          <div className={clsx(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
             {label[language] || label.en_US}
 
             {required && (
@@ -265,7 +265,7 @@ function Form<
           </div>
           <SimpleSelect
             wrapperClassName="h-8"
-            className={cn(inputClassName)}
+            className={clsx(inputClassName)}
             disabled={readonly}
             defaultValue={(isShowDefaultValue && ((value[variable] as string) === '' || value[variable] === undefined || value[variable] === null)) ? formSchema.default : value[variable]}
             items={options.filter((option) => {
@@ -295,10 +295,10 @@ function Form<
         return null
 
       return (
-        <div key={variable} className={cn(itemClassName, 'py-3')}>
+        <div key={variable} className={clsx(itemClassName, 'py-3')}>
           <div className="flex items-center justify-between py-2 text-text-secondary system-sm-semibold">
             <div className="flex items-center space-x-2">
-              <span className={cn(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>{label[language] || label.en_US}</span>
+              <span className={clsx(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>{label[language] || label.en_US}</span>
               {required && (
                 <span className="ml-1 text-red-500">*</span>
               )}
@@ -326,8 +326,8 @@ function Form<
         scope,
       } = formSchema as (CredentialFormSchemaTextInput | CredentialFormSchemaSecretInput)
       return (
-        <div key={variable} className={cn(itemClassName, 'py-3')}>
-          <div className={cn(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
+        <div key={variable} className={clsx(itemClassName, 'py-3')}>
+          <div className={clsx(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
             {label[language] || label.en_US}
             {required && (
               <span className="ml-1 text-red-500">*</span>
@@ -358,8 +358,8 @@ function Form<
         scope,
       } = formSchema as (CredentialFormSchemaTextInput | CredentialFormSchemaSecretInput)
       return (
-        <div key={variable} className={cn(itemClassName, 'py-3')}>
-          <div className={cn(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
+        <div key={variable} className={clsx(itemClassName, 'py-3')}>
+          <div className={clsx(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
             {label[language] || label.en_US}
             {required && (
               <span className="ml-1 text-red-500">*</span>
@@ -393,7 +393,7 @@ function Form<
       } = formSchema as (CredentialFormSchemaTextInput | CredentialFormSchemaSecretInput)
 
       return (
-        <div key={variable} className={cn(itemClassName, 'py-3')}>
+        <div key={variable} className={clsx(itemClassName, 'py-3')}>
           <MultipleToolSelector
             disabled={readonly}
             nodeId={nodeId}
@@ -422,8 +422,8 @@ function Form<
       } = formSchema as (CredentialFormSchemaTextInput | CredentialFormSchemaSecretInput)
 
       return (
-        <div key={variable} className={cn(itemClassName, 'py-3')}>
-          <div className={cn(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
+        <div key={variable} className={clsx(itemClassName, 'py-3')}>
+          <div className={clsx(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
             {label[language] || label.en_US}
             {required && (
               <span className="ml-1 text-red-500">*</span>
@@ -451,8 +451,8 @@ function Form<
       } = formSchema as (CredentialFormSchemaTextInput | CredentialFormSchemaSecretInput)
 
       return (
-        <div key={variable} className={cn(itemClassName, 'py-3')}>
-          <div className={cn(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
+        <div key={variable} className={clsx(itemClassName, 'py-3')}>
+          <div className={clsx(fieldLabelClassName, 'flex items-center py-2 text-text-secondary system-sm-semibold')}>
             {label[language] || label.en_US}
             {required && (
               <span className="ml-1 text-red-500">*</span>

@@ -141,7 +141,7 @@ const ModelLoadBalancingConfigs = ({
   return (
     <>
       <div
-        className={cn('min-h-16 rounded-xl border bg-components-panel-bg transition-colors', (withSwitch || !draftConfig.enabled) ? 'border-components-panel-border' : 'border-util-colors-blue-blue-600', (withSwitch || draftConfig.enabled) ? 'cursor-default' : 'cursor-pointer', className)}
+        className={clsx('min-h-16 rounded-xl border bg-components-panel-bg transition-colors', (withSwitch || !draftConfig.enabled) ? 'border-components-panel-border' : 'border-util-colors-blue-blue-600', (withSwitch || draftConfig.enabled) ? 'cursor-default' : 'cursor-pointer', className)}
         onClick={(!withSwitch && !draftConfig.enabled) ? () => toggleModalBalancing(true) : undefined}
         data-testid="load-balancing-main-panel"
       >
@@ -264,7 +264,7 @@ const ModelLoadBalancingConfigs = ({
         <GridMask canvasClassName="rounded-xl!">
           <div className="mt-2 flex h-14 items-center justify-between rounded-xl border-[0.5px] border-components-panel-border px-4 shadow-md">
             <div
-              className={cn('text-gradient text-sm font-semibold leading-tight', s.textGradient)}
+              className={clsx('text-gradient text-sm font-semibold leading-tight', s.textGradient)}
             >
               {t('modelProvider.upgradeForLoadBalancing', { ns: 'common' })}
             </div>

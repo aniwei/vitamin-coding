@@ -90,7 +90,7 @@ const EditWorkspaceModal = ({ onCancel }: IEditWorkspaceModalProps) => {
               }}
               aria-invalid={hasError}
               aria-describedby={hasError ? errorId : undefined}
-              className={cn(hasError && 'border-components-input-border-destructive bg-components-input-bg-destructive hover:border-components-input-border-destructive hover:bg-components-input-bg-destructive focus:border-components-input-border-destructive focus:bg-components-input-bg-destructive')}
+              className={clsx(hasError && 'border-components-input-border-destructive bg-components-input-bg-destructive hover:border-components-input-border-destructive hover:bg-components-input-bg-destructive focus:border-components-input-border-destructive focus:bg-components-input-bg-destructive')}
             />
             <div className="min-h-6">
               {hasError && (

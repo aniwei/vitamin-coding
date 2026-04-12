@@ -73,7 +73,7 @@ const AddCustomModel = ({
       <Button
         variant="ghost"
         size="small"
-        className={cn(
+        className={clsx(
           'text-text-tertiary',
           open && 'bg-components-button-ghost-bg-hover',
           notAllowCustomCredential && !!noModels && 'cursor-not-allowed opacity-50',

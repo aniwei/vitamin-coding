@@ -1,5 +1,5 @@
 import type { NodeProps } from 'reactflow'
-import BaseNode from './base'
+// import BaseNode from './base'
 import { NodeComponentMap } from './constants'
 
 const CustomNode = (props: NodeProps) => {
@@ -8,9 +8,9 @@ const CustomNode = (props: NodeProps) => {
 
   return (
     <>
-      <BaseNode {...props}>
+      {/* <BaseNode {...props}> */}
         { NodeComponent && <NodeComponent /> }
-      </BaseNode>
+      {/* </BaseNode> */}
     </>
   )
 }

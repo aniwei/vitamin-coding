@@ -38,7 +38,7 @@ export default function IntegrationsPage() {
               return null
             return (
               <div key={integrate.provider} className="mb-2 flex items-center rounded-lg border-[0.5px] border-gray-200 bg-gray-50 px-3 py-2">
-                <div className={cn('mr-3 h-8 w-8 rounded-lg border border-gray-100 bg-white', s[`${integrate.provider}-icon`])} />
+                <div className={clsx('mr-3 h-8 w-8 rounded-lg border border-gray-100 bg-white', s[`${integrate.provider}-icon`])} />
                 <div className="grow">
                   <div className="text-sm font-medium leading-[21px] text-gray-800">{info.name}</div>
                   <div className="text-xs font-normal leading-[18px] text-gray-500">{info.description}</div>

@@ -7,10 +7,7 @@ const Workflow = lazy(() => import('@/pages/workflow'))
 const Tools = lazy(() => import('@/pages/tools'))
 
 export const router = createBrowserRouter([
-  {
-    path: '/',
-    element: <Navigate to="/session" replace />,
-  },
+  { path: '/', element: <Navigate to="/session" replace /> },
   {
     element: <CommonLayout />,
     children: [

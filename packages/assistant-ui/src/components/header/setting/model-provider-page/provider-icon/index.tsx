@@ -21,7 +21,7 @@ const ProviderIcon: FC<ProviderIconProps> = ({
 
   if (provider.provider === 'langgenius/anthropic/anthropic') {
     return (
-      <div className={cn('py-[7px]', className)}>
+      <div className={clsx('py-[7px]', className)}>
         {theme === Theme.dark && <AnthropicLight className="h-2.5 w-[90px]" />}
         {theme === Theme.light && <AnthropicDark className="h-2.5 w-[90px]" />}
       </div>
@@ -37,7 +37,7 @@ const ProviderIcon: FC<ProviderIconProps> = ({
   }
 
   return (
-    <div className={cn('inline-flex items-center gap-2', className)}>
+    <div className={clsx('inline-flex items-center gap-2', className)}>
       <img
         alt="provider-icon"
         src={renderI18nObject(

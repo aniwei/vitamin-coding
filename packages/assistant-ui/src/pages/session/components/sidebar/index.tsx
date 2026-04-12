@@ -4,13 +4,13 @@ import NoApps from './no-session'
 import { useBoolean } from 'ahooks'
 import { useState } from 'react'
 import {
-  AlertDialog,
-  AlertDialogActions,
-  AlertDialogCancelButton,
-  AlertDialogConfirmButton,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogTitle,
+  Alert,
+  AlertActions,
+  AlertCancelButton,
+  AlertConfirmButton,
+  AlertContent,
+  AlertDescription,
+  AlertTitle,
 } from '@/components/ui/alert'
 import { ScrollArea } from '@/components/ui/scroll-area'
 import { toast } from '@/components/ui/toast'
@@ -136,22 +136,22 @@ export const SideBar = () => {
       </div>
       
 
-      <AlertDialog open={showConfirm} onOpenChange={setShowConfirm}>
-        <AlertDialogContent>
+      <Alert open={showConfirm} onOpenChange={setShowConfirm}>
+        <AlertContent>
           <div className="flex flex-col items-start gap-2 self-stretch pb-4 pl-6 pr-6 pt-6">
-            <AlertDialogTitle className="w-full text-text-primary title-2xl-semi-bold">
+            <AlertTitle className="w-full text-text-primary title-2xl-semi-bold">
               ...
-            </AlertDialogTitle>
-            <AlertDialogDescription className="w-full whitespace-pre-wrap wrap-break-word text-text-tertiary system-md-regular">
+            </AlertTitle>
+            <AlertDescription className="w-full whitespace-pre-wrap wrap-break-word text-text-tertiary system-md-regular">
               ...
-            </AlertDialogDescription>
+            </AlertDescription>
           </div>
-          <AlertDialogActions>
-            <AlertDialogCancelButton>Cancel</AlertDialogCancelButton>
-            <AlertDialogConfirmButton onClick={onDelete}>Confirm</AlertDialogConfirmButton>
-          </AlertDialogActions>
-        </AlertDialogContent>
-      </AlertDialog>
+          <AlertActions>
+            <AlertCancelButton>Cancel</AlertCancelButton>
+            <AlertConfirmButton onClick={onDelete}>Confirm</AlertConfirmButton>
+          </AlertActions>
+        </AlertContent>
+      </Alert>
     </div>
   )
 }

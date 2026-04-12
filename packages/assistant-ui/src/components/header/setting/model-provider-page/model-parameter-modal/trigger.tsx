@@ -50,7 +50,7 @@ const Trigger: FC<TriggerProps> = ({
   if (status === 'empty') {
     return (
       <div
-        className={cn(
+        className={clsx(
           'relative flex h-8 min-w-[296px] cursor-pointer items-center rounded-lg px-2',
           isInWorkflow
             ? 'border border-text-warning bg-state-warning-hover pr-[30px]'
@@ -65,14 +65,14 @@ const Trigger: FC<TriggerProps> = ({
         <div className="mr-1 flex-1 truncate text-[13px] font-normal text-text-secondary">
           {t('workflow:errorMsg.configureModel')}
         </div>
-        <span className={cn('i-ri-arrow-down-s-line h-4 w-4 shrink-0 text-text-tertiary', isInWorkflow && 'absolute right-2 top-[9px] h-3.5 w-3.5')} />
+        <span className={clsx('i-ri-arrow-down-s-line h-4 w-4 shrink-0 text-text-tertiary', isInWorkflow && 'absolute right-2 top-[9px] h-3.5 w-3.5')} />
       </div>
     )
   }
 
   return (
     <div className="flex h-8 min-w-[296px] cursor-pointer items-center gap-px overflow-hidden rounded-lg">
-      <div className={cn('flex flex-1 items-center gap-0.5 rounded-l-lg p-1', isInWorkflow ? 'border border-workflow-block-parma-bg bg-workflow-block-parma-bg' : 'bg-components-input-bg-normal')}>
+      <div className={clsx('flex flex-1 items-center gap-0.5 rounded-l-lg p-1', isInWorkflow ? 'border border-workflow-block-parma-bg bg-workflow-block-parma-bg' : 'bg-components-input-bg-normal')}>
         <ModelIcon
           className="p-0.5"
           provider={iconProvider}
@@ -128,7 +128,7 @@ const Trigger: FC<TriggerProps> = ({
           </div>
         )}
       </div>
-      <div ref={settingsRef} className={cn('flex shrink-0 items-center justify-center rounded-r-lg p-2', isInWorkflow ? 'border border-workflow-block-parma-bg bg-workflow-block-parma-bg' : 'bg-components-button-tertiary-bg')}>
+      <div ref={settingsRef} className={clsx('flex shrink-0 items-center justify-center rounded-r-lg p-2', isInWorkflow ? 'border border-workflow-block-parma-bg bg-workflow-block-parma-bg' : 'bg-components-button-tertiary-bg')}>
         <span className="i-ri-equalizer-2-line h-4 w-4 text-text-tertiary" />
       </div>
     </div>

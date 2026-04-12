@@ -3,8 +3,46 @@ import type {
   Node as ReactFlowNode
 } from 'reactflow'
 
-export type Node<T = {}> = ReactFlowNode<any>
-export type Edge = ReactFlowEdge<any>
+export interface CommonNode<T = {}> {
+  isInIteration?: boolean
+  iteration_id?: string
+  selected?: boolean
+  title: string
+  desc: string
+  type: BlockEnum
+  width?: number
+  height?: number
+  // position?: XYPosition
+  isInLoop?: boolean
+  loop_id?: string
+  error_strategy?: ErrorHandleTypeEnum
+  // retry_config?: WorkflowRetryConfig
+  // default_value?: DefaultValueForm[]
+  credential_id?: string
+  subscription_id?: string
+  provider_id?: string
+}
+
+export interface CommonEdge {
+  isInIteration?: boolean
+  iteration_id?: string
+  isInLoop?: boolean
+  loop_id?: string
+  sourceType: BlockEnum
+  targetType: BlockEnum
+}
+
+export type Node<T = {}> = ReactFlowNode<CommonNode<T>>
+export type Edge = ReactFlowEdge<CommonEdge>
+
+export enum NoteTheme {
+  Blue = 'blue',
+  Cyan = 'cyan',
+  Green = 'green',
+  Yellow = 'yellow',
+  Pink = 'pink',
+  Violet = 'violet',
+}
 
 export enum ErrorHandleTypeEnum {
   None = 'none',
@@ -56,4 +94,14 @@ export enum BlockEnum {
   TriggerSchedule = 'trigger-schedule',
   TriggerWebhook = 'trigger-webhook',
   TriggerPlugin = 'trigger-plugin',
+}
+
+export interface NoteNodeType  {
+  text: string
+  theme: NoteTheme
+  author: string
+  showAuthor: boolean
+  selected?: boolean
+  width?: number
+  height?: number
 }

@@ -28,12 +28,12 @@ const SystemQuotaCard = ({
 }: SystemQuotaCardProps) => {
   return (
     <VariantContext.Provider value={variant}>
-      <div className={cn(
+      <div className={clsx(
         'relative isolate ml-1 flex w-[128px] shrink-0 flex-col justify-between rounded-lg border-[0.5px] p-1 shadow-xs',
         containerVariants[variant],
       )}
       >
-        <div className={cn('pointer-events-none absolute inset-0 rounded-[7px]', styles.gridBg)} />
+        <div className={clsx('pointer-events-none absolute inset-0 rounded-[7px]', styles.gridBg)} />
         {children}
       </div>
     </VariantContext.Provider>
@@ -43,7 +43,7 @@ const SystemQuotaCard = ({
 const Label = ({ children, className }: { children: ReactNode, className?: string }) => {
   const variant = use(VariantContext)
   return (
-    <div className={cn(
+    <div className={clsx(
       'relative z-1 flex items-center gap-1 truncate px-1.5 pt-1 system-xs-medium',
       className ?? labelVariants[variant],
     )}

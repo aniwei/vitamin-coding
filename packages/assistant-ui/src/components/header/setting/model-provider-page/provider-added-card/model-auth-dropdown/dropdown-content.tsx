@@ -1,15 +1,14 @@
 import type { Credential, ModelProvider, PreferredProviderTypeEnum } from '../../declarations'
 import type { CredentialPanelState } from '../use-credential-panel-state'
 import { memo, useCallback } from 'react'
-import { useTranslation } from 'react-i18next'
 import {
-  AlertDialog,
-  AlertDialogActions,
-  AlertDialogCancelButton,
-  AlertDialogConfirmButton,
-  AlertDialogContent,
-  AlertDialogDescription,
-  AlertDialogTitle,
+  Alert,
+  AlertActions,
+  AlertCancelButton,
+  AlertConfirmButton,
+  AlertContent,
+  AlertDescription,
+  AlertTitle,
 } from '@/components/ui/alert'
 import { ConfigurationMethodEnum } from '../../declarations'
 import { useAuth } from '../../model-auth/hooks'
@@ -100,30 +99,30 @@ function DropdownContent({
           onAdd={handleAdd}
         />
       </div>
-      <AlertDialog
+      <Alert
         open={!!deleteCredentialId}
         onOpenChange={(open) => {
           if (!open)
             closeConfirmDelete()
         }}
       >
-        <AlertDialogContent>
+        <AlertContent>
           <div className="p-6 pb-0">
-            <AlertDialogTitle className="text-text-primary system-xl-semibold">
+            <AlertTitle className="text-text-primary system-xl-semibold">
               {t('modelProvider.confirmDelete', { ns: 'common' })}
-            </AlertDialogTitle>
-            <AlertDialogDescription className="mt-1 text-text-secondary system-sm-regular" />
+            </AlertTitle>
+            <AlertDescription className="mt-1 text-text-secondary system-sm-regular" />
           </div>
-          <AlertDialogActions>
-            <AlertDialogCancelButton disabled={doingAction}>
+          <AlertActions>
+            <AlertCancelButton disabled={doingAction}>
               {t('operation.cancel', { ns: 'common' })}
-            </AlertDialogCancelButton>
-            <AlertDialogConfirmButton disabled={doingAction} onClick={handleConfirmDelete}>
+            </AlertCancelButton>
+            <AlertConfirmButton disabled={doingAction} onClick={handleConfirmDelete}>
               {t('operation.delete', { ns: 'common' })}
-            </AlertDialogConfirmButton>
-          </AlertDialogActions>
-        </AlertDialogContent>
-      </AlertDialog>
+            </AlertConfirmButton>
+          </AlertActions>
+        </AlertContent>
+      </Alert>
     </>
   )
 }

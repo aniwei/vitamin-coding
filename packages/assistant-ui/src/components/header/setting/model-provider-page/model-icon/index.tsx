@@ -28,11 +28,11 @@ const ModelIcon: FC<ModelIconProps> = ({
   const { theme } = useTheme()
   const language = useLanguage()
   if (provider?.provider && ['openai', 'langgenius/openai/openai'].includes(provider.provider) && modelName?.startsWith('o'))
-    return <div className="flex items-center justify-center"><OpenaiYellow className={cn('h-5 w-5', className)} /></div>
+    return <div className="flex items-center justify-center"><OpenaiYellow className={clsx('h-5 w-5', className)} /></div>
 
   if (provider?.icon_small) {
     return (
-      <div className={cn('flex h-5 w-5 items-center justify-center', isDeprecated && 'opacity-50', className)}>
+      <div className={clsx('flex h-5 w-5 items-center justify-center', isDeprecated && 'opacity-50', className)}>
         <img
           alt="model-icon"
           src={renderI18nObject(
@@ -48,12 +48,12 @@ const ModelIcon: FC<ModelIconProps> = ({
   }
 
   return (
-    <div className={cn(
+    <div className={clsx(
       'flex h-5 w-5 items-center justify-center rounded-md border-[0.5px] border-components-panel-border-subtle bg-background-default-subtle',
       className,
     )}
     >
-      <div className={cn('flex h-5 w-5 items-center justify-center opacity-35', iconClassName)}>
+      <div className={clsx('flex h-5 w-5 items-center justify-center opacity-35', iconClassName)}>
         <Group className="h-3 w-3 text-text-tertiary" />
       </div>
     </div>

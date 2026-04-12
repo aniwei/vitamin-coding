@@ -109,7 +109,7 @@ const PopupItem: FC<PopupItemProps> = ({
           onClick={() => setCollapsed(prev => !prev)}
         >
           {model.label[language] || model.label.en_US}
-          <span className={cn('i-custom-vender-solid-general-arrow-down-round-fill h-4 w-4 text-text-quaternary', collapsed && '-rotate-90')} />
+          <span className={clsx('i-custom-vender-solid-general-arrow-down-round-fill h-4 w-4 text-text-quaternary', collapsed && '-rotate-90')} />
         </div>
         <Popover open={dropdownOpen} onOpenChange={setDropdownOpen}>
           <PopoverTrigger
@@ -134,7 +134,7 @@ const PopupItem: FC<PopupItemProps> = ({
                   : credentialName
                     ? (
                         <>
-                          <span className={cn('h-1.5 w-1.5 shrink-0 radius-2xs border', isApiKeyActive ? 'border-components-badge-status-light-success-border-inner bg-components-badge-status-light-success-bg' : 'border-components-badge-status-light-error-border-inner bg-components-badge-status-light-error-bg')} />
+                          <span className={clsx('h-1.5 w-1.5 shrink-0 radius-2xs border', isApiKeyActive ? 'border-components-badge-status-light-success-border-inner bg-components-badge-status-light-success-bg' : 'border-components-badge-status-light-error-border-inner bg-components-badge-status-light-error-bg')} />
                           <span className="ml-1 text-text-tertiary">{credentialName}</span>
                         </>
                       )
@@ -165,17 +165,17 @@ const PopupItem: FC<PopupItemProps> = ({
             render={(
               <button
                 type="button"
-                className={cn('group relative flex h-8 w-full items-center gap-1 rounded-lg px-3 py-1.5 text-left', modelItem.status === ModelStatusEnum.active ? 'cursor-pointer hover:bg-state-base-hover' : 'cursor-not-allowed hover:bg-state-base-hover-alt')}
+                className={clsx('group relative flex h-8 w-full items-center gap-1 rounded-lg px-3 py-1.5 text-left', modelItem.status === ModelStatusEnum.active ? 'cursor-pointer hover:bg-state-base-hover' : 'cursor-not-allowed hover:bg-state-base-hover-alt')}
                 onClick={() => handleSelect(model.provider, modelItem)}
               >
                 <div className="flex items-center gap-2">
                   <ModelIcon
-                    className={cn('h-5 w-5 shrink-0')}
+                    className={clsx('h-5 w-5 shrink-0')}
                     provider={model}
                     modelName={modelItem.model}
                   />
                   <ModelName
-                    className={cn('text-text-secondary system-sm-medium', modelItem.status !== ModelStatusEnum.active && 'opacity-60')}
+                    className={clsx('text-text-secondary system-sm-medium', modelItem.status !== ModelStatusEnum.active && 'opacity-60')}
                     modelItem={modelItem}
                   />
                 </div>
@@ -205,7 +205,7 @@ const PopupItem: FC<PopupItemProps> = ({
             <div className="flex flex-col gap-1">
               <div className="flex flex-col items-start gap-2">
                 <ModelIcon
-                  className={cn('h-5 w-5 shrink-0')}
+                  className={clsx('h-5 w-5 shrink-0')}
                   provider={model}
                   modelName={modelItem.model}
                 />

@@ -24,12 +24,12 @@ import { LinkExternal02 } from '@/components/icons/src/vender/line/general'
 import { Lock01 } from '@/components/icons/src/vender/solid/security'
 import Loading from '@/components/loading'
 import {
-  AlertDialog,
-  AlertDialogActions,
-  AlertDialogCancelButton,
-  AlertDialogConfirmButton,
-  AlertDialogContent,
-  AlertDialogTitle,
+  Alert,
+  AlertActions,
+  AlertCancelButton,
+  AlertConfirmButton,
+  AlertContent,
+  AlertTitle,
 } from '@/components/ui/alert'
 import {
   Dialog,
@@ -427,24 +427,24 @@ const ModelModal: FC<ModelModalProps> = ({
           )
         }
       </DialogContent>
-      <AlertDialog open={!!deleteCredentialId} onOpenChange={handleConfirmOpenChange}>
-        <AlertDialogContent backdropProps={{ forceRender: true }}>
+      <Alert open={!!deleteCredentialId} onOpenChange={handleConfirmOpenChange}>
+        <AlertContent backdropProps={{ forceRender: true }}>
           <div className="flex flex-col gap-2 p-6 pb-4">
-            <AlertDialogTitle className="text-text-primary title-2xl-semi-bold">
+            <AlertTitle className="text-text-primary title-2xl-semi-bold">
               {t('modelProvider.confirmDelete', { ns: 'common' })}
-            </AlertDialogTitle>
+            </AlertTitle>
           </div>
-          <AlertDialogActions>
-            <AlertDialogCancelButton>{t('operation.cancel', { ns: 'common' })}</AlertDialogCancelButton>
-            <AlertDialogConfirmButton
+          <AlertActions>
+            <AlertCancelButton>{t('operation.cancel', { ns: 'common' })}</AlertCancelButton>
+            <AlertConfirmButton
               disabled={doingAction}
               onClick={handleDeleteCredential}
             >
               {t('operation.confirm', { ns: 'common' })}
-            </AlertDialogConfirmButton>
-          </AlertDialogActions>
-        </AlertDialogContent>
-      </AlertDialog>
+            </AlertConfirmButton>
+          </AlertActions>
+        </AlertContent>
+      </Alert>
     </Dialog>
   )
 }

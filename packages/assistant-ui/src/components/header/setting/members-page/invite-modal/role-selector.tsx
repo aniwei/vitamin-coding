@@ -34,7 +34,7 @@ const RoleSelector = ({ value, onChange }: RoleSelectorProps) => {
     >
       <PopoverTrigger
         data-testid="role-selector-trigger"
-        className={cn(
+        className={clsx(
           'flex w-full cursor-pointer items-center rounded-lg bg-components-input-bg-normal px-3 py-2 hover:bg-state-base-hover',
           open && 'bg-state-base-hover',
         )}

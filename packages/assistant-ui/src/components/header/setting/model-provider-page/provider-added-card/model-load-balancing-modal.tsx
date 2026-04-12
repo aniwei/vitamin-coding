@@ -199,7 +199,7 @@ const ModelLoadBalancingModal = ({ provider, configurateMethod, currentCustomCon
           : (
               <>
                 <div className="py-2">
-                  <div className={cn('min-h-16 rounded-xl border bg-components-panel-bg transition-colors', draftConfig.enabled ? 'cursor-pointer border-components-panel-border' : 'cursor-default border-util-colors-blue-blue-600')} onClick={draftConfig.enabled ? () => toggleModalBalancing(false) : undefined}>
+                  <div className={clsx('min-h-16 rounded-xl border bg-components-panel-bg transition-colors', draftConfig.enabled ? 'cursor-pointer border-components-panel-border' : 'cursor-default border-util-colors-blue-blue-600')} onClick={draftConfig.enabled ? () => toggleModalBalancing(false) : undefined}>
                     <div className="flex select-none items-center gap-2 px-[15px] py-3">
                       <div className="flex h-8 w-8 shrink-0 grow-0 items-center justify-center rounded-lg border border-components-card-border bg-components-card-bg">
                         {Boolean(model) && (<ModelIcon className="shrink-0" provider={provider} modelName={model!.model} />)}

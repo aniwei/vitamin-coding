@@ -49,7 +49,7 @@ const InstallFromMarketplace = ({
       <Divider className="mt-4! h-px" />
       <div className="flex items-center justify-between">
         <div className="system-md-semibold flex cursor-pointer items-center gap-1 text-text-primary" onClick={() => setCollapse(!collapse)}>
-          <RiArrowDownSLine className={cn('h-4 w-4', collapse && '-rotate-90')} />
+          <RiArrowDownSLine className={clsx('h-4 w-4', collapse && '-rotate-90')} />
           {t('modelProvider.installDataSourceProvider', { ns: 'common' })}
         </div>
         <div className="mb-2 flex items-center pt-2">

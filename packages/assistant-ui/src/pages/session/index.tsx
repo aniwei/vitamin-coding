@@ -1,4 +1,4 @@
-import Sidebar from './sidebar'
+import Sidebar from './components/sidebar'
 import * as React from 'react'
 
 export const Session = ({
@@ -6,7 +6,6 @@ export const Session = ({
 }: {
   children?: React.ReactNode
 }) => {
-  debugger
   return (
     <div className="flex h-full overflow-hidden border-t border-divider-regular bg-background-body">
       <Sidebar />

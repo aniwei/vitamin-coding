@@ -115,13 +115,13 @@ const InviteModal = ({
           <div className="mb-2 text-sm font-medium text-text-primary">{t('members.email', { ns: 'common' })}</div>
           <div className="mb-8 flex h-36 flex-col items-stretch">
             <ReactMultiEmail
-              className={cn('h-full w-full border-components-input-border-active bg-components-input-bg-normal! px-3 pt-2 outline-hidden', 'appearance-none overflow-y-auto rounded-lg text-sm text-text-primary!')}
+              className={clsx('h-full w-full border-components-input-border-active bg-components-input-bg-normal! px-3 pt-2 outline-hidden', 'appearance-none overflow-y-auto rounded-lg text-sm text-text-primary!')}
               autoFocus
               emails={emails}
               inputClassName="bg-transparent"
               onChange={setEmails}
               getLabel={(email, index, removeEmail) => (
-                <div data-tag key={index} className={cn('bg-components-button-secondary-bg!')}>
+                <div data-tag key={index} className={clsx('bg-components-button-secondary-bg!')}>
                   <div data-tag-item>{email}</div>
                   <span
                     data-testid="remove-email-btn"
@@ -135,7 +135,7 @@ const InviteModal = ({
               placeholder={t('members.emailPlaceholder', { ns: 'common' }) || ''}
             />
             <div className={
-              cn('flex items-center justify-end text-text-tertiary system-xs-regular', (isLimited && usedSize > licenseLimit.workspace_members.limit) ? 'text-text-destructive' : '')
+              clsx('flex items-center justify-end text-text-tertiary system-xs-regular', (isLimited && usedSize > licenseLimit.workspace_members.limit) ? 'text-text-destructive' : '')
             }
             >
               <span>{usedSize}</span>

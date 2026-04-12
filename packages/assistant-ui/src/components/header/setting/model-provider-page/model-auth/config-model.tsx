@@ -39,7 +39,7 @@ const ConfigModel = ({
     <Button
       variant="secondary"
       size="small"
-      className={cn(
+      className={clsx(
         'hidden shrink-0 group-hover:flex',
         credentialRemoved && 'flex',
       )}

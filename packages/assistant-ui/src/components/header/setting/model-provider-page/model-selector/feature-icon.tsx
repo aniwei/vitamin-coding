@@ -66,7 +66,7 @@ const FeatureIcon: FC<FeatureIconProps> = ({
     if (showFeaturesLabel) {
       return (
         <ModelBadge
-          className={cn('gap-x-0.5', className)}
+          className={clsx('gap-x-0.5', className)}
         >
           <RiImageCircleAiLine className="size-3" />
           <span>{ModelFeatureTextEnum.vision}</span>
@@ -80,7 +80,7 @@ const FeatureIcon: FC<FeatureIconProps> = ({
       >
         <div className="inline-block cursor-help">
           <ModelBadge
-            className={cn(
+            className={clsx(
               'w-[18px] justify-center px-0!',
               className,
             )}
@@ -96,7 +96,7 @@ const FeatureIcon: FC<FeatureIconProps> = ({
     if (showFeaturesLabel) {
       return (
         <ModelBadge
-          className={cn('gap-x-0.5', className)}
+          className={clsx('gap-x-0.5', className)}
         >
           <RiFileTextLine className="size-3" />
           <span>{ModelFeatureTextEnum.document}</span>
@@ -110,7 +110,7 @@ const FeatureIcon: FC<FeatureIconProps> = ({
       >
         <div className="inline-block cursor-help">
           <ModelBadge
-            className={cn(
+            className={clsx(
               'w-[18px] justify-center px-0!',
               className,
             )}
@@ -126,7 +126,7 @@ const FeatureIcon: FC<FeatureIconProps> = ({
     if (showFeaturesLabel) {
       return (
         <ModelBadge
-          className={cn('gap-x-0.5', className)}
+          className={clsx('gap-x-0.5', className)}
         >
           <RiVoiceAiFill className="size-3" />
           <span>{ModelFeatureTextEnum.audio}</span>
@@ -140,7 +140,7 @@ const FeatureIcon: FC<FeatureIconProps> = ({
       >
         <div className="inline-block cursor-help">
           <ModelBadge
-            className={cn(
+            className={clsx(
               'w-[18px] justify-center px-0!',
               className,
             )}
@@ -156,7 +156,7 @@ const FeatureIcon: FC<FeatureIconProps> = ({
     if (showFeaturesLabel) {
       return (
         <ModelBadge
-          className={cn('gap-x-0.5', className)}
+          className={clsx('gap-x-0.5', className)}
         >
           <RiFilmAiLine className="size-3" />
           <span>{ModelFeatureTextEnum.video}</span>
@@ -170,7 +170,7 @@ const FeatureIcon: FC<FeatureIconProps> = ({
       >
         <div className="inline-block cursor-help">
           <ModelBadge
-            className={cn(
+            className={clsx(
               'w-[18px] justify-center px-0!',
               className,
             )}

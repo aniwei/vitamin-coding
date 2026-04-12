@@ -13,7 +13,7 @@ const Icon = (
   }: React.DetailedHTMLProps<React.HTMLAttributes<HTMLSpanElement>, HTMLSpanElement> & {
     ref?: React.RefObject<HTMLSpanElement>
   },
-) => <span className={cn(s.wrapper, className)} {...restProps} ref={ref} />
+) => <span className={clsx(s.wrapper, className)} {...restProps} ref={ref} />
 
 Icon.displayName = 'Tongyi'
 

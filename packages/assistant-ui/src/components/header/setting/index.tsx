@@ -60,14 +60,14 @@ export default function AccountSetting({
       {
         key: ACCOUNT_SETTING_TAB.PROVIDER,
         name: t('settings.provider', { ns: 'common' }),
-        icon: <span className={cn('i-ri-brain-2-line', iconClassName)} />,
-        activeIcon: <span className={cn('i-ri-brain-2-fill', iconClassName)} />,
+        icon: <span className={clsx('i-ri-brain-2-line', iconClassName)} />,
+        activeIcon: <span className={clsx('i-ri-brain-2-fill', iconClassName)} />,
       },
       {
         key: ACCOUNT_SETTING_TAB.MEMBERS,
         name: t('settings.members', { ns: 'common' }),
-        icon: <span className={cn('i-ri-group-2-line', iconClassName)} />,
-        activeIcon: <span className={cn('i-ri-group-2-fill', iconClassName)} />,
+        icon: <span className={clsx('i-ri-group-2-line', iconClassName)} />,
+        activeIcon: <span className={clsx('i-ri-group-2-fill', iconClassName)} />,
       },
     ]
 
@@ -76,8 +76,8 @@ export default function AccountSetting({
         key: ACCOUNT_SETTING_TAB.BILLING,
         name: t('settings.billing', { ns: 'common' }),
         description: t('plansCommon.receiptInfo', { ns: 'billing' }),
-        icon: <span className={cn('i-ri-money-dollar-circle-line', iconClassName)} />,
-        activeIcon: <span className={cn('i-ri-money-dollar-circle-fill', iconClassName)} />,
+        icon: <span className={clsx('i-ri-money-dollar-circle-line', iconClassName)} />,
+        activeIcon: <span className={clsx('i-ri-money-dollar-circle-fill', iconClassName)} />,
       })
     }
 
@@ -85,14 +85,14 @@ export default function AccountSetting({
       {
         key: ACCOUNT_SETTING_TAB.DATA_SOURCE,
         name: t('settings.dataSource', { ns: 'common' }),
-        icon: <span className={cn('i-ri-database-2-line', iconClassName)} />,
-        activeIcon: <span className={cn('i-ri-database-2-fill', iconClassName)} />,
+        icon: <span className={clsx('i-ri-database-2-line', iconClassName)} />,
+        activeIcon: <span className={clsx('i-ri-database-2-fill', iconClassName)} />,
       },
       {
         key: ACCOUNT_SETTING_TAB.API_BASED_EXTENSION,
         name: t('settings.apiBasedExtension', { ns: 'common' }),
-        icon: <span className={cn('i-ri-puzzle-2-line', iconClassName)} />,
-        activeIcon: <span className={cn('i-ri-puzzle-2-fill', iconClassName)} />,
+        icon: <span className={clsx('i-ri-puzzle-2-line', iconClassName)} />,
+        activeIcon: <span className={clsx('i-ri-puzzle-2-fill', iconClassName)} />,
       },
     )
 
@@ -100,8 +100,8 @@ export default function AccountSetting({
       items.push({
         key: ACCOUNT_SETTING_TAB.CUSTOM,
         name: t('custom', { ns: 'custom' }),
-        icon: <span className={cn('i-ri-color-filter-line', iconClassName)} />,
-        activeIcon: <span className={cn('i-ri-color-filter-fill', iconClassName)} />,
+        icon: <span className={clsx('i-ri-color-filter-line', iconClassName)} />,
+        activeIcon: <span className={clsx('i-ri-color-filter-fill', iconClassName)} />,
       })
     }
 
@@ -124,8 +124,8 @@ export default function AccountSetting({
         {
           key: ACCOUNT_SETTING_TAB.LANGUAGE,
           name: t('settings.language', { ns: 'common' }),
-          icon: <span className={cn('i-ri-translate-2', iconClassName)} />,
-          activeIcon: <span className={cn('i-ri-translate-2', iconClassName)} />,
+          icon: <span className={clsx('i-ri-translate-2', iconClassName)} />,
+          activeIcon: <span className={clsx('i-ri-translate-2', iconClassName)} />,
         },
       ],
     },
@@ -167,7 +167,7 @@ export default function AccountSetting({
                         <button
                           type="button"
                           key={item.key}
-                          className={cn(
+                          className={clsx(
                             'mb-0.5 flex h-[37px] w-full items-center rounded-lg p-1 pl-3 text-left text-sm',
                             activeMenu === item.key ? 'bg-state-base-active text-components-menu-item-text-active system-sm-semibold' : 'text-components-menu-item-text system-sm-medium',
                           )}

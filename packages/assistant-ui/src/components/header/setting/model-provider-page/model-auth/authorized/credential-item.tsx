@@ -49,7 +49,7 @@ const CredentialItem = ({
   const Item = (
     <div
       key={credential.credential_id}
-      className={cn(
+      className={clsx(
         'group flex h-8 items-center rounded-lg p-1 hover:bg-state-base-hover',
         (disabled || credential.not_allowed_to_use) ? 'cursor-not-allowed opacity-50' : onItemClick && 'cursor-pointer',
       )}
@@ -123,7 +123,7 @@ const CredentialItem = ({
                           onDelete?.(credential)
                         }}
                       >
-                        <span className={cn(
+                        <span className={clsx(
                           'i-ri-delete-bin-line h-4 w-4 text-text-tertiary',
                           !disableDeleteWhenSelected && 'hover:text-text-destructive',
                           disableDeleteWhenSelected && 'opacity-50',

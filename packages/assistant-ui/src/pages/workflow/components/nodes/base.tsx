@@ -1,4 +1,5 @@
 import type {
+import { clsx } from 'clsx'
   ReactElement,
 } from 'react'
 import type { IterationNodeType } from '@/app/components/workflow/nodes/iteration/types'
@@ -16,7 +17,6 @@ import {
   BlockEnum,
 } from '@/app/components/workflow/types'
 import { hasErrorHandleNode } from '@/app/components/workflow/utils'
-import { cn } from '@/utils/classnames'
 import ErrorHandleOnNode from '../error-handle-on-node'
 import {
   NodeSourceHandle,
@@ -38,7 +38,7 @@ const BaseCard = ({
 
   return (
     <div
-      className={cn(
+      className={clsx(
         'flex rounded-2xl border-2 border-transparent',
       )}
       style={{
@@ -47,7 +47,7 @@ const BaseCard = ({
       }}
     >
       <div
-        className={cn(
+        className={clsx(
           'group relative pb-1 shadow-xs',
           'rounded-[15px] border border-transparent',
           'bg-workflow-block-bg hover:shadow-lg',
@@ -57,7 +57,7 @@ const BaseCard = ({
           height: (data.type === BlockEnum.Iteration || data.type === BlockEnum.Loop) ? data.height : 'auto',
         }}
       >
-        <div className={cn(
+        <div className={clsx(
           'flex items-center rounded-t-2xl px-3 pb-2 pt-3',
         )}
         >

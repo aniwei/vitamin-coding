@@ -172,7 +172,7 @@ const ModelParameterModal: FC<ModelParameterModalProps> = ({
       <PopoverContent
         placement={isInWorkflow ? 'left' : (renderTrigger ? 'bottom-end' : 'left-start')}
         sideOffset={4}
-        popupClassName={cn(popupClassName, 'w-[400px] rounded-2xl')}
+        popupClassName={clsx(popupClassName, 'w-[400px] rounded-2xl')}
         positionerProps={!renderTrigger ? { anchor: settingsIconRef } : undefined}
       >
         <div className="relative px-3 pb-1 pt-3.5">

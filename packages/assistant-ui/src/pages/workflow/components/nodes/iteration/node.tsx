@@ -2,21 +2,20 @@ import type { FC } from 'react'
 import type { IterationNodeType } from '@/app/components/workflow/nodes/iteration/types'
 import type { NodeProps } from '@/app/components/workflow/types'
 import {
+import { clsx } from 'clsx'
   memo,
 } from 'react'
 import {
   Background,
   useViewport,
 } from 'reactflow'
-import { cn } from '@/utils/classnames'
-
 const Node: FC<NodeProps<IterationNodeType>> = ({
   id,
 }) => {
   const { zoom } = useViewport()
 
   return (
-    <div className={cn(
+    <div className={clsx(
       'relative h-full min-h-[90px] w-full min-w-[240px] rounded-2xl bg-workflow-canvas-workflow-bg',
     )}
     >

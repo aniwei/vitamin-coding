@@ -1,24 +1,24 @@
 import clsx from 'clsx'
 import Button from '@/components/button'
-import { AlertDialog as BaseAlertDialog } from '@base-ui/react/alert-dialog'
+import { AlertDialog } from '@base-ui/react/alert-dialog'
 import * as React from 'react'
 import type { ButtonProps } from '@/components/button'
 
-export const AlertDialog = BaseAlertDialog.Root
-export const AlertDialogTrigger = BaseAlertDialog.Trigger
-export const AlertDialogTitle = BaseAlertDialog.Title
-export const AlertDialogDescription = BaseAlertDialog.Description
-export const AlertDialogClose = BaseAlertDialog.Close
-export const AlertDialogPortal = BaseAlertDialog.Portal
-export const AlertDialogBackdrop = BaseAlertDialog.Backdrop
-export const AlertDialogPopup = BaseAlertDialog.Popup
+export const Alert = AlertDialog.Root
+export const AlertTrigger = AlertDialog.Trigger
+export const AlertTitle = AlertDialog.Title
+export const AlertDescription = AlertDialog.Description
+export const AlertClose = AlertDialog.Close
+export const AlertPortal = AlertDialog.Portal
+export const AlertBackdrop = AlertDialog.Backdrop
+export const AlertPopup = AlertDialog.Popup
 
 interface AlertContentProps {
   children: React.ReactNode
   className?: string
   overlayClassName?: string
-  popupProps?: Omit<React.ComponentPropsWithoutRef<typeof AlertDialogPopup>, 'children' | 'className'>
-  backdropProps?: Omit<React.ComponentPropsWithoutRef<typeof AlertDialogBackdrop>, 'className'>
+  popupProps?: Omit<React.ComponentPropsWithoutRef<typeof AlertPopup>, 'children' | 'className'>
+  backdropProps?: Omit<React.ComponentPropsWithoutRef<typeof AlertBackdrop>, 'className'>
 }
 
 export const AlertContent: React.FC<AlertContentProps> = ({
@@ -29,8 +29,8 @@ export const AlertContent: React.FC<AlertContentProps> = ({
   backdropProps,
 }) => {
   return (
-    <AlertDialogPortal>
-      <AlertDialogBackdrop
+    <AlertPortal>
+      <AlertBackdrop
         {...backdropProps}
         className={clsx(
           'inset-0 fixed z-1002 bg-background-overlay',
@@ -38,7 +38,7 @@ export const AlertContent: React.FC<AlertContentProps> = ({
           overlayClassName,
         )}
       />
-      <AlertDialogPopup
+      <AlertPopup
         {...popupProps}
         className={clsx(
           'fixed top-1/2 left-1/2 z-1002 max-h-[calc(100vh-2rem)] w-[480px] max-w-[calc(100vw-2rem)] -translate-x-1/2 -translate-y-1/2 overflow-y-auto overscroll-contain rounded-2xl border-[0.5px] border-components-panel-border bg-components-panel-bg shadow-lg',
@@ -47,8 +47,8 @@ export const AlertContent: React.FC<AlertContentProps> = ({
         )}
       >
         {children}
-      </AlertDialogPopup>
-    </AlertDialogPortal>
+      </AlertPopup>
+    </AlertPortal>
   )
 }
 
@@ -68,7 +68,7 @@ export const AlertActions: React.FC<AlertActionsProps> = ({
 
 interface AlertCancelButtonProps extends Omit<ButtonProps, 'children'> {
   children: React.ReactNode
-  closeProps?: Omit<React.ComponentPropsWithoutRef<typeof AlertDialogClose>, 'children' | 'render'>
+  closeProps?: Omit<React.ComponentPropsWithoutRef<typeof AlertClose>, 'children' | 'render'>
 }
 
 export const AlertCancelButton: React.FC<AlertCancelButtonProps> = ({
@@ -77,12 +77,12 @@ export const AlertCancelButton: React.FC<AlertCancelButtonProps> = ({
   ...buttonProps
 }) => {
   return (
-    <AlertDialogClose
+    <AlertClose
       {...closeProps}
       render={<Button {...buttonProps} />}
     >
       {children}
-    </AlertDialogClose>
+    </AlertClose>
   )
 }
 
@@ -103,10 +103,11 @@ export const AlertConfirmButton: React.FC<AlertConfirmButtonProps> = ({
 }
 
 export default {
-  AlertTrigger: AlertDialogTrigger,
-  AlertTitle: AlertDialogTitle,
-  AlertDescription: AlertDialogDescription,
-  AlertClose: AlertDialogClose,
+  Alert,
+  AlertTrigger,
+  AlertTitle,
+  AlertDescription,
+  AlertClose,
   AlertContent,
   AlertActions,
   AlertCancelButton,

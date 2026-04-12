@@ -87,7 +87,7 @@ const ProviderCardActions: FC<Props> = ({ detail, onUpdate }) => {
           alignOffset={0}
           trigger={(
             <Badge
-              className={cn(
+              className={clsx(
                 isFromMarketplace && 'cursor-pointer hover:bg-state-base-hover',
               )}
               uppercase={false}

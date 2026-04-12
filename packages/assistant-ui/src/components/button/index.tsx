@@ -1,11 +1,11 @@
 import clsx from 'clsx'
+import Spinner from '../spinner'
 import { Button as BaseButton } from '@base-ui/react/button'
 import { cva } from 'class-variance-authority'
-import Spinner from '../spinner'
 import * as React from 'react'
 import type { VariantProps } from 'class-variance-authority'
 
-const buttonVariants = cva('btn', {
+const bv = cva('btn', {
   variants: {
     variant: {
       'primary': 'btn-primary',
@@ -31,15 +31,15 @@ const buttonVariants = cva('btn', {
   },
 })
 
-export type ButtonProps = {
+export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof bv> {
   loading?: boolean
   spinnerClassName?: string
   ref?: React.Ref<HTMLButtonElement>
   render?: React.ReactElement
   focusableWhenDisabled?: boolean
-} & React.ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof buttonVariants>
+}
 
-const Button = ({
+export const Button = ({
   className,
   variant,
   size,
@@ -59,7 +59,7 @@ const Button = ({
   return (
     <BaseButton
       type={type}
-      className={clsx(buttonVariants({ variant, size, destructive, className }))}
+      className={clsx(bv({ variant, size, destructive, className }))}
       ref={ref}
       render={render}
       {...props}
@@ -72,7 +72,8 @@ const Button = ({
     </BaseButton>
   )
 }
+
 Button.displayName = 'Button'
 
 export default Button
-export { Button, buttonVariants }
+export { bv }

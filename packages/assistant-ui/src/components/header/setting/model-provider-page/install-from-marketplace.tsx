@@ -49,7 +49,7 @@ const InstallFromMarketplace = ({
           onClick={() => setCollapse(prev => !prev)}
           aria-expanded={!collapse}
         >
-          <span className={cn('i-ri-arrow-down-s-line h-4 w-4', collapse && '-rotate-90')} />
+          <span className={clsx('i-ri-arrow-down-s-line h-4 w-4', collapse && '-rotate-90')} />
           {t('modelProvider.installProvider', { ns: 'common' })}
         </button>
         <div className="mb-2 flex items-center pt-2">

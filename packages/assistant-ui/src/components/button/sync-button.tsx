@@ -1,15 +1,15 @@
-import clsx from 'clsx'
-import * as React from 'react'
+import { clsx } from 'clsx'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
+import * as React from 'react'
 import type { FC } from 'react'
 
-type Props = {
+interface SyncButtonProps {
   className?: string
   popupContent?: string
   onClick: () => void
 }
 
-const SyncButton: FC<Props> = ({
+const SyncButton: FC<SyncButtonProps> = ({
   className,
   popupContent = '',
   onClick,

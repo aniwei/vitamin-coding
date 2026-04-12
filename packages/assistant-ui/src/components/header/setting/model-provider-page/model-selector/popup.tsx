@@ -277,7 +277,7 @@ const Popup: FC<PopupProps> = ({
                   onClick={() => setMarketplaceCollapsed(prev => !prev)}
                 >
                   {t('modelProvider.selector.fromMarketplace', { ns: 'common' })}
-                  <span className={cn('i-custom-vender-solid-general-arrow-down-round-fill h-4 w-4 text-text-quaternary', marketplaceCollapsed && '-rotate-90')} />
+                  <span className={clsx('i-custom-vender-solid-general-arrow-down-round-fill h-4 w-4 text-text-quaternary', marketplaceCollapsed && '-rotate-90')} />
                 </div>
               </div>
               {!marketplaceCollapsed && (
@@ -297,7 +297,7 @@ const Popup: FC<PopupProps> = ({
                         <Button
                           variant="secondary"
                           size="small"
-                          className={cn(
+                          className={clsx(
                             'shrink-0 backdrop-blur-[5px]',
                             !isInstalling && 'hidden group-hover:flex',
                           )}

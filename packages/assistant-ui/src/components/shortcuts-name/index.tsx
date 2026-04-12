@@ -9,7 +9,7 @@ interface ShortcutsNameProps {
   backgroundColor?: 'gray' | 'white'
 }
 
-const ShortcutsName: React.FC<ShortcutsNameProps> = memo(({
+export const ShortcutsName: React.FC<ShortcutsNameProps> = memo(({
   keys,
   className,
   textColor = 'default',
