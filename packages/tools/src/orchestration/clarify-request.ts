@@ -6,7 +6,8 @@ import type { AgentTool, ToolResult } from '@vitamin/agent'
 const ClarifyRequestArgsSchema = z.object({
   taskId: z.string().describe('Task ID of the current task requesting clarification'),
   question: z.string().describe('A clear, specific question about what information is needed'),
-  reason: z.enum(['missing_context', 'conflicting_constraints', 'approval_needed'])
+  reason: z
+    .enum(['missing_context', 'conflicting_constraints', 'approval_needed'])
     .optional()
     .default('missing_context')
     .describe('Reason for requesting clarification'),
@@ -26,22 +27,26 @@ export type ClarifyRequest = (args: {
   error?: string
 }>
 
-
 export function createClarifyRequest(
   _projectRoot: string,
   clarify?: ClarifyRequest,
 ): AgentTool<ClarifyRequestArgs> {
-
   return {
     name: 'clarify_request',
-    description: 'Request clarification from the parent task or lead agent. Returns the answer or an escalation.',
+    description:
+      'Request clarification from the parent task or lead agent. Returns the answer or an escalation.',
     parameters: ClarifyRequestArgsSchema,
     visibility: 'always',
 
     async execute({ params }): Promise<ToolResult> {
       if (!clarify) {
         return {
-          content: [{ type: 'text', text: 'clarify_request not available — ClarifyChannel not configured in orchestrator.' }],
+          content: [
+            {
+              type: 'text',
+              text: 'clarify_request not available — ClarifyChannel not configured in orchestrator.',
+            },
+          ],
           isError: true,
         }
       }

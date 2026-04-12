@@ -24,5 +24,8 @@ export type {
 export { PersistentMemorySource, InMemoryMemorySource } from './memory-source'
 export type { PersistentMemorySourceOptions } from './memory-source'
 
-export { FilesystemPromptTemplateSource, InMemoryPromptTemplateSource } from './prompt-template-source'
+export {
+  FilesystemPromptTemplateSource,
+  InMemoryPromptTemplateSource,
+} from './prompt-template-source'
 export type { FilesystemPromptTemplateSourceOptions } from './prompt-template-source'

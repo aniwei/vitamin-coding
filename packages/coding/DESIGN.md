@@ -18,6 +18,7 @@
 应用级依赖注入容器，负责所有子系统的创建与装配：
 
 初始化阶段：
+
 1. 创建 SettingLoader → 加载配置
 2. 创建 ModelRegistry + ProviderRegistry + AuthStore
 3. 创建 ToolRegistry → 注册内置工具 → 设置预设
@@ -31,6 +32,7 @@
 11. 动态派生权限工具集：`createPermissionToolSetsFromRegistry(toolRegistry)`
 
 公开方法：
+
 - `createSession(options)` → AgentSession
 - `getToolRegistry()` / `getHookRegistry()` / `getModelRegistry()` 等访问器
 
@@ -50,6 +52,7 @@
 ### CodingSessionManager（coding-session-manager.ts）
 
 多会话容器管理：
+
 - `InMemoryCodingSessionManager`：纯内存管理
 - `DiskCodingSessionManager`：基于文件持久化
 - `RemoteCodingSessionManager`：基于远程 HTTP 持久化
@@ -86,17 +89,17 @@ CLI / Service --> VitaminApp.create(config)
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | VitaminAppConfig / AgentSessionOptions 等类型 |
-| `src/vitamin-app.ts` | 应用容器（依赖注入 + 子系统装配） |
-| `src/agent-session.ts` | 对话生命周期（消息持久化 + 事件桥 + 工具网关） |
-| `src/coding-session-manager.ts` | 多会话管理（InMemory / Disk / Remote） |
-| `src/run/print.ts` | Print 模式 |
-| `src/run/json.ts` | JSON 模式 |
-| `src/run/rpc.ts` | RPC 模式 |
-| `src/run/interactive.ts` | 交互式 REPL |
-| `src/index.ts` | barrel 导出 |
+| 文件                            | 职责                                           |
+| ------------------------------- | ---------------------------------------------- |
+| `src/types.ts`                  | VitaminAppConfig / AgentSessionOptions 等类型  |
+| `src/vitamin-app.ts`            | 应用容器（依赖注入 + 子系统装配）              |
+| `src/agent-session.ts`          | 对话生命周期（消息持久化 + 事件桥 + 工具网关） |
+| `src/coding-session-manager.ts` | 多会话管理（InMemory / Disk / Remote）         |
+| `src/run/print.ts`              | Print 模式                                     |
+| `src/run/json.ts`               | JSON 模式                                      |
+| `src/run/rpc.ts`                | RPC 模式                                       |
+| `src/run/interactive.ts`        | 交互式 REPL                                    |
+| `src/index.ts`                  | barrel 导出                                    |
 
 ## 入口与依赖
 

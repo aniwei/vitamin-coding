@@ -1,9 +1,6 @@
 import type { Message } from '@vitamin/ai'
 
-export type ContextSize =
-  | ['tokens', number]
-  | ['messages', number]
-  | ['fraction', number]
+export type ContextSize = ['tokens', number] | ['messages', number] | ['fraction', number]
 
 export type StorageType = 'file' | 'http' | 'memory'
 export interface MemorySource {
@@ -92,7 +89,10 @@ export interface MemoryManagerConfig {
   compaction?: Partial<CompactionConfig>
   prune?: Partial<PruneConfig>
   archiveStorage?: ArchiveStorage
-  summarize: (prompt: string, options?: { maxTokens?: number; signal?: AbortSignal }) => Promise<string>
+  summarize: (
+    prompt: string,
+    options?: { maxTokens?: number; signal?: AbortSignal },
+  ) => Promise<string>
   estimateTokens?: (text: string) => number
   model?: { contextWindow: number; maxOutput: number }
 }

@@ -20,9 +20,7 @@ interface SessionTokenUsage {
 // 每 session 的累计 token 使用；无 sessionId 时退化为按 model 统计以兼容旧调用方
 const sessionTokenUsage = new Map<string, SessionTokenUsage>()
 
-export function createTokenBudgetHook(
-  config?: TokenBudgetConfig,
-): HookRegistration<'chat.params'> {
+export function createTokenBudgetHook(config?: TokenBudgetConfig): HookRegistration<'chat.params'> {
   const maxOutput = config?.maxOutputTokens ?? 16384
   const warnThreshold = config?.inputTokenWarningThreshold ?? 100_000
 
@@ -46,7 +44,7 @@ export function createTokenBudgetHook(
         totalInput: 0,
         totalOutput: 0,
       }
-      
+
       if (usage.totalInput > warnThreshold) {
         log.warn(
           'Session token usage high: session=%s model=%s totalInput=%d threshold=%d',

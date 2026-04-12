@@ -16,6 +16,7 @@
 ### PromptManager（prompt-manager.ts）
 
 提示管理的核心协调器：
+
 - `getSystemPrompt(profile, context)` → 组装完整系统提示
 - `getSubAgentPrompt(profile, task)` → 子 Agent 特化提示
 - `resolve(name)` → 按名称解析模板
@@ -29,6 +30,7 @@
 ### 系统提示组装流程
 
 系统提示由多段内容拼接：
+
 1. **基础模板**：Agent Profile 对应的角色描述和行为指引
 2. **环境上下文**：workspace 目录、git 分支/状态、操作系统信息
 3. **记忆注入**：AGENTS.md 内容、经验教训
@@ -45,6 +47,7 @@
 ### 环境上下文收集（environment-context.ts）
 
 收集运行时环境信息：
+
 - `getWorkspaceContext()`：当前目录、项目名称
 - `getGitContext()`：分支、最近提交、文件状态
 - `getSystemContext()`：OS、Node 版本
@@ -53,12 +56,14 @@
 ### Phase 上下文（phase-context.ts）
 
 支持在提示中注入/提取阶段标记：
+
 - `injectPhaseContext(prompt, phase)` → 插入 `[PHASE:xxx]` 标记
 - `extractPhaseContext(prompt)` → 提取阶段信息
 
 ### Lesson 注入（lesson-injector.ts）
 
 将经验教训格式化注入提示：
+
 - `formatLessons(lessons)` → Markdown 列表
 - `injectLessons(prompt, lessons)` → 在指定位置插入
 
@@ -90,19 +95,19 @@ AgentSession.chat()
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | PromptTemplate / PromptContext / ProfileConfig 类型 |
-| `src/prompt-manager.ts` | 提示管理与组装协调 |
-| `src/prompt-cache.ts` | 模板缓存（TTL） |
-| `src/local-prompt-provider.ts` | 文件系统提示源 |
-| `src/http-prompt-provider.ts` | HTTP 提示源 |
-| `src/profile-resolver.ts` | Agent Profile 精确/模糊解析 |
-| `src/environment-context.ts` | 环境上下文收集 |
-| `src/phase-context.ts` | Phase 标记注入/提取 |
-| `src/lesson-injector.ts` | 经验教训注入 |
-| `src/index.ts` | barrel 导出 |
-| `prompts/` | 内置提示模板文件 |
+| 文件                           | 职责                                                |
+| ------------------------------ | --------------------------------------------------- |
+| `src/types.ts`                 | PromptTemplate / PromptContext / ProfileConfig 类型 |
+| `src/prompt-manager.ts`        | 提示管理与组装协调                                  |
+| `src/prompt-cache.ts`          | 模板缓存（TTL）                                     |
+| `src/local-prompt-provider.ts` | 文件系统提示源                                      |
+| `src/http-prompt-provider.ts`  | HTTP 提示源                                         |
+| `src/profile-resolver.ts`      | Agent Profile 精确/模糊解析                         |
+| `src/environment-context.ts`   | 环境上下文收集                                      |
+| `src/phase-context.ts`         | Phase 标记注入/提取                                 |
+| `src/lesson-injector.ts`       | 经验教训注入                                        |
+| `src/index.ts`                 | barrel 导出                                         |
+| `prompts/`                     | 内置提示模板文件                                    |
 
 ## 入口与依赖
 

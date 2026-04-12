@@ -16,6 +16,7 @@
 ### Devtools（devtools.ts）
 
 顶层组合类，封装所有调试子系统的初始化与协调：
+
 - `Devtools` 组合 Service + Breakpoints + Debugger + Logger
 - `start()` → 启动 Worker 线程 + 初始化断点
 - `stop()` → 清理所有资源
@@ -25,19 +26,20 @@
 
 23 个断点位置分 5 个类别：
 
-| 类别 | 断点 |
-|------|------|
-| Agent 生命周期 | `agent:init` / `agent:start` / `agent:end` / `agent:error` |
-| 回合控制 | `turn:start` / `turn:end` / `turn:model_before` / `turn:model_after` |
-| 工具执行 | `tool:before` / `tool:after` / `tool:validate` / `tool:error` |
-| 消息处理 | `message:before` / `message:after` / `message:transform` |
-| 系统 | `compaction:before` / `compaction:after` / `session:save` / `session:load` / 等 |
+| 类别           | 断点                                                                            |
+| -------------- | ------------------------------------------------------------------------------- |
+| Agent 生命周期 | `agent:init` / `agent:start` / `agent:end` / `agent:error`                      |
+| 回合控制       | `turn:start` / `turn:end` / `turn:model_before` / `turn:model_after`            |
+| 工具执行       | `tool:before` / `tool:after` / `tool:validate` / `tool:error`                   |
+| 消息处理       | `message:before` / `message:after` / `message:transform`                        |
+| 系统           | `compaction:before` / `compaction:after` / `session:save` / `session:load` / 等 |
 
 每个断点可启用/禁用，支持条件表达式（如仅在特定工具触发时暂停）。
 
 ### DebugSnapshot（debug-snapshot.ts）
 
 调试快照数据结构：
+
 ```ts
 interface DebugSnapshot {
   turn: number
@@ -52,6 +54,7 @@ interface DebugSnapshot {
 ### 调试命令（debugger.ts）
 
 `Debugger` 提供步进控制：
+
 - `next()` → 继续到下一个断点
 - `step()` → 单步执行
 - `over()` → 跳过当前工具调用
@@ -61,6 +64,7 @@ interface DebugSnapshot {
 ### PauseResumePayload
 
 断点暂停时可修改状态：
+
 - 修改系统提示
 - 修改工具参数
 - 注入额外消息
@@ -69,6 +73,7 @@ interface DebugSnapshot {
 ### Service（Worker 线程）
 
 `InspectorService` 在独立 Worker 线程中运行：
+
 - 通过 `worker_threads` 隔离
 - WebSocket 协议与主线程通信
 - 避免调试操作阻塞 Agent 执行
@@ -101,15 +106,15 @@ VitaminApp 初始化
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | BreakpointName / DebugSnapshot / DebugCommand 类型 |
-| `src/devtools.ts` | 顶层组合类 |
-| `src/breakpoints.ts` | 23 个断点 + 条件系统 |
-| `src/debug-snapshot.ts` | 快照数据结构 |
-| `src/debugger.ts` | 步进控制命令 |
-| `src/service.ts` | Worker 线程检测服务 |
-| `src/index.ts` | barrel 导出 |
+| 文件                    | 职责                                               |
+| ----------------------- | -------------------------------------------------- |
+| `src/types.ts`          | BreakpointName / DebugSnapshot / DebugCommand 类型 |
+| `src/devtools.ts`       | 顶层组合类                                         |
+| `src/breakpoints.ts`    | 23 个断点 + 条件系统                               |
+| `src/debug-snapshot.ts` | 快照数据结构                                       |
+| `src/debugger.ts`       | 步进控制命令                                       |
+| `src/service.ts`        | Worker 线程检测服务                                |
+| `src/index.ts`          | barrel 导出                                        |
 
 ## 入口与依赖
 

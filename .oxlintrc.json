@@ -14,5 +14,14 @@
     "prefer-template": "warn",
     "unicorn/no-array-for-each": "warn"
   },
-  "ignorePatterns": ["dist", "node_modules", "*.json", "*.md"]
+  "ignorePatterns": [
+    "dist",
+    "node_modules",
+    "*.json",
+    "*.md",
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "packages/web-ui",
+    "packages/cli"
+  ]
 }

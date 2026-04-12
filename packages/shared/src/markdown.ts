@@ -140,7 +140,10 @@ export function extractFrontmatter(content: string): { yaml: string | null; body
   for (let i = 1; i < lines.length; i++) {
     if (lines[i]?.trim() === '---') {
       const yaml = lines.slice(1, i).join('\n')
-      const body = lines.slice(i + 1).join('\n').trim()
+      const body = lines
+        .slice(i + 1)
+        .join('\n')
+        .trim()
       return { yaml, body }
     }
   }
@@ -159,9 +162,7 @@ export function extractBodyFromAst(content: string, yamlNode: YamlNode | undefin
 
   const afterFrontmatter = content.slice(yamlNode.position.end.offset!)
   const closingMatch = afterFrontmatter.match(/^[^\S\n]*---[^\S\n]*\r?\n?/)
-  const bodyStart = closingMatch
-    ? afterFrontmatter.slice(closingMatch[0].length)
-    : afterFrontmatter
+  const bodyStart = closingMatch ? afterFrontmatter.slice(closingMatch[0].length) : afterFrontmatter
 
   return bodyStart.trim()
 }

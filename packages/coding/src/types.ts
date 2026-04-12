@@ -1,4 +1,3 @@
-
 import type { AgentTool } from '@vitamin/agent'
 import type { AuthStore, Model, ProviderRegistry } from '@vitamin/ai'
 import type { ModelRegistry } from '@vitamin/ai'
@@ -47,7 +46,7 @@ export interface VitaminAppOptions {
     level: 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal'
     destination: string
   }
-  
+
   model?: Model
   modelId?: string
   modelRegistry?: ModelRegistry

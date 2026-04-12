@@ -1,9 +1,5 @@
 import { Devtools } from '@vitamin/devtools'
-import {
-  createModelSlot,
-  createDefaultProviderRegistry,
-  ModelRegistry,
-} from '@vitamin/ai'
+import { createModelSlot, createDefaultProviderRegistry, ModelRegistry } from '@vitamin/ai'
 import {
   createHookRegistry,
   PermissionPolicyRegistry,
@@ -16,12 +12,7 @@ import {
   createPermissionRegistry,
 } from '@vitamin/hooks'
 import type { PermissionMode, PermissionPolicySetting } from '@vitamin/hooks'
-import {
-  createToolRegistry,
-  ToolRegistry,
-  type ExecuteSkill,
-  type LoadSkill,
-} from '@vitamin/tools'
+import { createToolRegistry, ToolRegistry, type ExecuteSkill, type LoadSkill } from '@vitamin/tools'
 import { SESSION_MAX } from '@vitamin/env'
 import { createResourceManager, SettingsManager } from '@vitamin/resources'
 import { Orchestrator } from '@vitamin/orchestrator'
@@ -48,26 +39,13 @@ import {
   formatEnvironmentBlock,
   BUILTIN_PROMPTS_DIR,
 } from '@vitamin/prompt'
-import type {
-  AgentProfile,
-  PhaseAnnotation,
-  SubAgentPromptContext,
-} from '@vitamin/prompt'
+import type { AgentProfile, PhaseAnnotation, SubAgentPromptContext } from '@vitamin/prompt'
 import { BUILTIN_AGENT_PROFILES } from '@vitamin/setting'
 
 import type { AgentTool } from '@vitamin/agent'
-import type {
-  AuthStore,
-  Model,
-  ProviderRegistry,
-  WorkflowSlot,
-} from '@vitamin/ai'
+import type { AuthStore, Model, ProviderRegistry, WorkflowSlot } from '@vitamin/ai'
 import type { HookRegistry } from '@vitamin/hooks'
-import type {
-  AgentSessionInfo,
-  AgentSessionOptions,
-  ResolvedSessionConfig,
-} from '../session/types'
+import type { AgentSessionInfo, AgentSessionOptions, ResolvedSessionConfig } from '../session/types'
 
 import type { VitaminAppOptions, VitaminContext } from '../types'
 import type { ResourceManager } from '@vitamin/resources'
@@ -126,16 +104,14 @@ export class VitaminApp implements VitaminContext {
   private readonly learningTriggeredSessions = new Set<string>()
 
   public get tools(): AgentTool[] {
-    return this.toolRegistry
-      .getAvailable(this.defaultToolPreset)
-      .map((tool) => ({
-        name: tool.name,
-        description: tool.description,
-        parameters: tool.parameters,
-        readonly: tool.readonly,
-        visibility: tool.metadata.builtin ? 'always' : 'when-enabled',
-        execute: tool.execute,
-      }))
+    return this.toolRegistry.getAvailable(this.defaultToolPreset).map((tool) => ({
+      name: tool.name,
+      description: tool.description,
+      parameters: tool.parameters,
+      readonly: tool.readonly,
+      visibility: tool.metadata.builtin ? 'always' : 'when-enabled',
+      execute: tool.execute,
+    }))
   }
 
   public get modelRegistry(): ModelRegistry {
@@ -150,8 +126,7 @@ export class VitaminApp implements VitaminContext {
     return this.codingSessionManager
   }
 
-  private globalLogSubscription: ReturnType<typeof attachLogListener> | null =
-    null
+  private globalLogSubscription: ReturnType<typeof attachLogListener> | null = null
 
   constructor(options: VitaminAppOptions) {
     const {
@@ -176,11 +151,9 @@ export class VitaminApp implements VitaminContext {
       destination: logger.destination,
     })
 
-    const { model, authStore, hookRegistry, modelRegistry, providerRegistry } =
-      options
+    const { model, authStore, hookRegistry, modelRegistry, providerRegistry } = options
 
-    this.hookRegistry =
-      hookRegistry ?? createHookRegistry({ preset: 'default' })
+    this.hookRegistry = hookRegistry ?? createHookRegistry({ preset: 'default' })
     this.providerRegistry =
       providerRegistry ??
       createDefaultProviderRegistry({
@@ -189,10 +162,7 @@ export class VitaminApp implements VitaminContext {
       })
 
     const defaultModel =
-      model ??
-      (options.modelId
-        ? this.providerRegistry.resolveModel(options.modelId)
-        : undefined)
+      model ?? (options.modelId ? this.providerRegistry.resolveModel(options.modelId) : undefined)
     this.defaultModel = defaultModel
 
     if (inspect) {
@@ -246,19 +216,17 @@ export class VitaminApp implements VitaminContext {
     // configProvider 仅供 restore / restoreAll 路径使用；
     // 正常 createSession 路径会通过 resolveSessionConfig 完整解析。
     // 使用 factory function 而非静态快照，确保每次 restore 拿到最新配置。
-    const configProvider: (() => ResolvedSessionConfig) | undefined =
-      defaultModel
-        ? () => ({
-            model: defaultModel,
-            systemPrompt: '',
-            tools: [],
-            thinkingLevel: 'medium' as const,
-            maxToolTurns: this.maxToolTurns,
-            promptRefresh: () =>
-              this.promptManager.assemblePreset({ preset: 'main' }),
-            workspaceDir: this.workspaceDir,
-          })
-        : undefined
+    const configProvider: (() => ResolvedSessionConfig) | undefined = defaultModel
+      ? () => ({
+          model: defaultModel,
+          systemPrompt: '',
+          tools: [],
+          thinkingLevel: 'medium' as const,
+          maxToolTurns: this.maxToolTurns,
+          promptRefresh: () => this.promptManager.assemblePreset({ preset: 'main' }),
+          workspaceDir: this.workspaceDir,
+        })
+      : undefined
 
     const managerOptions = {
       maxSessions,
@@ -280,8 +248,7 @@ export class VitaminApp implements VitaminContext {
         sessionUrl,
       })
     } else {
-      this.codingSessionManager =
-        createInMemoryCodingSessionManager(managerOptions)
+      this.codingSessionManager = createInMemoryCodingSessionManager(managerOptions)
     }
 
     const run = async (options: {
@@ -402,24 +369,18 @@ export class VitaminApp implements VitaminContext {
     })
 
     // 仅移除 skill 类别工具（orchestration 工具现在有真实回调，保留）
-    const skillTools = this.toolRegistry
-      .getByCategory('skill')
-      .map((tool) => tool.name)
+    const skillTools = this.toolRegistry.getByCategory('skill').map((tool) => tool.name)
     if (skillTools.length > 0) {
       this.toolRegistry.unregister(skillTools)
     }
 
     // 初始化权限系统（基于当前 toolRegistry 动态推导读/写工具集合）
-    const permissionToolSets = createPermissionToolSetsFromRegistry(
-      this.toolRegistry.getAll(),
-    )
+    const permissionToolSets = createPermissionToolSetsFromRegistry(this.toolRegistry.getAll())
     this.auditLog = new PermissionAuditLog()
     this.permissionRegistry = createPermissionRegistry({
       toolSets: permissionToolSets,
     })
-    this.hookRegistry.register(
-      createPermissionGuardHook(this.permissionRegistry, this.auditLog),
-    )
+    this.hookRegistry.register(createPermissionGuardHook(this.permissionRegistry, this.auditLog))
 
     // 注册 hooks
     this.registerHooks()
@@ -440,9 +401,7 @@ export class VitaminApp implements VitaminContext {
     agentName: string | undefined,
     promptPreset: 'main' | 'subagent',
   ): AgentSources {
-    const userSetting = agentName
-      ? this.settings.get('agents')?.[agentName]
-      : undefined
+    const userSetting = agentName ? this.settings.get('agents')?.[agentName] : undefined
 
     const profile =
       promptPreset === 'subagent' && agentName
@@ -452,8 +411,7 @@ export class VitaminApp implements VitaminContext {
     return {
       slot: userSetting?.default_workflow_slot,
       profileTier: profile?.preferredModelTier,
-      toolNames:
-        userSetting?.tools ?? resolveAgentToolNames(profile?.defaultTools),
+      toolNames: userSetting?.tools ?? resolveAgentToolNames(profile?.defaultTools),
       systemPrompt: userSetting?.system_prompt,
       maxToolTurns: userSetting?.max_tool_turns ?? profile?.defaultMaxToolTurns,
       profile,
@@ -466,10 +424,7 @@ export class VitaminApp implements VitaminContext {
   //   ② model_slots[slot]（按 slot 查表）
   //   ③ model_slots.default / settings.model（全局默认，无 slot 时也走这里）
   //   ④ this.defaultModel（构造时传入的兜底）
-  private resolveModel(
-    explicitModel: Model | undefined,
-    slot: WorkflowSlot | undefined,
-  ): Model {
+  private resolveModel(explicitModel: Model | undefined, slot: WorkflowSlot | undefined): Model {
     if (explicitModel) return explicitModel
 
     const modelSlots = this.settings.get('model_slots')
@@ -499,8 +454,7 @@ export class VitaminApp implements VitaminContext {
     agentToolNames: string[] | undefined,
   ): AgentTool[] {
     if (explicitTools) return explicitTools
-    if (agentToolNames?.length)
-      return filterToolsByNames(this.tools, agentToolNames)
+    if (agentToolNames?.length) return filterToolsByNames(this.tools, agentToolNames)
     return this.tools
   }
 
@@ -538,9 +492,7 @@ export class VitaminApp implements VitaminContext {
     this.logger.info('Vitamin app stopped')
   }
 
-  async createSession(
-    options: Partial<AgentSessionOptions> = {},
-  ): Promise<AgentSession> {
+  async createSession(options: Partial<AgentSessionOptions> = {}): Promise<AgentSession> {
     this.ensureNotDisposed()
     await this.ensureSettingsLoaded()
 
@@ -565,15 +517,13 @@ export class VitaminApp implements VitaminContext {
   private async resolveSessionConfig(
     options: Partial<AgentSessionOptions>,
   ): Promise<ResolvedSessionConfig & { id?: string }> {
-    const promptPreset =
-      options.promptPreset ?? (options.agentName ? 'subagent' : 'main')
+    const promptPreset = options.promptPreset ?? (options.agentName ? 'subagent' : 'main')
 
     // Layer 1: 读取所有来源（纯同步，无决策）
     const agent = this.readAgentSources(options.agentName, promptPreset)
 
     // slot 合并：调用方 > agentConfig > agentProfile.tier 映射
-    const slot =
-      options.slot ?? agent.slot ?? TIER_TO_SLOT[agent.profileTier ?? '']
+    const slot = options.slot ?? agent.slot ?? TIER_TO_SLOT[agent.profileTier ?? '']
 
     // Layer 2: 各字段独立决策
     const model = this.resolveModel(options.model, slot)
@@ -608,8 +558,7 @@ export class VitaminApp implements VitaminContext {
       systemPrompt: initialSystemPrompt ?? '',
       tools,
       thinkingLevel: options.thinkingLevel ?? 'medium',
-      maxToolTurns:
-        options.maxToolTurns ?? agent.maxToolTurns ?? this.maxToolTurns,
+      maxToolTurns: options.maxToolTurns ?? agent.maxToolTurns ?? this.maxToolTurns,
       promptRefresh,
       workspaceDir: options.workspaceDir ?? this.workspaceDir,
     }
@@ -631,10 +580,7 @@ export class VitaminApp implements VitaminContext {
     return removed
   }
 
-  async forkSession(
-    sourceId: string,
-    newId?: string,
-  ): Promise<AgentSession | undefined> {
+  async forkSession(sourceId: string, newId?: string): Promise<AgentSession | undefined> {
     return this.codingSessionManager.forkSession(sourceId, newId)
   }
 
@@ -644,9 +590,7 @@ export class VitaminApp implements VitaminContext {
       'system-prompt.transform',
       'tool-guidance-injection',
       async (_input, output) => {
-        const guidance = this.toolRegistry.buildToolGuidance(
-          this.defaultToolPreset,
-        )
+        const guidance = this.toolRegistry.buildToolGuidance(this.defaultToolPreset)
         if (guidance) {
           output.systemPrompt = `${output.systemPrompt}\n\n${guidance}`
         }
@@ -681,8 +625,7 @@ export class VitaminApp implements VitaminContext {
       async (_input, output) => {
         const lessons = await this.learningStore.list()
         if (lessons.length > 0) {
-          const template =
-            (await this.promptManager.loadRuntimeLessonsTemplate()) ?? undefined
+          const template = (await this.promptManager.loadRuntimeLessonsTemplate()) ?? undefined
           const injection = buildLessonInjection(lessons, template)
           if (injection) {
             output.systemPrompt = `${output.systemPrompt}\n\n${injection}`
@@ -704,10 +647,7 @@ export class VitaminApp implements VitaminContext {
             currentPhase,
             phaseHistory: history,
           }
-          output.systemPrompt = injectPhaseContext(
-            output.systemPrompt,
-            annotation,
-          )
+          output.systemPrompt = injectPhaseContext(output.systemPrompt, annotation)
         }
       },
       30,
@@ -727,11 +667,7 @@ export class VitaminApp implements VitaminContext {
                 const history = this.phaseTracker.get(input.sessionId) ?? []
                 history.push(phase)
                 this.phaseTracker.set(input.sessionId, history)
-                this.logger.debug(
-                  'Phase extracted: %s (session=%s)',
-                  phase,
-                  input.sessionId,
-                )
+                this.logger.debug('Phase extracted: %s (session=%s)', phase, input.sessionId)
               }
             }
           }
@@ -760,20 +696,12 @@ export class VitaminApp implements VitaminContext {
         }
 
         this.learningTriggeredSessions.add(input.sessionId)
-        this.logger.info(
-          'Session idle, prompting for learning: %s',
-          input.sessionId,
-        )
+        this.logger.info('Session idle, prompting for learning: %s', input.sessionId)
         try {
-          const sessionEndPrompt =
-            await this.promptManager.loadSessionEndLearningPrompt()
+          const sessionEndPrompt = await this.promptManager.loadSessionEndLearningPrompt()
           await session.prompt(sessionEndPrompt ?? '')
         } catch (err) {
-          this.logger.warn(
-            'Learning prompt failed for session %s: %s',
-            input.sessionId,
-            err,
-          )
+          this.logger.warn('Learning prompt failed for session %s: %s', input.sessionId, err)
         }
       },
       50,
@@ -785,9 +713,7 @@ export class VitaminApp implements VitaminContext {
     permissions?: PermissionPolicySetting[]
     disabled_tools?: string[]
   }): void {
-    const permissionToolSets = createPermissionToolSetsFromRegistry(
-      this.toolRegistry.getAll(),
-    )
+    const permissionToolSets = createPermissionToolSetsFromRegistry(this.toolRegistry.getAll())
 
     // 1. permission_mode 变更 → 重新注册 mode 策略
     if (setting.permission_mode) {
@@ -804,9 +730,7 @@ export class VitaminApp implements VitaminContext {
     // 2. disabled_tools 变更 → 重新注册 disabled-tools 策略
     if (setting.disabled_tools && setting.disabled_tools.length > 0) {
       this.permissionRegistry.unregister('setting::disabled-tools')
-      this.permissionRegistry.register(
-        createDisabledToolsPolicy(setting.disabled_tools),
-      )
+      this.permissionRegistry.register(createDisabledToolsPolicy(setting.disabled_tools))
     } else {
       this.permissionRegistry.unregister('setting::disabled-tools')
     }

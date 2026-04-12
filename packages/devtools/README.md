@@ -6,23 +6,23 @@
 
 ## 核心功能
 
-| 模块 | 功能 |
-|------|------|
-| Devtools | 顶层组合（Service + Breakpoints + Debugger + Logger） |
-| Breakpoints | 23 个断点位置 × 5 类（Agent/回合/工具/消息/系统） |
-| Debugger | 步进控制（next/step/over/continue/stop） |
-| DebugSnapshot | 调试快照（turn/point/messages/tokens/params） |
-| InspectorService | Worker 线程隔离的检测服务 |
+| 模块             | 功能                                                  |
+| ---------------- | ----------------------------------------------------- |
+| Devtools         | 顶层组合（Service + Breakpoints + Debugger + Logger） |
+| Breakpoints      | 23 个断点位置 × 5 类（Agent/回合/工具/消息/系统）     |
+| Debugger         | 步进控制（next/step/over/continue/stop）              |
+| DebugSnapshot    | 调试快照（turn/point/messages/tokens/params）         |
+| InspectorService | Worker 线程隔离的检测服务                             |
 
 ## 调试命令
 
-| 命令 | 说明 |
-|------|------|
-| `next()` | 到下一个断点 |
-| `step()` | 单步 |
-| `over()` | 跳过 |
-| `continue()` | 继续 |
-| `stop()` | 停止 |
+| 命令         | 说明         |
+| ------------ | ------------ |
+| `next()`     | 到下一个断点 |
+| `step()`     | 单步         |
+| `over()`     | 跳过         |
+| `continue()` | 继续         |
+| `stop()`     | 停止         |
 
 ## 目录概览
 

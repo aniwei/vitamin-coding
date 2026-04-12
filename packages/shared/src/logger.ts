@@ -20,13 +20,15 @@ function isPrettyAvailable(): boolean {
 
 function createTransportTargets(
   destination: string,
-  level: string = 'info'
+  level: string = 'info',
 ): pino.TransportTargetOptions[] {
-  const targets: pino.TransportTargetOptions[] = [{
-    target: 'pino/file',
-    options: { destination, mkdir: true },
-    level,
-  }]
+  const targets: pino.TransportTargetOptions[] = [
+    {
+      target: 'pino/file',
+      options: { destination, mkdir: true },
+      level,
+    },
+  ]
 
   if (isPrettyAvailable()) {
     targets.push({
@@ -52,7 +54,7 @@ const globalSubscription = new Subscription()
 logPassThrough.on('data', (chunk) => {
   try {
     globalSubscription.publish({
-      log: [JSON.parse(chunk.toString())]
+      log: [JSON.parse(chunk.toString())],
     })
   } catch (error) {
     console.warn('Failed to parse log chunk for listener:', chunk.toString(), error)
@@ -63,42 +65,41 @@ export function attachLogListener(callback: (log: unknown) => void) {
   return globalSubscription.subscribe('log', callback)
 }
 
-
 let root: pino.Logger | null = null
 
-export function ensureLogger(
-  level: string, 
-  destination: string
-): pino.Logger {
-  root ??= pino({ level }, pino.multistream([
-    { level: level as pino.Level, stream: logPassThrough },
-    { level: level as pino.Level, stream: pino.transport({ targets: createTransportTargets(destination, level) }) }
-  ]))
+export function ensureLogger(level: string, destination: string): pino.Logger {
+  root ??= pino(
+    { level },
+    pino.multistream([
+      { level: level as pino.Level, stream: logPassThrough },
+      {
+        level: level as pino.Level,
+        stream: pino.transport({ targets: createTransportTargets(destination, level) }),
+      },
+    ]),
+  )
 
   return root
 }
 
 interface LoggerOptions {
-  level: 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal',
+  level: 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal'
   destination: string
 }
 
-export function createLogger(
-  name: string, 
-  options?: LoggerOptions
-): pino.Logger {
-  ensureLogger(
-    options?.level ?? LOG_LEVEL, 
-    options?.destination ?? LOG_FILE
-  )
+export function createLogger(name: string, options?: LoggerOptions): pino.Logger {
+  ensureLogger(options?.level ?? LOG_LEVEL, options?.destination ?? LOG_FILE)
 
   invariant(root, `Root logger is not initialized`)
-  return root.child({ name }, {
-    level: options?.level ?? LOG_LEVEL,
-  })
+  return root.child(
+    { name },
+    {
+      level: options?.level ?? LOG_LEVEL,
+    },
+  )
 }
 
 export function getRootLogger(): pino.Logger {
-  invariant(root, `Root logger is not initialized`) 
+  invariant(root, `Root logger is not initialized`)
   return root
 }

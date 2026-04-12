@@ -9,16 +9,24 @@ import type { AgentTool, ToolResult } from '@vitamin/agent'
 // 参数 schema
 const ReadArgsSchema = z.object({
   path: z.string().describe('Path to the file to read (relative or absolute)'),
-  limit: z.number().int().min(1).optional().describe('Maximum number of lines to read (text files only)'),
-  offset: z.number().int().min(1).optional().describe('Starting line number (1-based, text files only)'),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe('Maximum number of lines to read (text files only)'),
+  offset: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe('Starting line number (1-based, text files only)'),
 })
 
 export type ReadArgs = z.infer<typeof ReadArgsSchema>
 
 // 创建 read 工具
-export function createRead(
-  projectRoot: string
-): AgentTool<ReadArgs> {
+export function createRead(projectRoot: string): AgentTool<ReadArgs> {
   return {
     name: 'read',
     description: 'Read file content. For text files, can specify line range with limit and offset.',
@@ -31,11 +39,11 @@ export function createRead(
       const normalizedPath = normalizePath(resolvedPath)
 
       // 检查文件是否存在
-      if (!await exists(normalizedPath)) {
+      if (!(await exists(normalizedPath))) {
         throw new Error(`File not found: ${params.path}`)
       }
 
-      if (!await isFile(normalizedPath)) {
+      if (!(await isFile(normalizedPath))) {
         throw new Error(`Not a file: ${params.path}`)
       }
 
@@ -45,22 +53,17 @@ export function createRead(
       // 图片文件处理
       if (isSuppotedImage) {
         return readImage(normalizedPath, params.path, mt)
-      } 
+      }
 
       // 文本文件处理
-      return readTextWithRange(
-        normalizedPath, 
-        params.path, 
-        params.offset, 
-        params.limit
-      )
-    }
+      return readTextWithRange(normalizedPath, params.path, params.offset, params.limit)
+    },
   }
 }
 
 // 读取图片文件并返回 base64 编码
 async function readImage(
-  absolutePath: string, 
+  absolutePath: string,
   displayPath: string,
   mime?: string,
 ): Promise<ToolResult> {
@@ -68,20 +71,23 @@ async function readImage(
   const base64 = buffer.toString('base64')
 
   return {
-    content: [{
-      type: 'text',
-      text: `Read image file ${displayPath} (${buffer.length} bytes)`,
-    }, {
+    content: [
+      {
+        type: 'text',
+        text: `Read image file ${displayPath} (${buffer.length} bytes)`,
+      },
+      {
+        type: 'image',
+        mime: mime || 'application/octet-stream',
+        source: `data:${mime || 'application/octet-stream'};base64,${base64}`,
+      },
+    ],
+    details: {
+      path: absolutePath,
       type: 'image',
+      size: buffer.length,
       mime: mime || 'application/octet-stream',
-      source: `data:${mime || 'application/octet-stream'};base64,${base64}`,
-    }],
-    details: { 
-      path: absolutePath, 
-      type: 'image', 
-      size: buffer.length, 
-      mime: mime || 'application/octet-stream'
-    }
+    },
   }
 }
 
@@ -106,20 +112,22 @@ async function readTextWithRange(
   // 检查偏移是否越界
   if (start >= lines.length) {
     return {
-      content: [{ type: 'text', text: `Offset ${offset} is beyond end of file (${lines.length} lines total)` }],
+      content: [
+        {
+          type: 'text',
+          text: `Offset ${offset} is beyond end of file (${lines.length} lines total)`,
+        },
+      ],
     }
   }
 
-  let selectedContent: string
-  let userLimitedLines: number | undefined
-
   const end = Math.min(start + limit, lines.length)
-  selectedContent = lines.slice(start, end).join('\n')
-  userLimitedLines = end - start
+  const selectedContent = lines.slice(start, end).join('\n')
+  const userLimitedLines = end - start
 
   const truncation = truncateHead(selectedContent, {
     maxBytes: TOOLS_MAX_OUTPUT_BYTES,
-    maxLines: TOOLS_MAX_OUTPUT_LINES
+    maxLines: TOOLS_MAX_OUTPUT_LINES,
   })
   let output: string
 
@@ -138,7 +146,6 @@ async function readTextWithRange(
     } else {
       output += `\n\n(Showing lines ${displayLine}-${end} of ${lines.length} (${formatBytes(maxBytes)} limit). Use offset=${offset} to continue)`
     }
-
   } else if (userLimitedLines !== undefined && start + userLimitedLines < lines.length) {
     const remaining = lines.length - (start + userLimitedLines)
     const offset = start + userLimitedLines + 1
@@ -152,7 +159,7 @@ async function readTextWithRange(
   return {
     content: [{ type: 'text', text: output }],
     details: {
-      truncation
-    }
+      truncation,
+    },
   }
 }

@@ -1,9 +1,9 @@
 const {
   setPrototypeOf = function (obj: unknown, proto: unknown) {
-    ;(obj as any).__proto__ = proto
+    ;(obj as Record<string, unknown>)['__proto__'] = proto
     return obj
   },
-} = Object as any
+} = Object as { setPrototypeOf?: (obj: unknown, proto: unknown) => unknown }
 
 export class InvariantError extends Error {
   framesToPop = 1
@@ -15,7 +15,7 @@ export class InvariantError extends Error {
   }
 }
 
-export function invariant(condition: any, message?: string | number): asserts condition {
+export function invariant(condition: unknown, message?: string | number): asserts condition {
   if (typeof condition === 'function') {
     invariant(condition(), message)
   } else if (!condition) {
@@ -34,7 +34,7 @@ function override<M extends ConsoleFunctionName>(name: M) {
   return function () {
     if (VERBOSITY_LEVELS.indexOf(name) >= verbosityLevel) {
       const fn = console[name] || console.log
-      return fn.apply(console, arguments as any)
+      return fn.apply(console, arguments as unknown[])
     }
   } as (typeof console)[M]
 }

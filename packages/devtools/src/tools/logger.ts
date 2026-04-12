@@ -1,5 +1,3 @@
-
-
 import type { Service } from '../service'
 
 export class Logger {

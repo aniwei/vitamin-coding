@@ -2,17 +2,17 @@ type Timestamp = number // Unix 时间戳（毫秒）
 
 // 已知 API 协议类型
 export type KnownApi =
-	| 'openai-completions'
-	| 'openai-responses'
-	| 'azure-openai-responses'
-	| 'openai-codex-responses'
-	| 'anthropic-messages'
-	| 'bedrock-converse-stream'
-	| 'google-generative-ai'
-	| 'google-gemini-cli'
-	| 'google-vertex'
+  | 'openai-completions'
+  | 'openai-responses'
+  | 'azure-openai-responses'
+  | 'openai-codex-responses'
+  | 'anthropic-messages'
+  | 'bedrock-converse-stream'
+  | 'google-generative-ai'
+  | 'google-gemini-cli'
+  | 'google-vertex'
 
-export type Api = KnownApi | (string & {});
+export type Api = KnownApi | (string & {})
 
 // 已知提供商
 export type KnownProvider =
@@ -80,13 +80,13 @@ export type ModelSpec = string | { provider: string; name: string; api?: Api } |
 export interface TextContent {
   type: 'text'
   text: string
-  signature?: string 
+  signature?: string
 }
 
 export interface ImageContent {
   type: 'image'
   mime: string
-  source: string 
+  source: string
 }
 
 export interface ThinkingContent {
@@ -97,7 +97,7 @@ export interface ThinkingContent {
 
 export interface ToolCall {
   type: 'tool_call'
-  id: string 
+  id: string
   name: string
   arguments: Record<string, unknown>
 }
@@ -136,17 +136,17 @@ export type Message = UserMessage | AssistantMessage | ToolResultMessage
 
 export type StreamEvent =
   | { type: 'start'; partial: AssistantMessage }
-	| { type: 'text_start'; index: number; partial: AssistantMessage }
-	| { type: 'text_delta'; index: number; delta: string; partial: AssistantMessage }
-	| { type: 'text_end'; index: number; content: string; partial: AssistantMessage }
-	| { type: 'thinking_start'; index: number; partial: AssistantMessage }
-	| { type: 'thinking_delta'; index: number; delta: string; partial: AssistantMessage }
-	| { type: 'thinking_end'; index: number; content: string; partial: AssistantMessage }
-	| { type: 'tool_call_start'; index: number; partial: AssistantMessage }
-	| { type: 'tool_call_delta'; index: number; delta: string; partial: AssistantMessage }
-	| { type: 'tool_call_end'; index: number; toolCall: ToolCall; partial: AssistantMessage }
-	| { type: 'done'; reason: StopReason; message: AssistantMessage }
-	| { type: 'error'; error: Error };
+  | { type: 'text_start'; index: number; partial: AssistantMessage }
+  | { type: 'text_delta'; index: number; delta: string; partial: AssistantMessage }
+  | { type: 'text_end'; index: number; content: string; partial: AssistantMessage }
+  | { type: 'thinking_start'; index: number; partial: AssistantMessage }
+  | { type: 'thinking_delta'; index: number; delta: string; partial: AssistantMessage }
+  | { type: 'thinking_end'; index: number; content: string; partial: AssistantMessage }
+  | { type: 'tool_call_start'; index: number; partial: AssistantMessage }
+  | { type: 'tool_call_delta'; index: number; delta: string; partial: AssistantMessage }
+  | { type: 'tool_call_end'; index: number; toolCall: ToolCall; partial: AssistantMessage }
+  | { type: 'done'; reason: StopReason; message: AssistantMessage }
+  | { type: 'error'; error: Error }
 
 export interface ZodType<T = unknown> {
   parse(data: unknown): T
@@ -162,6 +162,7 @@ export interface ToolDefinition<TArgs = unknown> {
 }
 
 export interface StreamContext {
+  model: Model
   systemPrompt: string
   messages: Message[]
   tools?: ToolDefinition[]
@@ -181,7 +182,7 @@ export interface StreamOptions {
 export interface ProviderStream {
   readonly id: string
   readonly displayName: string
-  
+
   resolveKey?(model: Model): Promise<string>
 
   converse(
@@ -197,17 +198,17 @@ export interface ProviderStream {
 export type ProviderFactory = () => ProviderStream
 
 export type OAuthCredentials = {
-  refresh: string          
-  access: string           
-  expires: number          
-  [key: string]: unknown   
+  refresh: string
+  access: string
+  expires: number
+  [key: string]: unknown
 }
 
 export type OAuthProviderId = string
 
 export interface OAuthInfo {
   url: string
-  code?: string 
+  code?: string
   instructions?: string
 }
 
@@ -225,7 +226,7 @@ export interface OAuthLoginOptions {
   signal?: AbortSignal
 }
 
-export interface OAuthRefreshTokenOptions extends OAuthCredentials{
+export interface OAuthRefreshTokenOptions extends OAuthCredentials {
   domain?: string
 }
 
@@ -263,7 +264,7 @@ export function getToolCallsByAssistantMessage(message: AssistantMessage): ToolC
 }
 
 export function hasToolCalls(message: AssistantMessage): boolean {
-  return message.content.some(c => c.type === 'tool_call')
+  return message.content.some((c) => c.type === 'tool_call')
 }
 
 export function emptyUsage(): Usage {

@@ -96,10 +96,7 @@ export interface McpToolCallResult {
   isError?: boolean
 }
 
-export type McpContent =
-  | McpTextContent
-  | McpImageContent
-  | McpResourceContent
+export type McpContent = McpTextContent | McpImageContent | McpResourceContent
 
 export interface McpTextContent {
   type: 'text'

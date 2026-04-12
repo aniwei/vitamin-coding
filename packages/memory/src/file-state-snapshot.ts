@@ -20,8 +20,15 @@ export interface FileStateCapture {
 }
 
 const IGNORED_DIRS = new Set([
-  'node_modules', '.git', 'dist', '.next', '.turbo',
-  'coverage', '.cache', '__pycache__', '.vscode',
+  'node_modules',
+  '.git',
+  'dist',
+  '.next',
+  '.turbo',
+  'coverage',
+  '.cache',
+  '__pycache__',
+  '.vscode',
 ])
 
 const MAX_TREE_DEPTH = 4
@@ -68,7 +75,7 @@ export class FileStateManager {
 
     if (snapshot.modifiedFiles.length > 0) {
       const fileLines = snapshot.modifiedFiles
-        .map(f => `  ${f.action}: ${f.path} — ${f.summary}`)
+        .map((f) => `  ${f.action}: ${f.path} — ${f.summary}`)
         .join('\n')
       parts.push(`Modified Files:\n${fileLines}`)
     }
@@ -78,7 +85,7 @@ export class FileStateManager {
     }
 
     if (snapshot.findings.length > 0) {
-      parts.push(`Findings:\n${snapshot.findings.map(f => `  - ${f}`).join('\n')}`)
+      parts.push(`Findings:\n${snapshot.findings.map((f) => `  - ${f}`).join('\n')}`)
     }
 
     return parts.join('\n\n')
@@ -93,14 +100,14 @@ export class FileStateManager {
     try {
       const dirEntries = await readdir(dir, { withFileTypes: true })
       entries = dirEntries
-        .filter(e => !IGNORED_DIRS.has(e.name) && !e.name.startsWith('.'))
+        .filter((e) => !IGNORED_DIRS.has(e.name) && !e.name.startsWith('.'))
         .sort((a, b) => {
           // directories first
           if (a.isDirectory() !== b.isDirectory()) return a.isDirectory() ? -1 : 1
           return a.name.localeCompare(b.name)
         })
         .slice(0, MAX_ENTRIES_PER_DIR)
-        .map(e => e.name + (e.isDirectory() ? '/' : ''))
+        .map((e) => e.name + (e.isDirectory() ? '/' : ''))
     } catch {
       return ''
     }

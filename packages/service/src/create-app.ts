@@ -17,18 +17,18 @@ interface AppOptions {
   debug?: DebugBridge | null
 }
 
-export function createApp(
-  context: CodingService,
-  options: AppOptions = {}
-): Hono {
+export function createApp(context: CodingService, options: AppOptions = {}): Hono {
   const app = new Hono()
 
   if (options.corsOrigin) {
-    app.use('/api/*', cors({
-      origin: options.corsOrigin,
-      allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
-      allowHeaders: ['Content-Type', 'Authorization'],
-    }))
+    app.use(
+      '/api/*',
+      cors({
+        origin: options.corsOrigin,
+        allowMethods: ['GET', 'POST', 'PUT', 'DELETE', 'OPTIONS'],
+        allowHeaders: ['Content-Type', 'Authorization'],
+      }),
+    )
   }
 
   app.route('/api/health', createHealthRoute(context))
@@ -39,12 +39,12 @@ export function createApp(
   app.route('/api/logs', createLoggerRoute(context))
 
   if (options.staticDir) {
-    app.get('*', c => {
+    app.get('*', (c) => {
       return context.static(c)
     })
   }
 
-  app.notFound(c => {
+  app.notFound((c) => {
     return c.text('not found', 404)
   })
 

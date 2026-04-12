@@ -1,16 +1,6 @@
-import { 
-  loadSetting,
-  createSettingWatcher,
-} from '@vitamin/setting'
-import type {
-  VitaminSetting,
-  SettingStore,
-} from '@vitamin/setting'
-import { 
-  createLogger,
-  TypedEventEmitter, 
-  type Events 
-} from '@vitamin/shared'
+import { loadSetting, createSettingWatcher } from '@vitamin/setting'
+import type { VitaminSetting, SettingStore } from '@vitamin/setting'
+import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
 import type { SettingWatcher } from '@vitamin/setting'
 import { resolve } from 'node:path'
 

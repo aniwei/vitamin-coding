@@ -9,18 +9,22 @@ import type { AgentTool, ToolResult } from '@vitamin/agent'
 // 参数 schema
 const WriteArgsSchema = z.object({
   path: z.string().describe('Path to the file to write (relative or absolute)'),
-	content: z.string().describe('Content to write to the file'),
-  createDirectories: z.boolean().optional().default(true).describe('Whether to create parent directories if they do not exist'),
+  content: z.string().describe('Content to write to the file'),
+  createDirectories: z
+    .boolean()
+    .optional()
+    .default(true)
+    .describe('Whether to create parent directories if they do not exist'),
 })
 
 export type WriteArgs = z.infer<typeof WriteArgsSchema>
-
 
 // 创建 write 工具
 export function createWrite(projectRoot: string): AgentTool<WriteArgs> {
   return {
     name: 'write',
-    description: 'Create or overwrite a file, automatically creating parent directories if they do not exist',
+    description:
+      'Create or overwrite a file, automatically creating parent directories if they do not exist',
     parameters: WriteArgsSchema,
     visibility: 'always',
 
@@ -36,21 +40,12 @@ export function createWrite(projectRoot: string): AgentTool<WriteArgs> {
         throw new Error('Write operation was aborted')
       }
 
-      return await write(
-        normalizedPath,
-        params.content,
-        signal
-      )
+      return await write(normalizedPath, params.content, signal)
     },
   }
 }
 
-
-async function write(
-  path: string,
-  content: string,
-  signal: AbortSignal
-): Promise<ToolResult> {
+async function write(path: string, content: string, signal: AbortSignal): Promise<ToolResult> {
   if (signal.aborted) {
     throw new Error('Write operation was aborted')
   }

@@ -3,11 +3,7 @@
 
 import { spawn, type ChildProcess } from 'node:child_process'
 import { createLogger } from '@vitamin/shared'
-import type {
-  JsonRpcRequest,
-  JsonRpcResponse,
-  JsonRpcNotification,
-} from './types'
+import type { JsonRpcRequest, JsonRpcResponse, JsonRpcNotification } from './types'
 
 const logger = createLogger('@vitamin/tools:mcp-transport')
 
@@ -181,31 +177,33 @@ export class SseTransport implements McpTransport {
       headers,
       body: JSON.stringify(message),
       signal: this.abortController?.signal,
-    }).then(async (resp) => {
-      if (!resp.ok) {
-        logger.warn('MCP SSE POST failed: %s', resp.status)
-        return
-      }
-
-      // POST 响应也可能携带 Mcp-Session-Id（如 initialize 响应）
-      const sid = resp.headers.get('mcp-session-id')
-      if (sid && !this.sessionId) {
-        this.sessionId = sid
-      }
-
-      // 有些实现在 POST 响应中直接返回 JSON-RPC 结果
-      const contentType = resp.headers.get('content-type') ?? ''
-      if (contentType.includes('application/json')) {
-        const body = await resp.json() as JsonRpcResponse | JsonRpcNotification
-        this.messageHandler?.(body)
-      } else if (contentType.includes('text/event-stream')) {
-        void this.consumeStream(resp)
-      }
-    }).catch((err: Error) => {
-      if (err.name !== 'AbortError') {
-        logger.warn('MCP SSE send error: %s', err.message)
-      }
     })
+      .then(async (resp) => {
+        if (!resp.ok) {
+          logger.warn('MCP SSE POST failed: %s', resp.status)
+          return
+        }
+
+        // POST 响应也可能携带 Mcp-Session-Id（如 initialize 响应）
+        const sid = resp.headers.get('mcp-session-id')
+        if (sid && !this.sessionId) {
+          this.sessionId = sid
+        }
+
+        // 有些实现在 POST 响应中直接返回 JSON-RPC 结果
+        const contentType = resp.headers.get('content-type') ?? ''
+        if (contentType.includes('application/json')) {
+          const body = (await resp.json()) as JsonRpcResponse | JsonRpcNotification
+          this.messageHandler?.(body)
+        } else if (contentType.includes('text/event-stream')) {
+          void this.consumeStream(resp)
+        }
+      })
+      .catch((err: Error) => {
+        if (err.name !== 'AbortError') {
+          logger.warn('MCP SSE send error: %s', err.message)
+        }
+      })
   }
 
   onMessage(handler: (message: JsonRpcResponse | JsonRpcNotification) => void): void {

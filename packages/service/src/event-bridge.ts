@@ -4,7 +4,6 @@ import type { WebSocketMessage } from './types'
 import type { WebSocketManager } from './websocket-manager'
 import type { AgentSession } from '@vitamin/coding'
 
-
 export class EventBridge {
   private unsubscribeSession?: () => void
 
@@ -38,10 +37,9 @@ export class EventBridge {
     const sid = this.session.id
     this.send(sid, {
       type: 'Runtime.error',
-      data: { sessionId: sid, message: error.message }
+      data: { sessionId: sid, message: error.message },
     })
   }
-
 
   attach(): void {
     this.session.on('prompt_start', this.onPrompStart)
@@ -199,7 +197,7 @@ export class EventBridge {
 
         const blocks = event.message.content.filter((b): b is TextContent => b.type === 'text')
         if (blocks.length > 0) {
-          const fullText = blocks.map(b => b.text).join('')
+          const fullText = blocks.map((b) => b.text).join('')
           events.push({
             type: 'Chat.messageComplete',
             data: { sessionId, content: fullText, role: 'assistant' },
@@ -208,11 +206,11 @@ export class EventBridge {
 
         return events
       }
-        
+
       case 'error':
         return {
           type: 'Runtime.error',
-          data: { sessionId, message: event.error.message }
+          data: { sessionId, message: event.error.message },
         }
 
       default:

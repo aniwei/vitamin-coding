@@ -60,10 +60,7 @@ export class LocalPromptProvider implements PromptProvider {
           keys.push(...subKeys)
         } else if (entry.name.endsWith(this.extension)) {
           const rel = relative(this.baseDir, fullPath)
-          const key = rel
-            .slice(0, -this.extension.length)
-            .split(sep)
-            .join('/')
+          const key = rel.slice(0, -this.extension.length).split(sep).join('/')
           keys.push(key)
         }
       }

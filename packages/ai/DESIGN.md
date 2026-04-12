@@ -28,6 +28,7 @@
 ### 认证存储（auth-store.ts）
 
 `AuthStore` 统一管理 API Key 和 OAuth 凭证。支持：
+
 - `getCredentialKey()`：解析 token（OAuth 自动刷新过期 token）
 - `login()` / `logout()`：OAuth 认证流
 - 环境变量映射：将 provider 名称映射到 `ANTHROPIC_API_KEY` 等环境变量
@@ -46,6 +47,7 @@
 ### GitHub Copilot Provider（provider/github-copilot.ts）
 
 `GitHubCopilotStream` 实现 `ProviderStream` 接口：
+
 - SSE 流解析 + token 统计（含缓存和推理 token）
 - 消息格式转换：内部统一格式 <-> OpenAI Chat Completions JSON
 - 支持系统提示、图片（base64）、工具定义
@@ -55,6 +57,7 @@
 ### GitHub Copilot OAuth（oauth/github-copilot.ts）
 
 `GitHubCopilotOAuthProvider` 实现 Device Code Flow：
+
 - 申请 device code -> 展示验证 URL + 用户码 -> 轮询 token
 - 支持 GitHub Enterprise 域名配置
 - 指数退避轮询 + AbortSignal 支持
@@ -82,6 +85,7 @@
 ```
 
 认证流程：
+
 ```
 AuthStore.getCredentialKey(provider)
        |
@@ -96,20 +100,20 @@ AuthStore.getCredentialKey(provider)
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | 核心类型（Model / Message / StreamEvent / Provider / OAuth） |
-| `src/model-registry.ts` | 模型注册与解析 |
-| `src/model-slot-resolver.ts` | 工作流插槽到模型的映射 |
-| `src/provider-registry.ts` | Provider 工厂管理 |
-| `src/auth-store.ts` | 统一认证存储（API Key + OAuth） |
-| `src/oauth-registry.ts` | OAuth Provider 管理 |
-| `src/event-stream.ts` | 自定义 AsyncIterable 流 |
-| `src/stream.ts` | 流式调用封装（stream / complete / simple） |
-| `src/cost.ts` | 费用计算与追踪 |
-| `src/provider/github-copilot.ts` | GitHub Copilot Provider 实现 |
-| `src/oauth/github-copilot.ts` | GitHub Copilot OAuth Device Flow |
-| `src/models/index.ts` | 模型定义入口 |
+| 文件                             | 职责                                                         |
+| -------------------------------- | ------------------------------------------------------------ |
+| `src/types.ts`                   | 核心类型（Model / Message / StreamEvent / Provider / OAuth） |
+| `src/model-registry.ts`          | 模型注册与解析                                               |
+| `src/model-slot-resolver.ts`     | 工作流插槽到模型的映射                                       |
+| `src/provider-registry.ts`       | Provider 工厂管理                                            |
+| `src/auth-store.ts`              | 统一认证存储（API Key + OAuth）                              |
+| `src/oauth-registry.ts`          | OAuth Provider 管理                                          |
+| `src/event-stream.ts`            | 自定义 AsyncIterable 流                                      |
+| `src/stream.ts`                  | 流式调用封装（stream / complete / simple）                   |
+| `src/cost.ts`                    | 费用计算与追踪                                               |
+| `src/provider/github-copilot.ts` | GitHub Copilot Provider 实现                                 |
+| `src/oauth/github-copilot.ts`    | GitHub Copilot OAuth Device Flow                             |
+| `src/models/index.ts`            | 模型定义入口                                                 |
 
 ## 入口与依赖
 

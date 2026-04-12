@@ -6,14 +6,14 @@
 
 ## 核心功能
 
-| 模块 | 功能 |
-|------|------|
-| Snapshot<T> | 带版本号和元信息的数据快照 |
-| MemoryPersistence | 内存后端（Map） |
-| DiskPersistence | 磁盘后端（原子写入 .tmp -> rename） |
-| RemotePersistence | HTTP REST 后端（Bearer Token + ETag） |
-| Codec<T,S> | 编解码器抽象 |
-| createPersistence() | 工厂函数 |
+| 模块                | 功能                                  |
+| ------------------- | ------------------------------------- |
+| Snapshot<T>         | 带版本号和元信息的数据快照            |
+| MemoryPersistence   | 内存后端（Map）                       |
+| DiskPersistence     | 磁盘后端（原子写入 .tmp -> rename）   |
+| RemotePersistence   | HTTP REST 后端（Bearer Token + ETag） |
+| Codec<T,S>          | 编解码器抽象                          |
+| createPersistence() | 工厂函数                              |
 
 ## 目录概览
 

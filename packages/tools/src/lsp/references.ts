@@ -9,7 +9,10 @@ const ReferencesArgsSchema = z.object({
   filePath: z.string().describe('Absolute path to the file'),
   line: z.number().int().min(1).describe('1-based line number'),
   character: z.number().int().min(0).describe('0-based character offset'),
-  includeDeclaration: z.boolean().optional().describe('Include the declaration itself (default true)'),
+  includeDeclaration: z
+    .boolean()
+    .optional()
+    .describe('Include the declaration itself (default true)'),
 })
 
 type ReferencesArgs = z.infer<typeof ReferencesArgsSchema>

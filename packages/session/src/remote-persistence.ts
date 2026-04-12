@@ -5,7 +5,10 @@ import type { HttpSessionPersistenceOptions } from './http-persistence'
 
 export type RemoteSessionPersistenceOptions = HttpSessionPersistenceOptions
 
-export class RemoteSessionPersistence<T = unknown> extends RemotePersistence<SessionSnapshot<T>> implements SessionPersistence<T> {
+export class RemoteSessionPersistence<T = unknown>
+  extends RemotePersistence<SessionSnapshot<T>>
+  implements SessionPersistence<T>
+{
   constructor(options: RemoteSessionPersistenceOptions) {
     super({
       ...options,

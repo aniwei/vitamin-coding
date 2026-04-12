@@ -5,15 +5,18 @@ import type { AgentTool, ToolResult } from '@vitamin/agent'
 const SkillExecutorArgsSchema = z.object({
   name: z.string().describe('The name of the Skill to execute'),
   input: z.string().optional().describe('The input to pass to the Skill'),
-  parameters: z.record(z.string(), z.string()).optional().describe('The parameters for the Skill (key-value pairs)'),
+  parameters: z
+    .record(z.string(), z.string())
+    .optional()
+    .describe('The parameters for the Skill (key-value pairs)'),
 })
 
 type SkillExecutorArgs = z.infer<typeof SkillExecutorArgsSchema>
 
 export type ExecuteSkill = (
-  name: string, 
-  input?: string, 
-  parameters?: Record<string, string>
+  name: string,
+  input?: string,
+  parameters?: Record<string, string>,
 ) => Promise<{
   success: boolean
   output?: string
@@ -22,7 +25,7 @@ export type ExecuteSkill = (
 
 export function createSkillExecute(
   _projectRoot: string,
-  execute?: ExecuteSkill
+  execute?: ExecuteSkill,
 ): AgentTool<SkillExecutorArgs> {
   return {
     name: 'skill_execute',

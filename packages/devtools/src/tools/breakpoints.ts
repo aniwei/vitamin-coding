@@ -22,7 +22,7 @@ export class Breakpoints {
   }
 
   list(): Breakpoint[] {
-    return Array.from(this.byPoint.values(), breakpoint => ({ ...breakpoint }))
+    return Array.from(this.byPoint.values(), (breakpoint) => ({ ...breakpoint }))
   }
 
   get(point: BreakpointPoint): Breakpoint | undefined {

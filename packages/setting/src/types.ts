@@ -45,11 +45,7 @@ export interface CategoryConfig {
 
 export type CategoriesConfig = Record<string, CategoryConfig>
 
-export const COMPACTION_STRATEGIES = [
-  'summary',
-  'sliding-window',
-  'incremental',
-] as const
+export const COMPACTION_STRATEGIES = ['summary', 'sliding-window', 'incremental'] as const
 
 export type CompactionStrategy = (typeof COMPACTION_STRATEGIES)[number]
 

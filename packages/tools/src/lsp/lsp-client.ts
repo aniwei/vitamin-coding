@@ -15,10 +15,7 @@ const CONTENT_LENGTH = 'Content-Length: '
 
 function encodeMessage(body: string): Buffer {
   const buf = Buffer.from(body, 'utf-8')
-  return Buffer.concat([
-    Buffer.from(`Content-Length: ${buf.byteLength}\r\n\r\n`, 'ascii'),
-    buf,
-  ])
+  return Buffer.concat([Buffer.from(`Content-Length: ${buf.byteLength}\r\n\r\n`, 'ascii'), buf])
 }
 
 interface PendingRequest {
@@ -177,7 +174,9 @@ export class LSPClient {
       try {
         this.sendNotification('shutdown')
         this.sendNotification('exit')
-      } catch {}
+      } catch {
+        /* intentional */
+      }
 
       const proc = this.process
       this.process = null
@@ -192,7 +191,9 @@ export class LSPClient {
         logger.debug('LSP process did not exit within timeout, sending SIGKILL')
         try {
           proc.kill('SIGKILL')
-        } catch {}
+        } catch {
+          /* intentional */
+        }
       }
     }
 
@@ -435,23 +436,20 @@ export class LSPClient {
     await new Promise((r) => setTimeout(r, 500))
 
     try {
-      const result = await this.sendRequest<{ items?: Diagnostic[] }>(
-        'textDocument/diagnostic',
-        { textDocument: { uri } },
-      )
+      const result = await this.sendRequest<{ items?: Diagnostic[] }>('textDocument/diagnostic', {
+        textDocument: { uri },
+      })
       if (result && typeof result === 'object' && 'items' in result) {
         return result as { items: Diagnostic[] }
       }
-    } catch {}
+    } catch {
+      /* intentional */
+    }
 
     return { items: this.diagnosticsStore.get(uri) ?? [] }
   }
 
-  async prepareRename(
-    filePath: string,
-    line: number,
-    character: number,
-  ): Promise<unknown> {
+  async prepareRename(filePath: string, line: number, character: number): Promise<unknown> {
     const absPath = resolve(filePath)
     await this.openFile(absPath)
     return this.sendRequest('textDocument/prepareRename', {
@@ -539,7 +537,9 @@ class LSPServerManager {
       for (const [, managed] of this.clients) {
         try {
           void managed.client.stop().catch(() => {})
-        } catch {}
+        } catch {
+          /* intentional */
+        }
       }
       this.clients.clear()
       if (this.cleanupInterval) {
@@ -593,7 +593,11 @@ class LSPServerManager {
         managed.initializingSince !== undefined &&
         now - managed.initializingSince >= this.INIT_TIMEOUT
       ) {
-        try { await managed.client.stop() } catch {}
+        try {
+          await managed.client.stop()
+        } catch {
+          /* intentional */
+        }
         this.clients.delete(key)
         managed = undefined
       }
@@ -605,7 +609,11 @@ class LSPServerManager {
         try {
           await managed.initPromise
         } catch {
-          try { await managed.client.stop() } catch {}
+          try {
+            await managed.client.stop()
+          } catch {
+            /* intentional */
+          }
           this.clients.delete(key)
           managed = undefined
         }
@@ -617,7 +625,11 @@ class LSPServerManager {
           managed.lastUsedAt = Date.now()
           return managed.client
         }
-        try { await managed.client.stop() } catch {}
+        try {
+          await managed.client.stop()
+        } catch {
+          /* intentional */
+        }
         this.clients.delete(key)
       }
     }
@@ -643,7 +655,11 @@ class LSPServerManager {
       await initPromise
     } catch (error) {
       this.clients.delete(key)
-      try { await client.stop() } catch {}
+      try {
+        await client.stop()
+      } catch {
+        /* intentional */
+      }
       throw error
     }
 

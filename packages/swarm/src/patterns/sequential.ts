@@ -12,10 +12,10 @@ import { executeAgentTurn } from './shared'
 
 /**
  * 流水线模式 — Agent 按指定顺序依次执行。
- * 
+ *
  * 前一个 Agent 的输出作为下一个 Agent 的输入（追加到 messages 中），
  * 形成数据处理流水线，类似 Unix Pipeline。
- * 
+ *
  * 适用场景：
  * - 代码审查流水线：Lint → Security → Logic Review → Summary
  * - 文档处理：Extract → Transform → Generate
@@ -58,9 +58,10 @@ export async function executeSequential(options: {
     const startTime = Date.now()
 
     // 构造此 Agent 的输入：前一步的输出 + 流水线上下文
-    const pipelinePrompt = i === 0
-      ? currentInput
-      : `Previous agent output:\n\n${currentInput}\n\nYour task: ${agentDef.description}`
+    const pipelinePrompt =
+      i === 0
+        ? currentInput
+        : `Previous agent output:\n\n${currentInput}\n\nYour task: ${agentDef.description}`
 
     const turnResult = await executeAgentTurn({
       agentDef,

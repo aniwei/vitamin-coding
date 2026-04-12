@@ -104,17 +104,14 @@ export type CommandRejectCode =
   | 'DEBUGGER_OFFLINE'
   | 'BRIDGE_DISCONNECTED'
 
-
-
-export type DebuggerEvent =
-  | {
-      type: 'Debugger.paused'
-      pauseId: string
-      seq: number
-      point: BreakpointPoint
-      frameDepth: number
-      snapshot: DebugSnapshot
-    }
+export type DebuggerEvent = {
+  type: 'Debugger.paused'
+  pauseId: string
+  seq: number
+  point: BreakpointPoint
+  frameDepth: number
+  snapshot: DebugSnapshot
+}
 
 export type DebugCommand =
   | { type: 'next'; seq: number }
@@ -151,7 +148,11 @@ export function isDebuggerEvent(input: unknown): input is DebuggerEvent {
     return false
   }
 
-  if (typeof value.seq !== 'number' || typeof value.point !== 'string' || typeof value.frameDepth !== 'number') {
+  if (
+    typeof value.seq !== 'number' ||
+    typeof value.point !== 'string' ||
+    typeof value.frameDepth !== 'number'
+  ) {
     return false
   }
 
@@ -160,7 +161,11 @@ export function isDebuggerEvent(input: unknown): input is DebuggerEvent {
   }
 
   const snapshot = value.snapshot as Record<string, unknown>
-  if (typeof snapshot.turn !== 'number' || typeof snapshot.point !== 'string' || typeof snapshot.frameDepth !== 'number') {
+  if (
+    typeof snapshot.turn !== 'number' ||
+    typeof snapshot.point !== 'string' ||
+    typeof snapshot.frameDepth !== 'number'
+  ) {
     return false
   }
 

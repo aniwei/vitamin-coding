@@ -6,16 +6,16 @@
 
 ## 核心功能
 
-| 模块 | 功能 |
-|------|------|
-| ModelRegistry | 模型注册、解析、默认模型管理 |
-| ProviderRegistry | Provider 工厂注册与实例化（内置 github-copilot） |
-| ModelSlot | 工作流插槽（normal/thinking/compact/critique/vision）映射到模型 |
-| AuthStore | API Key + OAuth 双模式认证存储 |
-| EventStream | 自定义 AsyncIterable，支持背压控制 |
-| stream/complete/simple | 流式 LLM 调用封装 |
-| CostTracker | 基于 token 的费用计算与累计 |
-| OAuthRegistry | OAuth Provider 管理（内置 GitHub Copilot Device Flow） |
+| 模块                   | 功能                                                            |
+| ---------------------- | --------------------------------------------------------------- |
+| ModelRegistry          | 模型注册、解析、默认模型管理                                    |
+| ProviderRegistry       | Provider 工厂注册与实例化（内置 github-copilot）                |
+| ModelSlot              | 工作流插槽（normal/thinking/compact/critique/vision）映射到模型 |
+| AuthStore              | API Key + OAuth 双模式认证存储                                  |
+| EventStream            | 自定义 AsyncIterable，支持背压控制                              |
+| stream/complete/simple | 流式 LLM 调用封装                                               |
+| CostTracker            | 基于 token 的费用计算与累计                                     |
+| OAuthRegistry          | OAuth Provider 管理（内置 GitHub Copilot Device Flow）          |
 
 ## 目录概览
 
@@ -43,9 +43,21 @@ tests/                    # 13 个测试文件
 
 ```ts
 // 类型
-export type { Api, Provider, Model, StreamEvent, StreamContext, Message,
-              UserMessage, AssistantMessage, ToolResultMessage,
-              OAuthProvider, OAuthCredentials, ToolDefinition, ZodType }
+export type {
+  Api,
+  Provider,
+  Model,
+  StreamEvent,
+  StreamContext,
+  Message,
+  UserMessage,
+  AssistantMessage,
+  ToolResultMessage,
+  OAuthProvider,
+  OAuthCredentials,
+  ToolDefinition,
+  ZodType,
+}
 // 模型注册
 export { ModelRegistry, createModelRegistry, createDefaultModelRegistry }
 export { ModelSlot, createModelSlot }

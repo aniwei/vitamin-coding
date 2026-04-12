@@ -16,26 +16,26 @@ export class BackgroundManager {
   }> {
     const task = await this.taskStore.get(id)
     if (!task) {
-      return { 
-        status: 'not_found', 
-        success: false, 
-        error: `Task not found id: ${id}` 
+      return {
+        status: 'not_found',
+        success: false,
+        error: `Task not found id: ${id}`,
       }
     }
 
     if (task.status === 'completed') {
-      return { 
-        status: 'completed', 
-        success: true, 
-        output: task.output?.text 
+      return {
+        status: 'completed',
+        success: true,
+        output: task.output?.text,
       }
     }
 
     if (task.status === 'failed') {
-      return { 
-        status: 'failed', 
-        success: false, 
-        error: task.error?.message ?? 'Task failed' 
+      return {
+        status: 'failed',
+        success: false,
+        error: task.error?.message ?? 'Task failed',
       }
     }
 
@@ -46,26 +46,22 @@ export class BackgroundManager {
     const task = await this.taskStore.get(id)
 
     if (!task) {
-      return { 
-        success: false, 
-        error: `Task not found id: ${id}` 
+      return {
+        success: false,
+        error: `Task not found id: ${id}`,
       }
     }
 
-    if (
-      task.status === 'completed' || 
-      task.status === 'failed' || 
-      task.status === 'cancelled'
-    ) {
-      return { 
-        success: false, 
-        error: `Task already in terminal state: ${task.status}, id: ${id}` 
+    if (task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled') {
+      return {
+        success: false,
+        error: `Task already in terminal state: ${task.status}, id: ${id}`,
       }
     }
 
-    await this.taskStore.update(id, { 
-      status: 'cancelled', 
-      completedAt: Date.now() 
+    await this.taskStore.update(id, {
+      status: 'cancelled',
+      completedAt: Date.now(),
     })
 
     if (this.abortTask) {

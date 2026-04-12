@@ -16,6 +16,7 @@
 ### SkillRegistry（skill-registry.ts）
 
 技能的注册与生命周期管理：
+
 - `register(skill)` / `unregister(name)` / `get(name)` / `list()`
 - `discover()` → 扫描目录自动发现
 - `match(query)` → 根据查询匹配最佳技能
@@ -24,6 +25,7 @@
 ### 技能发现（skill-discovery.ts）
 
 自动扫描技能文件：
+
 - 项目级：`.vitamin/skills/` 目录
 - 用户级：`~/.vitamin/skills/` 目录
 - 递归扫描 `*.md` 文件
@@ -32,6 +34,7 @@
 ### 技能解析器（skill-parser.ts）
 
 解析 SKILL.md 文件结构：
+
 - YAML frontmatter 提取：`name`、`description`、`tags`、`version`、`applyTo` 等
 - Markdown body 提取：技能指令内容
 - 校验必要字段
@@ -39,6 +42,7 @@
 ### 技能匹配器（skill-matcher.ts）
 
 多因子评分匹配算法：
+
 - **名称匹配**（权重 0.3）：精确 / 前缀 / 包含
 - **描述匹配**（权重 0.5）：关键词命中率
 - **标签匹配**（权重 0.2）：标签交集
@@ -48,6 +52,7 @@
 ### 执行上下文（skill-context.ts）
 
 为技能执行提供上下文注入：
+
 - 当前文件路径、语言
 - 工作空间信息
 - 用户消息摘要
@@ -74,15 +79,15 @@ VitaminApp.init()
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | Skill / DiscoveredSkill / SkillMatch 类型 |
-| `src/skill-registry.ts` | 注册 + 发现 + 事件 |
-| `src/skill-discovery.ts` | 目录扫描 |
-| `src/skill-parser.ts` | SKILL.md 解析 |
-| `src/skill-matcher.ts` | 多因子匹配 |
-| `src/skill-context.ts` | 执行上下文 |
-| `src/index.ts` | barrel 导出 |
+| 文件                     | 职责                                      |
+| ------------------------ | ----------------------------------------- |
+| `src/types.ts`           | Skill / DiscoveredSkill / SkillMatch 类型 |
+| `src/skill-registry.ts`  | 注册 + 发现 + 事件                        |
+| `src/skill-discovery.ts` | 目录扫描                                  |
+| `src/skill-parser.ts`    | SKILL.md 解析                             |
+| `src/skill-matcher.ts`   | 多因子匹配                                |
+| `src/skill-context.ts`   | 执行上下文                                |
+| `src/index.ts`           | barrel 导出                               |
 
 ## 入口与依赖
 

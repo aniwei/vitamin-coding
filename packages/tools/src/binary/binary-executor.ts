@@ -1,40 +1,29 @@
 import os from 'node:os'
 import invariant from '@vitamin/invariant'
-import { 
-  createWriteStream, 
-  existsSync, 
+import {
+  createWriteStream,
+  existsSync,
   mkdirSync,
   readdirSync,
   statSync,
   copyFileSync,
   rmSync,
-  chmodSync
+  chmodSync,
 } from 'node:fs'
 import { join, resolve } from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
-import { 
-  spawnSync, 
-  spawn, 
-  type SpawnOptionsWithoutStdio 
-} from 'node:child_process'
-import { 
-  getThirdPartyToolDir,
-  getThirdPartyToolBinaryDir,
-  createLogger
-} from '@vitamin/shared'
-import { 
-  SETTING_OFFLINE_MODE_ENABLED, 
-  TOOLS_BINARY_DOWNLOAD_TIMEOUT_MS, 
-  VITAMIN_USER_AGENT 
+import { spawnSync, spawn, type SpawnOptionsWithoutStdio } from 'node:child_process'
+import { getThirdPartyToolDir, getThirdPartyToolBinaryDir, createLogger } from '@vitamin/shared'
+import {
+  SETTING_OFFLINE_MODE_ENABLED,
+  TOOLS_BINARY_DOWNLOAD_TIMEOUT_MS,
+  VITAMIN_USER_AGENT,
 } from '@vitamin/env'
-
 
 const logger = createLogger('@vitamin/tools:binary')
 
-export interface BinaryToolExecutionOptions extends SpawnOptionsWithoutStdio {
-  
-}
+export interface BinaryToolExecutionOptions extends SpawnOptionsWithoutStdio {}
 
 export interface BinaryToolExecutionResult {
   stdout: string
@@ -45,30 +34,24 @@ export interface BinaryToolExecutionResult {
 export interface BinaryTool {
   name: string
   version: string
-  execute(
-    args: string[], 
-    options?: SpawnOptionsWithoutStdio
-  ): Promise<BinaryToolExecutionResult>
+  execute(args: string[], options?: SpawnOptionsWithoutStdio): Promise<BinaryToolExecutionResult>
 }
 
-function tryExecuteSync(
-  toolPath: string,
-  args: string[] = ['--version']
-): boolean {
-  const result = spawnSync(toolPath, args, { stdio: 'pipe' }) 
+function tryExecuteSync(toolPath: string, args: string[] = ['--version']): boolean {
+  const result = spawnSync(toolPath, args, { stdio: 'pipe' })
   return result.status === 0
 }
 
 async function tryResolveExecutablePath(
-  toolName: string, 
-  target: string = toolName
+  toolName: string,
+  target: string = toolName,
 ): Promise<string | null> {
   const ext = os.platform() === 'win32' ? '.exe' : ''
   const toolPath = getThirdPartyToolBinaryDir(target, toolName) + ext
 
   try {
-    if (existsSync((toolPath))) return toolPath
-  } catch { 
+    if (existsSync(toolPath)) return toolPath
+  } catch {
     logger.debug(`Error checking existence of ${toolPath}, will try PATH lookup: %s`, toolPath)
   }
 
@@ -79,11 +62,7 @@ async function tryResolveExecutablePath(
   return null
 }
 
-async function tryDownloadAndExtract(
-  name: string,
-  cacheDir: string,
-  url: string
-) {
+async function tryDownloadAndExtract(name: string, cacheDir: string, url: string) {
   const platform = os.platform()
   const toolsDir = getThirdPartyToolDir()
   const archivePath = resolve(toolsDir, `${cacheDir}.download`)
@@ -93,7 +72,7 @@ async function tryDownloadAndExtract(
   const binaryPath = resolve(binaryDir, filename)
 
   const extractDir = resolve(toolsDir, `${cacheDir}-extract-${process.pid}_${Date.now()}`)
-  
+
   try {
     const response = await fetch(url, {
       headers: { 'User-Agent': VITAMIN_USER_AGENT },
@@ -134,15 +113,12 @@ async function tryDownloadAndExtract(
   } catch (error) {
     logger.warn(error)
   } finally {
-    rmSync(archivePath, { force: true }),
+    rmSync(archivePath, { force: true })
     rmSync(extractDir, { recursive: true, force: true })
   }
 }
 
-function findBinaryRecursively(
-  rootDir: string, 
-  binaryFileName: string
-) {
+function findBinaryRecursively(rootDir: string, binaryFileName: string) {
   const stack: string[] = [rootDir]
 
   while (stack.length > 0) {
@@ -223,8 +199,8 @@ export abstract class BinaryToolExecutor implements BinaryTool {
   }
 
   async execute(
-    args: string[], 
-    options?: SpawnOptionsWithoutStdio
+    args: string[],
+    options?: SpawnOptionsWithoutStdio,
   ): Promise<BinaryToolExecutionResult> {
     const executablePath = await this.ensure()
 
@@ -232,23 +208,25 @@ export abstract class BinaryToolExecutor implements BinaryTool {
       const ps = spawn(executablePath, args, {
         cwd: options?.cwd,
         env: options?.env,
-        timeout: options?.timeout
+        timeout: options?.timeout,
       })
-      
+
       const stdout: Buffer[] = []
       const stderr: Buffer[] = []
-      
-      ps.stdout.on('data', data => stdout.push(data))
-      ps.stderr.on('data', data => stderr.push(data))
 
-      ps.on('error', err => reject(err))
-      ps.on('close', code => {
+      ps.stdout.on('data', (data) => stdout.push(data))
+      ps.stderr.on('data', (data) => stderr.push(data))
+
+      ps.on('error', (err) => reject(err))
+      ps.on('close', (code) => {
         if (code !== 0) {
-          return reject(new Error(`Process exited with code ${code}: ${Buffer.concat(stderr).toString()}`))
+          return reject(
+            new Error(`Process exited with code ${code}: ${Buffer.concat(stderr).toString()}`),
+          )
         }
 
-        resolve({ 
-          stdout: Buffer.concat(stdout).toString(), 
+        resolve({
+          stdout: Buffer.concat(stdout).toString(),
           stderr: Buffer.concat(stderr).toString(),
           exitCode: code,
         })
@@ -259,7 +237,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
 
 type ConfiguredBinaryExecute = (
   args: string[],
-  options?: BinaryToolExecutionOptions
+  options?: BinaryToolExecutionOptions,
 ) => Promise<BinaryToolExecutionResult>
 
 export class ConfiguredBinaryExecutor implements BinaryTool {
@@ -268,19 +246,15 @@ export class ConfiguredBinaryExecutor implements BinaryTool {
 
   protected executeHandler: ConfiguredBinaryExecute
 
-  constructor(
-    name: string, 
-    version: string,
-    execute: ConfiguredBinaryExecute
-  ) {
+  constructor(name: string, version: string, execute: ConfiguredBinaryExecute) {
     this.name = name
     this.version = version
     this.executeHandler = execute
   }
 
   async execute(
-    args: string[], 
-    options?: BinaryToolExecutionOptions
+    args: string[],
+    options?: BinaryToolExecutionOptions,
   ): Promise<BinaryToolExecutionResult> {
     return this.executeHandler(args, options)
   }

@@ -28,7 +28,7 @@ export class RetryPolicy {
   }
 
   getBackoff(attempt: number): number {
-    return this.config.backoffMs * (this.config.backoffMultiplier ** (attempt - 1))
+    return this.config.backoffMs * this.config.backoffMultiplier ** (attempt - 1)
   }
 
   static fromWorkflowOptions(wf?: WorkflowOptions): RetryPolicy {
@@ -104,20 +104,28 @@ export class CircuitBreaker {
   }
 
   static fromWorkflowOptions(wf?: WorkflowOptions): CircuitBreaker {
-    const circuitCamel = (wf as {
-      circuitBreaker?: {
-        enabled?: boolean
-        failureThreshold?: number
-        resetTimeoutMs?: number
-      }
-    } | undefined)?.circuitBreaker
-    const circuitSnake = (wf as {
-      circuitBreaker?: {
-        enabled?: boolean
-        failureThreshold?: number
-        timeoutMs?: number
-      }
-    } | undefined)?.circuitBreaker
+    const circuitCamel = (
+      wf as
+        | {
+            circuitBreaker?: {
+              enabled?: boolean
+              failureThreshold?: number
+              resetTimeoutMs?: number
+            }
+          }
+        | undefined
+    )?.circuitBreaker
+    const circuitSnake = (
+      wf as
+        | {
+            circuitBreaker?: {
+              enabled?: boolean
+              failureThreshold?: number
+              timeoutMs?: number
+            }
+          }
+        | undefined
+    )?.circuitBreaker
 
     return new CircuitBreaker({
       enabled: circuitCamel?.enabled ?? circuitSnake?.enabled ?? true,

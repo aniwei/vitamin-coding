@@ -56,6 +56,7 @@
 ### Markdown 处理（markdown.ts）
 
 基于 unified / remark 系列插件的 AST 处理套件：
+
 - `createMarkdownProcessor()` / `createGfmProcessor()` / `createFrontmatterProcessor()`：按需创建解析器。
 - AST 工具：`getNodeText()`、`extractBoldLabels()`、`extractInlineCodes()`、`countChecks()`、`extractFrontmatter()`、`extractBodyFromAst()`。
 
@@ -80,23 +81,23 @@
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/error.ts` | 10 个分域错误类 |
-| `src/types.ts` | Brand / DeepPartial / DeepReadonly 等类型工具 |
-| `src/event-emitter.ts` | TypedEventEmitter 类型安全事件发射器 |
-| `src/subscrption.ts` | Subscription 带通配符的具名订阅 |
-| `src/bus-subscrption.ts` | BusSubscription 总线式事件订阅 |
-| `src/disposable.ts` | 可释放资源栈（sync + async） |
-| `src/logger.ts` | pino 日志器 + listener 订阅 |
-| `src/fs-extra.ts` | mkdirp / rimraf / exists / mime 文件工具 |
-| `src/path.ts` | 路径规范化 + Vitamin 约定目录 |
-| `src/string.ts` | slugify 字符串工具 |
-| `src/jsonc.ts` | JSONC 解析 + 稳定序列化 |
-| `src/http.ts` | HTTP 请求 + SSE 流式读取 |
-| `src/markdown.ts` | unified/remark Markdown AST 处理 |
-| `src/truncate.ts` | 文本截断 + 字节格式化 |
-| `src/index.ts` | barrel 导出入口 |
+| 文件                     | 职责                                          |
+| ------------------------ | --------------------------------------------- |
+| `src/error.ts`           | 10 个分域错误类                               |
+| `src/types.ts`           | Brand / DeepPartial / DeepReadonly 等类型工具 |
+| `src/event-emitter.ts`   | TypedEventEmitter 类型安全事件发射器          |
+| `src/subscrption.ts`     | Subscription 带通配符的具名订阅               |
+| `src/bus-subscrption.ts` | BusSubscription 总线式事件订阅                |
+| `src/disposable.ts`      | 可释放资源栈（sync + async）                  |
+| `src/logger.ts`          | pino 日志器 + listener 订阅                   |
+| `src/fs-extra.ts`        | mkdirp / rimraf / exists / mime 文件工具      |
+| `src/path.ts`            | 路径规范化 + Vitamin 约定目录                 |
+| `src/string.ts`          | slugify 字符串工具                            |
+| `src/jsonc.ts`           | JSONC 解析 + 稳定序列化                       |
+| `src/http.ts`            | HTTP 请求 + SSE 流式读取                      |
+| `src/markdown.ts`        | unified/remark Markdown AST 处理              |
+| `src/truncate.ts`        | 文本截断 + 字节格式化                         |
+| `src/index.ts`           | barrel 导出入口                               |
 
 ## 入口与依赖
 

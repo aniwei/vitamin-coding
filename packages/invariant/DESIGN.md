@@ -15,6 +15,7 @@
 ### 断言函数（invariant.ts）
 
 `invariant(condition, message?)` 提供带 TypeScript `asserts` 子句的运行时断言：
+
 - 条件为 falsy 时抛出 `InvariantError`（携带 `framesToPop = 1` 用于栈清理）。
 - 支持布尔值或函数型条件、字符串或数字消息。
 
@@ -23,6 +24,7 @@
 ### 构建期剥离插件（tsup-strip-invariant-plugin.ts）
 
 `createStripInvariantInProductionPlugin(options)` 是 tsup/esbuild 插件，在构建阶段自动移除开发断言代码：
+
 1. 检测 `if (process.env.NODE_ENV !== 'production') { ... }` 守卫块。
 2. 扫描块内是否包含 `invariant()` 调用（支持 import alias）。
 3. 有 invariant 调用则移除整个 if 块，保留 else 分支。
@@ -48,11 +50,11 @@
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/invariant.ts` | invariant 断言函数 + InvariantError + verbosity 控制 |
-| `src/tsup-strip-invariant-plugin.ts` | 构建期 AST 剥离插件 |
-| `src/index.ts` | barrel 导出 |
+| 文件                                 | 职责                                                 |
+| ------------------------------------ | ---------------------------------------------------- |
+| `src/invariant.ts`                   | invariant 断言函数 + InvariantError + verbosity 控制 |
+| `src/tsup-strip-invariant-plugin.ts` | 构建期 AST 剥离插件                                  |
+| `src/index.ts`                       | barrel 导出                                          |
 
 ## 入口与依赖
 

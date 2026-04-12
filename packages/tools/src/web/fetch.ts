@@ -1,8 +1,5 @@
 import { z } from 'zod'
-import {
-  TOOLS_MAX_OUTPUT_BYTES,
-  TOOLS_EXECUTE_TIMEOUT_MS,
-} from '@vitamin/env'
+import { TOOLS_MAX_OUTPUT_BYTES, TOOLS_EXECUTE_TIMEOUT_MS } from '@vitamin/env'
 import { formatBytes, truncateTail } from '@vitamin/shared'
 import { validateUrl } from './url-validator'
 import { htmlToText, htmlToMarkdown } from './html-to-text'
@@ -13,23 +10,24 @@ const DEFAULT_USER_AGENT = 'VitaminBot/1.0'
 
 const WebFetchArgsSchema = z.object({
   url: z.string().describe('URL to fetch content from'),
-  format: z.enum(['text', 'markdown', 'raw'])
+  format: z
+    .enum(['text', 'markdown', 'raw'])
     .optional()
     .default('text')
     .describe('Output format: text (cleaned, default), markdown, or raw HTML'),
-  headers: z.record(z.string(), z.string())
-    .optional()
-    .describe('Additional HTTP headers'),
-  maxLength: z.number().int().min(1000).max(500_000)
+  headers: z.record(z.string(), z.string()).optional().describe('Additional HTTP headers'),
+  maxLength: z
+    .number()
+    .int()
+    .min(1000)
+    .max(500_000)
     .optional()
     .describe('Maximum output length in characters'),
 })
 
 type WebFetchArgs = z.infer<typeof WebFetchArgsSchema>
 
-export function createWebFetch(
-  _projectRoot: string,
-): AgentTool<WebFetchArgs> {
+export function createWebFetch(_projectRoot: string): AgentTool<WebFetchArgs> {
   return {
     name: 'web_fetch',
     description: `Fetch a web page and return its content. Supports text (default), markdown, and raw HTML formats. Cannot render JavaScript-heavy pages (SPAs). Best for documentation, articles, and static pages. Output truncated to ${formatBytes(TOOLS_MAX_OUTPUT_BYTES)}.`,
@@ -43,7 +41,7 @@ export function createWebFetch(
       const response = await fetch(url.href, {
         headers: {
           'User-Agent': DEFAULT_USER_AGENT,
-          'Accept': 'text/html, application/json, text/plain, */*',
+          Accept: 'text/html, application/json, text/plain, */*',
           ...params.headers,
         },
         signal: signal ?? AbortSignal.timeout(TOOLS_EXECUTE_TIMEOUT_MS),
@@ -52,7 +50,12 @@ export function createWebFetch(
 
       if (!response.ok) {
         return {
-          content: [{ type: 'text', text: `HTTP ${response.status} ${response.statusText} for ${url.href}` }],
+          content: [
+            {
+              type: 'text',
+              text: `HTTP ${response.status} ${response.statusText} for ${url.href}`,
+            },
+          ],
           isError: true,
         }
       }
@@ -62,7 +65,12 @@ export function createWebFetch(
 
       if (contentLength > MAX_RESPONSE_BYTES) {
         return {
-          content: [{ type: 'text', text: `Response too large: ${formatBytes(contentLength)} (limit: ${formatBytes(MAX_RESPONSE_BYTES)})` }],
+          content: [
+            {
+              type: 'text',
+              text: `Response too large: ${formatBytes(contentLength)} (limit: ${formatBytes(MAX_RESPONSE_BYTES)})`,
+            },
+          ],
           isError: true,
         }
       }
@@ -70,7 +78,12 @@ export function createWebFetch(
       const buffer = await response.arrayBuffer()
       if (buffer.byteLength > MAX_RESPONSE_BYTES) {
         return {
-          content: [{ type: 'text', text: `Response too large: ${formatBytes(buffer.byteLength)} (limit: ${formatBytes(MAX_RESPONSE_BYTES)})` }],
+          content: [
+            {
+              type: 'text',
+              text: `Response too large: ${formatBytes(buffer.byteLength)} (limit: ${formatBytes(MAX_RESPONSE_BYTES)})`,
+            },
+          ],
           isError: true,
         }
       }
@@ -87,11 +100,8 @@ export function createWebFetch(
         }
       } else if (contentType.includes('text/html')) {
         const format = params.format ?? 'text'
-        output = format === 'raw'
-          ? raw
-          : format === 'markdown'
-            ? htmlToMarkdown(raw)
-            : htmlToText(raw)
+        output =
+          format === 'raw' ? raw : format === 'markdown' ? htmlToMarkdown(raw) : htmlToText(raw)
       } else {
         output = raw
       }

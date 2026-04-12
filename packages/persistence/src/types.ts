@@ -64,4 +64,7 @@ export interface MemoryStorageOptions {
   type: 'memory'
 }
 
-export type StorageOptions<T = unknown> = FileStorageOptions<T> | HttpStorageOptions<T> | MemoryStorageOptions
+export type StorageOptions<T = unknown> =
+  | FileStorageOptions<T>
+  | HttpStorageOptions<T>
+  | MemoryStorageOptions

@@ -28,9 +28,7 @@ export async function request(options: HttpRequestOptions): Promise<HttpResponse
   const { url, method = 'POST', headers = {}, body, timeout = 60000, signal } = options
 
   const controller = new AbortController()
-  const combinedSignal = signal 
-    ? AbortSignal.any([signal, controller.signal]) 
-    : controller.signal
+  const combinedSignal = signal ? AbortSignal.any([signal, controller.signal]) : controller.signal
 
   const timer = setTimeout(() => controller.abort(), timeout)
 
@@ -68,7 +66,6 @@ export async function request(options: HttpRequestOptions): Promise<HttpResponse
       code: 'NETWORK_ERROR',
       cause: error instanceof Error ? error : new Error(String(error)),
     })
-
   } finally {
     clearTimeout(timer)
   }
@@ -102,7 +99,7 @@ export async function* stream(options: HttpRequestOptions): AsyncIterable<SseEve
         code = 'RATE_LIMIT'
       } else if (response.status === 529) {
         code = 'OVERLOADED'
-      } else if (response.status >= 500) { 
+      } else if (response.status >= 500) {
         code = 'SERVER_ERROR'
       } else if (response.status >= 400) {
         code = 'REQUEST_ERROR'
@@ -127,7 +124,7 @@ export async function* stream(options: HttpRequestOptions): AsyncIterable<SseEve
           data: message.data,
           id: message.id || undefined,
         })
-      }
+      },
     })
 
     while (true) {
@@ -159,7 +156,7 @@ export async function* stream(options: HttpRequestOptions): AsyncIterable<SseEve
 
     throw new NetworkError('Stream request failed', {
       code: 'NETWORK_ERROR',
-      cause: error instanceof Error ? error : new Error(String(error))
+      cause: error instanceof Error ? error : new Error(String(error)),
     })
   } finally {
     clearTimeout(timer)

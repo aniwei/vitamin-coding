@@ -4,7 +4,8 @@ import { htmlToText } from './html-to-text'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 const BRAVE_SEARCH_URL = 'https://search.brave.com/search'
-const DEFAULT_USER_AGENT = 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
+const DEFAULT_USER_AGENT =
+  'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/136.0.0.0 Safari/537.36'
 
 interface SearchResult {
   title: string
@@ -14,7 +15,11 @@ interface SearchResult {
 
 const WebSearchArgsSchema = z.object({
   query: z.string().min(1).max(500).describe('Search query'),
-  limit: z.number().int().min(1).max(20)
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .max(20)
     .optional()
     .default(10)
     .describe('Maximum number of results to return (default: 10)'),
@@ -38,23 +43,27 @@ function parseSearchResults(html: string, limit: number): SearchResult[] {
     const url = urlMatch[1]!
 
     // Extract title from the title attribute of search-snippet-title
-    const titleAttrMatch = block.match(/class="title\s+search-snippet-title[^"]*"[^>]*title="([^"]*)"/)
+    const titleAttrMatch = block.match(
+      /class="title\s+search-snippet-title[^"]*"[^>]*title="([^"]*)"/,
+    )
     let title = ''
     if (titleAttrMatch) {
       title = titleAttrMatch[1]!
     } else {
       // Fallback: extract inner text of search-snippet-title
-      const titleInnerMatch = block.match(/class="title\s+search-snippet-title[^"]*"[^>]*>([\s\S]*?)<\/div>/)
+      const titleInnerMatch = block.match(
+        /class="title\s+search-snippet-title[^"]*"[^>]*>([\s\S]*?)<\/div>/,
+      )
       if (titleInnerMatch) {
         title = htmlToText(titleInnerMatch[1]!).trim()
       }
     }
 
     // Extract snippet from generic-snippet content
-    const snippetMatch = block.match(/class="generic-snippet[^"]*"[\s\S]*?class="content[^"]*"[^>]*>([\s\S]*?)<\/div>/)
-    const snippet = snippetMatch
-      ? htmlToText(snippetMatch[1]!).trim()
-      : ''
+    const snippetMatch = block.match(
+      /class="generic-snippet[^"]*"[\s\S]*?class="content[^"]*"[^>]*>([\s\S]*?)<\/div>/,
+    )
+    const snippet = snippetMatch ? htmlToText(snippetMatch[1]!).trim() : ''
 
     if (url && title) {
       results.push({ title, url, snippet })
@@ -84,12 +93,11 @@ function formatResults(query: string, results: SearchResult[]): string {
   return lines.join('\n').trim()
 }
 
-export function createWebSearch(
-  _projectRoot: string,
-): AgentTool<WebSearchArgs> {
+export function createWebSearch(_projectRoot: string): AgentTool<WebSearchArgs> {
   return {
     name: 'web_search',
-    description: 'Search the web and return results with titles, URLs, and snippets. Use this to discover relevant pages before fetching them with web_fetch.',
+    description:
+      'Search the web and return results with titles, URLs, and snippets. Use this to discover relevant pages before fetching them with web_fetch.',
     parameters: WebSearchArgsSchema,
     visibility: 'always',
     readonly: true,
@@ -102,7 +110,7 @@ export function createWebSearch(
       const response = await fetch(`${BRAVE_SEARCH_URL}?${searchParams}`, {
         headers: {
           'User-Agent': DEFAULT_USER_AGENT,
-          'Accept': 'text/html,application/xhtml+xml',
+          Accept: 'text/html,application/xhtml+xml',
           'Accept-Language': 'en-US,en;q=0.9',
         },
         redirect: 'follow',

@@ -1,29 +1,14 @@
 import type { ToolCall } from '@vitamin/ai'
-import type { Devtools, PauseResumePayload, DebugSnapshot, MessageSummaryItem } from '@vitamin/devtools'
-import type { AgentMessage, AgentTool, ToolResult } from './types'
+import type {
+  Devtools,
+  PauseResumePayload,
+  DebugSnapshot,
+  MessageSummaryItem,
+} from '@vitamin/devtools'
+import type { AgentMessage, AgentTool, ToolHookExecutor, ToolResult } from './types'
 import { AbortError } from './errors'
 
 type SnapshotMetadata = Record<string, string | number | boolean | null>
-
-export interface ToolHookExecutor {
-  executeBeforeHooks(input: {
-    toolName: string
-    toolCallId: string
-    args: Record<string, unknown>
-    agentName: string
-    sessionId: string
-  }): Promise<{ args: Record<string, unknown>; cancelled: boolean; cancelReason?: string }>
-
-  executeAfterHooks(input: {
-    toolName: string
-    toolCallId: string
-    args: Record<string, unknown>
-    result: ToolResult
-    agentName: string
-    sessionId: string
-    durationMs: number
-  }): Promise<{ result: ToolResult; metadata: Record<string, unknown> }>
-}
 
 // 工具执行器接口
 export interface ToolExecutor {
@@ -62,7 +47,9 @@ class DefaultToolExecutor implements ToolExecutor {
   private readonly agentName: string
   private readonly sessionId: string
   private readonly devtools: Devtools | undefined
-  private readonly approval: ((toolName: string, args: Record<string, unknown>, reason: string) => Promise<boolean>) | undefined
+  private readonly approval:
+    | ((toolName: string, args: Record<string, unknown>, reason: string) => Promise<boolean>)
+    | undefined
 
   constructor(options: ToolExecutorOptions) {
     this.tools = new Map()
@@ -84,23 +71,23 @@ class DefaultToolExecutor implements ToolExecutor {
     const { id, name } = toolCall
     const tool = this.tools.get(name)
     const emptySummary: MessageSummaryItem[] = []
-    const pause = (
-      point: DebugSnapshot['point'],
-      metadata: SnapshotMetadata,
-    ) => this.devtools?.debugger.pause({
-      turn: 0,
-      point,
-      frameDepth: 2,
-      messagesCount: 0,
-      lastToolName: name,
-      tokenUsage: { input: 0, output: 0 },
-      metadata,
-      systemPrompt: '',
-      messagesSummary: emptySummary,
-      llmParams: {},
-    })
+    const pause = (point: DebugSnapshot['point'], metadata: SnapshotMetadata) =>
+      this.devtools?.debugger.pause({
+        turn: 0,
+        point,
+        frameDepth: 2,
+        messagesCount: 0,
+        lastToolName: name,
+        tokenUsage: { input: 0, output: 0 },
+        metadata,
+        systemPrompt: '',
+        messagesSummary: emptySummary,
+        llmParams: {},
+      })
 
-    const consume = (result: { command: { type: string }; payload: PauseResumePayload | null } | undefined): void => {
+    const consume = (
+      result: { command: { type: string }; payload: PauseResumePayload | null } | undefined,
+    ): void => {
       if (!result) return
       if (result.command.type === 'stop') {
         throw new AbortError('Stopped by debugger')
@@ -135,7 +122,12 @@ class DefaultToolExecutor implements ToolExecutor {
 
         if (cancelled) {
           return {
-            content: [{ type: 'text', text: cancelReason ?? `Tool ${name} was blocked by pre-execution hook` }],
+            content: [
+              {
+                type: 'text',
+                text: cancelReason ?? `Tool ${name} was blocked by pre-execution hook`,
+              },
+            ],
             isError: true,
           }
         }
@@ -205,7 +197,9 @@ class DefaultToolExecutor implements ToolExecutor {
 
         result = afterResult.result
 
-        consume(await pause('tool_hook_after', { toolCallId: id, durationMs: Date.now() - startTime }))
+        consume(
+          await pause('tool_hook_after', { toolCallId: id, durationMs: Date.now() - startTime }),
+        )
       }
 
       if (signal.aborted) {
@@ -258,16 +252,27 @@ class DefaultToolExecutor implements ToolExecutor {
     toolCalls: ToolCall[],
     signal: AbortSignal,
   ): Promise<Map<string, ToolResult>> {
-    const entries = await Promise.all(toolCalls.map(async (toolCall) => {
-      const result = await this.execute(toolCall, signal)
-      return [toolCall.id, result] as const
-    }))
+    const entries = await Promise.all(
+      toolCalls.map(async (toolCall) => {
+        const result = await this.execute(toolCall, signal)
+        return [toolCall.id, result] as const
+      }),
+    )
 
     return new Map(entries)
   }
 }
 
 // 工厂函数
-export function createToolExecutor(tools: AgentTool[], options?: { hookExecutor?: ToolHookExecutor; agentName?: string; sessionId?: string; devtools?: Devtools; approval?: (toolName: string, args: Record<string, unknown>, reason: string) => Promise<boolean> }): ToolExecutor {
+export function createToolExecutor(
+  tools: AgentTool[],
+  options?: {
+    hookExecutor?: ToolHookExecutor
+    agentName?: string
+    sessionId?: string
+    devtools?: Devtools
+    approval?: (toolName: string, args: Record<string, unknown>, reason: string) => Promise<boolean>
+  },
+): ToolExecutor {
   return new DefaultToolExecutor({ tools, ...options })
 }

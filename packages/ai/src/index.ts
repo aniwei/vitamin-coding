@@ -65,11 +65,7 @@ export {
 export type { DefaultProviderRegistryOptions } from './provider-registry'
 
 // AuthStore — 统一凭据存储（取代 LocalFileAccessKeyResolver 的 OAuth 场景）
-export {
-  AuthStore,
-  createAuthStore,
-  createDefaultAuthStore,
-} from './auth-store'
+export { AuthStore, createAuthStore, createDefaultAuthStore } from './auth-store'
 export type {
   AuthStoreOptions,
   ApiKeyEntry,
@@ -81,11 +77,7 @@ export type {
 // OAuth
 export { GitHubCopilotOAuthProvider } from './oauth/github-copilot'
 
-export {
-  OAuthRegistry,
-  createOAuthRegistry,
-  createDefaultOAuthRegistry,
-} from './oauth-registry'
+export { OAuthRegistry, createOAuthRegistry, createDefaultOAuthRegistry } from './oauth-registry'
 
 // 流式入口
 export { stream, complete, simple } from './stream'
@@ -93,4 +85,3 @@ export { stream, complete, simple } from './stream'
 // 费用计算
 export { calculate, CostTracker, createCostTracker } from './cost'
 export type { CostBreakdown } from './cost'
-

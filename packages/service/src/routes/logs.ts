@@ -11,9 +11,7 @@ const LOG_LEVEL_SEVERITY: Record<string, number> = {
   fatal: 5,
 }
 
-export function createLoggerRoute(
-  context: CodingService,
-): Hono {
+export function createLoggerRoute(context: CodingService): Hono {
   const app = new Hono()
 
   app.get('/history', (c) => {
@@ -26,7 +24,7 @@ export function createLoggerRoute(
     let entries = context.bridge.getLogs()
     if (level && LOG_LEVEL_SEVERITY[level] !== undefined) {
       const minSeverity = LOG_LEVEL_SEVERITY[level]
-      entries = entries.filter(e => (LOG_LEVEL_SEVERITY[e.level] ?? 0) >= minSeverity)
+      entries = entries.filter((e) => (LOG_LEVEL_SEVERITY[e.level] ?? 0) >= minSeverity)
     }
     if (module) {
       entries = entries.filter((e) => e.module.includes(module))

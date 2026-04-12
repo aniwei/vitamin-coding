@@ -15,8 +15,7 @@ import { createVitamin, getLastAssistantText } from '../src'
 import { prepareSandboxWorkspace } from './sandbox-workspace'
 
 const modelId = process.env.CODING_EXAMPLE_MODEL_ID ?? 'github-copilot/gemini-2.5-pro'
-const prompt = process.env.CODING_EXAMPLE_PROMPT
-  ?? '在 app 创建一个 vite react typescript 项目'
+const prompt = process.env.CODING_EXAMPLE_PROMPT ?? '在 app 创建一个 vite react typescript 项目'
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
   if (!value) return fallback

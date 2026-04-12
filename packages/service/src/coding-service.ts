@@ -1,7 +1,6 @@
-
 import { readFileSync, existsSync } from 'node:fs'
 import { join, extname } from 'node:path'
-import { Hono } from 'hono'
+import { Hono, type Context } from 'hono'
 import { createAdaptorServer } from '@hono/node-server'
 import { createLogger } from '@vitamin/shared'
 import { WebSocketManager } from './websocket-manager'
@@ -12,7 +11,6 @@ import { type IncomingMessage, type Server } from 'node:http'
 import type { CodingServiceOptions } from './types'
 import type { Socket } from 'node:net'
 import type { AgentSession, VitaminContext } from '@vitamin/coding'
-
 
 const logger = createLogger('@vitamin/service')
 
@@ -36,7 +34,7 @@ export class CodingService {
   private readonly staticDir?: string
   private readonly bridges = new Map<string, EventBridge>()
   private started = false
-  
+
   public readonly bridge: DebugBridge | null = null
   public readonly ws: WebSocketManager
 
@@ -58,9 +56,9 @@ export class CodingService {
       this.bridge = new DebugBridge(vitamin.devtools, this.ws)
     }
 
-    this.app = createApp(this, { 
-      corsOrigin: options.cors, 
-      devtools: vitamin.devtools ?? undefined, 
+    this.app = createApp(this, {
+      corsOrigin: options.cors,
+      devtools: vitamin.devtools ?? undefined,
       staticDir: options.staticDir,
       debug: this.bridge,
     })
@@ -72,7 +70,7 @@ export class CodingService {
     this.ws.on('message', this.onMessage)
     this.server.on('upgrade', this.onUpgrade)
 
-     this.registerHooks(this.vitamin)
+    this.registerHooks(this.vitamin)
   }
 
   registerHooks(vitamin: VitaminContext): void {
@@ -104,12 +102,7 @@ export class CodingService {
 
   onUpgrade = (req: IncomingMessage, socket: Socket, head: Buffer) => {
     const url = new URL(req.url ?? '/', `http://${this.host}:${this.port}`)
-    const handled = this.ws.handleUpgrade(
-      req, 
-      socket, 
-      head, 
-      url.pathname
-    )
+    const handled = this.ws.handleUpgrade(req, socket, head, url.pathname)
 
     if (!handled) {
       socket.destroy()
@@ -193,7 +186,7 @@ export class CodingService {
     this.app.route(path, routeApp)
   }
 
-  static(c: any) {
+  static(c: Context): Response {
     if (!this.staticDir) {
       return c.text('not found', 404)
     }
@@ -235,7 +228,9 @@ export class CodingService {
   ) => {
     const sessionId = message.data.sessionId as string | undefined
 
-    logger.debug(`message from client ${clientId}: ${message.type} for session ${sessionId ?? 'N/A'}`)
+    logger.debug(
+      `message from client ${clientId}: ${message.type} for session ${sessionId ?? 'N/A'}`,
+    )
 
     switch (message.type) {
       case 'Chat.query': {
@@ -247,9 +242,7 @@ export class CodingService {
         })
 
         // Route to session for actual execution
-        const querySession = sessionId
-          ? this.getSession(sessionId)
-          : this.getActiveSession()
+        const querySession = sessionId ? this.getSession(sessionId) : this.getActiveSession()
 
         if (querySession) {
           const query = message.data.message as string
@@ -265,28 +258,27 @@ export class CodingService {
         break
       }
       case 'Chat.approval': {
-        const approvalSession = sessionId
-          ? this.getSession(sessionId)
-          : this.getActiveSession()
+        const approvalSession = sessionId ? this.getSession(sessionId) : this.getActiveSession()
 
         if (approvalSession) {
           const approvalId = message.data.approvalId as string
           const approved = message.data.approved === true
           approvalSession.resolveApproval(approvalId, approved)
-          logger.debug(`${approved ? 'approval' : 'rejection'} from client ${clientId} for session ${sessionId}`)
+          logger.debug(
+            `${approved ? 'approval' : 'rejection'} from client ${clientId} for session ${sessionId}`,
+          )
         }
         break
       }
       case 'Chat.askUserResponse': {
-        const askSession = sessionId
-          ? this.getSession(sessionId)
-          : this.getActiveSession()
+        const askSession = sessionId ? this.getSession(sessionId) : this.getActiveSession()
 
         if (askSession) {
           const requestId = message.data.requestId as string
-          const answers = message.data.cancelled === true
-            ? null
-            : (message.data.answers as Record<string, unknown>)
+          const answers =
+            message.data.cancelled === true
+              ? null
+              : (message.data.answers as Record<string, unknown>)
           askSession.resolveAskUser(requestId, answers)
           logger.debug(`ask_user response from client ${clientId} for session ${sessionId}`)
         }
@@ -294,9 +286,7 @@ export class CodingService {
         break
       }
       case 'Chat.planApprovalResponse': {
-        const planSession = sessionId
-          ? this.getSession(sessionId)
-          : this.getActiveSession()
+        const planSession = sessionId ? this.getSession(sessionId) : this.getActiveSession()
 
         if (planSession) {
           const requestId = message.data.requestId as string
@@ -324,18 +314,18 @@ export class CodingService {
     }
   }
 
-  private handleDebugCommand(
-    method: string, 
-    data: Record<string, unknown>
-  ): void {
+  private handleDebugCommand(method: string, data: Record<string, unknown>): void {
     if (!this.bridge) return
 
-    this.bridge.send({
-      type: method,
-      seq: (data.seq as number) ?? Date.now(),
-      ...(data.pauseId !== undefined ? { pauseId: data.pauseId as string } : {}),
-      ...(data.depth !== undefined ? { depth: data.depth as number } : {}),
-    }, data.payload as Record<string, unknown> | undefined)
+    this.bridge.send(
+      {
+        type: method,
+        seq: (data.seq as number) ?? Date.now(),
+        ...(data.pauseId !== undefined ? { pauseId: data.pauseId as string } : {}),
+        ...(data.depth !== undefined ? { depth: data.depth as number } : {}),
+      },
+      data.payload as Record<string, unknown> | undefined,
+    )
   }
 
   private handleDebugSetBreakpoint(data: Record<string, unknown>): void {

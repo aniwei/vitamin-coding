@@ -1,11 +1,6 @@
 import { OAuthError } from '@vitamin/shared'
 import { GitHubCopilotOAuthProvider } from './oauth/github-copilot'
-import type { 
-  OAuthCredentials, 
-  OAuthProvider, 
-  OAuthProviderId 
-} from './types'
-
+import type { OAuthCredentials, OAuthProvider, OAuthProviderId } from './types'
 
 export class OAuthRegistry {
   private readonly providers = new Map<OAuthProviderId, OAuthProvider>()
@@ -41,7 +36,7 @@ export class OAuthRegistry {
   async getAccessKey(
     providerId: OAuthProviderId,
     credentials: Record<string, OAuthCredentials>,
-  ): Promise<{ accessKey: string, credentials: OAuthCredentials } | null> {
+  ): Promise<{ accessKey: string; credentials: OAuthCredentials } | null> {
     const provider = this.get(providerId)
     if (!provider) {
       throw new OAuthError(`Unknown OAuth provider: ${providerId}`, {
@@ -75,4 +70,3 @@ export function createDefaultOAuthRegistry(): OAuthRegistry {
 
   return registry
 }
-

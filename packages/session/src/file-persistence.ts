@@ -1,15 +1,15 @@
 import { DiskPersistence } from '@vitamin/persistence'
 import { SESSION_PAGE_SIZE } from '@vitamin/env'
-import type { 
-  SessionPersistence, 
-  SessionSnapshot 
-} from './types'
+import type { SessionPersistence, SessionSnapshot } from './types'
 
 export interface FileSessionPersistenceOptions {
   baseDir: string
 }
 
-export class FileSessionPersistence<T = unknown> extends DiskPersistence<SessionSnapshot<T>> implements SessionPersistence<T> {
+export class FileSessionPersistence<T = unknown>
+  extends DiskPersistence<SessionSnapshot<T>>
+  implements SessionPersistence<T>
+{
   constructor(options: FileSessionPersistenceOptions) {
     super({
       baseDir: options.baseDir,
@@ -24,7 +24,7 @@ export class FileSessionPersistence<T = unknown> extends DiskPersistence<Session
 }
 
 export function createFileSessionPersistence<T = unknown>(
-  options: FileSessionPersistenceOptions
+  options: FileSessionPersistenceOptions,
 ): SessionPersistence<T> {
   return new FileSessionPersistence<T>(options)
 }

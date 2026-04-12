@@ -11,7 +11,7 @@ export const DEFAULT_MEMORY_SOURCES: MemorySource[] = [
   { path: './AGENTS.md', writable: false },
 ]
 
-// L1 Persistent Memory — 加载并管理持久化知识文件。 
+// L1 Persistent Memory — 加载并管理持久化知识文件。
 // AGENTS.md 文件按优先级从多个 source 加载：
 // 1. 全局用户偏好 (~/.vitamin/AGENTS.md)
 // 2. 项目级知识 (./.vitamin/AGENTS.md)
@@ -67,7 +67,7 @@ export class PersistentMemory {
   }
 }
 
-// 纯内存 MemoryStore — 用于测试 
+// 纯内存 MemoryStore — 用于测试
 export class InMemoryMemoryStore implements MemoryStore {
   private data = new Map<string, string>()
 
@@ -93,7 +93,7 @@ export class InMemoryMemoryStore implements MemoryStore {
 }
 
 // 文件系统 MemoryStore — 基于 Node.js fs 模块。
-// 
+//
 // 延迟加载 fs，不在模块顶层 import，
 // 确保在非 Node 环境（如浏览器 SDK）不会报错。
 export class FileSystemMemoryStore implements MemoryStore {
@@ -139,9 +139,7 @@ export class FileSystemMemoryStore implements MemoryStore {
     isAbsolute: (p: string) => boolean,
     homedir: () => string,
   ): string {
-    const expanded = filePath.startsWith('~/')
-      ? filePath.replace('~/', `${homedir()}/`)
-      : filePath
+    const expanded = filePath.startsWith('~/') ? filePath.replace('~/', `${homedir()}/`) : filePath
 
     return isAbsolute(expanded) ? expanded : resolve(this.cwd, expanded)
   }

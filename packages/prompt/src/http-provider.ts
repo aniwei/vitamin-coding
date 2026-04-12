@@ -22,7 +22,7 @@ export class HttpPromptProvider implements PromptProvider {
         if (response.status === 404) return null
         throw new Error(`Remote prompt load failed: ${response.status}`)
       }
-      return await response.json() as PromptEntry
+      return (await response.json()) as PromptEntry
     } catch {
       return null
     }
@@ -33,7 +33,7 @@ export class HttpPromptProvider implements PromptProvider {
     if (!response.ok) {
       throw new Error(`Remote prompt list failed: ${response.status}`)
     }
-    return await response.json() as string[]
+    return (await response.json()) as string[]
   }
 
   async loadMany(keys: string[]): Promise<Map<string, PromptEntry>> {
@@ -46,7 +46,7 @@ export class HttpPromptProvider implements PromptProvider {
       if (!response.ok) {
         throw new Error(`Remote prompt batch load failed: ${response.status}`)
       }
-      const entries = await response.json() as PromptEntry[]
+      const entries = (await response.json()) as PromptEntry[]
       for (const entry of entries) {
         results.set(entry.key, entry)
       }
@@ -81,7 +81,7 @@ export class HttpPromptProvider implements PromptProvider {
     try {
       return await this.fetch(`${this.baseUrl}${path}`, {
         ...init,
-        headers: { ...headers, ...init?.headers as Record<string, string> },
+        headers: { ...headers, ...(init?.headers as Record<string, string>) },
         signal: controller.signal,
       })
     } finally {

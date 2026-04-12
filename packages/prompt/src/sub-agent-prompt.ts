@@ -99,14 +99,15 @@ export function resolveAgentProfile(
   agentName: string,
 ): AgentProfile | undefined {
   // Exact match
-  const exact = profiles.find(p => p.name === agentName)
+  const exact = profiles.find((p) => p.name === agentName)
   if (exact) return exact
 
   // Fuzzy match: supports quality-reviewer / spec-reviewer / explore and similar aliases
   const lower = agentName.toLowerCase()
-  return profiles.find(p =>
-    lower.endsWith(p.name.toLowerCase()) ||
-    p.capabilities.some(c => lower.includes(c.toLowerCase())) ||
-    p.taskTypes.some(t => lower.includes(t.toLowerCase())),
+  return profiles.find(
+    (p) =>
+      lower.endsWith(p.name.toLowerCase()) ||
+      p.capabilities.some((c) => lower.includes(c.toLowerCase())) ||
+      p.taskTypes.some((t) => lower.includes(t.toLowerCase())),
   )
 }

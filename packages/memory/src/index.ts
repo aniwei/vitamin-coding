@@ -17,7 +17,6 @@ export {
   compact,
 } from './compaction'
 
-
 export {
   InMemoryArchiveStorage,
   LocalArchiveStorage,
@@ -85,4 +84,9 @@ export { FileStateManager } from './file-state-snapshot'
 export type { FileStateSnapshot, FileStateCapture } from './file-state-snapshot'
 
 export { OperationalLearningStore } from './operational-learning'
-export type { Lesson, LessonInput, LessonFilter, LearningStoreOptions } from './operational-learning'
+export type {
+  Lesson,
+  LessonInput,
+  LessonFilter,
+  LearningStoreOptions,
+} from './operational-learning'

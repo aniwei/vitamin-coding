@@ -2,17 +2,8 @@ import { z } from 'zod'
 import { resolve, relative } from 'node:path'
 import { readFile } from 'node:fs/promises'
 import { spawn as nodeSpawn } from 'node:child_process'
-import { 
-  TOOLS_MAX_OUTPUT_BYTES, 
-  TOOLS_MAX_OUTPUT_LINES 
-} from '@vitamin/env'
-import { 
-  exists, 
-  formatBytes,
-  normalizePath, 
-  truncateHead,
-  truncateLine 
-} from '@vitamin/shared'
+import { TOOLS_MAX_OUTPUT_BYTES, TOOLS_MAX_OUTPUT_LINES } from '@vitamin/env'
+import { exists, formatBytes, normalizePath, truncateHead, truncateLine } from '@vitamin/shared'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 import type { BinaryToolExecutorRegistry } from '../binary/binary-executor-registry'
 import { BinaryToolExecutor } from '../binary/binary-executor'
@@ -23,11 +14,27 @@ const GREP_MAX_LINE_LENGTH = 500
 const GrepArgsSchema = z.object({
   pattern: z.string().describe('Search pattern (regex or literal string)'),
   path: z.string().optional().describe('Directory or file to search (default: current directory)'),
-  glob: z.string().optional().describe('Filter files by glob pattern, e.g. "*.ts" or "**/*.spec.ts"'),
+  glob: z
+    .string()
+    .optional()
+    .describe('Filter files by glob pattern, e.g. "*.ts" or "**/*.spec.ts"'),
   ignoreCase: z.boolean().optional().describe('Case-insensitive search (default: false)'),
-  literal: z.boolean().optional().describe('Treat pattern as literal string instead of regex (default: false)'),
-  context: z.number().int().min(0).optional().describe('Number of lines to show before and after each match (default: 0)'),
-  limit: z.number().int().min(1).optional().describe(`Maximum number of matches to return (default: ${GREP_DEFAULT_LIMIT})`),
+  literal: z
+    .boolean()
+    .optional()
+    .describe('Treat pattern as literal string instead of regex (default: false)'),
+  context: z
+    .number()
+    .int()
+    .min(0)
+    .optional()
+    .describe('Number of lines to show before and after each match (default: 0)'),
+  limit: z
+    .number()
+    .int()
+    .min(1)
+    .optional()
+    .describe(`Maximum number of matches to return (default: ${GREP_DEFAULT_LIMIT})`),
 })
 
 type GrepArgs = z.infer<typeof GrepArgsSchema>
@@ -42,11 +49,7 @@ interface RgMatch {
   text: string
 }
 
-export function createGrep(
-  projectRoot: string,
-  options: GrepToolOptions
-): AgentTool<GrepArgs> {
-  
+export function createGrep(projectRoot: string, options: GrepToolOptions): AgentTool<GrepArgs> {
   return {
     name: 'grep',
     description: `Search file contents for pattern matches. Returns matching lines with file paths and line numbers. Respects .gitignore. Truncated to ${GREP_DEFAULT_LIMIT} matches or ${TOOLS_MAX_OUTPUT_BYTES / 1024}KB. Long lines truncated to ${GREP_MAX_LINE_LENGTH} chars.`,
@@ -58,7 +61,7 @@ export function createGrep(
       const searchPath = resolve(projectRoot, params.path ?? '.')
       const normalizedSearchPath = normalizePath(searchPath)
 
-      if (!await exists(normalizedSearchPath)) {
+      if (!(await exists(normalizedSearchPath))) {
         throw new Error(`Search path does not exist: ${params.path ?? '.'}`)
       }
 
@@ -73,7 +76,7 @@ export function createGrep(
         params.limit ?? GREP_DEFAULT_LIMIT,
         options.binaryToolExecutorRegistry,
       )
-    }
+    },
   }
 }
 
@@ -85,12 +88,7 @@ function buildRgArgs(
   glob?: string,
   limit?: number,
 ): string[] {
-  const args: string[] = [
-    '--json', 
-    '--line-number', 
-    '--color=never', 
-    '--hidden'
-  ]
+  const args: string[] = ['--json', '--line-number', '--color=never', '--hidden']
 
   if (ignoreCase) {
     args.push('--ignore-case')
@@ -195,8 +193,8 @@ function formatMatchWithContext(
 }
 
 async function executeRg(
-  rgPath: string, 
-  args: string[]
+  rgPath: string,
+  args: string[],
 ): Promise<{ stdout: string; exitCode: number | null; error?: string }> {
   return new Promise((resolve) => {
     const ps = nodeSpawn(rgPath, args, { stdio: 'pipe' })
@@ -212,9 +210,9 @@ async function executeRg(
     ps.on('close', (code) => {
       // rg exits 0 for matches, 1 for no matches, 2 for errors
       // all are valid outcomes
-      resolve({ 
-        stdout: Buffer.concat(stdout).toString('utf-8'), 
-        exitCode: code 
+      resolve({
+        stdout: Buffer.concat(stdout).toString('utf-8'),
+        exitCode: code,
       })
     })
   })
@@ -229,7 +227,7 @@ async function grep(
   ignoreCase: boolean,
   contextSize: number,
   limit: number,
-  binaryExecutorRegistry?: BinaryToolExecutorRegistry
+  binaryExecutorRegistry?: BinaryToolExecutorRegistry,
 ): Promise<ToolResult> {
   if (!binaryExecutorRegistry) {
     throw new Error('Binary tool executor registry is not available')

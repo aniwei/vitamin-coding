@@ -16,6 +16,7 @@
 ### SettingsManager（settings-manager.ts）
 
 封装 `@vitamin/setting` 的 SettingLoader，增加事件通知：
+
 - `load()` → 加载配置
 - `get(key)` → 读取配置项
 - `onChanged(callback)` → 配置变化通知
@@ -24,6 +25,7 @@
 ### DefaultResourceManager（resource-manager.ts）
 
 组合多个 Source 提供统一加载接口：
+
 - `loadAll()` → 并行加载所有 Source → 合并为 `LoadedResources`
 - `getMemories()` → 记忆注入内容
 - `getPromptTemplates()` → 提示模板列表
@@ -53,6 +55,7 @@ interface LoadedResources {
 ### 冲突检测（collision-detection.ts）
 
 检测多个 Source 加载同名资源的情况：
+
 - `detectCollisions(templates)` → 按名称分组，报告重复
 - 记录到 diagnostics 供上层展示
 
@@ -79,15 +82,15 @@ VitaminApp.init()
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | ResourceManager / LoadedResources / Source 接口 |
-| `src/resource-manager.ts` | DefaultResourceManager 多源协调 |
-| `src/settings-manager.ts` | 配置管理封装 |
-| `src/memory-source.ts` | PersistentMemorySource / InMemoryMemorySource |
-| `src/prompt-template-source.ts` | 文件/内存提示模板源 |
-| `src/collision-detection.ts` | 资源名冲突检测 |
-| `src/index.ts` | barrel 导出 |
+| 文件                            | 职责                                            |
+| ------------------------------- | ----------------------------------------------- |
+| `src/types.ts`                  | ResourceManager / LoadedResources / Source 接口 |
+| `src/resource-manager.ts`       | DefaultResourceManager 多源协调                 |
+| `src/settings-manager.ts`       | 配置管理封装                                    |
+| `src/memory-source.ts`          | PersistentMemorySource / InMemoryMemorySource   |
+| `src/prompt-template-source.ts` | 文件/内存提示模板源                             |
+| `src/collision-detection.ts`    | 资源名冲突检测                                  |
+| `src/index.ts`                  | barrel 导出                                     |
 
 ## 入口与依赖
 

@@ -15,8 +15,9 @@ import { createVitamin, getLastAssistantText } from '../src'
 import { prepareSandboxWorkspace } from './sandbox-workspace'
 
 const modelId = process.env.CODING_EXAMPLE_MODEL_ID ?? 'github-copilot/gemini-2.5-pro'
-const prompt = process.env.CODING_EXAMPLE_PROMPT
-  ?? '重构 session 模块：拆分 agent-session.ts 为独立的 prompt-handler 和 lifecycle-manager'
+const prompt =
+  process.env.CODING_EXAMPLE_PROMPT ??
+  '重构 session 模块：拆分 agent-session.ts 为独立的 prompt-handler 和 lifecycle-manager'
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
   if (!value) return fallback

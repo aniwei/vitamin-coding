@@ -28,12 +28,7 @@ const ROOT_OBJECT_KEYS = [
   'background_task',
   'experimental',
 ] as const
-const REMOVED_LEGACY_KEYS = [
-  'mcp',
-  'skills',
-  'disabled_mcps',
-  'disabled_skills',
-] as const
+const REMOVED_LEGACY_KEYS = ['mcp', 'skills', 'disabled_mcps', 'disabled_skills'] as const
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
   return typeof value === 'object' && value !== null && !Array.isArray(value)
@@ -67,7 +62,6 @@ function deepMerge(
   return result
 }
 
-
 function merge(...layers: Partial<VitaminSetting>[]): Partial<VitaminSetting> {
   const [lower, higher, ...others] = layers
   const result = { ...lower }
@@ -75,17 +69,14 @@ function merge(...layers: Partial<VitaminSetting>[]): Partial<VitaminSetting> {
   if (higher) {
     for (const [key, value] of Object.entries(higher)) {
       if (value === undefined) continue
-  
+
       if (Array.isArray(result[key]) && Array.isArray(value)) {
         const existing = result[key] as string[]
         const incoming = value as string[]
-  
+
         result[key] = [...new Set([...existing, ...incoming])]
       } else if (isPlainObject(value) && isPlainObject(result[key as keyof VitaminSetting])) {
-        result[key] = deepMerge(
-          result[key] as Record<string, unknown>,
-          value,
-        ) 
+        result[key] = deepMerge(result[key] as Record<string, unknown>, value)
       } else {
         result[key] = value
       }
@@ -128,7 +119,7 @@ function validate(setting: Partial<VitaminSetting>): Partial<VitaminSetting> {
       delete validated[key]
     }
   }
-  
+
   for (const key of Object.keys(validated)) {
     if (!knownKeys.has(key)) {
       logger.warn({ key }, 'Unknown config key (passthrough)')
@@ -149,8 +140,8 @@ function validate(setting: Partial<VitaminSetting>): Partial<VitaminSetting> {
 
   const toolPreset = validated.tool_preset
   if (
-    toolPreset !== undefined
-    && (typeof toolPreset !== 'string' || !TOOL_PRESET_SET.has(toolPreset))
+    toolPreset !== undefined &&
+    (typeof toolPreset !== 'string' || !TOOL_PRESET_SET.has(toolPreset))
   ) {
     dropInvalidField(validated, 'tool_preset', `Invalid tool_preset: ${String(toolPreset)}`)
   }
@@ -202,21 +193,12 @@ export class SettingLoader {
   }
 
   async load(options: LoadSettingOptions = {}): Promise<VitaminSetting> {
-    const {
-      store = this.store,
-      paths = [],
-    } = options
+    const { store = this.store, paths = [] } = options
 
-    const layers = store && paths.length > 0
-      ? await loadSettingFromStore(store, paths)
-      : []
+    const layers = store && paths.length > 0 ? await loadSettingFromStore(store, paths) : []
 
     const env = loadSettingFromEnv()
-    const merged = merge(
-      VITAMIN_DEFAULT_CONFIG,
-      ...layers,
-      env
-    )
+    const merged = merge(VITAMIN_DEFAULT_CONFIG, ...layers, env)
 
     const { config: migrated, applied } = migrate(merged as Record<string, unknown>)
     if (applied.length > 0) {
@@ -240,4 +222,3 @@ export async function loadSetting(options: LoadSettingOptions = {}): Promise<Vit
   const loader = new SettingLoader(options.store)
   return loader.load(options)
 }
-

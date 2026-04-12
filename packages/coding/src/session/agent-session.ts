@@ -4,37 +4,26 @@ import { createToolHookExecutor } from './hooks'
 import { calculate, type AssistantMessage } from '@vitamin/ai'
 import { createHookRegistry } from '@vitamin/hooks'
 import { createLogger, type Logger } from '@vitamin/shared'
-import type {
-  Agent,
-  AgentMessage,
-  AgentTool,
-  ToolCallEvent,
-  ToolResult,
+import {
+  createAgent,
+  type Agent,
+  type AgentMessage,
+  type AgentTool,
+  type ToolCallEvent,
+  type ToolResult,
 } from '@vitamin/agent'
 import type { HookRegistry } from '@vitamin/hooks'
 import type { Session } from '@vitamin/session'
-import type { 
-  Message, 
-  Model, 
-  StreamEvent, 
-  ThinkingLevel, 
-  Usage 
-} from '@vitamin/ai'
-import type { 
-  Devtools, 
-  PauseResult,
-  DebugSnapshot,
-  MessageSummaryItem,
-} from '@vitamin/devtools'
-import type { 
-  AgentSessionOptions, 
+import type { Message, Model, StreamEvent, ThinkingLevel, Usage } from '@vitamin/ai'
+import type { Devtools, PauseResult, DebugSnapshot, MessageSummaryItem } from '@vitamin/devtools'
+import type {
+  AgentSessionOptions,
   AgentSessionEvent,
   AgentSessionSubscriber,
   AskUserQuestion,
-  PromptRefresh, 
-  PromptOptions 
+  PromptRefresh,
+  PromptOptions,
 } from './types'
-
 
 interface AgentSessionEvents extends Events {
   session_start: (sessionId: string) => void
@@ -55,7 +44,10 @@ type SnapshotMetadata = Record<string, string | number | boolean | null>
 function createDeferred<T>(): Deferred<T> {
   let resolve!: (value: T) => void
   let reject!: (reason?: unknown) => void
-  const promise = new Promise<T>((res, rej) => { resolve = res; reject = rej })
+  const promise = new Promise<T>((res, rej) => {
+    resolve = res
+    reject = rej
+  })
   return { resolve, reject, promise }
 }
 
@@ -79,8 +71,14 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
   private devtools?: Devtools
 
   private pendingApproval: { id: string; deferred: Deferred<boolean> } | null = null
-  private pendingAskUser: { requestId: string; deferred: Deferred<Record<string, unknown> | null> } | null = null
-  private pendingPlanApproval: { requestId: string; deferred: Deferred<{ action: string; feedback?: string }> } | null = null
+  private pendingAskUser: {
+    requestId: string
+    deferred: Deferred<Record<string, unknown> | null>
+  } | null = null
+  private pendingPlanApproval: {
+    requestId: string
+    deferred: Deferred<{ action: string; feedback?: string }>
+  } | null = null
   private readonly agentUnsubs: Array<() => void> = []
 
   get id(): string {
@@ -95,20 +93,17 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
     return this.agent.status === 'streaming' || this.agent.status === 'tool_executing'
   }
 
-  constructor(
-    session: Session<AgentMessage>,
-    agent: Agent,
-    options: AgentSessionOptions,
-  ) {
+  constructor(session: Session<AgentMessage>, options: AgentSessionOptions) {
     super()
     this.session = session
-    this.agent = agent
 
     const hookRegistry = options.hookRegistry ?? createHookRegistry({ preset: 'default' })
-    const logger = options.logger ?? createLogger(`agent-session:${session.id}`, {
-      level: 'info',
-      destination: 'stdout',
-    })
+    const logger =
+      options.logger ??
+      createLogger(`agent-session:${session.id}`, {
+        level: 'info',
+        destination: 'stdout',
+      })
 
     const promptRefresh = options.promptRefresh
     const systemPrompt = options.systemPrompt ?? ''
@@ -116,7 +111,7 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
     const thinkingLevel = options.thinkingLevel ?? 'medium'
     const maxToolTurns = options.maxToolTurns ?? 25
     const workspaceDir = options.workspaceDir ?? process.cwd()
-    
+
     const { model, devtools, agentName } = options
 
     this.model = model
@@ -125,11 +120,27 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
     this.thinkingLevel = thinkingLevel
     this.maxToolTurns = maxToolTurns
     this.hookRegistry = hookRegistry
-    this.agentName = agentName ?? 'agent' // TODO
+    this.agentName = agentName ?? 'agent'
     this.devtools = devtools
     this.logger = logger
     this.workspaceDir = workspaceDir
     this.promptRefresh = promptRefresh
+
+    // Agent 在 AgentSession 内部创建，持有基础设施配置，跨所有 run() 共享
+    this.agent = createAgent({
+      stream: options.stream,
+      logger,
+      maxToolTurns,
+      agentName: this.agentName,
+      sessionId: session.id,
+      toolHookExecutor: createToolHookExecutor({
+        hookRegistry,
+        agentName: this.agentName,
+        sessionId: session.id,
+      }),
+      devtools,
+      approval: (toolName, args, reason) => this.requestApproval(toolName, args, reason),
+    })
 
     this.agentUnsubs.push(this.agent.on('stream_event', this.onStreamEvent))
     this.agentUnsubs.push(this.agent.on('turn_start', this.onTurnStart))
@@ -141,23 +152,38 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
   }
 
   onStreamEvent = async (event: StreamEvent): Promise<void> => {
-    this.publish({ 
-      stream_event: [{ 
-        type: 'stream_event' as const, 
-        sessionId: this.id, 
-        event 
-      }] 
+    this.publish({
+      stream_event: [
+        {
+          type: 'stream_event' as const,
+          sessionId: this.id,
+          event,
+        },
+      ],
     })
 
     if (event.type === 'start') {
-      this.publish({ streaming_start: [{ type: 'streaming_start' as const, sessionId: this.id, model: this.model.id }] })
+      this.publish({
+        streaming_start: [
+          { type: 'streaming_start' as const, sessionId: this.id, model: this.model.id },
+        ],
+      })
 
       await this.hookRegistry.emit('stream.start', {
         sessionId: this.id,
         model: this.model.id,
       })
     } else if (event.type === 'done') {
-      this.publish({ streaming_end: [{ type: 'streaming_end' as const, sessionId: this.id, model: this.model.id, stopReason: event.reason ?? 'end_turn' }] })
+      this.publish({
+        streaming_end: [
+          {
+            type: 'streaming_end' as const,
+            sessionId: this.id,
+            model: this.model.id,
+            stopReason: event.reason ?? 'end_turn',
+          },
+        ],
+      })
 
       await this.hookRegistry.emit('stream.end', {
         sessionId: this.id,
@@ -175,37 +201,38 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
 
   private onToolCallStart = (event: { toolCall: ToolCallEvent }): void => {
     this.publish({
-      tool_call_start: [{
-        type: 'tool_call_start' as const,
-        sessionId: this.id,
-        toolCall: {
-          id: event.toolCall.id,
-          name: event.toolCall.name,
-          arguments: event.toolCall.arguments,
+      tool_call_start: [
+        {
+          type: 'tool_call_start' as const,
+          sessionId: this.id,
+          toolCall: {
+            id: event.toolCall.id,
+            name: event.toolCall.name,
+            arguments: event.toolCall.arguments,
+          },
         },
-      }],
+      ],
     })
   }
 
   private onToolCallEnd = (event: { toolCall: ToolCallEvent; result: ToolResult }): void => {
     this.publish({
-      tool_call_end: [{
-        type: 'tool_call_end' as const,
-        sessionId: this.id,
-        toolCall: {
-          id: event.toolCall.id,
-          name: event.toolCall.name,
-          arguments: event.toolCall.arguments,
+      tool_call_end: [
+        {
+          type: 'tool_call_end' as const,
+          sessionId: this.id,
+          toolCall: {
+            id: event.toolCall.id,
+            name: event.toolCall.name,
+            arguments: event.toolCall.arguments,
+          },
+          isError: event.result.isError === true,
         },
-        isError: event.result.isError === true,
-      }],
+      ],
     })
   }
 
-  async prompt(
-    text: string,
-    options?: PromptOptions,
-  ): Promise<void> {
+  async prompt(text: string, options?: PromptOptions): Promise<void> {
     this.ensureNotDisposed()
 
     const overrides: {
@@ -214,10 +241,7 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
       thinkingLevel?: ThinkingLevel
     } = {}
 
-    const consume = (
-      result: PauseResult | undefined, 
-      messages?: AgentMessage[]
-    ): void => {
+    const consume = (result: PauseResult | undefined, messages?: AgentMessage[]): void => {
       if (!result?.payload) {
         return
       }
@@ -266,31 +290,33 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
       point: DebugSnapshot['point'],
       snapshotMessages: readonly AgentMessage[],
       metadata: SnapshotMetadata,
-    ) => this.devtools?.debugger.pause({
-      turn: 0,
-      point,
-      frameDepth: 0,
-      messagesCount: snapshotMessages.length,
-      tokenUsage: { input: 0, output: 0 },
-      metadata,
-      systemPrompt: this.systemPrompt,
-      messagesSummary: summarizeMessages(snapshotMessages, 10),
-      llmParams: {
-        temperature: overrides.temperature,
-        maxTokens: overrides.maxTokens,
-        thinkingLevel: overrides.thinkingLevel ?? this.thinkingLevel,
-      },
-    })
-    
-    if (this.isExecuting) {
+    ) =>
+      this.devtools?.debugger.pause({
+        turn: 0,
+        point,
+        frameDepth: 0,
+        messagesCount: snapshotMessages.length,
+        tokenUsage: { input: 0, output: 0 },
+        metadata,
+        systemPrompt: this.systemPrompt,
+        messagesSummary: summarizeMessages(snapshotMessages, 10),
+        llmParams: {
+          temperature: overrides.temperature,
+          maxTokens: overrides.maxTokens,
+          thinkingLevel: overrides.thinkingLevel ?? this.thinkingLevel,
+        },
+      })
 
+    if (this.isExecuting) {
       const { streamingBehavior } = options ?? {}
       if (streamingBehavior === 'followUp') {
         this.followUp(text)
       } else if (streamingBehavior === 'steer') {
         this.steer(text)
       } else {
-        throw new Error('Agent is processing. Specify streamingBehavior ("steer" or "followUp") to queue the message.')
+        throw new Error(
+          'Agent is processing. Specify streamingBehavior ("steer" or "followUp") to queue the message.',
+        )
       }
     } else {
       this.emit('prompt_start', this.id, text)
@@ -307,10 +333,12 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
 
     const sessionMessagesBeforePrompt = this.session.messages()
 
-    consume(await pause('prompt_before', sessionMessagesBeforePrompt, {
-      sessionId: this.id,
-      isFirstMessage: sessionMessagesBeforePrompt.length === 0,
-    }))
+    consume(
+      await pause('prompt_before', sessionMessagesBeforePrompt, {
+        sessionId: this.id,
+        isFirstMessage: sessionMessagesBeforePrompt.length === 0,
+      }),
+    )
 
     const isFirstMessage = sessionMessagesBeforePrompt.length === 0
 
@@ -331,11 +359,7 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
       metadata: {},
     }
 
-    await this.hookRegistry.execute(
-      'chat.message.before', 
-      beforeInput, 
-      beforeOutput
-    )
+    await this.hookRegistry.execute('chat.message.before', beforeInput, beforeOutput)
 
     if (beforeOutput.cancelled) {
       this.emit('prompt_end', this.id)
@@ -367,10 +391,12 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
 
     messages.push(...ctx.messages)
 
-    consume(await pause('context_build', messages, {
-      sessionId: this.id,
-      hasSummary: !!ctx.summary,
-    }))
+    consume(
+      await pause('context_build', messages, {
+        sessionId: this.id,
+        hasSummary: !!ctx.summary,
+      }),
+    )
 
     const messagesBefore = messages.length
     const paramsOutput = {
@@ -380,22 +406,30 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
       metadata: {},
     }
 
-    await this.hookRegistry.execute('chat.params', {
-      sessionId: this.id,
-      model: this.model.id,
-      provider: this.model.provider,
-      thinkingLevel: this.thinkingLevel,
-    }, paramsOutput)
+    await this.hookRegistry.execute(
+      'chat.params',
+      {
+        sessionId: this.id,
+        model: this.model.id,
+        provider: this.model.provider,
+        thinkingLevel: this.thinkingLevel,
+      },
+      paramsOutput,
+    )
 
     try {
       // system-prompt.transform hook: 允许 hook 链式修改 systemPrompt
       const promptTransformOutput = { systemPrompt: this.systemPrompt }
 
-      await this.hookRegistry.execute('system-prompt.transform', {
-        systemPrompt: this.systemPrompt,
-        sessionId: this.id,
-        tools: this.tools,
-      }, promptTransformOutput)
+      await this.hookRegistry.execute(
+        'system-prompt.transform',
+        {
+          systemPrompt: this.systemPrompt,
+          sessionId: this.id,
+          tools: this.tools,
+        },
+        promptTransformOutput,
+      )
 
       const effectiveSystemPrompt = promptTransformOutput.systemPrompt
 
@@ -404,8 +438,6 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
         model: this.model,
         systemPrompt: effectiveSystemPrompt,
         tools: this.tools,
-        logger: this.logger,
-        maxToolTurns: this.maxToolTurns,
         messages,
         thinkingLevel: paramsOutput.thinkingLevel as ThinkingLevel,
         temperature: paramsOutput.temperature,
@@ -417,46 +449,43 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
 
           const output = { messages: contextMessages }
 
-          await this.hookRegistry.execute('messages.transform', {
-            messages: contextMessages,
-            tools: this.tools,
-            agentName: this.agentName,
-            sessionId: this.id,
-          }, output)
+          await this.hookRegistry.execute(
+            'messages.transform',
+            {
+              messages: contextMessages,
+              tools: this.tools,
+              agentName: this.agentName,
+              sessionId: this.id,
+            },
+            output,
+          )
 
           return output.messages
         },
-        toolHookExecutor: createToolHookExecutor({
-          hookRegistry: this.hookRegistry,
-          agentName: this.agentName,
-          sessionId: this.id,
-        }),
-        agentName: this.agentName,
-        sessionId: this.id,
-        devtools: this.devtools,
-        approval: (toolName, args, reason) => this.requestApproval(toolName, args, reason),
       })
 
       // 4. 将 workLoop 追加的新消息持久化回 Session
       this.persistNewMessages(messages, messagesBefore)
       this.promptUsage(messages.slice(messagesBefore))
 
-      
-      consume(await pause('messages_persist', messages, {
-        sessionId: this.id,
-        newMessages: messages.length - messagesBefore,
-      }))
-      
+      consume(
+        await pause('messages_persist', messages, {
+          sessionId: this.id,
+          newMessages: messages.length - messagesBefore,
+        }),
+      )
+
       await this.hookRegistry.execute('chat.message.after', beforeInput, {
         message: beforeOutput.message,
         cancelled: false,
         metadata: {},
       })
 
-      
-      consume(await pause('prompt_after', messages, {
-        sessionId: this.id,
-      }))
+      consume(
+        await pause('prompt_after', messages, {
+          sessionId: this.id,
+        }),
+      )
 
       this.emit('prompt_end', this.id)
       this.logger.info('Session %s prompt finished', this.id)
@@ -514,9 +543,9 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
 
     const messageCount = this.session.messages().length
 
-    await this.hookRegistry.emit('compaction.before', { 
-      sessionId: this.id, 
-      messageCount 
+    await this.hookRegistry.emit('compaction.before', {
+      sessionId: this.id,
+      messageCount,
     })
 
     this.logger.info('Session %s compacting %d message(s)', this.id, compactedCount)
@@ -525,12 +554,16 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
 
     const retainedCount = this.session.messages().length
 
-    await this.hookRegistry.emit('compaction.after', { 
-      sessionId: this.id, 
-      retainedCount 
+    await this.hookRegistry.emit('compaction.after', {
+      sessionId: this.id,
+      retainedCount,
     })
 
-    this.logger.info('Session %s compaction finished, retained %d message(s)', this.id, retainedCount)
+    this.logger.info(
+      'Session %s compaction finished, retained %d message(s)',
+      this.id,
+      retainedCount,
+    )
   }
 
   private persistNewMessages(messages: AgentMessage[], startIndex: number): void {
@@ -584,20 +617,35 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
   }
 
   private isAssistantMessage(message: AgentMessage): message is AssistantMessage {
-    return typeof message === 'object' && message !== null && 'role' in message && message.role === 'assistant'
+    return (
+      typeof message === 'object' &&
+      message !== null &&
+      'role' in message &&
+      message.role === 'assistant'
+    )
   }
 
   private isThinkingLevel(value: string): value is ThinkingLevel {
-    return value === 'minimal'
-      || value === 'low'
-      || value === 'medium'
-      || value === 'high'
-      || value === 'xhigh'
+    return (
+      value === 'minimal' ||
+      value === 'low' ||
+      value === 'medium' ||
+      value === 'high' ||
+      value === 'xhigh'
+    )
   }
 
   override subscribe(subscriber: AgentSessionSubscriber): () => void
-  override subscribe<K extends string>(type: K, callback: (...args: unknown[]) => void, once?: boolean): () => void
-  override subscribe(subscriberOrType: AgentSessionSubscriber | string, callback?: (...args: unknown[]) => void, once?: boolean): () => void {
+  override subscribe<K extends string>(
+    type: K,
+    callback: (...args: unknown[]) => void,
+    once?: boolean,
+  ): () => void
+  override subscribe(
+    subscriberOrType: AgentSessionSubscriber | string,
+    callback?: (...args: unknown[]) => void,
+    once?: boolean,
+  ): () => void {
     if (typeof subscriberOrType === 'function') {
       return this.subscribeAll((_type: unknown, event: unknown) => {
         subscriberOrType(event as AgentSessionEvent)
@@ -615,7 +663,18 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
     const deferred = createDeferred<boolean>()
     this.pendingApproval = { id, deferred }
 
-    this.publish({ approval_required: [{ type: 'approval_required' as const, sessionId: this.id, id, toolName, arguments: args, description }] })
+    this.publish({
+      approval_required: [
+        {
+          type: 'approval_required' as const,
+          sessionId: this.id,
+          id,
+          toolName,
+          arguments: args,
+          description,
+        },
+      ],
+    })
 
     this.logger.info('Session %s approval requested for tool %s (%s)', this.id, toolName, id)
 
@@ -629,8 +688,17 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
   resolveApproval(approvalId: string, approved: boolean): void {
     if (this.pendingApproval?.id === approvalId) {
       this.pendingApproval.deferred.resolve(approved)
-      this.publish({ approval_resolved: [{ type: 'approval_resolved' as const, sessionId: this.id, id: approvalId, approved }] })
-      this.logger.info('Session %s approval %s for %s', this.id, approved ? 'granted' : 'denied', approvalId)
+      this.publish({
+        approval_resolved: [
+          { type: 'approval_resolved' as const, sessionId: this.id, id: approvalId, approved },
+        ],
+      })
+      this.logger.info(
+        'Session %s approval %s for %s',
+        this.id,
+        approved ? 'granted' : 'denied',
+        approvalId,
+      )
     }
   }
 
@@ -639,7 +707,11 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
     const deferred = createDeferred<Record<string, unknown> | null>()
     this.pendingAskUser = { requestId, deferred }
 
-    this.publish({ ask_user_required: [{ type: 'ask_user_required' as const, sessionId: this.id, requestId, questions }] })
+    this.publish({
+      ask_user_required: [
+        { type: 'ask_user_required' as const, sessionId: this.id, requestId, questions },
+      ],
+    })
 
     this.logger.info('Session %s ask-user requested (%s)', this.id, requestId)
 
@@ -653,7 +725,9 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
   resolveAskUser(requestId: string, answers: Record<string, unknown> | null): void {
     if (this.pendingAskUser?.requestId === requestId) {
       this.pendingAskUser.deferred.resolve(answers)
-      this.publish({ ask_user_resolved: [{ type: 'ask_user_resolved' as const, sessionId: this.id, requestId }] })
+      this.publish({
+        ask_user_resolved: [{ type: 'ask_user_resolved' as const, sessionId: this.id, requestId }],
+      })
       this.logger.info('Session %s ask-user resolved for %s', this.id, requestId)
     }
   }
@@ -663,7 +737,11 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
     const deferred = createDeferred<{ action: string; feedback?: string }>()
     this.pendingPlanApproval = { requestId, deferred }
 
-    this.publish({ plan_approval_required: [{ type: 'plan_approval_required' as const, sessionId: this.id, requestId, planContent }] })
+    this.publish({
+      plan_approval_required: [
+        { type: 'plan_approval_required' as const, sessionId: this.id, requestId, planContent },
+      ],
+    })
 
     this.logger.info('Session %s plan approval requested (%s)', this.id, requestId)
 
@@ -677,7 +755,11 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
   resolvePlanApproval(requestId: string, action: string, feedback?: string): void {
     if (this.pendingPlanApproval?.requestId === requestId) {
       this.pendingPlanApproval.deferred.resolve({ action, feedback })
-      this.publish({ plan_approval_resolved: [{ type: 'plan_approval_resolved' as const, sessionId: this.id, requestId, action }] })
+      this.publish({
+        plan_approval_resolved: [
+          { type: 'plan_approval_resolved' as const, sessionId: this.id, requestId, action },
+        ],
+      })
       this.logger.info('Session %s plan %s for %s', this.id, action, requestId)
     }
   }
@@ -726,13 +808,13 @@ function summarizeMessages(messages: readonly AgentMessage[], lastN: number): Me
   const start = Math.max(0, messages.length - lastN)
 
   return messages.slice(start).map((message, index) => {
-    const serializedContent = typeof message.content === 'string'
-      ? message.content
-      : (JSON.stringify(message.content) ?? '')
+    const serializedContent =
+      typeof message.content === 'string'
+        ? message.content
+        : (JSON.stringify(message.content) ?? '')
 
-    const toolName = message.role === 'tool_result'
-      ? (message as { toolCallId?: string }).toolCallId
-      : undefined
+    const toolName =
+      message.role === 'tool_result' ? (message as { toolCallId?: string }).toolCallId : undefined
 
     return {
       index: start + index,

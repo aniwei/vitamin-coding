@@ -45,7 +45,12 @@ export function createToolErrorTrackerHook(
 
       if (input.result.isError) {
         if (!record) {
-          record = { toolName: input.toolName, errorCount: 0, lastErrorTime: 0, consecutiveErrors: 0 }
+          record = {
+            toolName: input.toolName,
+            errorCount: 0,
+            lastErrorTime: 0,
+            consecutiveErrors: 0,
+          }
         }
         record.errorCount++
         record.consecutiveErrors++

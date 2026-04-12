@@ -52,11 +52,7 @@ export function createErrorRecoveryHook(
       const currentRetries = retryCounters.get(sessionId) ?? 0
 
       if (currentRetries >= maxRetries) {
-        logger.warn(
-          'Session %s exceeded max retries (%d), not recovering',
-          sessionId,
-          maxRetries,
-        )
+        logger.warn('Session %s exceeded max retries (%d), not recovering', sessionId, maxRetries)
         retryCounters.delete(sessionId)
         return
       }

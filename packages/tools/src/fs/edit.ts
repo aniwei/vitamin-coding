@@ -1,39 +1,37 @@
 import { z } from 'zod'
-import {
-  exists,
-  isFile,
-  normalizePath,
-} from '@vitamin/shared'
+import { exists, isFile, normalizePath } from '@vitamin/shared'
 import { resolve } from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
 import { diff } from './diff'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 
 // 参数 schema
-const EditArgsSchema = z.object({
-  path: z.string().describe('Path to the file to edit (relative or absolute)'),
-  oldContent: z.string().describe('Exact text to find and replace'),
-  newContent: z.string().describe('New text to replace oldContent'),
-}).superRefine((args, ctx) => {
-  const oldValue = args.oldContent
-  const newValue = args.newContent
+const EditArgsSchema = z
+  .object({
+    path: z.string().describe('Path to the file to edit (relative or absolute)'),
+    oldContent: z.string().describe('Exact text to find and replace'),
+    newContent: z.string().describe('New text to replace oldContent'),
+  })
+  .superRefine((args, ctx) => {
+    const oldValue = args.oldContent
+    const newValue = args.newContent
 
-  if (oldValue === undefined) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Missing old content text.',
-      path: ['oldContent'],
-    })
-  }
+    if (oldValue === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Missing old content text.',
+        path: ['oldContent'],
+      })
+    }
 
-  if (newValue === undefined) {
-    ctx.addIssue({
-      code: z.ZodIssueCode.custom,
-      message: 'Missing new content text.',
-      path: ['newContent'],
-    })
-  }
-})
+    if (newValue === undefined) {
+      ctx.addIssue({
+        code: z.ZodIssueCode.custom,
+        message: 'Missing new content text.',
+        path: ['newContent'],
+      })
+    }
+  })
 
 export type EditArgs = z.infer<typeof EditArgsSchema>
 
@@ -49,7 +47,9 @@ interface FuzzyMatch {
 
 function normalizeUnicodePunctuation(content: string): string {
   return content
-    .split('\n').map((line) => line.trimEnd()).join('\n')
+    .split('\n')
+    .map((line) => line.trimEnd())
+    .join('\n')
     .replace(/[\u2018\u2019\u201A\u201B]/g, "'")
     .replace(/[\u201C\u201D\u201E\u201F]/g, '"')
     .replace(/[\u2010\u2011\u2012\u2013\u2014\u2015\u2212]/g, '-')
@@ -60,43 +60,40 @@ const normalizeLineEndings = (content: string): string => {
   return content.replace(/\r\n/g, '\n').replace(/\r/g, '\n')
 }
 
-export function fuzzyMatch(
-  content: string, 
-  oldContent: string
-): FuzzyMatch {
-	const exactIndex = content.indexOf(oldContent)
-  
-	if (exactIndex !== -1) {
-		return {
-			found: true,
-			index: exactIndex,
-			matchLength: oldContent.length,
-			usedFuzzyMatch: false,
-			contentForReplacement: content,
-		}
-	}
+export function fuzzyMatch(content: string, oldContent: string): FuzzyMatch {
+  const exactIndex = content.indexOf(oldContent)
 
-	const fuzzyContent = normalizeUnicodePunctuation(content)
-	const fuzzyOldContent = normalizeUnicodePunctuation(oldContent)
-	const fuzzyIndex = fuzzyContent.indexOf(fuzzyOldContent)
+  if (exactIndex !== -1) {
+    return {
+      found: true,
+      index: exactIndex,
+      matchLength: oldContent.length,
+      usedFuzzyMatch: false,
+      contentForReplacement: content,
+    }
+  }
 
-	if (fuzzyIndex === -1) {
-		return {
-			found: false,
-			index: -1,
-			matchLength: 0,
-			usedFuzzyMatch: false,
-			contentForReplacement: content,
-		}
-	}
+  const fuzzyContent = normalizeUnicodePunctuation(content)
+  const fuzzyOldContent = normalizeUnicodePunctuation(oldContent)
+  const fuzzyIndex = fuzzyContent.indexOf(fuzzyOldContent)
 
-	return {
-		found: true,
-		index: fuzzyIndex,
-		matchLength: fuzzyOldContent.length,
-		usedFuzzyMatch: true,
-		contentForReplacement: fuzzyContent,
-	}
+  if (fuzzyIndex === -1) {
+    return {
+      found: false,
+      index: -1,
+      matchLength: 0,
+      usedFuzzyMatch: false,
+      contentForReplacement: content,
+    }
+  }
+
+  return {
+    found: true,
+    index: fuzzyIndex,
+    matchLength: fuzzyOldContent.length,
+    usedFuzzyMatch: true,
+    contentForReplacement: fuzzyContent,
+  }
 }
 
 // 创建 edit 工具
@@ -121,21 +118,16 @@ export function createEdit(projectRoot: string): AgentTool<EditArgs> {
       const resolvedPath = resolve(projectRoot, params.path)
       const normalizedPath = normalizePath(resolvedPath)
 
-      if (!await exists(normalizedPath)) {
+      if (!(await exists(normalizedPath))) {
         throw new Error(`File not found: ${params.path}`)
       }
 
-      if (!await isFile(normalizedPath)) {
+      if (!(await isFile(normalizedPath))) {
         throw new Error(`Not a file: ${params.path}`)
       }
 
-      return await edit(
-        normalizedPath,
-        oldContent,
-        newContent,
-        signal
-      )
-    }
+      return await edit(normalizedPath, oldContent, newContent, signal)
+    },
   }
 }
 
@@ -143,7 +135,7 @@ async function edit(
   path: string,
   oldContent: string,
   newContent: string,
-  signal: AbortSignal
+  signal: AbortSignal,
 ): Promise<ToolResult> {
   const raw = await readFile(path, 'utf-8')
 
@@ -151,7 +143,7 @@ async function edit(
     throw new Error('Operation aborted')
   }
 
-  const { bom, content: stripedContent } = raw.startsWith('\uFEFF') 
+  const { bom, content: stripedContent } = raw.startsWith('\uFEFF')
     ? { bom: '\uFEFF', content: raw.slice(1) }
     : { bom: '', content: raw }
 
@@ -175,7 +167,12 @@ async function edit(
 
   if (!fuzzyMatchResult.found) {
     return {
-      content: [{ type: 'text', text: `Could not find the specified text in ${path}. No changes were made.` }],
+      content: [
+        {
+          type: 'text',
+          text: `Could not find the specified text in ${path}. No changes were made.`,
+        },
+      ],
     }
   }
 
@@ -185,31 +182,38 @@ async function edit(
 
   if (occurrences > 1) {
     return {
-      content: [{ type: 'text', text: `Found ${occurrences} occurrences of the text in ${path}. The text must be unique. Please provide more context to make it unique.` }],
+      content: [
+        {
+          type: 'text',
+          text: `Found ${occurrences} occurrences of the text in ${path}. The text must be unique. Please provide more context to make it unique.`,
+        },
+      ],
     }
   }
 
   const replacement = fuzzyMatchResult.contentForReplacement
-  const content = replacement.substring(0, fuzzyMatchResult.index) 
-    + normalizedNewContent 
-    + replacement.substring(fuzzyMatchResult.index + fuzzyMatchResult.matchLength)
+  const content =
+    replacement.substring(0, fuzzyMatchResult.index) +
+    normalizedNewContent +
+    replacement.substring(fuzzyMatchResult.index + fuzzyMatchResult.matchLength)
 
   if (replacement === content) {
     return {
-      content: [{ type: 'text', text: `No changes made to ${path}. The replacement produced identical content. This might indicate an issue with special characters or the text not existing as expected.` }],
+      content: [
+        {
+          type: 'text',
+          text: `No changes made to ${path}. The replacement produced identical content. This might indicate an issue with special characters or the text not existing as expected.`,
+        },
+      ],
     }
   }
 
-  const finalContent = bom + (
-    lineEnding === '\r\n' 
-      ? content.replace(/\n/g, '\r\n') 
-      : content
-  )
+  const finalContent = bom + (lineEnding === '\r\n' ? content.replace(/\n/g, '\r\n') : content)
 
   await writeFile(path, finalContent)
 
   return {
     content: [{ type: 'text', text: `Successfully replaced text in ${path}.` }],
-    details: { diff:  diff(replacement, content) }
+    details: { diff: diff(replacement, content) },
   }
 }

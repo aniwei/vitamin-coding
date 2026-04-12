@@ -6,23 +6,23 @@
 
 ## 核心功能
 
-| 模块 | 功能 |
-|------|------|
-| CodingService | Hono HTTP 路由（health/chat/sessions/setting/debug/logs） |
-| WebSocketManager | WebSocket 连接管理 + 会话订阅 + 广播 |
-| EventBridge | AgentSession 事件 → WebSocket 协议映射（40+ 事件） |
-| DebugBridge | 调试协议桥接到 HTTP/WebSocket |
+| 模块             | 功能                                                      |
+| ---------------- | --------------------------------------------------------- |
+| CodingService    | Hono HTTP 路由（health/chat/sessions/setting/debug/logs） |
+| WebSocketManager | WebSocket 连接管理 + 会话订阅 + 广播                      |
+| EventBridge      | AgentSession 事件 → WebSocket 协议映射（40+ 事件）        |
+| DebugBridge      | 调试协议桥接到 HTTP/WebSocket                             |
 
 ## HTTP API
 
-| 路由 | 方法 | 功能 |
-|------|------|------|
-| `/api/health` | GET | 健康检查 |
-| `/api/chat` | POST | 发送消息（SSE 流式响应） |
-| `/api/sessions` | GET/POST | 会话列表/创建 |
-| `/api/sessions/:id` | GET/DELETE | 单会话操作 |
-| `/api/setting` | GET/PUT | 配置读写 |
-| `/api/debug` | GET/POST | 调试操作 |
+| 路由                | 方法       | 功能                     |
+| ------------------- | ---------- | ------------------------ |
+| `/api/health`       | GET        | 健康检查                 |
+| `/api/chat`         | POST       | 发送消息（SSE 流式响应） |
+| `/api/sessions`     | GET/POST   | 会话列表/创建            |
+| `/api/sessions/:id` | GET/DELETE | 单会话操作               |
+| `/api/setting`      | GET/PUT    | 配置读写                 |
+| `/api/debug`        | GET/POST   | 调试操作                 |
 
 ## 目录概览
 

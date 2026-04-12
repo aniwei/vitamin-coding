@@ -34,10 +34,7 @@ async function main() {
   console.log('[simple-task] session created:', session.id)
 
   // Direct 复杂度路由：LLM 判定为单文件无歧义，直接使用 read 工具完成
-  const response = await runPrintMode(
-    session,
-    '读取 package.json 并告诉我版本号和依赖列表',
-  )
+  const response = await runPrintMode(session, '读取 package.json 并告诉我版本号和依赖列表')
 
   console.log('\n[simple-task] final response:', response)
 

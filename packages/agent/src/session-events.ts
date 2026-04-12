@@ -19,9 +19,21 @@ export type AgentSessionEvent =
   | { type: 'tool_call_end'; sessionId: string; toolCall: ToolCallEvent; isError: boolean }
   | { type: 'compaction_start'; sessionId: string; messageCount: number }
   | { type: 'compaction_end'; sessionId: string; retainedCount: number }
-  | { type: 'approval_required'; sessionId: string; id: string; toolName: string; arguments: Record<string, unknown>; description: string }
+  | {
+      type: 'approval_required'
+      sessionId: string
+      id: string
+      toolName: string
+      arguments: Record<string, unknown>
+      description: string
+    }
   | { type: 'approval_resolved'; sessionId: string; id: string; approved: boolean }
-  | { type: 'ask_user_required'; sessionId: string; requestId: string; questions: AskUserQuestion[] }
+  | {
+      type: 'ask_user_required'
+      sessionId: string
+      requestId: string
+      questions: AskUserQuestion[]
+    }
   | { type: 'ask_user_resolved'; sessionId: string; requestId: string }
   | { type: 'plan_approval_required'; sessionId: string; requestId: string; planContent: string }
   | { type: 'plan_approval_resolved'; sessionId: string; requestId: string; action: string }

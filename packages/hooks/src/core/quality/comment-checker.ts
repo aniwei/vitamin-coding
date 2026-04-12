@@ -32,10 +32,7 @@ export function createCommentCheckerHook(): HookRegistration<'tool.execute.after
 
         output.result = {
           ...output.result,
-          content: [
-            ...output.result.content,
-            { type: 'text', text: warning },
-          ],
+          content: [...output.result.content, { type: 'text', text: warning }],
         }
         output.metadata.aiCommentsDetected = violations.length
       }

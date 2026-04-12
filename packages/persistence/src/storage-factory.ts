@@ -3,9 +3,7 @@ import { MemoryPersistence } from './memory-persistence'
 import { HttpPersistence } from './http-persistence'
 import type { Persistence, StorageOptions } from './types'
 
-export function createPersistence<T = unknown>(
-  options: StorageOptions<T>,
-): Persistence<T> {
+export function createPersistence<T = unknown>(options: StorageOptions<T>): Persistence<T> {
   switch (options.type) {
     case 'file':
       return new FilePersistence<T>({

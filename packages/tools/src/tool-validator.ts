@@ -24,12 +24,15 @@ function formatValidationError(error: unknown): string {
   }
 
   if (typeof error === 'object' && 'issues' in error) {
-    const issues = (error as { issues: Array<{ path: (string | number)[]; message: string }> }).issues
-    
-    return issues.map((issue) => {
-      const path = issue.path.length > 0 ? `${issue.path.join('.')}: ` : ''
-      return `${path}${issue.message}`
-    }).join('; ')
+    const issues = (error as { issues: Array<{ path: (string | number)[]; message: string }> })
+      .issues
+
+    return issues
+      .map((issue) => {
+        const path = issue.path.length > 0 ? `${issue.path.join('.')}: ` : ''
+        return `${path}${issue.message}`
+      })
+      .join('; ')
   }
 
   return String(error)

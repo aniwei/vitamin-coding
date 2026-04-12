@@ -54,13 +54,20 @@ type CompareResult = {
   error?: string
 }
 
-function parseOutput(modelId: string, output: string, durationMs: number, exitCode: number | null): CompareResult {
+function parseOutput(
+  modelId: string,
+  output: string,
+  durationMs: number,
+  exitCode: number | null,
+): CompareResult {
   const responseMatch = output.match(/^\[complex-task\] final response: (.*)$/m)
   const totalMessagesMatch = output.match(/^\[complex-task\] total messages: (\d+)$/m)
   const totalToolCallsMatch = output.match(/^\[complex-task\] total tool calls: (\d+)$/m)
   const workspaceSourceMatch = output.match(/^\[complex-task\] workspaceSource: (.*)$/m)
   const errorMatch = output.match(/^\[complex-task\] error: (.*)$/m)
-  const toolNames = [...output.matchAll(/Executing tool ([a-zA-Z0-9_-]+)/g)].map((match) => match[1] ?? '')
+  const toolNames = [...output.matchAll(/Executing tool ([a-zA-Z0-9_-]+)/g)].map(
+    (match) => match[1] ?? '',
+  )
 
   return {
     modelId,
@@ -71,7 +78,9 @@ function parseOutput(modelId: string, output: string, durationMs: number, exitCo
     toolNames: [...new Set(toolNames.filter((name) => name.length > 0))],
     workspaceSource: workspaceSourceMatch?.[1]?.trim(),
     responsePreview: responseMatch?.[1]?.trim() ?? '',
-    error: errorMatch?.[1]?.trim() ?? (exitCode === 0 ? undefined : `process exited with code ${exitCode ?? -1}`),
+    error:
+      errorMatch?.[1]?.trim() ??
+      (exitCode === 0 ? undefined : `process exited with code ${exitCode ?? -1}`),
   }
 }
 
@@ -122,8 +131,9 @@ async function runModel(modelId: string, maxToolTurns: number): Promise<CompareR
 async function main() {
   const models = getModels()
   const maxToolTurns = parsePositiveInt(process.env.CODING_EXAMPLE_MAX_TOOL_TURNS, 20)
-  const prompt = process.env.CODING_EXAMPLE_PROMPT
-    ?? '重构 session 模块：拆分 agent-session.ts 为独立的 prompt-handler 和 lifecycle-manager'
+  const prompt =
+    process.env.CODING_EXAMPLE_PROMPT ??
+    '重构 session 模块：拆分 agent-session.ts 为独立的 prompt-handler 和 lifecycle-manager'
 
   console.log('[compare] prompt:', prompt)
   console.log('[compare] maxToolTurns:', maxToolTurns)
@@ -142,7 +152,7 @@ async function main() {
 
     console.log('[compare] status: ok')
     console.log(`[compare] durationMs: ${result.durationMs}`)
-  console.log(`[compare] workspaceSource: ${result.workspaceSource ?? '(unknown)'}`)
+    console.log(`[compare] workspaceSource: ${result.workspaceSource ?? '(unknown)'}`)
     console.log(`[compare] totalMessages: ${result.totalMessages}`)
     console.log(`[compare] totalToolCalls: ${result.totalToolCalls}`)
     console.log(`[compare] toolNames: ${result.toolNames.join(', ') || '(none)'}`)

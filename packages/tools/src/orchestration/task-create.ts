@@ -25,10 +25,9 @@ export type CreateTask = (args: CreateTaskArgs) => Promise<{
 }>
 
 export function createTaskCreate(
-  _projectRoot: string, 
-  create?: CreateTask
+  _projectRoot: string,
+  create?: CreateTask,
 ): AgentTool<TaskCreateArgs> {
-
   return {
     name: 'task_create',
     description: 'Create a new task and submit it to the orchestrator Dispatcher.',
@@ -48,13 +47,23 @@ export function createTaskCreate(
 
       if (result.success) {
         return {
-          content: [{ type: 'text', text: `Task created: ${result.id}${result.message ? `\n${result.message}` : ''}` }],
+          content: [
+            {
+              type: 'text',
+              text: `Task created: ${result.id}${result.message ? `\n${result.message}` : ''}`,
+            },
+          ],
           details: { taskId: result.id },
         }
       }
 
       return {
-        content: [{ type: 'text', text: `Failed to create task: ${result.error ?? 'Unknown error creating task'}` }],
+        content: [
+          {
+            type: 'text',
+            text: `Failed to create task: ${result.error ?? 'Unknown error creating task'}`,
+          },
+        ],
         isError: true,
       }
     },

@@ -20,11 +20,11 @@ function resolveWorkerPath(): string {
 }
 
 interface ServiceEvents extends Events {
-  'Debugger.enabled': () => void,
-  'Debugger.disabled': () => void,
-  'Debugger.started': () => void,
-  'Debugger.stopped': () => void,
-  'error': (error: Error) => void,
+  'Debugger.enabled': () => void
+  'Debugger.disabled': () => void
+  'Debugger.started': () => void
+  'Debugger.stopped': () => void
+  error: (error: Error) => void
 }
 
 interface ServiceOptions {
@@ -39,9 +39,12 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
   private breakpoints: Breakpoints
   private initializedTask: Promise<void> | null = null
   private stoppingTask: Promise<void> | null = null
-  private readonly pendingPauses = new Map<string, {
-    resolve: (result: PauseResult) => void
-  }>()
+  private readonly pendingPauses = new Map<
+    string,
+    {
+      resolve: (result: PauseResult) => void
+    }
+  >()
 
   public get serviceUrl(): string {
     return `http://${SERVICE_HOST}:${this.port}/${this.id}`
@@ -51,10 +54,7 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
     return `ws://${SERVICE_HOST}:${this.port}/${this.id}/inspect`
   }
 
-  constructor(
-    breakpoints: Breakpoints,
-    options: ServiceOptions
-  ) {
+  constructor(breakpoints: Breakpoints, options: ServiceOptions) {
     super()
 
     this.port = options.port
@@ -79,14 +79,14 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
         host: SERVICE_HOST,
         port: this.port,
         serviceId: this.id,
-      }
+      },
     })
     this.workerStopped = false
 
     this.worker.on('message', this.handleWorkerMessage)
-    this.worker.on('error', error => this.emit('error', error as Error))
+    this.worker.on('error', (error) => this.emit('error', error as Error))
     this.worker.on('exit', this.handleWorkerExit)
-    
+
     this.initializedTask = new Promise((resolve, reject) => {
       this.once('Debugger.started', () => {
         logger.info('Agent debug service started and debugger enabled')
@@ -94,7 +94,7 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
         resolve()
       })
 
-      this.once('error', error => {
+      this.once('error', (error) => {
         logger.error({ error }, 'Failed to start devtools service')
         reject(error)
       })
@@ -145,7 +145,7 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
 
       try {
         worker.postMessage({
-          type: 'Runtime.stop'
+          type: 'Runtime.stop',
         })
       } catch (error) {
         logger.warn({ error }, 'Failed to post Runtime.stop to devtools worker')
@@ -178,24 +178,27 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
       return
     }
 
-    worker.terminate().then(() => {
-      logger.info('Devtools worker terminated')
-    }).catch(error => {
-      logger.error({ error }, 'Failed to terminate devtools worker')
-    })
+    worker
+      .terminate()
+      .then(() => {
+        logger.info('Devtools worker terminated')
+      })
+      .catch((error) => {
+        logger.error({ error }, 'Failed to terminate devtools worker')
+      })
   }
 
   logger(message: unknown): void {
-    this.worker?.postMessage({ 
-      type: 'Log.entryAdded', 
-      message: JSON.stringify(message) 
+    this.worker?.postMessage({
+      type: 'Log.entryAdded',
+      message: JSON.stringify(message),
     })
   }
 
   session(message: unknown): void {
-    this.worker?.postMessage({ 
-      type: 'Session.update', 
-      message: JSON.stringify(message) 
+    this.worker?.postMessage({
+      type: 'Session.update',
+      message: JSON.stringify(message),
     })
   }
 
@@ -218,28 +221,27 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
       type: 'Debugger.breakpoints.response',
       requestId,
       success: true,
-      payload: this.breakpoints?.list()
+      payload: this.breakpoints?.list(),
     })
   }
 
   private handleBreakpointSet(requestId: string, payload: Record<string, unknown>): void {
-    this.breakpoints?.set(
-      payload.point as BreakpointPoint, 
-      payload.enabled as boolean
-    )
+    this.breakpoints?.set(payload.point as BreakpointPoint, payload.enabled as boolean)
 
     this.worker?.postMessage({
       type: 'Debugger.breakpoints.response',
       requestId,
-      success: true
+      success: true,
     })
   }
 
   private handleBreakpointSetAll(requestId: string, payload: Record<string, unknown>): void {
-    payload.enabled as boolean 
-      ? this.breakpoints?.enableAll() 
-      : this.breakpoints?.disableAll()
-    
+    if (payload.enabled as boolean) {
+      this.breakpoints?.enableAll()
+    } else {
+      this.breakpoints?.disableAll()
+    }
+
     this.worker?.postMessage({
       type: 'Debugger.breakpoints.response',
       requestId,

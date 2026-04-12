@@ -1,10 +1,9 @@
-import { 
-  spawn as childProcessSpawn, 
-  type ChildProcess 
+import {
+  spawn as childProcessSpawn,
+  type ChildProcess,
 } from 'node:child_process'
 
 type ProgressCallback = (chunk: Buffer) => void
-
 
 export interface SpawnExecuteOptions {
   timeout: number
@@ -26,7 +25,6 @@ const createExecuteResult = (): SpawnExecuteResult => ({
   timedOut: false,
 })
 
-
 const kill = (child: ChildProcess) => {
   const pid = child.pid
   if (!pid) return
@@ -34,17 +32,19 @@ const kill = (child: ChildProcess) => {
   try {
     switch (process.platform) {
       case 'win32': {
-        const args = ['/F', '/T', '/PID', pid + '']
+        const args = ['/F', '/T', '/PID', `${pid}`]
         childProcessSpawn('taskkill', args, { stdio: 'ignore', detached: true })
         break
       }
       default: {
         process.kill(-pid, 'SIGKILL')
-        
+
         try {
           process.kill(pid, 'SIGKILL')
         } catch {
-          console.warn(`Failed to kill process ${pid}, it may still be running.`)
+          console.warn(
+            `Failed to kill process ${pid}, it may still be running.`,
+          )
         }
       }
     }
@@ -54,17 +54,11 @@ const kill = (child: ChildProcess) => {
 }
 
 export function spawn(
-  command: string, 
-  args: string[], 
+  command: string,
+  args: string[],
   options: SpawnExecuteOptions,
 ): Promise<SpawnExecuteResult> {
-  const {
-    cwd,
-    env,
-    timeout,
-    signal,
-    onProgress
-  } = options
+  const { cwd, env, timeout, signal, onProgress } = options
 
   return new Promise<SpawnExecuteResult>((resolve, reject) => {
     if (signal?.aborted) {
@@ -112,11 +106,11 @@ export function spawn(
       result.exitCode = code ?? -1
       cleanup()
 
-      result.timedOut 
-        ? reject(new Error(`Process timed out after ${timeout}ms`))
-        : resolve(result)
-    })    
+      if (result.timedOut) {
+        reject(new Error(`Process timed out after ${timeout}ms`))
+      } else {
+        resolve(result)
+      }
+    })
   })
 }
-
-

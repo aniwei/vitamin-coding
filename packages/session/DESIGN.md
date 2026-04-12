@@ -16,6 +16,7 @@
 ### 会话数据结构（session.ts）
 
 `InMemorySession` 基于链表维护消息序列：
+
 - `parentId` / `leafId`：分支链关系
 - `entries`：消息条目数组（MessageEntry）
 - `compact(keepCount)`：保留最近 N 条，压缩其余为摘要
@@ -25,12 +26,14 @@
 ### 会话存储（session-store.ts）
 
 `SessionStore` 接口与 `InMemorySessionStore` 实现：
+
 - CRUD 操作：`create()` / `get()` / `update()` / `delete()` / `list()`
 - 分页支持：`list(cursor?, pageSize?)`
 
 ### 会话持久化（persistence/）
 
 三种持久化适配器：
+
 - `FileSessionPersistence`：基于 `@vitamin/persistence` DiskPersistence
 - `HttpSessionPersistence`：基于 RemotePersistence
 - `RemoteSessionPersistence`：自定义 HTTP 实现
@@ -40,6 +43,7 @@
 ### 会话管理器（session-manager.ts）
 
 `SessionManager` 负责会话容器管理：
+
 - `create()` / `get()` / `delete()` / `list()`：会话 CRUD
 - `fork(sessionId)`：分支创建
 - **懒回收**：每次操作时检查 `idleTimeoutMs`，回收超时闲置会话
@@ -69,16 +73,16 @@ SessionManager
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | Session / SessionEntry / SessionPersistence 等接口 |
-| `src/session.ts` | InMemorySession 链表分支实现 |
-| `src/session-store.ts` | SessionStore 接口 + InMemorySessionStore |
-| `src/session-manager.ts` | SessionManager 容器（懒 GC + 容量控制） |
-| `src/persistence/file-session-persistence.ts` | 文件持久化适配 |
-| `src/persistence/http-session-persistence.ts` | HTTP 持久化适配 |
-| `src/persistence/remote-session-persistence.ts` | 远程持久化适配 |
-| `src/index.ts` | barrel 导出 |
+| 文件                                            | 职责                                               |
+| ----------------------------------------------- | -------------------------------------------------- |
+| `src/types.ts`                                  | Session / SessionEntry / SessionPersistence 等接口 |
+| `src/session.ts`                                | InMemorySession 链表分支实现                       |
+| `src/session-store.ts`                          | SessionStore 接口 + InMemorySessionStore           |
+| `src/session-manager.ts`                        | SessionManager 容器（懒 GC + 容量控制）            |
+| `src/persistence/file-session-persistence.ts`   | 文件持久化适配                                     |
+| `src/persistence/http-session-persistence.ts`   | HTTP 持久化适配                                    |
+| `src/persistence/remote-session-persistence.ts` | 远程持久化适配                                     |
+| `src/index.ts`                                  | barrel 导出                                        |
 
 ## 入口与依赖
 

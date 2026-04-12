@@ -28,6 +28,7 @@
 ### PersistentMemory（persistent-memory.ts）
 
 加载和管理持久化的长期记忆：
+
 - **全局记忆**：`~/.vitamin/AGENTS.md`（用户级）
 - **项目记忆**：`.vitamin/AGENTS.md`（项目级）
 - **社区记忆**：`.github/copilot-instructions.md`（社区兼容）
@@ -37,6 +38,7 @@
 ### Token 估算器（token-estimator.ts）
 
 `TokenEstimator` 提供快速 token 数估算：
+
 - `estimate(text)`：`text.length / 4` 的近似估算
 - `estimateMessages(messages)`：递归估算消息数组总 token
 - 用于触发压缩/修剪的阈值判断
@@ -44,6 +46,7 @@
 ### 经验学习（operational-learning-store.ts）
 
 `OperationalLearningStore` 管理 Agent 的经验教训：
+
 - `add(lesson)`：添加经验条目
 - `get(query)`：按相关性检索
 - `getRecentLessons(n)`：获取最近 N 条
@@ -52,6 +55,7 @@
 ### 文件状态管理器（file-state-manager.ts）
 
 `FileStateManager` 追踪工作空间快照：
+
 - 记录压缩时的文件操作（创建、修改、删除）
 - 在摘要中保留文件变更上下文
 - 支持增量比对
@@ -59,6 +63,7 @@
 ### 压缩 Prompt 模板（prompts/）
 
 提供用于 LLM 摘要的 prompt 模板，指导压缩行为：
+
 - 保留关键决策和上下文
 - 追踪文件变更
 - 维护任务进度
@@ -96,17 +101,17 @@
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | MemoryContext / CompactionResult / Lesson 等类型 |
-| `src/memory-manager.ts` | 管线协调（prune → compaction → archive） |
-| `src/persistent-memory.ts` | AGENTS.md 多源记忆加载 |
-| `src/token-estimator.ts` | 快速 token 估算 |
-| `src/operational-learning-store.ts` | 经验学习存储 |
-| `src/file-state-manager.ts` | 文件变更追踪 |
-| `src/archive/` | 归档存储（Memory / Local / HTTP） |
-| `src/prompts/` | LLM 压缩模板 |
-| `src/index.ts` | barrel 导出 |
+| 文件                                | 职责                                             |
+| ----------------------------------- | ------------------------------------------------ |
+| `src/types.ts`                      | MemoryContext / CompactionResult / Lesson 等类型 |
+| `src/memory-manager.ts`             | 管线协调（prune → compaction → archive）         |
+| `src/persistent-memory.ts`          | AGENTS.md 多源记忆加载                           |
+| `src/token-estimator.ts`            | 快速 token 估算                                  |
+| `src/operational-learning-store.ts` | 经验学习存储                                     |
+| `src/file-state-manager.ts`         | 文件变更追踪                                     |
+| `src/archive/`                      | 归档存储（Memory / Local / HTTP）                |
+| `src/prompts/`                      | LLM 压缩模板                                     |
+| `src/index.ts`                      | barrel 导出                                      |
 
 ## 入口与依赖
 

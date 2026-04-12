@@ -29,9 +29,10 @@ export async function collectEnvironment(
     const status = (await exec('git status --porcelain --short', workspaceDir)).trim()
     if (status) {
       const lines = status.split('\n')
-      snapshot.gitStatus = lines.length > 10
-        ? `${lines.slice(0, 10).join('\n')}\n... and ${lines.length - 10} more files`
-        : status
+      snapshot.gitStatus =
+        lines.length > 10
+          ? `${lines.slice(0, 10).join('\n')}\n... and ${lines.length - 10} more files`
+          : status
     }
   } catch {
     // Ignore

@@ -39,8 +39,11 @@ export function migrate(config: Record<string, unknown>): {
       result = migration.migrate(result)
       result.config_version = migration.version
       applied.push(`${currentVersion} → ${migration.version}`)
-      
-      logger.info({ from: currentVersion, to: migration.version }, `Applying migration: ${migration.description}`)
+
+      logger.info(
+        { from: currentVersion, to: migration.version },
+        `Applying migration: ${migration.description}`,
+      )
     }
   }
 
@@ -48,7 +51,7 @@ export function migrate(config: Record<string, unknown>): {
     const existingMigrations = Array.isArray(result._migrations)
       ? (result._migrations as string[])
       : []
-      
+
     result._migrations = [...existingMigrations, ...applied]
   }
 

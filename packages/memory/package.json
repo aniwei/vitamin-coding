@@ -1,6 +1,9 @@
 {
   "name": "@vitamin/memory",
   "version": "0.0.1",
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,9 +13,10 @@
       "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
+  },
   "scripts": {
     "build": "tsdown",
     "typecheck:project": "tsc -p tsconfig.json --noEmit",
@@ -21,13 +25,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/shared": "workspace:*",
     "@vitamin/ai": "workspace:*",
     "@vitamin/env": "workspace:*",
-    "@vitamin/persistence": "workspace:*"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
+    "@vitamin/persistence": "workspace:*",
+    "@vitamin/shared": "workspace:*"
   }
 }

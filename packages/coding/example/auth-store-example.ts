@@ -91,7 +91,7 @@ async function exampleCustomPath() {
   const projectStore = createDefaultAuthStore({
     path: '/tmp/my-project/.vitamin/auth.json',
     env: {
-      'openai': 'MY_PROJECT_OPENAI_KEY', // 覆盖默认环境变量名
+      openai: 'MY_PROJECT_OPENAI_KEY', // 覆盖默认环境变量名
     },
   })
 
@@ -129,7 +129,10 @@ async function exampleVitaminAppAuth() {
   // app.providerRegistry 已绑定该 auth 作为主要凭据来源
 
   // CLI 临时注入 key（不调用 save()，进程退出即丢弃）
-  await app.authStore.setCredentialKey('anthropic', process.env.ANTHROPIC_API_KEY ?? 'sk-placeholder')
+  await app.authStore.setCredentialKey(
+    'anthropic',
+    process.env.ANTHROPIC_API_KEY ?? 'sk-placeholder',
+  )
 
   // 检查 anthropic 是否有凭据（会被 ProviderRegistry 的 resolveAccessKey 调用）
   const ready = await app.authStore.hasCredential('anthropic')

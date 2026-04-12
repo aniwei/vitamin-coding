@@ -10,9 +10,7 @@ import type {
   ZodType,
 } from '@vitamin/ai'
 import type { Logger } from '@vitamin/shared'
-
 import type { Devtools, BreakpointPoint } from '@vitamin/devtools'
-import type { ToolHookExecutor } from './tool-executor'
 
 // Agent 运行状态
 export type AgentStatus =
@@ -38,7 +36,6 @@ export interface AgentDebugSnapshot {
 export type AgentMode = 'primary' | 'subagent' | 'all'
 
 // Agent 事件（细粒度，供 Hook/Extension 订阅）
-// 15 种事件类型，完整覆盖 Agent 生命周期
 export type AgentEvent =
   | { type: 'status_change'; from: AgentStatus; to: AgentStatus }
   | { type: 'turn_start'; turnIndex: number }
@@ -63,82 +60,6 @@ export interface ToolCallEvent {
   arguments: Record<string, unknown>
 }
 
-export interface CustomAgentMessages {
-  // 应用层通过 declaration merging 扩展
-}
-export type AgentMessage = Message | CustomAgentMessages[keyof CustomAgentMessages]
-
-// Agent 运行时状态（纯执行快照，不持有 messages/model/tools）
-export interface AgentState {
-  status: AgentStatus
-  turnCount: number
-  tokenUsage: { input: number; output: number; cacheRead: number }
-  isStreaming: boolean
-  currentStreamMessage: AssistantMessage | null
-  pendingToolCalls: Set<string>
-  error?: Error
-}
-
-// Agent 运行上下文 — 每次 run() 由调用方构建传入
-export interface AgentRunContext {
-  model: Model
-  systemPrompt: string
-  messages: AgentMessage[]
-  tools: AgentTool[]
-  logger: Logger
-  toolHookExecutor?: ToolHookExecutor
-  agentName?: string
-  sessionId?: string
-  // AgentMessage[] → LLM Message[] 转换
-  convertToLLM?: (messages: AgentMessage[]) => Message[] | Promise<Message[]>
-  // 上下文转换（压缩/裁剪/注入）— 由外部 MemoryManager 驱动
-  transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>
-  // 最大连续工具调用轮次（安全阀）
-  maxToolTurns: number
-  // 思维级别
-  thinkingLevel: ThinkingLevel
-  // 最大输出 token
-  maxTokens?: number
-  // 温度
-  temperature?: number
-  // 开发工具
-  devtools?: Devtools
-  // 工具审批门控回调 — 当 permission hook 判定 'ask' 时调用
-  approval?: (toolName: string, args: Record<string, unknown>, reason: string) => Promise<boolean>
-}
-
-export interface AgentLoopContext {
-  model: Model
-  systemPrompt: string
-  logger: Logger
-  // AgentMessage[] → LLM Message[] 转换
-  convertToLLM: (messages: AgentMessage[]) => Message[] | Promise<Message[]>
-  
-  // 上下文转换（压缩/裁剪/注入）
-  transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>
-  
-  // Steering 消息获取
-  getSteeringMessages?: () => Promise<AgentMessage[]>
-  
-  // FollowUp 消息获取
-  getFollowUpMessages?: () => Promise<AgentMessage[]>
-  
-  // 最大连续工具调用轮次（安全阀）
-  maxToolTurns: number
-  
-  // 思维级别
-  thinkingLevel: ThinkingLevel
-  
-  // 最大输出 token
-  maxTokens?: number
-  
-  // 温度
-  temperature?: number
-
-  // 开发工具
-  devtools?: Devtools
-}
-
 // 工具调用上下文（参考 Hono Context 模式）
 export interface ToolCallContext<Params = unknown> {
   id: string
@@ -147,6 +68,13 @@ export interface ToolCallContext<Params = unknown> {
   sessionId?: string
   agentName?: string
   onUpdate?: (update: string) => void
+}
+
+// 工具执行结果
+export interface ToolResult {
+  content: (TextContent | ImageContent)[]
+  isError?: boolean
+  details?: Record<string, unknown>
 }
 
 // Agent 工具（封装 ToolDefinition + execute）
@@ -160,20 +88,72 @@ export interface AgentTool<Params = unknown> {
   execute: (ctx: ToolCallContext<Params>) => Promise<ToolResult>
 }
 
-// 工具执行结果
-export interface ToolResult {
-  content: (TextContent | ImageContent)[]
-  isError?: boolean
-  details?: Record<string, unknown>
+export interface CustomAgentMessages {
+  // 应用层通过 declaration merging 扩展
+}
+export type AgentMessage = Message | CustomAgentMessages[keyof CustomAgentMessages]
+
+// Agent 运行时状态（纯执行快照）
+export interface AgentState {
+  status: AgentStatus
+  turnCount: number
+  tokenUsage: { input: number; output: number; cacheRead: number }
+  isStreaming: boolean
+  currentStreamMessage: AssistantMessage | null
+  error?: Error
 }
 
-// Agent 配置（创建时仅需 stream 函数，其余通过 run() 传入）
-export interface AgentOptions {
-  stream?: (
-    context: StreamContext,
-    signal: AbortSignal,
-  ) => AsyncIterable<StreamEvent> & {
-    result(): Promise<AssistantMessage>
-  }
+// Stream 函数类型 — Agent 与 LLM 调用之间的唯一契约接口
+// Agent 只知道这个接口，不知道背后是哪家 LLM
+export type StreamFunction = (
+  context: StreamContext,
+  signal: AbortSignal,
+) => AsyncIterable<StreamEvent> & { result(): Promise<AssistantMessage> }
+
+// 工具 Hook 执行器接口
+export interface ToolHookExecutor {
+  executeBeforeHooks(input: {
+    toolName: string
+    toolCallId: string
+    args: Record<string, unknown>
+    agentName: string
+    sessionId: string
+  }): Promise<{ args: Record<string, unknown>; cancelled: boolean; cancelReason?: string }>
+
+  executeAfterHooks(input: {
+    toolName: string
+    toolCallId: string
+    args: Record<string, unknown>
+    result: ToolResult
+    agentName: string
+    sessionId: string
+    durationMs: number
+  }): Promise<{ result: ToolResult; metadata: Record<string, unknown> }>
+}
+
+// Agent 构造配置 — 创建时确定的基础设施与身份，在所有 run() 间共享
+export interface AgentConfig {
+  stream: StreamFunction
+  logger: Logger
+  maxToolTurns?: number
+  agentName?: string
+  sessionId?: string
+  toolHookExecutor?: ToolHookExecutor
   devtools?: Devtools
+  approval?: (toolName: string, args: Record<string, unknown>, reason: string) => Promise<boolean>
+}
+
+// Agent 执行上下文 — 每次 run() 由调用方传入，描述本次执行内容
+export interface AgentRunContext {
+  model: Model
+  systemPrompt: string
+  messages: AgentMessage[]
+  tools: AgentTool[]
+  thinkingLevel: ThinkingLevel
+  maxTokens?: number
+  temperature?: number
+  // AgentMessage[] → LLM Message[] 转换
+  convertToLLM?: (messages: AgentMessage[]) => Message[] | Promise<Message[]>
+  // 上下文转换（压缩/裁剪/注入）— 由外部 MemoryManager 驱动
+  transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>
 }

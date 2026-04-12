@@ -30,17 +30,19 @@ export class TaskStore {
   async list(filter?: { status?: TaskStatus; parentId?: string }): Promise<Task[]> {
     let result = [...this.tasks.values()]
     if (filter?.status) {
-      result = result.filter(t => t.status === filter.status)
+      result = result.filter((t) => t.status === filter.status)
     }
     if (filter?.parentId) {
-      result = result.filter(t => t.parentId === filter.parentId)
+      result = result.filter((t) => t.parentId === filter.parentId)
     }
     return result
   }
 
   async update(
-    id: string, 
-    patch: Partial<Pick<Task, 'status' | 'output' | 'error' | 'attempts' | 'completedAt' | 'sessionId'>>
+    id: string,
+    patch: Partial<
+      Pick<Task, 'status' | 'output' | 'error' | 'attempts' | 'completedAt' | 'sessionId'>
+    >,
   ): Promise<void> {
     const task = this.tasks.get(id)
     if (!task) {

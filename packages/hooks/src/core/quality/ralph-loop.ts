@@ -65,7 +65,10 @@ function detectLoop(sequence: string[]): string[] | null {
     // 向前检查是否重复
     for (let offset = patternLen; offset <= sequence.length - patternLen; offset += patternLen) {
       const segment = sequence.slice(-(offset + patternLen), -offset)
-      if (segment.length === patternLen && segment.every((tool, i) => tool === candidatePattern[i])) {
+      if (
+        segment.length === patternLen &&
+        segment.every((tool, i) => tool === candidatePattern[i])
+      ) {
         matches++
       } else {
         break

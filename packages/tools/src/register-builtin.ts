@@ -13,10 +13,7 @@ import { createWebFetch } from './web/fetch'
 import { createWebSearch } from './web/search'
 
 // Orchestration
-import { 
-  createTaskDelegate, 
-  type TaskDispatch 
-} from './orchestration/task-delegate'
+import { createTaskDelegate, type TaskDispatch } from './orchestration/task-delegate'
 import { createTaskCreate, type CreateTask } from './orchestration/task-create'
 import { createTaskGet, type GetTask } from './orchestration/task-get'
 import { createTaskList, type ListTasks } from './orchestration/task-list'
@@ -29,33 +26,15 @@ import {
   createBackgroundCancelTool,
   type CancelBackground,
 } from './orchestration/background-task-cancel'
-import {
-  createAgentCall,
-  createReviewCall,
-  type CallAgent,
-} from './orchestration/agent-call'
+import { createAgentCall, createReviewCall, type CallAgent } from './orchestration/agent-call'
 import { createAgentTask } from './orchestration/agent-task'
-import {
-  createClarifyRequest,
-  type ClarifyRequest,
-} from './orchestration/clarify-request'
+import { createClarifyRequest, type ClarifyRequest } from './orchestration/clarify-request'
 
-import {
-  createWriteTodos,
-  type WriteTodos,
-} from './orchestration/write-todos'
+import { createWriteTodos, type WriteTodos } from './orchestration/write-todos'
 
-import {
-  createCaptureFileState,
-  type CaptureFileState,
-} from './orchestration/capture-file-state'
+import { createCaptureFileState, type CaptureFileState } from './orchestration/capture-file-state'
 
-import {
-  createLearn,
-  type LearnCallback,
-} from './orchestration/learn'
-
-
+import { createLearn, type LearnCallback } from './orchestration/learn'
 
 // LSP
 // import { createLspDefinition } from './lsp/definition'
@@ -68,7 +47,7 @@ import {
 import { createSessionManager, type SessionManager } from './session/session-manager'
 
 // Skill
-import { createSkillLoad, type LoadSkill  } from './skill/skill-load'
+import { createSkillLoad, type LoadSkill } from './skill/skill-load'
 import { createSkillExecute, type ExecuteSkill } from './skill/skill-execute'
 
 import type { ToolRegistry } from './tool-registry'
@@ -78,7 +57,7 @@ export interface RegisterBuiltinOptions {
 
   loadSkill: LoadSkill
   executeSkill: ExecuteSkill
-  
+
   dispatchTask: TaskDispatch
   createTask?: CreateTask
   getTask?: GetTask
@@ -93,8 +72,6 @@ export interface RegisterBuiltinOptions {
   captureFileState?: CaptureFileState
   learn?: LearnCallback
   sessionId?: string
-
-
 }
 
 // 注册所有内置工具 (minimal + standard + full 预设)
@@ -105,11 +82,7 @@ export function registerBuiltinTools(
 ): void {
   /// minimal
   // 基础文件系统
-  registry.register([  
-    createRead(projectRoot),
-    createWrite(projectRoot),
-    createEdit(projectRoot),
-  ], {
+  registry.register([createRead(projectRoot), createWrite(projectRoot), createEdit(projectRoot)], {
     preset: 'minimal',
     category: 'fs',
     builtin: true,
@@ -123,9 +96,7 @@ export function registerBuiltinTools(
   })
 
   // 基础 shell
-  registry.register([
-    createBash(projectRoot)
-  ], {
+  registry.register([createBash(projectRoot)], {
     preset: 'minimal',
     category: 'shell',
     builtin: true,
@@ -140,33 +111,32 @@ export function registerBuiltinTools(
     ].join('\n'),
   })
 
-
-  /// standard 
+  /// standard
   // 搜索/导航工具
-  registry.register([
-    createLs(projectRoot),
-    createFind(projectRoot),
-    createGrep(projectRoot, {
-      binaryToolExecutorRegistry: registry.getBinaryToolExecutors()
-    }),
-  ], {
-    preset: 'standard',
-    category: 'search',
-    builtin: true,
-    guideline: [
-      'Use ls to explore directory structure before diving into specific files.',
-      'Use find to locate files by name or glob pattern; use grep to search file contents by text or regex.',
-      'Start broad (ls → find) then narrow (grep → read) to efficiently navigate unfamiliar codebases.',
-      'Combine grep results with read to understand full context around matches.',
-      'grep should use precise patterns; prefer regex alternation for multiple candidates rather than many separate searches.',
-    ].join('\n'),
-  })
+  registry.register(
+    [
+      createLs(projectRoot),
+      createFind(projectRoot),
+      createGrep(projectRoot, {
+        binaryToolExecutorRegistry: registry.getBinaryToolExecutors(),
+      }),
+    ],
+    {
+      preset: 'standard',
+      category: 'search',
+      builtin: true,
+      guideline: [
+        'Use ls to explore directory structure before diving into specific files.',
+        'Use find to locate files by name or glob pattern; use grep to search file contents by text or regex.',
+        'Start broad (ls → find) then narrow (grep → read) to efficiently navigate unfamiliar codebases.',
+        'Combine grep results with read to understand full context around matches.',
+        'grep should use precise patterns; prefer regex alternation for multiple candidates rather than many separate searches.',
+      ].join('\n'),
+    },
+  )
 
   // Web 工具
-  registry.register([
-    createWebFetch(projectRoot),
-    createWebSearch(projectRoot),
-  ], {
+  registry.register([createWebFetch(projectRoot), createWebSearch(projectRoot)], {
     preset: 'standard',
     category: 'web',
     builtin: true,
@@ -179,22 +149,20 @@ export function registerBuiltinTools(
   })
 
   // 任务调度工具
-  registry.register([
-    createTaskDelegate(projectRoot, options.dispatchTask),
-    createWriteTodos(options.writeTodos),
-  ], { 
-    preset: 'standard', 
-    category: 'orchestration', 
-    builtin: true,
-    guideline: [
-      'Use task_delegate to route tasks to more suitable sub-agents by category — useful for tasks requiring specialization or lifecycle management. Provide clear, complete context — sub-agents start with a blank slate.',
-      'Use write_todos for complex tasks to build and maintain a step list first — for UI visibility and memory aid, not to drive execution.',
-      'Break complex tasks into small, independently verifiable subtasks (2-5 minutes each) before delegating.',
-      'Do not delegate tasks that require the current conversation context or interactive clarification.',
-    ].join('\n'),
-  })
-
-
+  registry.register(
+    [createTaskDelegate(projectRoot, options.dispatchTask), createWriteTodos(options.writeTodos)],
+    {
+      preset: 'standard',
+      category: 'orchestration',
+      builtin: true,
+      guideline: [
+        'Use task_delegate to route tasks to more suitable sub-agents by category — useful for tasks requiring specialization or lifecycle management. Provide clear, complete context — sub-agents start with a blank slate.',
+        'Use write_todos for complex tasks to build and maintain a step list first — for UI visibility and memory aid, not to drive execution.',
+        'Break complex tasks into small, independently verifiable subtasks (2-5 minutes each) before delegating.',
+        'Do not delegate tasks that require the current conversation context or interactive clarification.',
+      ].join('\n'),
+    },
+  )
 
   // LSP 工具（opt-in，需要 enableLsp: true）
   // if (options.enableLsp) {
@@ -210,62 +178,69 @@ export function registerBuiltinTools(
 
   /// full
   // 编排工具
-  registry.register([
-    createReviewCall(projectRoot, options.callAgent),
-    createAgentCall(projectRoot, options.callAgent),
-    createAgentTask(projectRoot, options.dispatchTask),
-    createTaskCreate(projectRoot, options.createTask),
-    createTaskGet(projectRoot, { get: options.getTask }),
-    createTaskList(projectRoot, { list: options.listTasks }),
-    createTaskUpdate(projectRoot, { update: options.updateTask }),
-    createBackgroundOutputTool(options.getBackgroundOutput),
-    createBackgroundCancelTool(options.cancelBackground),
-    createClarifyRequest(projectRoot, options.clarifyRequest),
-    createCaptureFileState(options.captureFileState),
-    createLearn(options.sessionId ?? '', options.learn),
-  ], { 
-    preset: 'full', 
-    category: 'orchestration', 
-    builtin: true,
-    guideline: [
-      'Use agent_call / agent_task when you already know exactly which agent to call. Use agent_task for background or stateful execution.',
-      'Use review_call for synchronous, isolated second opinions (code review, design critique).',
-      'Use clarify_request to clarify ambiguous requirements with the user rather than guessing. Only use when genuinely blocked — missing context, conflicting constraints, or needing explicit approval. Include all available context.',
-      'Use capture_file_state when conversation is long and you need to refresh understanding of workspace changes.',
-      'Use learn to record reusable insights (patterns, mistakes, strategies) — not routine progress notes.',
-      'Check task status with task_get/task_list before creating duplicate tasks. Cancel stale tasks with task_update.',
-      'Monitor background tasks with background_output periodically. Cancel unresponsive tasks rather than waiting indefinitely.',
-    ].join('\n'),
-  })
+  registry.register(
+    [
+      createReviewCall(projectRoot, options.callAgent),
+      createAgentCall(projectRoot, options.callAgent),
+      createAgentTask(projectRoot, options.dispatchTask),
+      createTaskCreate(projectRoot, options.createTask),
+      createTaskGet(projectRoot, { get: options.getTask }),
+      createTaskList(projectRoot, { list: options.listTasks }),
+      createTaskUpdate(projectRoot, { update: options.updateTask }),
+      createBackgroundOutputTool(options.getBackgroundOutput),
+      createBackgroundCancelTool(options.cancelBackground),
+      createClarifyRequest(projectRoot, options.clarifyRequest),
+      createCaptureFileState(options.captureFileState),
+      createLearn(options.sessionId ?? '', options.learn),
+    ],
+    {
+      preset: 'full',
+      category: 'orchestration',
+      builtin: true,
+      guideline: [
+        'Use agent_call / agent_task when you already know exactly which agent to call. Use agent_task for background or stateful execution.',
+        'Use review_call for synchronous, isolated second opinions (code review, design critique).',
+        'Use clarify_request to clarify ambiguous requirements with the user rather than guessing. Only use when genuinely blocked — missing context, conflicting constraints, or needing explicit approval. Include all available context.',
+        'Use capture_file_state when conversation is long and you need to refresh understanding of workspace changes.',
+        'Use learn to record reusable insights (patterns, mistakes, strategies) — not routine progress notes.',
+        'Check task status with task_get/task_list before creating duplicate tasks. Cancel stale tasks with task_update.',
+        'Monitor background tasks with background_output periodically. Cancel unresponsive tasks rather than waiting indefinitely.',
+      ].join('\n'),
+    },
+  )
 
   // 会话管理工具（需注入 sessionManager 回调）
   if (options.sessionManager) {
-    registry.register([
-      createSessionManager({ projectRoot, sessionManager: options.sessionManager }),
-    ], { 
-      preset: 'full', 
-      category: 'session', 
-      builtin: true,
-      guideline: [
-        'Use session management to organize separate conversation threads per task or topic.',
-        'Compact sessions proactively when conversation history grows long to avoid context window exhaustion.',
-        'Do not create excessive sessions — reuse existing ones when the topic is the same.',
-      ].join('\n'),
-    })
+    registry.register(
+      [createSessionManager({ projectRoot, sessionManager: options.sessionManager })],
+      {
+        preset: 'full',
+        category: 'session',
+        builtin: true,
+        guideline: [
+          'Use session management to organize separate conversation threads per task or topic.',
+          'Compact sessions proactively when conversation history grows long to avoid context window exhaustion.',
+          'Do not create excessive sessions — reuse existing ones when the topic is the same.',
+        ].join('\n'),
+      },
+    )
   }
 
   // Skill 工具
-  registry.register([
-    createSkillLoad(projectRoot, options.loadSkill),
-    createSkillExecute(projectRoot, options.executeSkill),
-  ], { 
-    preset: 'full', 
-    category: 'skill', 
-    builtin: true,
-    guideline: [
-      'Load skills with skill_load before executing them. Skills are reusable workflow templates (e.g., TDD, debugging, code review).',
-      'Prefer invoking a matching skill over ad-hoc multi-step workflows when one exists.',
-      'Skills encapsulate best practices — follow their structure rather than shortcutting steps.',
-    ].join('\n'),
-  })
+  registry.register(
+    [
+      createSkillLoad(projectRoot, options.loadSkill),
+      createSkillExecute(projectRoot, options.executeSkill),
+    ],
+    {
+      preset: 'full',
+      category: 'skill',
+      builtin: true,
+      guideline: [
+        'Load skills with skill_load before executing them. Skills are reusable workflow templates (e.g., TDD, debugging, code review).',
+        'Prefer invoking a matching skill over ad-hoc multi-step workflows when one exists.',
+        'Skills encapsulate best practices — follow their structure rather than shortcutting steps.',
+      ].join('\n'),
+    },
+  )
 }

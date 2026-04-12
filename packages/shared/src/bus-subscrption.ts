@@ -1,5 +1,3 @@
 import { Subscription } from './subscrption'
 
-export class BusSubscription extends Subscription {
-  
-}
+export class BusSubscription extends Subscription {}

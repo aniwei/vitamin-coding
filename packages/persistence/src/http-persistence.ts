@@ -10,7 +10,10 @@ export interface HttpPersistenceOptions<T = unknown> {
   codec?: Codec<Snapshot<T>>
 }
 
-export class HttpPersistence<T = unknown> extends RemotePersistence<Snapshot<T>> implements Persistence<T> {
+export class HttpPersistence<T = unknown>
+  extends RemotePersistence<Snapshot<T>>
+  implements Persistence<T>
+{
   constructor(options: HttpPersistenceOptions<T>) {
     super({ ...options })
   }

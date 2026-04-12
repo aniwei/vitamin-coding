@@ -31,42 +31,24 @@ export {
 } from './disposable'
 export type { Disposable, AsyncDisposable } from './disposable'
 
-export { 
-  createLogger, 
-  getRootLogger, 
-  attachLogListener, 
-} from './logger'
+export { createLogger, getRootLogger, attachLogListener } from './logger'
 export type { Logger } from './logger'
 
-export {
-  mkdirp,
-  rimraf,
-  exists,
-  mime,
-  isFile,
-  isDirectory,
-} from './fs-extra'
+export { mkdirp, rimraf, exists, mime, isFile, isDirectory } from './fs-extra'
+
+export { formatBytes, truncateLine, truncateHead, truncateTail } from './truncate'
 
 export {
-  formatBytes,
-  truncateLine,
-  truncateHead,
-  truncateTail,
-} from './truncate'
-
-export { 
-  normalizePath, 
+  normalizePath,
   createTempLoggerDir,
   createTempLoggerPath,
   getVitaminHomeDir,
   getVitaminProjectDir,
   getThirdPartyToolDir,
-  getThirdPartyToolBinaryDir
+  getThirdPartyToolBinaryDir,
 } from './path'
 
-export {
-  slugify
-} from './string'
+export { slugify } from './string'
 
 export { parseJsonc, safeStringify } from './jsonc'
 
@@ -87,11 +69,4 @@ export {
   extractFrontmatter,
   extractBodyFromAst,
 } from './markdown'
-export type {
-  MarkdownProcessor,
-  MdastPosition,
-  MdastNode,
-  YamlNode,
-  RootNode,
-} from './markdown'
-
+export type { MarkdownProcessor, MdastPosition, MdastNode, YamlNode, RootNode } from './markdown'

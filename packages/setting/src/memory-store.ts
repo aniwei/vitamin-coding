@@ -25,4 +25,3 @@ export class InMemorySettingStore implements SettingStore {
     return this.data.has(path)
   }
 }
-

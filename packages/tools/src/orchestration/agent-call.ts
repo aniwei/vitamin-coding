@@ -4,7 +4,10 @@ import type { AgentTool, ToolResult } from '@vitamin/agent'
 const CallAgentArgsSchema = z.object({
   agent: z.string().describe('Agent name (e.g. "explore", "librarian")'),
   prompt: z.string().describe('Prompt to send to the Agent'),
-  slot: z.enum(['normal', 'thinking', 'compact', 'critique', 'vision']).optional().describe('Model slot to use for this synchronous isolated call'),
+  slot: z
+    .enum(['normal', 'thinking', 'compact', 'critique', 'vision'])
+    .optional()
+    .describe('Model slot to use for this synchronous isolated call'),
 })
 
 type CallAgentArgs = z.infer<typeof CallAgentArgsSchema>
@@ -13,9 +16,9 @@ type CallAgentOptions = {
 }
 
 export type CallAgent = (
-  agent: string, 
-  prompt: string, 
-  options?: CallAgentOptions
+  agent: string,
+  prompt: string,
+  options?: CallAgentOptions,
 ) => Promise<{
   success: boolean
   output?: string
@@ -51,10 +54,7 @@ function createIsolatedAgentCallTool(
   }
 }
 
-export function createAgentCall(
-  _projectRoot: string,
-  call: CallAgent
-): AgentTool<CallAgentArgs> {
+export function createAgentCall(_projectRoot: string, call: CallAgent): AgentTool<CallAgentArgs> {
   return createIsolatedAgentCallTool(
     'agent_call',
     'Call a specific agent synchronously as an isolated collaborator. Returns the agent response directly.',
@@ -62,10 +62,7 @@ export function createAgentCall(
   )
 }
 
-export function createReviewCall(
-  _projectRoot: string,
-  call: CallAgent,
-): AgentTool<CallAgentArgs> {
+export function createReviewCall(_projectRoot: string, call: CallAgent): AgentTool<CallAgentArgs> {
   return createIsolatedAgentCallTool(
     'review_call',
     'Ask a reviewer or collaborator agent for a synchronous isolated second opinion.',

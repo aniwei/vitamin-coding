@@ -43,12 +43,12 @@ web-ui  ──► service  (React SPA 通过 WebSocket 连接)
 
 通过 `setting` 配置，代理支持四种执行模式：
 
-| 模式 | 说明 |
-|------|------|
+| 模式          | 说明                                                 |
+| ------------- | ---------------------------------------------------- |
 | `interactive` | REPL 循环 — 从 stdin 读取用户输入，流式输出到 stdout |
-| `print` | 单次运行 — 执行一个任务后退出，流式输出到 stdout |
-| `json` | 单次运行 — 将结构化 JSON 事件输出到 stdout |
-| `rpc` | 服务器模式 — 通过 stdin/stdout 暴露 JSON-RPC 接口 |
+| `print`       | 单次运行 — 执行一个任务后退出，流式输出到 stdout     |
+| `json`        | 单次运行 — 将结构化 JSON 事件输出到 stdout           |
+| `rpc`         | 服务器模式 — 通过 stdin/stdout 暴露 JSON-RPC 接口    |
 
 `web-ui` 通过 `service` 与代理通信，`service` 将 `rpc` 模式封装为 WebSocket。
 
@@ -147,34 +147,34 @@ npx nx dev @vitamin/web-ui
 
 ## 包说明
 
-| 包 | 说明 |
-|----|------|
-| `@vitamin/agent` | 核心执行引擎：工具循环、流式处理、会话管理 |
-| `@vitamin/ai` | Anthropic API 的轻量封装，支持 SSE 解析 |
-| `@vitamin/cli` | 二进制入口点 — 解析参数并启动代理 |
-| `@vitamin/coding` | 工作区检测、文件树、语言感知工具 |
-| `@vitamin/devtools` | 暴露代理状态的 Hono HTTP 调试服务器 |
-| `@vitamin/invariant` | 带描述性错误信息的类型化断言工具 |
-| `@vitamin/mcp` | MCP 协议服务器 — 向 MCP 兼容客户端暴露工具 |
-| `@vitamin/service` | Hono + WebSocket 服务器，桥接 HTTP 客户端与代理 |
-| `@vitamin/setting` | 配置 Schema（Zod）、加载、校验与默认值 |
-| `@vitamin/shared` | 事件类型、日志（pino）、Markdown 解析、共享 Schema |
-| `@vitamin/skill` | 加载 YAML/JSON 技能定义并注入为工具 |
-| `@vitamin/swarm` | 生成并协调多个代理实例 |
-| `@vitamin/tools` | 实现：读写文件、bash、搜索、网页抓取 |
-| `web-ui` | React 19 + Vite 8 + Tailwind CSS v4 聊天界面 |
+| 包                   | 说明                                               |
+| -------------------- | -------------------------------------------------- |
+| `@vitamin/agent`     | 核心执行引擎：工具循环、流式处理、会话管理         |
+| `@vitamin/ai`        | Anthropic API 的轻量封装，支持 SSE 解析            |
+| `@vitamin/cli`       | 二进制入口点 — 解析参数并启动代理                  |
+| `@vitamin/coding`    | 工作区检测、文件树、语言感知工具                   |
+| `@vitamin/devtools`  | 暴露代理状态的 Hono HTTP 调试服务器                |
+| `@vitamin/invariant` | 带描述性错误信息的类型化断言工具                   |
+| `@vitamin/mcp`       | MCP 协议服务器 — 向 MCP 兼容客户端暴露工具         |
+| `@vitamin/service`   | Hono + WebSocket 服务器，桥接 HTTP 客户端与代理    |
+| `@vitamin/setting`   | 配置 Schema（Zod）、加载、校验与默认值             |
+| `@vitamin/shared`    | 事件类型、日志（pino）、Markdown 解析、共享 Schema |
+| `@vitamin/skill`     | 加载 YAML/JSON 技能定义并注入为工具                |
+| `@vitamin/swarm`     | 生成并协调多个代理实例                             |
+| `@vitamin/tools`     | 实现：读写文件、bash、搜索、网页抓取               |
+| `web-ui`             | React 19 + Vite 8 + Tailwind CSS v4 聊天界面       |
 
 ## 工具链
 
-| 工具 | 用途 |
-|------|------|
-| **Nx** | Monorepo 任务编排 — 按依赖顺序构建，缓存结果 |
-| **tsup** | 库打包器（ESM 输出，`.d.ts` 生成） |
-| **Vite** | `web-ui` 的前端打包器 |
-| **oxlint** | 基于 Rust 的高速 Linter（替代 Biome linter） |
-| **oxfmt** | 基于 Rust 的高速格式化工具（替代 Biome formatter） |
-| **vitest** | 单元测试运行器 |
-| **TypeScript** | 全包严格模式 |
+| 工具           | 用途                                               |
+| -------------- | -------------------------------------------------- |
+| **Nx**         | Monorepo 任务编排 — 按依赖顺序构建，缓存结果       |
+| **tsup**       | 库打包器（ESM 输出，`.d.ts` 生成）                 |
+| **Vite**       | `web-ui` 的前端打包器                              |
+| **oxlint**     | 基于 Rust 的高速 Linter（替代 Biome linter）       |
+| **oxfmt**      | 基于 Rust 的高速格式化工具（替代 Biome formatter） |
+| **vitest**     | 单元测试运行器                                     |
+| **TypeScript** | 全包严格模式                                       |
 
 ## 贡献指南
 

@@ -1,176 +1,73 @@
 [
   {
     "name": "coder",
-    "taskTypes": [
-      "code_generation",
-      "code_modification"
-    ],
-    "capabilities": [
-      "code",
-      "implement",
-      "write"
-    ],
+    "taskTypes": ["code_generation", "code_modification"],
+    "capabilities": ["code", "implement", "write"],
     "systemPromptTemplate": "你是高质量的代码生成与修改子代理。\n\n## 当前任务\n**{task_title}**\n{task_description}\n\n文件范围：{task_files}\n\n## 执行要求\n- 编写干净、地道、符合项目既有约定的代码。\n- 只实现任务描述中要求的内容，不要过度设计。\n- 如条件允许，运行现有测试确认没有引入回归。\n- 如果遇到小的歧义，做出合理选择并在结果中说明。",
-    "defaultTools": [
-      "file_write",
-      "file_read",
-      "file_edit",
-      "shell",
-      "search",
-      "find",
-      "grep"
-    ],
+    "defaultTools": ["file_write", "file_read", "file_edit", "shell", "search", "find", "grep"],
     "preferredModelTier": "standard",
     "defaultMaxToolTurns": 30
   },
   {
     "name": "refactorer",
-    "taskTypes": [
-      "refactoring"
-    ],
-    "capabilities": [
-      "refactor",
-      "restructure"
-    ],
+    "taskTypes": ["refactoring"],
+    "capabilities": ["refactor", "restructure"],
     "systemPromptTemplate": "你是安全重构子代理。\n\n## 当前任务\n**{task_title}**\n{task_description}\n\n文件范围：{task_files}\n\n## 执行要求\n- 必须精确保留既有行为；这是重构，不是功能变更。\n- 优先做小步、可验证的改动，而不是一次性大改。\n- 每个关键改动后尽量运行测试验证正确性。\n- 必要时同步更新 import 与引用关系。",
-    "defaultTools": [
-      "file_write",
-      "file_read",
-      "file_edit",
-      "shell",
-      "search",
-      "find",
-      "grep"
-    ],
+    "defaultTools": ["file_write", "file_read", "file_edit", "shell", "search", "find", "grep"],
     "preferredModelTier": "powerful",
     "defaultMaxToolTurns": 40
   },
   {
     "name": "tester",
-    "taskTypes": [
-      "testing"
-    ],
-    "capabilities": [
-      "test",
-      "verify",
-      "validate"
-    ],
+    "taskTypes": ["testing"],
+    "capabilities": ["test", "verify", "validate"],
     "systemPromptTemplate": "你是测试专项子代理。\n\n## 当前任务\n**{task_title}**\n{task_description}\n\n文件范围：{task_files}\n\n## 执行要求\n- 编写覆盖关键行为、边界情况和错误路径的测试。\n- 遵循项目现有测试风格与约定。\n- 尽量运行相关测试，确认全部通过。\n- 能真实执行时优先真实执行，尽量少用 mock。",
-    "defaultTools": [
-      "file_write",
-      "file_read",
-      "file_edit",
-      "shell",
-      "search",
-      "find"
-    ],
+    "defaultTools": ["file_write", "file_read", "file_edit", "shell", "search", "find"],
     "preferredModelTier": "standard",
     "defaultMaxToolTurns": 25
   },
   {
     "name": "debugger",
-    "taskTypes": [
-      "debugging"
-    ],
-    "capabilities": [
-      "debug",
-      "diagnose",
-      "fix"
-    ],
+    "taskTypes": ["debugging"],
+    "capabilities": ["debug", "diagnose", "fix"],
     "systemPromptTemplate": "你是调试专项子代理。\n\n## 当前任务\n**{task_title}**\n{task_description}\n\n文件范围：{task_files}\n\n## 执行要求\n- 在动手修复前，先系统性缩小根因范围。\n- 先读懂相关代码路径，再提出修复方案。\n- 用有针对性的日志、断言或验证步骤来确认假设。\n- 修根因，不修表象；如可行，用测试验证修复。",
-    "defaultTools": [
-      "file_read",
-      "file_edit",
-      "shell",
-      "search",
-      "find",
-      "grep"
-    ],
+    "defaultTools": ["file_read", "file_edit", "shell", "search", "find", "grep"],
     "preferredModelTier": "powerful",
     "defaultMaxToolTurns": 35
   },
   {
     "name": "researcher",
-    "taskTypes": [
-      "research"
-    ],
-    "capabilities": [
-      "explore",
-      "analyze",
-      "research"
-    ],
+    "taskTypes": ["research"],
+    "capabilities": ["explore", "analyze", "research"],
     "systemPromptTemplate": "你是代码探索与分析子代理。\n\n## 当前任务\n**{task_title}**\n{task_description}\n\n文件范围：{task_files}\n\n## 执行要求\n- 深入探索代码库，完整回答研究问题。\n- 使用搜索、文件读取和符号导航收集证据。\n- 输出结构化、简洁的结论。\n- 聚焦事实与代码证据，避免猜测。",
-    "defaultTools": [
-      "file_read",
-      "search",
-      "find",
-      "grep",
-      "shell"
-    ],
+    "defaultTools": ["file_read", "search", "find", "grep", "shell"],
     "preferredModelTier": "fast",
     "defaultMaxToolTurns": 20
   },
   {
     "name": "documenter",
-    "taskTypes": [
-      "documentation"
-    ],
-    "capabilities": [
-      "document",
-      "readme",
-      "docs"
-    ],
+    "taskTypes": ["documentation"],
+    "capabilities": ["document", "readme", "docs"],
     "systemPromptTemplate": "你是文档专项子代理。\n\n## 当前任务\n**{task_title}**\n{task_description}\n\n文件范围：{task_files}\n\n## 执行要求\n- 基于真实代码编写清晰、准确的文档。\n- 遵循项目现有文档风格与约定。\n- 只有在确实能帮助理解时才加入代码示例。\n- 文档保持简洁、聚焦，不要泛化。",
-    "defaultTools": [
-      "file_write",
-      "file_read",
-      "search",
-      "find"
-    ],
+    "defaultTools": ["file_write", "file_read", "search", "find"],
     "preferredModelTier": "fast",
     "defaultMaxToolTurns": 15
   },
   {
     "name": "reviewer",
-    "taskTypes": [
-      "review"
-    ],
-    "capabilities": [
-      "review",
-      "audit",
-      "inspect"
-    ],
+    "taskTypes": ["review"],
+    "capabilities": ["review", "audit", "inspect"],
     "systemPromptTemplate": "你是代码审查专项子代理。\n\n## 当前任务\n**{task_title}**\n{task_description}\n\n文件范围：{task_files}\n\n## 执行要求\n- 从正确性、可维护性、安全性和性能角度审查代码。\n- 仔细阅读相关代码，并用搜索或符号工具补全上下文。\n- 报告问题时提供具体文件和行号引用。\n- 发现按严重级别分类：critical、warning、suggestion。\n- 检查是否存在必要测试以及是否覆盖关键路径。",
-    "defaultTools": [
-      "file_read",
-      "search",
-      "find",
-      "grep",
-      "shell"
-    ],
+    "defaultTools": ["file_read", "search", "find", "grep", "shell"],
     "preferredModelTier": "powerful",
     "defaultMaxToolTurns": 25
   },
   {
     "name": "infra",
-    "taskTypes": [
-      "infrastructure"
-    ],
-    "capabilities": [
-      "infrastructure",
-      "build",
-      "config",
-      "ci"
-    ],
+    "taskTypes": ["infrastructure"],
+    "capabilities": ["infrastructure", "build", "config", "ci"],
     "systemPromptTemplate": "你是基础设施与构建配置子代理。\n\n## 当前任务\n**{task_title}**\n{task_description}\n\n文件范围：{task_files}\n\n## 执行要求\n- 负责构建配置、包结构、CI 流水线或其他基础设施相关工作。\n- 遵循项目现有配置模式与约定。\n- 尽量通过相关 build/test 命令验证改动有效。\n- 配置保持精简，并在必要处写清说明。",
-    "defaultTools": [
-      "file_write",
-      "file_read",
-      "file_edit",
-      "shell",
-      "search",
-      "find"
-    ],
+    "defaultTools": ["file_write", "file_read", "file_edit", "shell", "search", "find"],
     "preferredModelTier": "standard",
     "defaultMaxToolTurns": 20
   }

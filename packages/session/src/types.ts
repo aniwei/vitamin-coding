@@ -1,6 +1,13 @@
 export type SessionEntry<T = unknown> =
   | { type: 'message'; id: string; parentId?: string; message: T; timestamp: number }
-  | { type: 'compaction'; id: string; parentId?: string; summary: string; compactedCount: number; timestamp: number }
+  | {
+      type: 'compaction'
+      id: string
+      parentId?: string
+      summary: string
+      compactedCount: number
+      timestamp: number
+    }
 
 export interface SessionContext<T = unknown> {
   summary?: string

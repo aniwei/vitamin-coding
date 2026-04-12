@@ -27,13 +27,13 @@ function decodeHtmlEntities(text: string): string {
   // Numeric entities (decimal)
   result = result.replace(/&#(\d+);/g, (_, code) => {
     const num = parseInt(code, 10)
-    return num > 0 && num < 0x10FFFF ? String.fromCodePoint(num) : ''
+    return num > 0 && num < 0x10ffff ? String.fromCodePoint(num) : ''
   })
 
   // Numeric entities (hex)
   result = result.replace(/&#x([0-9a-fA-F]+);/g, (_, code) => {
     const num = parseInt(code, 16)
-    return num > 0 && num < 0x10FFFF ? String.fromCodePoint(num) : ''
+    return num > 0 && num < 0x10ffff ? String.fromCodePoint(num) : ''
   })
 
   return result
@@ -121,7 +121,10 @@ export function htmlToMarkdown(html: string): string {
   text = text.replace(/<td[^>]*>/gi, ' | ')
   text = text.replace(/<th[^>]*>/gi, ' | ')
   text = text.replace(/<blockquote[^>]*>([\s\S]*?)<\/blockquote>/gi, (_, content: string) => {
-    return content.split('\n').map((line: string) => `> ${line}`).join('\n')
+    return content
+      .split('\n')
+      .map((line: string) => `> ${line}`)
+      .join('\n')
   })
 
   // 3. 剥离剩余标签

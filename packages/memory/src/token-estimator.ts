@@ -13,20 +13,23 @@ export function messageToText(message: Message): string {
     return message.content
   }
   if (Array.isArray(message.content)) {
-    return message.content.map((c) => {
-      switch (c.type) {
-        case 'text':
-          return c.text
-        case 'thinking':
-          return c.text
-        case 'tool_call':
-          return `${c.name}(${JSON.stringify(c.arguments)})`
-        case 'image':
-          return '[image]'
-        default:
-          return ''
-      }
-    }).filter(Boolean).join('\n')
+    return message.content
+      .map((c) => {
+        switch (c.type) {
+          case 'text':
+            return c.text
+          case 'thinking':
+            return c.text
+          case 'tool_call':
+            return `${c.name}(${JSON.stringify(c.arguments)})`
+          case 'image':
+            return '[image]'
+          default:
+            return ''
+        }
+      })
+      .filter(Boolean)
+      .join('\n')
   }
 
   return JSON.stringify(message)
@@ -37,7 +40,10 @@ export function estimateMessageTokens(message: Message, estimator = estimateToke
   return roleOverhead + estimator(messageToText(message))
 }
 
-export function estimateMessagesTokens(messages: readonly Message[], estimator = estimateTokens): number {
+export function estimateMessagesTokens(
+  messages: readonly Message[],
+  estimator = estimateTokens,
+): number {
   let total = 0
   for (const msg of messages) {
     total += estimateMessageTokens(msg, estimator)

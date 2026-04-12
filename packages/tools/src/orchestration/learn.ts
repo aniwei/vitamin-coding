@@ -22,10 +22,7 @@ export type LearnCallback = (args: {
   error?: string
 }>
 
-export function createLearn(
-  sessionId: string,
-  learn?: LearnCallback,
-): AgentTool<LearnArgs> {
+export function createLearn(sessionId: string, learn?: LearnCallback): AgentTool<LearnArgs> {
   return {
     name: 'learn',
     description: 'Record an operational lesson learned during this session for future reference.',
@@ -49,16 +46,20 @@ export function createLearn(
 
       if (result.success) {
         return {
-          content: [{
-            type: 'text',
-            text: `Lesson recorded (${result.lessonId}): [${params.tags.join(', ')}] ${params.trigger} → ${params.insight}`,
-          }],
+          content: [
+            {
+              type: 'text',
+              text: `Lesson recorded (${result.lessonId}): [${params.tags.join(', ')}] ${params.trigger} → ${params.insight}`,
+            },
+          ],
           details: { lessonId: result.lessonId },
         }
       }
 
       return {
-        content: [{ type: 'text', text: `Failed to record lesson: ${result.error ?? 'Unknown error'}` }],
+        content: [
+          { type: 'text', text: `Failed to record lesson: ${result.error ?? 'Unknown error'}` },
+        ],
         isError: true,
       }
     },

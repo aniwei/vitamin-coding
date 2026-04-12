@@ -59,7 +59,7 @@ export class OperationalLearningStore {
 
     for (const lesson of this.lessons.values()) {
       let score = 0
-      
+
       if (lesson.trigger.toLowerCase().includes(lowerQuery)) score += 3
       if (lesson.insight.toLowerCase().includes(lowerQuery)) score += 2
 
@@ -75,7 +75,7 @@ export class OperationalLearningStore {
     return scored
       .sort((a, b) => b.score - a.score)
       .slice(0, limit)
-      .map(s => {
+      .map((s) => {
         s.lesson.appliedCount++
         return s.lesson
       })
@@ -87,14 +87,13 @@ export class OperationalLearningStore {
 
     if (filter?.tags && filter.tags.length > 0) {
       const tagSet = new Set(filter.tags)
-      results = results.filter(l => l.tags.some(t => tagSet.has(t)))
+      results = results.filter((l) => l.tags.some((t) => tagSet.has(t)))
     }
 
     if (filter?.query) {
       const q = filter.query.toLowerCase()
-      results = results.filter(l =>
-        l.trigger.toLowerCase().includes(q) ||
-        l.insight.toLowerCase().includes(q),
+      results = results.filter(
+        (l) => l.trigger.toLowerCase().includes(q) || l.insight.toLowerCase().includes(q),
       )
     }
 

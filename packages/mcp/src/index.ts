@@ -61,11 +61,7 @@ export {
 } from './mcp-tool-adapter'
 
 // ─── Resource ───
-export {
-  readMcpResource,
-  findMcpResource,
-  searchMcpResources,
-} from './mcp-resource'
+export { readMcpResource, findMcpResource, searchMcpResources } from './mcp-resource'
 export type { McpResourceEntry } from './mcp-resource'
 
 // ─── Server ───

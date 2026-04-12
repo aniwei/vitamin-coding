@@ -9,7 +9,10 @@ const TaskUpdateArgsSchema = z.object({
 
 type TaskUpdateArgs = z.infer<typeof TaskUpdateArgsSchema>
 
-export type UpdateTask = (id: string, action: 'cancel' | 'retry') => Promise<{
+export type UpdateTask = (
+  id: string,
+  action: 'cancel' | 'retry',
+) => Promise<{
   success: boolean
   message: string
 }>
@@ -20,7 +23,7 @@ export interface TaskUpdateOptions {
 
 export function createTaskUpdate(
   _projectRoot: string,
-  options: TaskUpdateOptions
+  options: TaskUpdateOptions,
 ): AgentTool<TaskUpdateArgs> {
   const { update } = options
 

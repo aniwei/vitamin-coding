@@ -2,11 +2,11 @@ import type { HookRegistry } from '@vitamin/hooks'
 import type { RunSessionOptions, RunSessionResult } from './executor'
 
 export type TaskStatus =
-  | 'pending'      // 已创建，等待执行
-  | 'running'      // 正在执行中
-  | 'completed'    // 成功完成
-  | 'failed'       // 执行失败
-  | 'cancelled'    // 已取消
+  | 'pending' // 已创建，等待执行
+  | 'running' // 正在执行中
+  | 'completed' // 成功完成
+  | 'failed' // 执行失败
+  | 'cancelled' // 已取消
 
 // 对齐 task_delegate / task_create / agent_call 参数 ═══
 export interface TaskInput {

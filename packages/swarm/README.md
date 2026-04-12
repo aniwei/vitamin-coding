@@ -6,24 +6,24 @@
 
 ## 核心功能
 
-| 模块 | 功能 |
-|------|------|
-| Handoff | Agent 间直接转交控制权（含深度限制） |
-| Sequential | 管道串行，上游输出→下游输入 |
-| Parallel | 并发执行 + maxConcurrency + 结果聚合 |
-| Hierarchical | Supervisor-Worker 层级协作 |
-| Router | 动态任务路由（5 种策略） |
-| SwarmContext | 跨 Agent 共享状态容器 |
+| 模块         | 功能                                 |
+| ------------ | ------------------------------------ |
+| Handoff      | Agent 间直接转交控制权（含深度限制） |
+| Sequential   | 管道串行，上游输出→下游输入          |
+| Parallel     | 并发执行 + maxConcurrency + 结果聚合 |
+| Hierarchical | Supervisor-Worker 层级协作           |
+| Router       | 动态任务路由（5 种策略）             |
+| SwarmContext | 跨 Agent 共享状态容器                |
 
 ## 路由策略
 
-| 策略 | 说明 |
-|------|------|
-| `llm` | LLM 分析任务选择 Agent |
-| `rule` | 正则/关键词规则匹配 |
-| `round-robin` | 轮询分发 |
-| `random` | 随机选择 |
-| `custom` | 自定义回调 |
+| 策略          | 说明                   |
+| ------------- | ---------------------- |
+| `llm`         | LLM 分析任务选择 Agent |
+| `rule`        | 正则/关键词规则匹配    |
+| `round-robin` | 轮询分发               |
+| `random`      | 随机选择               |
+| `custom`      | 自定义回调             |
 
 ## 目录概览
 

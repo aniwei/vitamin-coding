@@ -1,5 +1,9 @@
 // @vitamin/hooks permission 模块桶导出
-export { PermissionPolicyRegistry, compilePolicyFromSetting, createPermissionRegistry } from './policy-registry'
+export {
+  PermissionPolicyRegistry,
+  compilePolicyFromSetting,
+  createPermissionRegistry,
+} from './policy-registry'
 export { PermissionAuditLog } from './audit-log'
 export { PermissionGuardHook, createPermissionGuardHook } from './permission-guard'
 export {

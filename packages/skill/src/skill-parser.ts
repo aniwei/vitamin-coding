@@ -31,9 +31,7 @@ export function parseSkillContent(
   try {
     raw = parseYaml(yamlStr!) as Record<string, unknown>
   } catch (err) {
-    throw new Error(
-      `Failed to parse YAML frontmatter in "${filePath}": ${(err as Error).message}`,
-    )
+    throw new Error(`Failed to parse YAML frontmatter in "${filePath}": ${(err as Error).message}`)
   }
 
   if (!raw || typeof raw !== 'object') {
@@ -62,11 +60,7 @@ function extractMetadata(raw: Record<string, unknown>, filePath: string): SkillM
 
   // 验证 name 格式 (kebab-case: 字母、数字、连字符)
   if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/.test(name)) {
-    logger.warn(
-      'Skill name "%s" in "%s" does not follow kebab-case convention',
-      name,
-      filePath,
-    )
+    logger.warn('Skill name "%s" in "%s" does not follow kebab-case convention', name, filePath)
   }
 
   const description = raw['description']
@@ -89,7 +83,9 @@ function extractMetadata(raw: Record<string, unknown>, filePath: string): SkillM
     description,
     version: typeof raw['version'] === 'string' ? raw['version'] : undefined,
     author: typeof raw['author'] === 'string' ? raw['author'] : undefined,
-    tags: Array.isArray(raw['tags']) ? raw['tags'].filter((t): t is string => typeof t === 'string') : undefined,
+    tags: Array.isArray(raw['tags'])
+      ? raw['tags'].filter((t): t is string => typeof t === 'string')
+      : undefined,
     dependencies: Array.isArray(raw['dependencies'])
       ? raw['dependencies'].filter((d): d is string => typeof d === 'string')
       : undefined,

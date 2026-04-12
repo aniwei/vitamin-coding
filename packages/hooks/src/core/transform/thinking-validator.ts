@@ -16,7 +16,10 @@ export function createThinkingValidatorHook(): HookRegistration<'messages.transf
 
         // 过滤掉空 thinking block
         const filtered = content.filter((part: Record<string, unknown>) => {
-          if (part.type === 'thinking' && (!part.thinking || (part.thinking as string).trim() === '')) {
+          if (
+            part.type === 'thinking' &&
+            (!part.thinking || (part.thinking as string).trim() === '')
+          ) {
             return false
           }
           return true

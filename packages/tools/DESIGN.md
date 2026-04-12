@@ -16,6 +16,7 @@
 ### 工具注册表（tool-registry.ts）
 
 `ToolRegistry` 管理 `AgentTool` 实例的注册与查询：
+
 - `register(tool)`：注册具名工具
 - `get(name)` / `has(name)`：按名查询
 - `getAll()` / `getEnabled()` / `getByTag(tag)`：批量查询
@@ -32,25 +33,30 @@
 ### 内置工具分类
 
 #### 文件系统（fs/）
+
 - `read_file`：读取文件内容（支持行范围 + 二进制偏移）
 - `write_file`：写入新文件，自动创建目录
 - `edit_file`：基于精确 oldString/newString 的单点替换
 - `multi_edit`：批量多文件替换
 
 #### 搜索（search/）
+
 - `list_dir`：列目录内容
 - `find_file`：glob/regex 文件查找
 - `grep`：文本/正则搜索
 - `semantic_search`：语义搜索
 
 #### Shell（shell/）
+
 - `bash`：Shell 命令执行，支持超时/工作目录/AbortSignal
 
 #### Web（web/）
+
 - `web_search`：网络搜索
 - `web_fetch`：获取网页正文
 
 #### 编排（orchestration/）
+
 - `task_delegate`：委托给子 Agent
 - `write_todos`：任务列表管理
 - `agent_call`：调用指定 Agent 配置
@@ -62,13 +68,16 @@
 - `abort_task`：中止当前任务
 
 #### 会话（session/）
+
 - `session_summary`：获取会话摘要
 - `session_history`：获取历史回合
 
 #### 技能（skill/）
+
 - `load_skill`：加载 SKILL.md 技能文件
 
 #### LSP（lsp/）
+
 - `lsp_definition`：跳转定义
 - `lsp_references`：查找引用
 - `lsp_symbols`：符号搜索
@@ -99,19 +108,19 @@ VitaminApp 初始化
 
 ## 模块分层
 
-| 目录/文件 | 职责 |
-|----------|------|
-| `src/types.ts` | AgentTool / ToolResult / ToolCallContext 类型 |
-| `src/tool-registry.ts` | 工具注册表 + 预设管理 |
-| `src/binary-executor-registry.ts` | 二进制工具管理 |
-| `src/builtin-tools/fs/` | 4 个文件系统工具 |
-| `src/builtin-tools/search/` | 4 个搜索工具 |
-| `src/builtin-tools/shell/` | 1 个 Shell 工具 |
-| `src/builtin-tools/web/` | 2 个 Web 工具 |
-| `src/builtin-tools/orchestration/` | 9 个编排工具 |
-| `src/builtin-tools/session/` | 2 个会话工具 |
-| `src/builtin-tools/skill/` | 1 个技能工具 |
-| `src/builtin-tools/lsp/` | 5 个 LSP 工具 |
+| 目录/文件                          | 职责                                          |
+| ---------------------------------- | --------------------------------------------- |
+| `src/types.ts`                     | AgentTool / ToolResult / ToolCallContext 类型 |
+| `src/tool-registry.ts`             | 工具注册表 + 预设管理                         |
+| `src/binary-executor-registry.ts`  | 二进制工具管理                                |
+| `src/builtin-tools/fs/`            | 4 个文件系统工具                              |
+| `src/builtin-tools/search/`        | 4 个搜索工具                                  |
+| `src/builtin-tools/shell/`         | 1 个 Shell 工具                               |
+| `src/builtin-tools/web/`           | 2 个 Web 工具                                 |
+| `src/builtin-tools/orchestration/` | 9 个编排工具                                  |
+| `src/builtin-tools/session/`       | 2 个会话工具                                  |
+| `src/builtin-tools/skill/`         | 1 个技能工具                                  |
+| `src/builtin-tools/lsp/`           | 5 个 LSP 工具                                 |
 
 ## 入口与依赖
 

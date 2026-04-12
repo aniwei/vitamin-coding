@@ -6,15 +6,15 @@
 
 ## 核心功能
 
-| 模块 | 功能 |
-|------|------|
-| HookRegistry | 31 种时机的 Hook 注册、优先级排序、执行引擎 |
-| PermissionPolicyRegistry | 权限策略注册与评估（allow/deny/escalate） |
-| PermissionAuditLog | 权限决策审计轨迹 |
-| PermissionGuardHook | 权限 -> tool:guard 集成 |
-| 内置策略 | FILE_GUARD / DESTRUCTIVE_COMMAND / 模式策略 / 冻结 / 黑白名单 |
-| 预设 | default / strict / minimal / none 四种权限模式 |
-| 23+ 内置 Hooks | 会话 / 工具防护 / 变换 / 质量 / 流 / 压缩 / 后台 |
+| 模块                     | 功能                                                          |
+| ------------------------ | ------------------------------------------------------------- |
+| HookRegistry             | 31 种时机的 Hook 注册、优先级排序、执行引擎                   |
+| PermissionPolicyRegistry | 权限策略注册与评估（allow/deny/escalate）                     |
+| PermissionAuditLog       | 权限决策审计轨迹                                              |
+| PermissionGuardHook      | 权限 -> tool:guard 集成                                       |
+| 内置策略                 | FILE_GUARD / DESTRUCTIVE_COMMAND / 模式策略 / 冻结 / 黑白名单 |
+| 预设                     | default / strict / minimal / none 四种权限模式                |
+| 23+ 内置 Hooks           | 会话 / 工具防护 / 变换 / 质量 / 流 / 压缩 / 后台              |
 
 ## Hook 时机（31 种）
 

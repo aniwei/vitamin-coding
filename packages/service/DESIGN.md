@@ -19,15 +19,15 @@
 
 #### HTTP 路由
 
-| 路由 | 方法 | 功能 |
-|------|------|------|
-| `/api/health` | GET | 健康检查 |
-| `/api/chat` | POST | 发送消息（流式 SSE 响应） |
-| `/api/sessions` | GET/POST/DELETE | 会话 CRUD |
-| `/api/sessions/:id` | GET/PATCH | 单会话操作 |
-| `/api/setting` | GET/PUT | 配置读写 |
-| `/api/debug` | GET/POST | 调试相关 |
-| `/api/logs` | GET | 日志查询 |
+| 路由                | 方法            | 功能                      |
+| ------------------- | --------------- | ------------------------- |
+| `/api/health`       | GET             | 健康检查                  |
+| `/api/chat`         | POST            | 发送消息（流式 SSE 响应） |
+| `/api/sessions`     | GET/POST/DELETE | 会话 CRUD                 |
+| `/api/sessions/:id` | GET/PATCH       | 单会话操作                |
+| `/api/setting`      | GET/PUT         | 配置读写                  |
+| `/api/debug`        | GET/POST        | 调试相关                  |
+| `/api/logs`         | GET             | 日志查询                  |
 
 #### WebSocket
 
@@ -37,6 +37,7 @@
 ### WebSocketManager（websocket-manager.ts）
 
 管理 WebSocket 客户端连接：
+
 - `handleConnection(ws)` → 注册客户端
 - `subscribe(clientId, sessionId)` → 绑定客户端到会话
 - `broadcast(sessionId, event)` → 向订阅会话的所有客户端广播
@@ -45,6 +46,7 @@
 ### EventBridge（event-bridge.ts）
 
 AgentSession 事件到 WebSocket 协议的单向映射（40+ 事件类型）：
+
 - Agent 事件：`status_change` / `stream_event` / `tool_call_start` / `tool_call_end` / `messages_updated`
 - Session 事件：`session:created` / `session:deleted`
 - 系统事件：`error` / `abort`
@@ -54,6 +56,7 @@ AgentSession 事件到 WebSocket 协议的单向映射（40+ 事件类型）：
 ### DebugBridge（debug-bridge.ts）
 
 将 `@vitamin/devtools` 的调试协议桥接到 HTTP/WebSocket：
+
 - `/api/debug/breakpoints` → 断点管理
 - `/api/debug/snapshot` → 调试快照
 - WebSocket debug 事件转发
@@ -89,14 +92,14 @@ AgentSession 事件到 WebSocket 协议的单向映射（40+ 事件类型）：
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | ServiceConfig / WebSocketMessage 类型 |
-| `src/coding-service.ts` | Hono HTTP 路由 + 启动 |
-| `src/websocket-manager.ts` | WebSocket 连接管理 |
-| `src/event-bridge.ts` | 事件 → WebSocket 映射 |
-| `src/debug-bridge.ts` | 调试协议桥接 |
-| `src/index.ts` | barrel 导出 |
+| 文件                       | 职责                                  |
+| -------------------------- | ------------------------------------- |
+| `src/types.ts`             | ServiceConfig / WebSocketMessage 类型 |
+| `src/coding-service.ts`    | Hono HTTP 路由 + 启动                 |
+| `src/websocket-manager.ts` | WebSocket 连接管理                    |
+| `src/event-bridge.ts`      | 事件 → WebSocket 映射                 |
+| `src/debug-bridge.ts`      | 调试协议桥接                          |
+| `src/index.ts`             | barrel 导出                           |
 
 ## 入口与依赖
 
