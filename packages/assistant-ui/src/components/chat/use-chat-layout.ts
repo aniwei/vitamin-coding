@@ -14,18 +14,19 @@ interface UseChatLayoutOptions {
 
 export const useChatLayout = ({ chatList, sidebarCollapseState }: UseChatLayoutOptions) => {
   const [width, setWidth] = useState(0)
-  const chatContainerRef = useRef<HTMLDivElement>(null)
-  const chatContainerInnerRef = useRef<HTMLDivElement>(null)
-  const chatFooterRef = useRef<HTMLDivElement>(null)
-  const chatFooterInnerRef = useRef<HTMLDivElement>(null)
+
+  const containerRef = useRef<HTMLDivElement>(null)
+  const containerInnerRef = useRef<HTMLDivElement>(null)
+  const footerRef = useRef<HTMLDivElement>(null)
+  const footerInnerRef = useRef<HTMLDivElement>(null)
   const userScrolledRef = useRef(false)
   const isAutoScrollingRef = useRef(false)
   const prevFirstMessageIdRef = useRef<string | undefined>(undefined)
 
-  const handleScrollToBottom = useCallback(() => {
-    if (chatList?.length > 1 && chatContainerRef.current && !userScrolledRef.current) {
+  const onScrollToBottom = useCallback(() => {
+    if (chatList?.length > 1 && containerRef.current && !userScrolledRef.current) {
       isAutoScrollingRef.current = true
-      chatContainerRef.current.scrollTop = chatContainerRef.current.scrollHeight
+      containerRef.current.scrollTop = containerRef.current.scrollHeight
 
       requestAnimationFrame(() => {
         isAutoScrollingRef.current = false
@@ -33,78 +34,89 @@ export const useChatLayout = ({ chatList, sidebarCollapseState }: UseChatLayoutO
     }
   }, [chatList?.length])
 
-  const handleWindowResize = useCallback(() => {
-    if (chatContainerRef.current)
-      setWidth(document.body.clientWidth - (chatContainerRef.current.clientWidth + 16) - 8)
+  const onWindowResize = useCallback(() => {
+    if (containerRef.current) {
+      setWidth(document.body.clientWidth - (containerRef.current.clientWidth + 16) - 8)
+    }
 
-    if (chatContainerRef.current && chatFooterRef.current)
-      chatFooterRef.current.style.width = `${chatContainerRef.current.clientWidth}px`
+    if (containerRef.current && footerRef.current) {
+      footerRef.current.style.width = `${containerRef.current.clientWidth}px`
+    }
 
-    if (chatContainerInnerRef.current && chatFooterInnerRef.current)
-      chatFooterInnerRef.current.style.width = `${chatContainerInnerRef.current.clientWidth}px`
+    if (containerInnerRef.current && footerInnerRef.current) {
+      footerInnerRef.current.style.width = `${containerInnerRef.current.clientWidth}px`
+    }
   }, [])
 
   useEffect(() => {
-    handleScrollToBottom()
-    const animationFrame = requestAnimationFrame(handleWindowResize)
+    onScrollToBottom()
+    const animationFrame = requestAnimationFrame(onWindowResize)
 
     return () => {
       cancelAnimationFrame(animationFrame)
     }
-  }, [handleScrollToBottom, handleWindowResize])
+  }, [onScrollToBottom, onWindowResize])
 
   useEffect(() => {
-    if (chatContainerRef.current) {
+    if (containerRef.current) {
       requestAnimationFrame(() => {
-        handleScrollToBottom()
-        handleWindowResize()
+        onScrollToBottom()
+        onWindowResize()
       })
     }
   })
 
   useEffect(() => {
-    const debouncedHandler = debounce(handleWindowResize, 200)
+    const debouncedHandler = debounce(onWindowResize, 200)
     window.addEventListener('resize', debouncedHandler)
 
     return () => {
       window.removeEventListener('resize', debouncedHandler)
       debouncedHandler.cancel()
     }
-  }, [handleWindowResize])
+  }, [onWindowResize])
 
   useEffect(() => {
-    if (chatFooterRef.current && chatContainerRef.current) {
-      const resizeContainerObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const { blockSize } = entry.borderBoxSize[0]
-          chatContainerRef.current!.style.paddingBottom = `${blockSize}px`
-          handleScrollToBottom()
+    if (footerRef.current && containerRef.current) {
+      const containerObserver = new ResizeObserver((entries) => {
+        if (containerRef.current) {
+          for (const entry of entries) {
+            const { blockSize } = entry.borderBoxSize[0]
+            containerRef.current!.style.paddingBottom = `${blockSize}px`
+            onScrollToBottom()
+          }
         }
       })
-      resizeContainerObserver.observe(chatFooterRef.current)
 
-      const resizeFooterObserver = new ResizeObserver((entries) => {
-        for (const entry of entries) {
-          const { inlineSize } = entry.borderBoxSize[0]
-          chatFooterRef.current!.style.width = `${inlineSize}px`
+      containerObserver.observe(footerRef.current)
+      
+      const footerObserver = new ResizeObserver((entries) => {
+        if (footerRef.current) {
+          for (const entry of entries) {
+            const { inlineSize } = entry.borderBoxSize[0]
+            footerRef.current.style.width = `${inlineSize}px`
+          }
         }
       })
-      resizeFooterObserver.observe(chatContainerRef.current)
+      footerObserver.observe(containerRef.current)
 
       return () => {
-        resizeContainerObserver.disconnect()
-        resizeFooterObserver.disconnect()
+        containerObserver.disconnect()
+        footerObserver.disconnect()
       }
     }
-  }, [handleScrollToBottom])
+  }, [onScrollToBottom])
 
   useEffect(() => {
     const setUserScrolled = () => {
-      const container = chatContainerRef.current
-      if (!container)
+      const container = containerRef.current
+      if (!container) {
         return
-      if (isAutoScrollingRef.current)
+      }
+
+      if (isAutoScrollingRef.current) {
         return
+      }
 
       const distanceToBottom = container.scrollHeight - container.clientHeight - container.scrollTop
       const scrollUpThreshold = 100
@@ -112,9 +124,10 @@ export const useChatLayout = ({ chatList, sidebarCollapseState }: UseChatLayoutO
       userScrolledRef.current = distanceToBottom > scrollUpThreshold
     }
 
-    const container = chatContainerRef.current
-    if (!container)
+    const container = containerRef.current
+    if (!container) {
       return
+    }
 
     container.addEventListener('scroll', setUserScrolled)
     return () => container.removeEventListener('scroll', setUserScrolled)
@@ -130,16 +143,16 @@ export const useChatLayout = ({ chatList, sidebarCollapseState }: UseChatLayoutO
 
   useEffect(() => {
     if (!sidebarCollapseState) {
-      const timer = setTimeout(handleWindowResize, 200)
+      const timer = setTimeout(onWindowResize, 200)
       return () => clearTimeout(timer)
     }
-  }, [handleWindowResize, sidebarCollapseState])
+  }, [onWindowResize, sidebarCollapseState])
 
   return {
     width,
-    chatContainerRef,
-    chatContainerInnerRef,
-    chatFooterRef,
-    chatFooterInnerRef,
+    containerRef,
+    containerInnerRef,
+    footerRef,
+    footerInnerRef,
   }
 }

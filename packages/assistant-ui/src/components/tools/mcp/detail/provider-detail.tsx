@@ -3,7 +3,7 @@ import { clsx } from 'clsx'
 import type { FC } from 'react'
 import type { ToolWithProvider } from '../../../workflow/types'
 import * as React from 'react'
-import Drawer from '@/app/components/base/drawer'
+import Drawer from '@/components/drawer'
 import MCPDetailContent from './content'
 
 type Props = {

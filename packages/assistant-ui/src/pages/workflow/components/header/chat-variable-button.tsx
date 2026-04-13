@@ -1,9 +1,9 @@
 import { memo } from 'react'
-import Button from '@/app/components/base/button'
-import { BubbleX } from '@/app/components/base/icons/src/vender/line/others'
+import Button from '@/components/button'
+import { BubbleX } from '@/components/icons/src/vender/line/others'
 import { useStore } from '@/app/components/workflow/store'
 import useTheme from '@/hooks/use-theme'
-import { cn } from '@/utils/classnames'
+import { clsx } from 'clsx'
 
 const ChatVariableButton = ({ disabled }: { disabled: boolean }) => {
   const { theme } = useTheme()

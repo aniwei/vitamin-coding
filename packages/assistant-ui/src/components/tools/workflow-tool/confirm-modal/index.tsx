@@ -4,9 +4,9 @@ import { clsx } from 'clsx'
 import { RiCloseLine } from '@remixicon/react'
 import { noop } from 'es-toolkit/function'
 import { useTranslation } from 'react-i18next'
-import Button from '@/app/components/base/button'
-import { AlertTriangle } from '@/app/components/base/icons/src/vender/solid/alertsAndFeedback'
-import Modal from '@/app/components/base/modal'
+import Button from '@/components/button'
+import { AlertTriangle } from '@/components/icons/src/vender/solid/alertsAndFeedback'
+import Modal from '@/components/modal'
 type ConfirmModalProps = {
   show: boolean
   onConfirm?: () => void

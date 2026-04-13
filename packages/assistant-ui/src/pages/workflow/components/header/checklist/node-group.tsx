@@ -2,7 +2,7 @@ import type { ChecklistItem } from '../../hooks/use-checklist'
 import type { BlockEnum } from '../../types'
 import { memo, useMemo } from 'react'
 import { useTranslation } from 'react-i18next'
-import { cn } from '@/utils/classnames'
+import { clsx } from 'clsx'
 import BlockIcon from '../../block-icon'
 import { ItemIndicator } from './item-indicator'
 

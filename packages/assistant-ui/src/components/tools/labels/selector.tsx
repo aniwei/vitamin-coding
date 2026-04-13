@@ -5,15 +5,15 @@ import { useDebounceFn } from 'ahooks'
 import { noop } from 'es-toolkit/function'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import Checkbox from '@/app/components/base/checkbox'
-import { Tag03 } from '@/app/components/base/icons/src/vender/line/financeAndECommerce'
-import Input from '@/app/components/base/input'
+import Checkbox from '@/components/checkbox'
+import { Tag03 } from '@/components/icons/src/vender/line/financeAndECommerce'
+import Input from '@/components/input'
 import {
 import { clsx } from 'clsx'
   PortalToFollowElem,
   PortalToFollowElemContent,
   PortalToFollowElemTrigger,
-} from '@/app/components/base/portal-to-follow-elem'
+} from '@/components/portal-to-follow-elem'
 import { useTags } from '@/app/components/plugins/hooks'
 type LabelSelectorProps = {
   value: string[]

@@ -74,12 +74,12 @@ vi.mock('@/utils/var', () => ({
   basePath: '',
 }))
 
-vi.mock('@/app/components/base/drawer', () => ({
+vi.mock('@/components/drawer', () => ({
   default: ({ children, isOpen }: { children: React.ReactNode, isOpen: boolean }) =>
     isOpen ? <div data-testid="drawer">{children}</div> : null,
 }))
 
-vi.mock('@/app/components/base/confirm', () => ({
+vi.mock('@/components/confirm', () => ({
   default: ({ isShow, onConfirm, onCancel, title }: { isShow: boolean, onConfirm: () => void, onCancel: () => void, title: string }) =>
     isShow
       ? (
@@ -94,7 +94,7 @@ vi.mock('@/app/components/base/confirm', () => ({
 
 const mockToastSuccess = vi.hoisted(() => vi.fn())
 const mockToastError = vi.hoisted(() => vi.fn())
-vi.mock('@/app/components/base/ui/toast', () => ({
+vi.mock('@/components/ui/toast', () => ({
   toast: {
     success: mockToastSuccess,
     error: mockToastError,

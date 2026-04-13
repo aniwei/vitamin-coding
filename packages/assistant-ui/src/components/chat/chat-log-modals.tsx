@@ -1,7 +1,7 @@
 import type { FC } from 'react'
 import type { IChatItem } from './type'
-import AgentLogModal from '@/app/components/base/agent-log-modal'
-import PromptLogModal from '@/app/components/base/prompt-log-modal'
+import AgentLogModal from '@/components/agent-log-modal'
+import PromptLogModal from '@/components/prompt-log-modal'
 
 type ChatLogModalsProps = {
   width: number

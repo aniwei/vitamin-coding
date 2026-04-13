@@ -5,7 +5,7 @@ import {
   PortalToFollowElem,
   PortalToFollowElemContent,
   PortalToFollowElemTrigger,
-} from '@/app/components/base/portal-to-follow-elem'
+} from '@/components/portal-to-follow-elem'
 
 type ProgressTooltipProps = {
   data: number

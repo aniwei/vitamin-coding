@@ -1,7 +1,6 @@
 import { toast } from '@/components/ui/toast'
 
 declare global {
-  // eslint-disable-next-line ts/consistent-type-definitions
   interface Window {
     ManagedMediaSource: any
   }

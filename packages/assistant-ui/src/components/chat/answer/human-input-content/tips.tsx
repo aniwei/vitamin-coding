@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import { Trans, useTranslation } from 'react-i18next'
-import Divider from '@/app/components/base/divider'
+import Divider from '@/components/divider'
 import { useSelector as useAppSelector } from '@/context/app-context'
 
 type TipsProps = {

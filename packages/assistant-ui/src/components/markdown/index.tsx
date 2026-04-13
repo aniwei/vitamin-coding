@@ -1,8 +1,8 @@
-import type { SimplePluginInfo, StreamdownWrapperProps } from './streamdown-wrapper'
+import { clsx } from 'clsx'
 import { flow } from 'es-toolkit/compat'
 import { memo, useMemo, lazy } from 'react'
-import { clsx } from 'clsx'
 import { preprocessLaTeX, preprocessThinkTag } from './markdown-utils'
+import type { SimplePluginInfo, StreamdownWrapperProps } from './streamdown-wrapper'
 
 const StreamdownWrapper = lazy(() => import('./streamdown-wrapper'))
 
@@ -10,39 +10,41 @@ const preprocess = flow([preprocessThinkTag, preprocessLaTeX])
 
 const EMPTY_COMPONENTS = {} as const
 
-export type MarkdownProps = {
+export interface MarkdownProps extends Omit<StreamdownWrapperProps, 'latexContent'> {
   content: string
   className?: string
   pluginInfo?: SimplePluginInfo
-} & Pick<
-  StreamdownWrapperProps,
-  'customComponents' | 'customDisallowedElements' | 'remarkPlugins' | 'rehypePlugins' | 'isAnimating' | 'mode'
->
+}
 
-export const Markdown = memo((props: MarkdownProps) => {
+export const Markdown: React.FC<MarkdownProps> = memo((props) => {
   const {
     content,
     customComponents = EMPTY_COMPONENTS,
     pluginInfo,
-    isAnimating,
-    customDisallowedElements,
+    animating,
+    disallowedTags,
     remarkPlugins,
     rehypePlugins,
     mode,
     className,
   } = props
+
   const latexContent = useMemo(() => preprocess(content), [content])
 
   return (
-    <div className={clsx('markdown-body', 'text-text-primary!', className)} data-testid="markdown-body">
+    <div className={clsx(
+      'markdown-body', 
+      'text-text-primary!', 
+      className)
+    }>
       <StreamdownWrapper
         pluginInfo={pluginInfo}
         latexContent={latexContent}
         customComponents={customComponents}
-        customDisallowedElements={customDisallowedElements}
+        disallowedTags={disallowedTags}
         remarkPlugins={remarkPlugins}
         rehypePlugins={rehypePlugins}
-        isAnimating={isAnimating}
+        animating={animating}
         mode={mode}
       />
     </div>
@@ -50,3 +52,4 @@ export const Markdown = memo((props: MarkdownProps) => {
 })
 
 Markdown.displayName = 'Markdown'
+export default Markdown

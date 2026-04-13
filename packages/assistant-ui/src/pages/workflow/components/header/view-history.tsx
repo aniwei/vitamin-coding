@@ -3,13 +3,13 @@ import {
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import Loading from '@/app/components/base/loading'
+import Loading from '@/components/loading'
 import {
   PortalToFollowElem,
   PortalToFollowElemContent,
   PortalToFollowElemTrigger,
-} from '@/app/components/base/portal-to-follow-elem'
-import Tooltip from '@/app/components/base/tooltip'
+} from '@/components/portal-to-follow-elem'
+import Tooltip from '@/components/tooltip'
 import { useInputFieldPanel } from '@/app/components/rag-pipeline/hooks'
 import {
   useStore,
@@ -17,7 +17,7 @@ import {
 } from '@/app/components/workflow/store'
 import { useFormatTimeFromNow } from '@/hooks/use-format-time-from-now'
 import { useWorkflowRunHistory } from '@/service/use-workflow'
-import { cn } from '@/utils/classnames'
+import { clsx } from 'clsx'
 import {
   useIsChatMode,
   useNodesInteractions,

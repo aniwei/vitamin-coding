@@ -23,7 +23,7 @@ vi.mock('../../../utils/to-form-schema', () => ({
   addDefaultValue: (value: Record<string, unknown>, _schemas: unknown[]) => ({ ...value }),
 }))
 
-vi.mock('@/app/components/base/drawer-plus', () => ({
+vi.mock('@/components/drawer-plus', () => ({
   default: ({ body, title, onHide }: { body: React.ReactNode, title: string, onHide: () => void }) => (
     <div data-testid="drawer">
       <span data-testid="drawer-title">{title}</span>
@@ -33,7 +33,7 @@ vi.mock('@/app/components/base/drawer-plus', () => ({
   ),
 }))
 
-vi.mock('@/app/components/base/ui/toast', () => ({
+vi.mock('@/components/ui/toast', () => ({
   default: { notify: vi.fn() },
 }))
 

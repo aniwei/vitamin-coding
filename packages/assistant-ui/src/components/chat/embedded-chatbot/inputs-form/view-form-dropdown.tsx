@@ -1,9 +1,9 @@
 import * as React from 'react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import ActionButton, { ActionButtonState } from '@/app/components/base/action-button'
-import InputsFormContent from '@/app/components/base/chat/embedded-chatbot/inputs-form/content'
-import { PortalToFollowElem, PortalToFollowElemContent, PortalToFollowElemTrigger } from '@/app/components/base/portal-to-follow-elem'
+import ActionButton, { ActionButtonState } from '@/components/action-button'
+import InputsFormContent from '@/components/chat/embedded-chatbot/inputs-form/content'
+import { PortalToFollowElem, PortalToFollowElemContent, PortalToFollowElemTrigger } from '@/components/portal-to-follow-elem'
 import { clsx } from 'clsx'
 type Props = {
   iconColor?: string

@@ -5,12 +5,12 @@ import {
 } from '@remixicon/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { MessageClockCircle } from '@/app/components/base/icons/src/vender/solid/general'
+import { MessageClockCircle } from '@/components/icons/src/vender/solid/general'
 import {
   PortalToFollowElem,
   PortalToFollowElemContent,
   PortalToFollowElemTrigger,
-} from '@/app/components/base/portal-to-follow-elem'
+} from '@/components/portal-to-follow-elem'
 import { useEventEmitterContextContext } from '@/context/event-emitter'
 import { UPDATE_HISTORY_EVENT_EMITTER } from '../../constants'
 import { useSelectOrDelete, useTrigger } from '../../hooks'

@@ -9,13 +9,13 @@ import {
 } from '@remixicon/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-// import Button from '@/app/components/base/button'
-import ActionButton from '@/app/components/base/action-button'
-import Tooltip from '@/app/components/base/tooltip'
+// import Button from '@/components/button'
+import ActionButton from '@/components/action-button'
+import Tooltip from '@/components/tooltip'
 import BlockIcon from '@/app/components/workflow/block-icon'
 import { VariableIconWithColor } from '@/app/components/workflow/nodes/_base/components/variable/variable-label'
 import { VarInInspectType } from '@/types/workflow'
-import { cn } from '@/utils/classnames'
+import { clsx } from 'clsx'
 import { useToolIcon } from '../hooks'
 
 type Props = {

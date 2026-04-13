@@ -3,7 +3,7 @@ import type { FC } from 'react'
 import { RiInformation2Fill } from '@remixicon/react'
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
-import { cn } from '@/utils/classnames'
+import { clsx } from 'clsx'
 
 type Props = {
   textHasNoExport?: boolean

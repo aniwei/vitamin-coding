@@ -3,16 +3,16 @@ import type { Label } from '@/app/components/tools/labels/constant'
 import { RiArrowDownSLine } from '@remixicon/react'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Tag01, Tag03 } from '@/app/components/base/icons/src/vender/line/financeAndECommerce'
-import { Check } from '@/app/components/base/icons/src/vender/line/general'
-import { XCircle } from '@/app/components/base/icons/src/vender/solid/general'
-import Input from '@/app/components/base/input'
+import { Tag01, Tag03 } from '@/components/icons/src/vender/line/financeAndECommerce'
+import { Check } from '@/components/icons/src/vender/line/general'
+import { XCircle } from '@/components/icons/src/vender/solid/general'
+import Input from '@/components/input'
 import {
 import { clsx } from 'clsx'
   Popover,
   PopoverContent,
   PopoverTrigger,
-} from '@/app/components/base/ui/popover'
+} from '@/components/ui/popover'
 import { useTags } from '@/app/components/plugins/hooks'
 type LabelFilterProps = {
   value: string[]

@@ -1,43 +1,47 @@
 import React, { useCallback, useState } from 'react'
 import Textarea from 'react-textarea-autosize'
-// import VoiceInput from '@/components/voice-input'
 import Operation from './operation'
 import { clsx } from 'clsx'
-import { useTextAreaHeight } from './hooks'
+import { useTextArea } from './use-textarea'
 import type { Theme } from '../embedded-chatbot/theme/theme-context'
-import type { InputForm, EnableType, OnSend } from '../types'
+import type { InputForm, OnSend } from '../types'
 
 interface ChatInputAreaProps {
   readonly?: boolean
-  botName?: string
-  speechToTextSetting?: EnableType
+  name?: string
   onSend?: OnSend
   inputs?: Record<string, any>
   inputsForm?: InputForm[]
   theme?: Theme | null
   responding?: boolean
   disabled?: boolean
-  sendOnEnter?: boolean
+  enterToSend?: boolean
 }
+
 export const ChatInputArea: React.FC<ChatInputAreaProps> = React.memo(({ 
   readonly, 
-  botName, 
-  speechToTextSetting = { enabled: true },  
+  name, 
   inputs = {}, 
   inputsForm = [], 
   theme, 
   responding, 
   disabled, 
-  sendOnEnter = true 
+  enterToSend = true 
 }) => {
-  const { wrapperRef, textareaRef, textValueRef, holdSpaceRef, handleTextareaResize, isMultipleLine } = useTextAreaHeight()
+  const { 
+    wrapperRef, 
+    textareaRef, 
+    textValueRef, 
+    holdSpaceRef, 
+    onTextareaResize, 
+    isMultipleLine 
+  } = useTextArea()
   const [query, setQuery] = useState('')
-  const [showVoiceInput, setShowVoiceInput] = useState(false)
   
   const onQueryChange = useCallback((value: string) => {
     setQuery(value)
-    setTimeout(handleTextareaResize, 0)
-  }, [handleTextareaResize])
+    setTimeout(onTextareaResize, 0)
+  }, [onTextareaResize])
 
   const onKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {}, [])
   const onCompositionStart = useCallback(() => {}, [])
@@ -48,29 +52,21 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = React.memo(({
   const onDragOver = useCallback(() => {}, [])
   const onDrop = useCallback(() => {}, [])
 
-  const isDragActive = false
-  
   const operation = <Operation 
-    ref={holdSpaceRef} 
-    readonly={readonly} 
-    speechToTextSetting={speechToTextSetting} 
-    theme={theme} 
-    onShowVoiceInput={() => {}}
+    theme={theme}
+    readonly={readonly}
     onSend={() => {}}
   />
-  
+
   return <>
     <div className={clsx(
       'relative z-10 overflow-hidden radius-full border border-components-chat-input-border bg-components-panel-bg-blur pb-[9px] shadow-md', 
-      isDragActive && 'border border-dashed border-components-option-card-option-selected-border', 
       disabled && 'pointer-events-none border-components-panel-border opacity-50 shadow-none'
     )}>
       <div className="relative max-h-[158px] overflow-y-auto overflow-x-hidden px-[9px] pt-[9px]">
         <div ref={wrapperRef} className="flex items-center justify-between">
           <div className="relative flex w-full grow items-center">
-            <div ref={textValueRef} className="pointer-events-none invisible absolute h-auto w-auto whitespace-pre p-1 leading-6 body-lg-regular">
-              {query}
-            </div>
+            <div ref={textValueRef} className="pointer-events-none invisible absolute h-auto w-auto whitespace-pre p-1 leading-6 body-lg-regular">{query}</div>
             <Textarea 
               ref={ref => textareaRef.current = ref as any} 
               className="w-full resize-none bg-transparent p-1 leading-6 text-text-primary outline-none body-lg-regular" 
@@ -88,9 +84,8 @@ export const ChatInputArea: React.FC<ChatInputAreaProps> = React.memo(({
               onDrop={onDrop} 
               readOnly={readonly} />
           </div>
-          {!isMultipleLine && operation}
+          { !isMultipleLine && operation }
         </div>
-        {/* {showVoiceInput && (<VoiceInput onCancel={() => setShowVoiceInput(false)} onConverted={text => onQueryChange(text)} />)} */}
       </div>
       {isMultipleLine && (<div className="px-[9px]">{operation}</div>)}
     </div>

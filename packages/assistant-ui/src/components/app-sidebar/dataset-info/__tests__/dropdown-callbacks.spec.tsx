@@ -112,7 +112,7 @@ vi.mock('@/service/datasets', () => ({
   deleteDataset: (...args: unknown[]) => mockDeleteDataset(...args),
 }))
 
-vi.mock('@/app/components/base/ui/toast', () => ({
+vi.mock('@/components/ui/toast', () => ({
   toast: (...args: unknown[]) => mockToast(...args),
 }))
 
@@ -137,7 +137,7 @@ vi.mock('@/app/components/datasets/rename-modal', () => ({
   },
 }))
 
-vi.mock('@/app/components/base/confirm', () => ({
+vi.mock('@/components/confirm', () => ({
   default: ({
     isShow,
     onConfirm,
@@ -164,7 +164,7 @@ vi.mock('@/app/components/base/confirm', () => ({
   },
 }))
 
-vi.mock('@/app/components/base/portal-to-follow-elem', () => ({
+vi.mock('@/components/portal-to-follow-elem', () => ({
   PortalToFollowElem: ({ children }: { children: React.ReactNode }) => <div>{children}</div>,
   PortalToFollowElemTrigger: ({ children, onClick }: { children: React.ReactNode, onClick?: () => void }) => (
     <div data-testid="portal-trigger" onClick={onClick}>{children}</div>

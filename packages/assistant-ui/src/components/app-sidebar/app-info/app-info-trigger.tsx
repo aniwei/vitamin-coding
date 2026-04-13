@@ -2,7 +2,7 @@ import type { App, AppSSO } from '@/types/app'
 import { RiEqualizer2Line } from '@remixicon/react'
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
-import { cn } from '@/utils/classnames'
+import { clsx } from 'clsx'
 import AppIcon from '../../base/app-icon'
 import { getAppModeLabel } from './app-mode-labels'
 

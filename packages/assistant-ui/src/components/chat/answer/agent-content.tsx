@@ -3,10 +3,10 @@ import type {
   ChatItem,
 } from '../../types'
 import { memo } from 'react'
-import Thought from '@/app/components/base/chat/chat/thought'
-import { FileList } from '@/app/components/base/file-uploader'
-import { getProcessedFilesFromResponse } from '@/app/components/base/file-uploader/utils'
-import { Markdown } from '@/app/components/base/markdown'
+import Thought from '@/components/chat/chat/thought'
+import { FileList } from '@/components/file-uploader'
+import { getProcessedFilesFromResponse } from '@/components/file-uploader/utils'
+import { Markdown } from '@/components/markdown'
 
 type AgentContentProps = {
   item: ChatItem

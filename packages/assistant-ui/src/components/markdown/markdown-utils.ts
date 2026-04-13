@@ -1,8 +1,3 @@
-/**
- * @fileoverview Utility functions for preprocessing Markdown content.
- * These functions were extracted from the main markdown renderer for better separation of concerns.
- * Includes preprocessing for LaTeX and custom "think" tags.
- */
 import { flow } from 'es-toolkit/compat'
 import { ALLOW_UNSAFE_DATA_SCHEME } from '@/config'
 

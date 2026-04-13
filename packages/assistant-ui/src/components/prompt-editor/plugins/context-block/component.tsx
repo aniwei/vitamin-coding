@@ -7,7 +7,7 @@ import {
   PortalToFollowElem,
   PortalToFollowElemContent,
   PortalToFollowElemTrigger,
-} from '@/app/components/base/portal-to-follow-elem'
+} from '@/components/portal-to-follow-elem'
 import { useEventEmitterContextContext } from '@/context/event-emitter'
 import { UPDATE_DATASETS_EVENT_EMITTER } from '../../constants'
 import { useSelectOrDelete, useTrigger } from '../../hooks'

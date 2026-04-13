@@ -1,7 +1,7 @@
 'use client'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import Input from '@/app/components/base/input'
+import Input from '@/components/input'
 
 type ConfigurationsSectionProps = {
   timeout: number

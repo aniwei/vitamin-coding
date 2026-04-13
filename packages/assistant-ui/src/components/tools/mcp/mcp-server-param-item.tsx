@@ -1,7 +1,7 @@
 'use client'
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
-import Textarea from '@/app/components/base/textarea'
+import Textarea from '@/components/textarea'
 
 type Props = {
   data?: any

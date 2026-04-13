@@ -2,9 +2,9 @@ import { clsx } from 'clsx'
 'use client'
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import AlertTriangle from '@/app/components/base/icons/src/vender/solid/alertsAndFeedback/AlertTriangle'
-import Input from '@/app/components/base/input'
-import Switch from '@/app/components/base/switch'
+import AlertTriangle from '@/components/icons/src/vender/solid/alertsAndFeedback/AlertTriangle'
+import Input from '@/components/input'
+import Switch from '@/components/switch'
 import { API_PREFIX } from '@/config'
 type AuthenticationSectionProps = {
   isDynamicRegistration: boolean

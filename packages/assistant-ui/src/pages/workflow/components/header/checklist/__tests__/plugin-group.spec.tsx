@@ -1,7 +1,7 @@
 import type { ChecklistItem } from '../../../hooks/use-checklist'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { beforeEach, describe, expect, it } from 'vitest'
-import { Popover, PopoverContent } from '@/app/components/base/ui/popover'
+import { Popover, PopoverContent } from '@/components/ui/popover'
 import { useStore as usePluginDependencyStore } from '../../../plugin-dependency/store'
 import { BlockEnum } from '../../../types'
 import { ChecklistPluginGroup } from '../plugin-group'

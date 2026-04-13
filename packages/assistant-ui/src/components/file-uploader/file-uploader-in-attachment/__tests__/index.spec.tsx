@@ -1,5 +1,5 @@
 import type { FileEntity } from '../../types'
-import type { FileUpload } from '@/app/components/base/features/types'
+import type { FileUpload } from '@/components/features/types'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { TransferMethod } from '@/types/app'
 import FileUploaderInAttachmentWrapper from '../index'

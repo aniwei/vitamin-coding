@@ -1,5 +1,5 @@
 import type { VarInInspect } from '@/types/workflow'
-import { getProcessedFilesFromResponse } from '@/app/components/base/file-uploader/utils'
+import { getProcessedFilesFromResponse } from '@/components/file-uploader/utils'
 import {
   checkJsonSchemaDepth,
   getValidationErrorMessage,

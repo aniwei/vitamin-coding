@@ -1,7 +1,7 @@
 import { useState } from 'react'
-import { AudioPlayerManager } from '@/app/components/base/audio-btn/audio.player.manager'
+import { AudioPlayerManager } from '@/components/audio-btn/audio.player.manager'
 import Loading from '@/components/loading'
-import Tooltip from '@/components/tooltip'
+import Tooltip from '@/components/ui/tooltip'
 import s from './index.module.css'
 import { useLocation, useParams } from 'react-router-dom'
 

@@ -13,7 +13,7 @@ import {
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import Tooltip from '@/app/components/base/tooltip'
+import Tooltip from '@/components/tooltip'
 import {
   isConversationVar,
   isENV,

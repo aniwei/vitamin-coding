@@ -1,6 +1,6 @@
 import type { FC } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Variable02 } from '@/app/components/base/icons/src/vender/solid/development'
+import { Variable02 } from '@/components/icons/src/vender/solid/development'
 import { useDocLink } from '@/context/i18n'
 
 const Empty: FC = () => {

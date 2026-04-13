@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import type { CommonNodeType } from '../types'
 import { useTranslation } from 'react-i18next'
 import { useNodes } from 'reactflow'
-import { cn } from '@/utils/classnames'
+import { clsx } from 'clsx'
 import { scrollToWorkflowNode } from '../utils/node-navigation'
 
 const ScrollToSelectedNodeButton: FC = () => {

@@ -85,7 +85,7 @@ vi.mock('../../modal', () => ({
 }))
 
 // Mock Confirm dialog
-vi.mock('@/app/components/base/confirm', () => ({
+vi.mock('@/components/confirm', () => ({
   default: ({ isShow, onConfirm, onCancel, title }: { isShow: boolean, onConfirm: () => void, onCancel: () => void, title: string }) => {
     if (!isShow)
       return null

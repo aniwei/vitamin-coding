@@ -1,4 +1,4 @@
-import type { WorkflowNodesMap } from '@/app/components/base/prompt-editor/types'
+import type { WorkflowNodesMap } from '@/components/prompt-editor/types'
 import { BlockEnum } from '@/app/components/workflow/types'
 import { extractPluginId } from '@/app/components/workflow/utils/plugin'
 import { useProviderContextSelector } from '@/context/provider-context'

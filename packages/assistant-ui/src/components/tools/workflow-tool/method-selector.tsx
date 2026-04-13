@@ -2,13 +2,13 @@ import type { FC } from 'react'
 import { RiArrowDownSLine } from '@remixicon/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check } from '@/app/components/base/icons/src/vender/line/general'
+import { Check } from '@/components/icons/src/vender/line/general'
 import {
 import { clsx } from 'clsx'
   PortalToFollowElem,
   PortalToFollowElemContent,
   PortalToFollowElemTrigger,
-} from '@/app/components/base/portal-to-follow-elem'
+} from '@/components/portal-to-follow-elem'
 type MethodSelectorProps = {
   value?: string
   onChange: (v: string) => void

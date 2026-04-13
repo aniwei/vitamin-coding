@@ -6,10 +6,10 @@ import type {
 import { RiCloseLine } from '@remixicon/react'
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
-import Button from '@/app/components/base/button'
-import Divider from '@/app/components/base/divider'
-import Modal from '@/app/components/base/modal'
-import Textarea from '@/app/components/base/textarea'
+import Button from '@/components/button'
+import Divider from '@/components/divider'
+import Modal from '@/components/modal'
+import Textarea from '@/components/textarea'
 import MCPServerParamItem from '@/app/components/tools/mcp/mcp-server-param-item'
 import {
   useCreateMCPServer,

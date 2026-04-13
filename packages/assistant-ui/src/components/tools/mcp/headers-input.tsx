@@ -4,9 +4,9 @@ import { RiAddLine, RiDeleteBinLine } from '@remixicon/react'
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 import { v4 as uuid } from 'uuid'
-import ActionButton from '@/app/components/base/action-button'
-import Button from '@/app/components/base/button'
-import Input from '@/app/components/base/input'
+import ActionButton from '@/components/action-button'
+import Button from '@/components/button'
+import Input from '@/components/input'
 export type HeaderItem = {
   id: string
   key: string

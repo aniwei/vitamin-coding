@@ -23,7 +23,7 @@ type AppIconPickerProps = {
   onClose: () => void
 }
 
-vi.mock('@/app/components/base/app-icon-picker', () => ({
+vi.mock('@/components/app-icon-picker', () => ({
   default: ({ onSelect, onClose }: AppIconPickerProps) => (
     <div data-testid="app-icon-picker">
       <button data-testid="select-emoji-btn" onClick={() => onSelect({ type: 'emoji', icon: '🎉', background: '#FF0000' })}>
@@ -49,7 +49,7 @@ vi.mock('@/service/use-plugins', () => ({
 }))
 
 const mockToastError = vi.hoisted(() => vi.fn())
-vi.mock('@/app/components/base/ui/toast', () => ({
+vi.mock('@/components/ui/toast', () => ({
   toast: {
     error: mockToastError,
   },

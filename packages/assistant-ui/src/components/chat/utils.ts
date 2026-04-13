@@ -1,5 +1,4 @@
 import type { InputForm } from './type'
-import { getProcessedFiles } from '@/app/components/base/file-uploader/utils'
 import { InputVarType } from '@/app/components/workflow/types'
 
 export const processOpeningStatement = (openingStatement: string, inputs: Record<string, any>, inputsForm: InputForm[]) => {

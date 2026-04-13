@@ -10,7 +10,7 @@ import ContentSwitch from '../content-switch'
 import More from './more'
 // import Operation from './operation'
 import SuggestedQuestions from './suggested-questions'
-// import WorkflowProcessItem from './workflow-process'
+import WorkflowProcessItem from './workflow-process'
 import { memo, useCallback, useEffect, useRef, useState } from 'react'
 import { clsx } from 'clsx'
 import { useChatContext } from '../context'
@@ -24,7 +24,7 @@ import type {
   ChatItem,
 } from '../types'
 
-type AnswerProps = {
+interface AnswerProps {
   item: ChatItem
   question: string
   index: number
@@ -32,14 +32,15 @@ type AnswerProps = {
   answerIcon?: ReactNode
   responding?: boolean
   showPromptLog?: boolean
-  chatAnswerContainerInner?: string
+  answerContainerInner?: string
   hideProcessDetail?: boolean
   noChatInput?: boolean
-  switchSibling?: (siblingMessageId: string) => void
   hideAvatar?: boolean
+  switchSibling?: (siblingMessageId: string) => void
   onHumanInputFormSubmit?: (formToken: string, formData: any) => Promise<void>
 }
-const Answer: FC<AnswerProps> = ({
+
+export const Answer: FC<AnswerProps> = memo(({
   item,
   question,
   index,
@@ -47,7 +48,7 @@ const Answer: FC<AnswerProps> = ({
   answerIcon,
   responding,
   showPromptLog,
-  chatAnswerContainerInner,
+  answerContainerInner,
   hideProcessDetail,
   noChatInput,
   switchSibling,
@@ -148,7 +149,7 @@ const Answer: FC<AnswerProps> = ({
       <div className="chat-answer-container group ml-4 w-0 grow pb-4" ref={containerRef} data-testid="chat-answer-container">
         {/* Block 1: Workflow Process + Human Input Forms */}
         {hasHumanInputs && (
-          <div className={clsx('group relative pr-10', chatAnswerContainerInner)} data-testid="chat-answer-container-humaninput">
+          <div className={clsx('group relative pr-10', answerContainerInner)} data-testid="chat-answer-container-humaninput">
             <div
               ref={humanInputFormContainerRef}
               className={clsx('relative inline-block w-full max-w-full rounded-2xl bg-chat-bubble-bg px-4 py-3 text-text-primary body-lg-regular')}
@@ -216,7 +217,7 @@ const Answer: FC<AnswerProps> = ({
 
         {/* Block 2: Response Content (when human inputs exist) */}
         {hasHumanInputs && (responding || !contentIsEmpty || hasAgentThoughts) && (
-          <div className={clsx('group relative mt-2 pr-10', chatAnswerContainerInner)}>
+          <div className={clsx('group relative mt-2 pr-10', answerContainerInner)}>
             <div className="absolute -top-2 left-6 h-3 w-0.5 bg-chat-answer-human-input-form-divider-bg" />
             <div
               ref={contentRef}
@@ -283,7 +284,7 @@ const Answer: FC<AnswerProps> = ({
 
         {/* Original single block layout (when no human inputs) */}
         {!hasHumanInputs && (
-          <div className={clsx('group relative pr-10', chatAnswerContainerInner)} data-testid="chat-answer-container-inner">
+          <div className={clsx('group relative pr-10', answerContainerInner)} data-testid="chat-answer-container-inner">
             <div
               ref={contentRef}
               className={clsx(
@@ -363,6 +364,6 @@ const Answer: FC<AnswerProps> = ({
       </div>
     </div>
   )
-}
+})
 
-export default memo(Answer)
+export default Answer

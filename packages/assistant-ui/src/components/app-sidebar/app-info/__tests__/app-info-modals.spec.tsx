@@ -36,7 +36,7 @@ vi.mock('@/app/components/app/duplicate-modal', () => ({
   ),
 }))
 
-vi.mock('@/app/components/base/confirm', () => ({
+vi.mock('@/components/confirm', () => ({
   default: ({ isShow, title, onConfirm, onCancel }: {
     isShow: boolean
     title: string

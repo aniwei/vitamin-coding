@@ -1,8 +1,8 @@
 import type { ContentItemProps } from './type'
 import * as React from 'react'
 import { useMemo } from 'react'
-import { Markdown } from '@/app/components/base/markdown'
-import Textarea from '@/app/components/base/textarea'
+import { Markdown } from '@/components/markdown'
+import Textarea from '@/components/textarea'
 
 const ContentItem = ({
   content,

@@ -1,7 +1,7 @@
 import type { ShortcutMapping } from './test-run-menu-helpers'
 import { forwardRef, useCallback, useImperativeHandle, useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { PortalToFollowElem, PortalToFollowElemContent, PortalToFollowElemTrigger } from '@/app/components/base/portal-to-follow-elem'
+import { PortalToFollowElem, PortalToFollowElemContent, PortalToFollowElemTrigger } from '@/components/portal-to-follow-elem'
 import { OptionRow, SingleOptionTrigger, useShortcutMenu } from './test-run-menu-helpers'
 
 export enum TriggerType {

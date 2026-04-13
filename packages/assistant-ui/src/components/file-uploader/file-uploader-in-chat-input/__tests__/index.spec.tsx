@@ -1,4 +1,4 @@
-import type { FileUpload } from '@/app/components/base/features/types'
+import type { FileUpload } from '@/components/features/types'
 import { fireEvent, render, screen } from '@testing-library/react'
 import { FileContextProvider } from '../../store'
 import FileUploaderInChatInput from '../index'

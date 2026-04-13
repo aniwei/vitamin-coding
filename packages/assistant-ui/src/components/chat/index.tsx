@@ -1,7 +1,6 @@
 import Button from '@/components/button'
 import Answer from './answer'
 import Question from './question'
-import TryToAsk from './try-to-ask'
 import ChatInputArea from './chat-input-area'
 
 import { memo } from 'react'
@@ -21,7 +20,8 @@ import type {
   OnSend,
 } from './types'
 
-export type ChatProps = {
+export interface ChatProps {
+  title?: string
   isTryApp?: boolean
   readonly?: boolean
   chatList: ChatItem[]
@@ -35,7 +35,7 @@ export type ChatProps = {
   inputsForm?: InputForm[]
   onRegenerate?: OnRegenerate
   chatContainerClassName?: string
-  chatContainerInnerClassName?: string
+  containerInnerClassName?: string
   chatFooterClassName?: string
   chatFooterInnerClassName?: string
   suggestedQuestions?: string[]
@@ -45,17 +45,17 @@ export type ChatProps = {
   allToolIcons?: Record<string, string | Emoji>
   chatNode?: ReactNode
   disableFeedback?: boolean
-  chatAnswerContainerInner?: string
+  answerContainerInner?: string
   hideProcessDetail?: boolean
   hideLogModal?: boolean
   themeBuilder?: ThemeBuilder
   showFeatureBar?: boolean
   showFileUpload?: boolean
-  noSpacing?: boolean
+  spacing?: boolean
   inputDisabled?: boolean
   sidebarCollapseState?: boolean
   hideAvatar?: boolean
-  sendOnEnter?: boolean
+  enterToSend?: boolean
   onAnnotationEdited?: (question: string, answer: string, index: number) => void
   onAnnotationAdded?: (annotationId: string, authorName: string, question: string, answer: string, index: number) => void
   onAnnotationRemoved?: (index: number) => void
@@ -67,6 +67,7 @@ export type ChatProps = {
 }
 
 export const Chat: FC<ChatProps> = memo(({
+  title,
   isTryApp,
   readonly = false,
   setting,
@@ -80,10 +81,9 @@ export const Chat: FC<ChatProps> = memo(({
   onStopResponding,
   noChatInput,
   chatContainerClassName,
-  chatContainerInnerClassName,
+  containerInnerClassName,
   chatFooterClassName,
   chatFooterInnerClassName,
-  suggestedQuestions,
   showPromptLog,
   questionIcon,
   answerIcon,
@@ -93,7 +93,7 @@ export const Chat: FC<ChatProps> = memo(({
   chatNode,
   disableFeedback,
   onFeedback,
-  chatAnswerContainerInner,
+  answerContainerInner,
   hideProcessDetail,
   hideLogModal,
   themeBuilder,
@@ -101,28 +101,24 @@ export const Chat: FC<ChatProps> = memo(({
   showFeatureBar,
   showFileUpload,
   onFeatureBarClick,
-  noSpacing,
+  spacing,
   inputDisabled,
   sidebarCollapseState,
   hideAvatar,
-  sendOnEnter,
+  enterToSend,
   onHumanInputFormSubmit,
   getHumanInputNodeData,
 }) => {
   const {
     width,
-    chatContainerRef,
-    chatContainerInnerRef,
-    chatFooterRef,
-    chatFooterInnerRef,
+    containerRef,
+    containerInnerRef,
+    footerRef,
+    footerInnerRef,
   } = useChatLayout({
     chatList,
     sidebarCollapseState,
   })
-  // TODO
-  const appData: any = {}
-
-  const hasTryToAsk = setting?.suggested_questions_after_answer?.enabled && !!suggestedQuestions?.length && onSend
 
   return (
     <ChatContextProvider
@@ -142,22 +138,26 @@ export const Chat: FC<ChatProps> = memo(({
       onFeedback={onFeedback}
       getHumanInputNodeData={getHumanInputNodeData}
     >
-      <div data-testid="chat-root" className={clsx('relative h-full', isTryApp && 'flex flex-col')}>
+      <div className={clsx('relative h-full', isTryApp && 'flex flex-col')}>
         <div
-          data-testid="chat-container"
-          ref={chatContainerRef}
+          ref={containerRef}
           className={clsx('relative h-full overflow-x-hidden overflow-y-auto', isTryApp && 'h-0 grow', chatContainerClassName)}
         >
           {chatNode}
           <div
-            ref={chatContainerInnerRef}
-            className={clsx('w-full', !noSpacing && 'px-8', chatContainerInnerClassName, isTryApp && 'px-0')}
+            ref={containerInnerRef}
+            className={clsx(
+              'w-full', 
+              spacing && 'px-8', 
+              containerInnerClassName, 
+              isTryApp && 'px-0'
+            )}
           >
             {
               chatList.map((item, index) => {
                 if (item.isAnswer) {
                   const isLast = item.id === chatList.at(-1)?.id
-                  
+
                   return (
                     <Answer
                       key={item.id}
@@ -168,7 +168,7 @@ export const Chat: FC<ChatProps> = memo(({
                       answerIcon={answerIcon}
                       responding={isLast && responding}
                       showPromptLog={showPromptLog}
-                      chatAnswerContainerInner={chatAnswerContainerInner}
+                      answerContainerInner={answerContainerInner}
                       hideProcessDetail={hideProcessDetail}
                       noChatInput={noChatInput}
                       switchSibling={switchSibling}
@@ -196,11 +196,11 @@ export const Chat: FC<ChatProps> = memo(({
         <div
           className={clsx(
             'absolute bottom-0 z-10 flex justify-center bg-chat-input-mask', 
-            (hasTryToAsk || !noChatInput || !noStopResponding) && chatFooterClassName)}
-          ref={chatFooterRef}
+            (!noChatInput || !noStopResponding) && chatFooterClassName)}
+          ref={footerRef}
         >
           <div
-            ref={chatFooterInnerRef}
+            ref={footerInnerRef}
             className={clsx('relative', chatFooterInnerClassName, isTryApp && 'px-0')}
           >
             {
@@ -213,30 +213,18 @@ export const Chat: FC<ChatProps> = memo(({
                 </div>
               )
             }
-            {
-              hasTryToAsk && (
-                <TryToAsk
-                  suggestedQuestions={suggestedQuestions}
-                  onSend={onSend}
-                />
-              )
-            }
-            {
-              !noChatInput && (
-                <ChatInputArea
-                  botName={appData?.site?.title || 'Bot'}
-                  disabled={inputDisabled}
-                  speechToTextSetting={setting?.speech_to_text}
-                  onSend={onSend}
-                  inputs={inputs}
-                  inputsForm={inputsForm}
-                  theme={themeBuilder?.theme}
-                  responding={responding}
-                  readonly={readonly}
-                  sendOnEnter={sendOnEnter}
-                />
-              )
-            }
+
+            <ChatInputArea
+              name={title || 'Bot'}
+              disabled={inputDisabled}
+              inputs={inputs}
+              inputsForm={inputsForm}
+              theme={themeBuilder?.theme}
+              responding={responding}
+              readonly={readonly}
+              enterToSend={enterToSend}
+              onSend={onSend}
+            />
           </div>
         </div>
       </div>

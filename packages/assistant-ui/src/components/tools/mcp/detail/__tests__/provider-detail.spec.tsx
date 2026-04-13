@@ -7,7 +7,7 @@ import { describe, expect, it, vi } from 'vitest'
 import MCPDetailPanel from '../provider-detail'
 
 // Mock the drawer component
-vi.mock('@/app/components/base/drawer', () => ({
+vi.mock('@/components/drawer', () => ({
   default: ({ children, isOpen }: { children: ReactNode, isOpen: boolean }) => {
     if (!isOpen)
       return null

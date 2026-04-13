@@ -1,4 +1,4 @@
-import type { IChatItem, ThoughtItem } from '@/app/components/base/chat/chat/type'
+import type { IChatItem, ThoughtItem } from '@/components/chat/chat/type'
 import { render, screen } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'

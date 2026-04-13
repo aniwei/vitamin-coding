@@ -17,7 +17,7 @@ import {
 } from 'react'
 import { useTranslation } from 'react-i18next'
 import { useReactFlow, useStoreApi } from 'reactflow'
-import { Tooltip, TooltipContent, TooltipTrigger } from '@/app/components/base/ui/tooltip'
+import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 import { isRagVariableVar, isSpecialVar, isSystemVar } from '@/app/components/workflow/nodes/_base/components/variable/utils'
 import VarFullPathPanel from '@/app/components/workflow/nodes/_base/components/variable/var-full-path-panel'
 import {

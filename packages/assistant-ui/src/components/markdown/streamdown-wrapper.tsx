@@ -1,24 +1,27 @@
+import RemarkBreaks from 'remark-breaks'
+import { createMathPlugin } from '@streamdown/math'
+import { lazy, memo, useMemo } from 'react'
+import {
+  defaultRehypePlugins, 
+  defaultRemarkPlugins, 
+  Streamdown 
+} from 'streamdown'
+import {
+  Image,
+  Link,
+  Audio,
+  Button,
+  Form,
+  Paragraph,
+  PluginImage,
+  PluginParagraph,
+  Think,
+  Video,
+} from './blocks'
+import { ALLOW_INLINE_STYLES, ENABLE_SINGLE_DOLLAR_LATEX } from '@/config'
 import type { ComponentType } from 'react'
 import type { Components, StreamdownProps } from 'streamdown'
-import { createMathPlugin } from '@streamdown/math'
-import { memo, useMemo } from 'react'
-import RemarkBreaks from 'remark-breaks'
-import { defaultRehypePlugins, defaultRemarkPlugins, Streamdown } from 'streamdown'
-import {
-  AudioBlock,
-  Img,
-  Link,
-  MarkdownButton,
-  MarkdownForm,
-  Paragraph,
-  PluginImg,
-  PluginParagraph,
-  ThinkBlock,
-  VideoBlock,
-} from '@/app/components/base/markdown-blocks'
-import { ALLOW_INLINE_STYLES, ENABLE_SINGLE_DOLLAR_LATEX } from '@/config'
-import dynamic from '@/next/dynamic'
-import { customUrlTransform } from './markdown-utils'
+
 import 'katex/dist/katex.min.css'
 
 type PluggableList = NonNullable<StreamdownProps['rehypePlugins']>
@@ -26,7 +29,7 @@ type Pluggable = PluggableList[number]
 
 type AttributeDefinition = string | [string, ...(string | boolean | RegExp)[]]
 
-type SanitizeSchema = {
+interface SanitizeSchema {
   tagNames?: string[]
   attributes?: Record<string, AttributeDefinition[]>
   required?: Record<string, Record<string, unknown>>
@@ -35,20 +38,54 @@ type SanitizeSchema = {
   [key: string]: unknown
 }
 
-const CodeBlock = dynamic(() => import('@/app/components/base/markdown-blocks/code-block'), { ssr: false })
+const Code = lazy(() => import('./blocks/code'))
 
 const mathPlugin = createMathPlugin({
   singleDollarTextMath: ENABLE_SINGLE_DOLLAR_LATEX,
 })
 
-/**
- * Allowed HTML tags and their permitted data attributes for rehype-sanitize.
- * Keys = tag names to allow; values = attribute names in **hast** property format
- * (camelCase, e.g. `dataThink` for `data-think`).
- *
- * Prefer explicit attribute lists over wildcards (e.g. `data*`) to
- * minimise the attack surface when LLM-generated content is rendered.
- */
+export const urlTransform = (
+  uri: string
+): string | undefined => {
+  const PERMITTED_SCHEME_REGEX = /^(https?|ircs?|mailto|xmpp|abbr):$/i
+
+  if (uri.startsWith('#')) {
+    return uri
+  }
+
+  if (uri.startsWith('//')) {
+    return uri
+  }
+
+  const colonIndex = uri.indexOf(':')
+  if (colonIndex === -1) {
+    return uri
+  }
+
+  const slashIndex = uri.indexOf('/')
+  const questionMarkIndex = uri.indexOf('?')
+  const hashIndex = uri.indexOf('#')
+
+  if (
+    (slashIndex !== -1 && colonIndex > slashIndex) || 
+    (questionMarkIndex !== -1 && colonIndex > questionMarkIndex) || 
+    (hashIndex !== -1 && colonIndex > hashIndex)
+  ) {
+    return uri
+  }
+
+  const scheme = uri.substring(0, colonIndex + 1).toLowerCase()
+  if (PERMITTED_SCHEME_REGEX.test(scheme)) {
+    return uri
+  }
+
+  if (ALLOW_UNSAFE_DATA_SCHEME && scheme === 'data:') {
+    return uri
+  }
+
+  return undefined
+}
+
 const ALLOWED_TAGS: Record<string, string[]> = {
   button: ['dataVariant', 'dataSize', 'dataMessage', 'dataLink'],
   form: ['dataFormat'],
@@ -68,14 +105,6 @@ const ALLOWED_TAGS: Record<string, string[]> = {
   section: ['dataName'],
 }
 
-/**
- * Build a rehype plugin list that includes the default raw → sanitize → harden
- * pipeline with `ALLOWED_TAGS` baked into the sanitize schema, plus any extra
- * plugins the caller provides.
- *
- * This sidesteps the streamdown `allowedTags` prop, which only takes effect
- * when `rehypePlugins` is the exact default reference (identity check).
- */
 function buildRehypePlugins(extraPlugins?: PluggableList): PluggableList {
   const [sanitizePlugin, defaultSanitizeSchema]
     = defaultRehypePlugins.sanitize as [Pluggable, SanitizeSchema]
@@ -91,31 +120,22 @@ function buildRehypePlugins(extraPlugins?: PluggableList): PluggableList {
 
   for (const tag of Object.keys(ALLOWED_TAGS)) {
     const existing = mergedAttributes[tag]
+
     if (existing) {
-      // When we add an unrestricted attribute (bare string), remove any
-      // existing restricted tuple for the same name.  hast-util-sanitize's
-      // `findDefinition` returns the *first* match, so a restricted tuple
-      // like `['type','checkbox']` would shadow our unrestricted `'type'`.
       const overrideNames = new Set(ALLOWED_TAGS[tag])
       const filtered = existing.filter((entry) => {
         const name = typeof entry === 'string' ? entry : entry[0]
         return !overrideNames.has(name as string)
       })
+
       mergedAttributes[tag] = [...filtered, ...ALLOWED_TAGS[tag]]
-    }
-    else {
+    } else {
       mergedAttributes[tag] = ALLOWED_TAGS[tag]
     }
   }
 
-  // The default schema forces `input` to be `{disabled:true, type:'checkbox'}`
-  // via `required`.  Drop that so form inputs keep their original attributes.
-  const { input: _inputRequired, ...requiredRest }
-    = (defaultSanitizeSchema.required ?? {})
-
-  // `name` is in the default `clobber` list, which prefixes every `name` value
-  // with `user-content-`.  Form fields need the original `name`, and our form
-  // component validates names with `isSafeName()`, so remove it.
+  
+  const { input: _inputRequired, ...requiredRest } = (defaultSanitizeSchema.required ?? {})
   const clobber = (defaultSanitizeSchema.clobber ?? []).filter(k => k !== 'name')
 
   if (ALLOW_INLINE_STYLES) {
@@ -139,73 +159,86 @@ function buildRehypePlugins(extraPlugins?: PluggableList): PluggableList {
   ]
 }
 
-export type SimplePluginInfo = {
+export interface SimplePluginInfo {
   pluginUniqueIdentifier: string
   pluginId: string
 }
 
-export type StreamdownWrapperProps = {
+export interface StreamdownWrapperProps {
   latexContent: string
-  customDisallowedElements?: string[]
+  disallowedTags?: string[]
   customComponents?: Components
   pluginInfo?: SimplePluginInfo
   remarkPlugins?: StreamdownProps['remarkPlugins']
   rehypePlugins?: StreamdownProps['rehypePlugins']
-  isAnimating?: boolean
+  animating?: boolean
   className?: string
   mode?: StreamdownProps['mode']
 }
 
-const StreamdownWrapper = (props: StreamdownWrapperProps) => {
+const useComponents = (
+  pluginInfo?: SimplePluginInfo, 
+  customComponents?: Components
+) => {
+  return  useMemo(() => {
+    const Img = (props: { src?: string }) => (
+      pluginInfo 
+        ? <PluginImage 
+          src={String(props.src ?? '')} 
+          pluginInfo={pluginInfo} 
+        /> 
+        : <Image src={String(props.src ?? '')} />
+    )
+
+    const P = (props: { children?: React.ReactNode }) => (
+      pluginInfo 
+      ? <PluginParagraph {...props} pluginInfo={pluginInfo} /> 
+      : <Paragraph {...props} />)
+
+
+    return {
+      code: Code,
+      video: Video,
+      audio: Audio,
+      a: Link,
+      img: Img,
+      p: P,
+      button: Button,
+      form: Form as ComponentType,
+      details: Think as ComponentType,
+      ...customComponents,
+    }
+  }, [pluginInfo, customComponents])
+}
+
+const StreamdownWrapper: React.FC<StreamdownWrapperProps> = memo((props) => {
   const {
     customComponents,
     latexContent,
     pluginInfo,
-    isAnimating,
+    animating,
     className,
     mode = 'streaming',
   } = props
 
-  const remarkPlugins = useMemo(
-    () => [
-      [Array.isArray(defaultRemarkPlugins.gfm) ? defaultRemarkPlugins.gfm[0] : defaultRemarkPlugins.gfm, { singleTilde: false }] as Pluggable,
-      RemarkBreaks,
-      ...(props.remarkPlugins ?? []),
-    ],
-    [props.remarkPlugins],
-  )
+  const remarkPlugins = useMemo(() => [
+    [Array.isArray(defaultRemarkPlugins.gfm) 
+      ? defaultRemarkPlugins.gfm[0] 
+      : defaultRemarkPlugins.gfm, { singleTilde: false }] as Pluggable,
+    RemarkBreaks,
+    ...(props.remarkPlugins ?? []),
+  ], [props.remarkPlugins])
 
-  const rehypePlugins = useMemo(
-    () => buildRehypePlugins(props.rehypePlugins ?? undefined),
-    [props.rehypePlugins],
-  )
+  const rehypePlugins = useMemo(() => buildRehypePlugins(props.rehypePlugins), [props.rehypePlugins])
+  const plugins = useMemo(() => ({ math: mathPlugin }), [])
 
-  const plugins = useMemo(
-    () => ({
-      math: mathPlugin,
-    }),
-    [],
-  )
+  const disallowedTags = useMemo(() => {
+    return ['iframe', 'head', 'html', 'meta', 'link', 'style', 'body', ...(props.disallowedTags || [])]
+  }, [props.disallowedTags])
 
-  const disallowedElements = useMemo(
-    () => ['iframe', 'head', 'html', 'meta', 'link', 'style', 'body', ...(props.customDisallowedElements || [])],
-    [props.customDisallowedElements],
-  )
-
-  const components: Components = useMemo(
-    () => ({
-      code: CodeBlock,
-      img: imgProps => pluginInfo ? <PluginImg src={String(imgProps.src ?? '')} pluginInfo={pluginInfo} /> : <Img src={String(imgProps.src ?? '')} />,
-      video: VideoBlock,
-      audio: AudioBlock,
-      a: Link,
-      p: pProps => pluginInfo ? <PluginParagraph {...pProps} pluginInfo={pluginInfo} /> : <Paragraph {...pProps} />,
-      button: MarkdownButton,
-      form: MarkdownForm as ComponentType,
-      details: ThinkBlock as ComponentType,
-      ...customComponents,
-    }),
-    [pluginInfo, customComponents],
+  const components = useComponents(
+    pluginInfo, 
+    customComponents
   )
 
   return (
@@ -214,15 +247,13 @@ const StreamdownWrapper = (props: StreamdownWrapperProps) => {
       remarkPlugins={remarkPlugins}
       rehypePlugins={rehypePlugins}
       plugins={plugins}
-      urlTransform={customUrlTransform}
-      disallowedElements={disallowedElements}
+      urlTransform={urlTransform}
+      disallowedElements={disallowedTags}
       components={components}
-      isAnimating={isAnimating}
+      isAnimating={animating}
       mode={mode}
-    >
-      {latexContent}
-    </Streamdown>
+    >{latexContent}</Streamdown>
   )
-}
+})
 
-export default memo(StreamdownWrapper)
+export default StreamdownWrapper

@@ -1,14 +1,13 @@
-import type { ChatItem, WorkflowProcess } from '../../types'
+import type { ChatItem, WorkflowProcess } from '../types'
 
 import { clsx } from 'clsx'
 import {
   useEffect,
   useState,
 } from 'react'
-import { useTranslation } from 'react-i18next'
-import TracingPanel from '@/app/components/workflow/run/tracing-panel'
-import { WorkflowRunningStatus } from '@/app/components/workflow/types'
-type WorkflowProcessProps = {
+import TracingPanel from '@/components/workflow/run/tracing-panel'
+import { WorkflowRunningStatus } from '@/components/workflow/types'
+interface WorkflowProcessProps {
   data: WorkflowProcess
   item?: ChatItem
   expand?: boolean
@@ -16,27 +15,27 @@ type WorkflowProcessProps = {
   hideProcessDetail?: boolean
   readonly?: boolean
 }
-const WorkflowProcessItem = ({
+
+const WorkflowProcessItem: React.FC<WorkflowProcessProps> = ({
   data,
   expand = false,
   hideInfo = false,
   hideProcessDetail = false,
   readonly = false,
-}: WorkflowProcessProps) => {
-  const { t } = useTranslation()
+}) => {
   const [collapse, setCollapse] = useState(!expand)
+
   const running = data.status === WorkflowRunningStatus.Running
   const succeeded = data.status === WorkflowRunningStatus.Succeeded
   const failed = data.status === WorkflowRunningStatus.Failed || data.status === WorkflowRunningStatus.Stopped
   const paused = data.status === WorkflowRunningStatus.Paused
   const latestNode = data.tracing[data.tracing.length - 1]
 
-  useEffect(() => {
-    setCollapse(!expand)
-  }, [expand])
+  useEffect(() => setCollapse(!expand), [expand])
 
-  if (readonly)
+  if (readonly) {
     return null
+  }
 
   return (
     <div
@@ -51,12 +50,13 @@ const WorkflowProcessItem = ({
         collapse && paused && 'bg-workflow-process-paused-bg',
         collapse && failed && 'bg-workflow-process-failed-bg',
       )}
-      data-testid="workflow-process-item"
     >
       <div
-        className={clsx('flex cursor-pointer items-center', !collapse && 'px-1.5')}
+        className={clsx(
+          'flex cursor-pointer items-center', 
+          !collapse && 'px-1.5'
+        )}
         onClick={() => setCollapse(!collapse)}
-        data-testid="workflow-process-header"
       >
         {
           running && (

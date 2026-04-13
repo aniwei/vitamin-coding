@@ -11,7 +11,7 @@ vi.mock('../../../base/app-icon', () => ({
   ),
 }))
 
-vi.mock('@/app/components/base/content-dialog', () => ({
+vi.mock('@/components/content-dialog', () => ({
   default: ({ show, onClose, children, className }: {
     show: boolean
     onClose: () => void
@@ -35,7 +35,7 @@ vi.mock('@/app/(commonLayout)/app/(appDetailLayout)/[appId]/overview/card-view',
   ),
 }))
 
-vi.mock('@/app/components/base/button', () => ({
+vi.mock('@/components/button', () => ({
   default: ({ children, onClick, className, size, variant }: {
     children: React.ReactNode
     onClick?: () => void

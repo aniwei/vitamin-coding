@@ -1,5 +1,5 @@
 import * as React from 'react'
-import { Markdown } from '@/app/components/base/markdown'
+import { Markdown } from '@/components/markdown'
 
 type SubmittedContentProps = {
   content: string

@@ -1,5 +1,5 @@
-import type { ThoughtItem } from '@/app/components/base/chat/chat/type'
-import type { FileEntity } from '@/app/components/base/file-uploader/types'
+import type { ThoughtItem } from '@/components/chat/chat/type'
+import type { FileEntity } from '@/components/file-uploader/types'
 import { describe, expect, it } from 'vitest'
 import { addFileInfos, sortAgentSorts } from '../index'
 

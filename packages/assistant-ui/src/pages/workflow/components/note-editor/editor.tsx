@@ -13,7 +13,7 @@ import {
   memo,
   useCallback,
 } from 'react'
-// import TreeView from '@/app/components/base/prompt-editor/plugins/tree-view'
+// import TreeView from '@/components/prompt-editor/plugins/tree-view'
 import Placeholder from '@/components/prompt-editor/plugins/placeholder'
 import FormatDetectorPlugin from './plugins/format-detector-plugin'
 import LinkEditorPlugin from './plugins/link-editor-plugin'

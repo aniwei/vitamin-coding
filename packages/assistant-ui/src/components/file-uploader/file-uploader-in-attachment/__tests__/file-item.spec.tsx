@@ -1,6 +1,6 @@
 import type { FileEntity } from '../../types'
 import { fireEvent, render, screen } from '@testing-library/react'
-import { PreviewMode } from '@/app/components/base/features/types'
+import { PreviewMode } from '@/components/features/types'
 import { TransferMethod } from '@/types/app'
 import FileInAttachmentItem from '../file-item'
 

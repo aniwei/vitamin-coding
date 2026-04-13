@@ -7,12 +7,12 @@ import { clsx } from 'clsx'
   OnSend,
 } from '../types'
 import { useCallback, useEffect, useMemo, useState } from 'react'
-import AnswerIcon from '@/app/components/base/answer-icon'
-import AppIcon from '@/app/components/base/app-icon'
-import SuggestedQuestions from '@/app/components/base/chat/chat/answer/suggested-questions'
-import InputsForm from '@/app/components/base/chat/embedded-chatbot/inputs-form'
-import LogoAvatar from '@/app/components/base/logo/logo-embedded-chat-avatar'
-import { Markdown } from '@/app/components/base/markdown'
+import AnswerIcon from '@/components/answer-icon'
+import AppIcon from '@/components/app-icon'
+import SuggestedQuestions from '@/components/chat/chat/answer/suggested-questions'
+import InputsForm from '@/components/chat/embedded-chatbot/inputs-form'
+import LogoAvatar from '@/components/logo/logo-embedded-chat-avatar'
+import { Markdown } from '@/components/markdown'
 import { InputVarType } from '@/app/components/workflow/types'
 import {
   AppSourceType,

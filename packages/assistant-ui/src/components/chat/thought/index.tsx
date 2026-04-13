@@ -2,7 +2,7 @@
 import type { FC } from 'react'
 import type { ThoughtItem, ToolInfoInThought } from '../type'
 import * as React from 'react'
-import ToolDetail from '@/app/components/base/chat/chat/answer/tool-detail'
+import ToolDetail from '@/components/chat/chat/answer/tool-detail'
 
 export type IThoughtProps = {
   thought: ThoughtItem

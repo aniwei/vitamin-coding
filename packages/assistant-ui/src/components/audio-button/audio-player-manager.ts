@@ -1,4 +1,4 @@
-import AudioPlayer from '@/app/components/base/audio-btn/audio'
+import AudioPlayer from '@/components/audio-btn/audio'
 
 declare global {
   // eslint-disable-next-line ts/consistent-type-definitions

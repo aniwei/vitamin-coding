@@ -49,7 +49,7 @@ vi.mock('@/service/use-tools', () => ({
 
 // Mock Toast - need to verify notification calls
 const mockToastNotify = vi.fn()
-vi.mock('@/app/components/base/ui/toast', () => ({
+vi.mock('@/components/ui/toast', () => ({
   toast: {
     success: (message: string) => mockToastNotify({ type: 'success', message }),
     error: (message: string) => mockToastNotify({ type: 'error', message }),
@@ -69,7 +69,7 @@ vi.mock('@/app/components/plugins/hooks', () => ({
 }))
 
 // Mock Drawer - simplified for testing, preserves behavior
-vi.mock('@/app/components/base/drawer-plus', () => ({
+vi.mock('@/components/drawer-plus', () => ({
   default: ({ isShow, onHide, title, body }: { isShow: boolean, onHide: () => void, title: string, body: React.ReactNode }) => {
     if (!isShow)
       return null
@@ -84,7 +84,7 @@ vi.mock('@/app/components/base/drawer-plus', () => ({
 }))
 
 // Mock EmojiPicker - simplified for testing
-vi.mock('@/app/components/base/emoji-picker', () => ({
+vi.mock('@/components/emoji-picker', () => ({
   default: ({ onSelect, onClose }: { onSelect: (icon: string, background: string) => void, onClose: () => void }) => (
     <div data-testid="emoji-picker">
       <button data-testid="select-emoji" onClick={() => onSelect('🚀', '#f0f0f0')}>Select Emoji</button>
@@ -94,7 +94,7 @@ vi.mock('@/app/components/base/emoji-picker', () => ({
 }))
 
 // Mock AppIcon - simplified for testing
-vi.mock('@/app/components/base/app-icon', () => ({
+vi.mock('@/components/app-icon', () => ({
   default: ({ onClick, icon, background }: { onClick?: () => void, icon: string, background: string }) => (
     <div data-testid="app-icon" onClick={onClick} data-icon={icon} data-background={background}>
       {icon}
@@ -114,7 +114,7 @@ vi.mock('@/app/components/tools/labels/selector', () => ({
 
 // Mock PortalToFollowElem for dropdown tests
 let mockPortalOpenState = false
-vi.mock('@/app/components/base/portal-to-follow-elem', () => ({
+vi.mock('@/components/portal-to-follow-elem', () => ({
   PortalToFollowElem: ({ children, open, onOpenChange }: { children: React.ReactNode, open: boolean, onOpenChange: (open: boolean) => void }) => {
     mockPortalOpenState = open
     return (

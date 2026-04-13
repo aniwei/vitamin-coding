@@ -2,7 +2,7 @@ import type { ModalContextState } from '@/context/modal-context'
 import type { ProviderContextState } from '@/context/provider-context'
 import { act, fireEvent, render, screen, waitFor } from '@testing-library/react'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
-import { toast } from '@/app/components/base/ui/toast'
+import { toast } from '@/components/ui/toast'
 import { Plan } from '@/app/components/billing/type'
 import { AuthHeaderPrefix, AuthType } from '@/app/components/tools/types'
 import { parseParamsSchema } from '@/service/tools'
@@ -55,7 +55,7 @@ vi.mock('@/context/i18n', async () => {
 })
 
 // Mock EmojiPicker
-vi.mock('@/app/components/base/emoji-picker', () => ({
+vi.mock('@/components/emoji-picker', () => ({
   default: ({ onSelect, onClose }: { onSelect: (icon: string, background: string) => void, onClose: () => void }) => {
     return (
       <div data-testid="emoji-picker">

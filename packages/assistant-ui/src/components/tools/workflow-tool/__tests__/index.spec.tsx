@@ -4,7 +4,7 @@ import userEvent from '@testing-library/user-event'
 import { beforeEach, describe, expect, it, vi } from 'vitest'
 import WorkflowToolAsModal from '../index'
 
-vi.mock('@/app/components/base/drawer-plus', () => ({
+vi.mock('@/components/drawer-plus', () => ({
   default: ({ isShow, onHide, title, body }: { isShow: boolean, onHide: () => void, title: string, body: React.ReactNode }) => (
     isShow
       ? (
@@ -18,7 +18,7 @@ vi.mock('@/app/components/base/drawer-plus', () => ({
   ),
 }))
 
-vi.mock('@/app/components/base/emoji-picker', () => ({
+vi.mock('@/components/emoji-picker', () => ({
   default: ({ onSelect, onClose }: { onSelect: (icon: string, background: string) => void, onClose: () => void }) => (
     <div data-testid="emoji-picker">
       <button data-testid="select-emoji" onClick={() => onSelect('🚀', '#000000')}>Emoji</button>
@@ -27,7 +27,7 @@ vi.mock('@/app/components/base/emoji-picker', () => ({
   ),
 }))
 
-vi.mock('@/app/components/base/app-icon', () => ({
+vi.mock('@/components/app-icon', () => ({
   default: ({ onClick, icon }: { onClick?: () => void, icon: string }) => (
     <button data-testid="app-icon" onClick={onClick}>{icon}</button>
   ),
@@ -42,7 +42,7 @@ vi.mock('@/app/components/tools/labels/selector', () => ({
   ),
 }))
 
-vi.mock('@/app/components/base/tooltip', () => ({
+vi.mock('@/components/tooltip', () => ({
   default: ({
     children,
     popupContent,
@@ -71,7 +71,7 @@ vi.mock('../confirm-modal', () => ({
 }))
 
 const mockToastNotify = vi.fn()
-vi.mock('@/app/components/base/ui/toast', () => ({
+vi.mock('@/components/ui/toast', () => ({
   toast: {
     success: (message: string) => mockToastNotify({ type: 'success', message }),
     error: (message: string) => mockToastNotify({ type: 'error', message }),

@@ -1,4 +1,4 @@
-import type { AppIconEmojiSelection, AppIconImageSelection } from '@/app/components/base/app-icon-picker'
+import type { AppIconEmojiSelection, AppIconImageSelection } from '@/components/app-icon-picker'
 import type { ToolWithProvider } from '@/app/components/workflow/types'
 import { act, renderHook } from '@testing-library/react'
 import { describe, expect, it, vi } from 'vitest'

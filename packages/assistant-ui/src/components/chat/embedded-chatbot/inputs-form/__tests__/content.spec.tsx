@@ -16,7 +16,7 @@ vi.mock('@/next/navigation', () => ({
   useSearchParams: () => new URLSearchParams(),
 }))
 
-vi.mock('@/app/components/base/ui/toast', () => ({
+vi.mock('@/components/ui/toast', () => ({
 
 }))
 
@@ -33,7 +33,7 @@ vi.mock('@/app/components/workflow/nodes/_base/components/editor/code-editor', (
 }))
 
 // Mock FileUploaderInAttachmentWrapper to trigger onChange easily
-vi.mock('@/app/components/base/file-uploader', () => ({
+vi.mock('@/components/file-uploader', () => ({
 
   FileUploaderInAttachmentWrapper: ({ value, onChange }: { value: any[], onChange: (v: any[]) => void }) => (
     <div data-testid="mock-file-uploader">

@@ -1,16 +1,16 @@
-import type { FileUpload } from '@/app/components/base/features/types'
+import type { FileUpload } from '@/components/features/types'
 import { RiUploadCloud2Line } from '@remixicon/react'
 import {
   memo,
   useState,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import Button from '@/app/components/base/button'
+import Button from '@/components/button'
 import {
   PortalToFollowElem,
   PortalToFollowElemContent,
   PortalToFollowElemTrigger,
-} from '@/app/components/base/portal-to-follow-elem'
+} from '@/components/portal-to-follow-elem'
 import { clsx } from 'clsx'
 import { FILE_URL_REGEX } from '../constants'
 import FileInput from '../file-input'

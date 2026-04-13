@@ -40,7 +40,7 @@ import type {
 
 import 'reactflow/dist/style.css'
 import './index.module.css'
-import Panel from './components/panel'
+import Panel from '../../components/panel'
 import Inspect from './components/inspect'
 
 

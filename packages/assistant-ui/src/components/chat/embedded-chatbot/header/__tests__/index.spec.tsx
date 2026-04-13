@@ -16,7 +16,7 @@ vi.mock('@/context/global-public-context', () => ({
   useGlobalPublicStore: vi.fn(),
 }))
 
-vi.mock('@/app/components/base/chat/embedded-chatbot/inputs-form/view-form-dropdown', () => ({
+vi.mock('@/components/chat/embedded-chatbot/inputs-form/view-form-dropdown', () => ({
   default: () => <div data-testid="view-form-dropdown" />,
 }))
 

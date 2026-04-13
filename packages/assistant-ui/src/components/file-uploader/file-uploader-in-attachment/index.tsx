@@ -1,5 +1,5 @@
 import type { FileEntity } from '../types'
-import type { FileUpload } from '@/app/components/base/features/types'
+import type { FileUpload } from '@/components/features/types'
 import {
   RiLink,
   RiUploadCloud2Line,
@@ -8,7 +8,7 @@ import {
   useCallback,
 } from 'react'
 import { useTranslation } from 'react-i18next'
-import Button from '@/app/components/base/button'
+import Button from '@/components/button'
 import { TransferMethod } from '@/types/app'
 import { clsx } from 'clsx'
 import FileFromLinkOrLocal from '../file-from-link-or-local'

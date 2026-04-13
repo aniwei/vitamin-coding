@@ -17,8 +17,8 @@ import {
   PortalToFollowElem,
   PortalToFollowElemContent,
   PortalToFollowElemTrigger,
-} from '@/app/components/base/portal-to-follow-elem'
-import { cn } from '@/utils/classnames'
+} from '@/components/portal-to-follow-elem'
+import { clsx } from 'clsx'
 import Divider from '../../base/divider'
 import {
   useNodesReadOnly,

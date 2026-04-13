@@ -1,4 +1,4 @@
-import { cn } from '@/utils/classnames'
+import { clsx } from 'clsx'
 
 type ItemIndicatorProps = {
   className?: string

@@ -1,4 +1,4 @@
-import type { FileUpload } from '@/app/components/base/features/types'
+import type { FileUpload } from '@/components/features/types'
 import {
   RiAttachmentLine,
 } from '@remixicon/react'
@@ -6,7 +6,7 @@ import {
   memo,
   useCallback,
 } from 'react'
-import ActionButton from '@/app/components/base/action-button'
+import ActionButton from '@/components/action-button'
 import { TransferMethod } from '@/types/app'
 import { clsx } from 'clsx'
 import FileFromLinkOrLocal from '../file-from-link-or-local'

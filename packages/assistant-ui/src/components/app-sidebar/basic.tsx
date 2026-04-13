@@ -3,8 +3,8 @@ import { useTranslation } from 'react-i18next'
 import {
   ApiAggregate,
   WindowCursor,
-} from '@/app/components/base/icons/src/vender/workflow'
-import Tooltip from '@/app/components/base/tooltip'
+} from '@/components/icons/src/vender/workflow'
+import Tooltip from '@/components/tooltip'
 import AppIcon from '../base/app-icon'
 
 type IAppBasicProps = {

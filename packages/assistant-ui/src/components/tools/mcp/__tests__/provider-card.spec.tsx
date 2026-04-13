@@ -57,7 +57,7 @@ type ConfirmDialogProps = {
   isLoading: boolean
 }
 
-vi.mock('@/app/components/base/confirm', () => ({
+vi.mock('@/components/confirm', () => ({
   default: ({ isShow, onConfirm, onCancel, isLoading }: ConfirmDialogProps) => {
     if (!isShow)
       return null

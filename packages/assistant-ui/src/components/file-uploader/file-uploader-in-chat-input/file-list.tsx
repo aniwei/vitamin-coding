@@ -1,5 +1,5 @@
 import type { FileEntity } from '../types'
-import type { FileUpload } from '@/app/components/base/features/types'
+import type { FileUpload } from '@/components/features/types'
 import { SupportUploadFileTypes } from '@/app/components/workflow/types'
 import { clsx } from 'clsx'
 import { useFile } from '../hooks'

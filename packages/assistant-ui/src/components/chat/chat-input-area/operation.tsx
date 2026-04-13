@@ -1,33 +1,25 @@
-import ActionButton from '@/components/action-button'
 import Button from '@/components/button'
 
-import { clsx } from 'clsx'
 import {
-  RiMicLine,
   RiSendPlane2Fill,
 } from '@remixicon/react'
 import { noop } from 'es-toolkit/function'
 import { memo } from 'react'
 import type { FC, Ref } from 'react'
 import type { Theme } from '../embedded-chatbot/theme/theme-context'
-import type { EnableType } from '../types'
 
 interface OperationProps {
   readonly?: boolean
-  speechToTextSetting?: EnableType
-  onShowVoiceInput?: () => void
   onSend: () => void
   theme?: Theme | null
   ref?: Ref<HTMLDivElement>
 }
 
 export const Operation: FC<OperationProps> = memo(({
-  readonly,
   ref,
-  speechToTextSetting,
-  onShowVoiceInput,
-  onSend,
   theme,
+  readonly,
+  onSend,
 }) => {
   return (
     <div
@@ -37,21 +29,6 @@ export const Operation: FC<OperationProps> = memo(({
         ref={ref}
         className="flex items-center pl-1"
       >
-        {/* TODO */}
-        {/* <div className="flex items-center space-x-1">
-          {
-            speechToTextSetting?.enabled && (
-              <ActionButton
-                size="l"
-                disabled={readonly}
-                onClick={onShowVoiceInput}
-                data-testid="voice-input-button"
-              >
-                <RiMicLine className="h-5 w-5" />
-              </ActionButton>
-            )
-          }
-        </div> */}
         <Button
           className="ml-3 w-8 px-0 radius-full"
           variant="primary"

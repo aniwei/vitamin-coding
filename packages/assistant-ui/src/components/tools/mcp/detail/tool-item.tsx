@@ -3,7 +3,7 @@ import { clsx } from 'clsx'
 import type { Tool } from '@/app/components/tools/types'
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
-import Tooltip from '@/app/components/base/tooltip'
+import Tooltip from '@/components/tooltip'
 import { useLocale } from '@/context/i18n'
 import { getLanguage } from '@/i18n-config/language'
 type Props = {

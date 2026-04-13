@@ -10,12 +10,12 @@ import {
   PortalToFollowElem,
   PortalToFollowElemContent,
   PortalToFollowElemTrigger,
-} from '@/app/components/base/portal-to-follow-elem'
+} from '@/components/portal-to-follow-elem'
 import { useDatasetDetailContextWithSelector } from '@/context/dataset-detail'
 import { useKnowledge } from '@/hooks/use-knowledge'
 import { DOC_FORM_TEXT } from '@/models/datasets'
 import { useDatasetRelatedApps } from '@/service/knowledge/use-dataset'
-import { cn } from '@/utils/classnames'
+import { clsx } from 'clsx'
 import AppIcon from '../base/app-icon'
 import Divider from '../base/divider'
 import Effect from '../base/effect'

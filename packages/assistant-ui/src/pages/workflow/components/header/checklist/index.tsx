@@ -16,9 +16,9 @@ import {
   PopoverClose,
   PopoverContent,
   PopoverTrigger,
-} from '@/app/components/base/ui/popover'
+} from '@/components/ui/popover'
 import useNodes from '@/app/components/workflow/store/workflow/use-nodes'
-import { cn } from '@/utils/classnames'
+import { clsx } from 'clsx'
 import {
   useChecklist,
   useNodesInteractions,

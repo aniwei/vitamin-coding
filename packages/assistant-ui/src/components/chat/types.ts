@@ -12,10 +12,6 @@ export type ExtraContent
     submitted: true
   }
 
-export interface EnableType {
-  enabled: boolean
-}
-
 export interface ToolInfoInThought {
   name: string
   label: string

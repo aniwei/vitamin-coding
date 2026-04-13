@@ -47,7 +47,7 @@ vi.mock('@/app/components/app/store', () => ({
   }),
 }))
 
-vi.mock('@/app/components/base/ui/toast', () => ({
+vi.mock('@/components/ui/toast', () => ({
   toast: Object.assign(toastMocks.api, {
     success: vi.fn((message, options) => toastMocks.call({ type: 'success', message, ...options })),
     error: vi.fn((message, options) => toastMocks.call({ type: 'error', message, ...options })),
