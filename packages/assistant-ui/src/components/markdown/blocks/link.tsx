@@ -1,5 +1,10 @@
-import { isValidUrl } from './utils'
 import * as React from 'react'
+
+export const isValidUrl = (url: string): boolean => {
+  const validPrefixes = ['http:', 'https:', '//', 'mailto:', 'data:']
+  return validPrefixes.some(prefix => url.startsWith(prefix))
+}
+
 
 interface LinkProps {
   node: {
@@ -14,13 +19,16 @@ interface LinkProps {
   [key: string]: any
 }
 
-const Link: React.FC<LinkProps> = ({ 
+export const Link: React.FC<LinkProps> = ({ 
   node, 
   children, 
   onSend, 
   ...props 
 }) => {
-  if (node.properties?.href && node.properties.href?.toString().startsWith('abbr')) {
+  if (
+    node.properties?.href && 
+    node.properties.href?.toString().startsWith('abbr')
+  ) {
     const hiddenText = decodeURIComponent(node.properties.href.toString().split('abbr:')[1])
 
     return <abbr 
@@ -34,14 +42,16 @@ const Link: React.FC<LinkProps> = ({
     if (href && /^#[\w-]+$/.test(href.toString())) {
       const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
         e.preventDefault()
-        // scroll to target element if exists within the answer container
-        const answerContainer = e.currentTarget.closest('.chat-answer-container')
+        
+        const answer = e.currentTarget.closest('.chat-answer-container')
 
-        if (answerContainer) {
+        if (answer) {
           const targetId = CSS.escape(href.toString().substring(1))
-          const targetElement = answerContainer.querySelector(`[id="${targetId}"]`)
-          if (targetElement)
-            targetElement.scrollIntoView({ behavior: 'smooth' })
+          const target = answer.querySelector(`[id="${targetId}"]`)
+
+          if (target) {
+            target.scrollIntoView({ behavior: 'smooth' })
+          }
         }
       }
       return <a 

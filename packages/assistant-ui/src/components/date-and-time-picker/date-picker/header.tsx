@@ -1,11 +1,13 @@
-import type { FC } from 'react'
-import type { DatePickerHeaderProps } from '../types'
 import { RiArrowDownSLine, RiArrowUpSLine } from '@remixicon/react'
-import * as React from 'react'
 import { useMonths } from '../hooks'
 
-const Header: FC<DatePickerHeaderProps> = ({
-  handleOpenYearMonthPicker,
+import * as React from 'react'
+import type { FC } from 'react'
+import type { DatePickerHeaderProps } from '../types'
+
+
+export const Header: FC<DatePickerHeaderProps> = ({
+  onOpenYearMonthPicker,
   currentDate,
   onClickNextMonth,
   onClickPrevMonth,
@@ -17,7 +19,7 @@ const Header: FC<DatePickerHeaderProps> = ({
       <div className="flex-1">
         <button
           type="button"
-          onClick={handleOpenYearMonthPicker}
+          onClick={onOpenYearMonthPicker}
           className="system-md-semibold flex items-center gap-x-0.5 rounded-lg px-2 py-1.5 text-text-primary hover:bg-state-base-hover"
         >
           <span>{`${months[currentDate.month()]} ${currentDate.year()}`}</span>

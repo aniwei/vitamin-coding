@@ -35,8 +35,8 @@ export const Markdown: React.FC<MarkdownProps> = memo((props) => {
     <div className={clsx(
       'markdown-body', 
       'text-text-primary!', 
-      className)
-    }>
+      className)}
+    >
       <StreamdownWrapper
         pluginInfo={pluginInfo}
         latexContent={latexContent}

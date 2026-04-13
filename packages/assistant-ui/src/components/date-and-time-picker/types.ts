@@ -2,9 +2,9 @@ import type { Placement } from '@floating-ui/react'
 import type { Dayjs } from 'dayjs'
 
 export enum ViewType {
-  date = 'date',
-  yearMonth = 'yearMonth',
-  time = 'time',
+  Date = 'date',
+  YearMonth = 'yearMonth',
+  Time = 'time',
 }
 
 export enum Period {
@@ -12,43 +12,43 @@ export enum Period {
   PM = 'PM',
 }
 
-export type TriggerProps = {
+export interface TriggerProps {
   value: Dayjs | undefined
   selectedDate: Dayjs | undefined
   isOpen: boolean
-  handleClear: (e: React.MouseEvent) => void
-  handleClickTrigger: (e: React.MouseEvent) => void
+  onClear: (e: React.MouseEvent) => void
+  onClickTrigger: (e: React.MouseEvent) => void
 }
 
-export type DatePickerProps = {
+export interface DatePickerProps {
   value: Dayjs | undefined
   timezone?: string
   placeholder?: string
-  needTimePicker?: boolean
-  onChange: (date: Dayjs | undefined) => void
-  onClear: () => void
+  disabledTimePicker?: boolean
   triggerWrapClassName?: string
-  renderTrigger?: (props: TriggerProps) => React.ReactNode
-  minuteFilter?: (minutes: string[]) => string[]
   popupZIndexClassname?: string
   noConfirm?: boolean
+  onChange: (date: Dayjs | undefined) => void
+  onClear: () => void
+  renderTrigger?: (props: TriggerProps) => React.ReactNode
+  minuteFilter?: (minutes: string[]) => string[]
   getIsDateDisabled?: (date: Dayjs) => boolean
 }
 
 export type DatePickerHeaderProps = {
-  handleOpenYearMonthPicker: () => void
   currentDate: Dayjs
+  onOpenYearMonthPicker: () => void
   onClickNextMonth: () => void
   onClickPrevMonth: () => void
 }
 
 export type DatePickerFooterProps = {
-  needTimePicker: boolean
+  disabledTimePicker: boolean
   displayTime: string
   view: ViewType
-  handleClickTimePicker: () => void
-  handleSelectCurrentDate: () => void
-  handleConfirmDate: () => void
+  onClickTimePicker: () => void
+  onSelectCurrentDate: () => void
+  onConfirm: () => void
 }
 
 export type TriggerParams = {
@@ -60,24 +60,24 @@ export type TimePickerProps = {
   value: Dayjs | string | undefined
   timezone?: string
   placeholder?: string
-  onChange: (date: Dayjs | undefined) => void
-  onClear: () => void
-  renderTrigger?: (props: TriggerParams) => React.ReactNode
   title?: string
-  minuteFilter?: (minutes: string[]) => string[]
   popupClassName?: string
   notClearable?: boolean
   triggerFullWidth?: boolean
   showTimezone?: boolean
   placement?: Placement
+  onChange: (date: Dayjs | undefined) => void
+  onClear: () => void
+  renderTrigger?: (props: TriggerParams) => React.ReactNode
+  minuteFilter?: (minutes: string[]) => string[]
 }
 
 export type TimePickerFooterProps = {
-  handleSelectCurrentTime: () => void
-  handleConfirm: () => void
+  onSelectCurrentTime: () => void
+  onConfirm: () => void
 }
 
-export type Day = {
+export interface Day {
   date: Dayjs
   isCurrentMonth: boolean
 }
@@ -85,24 +85,24 @@ export type Day = {
 export type CalendarProps = {
   days: Day[]
   selectedDate: Dayjs | undefined
-  onDateClick: (date: Dayjs) => void
   wrapperClassName?: string
+  onDateClick: (date: Dayjs) => void
   getIsDateDisabled?: (date: Dayjs) => boolean
 }
 
 export type CalendarItemProps = {
   day: Day
   selectedDate: Dayjs | undefined
-  onClick: (date: Dayjs) => void
   isDisabled: boolean
+  onClick: (date: Dayjs) => void
 }
 
 export type TimeOptionsProps = {
   selectedTime: Dayjs | undefined
   minuteFilter?: (minutes: string[]) => string[]
-  handleSelectHour: (hour: string) => void
-  handleSelectMinute: (minute: string) => void
-  handleSelectPeriod: (period: Period) => void
+  onSelectHour: (hour: string) => void
+  onSelectMinute: (minute: string) => void
+  onSelectPeriod: (period: Period) => void
 }
 
 export type YearAndMonthPickerHeaderProps = {
@@ -114,11 +114,11 @@ export type YearAndMonthPickerHeaderProps = {
 export type YearAndMonthPickerOptionsProps = {
   selectedYear: number
   selectedMonth: number
-  handleYearSelect: (year: number) => void
-  handleMonthSelect: (month: number) => void
+  onYearSelect: (year: number) => void
+  onMonthSelect: (month: number) => void
 }
 
 export type YearAndMonthPickerFooterProps = {
-  handleYearMonthCancel: () => void
-  handleYearMonthConfirm: () => void
+  onYearMonthCancel: () => void
+  onYearMonthConfirm: () => void
 }

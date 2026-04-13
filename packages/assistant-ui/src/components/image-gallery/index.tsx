@@ -1,6 +1,6 @@
 
 import { ImagePreview } from '@/components/image-preview'
-import { useState } from 'react'
+import { useState, useMemo } from 'react'
 import { clsx } from 'clsx'
 import * as React from 'react'
 import type { FC } from 'react'
@@ -36,30 +36,35 @@ const ImageGallery: FC<ImageGalleryProps> = React.memo(({
   const [url, setImagePreviewUrl] = useState('')
 
   const length = srcs.length
-  const style = getWidthStyle(length)
+  const style = useMemo(() => getWidthStyle(length), [length])
+
   return (
-    <div className={clsx(s[`img-${length}`], 'flex flex-wrap')} data-testid="image-gallery">
-      {srcs.map((src, index) => (
-        !src
-          ? null
-          : <img
-            key={index}
-            className={s.item}
-            style={style}
-            src={src}
-            alt=""
-            onClick={() => setImagePreviewUrl(src)}
-            onError={e => e.currentTarget.remove()}
-          />
-      ))}
+    <div 
+      className={clsx(
+      s[`img${length}`], 
+      'flex flex-wrap')} 
+    >
       {
-        url && (
-          <ImagePreview
-            url={url}
-            onCancel={() => setImagePreviewUrl('')}
-            title=""
-          />
+        srcs.map((src, index) => 
+          !src
+            ? null
+            : <img
+              key={index}
+              className={s.item}
+              style={style}
+              src={src}
+              alt=""
+              onClick={() => setImagePreviewUrl(src)}
+              onError={e => e.currentTarget.remove()}
+            />
         )
+      }
+      {
+        url && <ImagePreview
+          url={url}
+          onCancel={() => setImagePreviewUrl('')}
+          title=""
+        />
       }
     </div>
   )

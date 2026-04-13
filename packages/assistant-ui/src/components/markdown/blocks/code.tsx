@@ -68,7 +68,7 @@ interface ShikiCodeProps {
   initial?: JSX.Element
 }
 
-const ShikiCode: React.FC<ShikiCodeProps> = memo(({ code, language, theme, initial }) => {
+export const ShikiCode: React.FC<ShikiCodeProps> = memo(({ code, language, theme, initial }) => {
   const [nodes, setNodes] = useState(initial)
 
   useLayoutEffect(() => {
@@ -95,8 +95,8 @@ const ShikiCode: React.FC<ShikiCodeProps> = memo(({ code, language, theme, initi
   }, [code, language, theme])
 
   if (!nodes) {
-    return (
-      <pre style={{
+    return <pre 
+      style={{
         paddingLeft: 12,
         borderBottomLeftRadius: '10px',
         borderBottomRightRadius: '10px',
@@ -104,8 +104,7 @@ const ShikiCode: React.FC<ShikiCodeProps> = memo(({ code, language, theme, initi
         margin: 0,
         overflow: 'auto',
       }}
-      ><code>{code}</code></pre>
-    )
+    ><code>{code}</code></pre>
   }
 
   return (
@@ -122,8 +121,7 @@ const ShikiCode: React.FC<ShikiCodeProps> = memo(({ code, language, theme, initi
 
 ShikiCode.displayName = 'ShikiCode'
 
-// Define ECharts event parameter types
-type EChartsEventParams = {
+interface EChartsEventParams {
   type: string
   seriesIndex?: number
   dataIndex?: number
@@ -175,9 +173,7 @@ const Loading = () => {
         fontFamily: 'var(--font-family)',
         fontSize: '14px',
       }}
-      >
-        Chart loading...
-      </div>
+      >Chart loading...</div>
     </div>
   )
 }
@@ -317,26 +313,32 @@ interface CodeProps {
   children?: React.ReactNode
 }
 
-const Code: React.FC<CodeProps> = memo(({ inline, className, children = '', ...props }) => {
+export const Code: React.FC<CodeProps> = memo(({ 
+  inline, 
+  className, 
+  children = '', 
+  ...props 
+}) => {
   const { theme } = useTheme()
   const [isSVG, setIsSVG] = useState(true)
   const [chartState, setChartState] = useState<'loading' | 'success' | 'error'>('loading')
   const [finalChartOption, setFinalChartOption] = useState<any>(null)
   const echartsRef = useRef<any>(null)
   const contentRef = useRef<string>('')
-  const processedRef = useRef<boolean>(false) // Track if content was successfully processed
-  const isInitialRenderRef = useRef<boolean>(true) // Track if this is initial render
-  const chartInstanceRef = useRef<any>(null) // Direct reference to ECharts instance
-  const resizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null) // For debounce handling
+  const processedRef = useRef<boolean>(false) 
+  const isInitialRenderRef = useRef<boolean>(true)
+  const chartInstanceRef = useRef<any>(null)
+  const resizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
   const chartReadyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const finishedEventCountRef = useRef<number>(0) // Track finished event trigger count
+  const finishedEventCountRef = useRef<number>(0) 
   const match = /language-(\w+)/.exec(className || '')
   const language = match?.[1]
   const languageShowName = getCorrectCapitalizationLanguageName(language || '')
 
   const clearResizeTimer = useCallback(() => {
-    if (!resizeTimerRef.current)
+    if (!resizeTimerRef.current) {
       return
+    }
 
     clearTimeout(resizeTimerRef.current)
     resizeTimerRef.current = null
@@ -361,7 +363,6 @@ const Code: React.FC<CodeProps> = memo(({ inline, className, children = '', ...p
     width: 'auto',
   }) as any, [])
 
-  // Debounce resize operations
   const debouncedResize = useCallback(() => {
     clearResizeTimer()
 
@@ -372,31 +373,27 @@ const Code: React.FC<CodeProps> = memo(({ inline, className, children = '', ...p
     }, 200)
   }, [clearResizeTimer])
 
-  // Handle ECharts instance initialization
-  const handleChartReady = useCallback((instance: any) => {
+  const onChartReady = useCallback((instance: any) => {
     chartInstanceRef.current = instance
 
-    // Force resize to ensure timeline displays correctly
     clearChartReadyTimer()
     chartReadyTimerRef.current = setTimeout(() => {
-      if (chartInstanceRef.current)
+      if (chartInstanceRef.current) {
         chartInstanceRef.current.resize()
+      }
+
       chartReadyTimerRef.current = null
     }, 200)
   }, [clearChartReadyTimer])
 
-  // Store event handlers in useMemo to avoid recreating them
   const echartsEvents = useMemo(() => ({
     finished: (_params: EChartsEventParams) => {
-      // Limit finished event frequency to avoid infinite loops
       finishedEventCountRef.current++
       if (finishedEventCountRef.current > 3) {
-        // Stop processing after 3 times to avoid infinite loops
         return
       }
 
       if (chartInstanceRef.current) {
-        // Use debounced resize
         debouncedResize()
       }
     },
@@ -404,13 +401,14 @@ const Code: React.FC<CodeProps> = memo(({ inline, className, children = '', ...p
 
   // Handle container resize for echarts
   useEffect(() => {
-    if (language !== 'echarts' || !chartInstanceRef.current)
+    if (language !== 'echarts' || !chartInstanceRef.current) {
       return
+    }
 
     const handleResize = () => {
-      if (chartInstanceRef.current)
-        // Use debounced resize
+      if (chartInstanceRef.current) {
         debouncedResize()
+      }
     }
 
     window.addEventListener('resize', handleResize)
@@ -433,36 +431,36 @@ const Code: React.FC<CodeProps> = memo(({ inline, className, children = '', ...p
   }, [clearResizeTimer, clearChartReadyTimer])
   
   useEffect(() => {
-    // Only process echarts content
-    if (language !== 'echarts')
+    if (language !== 'echarts') {
       return
+    }
 
-    // Reset state when new content is detected
     if (!contentRef.current) {
       setChartState('loading')
       processedRef.current = false
     }
 
     const newContent = String(children).replace(/\n$/, '')
-
-    // Skip if content hasn't changed
-    if (contentRef.current === newContent)
+    if (contentRef.current === newContent) {
       return
+    }
+
     contentRef.current = newContent
 
     const trimmedContent = newContent.trim()
-    if (!trimmedContent)
+    if (!trimmedContent) {
       return
+    }
 
-    // Detect if this is historical data (already complete)
-    // Historical data typically comes as a complete code block with complete JSON
-    const isCompleteJson
-      = (trimmedContent.startsWith('{') && trimmedContent.endsWith('}')
-        && trimmedContent.split('{').length === trimmedContent.split('}').length)
-      || (trimmedContent.startsWith('[') && trimmedContent.endsWith(']')
-        && trimmedContent.split('[').length === trimmedContent.split(']').length)
+    const isCompleteJson = (
+      trimmedContent.startsWith('{') && trimmedContent.endsWith('}') && 
+      trimmedContent.split('{').length === trimmedContent.split('}').length) || 
+      (
+        trimmedContent.startsWith('[') && trimmedContent.endsWith(']') && 
+        trimmedContent.split('[').length === trimmedContent.split(']').length
+      ) 
 
-    // If the JSON structure looks complete, try to parse it right away
+    
     if (isCompleteJson && !processedRef.current) {
       try {
         const parsed = JSON.parse(trimmedContent)
@@ -472,29 +470,25 @@ const Code: React.FC<CodeProps> = memo(({ inline, className, children = '', ...p
           processedRef.current = true
           return
         }
-      }
-      catch {
-        // Avoid executing arbitrary code; require valid JSON for chart options.
+      } catch {
         setChartState('error')
         processedRef.current = true
         return
       }
     }
 
-    // If we get here, either the JSON isn't complete yet, or we failed to parse it
-    // Check more conditions for streaming data
-    const isIncomplete
-      = trimmedContent.length < 5
-        || (trimmedContent.startsWith('{')
-          && (!trimmedContent.endsWith('}')
-            || trimmedContent.split('{').length !== trimmedContent.split('}').length))
-          || (trimmedContent.startsWith('[')
-            && (!trimmedContent.endsWith(']')
-              || trimmedContent.split('[').length !== trimmedContent.split('}').length))
+    const isIncomplete = trimmedContent.length < 5 || (
+      trimmedContent.startsWith('{') && (
+        !trimmedContent.endsWith('}') || 
+        trimmedContent.split('{').length !== trimmedContent.split('}').length)
+    ) || (
+      trimmedContent.startsWith('[') && (
+        !trimmedContent.endsWith(']') || 
+        trimmedContent.split('[').length !== trimmedContent.split('}').length)
+    )
             || (trimmedContent.split('"').length % 2 !== 1)
             || (trimmedContent.includes('{"') && !trimmedContent.includes('"}'))
 
-    // Only try to parse streaming data if it looks complete and hasn't been processed
     if (!isIncomplete && !processedRef.current) {
       let isValidOption = false
 
@@ -504,9 +498,7 @@ const Code: React.FC<CodeProps> = memo(({ inline, className, children = '', ...p
           setFinalChartOption(parsed)
           isValidOption = true
         }
-      }
-      catch {
-        // Only accept JSON to avoid executing arbitrary code from the message.
+      } catch {
         setChartState('error')
         processedRef.current = true
       }

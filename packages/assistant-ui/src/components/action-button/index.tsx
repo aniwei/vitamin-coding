@@ -63,18 +63,16 @@ export const ActionButton: React.FC<ActionButtonProps> = memo(({
   return (
     <button
       type="button"
+      ref={ref}
+      style={styleCss}
       className={clsx(
         abv({ className, size }),
         getActionButtonState(state),
         disabled && 'cursor-not-allowed text-text-disabled hover:bg-transparent hover:text-text-disabled',
       )}
       disabled={disabled}
-      ref={ref}
-      style={styleCss}
       {...props}
-    >
-      {children}
-    </button>
+    >{children}</button>
   )
 })
 

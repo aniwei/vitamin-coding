@@ -12,7 +12,7 @@ export { Image } from './image'
 export { Link } from './link'
 export { Paragraph } from './paragraph'
 
-export * from './plugin-img'
+export * from './plugin-image'
 export * from './plugin-paragraph'
 
 export { Think } from './think'

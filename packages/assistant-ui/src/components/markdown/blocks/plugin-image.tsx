@@ -1,41 +1,47 @@
-import type { SimplePluginInfo } from '../streamdown-wrapper'
-import { memo, useEffect, useMemo, useState } from 'react'
 import ImageGallery from '@/components/image-gallery'
-import { usePluginReadmeAsset } from '@/service/use-plugins'
+import { memo, useEffect, useMemo, useState } from 'react'
 import { getMarkdownImageURL } from './utils'
+import type { SimplePluginInfo } from '../streamdown-wrapper'
 
 interface ImageProps {
   src: string
+  data?: Blob
   pluginInfo?: SimplePluginInfo
 }
 
-export const PluginImage: React.FC<ImageProps> = memo(({ src, pluginInfo }) => {
-  const { pluginUniqueIdentifier, pluginId } = pluginInfo || {}
-  const { data: assetData } = usePluginReadmeAsset({ plugin_unique_identifier: pluginUniqueIdentifier, file_name: src })
+export const PluginImage: React.FC<ImageProps> = memo(({ 
+  src, 
+  data,
+  pluginInfo 
+}) => {
+  const { pluginId } = pluginInfo || {}
   const [blobUrl, setBlobUrl] = useState<string>()
 
   useEffect(() => {
-    if (!assetData) {
+    if (!data) {
       setBlobUrl(undefined)
-      return
+     
+    } else {
+      const objectUrl = URL.createObjectURL(data)
+      setBlobUrl(objectUrl)
     }
-
-    const objectUrl = URL.createObjectURL(assetData)
-    setBlobUrl(objectUrl)
 
     return () => {
-      URL.revokeObjectURL(objectUrl)
+      if (blobUrl) {
+        URL.revokeObjectURL(blobUrl)
+      }
     }
-  }, [assetData])
+  }, [data])
 
-  const imageUrl = useMemo(() => {
-    if (blobUrl)
+  const url = useMemo(() => {
+    if (blobUrl) {
       return blobUrl
-
+    }
+      
     return getMarkdownImageURL(src, pluginId)
   }, [blobUrl, pluginId, src])
 
-  const srcs = useMemo(() => [imageUrl], [imageUrl])
+  const srcs = useMemo(() => [url], [url])
 
   return (
     <div className="markdown-img-wrapper">
@@ -43,3 +49,7 @@ export const PluginImage: React.FC<ImageProps> = memo(({ src, pluginInfo }) => {
     </div>
   )
 })
+
+PluginImage.displayName = 'PluginImage'
+
+export default PluginImage

@@ -49,15 +49,17 @@ export const ImagePreview: FC<ImagePreviewProps> = React.memo(({
     } else if (url.startsWith('data:image')) {
       const win = window.open()
       win?.document.write(`<img src="${url}" alt="${title}" />`)
-    }
-    else {
+    } else {
       toast.error(`Unable to open image: ${url}`)
     }
   }
 
   const downloadImage = () => {
-    // Open in a new window, considering the case when the page is inside an iframe
-    if (url.startsWith('http') || url.startsWith('https') || url.startsWith('data:image')) {
+    if (
+      url.startsWith('http') || 
+      url.startsWith('https') || 
+      url.startsWith('data:image')
+    ) {
       // TODO
       // downloadUrl({ url, fileName: title, target: '_blank' })
       return
@@ -82,15 +84,17 @@ export const ImagePreview: FC<ImagePreviewProps> = React.memo(({
     })
   }
 
-  const imageBase64ToBlob = (base64: string, type = 'image/png'): Blob => {
+  const base64ToBlob = (base64: string, type = 'image/png'): Blob => {
     const byteCharacters = atob(base64)
     const byteArrays = []
 
     for (let offset = 0; offset < byteCharacters.length; offset += 512) {
       const slice = byteCharacters.slice(offset, offset + 512)
       const byteNumbers = Array.from({ length: slice.length })
-      for (let i = 0; i < slice.length; i++)
+
+      for (let i = 0; i < slice.length; i++) {
         byteNumbers[i] = slice.charCodeAt(i)
+      }
 
       const byteArray = new Uint8Array(byteNumbers as any)
       byteArrays.push(byteArray)
@@ -103,13 +107,12 @@ export const ImagePreview: FC<ImagePreviewProps> = React.memo(({
     const shareImage = async () => {
       try {
         const base64Data = url.split(',')[1]
-        const blob = imageBase64ToBlob(base64Data, 'image/png')
+        const blob = base64ToBlob(base64Data, 'image/png')
 
-        await navigator.clipboard.write([
-          new ClipboardItem({
+        await navigator.clipboard.write([new ClipboardItem({
             [blob.type]: blob,
-          }),
-        ])
+        })])
+
         setCopied(true)
 
         toast.success('Image copied')
@@ -118,16 +121,19 @@ export const ImagePreview: FC<ImagePreviewProps> = React.memo(({
 
         // TODO
         // downloadUrl({ url, fileName: `${title}.png` })
-
         toast.info('Failed to copy image. Downloading instead.')
       }
     }
+
     shareImage()
   }, [title, url])
 
   const onWheel = useCallback((e: React.WheelEvent<HTMLDivElement>) => {
-    if (e.deltaY < 0) zoomIn()
-    else zoomOut()
+    if (e.deltaY < 0) {
+      zoomIn()
+    } else {
+      zoomOut()
+    }
   }, [])
 
   const onMouseDown = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -175,15 +181,14 @@ export const ImagePreview: FC<ImagePreviewProps> = React.memo(({
 
   return createPortal(
     <div
+      style={{ cursor: scale > 1 ? 'move' : 'default' }}
       className="image-preview-container fixed inset-0 z-1000 flex items-center justify-center bg-black/80 p-8"
       onClick={e => e.stopPropagation()}
       onWheel={onWheel}
       onMouseDown={onMouseDown}
       onMouseMove={onMouseMove}
       onMouseUp={onMouseUp}
-      style={{ cursor: scale > 1 ? 'move' : 'default' }}
       tabIndex={-1}
-      data-testid="image-preview-container"
     >
       { }
       { }
@@ -205,9 +210,11 @@ export const ImagePreview: FC<ImagePreviewProps> = React.memo(({
               className="absolute right-48 top-6 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg"
               onClick={copyImage}
             >
-              {copied
-                ? <span className="i-ri-file-copy-line h-4 w-4 text-green-500" data-testid="image-preview-copied-icon" />
-                : <span className="i-ri-file-copy-line h-4 w-4 text-gray-500" data-testid="image-preview-copy-button" />}
+              {
+                copied
+                  ? <span className="i-ri-file-copy-line h-4 w-4 text-green-500"/>
+                  : <span className="i-ri-file-copy-line h-4 w-4 text-gray-500"/>
+              }
             </div>
           )}
         />
@@ -215,66 +222,66 @@ export const ImagePreview: FC<ImagePreviewProps> = React.memo(({
       </Tooltip>
       <Tooltip>
         <TooltipTrigger
-          render={(
+          render={
             <div
               className="absolute right-40 top-6 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg"
               onClick={zoomOut}
             >
               <span className="i-ri-zoom-out-line h-4 w-4 text-gray-500" data-testid="image-preview-zoom-out-button" />
             </div>
-          )}
+          }
         />
         <TooltipContent>Zoom Out</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger
-          render={(
+          render={
             <div
               className="absolute right-32 top-6 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg"
               onClick={zoomIn}
             >
               <span className="i-ri-zoom-in-line h-4 w-4 text-gray-500" data-testid="image-preview-zoom-in-button" />
             </div>
-          )}
+          }
         />
         <TooltipContent>Zoom In</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger
-          render={(
+          render={
             <div
               className="absolute right-24 top-6 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg"
               onClick={downloadImage}
             >
               <span className="i-ri-download-cloud-2-line h-4 w-4 text-gray-500" data-testid="image-preview-download-button" />
             </div>
-          )}
+          }
         />
         <TooltipContent>Download Image</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger
-          render={(
+          render={
             <div
               className="absolute right-16 top-6 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg"
               onClick={openInNewTab}
             >
               <span className="i-ri-add-box-line h-4 w-4 text-gray-500" data-testid="image-preview-open-in-tab-button" />
             </div>
-          )}
+          }
         />
         <TooltipContent>Open in New Tab</TooltipContent>
       </Tooltip>
       <Tooltip>
         <TooltipTrigger
-          render={(
+          render={
             <div
               className="absolute right-6 top-6 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg bg-white/8 backdrop-blur-[2px]"
               onClick={onCancel}
             >
               <span className="i-ri-close-line h-4 w-4 text-gray-500" data-testid="image-preview-close-button" />
             </div>
-          )}
+          }
         />
         <TooltipContent>Cancel</TooltipContent>
       </Tooltip>

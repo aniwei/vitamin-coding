@@ -33,8 +33,8 @@ const FullscreenIcon = () => (
 )
 
 interface VideoPlayerProps {
-  src?: string // Keep backward compatibility
-  srcs?: string[] // Support multiple sources
+  src?: string 
+  srcs?: string[]
 }
 
 export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {

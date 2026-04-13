@@ -12,11 +12,11 @@
   margin-right: 0;
 }
 
-.img-2 .item:nth-child(2n),
-.img-4 .item:nth-child(2n) {
+.img2 .item:nth-child(2n),
+.img4 .item:nth-child(2n) {
   margin-right: 0;
 }
 
-.img-4 .item:nth-child(3n) {
+.img4 .item:nth-child(3n) {
   margin-right: 8px;
 }

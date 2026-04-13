@@ -18,7 +18,6 @@ import {
   Think,
   Video,
 } from './blocks'
-import { ALLOW_INLINE_STYLES, ENABLE_SINGLE_DOLLAR_LATEX } from '@/config'
 import type { ComponentType } from 'react'
 import type { Components, StreamdownProps } from 'streamdown'
 
@@ -41,7 +40,7 @@ interface SanitizeSchema {
 const Code = lazy(() => import('./blocks/code'))
 
 const mathPlugin = createMathPlugin({
-  singleDollarTextMath: ENABLE_SINGLE_DOLLAR_LATEX,
+  singleDollarTextMath: false,
 })
 
 export const urlTransform = (
@@ -79,7 +78,7 @@ export const urlTransform = (
     return uri
   }
 
-  if (ALLOW_UNSAFE_DATA_SCHEME && scheme === 'data:') {
+  if (scheme === 'data:') {
     return uri
   }
 
@@ -181,19 +180,17 @@ const useComponents = (
   customComponents?: Components
 ) => {
   return  useMemo(() => {
-    const Img = (props: { src?: string }) => (
-      pluginInfo 
-        ? <PluginImage 
-          src={String(props.src ?? '')} 
-          pluginInfo={pluginInfo} 
-        /> 
-        : <Image src={String(props.src ?? '')} />
-    )
+    const Img = (props: { src?: string }) => pluginInfo 
+      ? <PluginImage 
+        src={String(props.src ?? '')} 
+        pluginInfo={pluginInfo} 
+      /> 
+      : <Image src={String(props.src ?? '')} />
+    
 
-    const P = (props: { children?: React.ReactNode }) => (
-      pluginInfo 
+    const P = (props: { children?: React.ReactNode }) => pluginInfo 
       ? <PluginParagraph {...props} pluginInfo={pluginInfo} /> 
-      : <Paragraph {...props} />)
+      : <Paragraph {...props} />
 
 
     return {

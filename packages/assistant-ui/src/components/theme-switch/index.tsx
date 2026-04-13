@@ -3,7 +3,7 @@ import { clsx } from 'clsx'
 
 type Theme = 'light' | 'dark' | 'system'
 
-const ThemeSwitcher = () => {
+export const ThemeSwitcher = () => {
   const { theme, setTheme } = useTheme()
 
   const onThemeChange = (newTheme: Theme) => {
@@ -20,13 +20,16 @@ const ThemeSwitcher = () => {
         )}
         onClick={() => onThemeChange('system')}
         aria-label="System theme"
-        data-testid="system-theme-container"
       >
         <div className="p-0.5">
           <span className="i-ri-computer-line h-4 w-4" />
         </div>
       </button>
-      <div className={clsx('h-[14px] w-px bg-transparent', theme === 'dark' && 'bg-divider-regular')} data-testid="divider"></div>
+      <div className={clsx(
+        'h-[14px] w-px bg-transparent', 
+        theme === 'dark' && 'bg-divider-regular'
+        )} 
+      ></div>
       <button
         type="button"
         className={clsx(
@@ -35,13 +38,17 @@ const ThemeSwitcher = () => {
         )}
         onClick={() => onThemeChange('light')}
         aria-label="Light theme"
-        data-testid="light-theme-container"
       >
         <div className="p-0.5">
           <span className="i-ri-sun-line h-4 w-4" />
         </div>
       </button>
-      <div className={clsx('h-[14px] w-px bg-transparent', theme === 'system' && 'bg-divider-regular')} data-testid="divider"></div>
+      <div 
+        className={clsx(
+          'h-[14px] w-px bg-transparent', 
+          theme === 'system' && 'bg-divider-regular'
+        )} 
+      ></div>
       <button
         type="button"
         className={clsx(
@@ -50,7 +57,6 @@ const ThemeSwitcher = () => {
         )}
         onClick={() => onThemeChange('dark')}
         aria-label="Dark theme"
-        data-testid="dark-theme-container"
       >
         <div className="p-0.5">
           <span className="i-ri-moon-line h-4 w-4" />
