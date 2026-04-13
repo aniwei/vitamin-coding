@@ -1,17 +1,17 @@
 // 关键词检测 Hook — 检测 plan/build 等触发词
-import type { ChatMessageInput, ChatMessageOutput, HookRegistration } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 // plan/build 模式关键词
 const PLAN_KEYWORDS = ['plan', 'design', 'architect', 'roadmap', 'blueprint']
 const BUILD_KEYWORDS = ['build', 'implement', 'create', 'develop', 'construct']
 
-export function createKeywordDetectionHook(): HookRegistration<'chat.message.before'> {
-  return {
+export function createKeywordDetectionHook(): HookSpec {
+  return defineHook({
     name: 'keyword-detection',
     timing: 'chat.message.before',
     priority: 30,
-    enabled: true,
-    handle(input: ChatMessageInput, output: ChatMessageOutput): void {
+    handle(input, output) {
       const text = extractText(input.message)
       if (!text) return
 
@@ -26,7 +26,7 @@ export function createKeywordDetectionHook(): HookRegistration<'chat.message.bef
         output.metadata.detectedKeyword = hasPlan ? 'plan' : 'build'
       }
     },
-  }
+  })
 }
 
 // 从消息中提取文本内容

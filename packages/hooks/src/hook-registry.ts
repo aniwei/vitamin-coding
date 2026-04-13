@@ -17,7 +17,13 @@ import {
   createBackgroundEndHook,
 } from './core/background/background-tracker'
 
-import type { HookHandle, HookInput, HookOutput, HookRegistration, HookTiming } from './types'
+import type { HookHandle, HookInput, HookOutput, HookTiming, InterceptorTiming, ObserverTiming } from './types'
+import {
+  type HookSpec,
+  type ObserverRuntimeHook,
+  type InterceptorRuntimeHook,
+  defineHook,
+} from './hook-spec'
 
 const logger = createLogger('@vitamin/hooks')
 
@@ -60,15 +66,6 @@ const HOOK_TIMINGS: HookTiming[] = [
   'system-prompt.transform',
 ]
 
-interface RuntimeHook {
-  name: string
-  timing: HookTiming
-  priority: number
-  enabled: boolean
-  run: (input: unknown, output: unknown) => void | Promise<void>
-  emit: (input: unknown) => void | Promise<void>
-}
-
 export interface RegisteredHookInfo {
   name: string
   timing: HookTiming
@@ -76,7 +73,7 @@ export interface RegisteredHookInfo {
   enabled: boolean
 }
 
-function createHookBuckets(): Record<HookTiming, RuntimeHook[]> {
+function createHookBuckets(): Record<HookTiming, HookSpec[]> {
   return {
     'chat.message.before': [],
     'chat.message.after': [],
@@ -133,65 +130,31 @@ export class HookRegistry {
     }
   }
 
-  // 注册 Hook
-  register<T extends HookTiming>(registration: HookRegistration<T>): void {
-    const handle = registration.handle
-    if (!handle) {
-      logger.warn(`Hook ${registration.name} skipped: missing handle`)
-      return
-    }
-
-    const run = (input: unknown, output: unknown): void | Promise<void> => {
-      const runHandler = handle as HookHandle<T>
-      return runHandler(input as HookInput<T>, output as HookOutput<T>)
-    }
-
-    const emit = (input: unknown): void | Promise<void> => {
-      const emitHandler = handle as (input: HookInput<T>) => void | Promise<void>
-      return emitHandler(input as HookInput<T>)
-    }
-
-    const list = this.hooks[registration.timing]
-    list.push({
-      name: registration.name,
-      timing: registration.timing,
-      priority: registration.priority,
-      enabled: registration.enabled,
-      run,
-      emit,
-    })
+  register(spec: HookSpec): void {
+    this.hooks[spec.timing].push(spec)
 
     logger.debug(
-      `Hook registered: ${registration.name} (timing=${registration.timing}, priority=${registration.priority})`,
+      `Hook registered: ${spec.name} (timing=${spec.timing}, priority=${spec.priority})`,
     )
   }
 
-  // 批量注册 Hook
-  registerAll(registrations: HookRegistration[]): void {
-    for (const reg of registrations) {
-      this.register(reg)
+  registerAll(specs: HookSpec[]): void {
+    for (const spec of specs) {
+      this.register(spec)
     }
   }
 
-  // 便捷方法: 创建并注册
+  // 内联 defineHook 而非直接接受 handle，保持 on() 调用侧同样零 cast
   on<T extends HookTiming>(timing: T, name: string, handle: HookHandle<T>, priority = 50): this {
-    this.register({
-      name,
-      timing,
-      priority,
-      enabled: true,
-      handle,
-    })
+    this.register(defineHook({ name, timing, handle, priority }))
 
     return this
   }
 
-  // 检查是否存在指定名称的 Hook
   has(name: string): boolean {
     return this.getRegistered().some((h) => h.name === name)
   }
 
-  // 注销 Hook
   unregister(name: string): boolean {
     let removed = false
     for (const timing of HOOK_TIMINGS) {
@@ -208,19 +171,17 @@ export class HookRegistry {
     return removed
   }
 
-  // 运行时禁用 Hook
+  // 运行时屏蔽，不从 bucket 移除，便于快速恢复
   disable(name: string): void {
     this.disabled.add(name)
     logger.debug(`Hook disabled: ${name}`)
   }
 
-  // 运行时启用 Hook
   enable(name: string): void {
     this.disabled.delete(name)
     logger.debug(`Hook enabled: ${name}`)
   }
 
-  // 查询指定时机已注册的 Hook
   getRegistered(timing?: HookTiming): RegisteredHookInfo[] {
     if (timing) {
       return this.hooks[timing].map(toHookInfo)
@@ -234,18 +195,18 @@ export class HookRegistry {
     return all
   }
 
-  // 执行有输出的 Hook 链（链式处理）
-  async execute<T extends HookTiming>(
+  // execute/emit 分离：编译期保证拦截器 timing 不能用 emit 触发，反之亦然
+  async execute<T extends InterceptorTiming>(
     timing: T,
     input: HookInput<T>,
     output: HookOutput<T>,
   ): Promise<void> {
-    const hooks = this.getSortedHooks(timing)
+    const hooks = this.getSortedInterceptorHooks(timing)
     if (hooks.length === 0) return
 
     for (const hook of hooks) {
       try {
-        await hook.run(input, output)
+        await hook.handle(input, output)
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         logger.error(`Hook ${hook.name} (timing=${timing}) failed: ${message}`)
@@ -253,14 +214,13 @@ export class HookRegistry {
     }
   }
 
-  // 执行无输出的 Hook (event 类型)
-  async emit<T extends HookTiming>(timing: T, input: HookInput<T>): Promise<void> {
-    const hooks = this.getSortedHooks(timing)
+  async emit<T extends ObserverTiming>(timing: T, input: HookInput<T>): Promise<void> {
+    const hooks = this.getSortedObserverHooks(timing)
     if (hooks.length === 0) return
 
     for (const hook of hooks) {
       try {
-        await hook.emit(input)
+        await hook.handle(input)
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
         logger.error(`Hook ${hook.name} (timing=${timing}) failed: ${message}`)
@@ -268,7 +228,6 @@ export class HookRegistry {
     }
   }
 
-  // 清空所有 Hook
   clear(): void {
     for (const timing of HOOK_TIMINGS) {
       this.hooks[timing] = []
@@ -277,12 +236,22 @@ export class HookRegistry {
     logger.debug(`All hooks cleared`)
   }
 
-  // 按 priority 排序，排除已禁用的 Hook
-  private getSortedHooks<T extends HookTiming>(timing: T): RuntimeHook[] {
-    const list = this.hooks[timing]
+  // 类型谓词在 filter 阶段完成类型收窄，避免 execute/emit 内部 cast
+  private getSortedInterceptorHooks(timing: InterceptorTiming): InterceptorRuntimeHook[] {
+    return this.hooks[timing]
+      .filter(
+        (hook): hook is InterceptorRuntimeHook =>
+          hook.kind === 'interceptor' && hook.enabled && !this.disabled.has(hook.name),
+      )
+      .sort((a, b) => a.priority - b.priority)
+  }
 
-    return list
-      .filter((hook) => hook.enabled && !this.disabled.has(hook.name))
+  private getSortedObserverHooks(timing: ObserverTiming): ObserverRuntimeHook[] {
+    return this.hooks[timing]
+      .filter(
+        (hook): hook is ObserverRuntimeHook =>
+          hook.kind === 'observer' && hook.enabled && !this.disabled.has(hook.name),
+      )
       .sort((a, b) => a.priority - b.priority)
   }
 
@@ -296,7 +265,7 @@ export class HookRegistry {
   }
 }
 
-function toHookInfo(hook: RuntimeHook): RegisteredHookInfo {
+function toHookInfo(hook: HookSpec): RegisteredHookInfo {
   return {
     name: hook.name,
     timing: hook.timing,
@@ -305,7 +274,7 @@ function toHookInfo(hook: RuntimeHook): RegisteredHookInfo {
   }
 }
 
-function getPresetHooks(preset: HookPreset): HookRegistration[] {
+function getPresetHooks(preset: HookPreset): HookSpec[] {
   switch (preset) {
     case 'default':
       return getDefaultPresetHooks()
@@ -318,34 +287,31 @@ function getPresetHooks(preset: HookPreset): HookRegistration[] {
   }
 }
 
-function getDefaultPresetHooks(): HookRegistration[] {
+function getDefaultPresetHooks(): HookSpec[] {
   return [
-    createFileGuardHook() as HookRegistration,
-    createOutputTruncationHook() as HookRegistration,
-    createLabelTruncatorHook() as HookRegistration,
-    createThinkingValidatorHook() as HookRegistration,
-    createAnthropicEffortHook() as HookRegistration,
-    createFirstMessageVariantHook() as HookRegistration,
-    createBabysittingHook() as HookRegistration,
-    createRalphLoopHook() as HookRegistration,
-    createStreamMetricsHook() as HookRegistration,
-    createCompactionLoggerHook() as HookRegistration,
-    createToolErrorTrackerHook() as HookRegistration,
-    createTokenBudgetHook() as HookRegistration,
-    createBackgroundStartHook() as HookRegistration,
-    createBackgroundEndHook() as HookRegistration,
+    createFileGuardHook(),
+    createOutputTruncationHook(),
+    createLabelTruncatorHook(),
+    createThinkingValidatorHook(),
+    createAnthropicEffortHook(),
+    createFirstMessageVariantHook(),
+    createBabysittingHook(),
+    createRalphLoopHook(),
+    createStreamMetricsHook(),
+    createCompactionLoggerHook(),
+    createToolErrorTrackerHook(),
+    createTokenBudgetHook(),
+    createBackgroundStartHook(),
+    createBackgroundEndHook(),
   ]
 }
 
-function getStrictPresetHooks(): HookRegistration[] {
-  return [...getDefaultPresetHooks(), createCommentCheckerHook() as HookRegistration]
+function getStrictPresetHooks(): HookSpec[] {
+  return [...getDefaultPresetHooks(), createCommentCheckerHook()]
 }
 
-function getMinimalPresetHooks(): HookRegistration[] {
-  return [
-    createFileGuardHook() as HookRegistration,
-    createOutputTruncationHook() as HookRegistration,
-  ]
+function getMinimalPresetHooks(): HookSpec[] {
+  return [createFileGuardHook(), createOutputTruncationHook()]
 }
 
 export function createHookRegistry(options?: HookRegistryOptions): HookRegistry {

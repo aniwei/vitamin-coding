@@ -1,6 +1,7 @@
 // Tool Error Tracker Hook — 工具错误频率追踪 + 熔断检测
 import { createLogger } from '@vitamin/shared'
-import type { HookRegistration, ToolExecuteAfterInput, ToolExecuteAfterOutput } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 const log = createLogger('@vitamin/hooks:tool-error-tracker')
 
@@ -23,16 +24,15 @@ export interface ToolErrorTrackerConfig {
 
 export function createToolErrorTrackerHook(
   config?: ToolErrorTrackerConfig,
-): HookRegistration<'tool.execute.after'> {
+): HookSpec {
   const threshold = config?.circuitBreakerThreshold ?? 5
   const decayMs = config?.decayWindowMs ?? 120_000
 
-  return {
+  return defineHook({
     name: 'tool-error-tracker',
     timing: 'tool.execute.after',
     priority: 15,
-    enabled: true,
-    handle(input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
+    handle(input, output) {
       const toolMap = sessionErrors.get(input.sessionId) ?? new Map<string, ToolErrorRecord>()
       sessionErrors.set(input.sessionId, toolMap)
 
@@ -72,7 +72,7 @@ export function createToolErrorTrackerHook(
         toolMap.set(input.toolName, record)
       }
     },
-  }
+  })
 }
 
 export function getToolErrors(sessionId: string): Map<string, ToolErrorRecord> | undefined {

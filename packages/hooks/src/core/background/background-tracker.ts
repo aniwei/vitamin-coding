@@ -1,5 +1,6 @@
 import { createLogger } from '@vitamin/shared'
-import type { HookRegistration } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 const log = createLogger('@vitamin/hooks:background-tracker')
 
@@ -17,13 +18,12 @@ const activeTasks = new Map<string, BackgroundTaskRecord>()
 const completedTasks: BackgroundTaskRecord[] = []
 const MAX_COMPLETED_HISTORY = 100
 
-export function createBackgroundStartHook(): HookRegistration<'background.start'> {
-  return {
+export function createBackgroundStartHook(): HookSpec {
+  return defineHook({
     name: 'background-start-tracker',
     timing: 'background.start',
     priority: 10,
-    enabled: true,
-    handle(input: { taskId: string; agentName: string }): void {
+    handle(input) {
       activeTasks.set(input.taskId, {
         taskId: input.taskId,
         agentName: input.agentName,
@@ -31,16 +31,15 @@ export function createBackgroundStartHook(): HookRegistration<'background.start'
       })
       log.debug('Background task started: taskId=%s agent=%s', input.taskId, input.agentName)
     },
-  }
+  })
 }
 
-export function createBackgroundEndHook(): HookRegistration<'background.end'> {
-  return {
+export function createBackgroundEndHook(): HookSpec {
+  return defineHook({
     name: 'background-end-tracker',
     timing: 'background.end',
     priority: 10,
-    enabled: true,
-    handle(input: { taskId: string; agentName: string; success: boolean }): void {
+    handle(input) {
       const record = activeTasks.get(input.taskId)
       if (record) {
         record.endTime = Date.now()
@@ -64,7 +63,7 @@ export function createBackgroundEndHook(): HookRegistration<'background.end'> {
         )
       }
     },
-  }
+  })
 }
 
 export function getActiveBackgroundTasks(): ReadonlyMap<string, BackgroundTaskRecord> {

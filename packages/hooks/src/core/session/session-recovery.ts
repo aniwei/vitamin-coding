@@ -1,17 +1,17 @@
 // 会话恢复 Hook — 恢复已有会话时注入上下文
-import type { ChatMessageInput, ChatMessageOutput, HookRegistration } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
-export function createSessionRecoveryHook(): HookRegistration<'chat.message.before'> {
-  return {
+export function createSessionRecoveryHook(): HookSpec {
+  return defineHook({
     name: 'session-recovery',
     timing: 'chat.message.before',
     priority: 20,
-    enabled: true,
-    handle(_input: ChatMessageInput, output: ChatMessageOutput): void {
+    handle(input, output) {
       // 会话恢复时注入 metadata 标记
-      if (_input.metadata.recovered === true) {
+      if (input.metadata.recovered === true) {
         output.metadata.sessionRecovered = true
       }
     },
-  }
+  })
 }

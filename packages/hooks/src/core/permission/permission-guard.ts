@@ -1,11 +1,13 @@
 import { ToolError } from '@vitamin/shared'
 
-import type { HookRegistration, ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
+import type { ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from '../../types'
 import type { PermissionPolicyRegistry } from './policy-registry'
 import type { PermissionAuditLog } from './audit-log'
 import type { PermissionContext } from './types'
 
-export class PermissionGuardHook implements HookRegistration<'tool.execute.before'> {
+export class PermissionGuardHook {
   readonly name = 'permission-guard'
   readonly timing = 'tool.execute.before' as const
   readonly priority = 5
@@ -57,6 +59,13 @@ export class PermissionGuardHook implements HookRegistration<'tool.execute.befor
 export function createPermissionGuardHook(
   registry: PermissionPolicyRegistry,
   auditLog?: PermissionAuditLog,
-): PermissionGuardHook {
-  return new PermissionGuardHook(registry, auditLog)
+): HookSpec {
+  const hook = new PermissionGuardHook(registry, auditLog)
+  return defineHook({
+    name: hook.name,
+    timing: hook.timing,
+    priority: hook.priority,
+    enabled: hook.enabled,
+    handle: hook.handle,
+  })
 }

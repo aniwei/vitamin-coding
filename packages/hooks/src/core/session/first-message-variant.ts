@@ -1,18 +1,18 @@
 // 首条消息变体 Hook — 首次对话特殊处理
-import type { ChatMessageInput, ChatMessageOutput, HookRegistration } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
-export function createFirstMessageVariantHook(): HookRegistration<'chat.message.before'> {
-  return {
+export function createFirstMessageVariantHook(): HookSpec {
+  return defineHook({
     name: 'first-message-variant',
     timing: 'chat.message.before',
     priority: 10,
-    enabled: true,
-    handle(_input: ChatMessageInput, output: ChatMessageOutput): void {
+    handle(input, output) {
       // 标记首条消息（用于下游 Hook 和 Agent 决策）
-      if (_input.isFirstMessage) {
+      if (input.isFirstMessage) {
         output.metadata.isFirstMessage = true
         output.metadata.variant = 'first-message'
       }
     },
-  }
+  })
 }

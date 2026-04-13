@@ -1,5 +1,6 @@
 import { createLogger } from '@vitamin/shared'
-import type { HookRegistration } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 const logger = createLogger('@vitamin/hooks:compaction')
 
@@ -12,13 +13,12 @@ interface CompactionStats {
   lastCompactionTime: number
 }
 
-export function createCompactionLoggerHook(): HookRegistration<'compaction.before'> {
-  return {
+export function createCompactionLoggerHook(): HookSpec {
+  return defineHook({
     name: 'compaction-logger',
     timing: 'compaction.before',
     priority: 10,
-    enabled: true,
-    handle(input: { sessionId: string; messageCount: number }): void {
+    handle(input) {
       const stats = compactionStats.get(input.sessionId) ?? {
         compactionCount: 0,
         totalCompacted: 0,
@@ -36,16 +36,15 @@ export function createCompactionLoggerHook(): HookRegistration<'compaction.befor
         stats.compactionCount,
       )
     },
-  }
+  })
 }
 
-export function createCompactionAfterHook(): HookRegistration<'compaction.after'> {
-  return {
+export function createCompactionAfterHook(): HookSpec {
+  return defineHook({
     name: 'compaction-after-logger',
     timing: 'compaction.after',
     priority: 10,
-    enabled: true,
-    handle(input: { sessionId: string; retainedCount: number }): void {
+    handle(input) {
       const stats = compactionStats.get(input.sessionId)
       if (stats) {
         const duration = Date.now() - stats.lastCompactionTime
@@ -59,7 +58,7 @@ export function createCompactionAfterHook(): HookRegistration<'compaction.after'
         )
       }
     },
-  }
+  })
 }
 
 export function getCompactionStats(sessionId: string): CompactionStats | undefined {
