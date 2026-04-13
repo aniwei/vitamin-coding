@@ -78,6 +78,13 @@ export interface CodingServiceOptions {
   cors?: string
 }
 
+// ─── Message sender interface ───
+// EventBridge 和 DebugBridge 依赖此接口而非具体的 WebSocketManager
+export interface IMessageSender {
+  broadcast(message: WebSocketMessage): void
+  sendToSession(sessionId: string, message: WebSocketMessage): void
+}
+
 // ─── Event bridge: maps internal events → WS events ───
 export type EventBridgeMapper = (
   event: AgentSessionEvent,

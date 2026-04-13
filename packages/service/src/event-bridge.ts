@@ -8,7 +8,7 @@
  */
 
 import { routeSessionEvent } from './session-event-router'
-import type { WebSocketManager } from './websocket-manager'
+import type { IMessageSender } from './types'
 import type { AgentSession } from '@vitamin/coding'
 
 export class EventBridge {
@@ -16,14 +16,14 @@ export class EventBridge {
 
   constructor(
     private readonly session: AgentSession,
-    private readonly ws: WebSocketManager,
+    private readonly sender: IMessageSender,
   ) {}
 
   attach(): void {
     this.unsubscribeSession = this.session.subscribe((event) => {
       const messages = routeSessionEvent(event)
       for (const msg of messages) {
-        this.ws.sendToSession(event.sessionId, msg)
+        this.sender.sendToSession(event.sessionId, msg)
       }
     })
   }

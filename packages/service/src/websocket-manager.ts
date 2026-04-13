@@ -64,6 +64,19 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
     }
   }
 
+  subscribeClient(clientId: string, sessionId: string): void {
+    if (!sessionId) return
+    if (!this.sessionSubscriptions.has(sessionId)) {
+      this.sessionSubscriptions.set(sessionId, new Set())
+    }
+    this.sessionSubscriptions.get(sessionId)?.add(clientId)
+  }
+
+  unsubscribeClient(clientId: string, sessionId: string): void {
+    if (!sessionId) return
+    this.sessionSubscriptions.get(sessionId)?.delete(clientId)
+  }
+
   sendToClient(clientId: string, message: WebSocketMessage): void {
     const ws = this.clients.get(clientId)
     if (ws && ws.readyState === ws.OPEN) {
@@ -127,12 +140,6 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
       case 'Runtime.ping':
         this.handleRuntimePing(clientId)
         return true
-      case 'Session.subscribe':
-        this.handleSessionSubscribe(clientId, message.data)
-        return true
-      case 'Session.unsubscribe':
-        this.handleSessionUnsubscribe(clientId, message.data)
-        return true
       default:
         return false
     }
@@ -143,37 +150,6 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
       type: 'Runtime.pong',
       data: { timestamp: Date.now() },
     })
-  }
-
-  private handleSessionSubscribe(clientId: string, data: Record<string, unknown>): void {
-    const sessionId = this.readSessionId(data)
-    if (!sessionId) {
-      return
-    }
-
-    if (!this.sessionSubscriptions.has(sessionId)) {
-      this.sessionSubscriptions.set(sessionId, new Set())
-    }
-
-    this.sessionSubscriptions.get(sessionId)?.add(clientId)
-  }
-
-  private handleSessionUnsubscribe(clientId: string, data: Record<string, unknown>): void {
-    const sessionId = this.readSessionId(data)
-    if (!sessionId) {
-      return
-    }
-
-    this.sessionSubscriptions.get(sessionId)?.delete(clientId)
-  }
-
-  private readSessionId(data: Record<string, unknown>): string | null {
-    const sessionId = data.sessionId
-    if (typeof sessionId !== 'string' || sessionId.length === 0) {
-      return null
-    }
-
-    return sessionId
   }
 
   private normalizeClientMessage(raw: unknown): WebSocketClientMessage | null {
