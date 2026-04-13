@@ -1,6 +1,7 @@
 // Idle Continuation Hook — 会话空闲时自动继续执行未完成任务 (§S14.2)
-import type { HookRegistration, SessionEventInput } from '../../types'
 import { createLogger } from '@vitamin/shared'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 const logger = createLogger('hook:idle-continuation')
 
@@ -13,13 +14,12 @@ export interface IdleContinuationConfig {
 
 export function createIdleContinuationHook(
   config: IdleContinuationConfig,
-): HookRegistration<'session.idle'> {
-  return {
+): HookSpec {
+  return defineHook({
     name: 'idle-continuation',
     timing: 'session.idle',
     priority: 50,
-    enabled: true,
-    handle(input: SessionEventInput): void {
+    handle(input) {
       const { sessionId } = input
 
       if (config.hasPendingWork(sessionId)) {
@@ -27,5 +27,5 @@ export function createIdleContinuationHook(
         logger.info('Session %s idle with pending work, resuming', sessionId)
       }
     },
-  }
+  })
 }

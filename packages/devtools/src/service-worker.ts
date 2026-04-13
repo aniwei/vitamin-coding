@@ -113,9 +113,6 @@ export class ServiceWorker {
       case 'Log.entryAdded':
         this.handleLogMessage(message)
         break
-      case 'Session.update':
-        this.handleBroadcastMessage(message)
-        break
       case 'Debugger.paused':
         this.handlePausedMessage(message)
         break
@@ -154,10 +151,6 @@ export class ServiceWorker {
     if (typeof message.message === 'string') {
       this.broadcast(message.message)
     }
-  }
-
-  private handleBroadcastMessage(message: Record<string, unknown>): void {
-    this.broadcast(JSON.stringify(message))
   }
 
   private handlePausedMessage(message: Record<string, unknown>): void {

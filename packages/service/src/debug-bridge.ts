@@ -1,6 +1,7 @@
 import WebSocket from 'ws'
 import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
-import type { WebSocketManager } from './websocket-manager'
+import { routeDebugEvent } from './debug-event-router'
+import type { IMessageSender } from './types'
 import type { Devtools } from '@vitamin/devtools'
 import type { PauseResumePayload } from '@vitamin/devtools'
 
@@ -37,7 +38,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
 
   constructor(
     private readonly devtools: Devtools,
-    private readonly ws: WebSocketManager,
+    private readonly sender: IMessageSender,
   ) {
     super()
   }
@@ -66,7 +67,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
       this.socket.send(JSON.stringify({ ...command, payload }))
     } else {
       logger.warn('debug bridge not connected, command dropped')
-      this.ws.broadcast({
+      this.sender.broadcast({
         type: 'Debugger.commandRejected',
         data: {
           code: 'BRIDGE_DISCONNECTED',
@@ -116,40 +117,14 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
   private handleDevtoolsEvent(event: Record<string, unknown>): void {
     switch (event.type) {
       case 'Debugger.paused':
-        this.ws.broadcast({
-          type: 'Debugger.paused',
-          data: {
-            reason: 'breakpoint',
-            pauseId: event.pauseId as string,
-            point: (event.snapshot as Record<string, unknown>)?.point,
-            snapshot: event.snapshot as Record<string, unknown>,
-            timestamp: new Date().toISOString(),
-          },
-        })
-        break
-
       case 'Debugger.resumed':
-        this.ws.broadcast({
-          type: 'Debugger.resumed',
-          data: {
-            pauseId: event.pauseId as string,
-            command: event.command as SendCommand,
-            timestamp: new Date().toISOString(),
-          },
-        })
+      case 'Debugger.commandRejected': {
+        const messages = routeDebugEvent(event)
+        for (const msg of messages) {
+          this.sender.broadcast(msg)
+        }
         break
-
-      case 'Debugger.commandRejected':
-        this.ws.broadcast({
-          type: 'Debugger.commandRejected',
-          data: {
-            code: event.code as string,
-            pauseId: event.pauseId as string | undefined,
-            command: event.command as SendCommand,
-            timestamp: new Date().toISOString(),
-          },
-        })
-        break
+      }
 
       case 'Log.entryAdded': {
         const raw = event.message
@@ -187,7 +162,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
         this.logs.splice(0, this.logs.length - 2000)
       }
 
-      this.ws.broadcast({
+      this.sender.broadcast({
         type: 'Log.entryAdded',
         data: { entry: entry as unknown as Record<string, unknown> },
       })

@@ -1,7 +1,10 @@
 export { HookRegistry, createHookRegistry } from './hook-registry'
 export type { HookPreset, HookRegistryOptions } from './hook-registry'
 
-export { safeCreateHook, isHookEnabled, safeHookEnabled } from './safe-hook'
+export { safeCreateHook, isHookEnabled } from './safe-hook'
+
+export { defineHook } from './hook-spec'
+export type { HookSpec } from './hook-spec'
 
 export {
   createFirstMessageVariantHook,
@@ -95,7 +98,8 @@ export type {
   HookInput,
   HookOutput,
   HookHandle,
-  HookRegistration,
+  ObserverTiming,
+  InterceptorTiming,
   HookPayloadMap,
   ChatMessageInput,
   ChatMessageOutput,

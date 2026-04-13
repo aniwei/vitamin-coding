@@ -1,13 +1,13 @@
 // Thinking Block 校验 Hook — 确保 thinking block 格式正确
-import type { HookRegistration, MessagesTransformInput, MessagesTransformOutput } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
-export function createThinkingValidatorHook(): HookRegistration<'messages.transform'> {
-  return {
+export function createThinkingValidatorHook(): HookSpec {
+  return defineHook({
     name: 'thinking-validator',
     timing: 'messages.transform',
     priority: 20,
-    enabled: true,
-    handle(_input: MessagesTransformInput, output: MessagesTransformOutput): void {
+    handle(_input, output) {
       // 遍历消息，修复/移除无效的 thinking block
       output.messages = output.messages.map((msg) => {
         if (!isAssistantMessage(msg)) return msg
@@ -28,7 +28,7 @@ export function createThinkingValidatorHook(): HookRegistration<'messages.transf
         return { ...msg, content: filtered } as typeof msg
       })
     },
-  }
+  })
 }
 
 function isAssistantMessage(msg: unknown): boolean {

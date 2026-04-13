@@ -1,7 +1,8 @@
 // Babysitting Hook — 检测 Agent 异常行为模式
 import { createLogger } from '@vitamin/shared'
 
-import type { HookRegistration, ToolExecuteAfterInput, ToolExecuteAfterOutput } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 const log = createLogger('@vitamin/hooks:babysitting')
 
@@ -19,13 +20,12 @@ const MAX_CONSECUTIVE_ERRORS = 3
 const MAX_SAME_TOOL_CALLS = 5
 const HISTORY_WINDOW_MS = 60_000
 
-export function createBabysittingHook(): HookRegistration<'tool.execute.after'> {
-  return {
+export function createBabysittingHook(): HookSpec {
+  return defineHook({
     name: 'babysitting',
     timing: 'tool.execute.after',
     priority: 30,
-    enabled: true,
-    handle(input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
+    handle(input, output) {
       const history = getHistory(input.sessionId)
 
       // 记录本次调用
@@ -55,7 +55,7 @@ export function createBabysittingHook(): HookRegistration<'tool.execute.after'> 
         output.metadata.babysittingWarning = warning
       }
     },
-  }
+  })
 }
 
 function getHistory(sessionId: string): RecentToolCall[] {

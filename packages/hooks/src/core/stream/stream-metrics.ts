@@ -1,6 +1,7 @@
 // Stream Metrics Hook — 流式响应性能追踪
 import { createLogger } from '@vitamin/shared'
-import type { HookRegistration } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 const log = createLogger('@vitamin/hooks:stream-metrics')
 
@@ -15,13 +16,12 @@ interface StreamMetrics {
   totalDurationMs: number
 }
 
-export function createStreamMetricsHook(): HookRegistration<'stream.start'> {
-  return {
+export function createStreamMetricsHook(): HookSpec {
+  return defineHook({
     name: 'stream-metrics',
     timing: 'stream.start',
     priority: 10,
-    enabled: true,
-    handle(input: { sessionId: string; model: string }): void {
+    handle(input) {
       sessionMetrics.set(input.sessionId, {
         startTime: Date.now(),
         model: input.model,
@@ -31,16 +31,15 @@ export function createStreamMetricsHook(): HookRegistration<'stream.start'> {
       })
       log.debug('Stream started: session=%s model=%s', input.sessionId, input.model)
     },
-  }
+  })
 }
 
-export function createStreamEndMetricsHook(): HookRegistration<'stream.end'> {
-  return {
+export function createStreamEndMetricsHook(): HookSpec {
+  return defineHook({
     name: 'stream-end-metrics',
     timing: 'stream.end',
     priority: 10,
-    enabled: true,
-    handle(input: { sessionId: string; model: string; stopReason: string }): void {
+    handle(input) {
       const metrics = sessionMetrics.get(input.sessionId)
       if (metrics) {
         const duration = Date.now() - metrics.startTime
@@ -56,7 +55,7 @@ export function createStreamEndMetricsHook(): HookRegistration<'stream.end'> {
         )
       }
     },
-  }
+  })
 }
 
 export function getStreamMetrics(sessionId: string): StreamMetrics | undefined {

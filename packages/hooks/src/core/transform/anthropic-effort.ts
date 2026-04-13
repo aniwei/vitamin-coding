@@ -1,13 +1,13 @@
 // Anthropic Effort 级别调整 Hook — 根据模型调整 reasoning effort
-import type { ChatParamsInput, ChatParamsOutput, HookRegistration } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
-export function createAnthropicEffortHook(): HookRegistration<'chat.params'> {
-  return {
+export function createAnthropicEffortHook(): HookSpec {
+  return defineHook({
     name: 'anthropic-effort',
     timing: 'chat.params',
     priority: 10,
-    enabled: true,
-    handle(input: ChatParamsInput, output: ChatParamsOutput): void {
+    handle(input, output) {
       // 仅对 Anthropic 模型调整
       if (input.provider !== 'anthropic') return
 
@@ -27,5 +27,5 @@ export function createAnthropicEffortHook(): HookRegistration<'chat.params'> {
         }
       }
     },
-  }
+  })
 }

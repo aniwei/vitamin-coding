@@ -1,5 +1,6 @@
 // 上下文注入 Hook — 向消息列表注入额外上下文
-import type { HookRegistration, MessagesTransformInput, MessagesTransformOutput } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 export interface ContextInjectorConfig {
   contextProviders: ContextProvider[]
@@ -12,13 +13,12 @@ export interface ContextProvider {
 
 export function createContextInjectorHook(
   config: ContextInjectorConfig,
-): HookRegistration<'messages.transform'> {
-  return {
+): HookSpec {
+  return defineHook({
     name: 'context-injector',
     timing: 'messages.transform',
     priority: 10,
-    enabled: true,
-    async handle(_input: MessagesTransformInput, output: MessagesTransformOutput): Promise<void> {
+    async handle(_input, output) {
       const contexts: string[] = []
 
       for (const provider of config.contextProviders) {
@@ -42,5 +42,5 @@ export function createContextInjectorHook(
 
       output.messages = [contextMessage as never, ...output.messages]
     },
-  }
+  })
 }

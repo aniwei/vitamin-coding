@@ -1,18 +1,18 @@
 // 输出截断 Hook — 截断超长工具输出
-import type { HookRegistration, ToolExecuteAfterInput, ToolExecuteAfterOutput } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 // 默认输出上限 60KB
 const DEFAULT_MAX_OUTPUT_SIZE = 60 * 1024
 
 export function createOutputTruncationHook(
   maxOutputSize: number = DEFAULT_MAX_OUTPUT_SIZE,
-): HookRegistration<'tool.execute.after'> {
-  return {
+): HookSpec {
+  return defineHook({
     name: 'output-truncation',
     timing: 'tool.execute.after',
     priority: 10,
-    enabled: true,
-    handle(_input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
+    handle(_input, output) {
       const { content } = output.result
       let totalSize = 0
 
@@ -49,5 +49,5 @@ export function createOutputTruncationHook(
       output.metadata.truncated = true
       output.metadata.originalSize = totalSize
     },
-  }
+  })
 }

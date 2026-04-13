@@ -56,7 +56,6 @@ export { request, stream } from './http'
 export type { HttpRequestOptions, HttpResponse, SseEvent } from './http'
 
 export { Subscription } from './subscrption'
-export { BusSubscription } from './bus-subscrption'
 
 export {
   createMarkdownProcessor,

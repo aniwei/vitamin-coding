@@ -1,6 +1,7 @@
 // Error Recovery Hook — 会话错误时尝试自动恢复 (§S14.2)
-import type { HookRegistration, SessionEventInput } from '../../types'
 import { createLogger } from '@vitamin/shared'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 const logger = createLogger('@vitamin/hooks:error-recovery')
 
@@ -28,17 +29,16 @@ const retryCounters = new Map<string, number>()
 
 export function createErrorRecoveryHook(
   config?: Partial<ErrorRecoveryConfig>,
-): HookRegistration<'session.error'> {
+): HookSpec {
   const maxRetries = config?.maxRetries ?? 3
   const patterns = config?.recoverablePatterns ?? DEFAULT_RECOVERABLE_PATTERNS
   const recoverFn = config?.recover
 
-  return {
+  return defineHook({
     name: 'error-recovery',
     timing: 'session.error',
     priority: 10,
-    enabled: true,
-    handle(input: SessionEventInput & { error: Error }): void {
+    handle(input) {
       const { sessionId, error } = input
       const errorMessage = error.message
 
@@ -70,7 +70,7 @@ export function createErrorRecoveryHook(
         recoverFn(sessionId, error)
       }
     },
-  }
+  })
 }
 
 // 重置 session 的重试计数（在 session 成功恢复后调用）

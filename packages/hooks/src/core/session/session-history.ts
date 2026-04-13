@@ -1,15 +1,15 @@
 // 会话历史 Hook — 注入会话历史信息
-import type { ChatMessageInput, ChatMessageOutput, HookRegistration } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
-export function createSessionHistoryHook(): HookRegistration<'chat.message.before'> {
-  return {
+export function createSessionHistoryHook(): HookSpec {
+  return defineHook({
     name: 'session-history',
     timing: 'chat.message.before',
     priority: 40,
-    enabled: true,
-    handle(_input: ChatMessageInput, output: ChatMessageOutput): void {
+    handle(input, output) {
       // 注入会话元信息供下游使用
-      output.metadata.sessionId = _input.sessionId
+      output.metadata.sessionId = input.sessionId
     },
-  }
+  })
 }

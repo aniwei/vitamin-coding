@@ -1,5 +1,6 @@
 // Comment Checker Hook — 检测 AI 风格注释并要求修正
-import type { HookRegistration, ToolExecuteAfterInput, ToolExecuteAfterOutput } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 // AI 风格注释模式
 const AI_COMMENT_PATTERNS = [
@@ -11,13 +12,12 @@ const AI_COMMENT_PATTERNS = [
   /\/\*\s*\*\//,
 ]
 
-export function createCommentCheckerHook(): HookRegistration<'tool.execute.after'> {
-  return {
+export function createCommentCheckerHook(): HookSpec {
+  return defineHook({
     name: 'comment-checker',
     timing: 'tool.execute.after',
     priority: 20,
-    enabled: true,
-    handle(input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
+    handle(input, output) {
       // 仅检查写入类工具
       if (!WRITE_TOOLS.has(input.toolName)) return
 
@@ -37,7 +37,7 @@ export function createCommentCheckerHook(): HookRegistration<'tool.execute.after
         output.metadata.aiCommentsDetected = violations.length
       }
     },
-  }
+  })
 }
 
 const WRITE_TOOLS = new Set(['write', 'edit', 'edit-diff'])

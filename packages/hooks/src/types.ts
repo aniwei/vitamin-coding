@@ -191,23 +191,19 @@ export interface HookPayloadMap {
   }
 }
 
-// Hook 输入/输出泛型提取
 export type HookInput<T extends HookTiming> = HookPayloadMap[T]['input']
 export type HookOutput<T extends HookTiming> = HookPayloadMap[T]['output']
 
-// Hook 处理器签名
+// output 是否为 void 决定 timing 类别，新增 timing 只需更新 HookPayloadMap
+export type ObserverTiming = {
+  [K in HookTiming]: HookPayloadMap[K]['output'] extends void ? K : never
+}[HookTiming]
 
-// 有输出的 Hook (链式处理)
-export type HookHandle<T extends HookTiming> =
-  HookOutput<T> extends void
-    ? (input: HookInput<T>) => void | Promise<void>
-    : (input: HookInput<T>, output: HookOutput<T>) => void | Promise<void>
+export type InterceptorTiming = {
+  [K in HookTiming]: HookPayloadMap[K]['output'] extends void ? never : K
+}[HookTiming]
 
-// ═══ Hook 注册信息 ═══
-export interface HookRegistration<T extends HookTiming = HookTiming> {
-  name: string
-  timing: T
-  priority: number
-  enabled: boolean
-  handle?: HookHandle<T>
-}
+// output 为 void 时无 output 参数，强制调用侧意图明确
+export type HookHandle<T extends HookTiming> = T extends ObserverTiming
+  ? (input: HookInput<T>) => void | Promise<void>
+  : (input: HookInput<T>, output: HookOutput<T>) => void | Promise<void>

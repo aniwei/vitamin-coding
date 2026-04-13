@@ -4,7 +4,8 @@ import { join } from 'node:path'
 
 import { exists } from '@vitamin/shared'
 
-import type { HookRegistration, ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 // 缓存已加载的规则内容
 let cachedRules: string | null = null
@@ -12,13 +13,12 @@ let cacheProjectRoot: string | null = null
 
 export function createRulesInjectorHook(
   projectRoot: string,
-): HookRegistration<'tool.execute.before'> {
-  return {
+): HookSpec {
+  return defineHook({
     name: 'rules-injector',
     timing: 'tool.execute.before',
     priority: 30,
-    enabled: true,
-    async handle(input: ToolExecuteBeforeInput, output: ToolExecuteBeforeOutput): Promise<void> {
+    async handle(input, output) {
       // 仅对写入类工具注入规则
       if (!INJECTION_TOOLS.has(input.toolName)) return
 
@@ -27,7 +27,7 @@ export function createRulesInjectorHook(
         output.args._injectedRules = rules
       }
     },
-  }
+  })
 }
 
 const INJECTION_TOOLS = new Set(['write', 'edit', 'edit-diff'])

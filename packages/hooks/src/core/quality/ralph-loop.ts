@@ -1,7 +1,8 @@
 // Ralph Loop 检测 Hook — 检测工具调用死循环
 import { createLogger } from '@vitamin/shared'
 
-import type { HookRegistration, ToolExecuteAfterInput, ToolExecuteAfterOutput } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 const log = createLogger('hooks:ralph-loop')
 
@@ -14,13 +15,12 @@ const MIN_PATTERN_LENGTH = 2
 const MAX_PATTERN_LENGTH = 5
 const REPETITION_THRESHOLD = 3
 
-export function createRalphLoopHook(): HookRegistration<'tool.execute.after'> {
-  return {
+export function createRalphLoopHook(): HookSpec {
+  return defineHook({
     name: 'ralph-loop',
     timing: 'tool.execute.after',
     priority: 40,
-    enabled: true,
-    handle(input: ToolExecuteAfterInput, output: ToolExecuteAfterOutput): void {
+    handle(input, output) {
       const sequence = sessionSequences.get(input.sessionId) ?? []
       sequence.push(input.toolName)
 
@@ -48,7 +48,7 @@ export function createRalphLoopHook(): HookRegistration<'tool.execute.after'> {
         }
       }
     },
-  }
+  })
 }
 
 // 检测工具调用序列中的循环模式

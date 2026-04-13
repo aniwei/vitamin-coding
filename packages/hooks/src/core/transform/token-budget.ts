@@ -1,6 +1,7 @@
 // Token Budget Hook — 在 chat.params 阶段强制 token 预算
 import { createLogger } from '@vitamin/shared'
-import type { ChatParamsInput, ChatParamsOutput, HookRegistration } from '../../types'
+import { defineHook } from '../../hook-spec'
+import type { HookSpec } from '../../hook-spec'
 
 const log = createLogger('@vitamin/hooks:token-budget')
 
@@ -20,16 +21,15 @@ interface SessionTokenUsage {
 // 每 session 的累计 token 使用；无 sessionId 时退化为按 model 统计以兼容旧调用方
 const sessionTokenUsage = new Map<string, SessionTokenUsage>()
 
-export function createTokenBudgetHook(config?: TokenBudgetConfig): HookRegistration<'chat.params'> {
+export function createTokenBudgetHook(config?: TokenBudgetConfig): HookSpec {
   const maxOutput = config?.maxOutputTokens ?? 16384
   const warnThreshold = config?.inputTokenWarningThreshold ?? 100_000
 
-  return {
+  return defineHook({
     name: 'token-budget',
     timing: 'chat.params',
     priority: 20,
-    enabled: true,
-    handle(input: ChatParamsInput, output: ChatParamsOutput): void {
+    handle(input, output) {
       const usageKey = input.sessionId ?? input.model
 
       // 如果 maxTokens 未设或超出预算，强制上限
@@ -61,7 +61,7 @@ export function createTokenBudgetHook(config?: TokenBudgetConfig): HookRegistrat
         }
       }
     },
-  }
+  })
 }
 
 export function trackTokenUsage(
