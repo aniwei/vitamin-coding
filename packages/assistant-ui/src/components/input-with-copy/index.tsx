@@ -1,33 +1,24 @@
-'use client'
-import type { InputProps } from '../input'
-import * as React from 'react'
-import { useTranslation } from 'react-i18next'
+import ActionButton from '@/components/action-button'
+import Tooltip from '@/components/ui/tooltip'
 import { useClipboard } from '@/hooks/use-clipboard'
 import { clsx } from 'clsx'
-import ActionButton from '../action-button'
-import Tooltip from '../tooltip'
+import * as React from 'react'
+import type { InputProps } from '@/components/input'
 
-type InputWithCopyProps = {
+interface InputWithCopyProps extends Omit<InputProps, 'showClearIcon' | 'onCopy'> {
   showCopyButton?: boolean
-  copyValue?: string // Value to copy, defaults to input value
-  onCopy?: (value: string) => void // Callback when copy is triggered
-} & Omit<InputProps, 'showClearIcon' | 'onCopy'> // Remove conflicting props
+  copyValue?: string 
+  onCopy?: (value: string) => void
+}
 
-const prefixEmbedded = 'overview.appInfo.embedded'
-
-const InputWithCopy = React.forwardRef<HTMLInputElement, InputWithCopyProps>((
-  {
-    showCopyButton = true,
-    copyValue,
-    onCopy,
-    value,
-    wrapperClassName,
-    ...inputProps
-  },
-  ref,
-) => {
-  const { t } = useTranslation()
-  // Determine what value to copy
+export const InputWithCopy: React.FC<InputWithCopyProps> = React.forwardRef<HTMLInputElement, InputWithCopyProps>(({
+  showCopyButton = true,
+  copyValue,
+  onCopy,
+  value,
+  wrapperClassName,
+  ...inputProps
+}, ref) => {
   const valueToString = typeof value === 'string' ? value : String(value || '')
   const finalCopyValue = copyValue || valueToString
 
@@ -39,16 +30,16 @@ const InputWithCopy = React.forwardRef<HTMLInputElement, InputWithCopyProps>((
   }
 
   const tooltipText = copied
-    ? t(`${prefixEmbedded}.copied`, { ns: 'appOverview' })
-    : t(`${prefixEmbedded}.copy`, { ns: 'appOverview' })
-  /* v8 ignore next -- i18n test mock always returns a non-empty string; runtime fallback is defensive. -- @preserve */
+    ? 'Copied'
+    : 'Copy'
+  
   const safeTooltipText = tooltipText || ''
 
   return (
-    <div className={cn('relative w-full', wrapperClassName)}>
+    <div className={clsx('relative w-full', wrapperClassName)}>
       <input
         ref={ref}
-        className={cn(
+        className={clsx(
           'w-full appearance-none border border-transparent bg-components-input-bg-normal py-[7px] text-components-input-text-filled caret-primary-600 outline-hidden placeholder:text-components-input-text-placeholder hover:border-components-input-border-hover hover:bg-components-input-bg-hover focus:border-components-input-border-active focus:bg-components-input-bg-active focus:shadow-xs',
           'px-3 system-sm-regular radius-md',
           showCopyButton && 'pr-8',
@@ -58,8 +49,8 @@ const InputWithCopy = React.forwardRef<HTMLInputElement, InputWithCopyProps>((
         value={value}
         {...(({ size: _size, ...rest }) => rest)(inputProps)}
       />
-      {showCopyButton && (
-        <div
+      {
+        showCopyButton && <div
           className="absolute right-2 top-1/2 -translate-y-1/2"
           onMouseLeave={reset}
           data-testid="copy-button-wrapper"
@@ -78,7 +69,7 @@ const InputWithCopy = React.forwardRef<HTMLInputElement, InputWithCopyProps>((
             </ActionButton>
           </Tooltip>
         </div>
-      )}
+      }
     </div>
   )
 })

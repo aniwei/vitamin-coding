@@ -29,11 +29,11 @@ interface AvatarRootProps extends React.ComponentPropsWithRef<typeof BaseAvatar.
   size?: AvatarSize
 }
 
-function AvatarRoot({
+export const AvatarRoot: React.FC<AvatarRootProps> = ({
   size = 'md',
   className,
   ...props
-}: AvatarRootProps) {
+}) => {
   return (
     <BaseAvatar.Root
       className={clsx(
@@ -46,12 +46,14 @@ function AvatarRoot({
   )
 }
 
+AvatarRoot.displayName = 'AvatarRoot'
+
 interface AvatarImageProps extends React.ComponentPropsWithRef<typeof BaseAvatar.Image> {}
 
-function AvatarImage({
+export const AvatarImage: React.FC<AvatarImageProps> = ({
   className,
   ...props
-}: AvatarImageProps) {
+}) => {
   return (
     <BaseAvatar.Image
       className={clsx('absolute inset-0 size-full object-cover', className)}
@@ -60,15 +62,17 @@ function AvatarImage({
   )
 }
 
+AvatarImage.displayName = 'AvatarImage'
+
 interface AvatarFallbackProps extends React.ComponentPropsWithRef<typeof BaseAvatar.Fallback> {
   size?: AvatarSize
 }
 
-function AvatarFallback({
+export const AvatarFallback: React.FC<AvatarFallbackProps> = ({
   size = 'md',
   className,
   ...props
-}: AvatarFallbackProps) {
+}: AvatarFallbackProps) => {
   return (
     <BaseAvatar.Fallback
       className={clsx(
@@ -81,25 +85,33 @@ function AvatarFallback({
   )
 }
 
-export const Avatar = ({
+AvatarFallback.displayName = 'AvatarFallback'
+
+interface AvatarProps {
+  name: string
+  avatar: string | null
+  size?: AvatarSize
+  className?: string
+  onLoadingStatusChange?: (status: ImageLoadingStatus) => void
+}
+
+export const Avatar: React.FC<AvatarProps> = ({
   name,
   avatar,
   size = 'md',
   className,
   onLoadingStatusChange,
-}: AvatarProps) => {
+}) => {
   return (
     <AvatarRoot size={size} className={className}>
-      {avatar && (
-        <AvatarImage
+      {
+        avatar && <AvatarImage
           src={avatar}
           alt={name}
           onLoadingStatusChange={onLoadingStatusChange}
         />
-      )}
-      <AvatarFallback size={size}>
-        {name?.[0]?.toLocaleUpperCase()}
-      </AvatarFallback>
+      }
+      <AvatarFallback size={size}>{name?.[0]?.toLocaleUpperCase()}</AvatarFallback>
     </AvatarRoot>
   )
 }

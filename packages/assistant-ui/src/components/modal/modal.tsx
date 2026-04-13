@@ -1,54 +1,56 @@
 import clsx from 'clsx'
-import { memo } from 'react'
 import Button from '@/components/button'
+import { memo } from 'react'
 import { Dialog, DialogContent } from '@/components/ui/dialog'
 import type { ButtonProps } from '@/components/button'
 
-type ModalProps = {
-  onClose?: () => void
+interface ModalProps {
   size?: 'sm' | 'md'
   title: string
   subTitle?: string
   children?: React.ReactNode
   confirmButtonText?: string
-  onConfirm?: () => void
   cancelButtonText?: string
-  onCancel?: () => void
   showExtraButton?: boolean
   extraButtonText?: string
   extraButtonVariant?: ButtonProps['variant']
-  onExtraButtonClick?: () => void
   footerSlot?: React.ReactNode
   bottomSlot?: React.ReactNode
   disabled?: boolean
   containerClassName?: string
   wrapperClassName?: string
   clickOutsideNotClose?: boolean
+  onClose?: () => void
+  onConfirm?: () => void
+  onCancel?: () => void
+  onExtraButtonClick?: () => void
 }
-const Modal = ({
-  onClose,
+
+export const Modal: React.FC<ModalProps> = ({
   size = 'sm',
   title,
   subTitle,
   children,
   confirmButtonText,
-  onConfirm,
   cancelButtonText,
-  onCancel,
   showExtraButton,
   extraButtonVariant = 'warning',
   extraButtonText,
-  onExtraButtonClick,
   footerSlot,
   bottomSlot,
   disabled,
   containerClassName,
   wrapperClassName,
   clickOutsideNotClose = false,
-}: ModalProps) => {
+  onClose,
+  onConfirm,
+  onCancel,
+  onExtraButtonClick,
+}) => {
   const handleOpenChange = (open: boolean) => {
-    if (!open && !clickOutsideNotClose)
+    if (!open && !clickOutsideNotClose) {
       onClose?.()
+    }
   }
 
   return (
@@ -59,18 +61,16 @@ const Modal = ({
           '!z-9998 !flex !max-h-[80%] !flex-col !overflow-hidden !p-0 !shadow-xs',
           size === 'sm' && '!w-[480px]',
           size === 'md' && '!w-[640px]',
-          containerClassName,
+          containerClassName
         )}
         backdropProps={{ forceRender: true }}
       >
         <div className="relative shrink-0 p-6 pb-3 pr-14 text-text-primary title-2xl-semi-bold">
           {title}
           {
-            subTitle && (
-              <div className="mt-1 text-text-tertiary system-xs-regular">
-                {subTitle}
-              </div>
-            )
+            subTitle && <div className="mt-1 text-text-tertiary system-xs-regular">
+              {subTitle}
+            </div>
           }
           <div
             className="absolute right-5 top-5 flex h-8 w-8 cursor-pointer items-center justify-center rounded-lg"
@@ -80,35 +80,27 @@ const Modal = ({
           </div>
         </div>
         {
-          !!children && (
-            <div className="min-h-0 flex-1 overflow-y-auto px-6 py-3">{children}</div>
-          )
+          !!children && <div 
+            className="min-h-0 flex-1 overflow-y-auto px-6 py-3"
+          >{children}</div>
         }
         <div className="flex shrink-0 justify-between p-6 pt-5">
-          <div>
-            {footerSlot}
-          </div>
+          <div>{footerSlot}</div>
           <div className="flex items-center">
             {
-              showExtraButton && (
-                <>
-                  <Button
-                    variant={extraButtonVariant}
-                    onClick={onExtraButtonClick}
-                    disabled={disabled}
-                  >
-                    {extraButtonText || 'Remove'}
-                  </Button>
-                  <div className="mx-3 h-4 w-px bg-divider-regular"></div>
-                </>
-              )
+              showExtraButton && <>
+                <Button
+                  variant={extraButtonVariant}
+                  onClick={onExtraButtonClick}
+                  disabled={disabled}
+                >{extraButtonText || 'Remove'}</Button>
+                <div className="mx-3 h-4 w-px bg-divider-regular"></div>
+              </>
             }
             <Button
               onClick={onCancel}
               disabled={disabled}
-            >
-              {cancelButtonText || 'Cancel'}
-            </Button>
+            >{cancelButtonText || 'Cancel'}</Button>
             <Button
               className="ml-2"
               variant="primary"
@@ -117,14 +109,16 @@ const Modal = ({
             >{confirmButtonText || 'Save'}</Button>
           </div>
         </div>
-        {!!bottomSlot && (
-          <div className="shrink-0">
+        {
+          !!bottomSlot && <div className="shrink-0">
             {bottomSlot}
           </div>
-        )}
+        }
       </DialogContent>
     </Dialog>
   )
 }
+
+Modal.displayName = 'Modal'
 
 export default memo(Modal)

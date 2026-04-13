@@ -148,11 +148,7 @@ function getHastElementKey(child: HastElement, index: number): string {
   return `${tag}-${index}`
 }
 
-const Unsupported: React.FC<{ tagName: string }> = ({ tagName }) => (
-  <p>
-    Unsupported tag: {tagName}
-  </p>
-)
+const Unsupported: React.FC<{ tagName: string }> = ({ tagName }) => <p>Unsupported tag: {tagName}</p>
 
 const SupportLabel: React.FC<{
   htmlFor?: string

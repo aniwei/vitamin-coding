@@ -62,6 +62,7 @@ const spinnerSizeConfig: Partial<Record<SwitchSize, {
 
 interface SwitchProps {
   value: boolean
+  ref?: React.Ref<HTMLElement>
   onChange?: (value: boolean) => void
   size?: SwitchSize
   disabled?: boolean
@@ -69,16 +70,14 @@ interface SwitchProps {
   className?: string
 }
 
-const Switch = memo(({
+export const Switch: React.FC<SwitchProps> = memo(({
   ref,
   value,
   onChange,
   size = 'md',
   disabled = false,
   loading = false,
-  className
-}: SwitchProps & {
-  ref?: React.Ref<HTMLElement>
+  className 
 }) => {
   const isDisabled = disabled || loading
   const spinner = loading ? spinnerSizeConfig[size] : undefined
@@ -92,23 +91,21 @@ const Switch = memo(({
       aria-busy={loading || undefined}
       className={clsx(switchRootVariants({ size }), className)}
     >
-      <BaseSwitch.Thumb
-        className={switchThumbVariants({ size })}
-      />
-      {spinner
-        ? (
-            <span
-              className={clsx(
-                'absolute top-1/2 -translate-x-1/2 -translate-y-1/2',
-                spinner.icon,
-                value ? spinner.checkedPosition : spinner.uncheckedPosition,
-              )}
-              aria-hidden="true"
-            >
-              <i className="i-ri-loader-2-line size-full animate-spin text-text-tertiary motion-reduce:animate-none" />
-            </span>
-          )
-        : null}
+      <BaseSwitch.Thumb className={switchThumbVariants({ size })} />
+      {
+        spinner
+          ? <span
+            className={clsx(
+              'absolute top-1/2 -translate-x-1/2 -translate-y-1/2',
+              spinner.icon,
+              value ? spinner.checkedPosition : spinner.uncheckedPosition,
+            )}
+            aria-hidden="true"
+          >
+            <i className="i-ri-loader-2-line size-full animate-spin text-text-tertiary motion-reduce:animate-none" />
+          </span>
+        : null
+      }
     </BaseSwitch.Root>
   )
 })

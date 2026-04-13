@@ -19,4 +19,5 @@ export const AudioGallery: React.FC<AudioGalleryProps> = React.memo(({ srcs }) =
   )
 })
 
+AudioGallery.displayName = 'AudioGallery'
 export default AudioGallery

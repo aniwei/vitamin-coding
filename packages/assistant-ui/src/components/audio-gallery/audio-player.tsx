@@ -258,4 +258,6 @@ export const AudioPlayer: React.FC<AudioPlayerProps> = ({ src, srcs }) => {
     </div>
   )
 }
+
+AudioPlayer.displayName = 'AudioPlayer'
 export default AudioPlayer

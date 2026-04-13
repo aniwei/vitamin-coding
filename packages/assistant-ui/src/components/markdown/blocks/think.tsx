@@ -20,10 +20,10 @@ const removeEndThink = (children: React.ReactNode): React.ReactNode => {
   } else if (Array.isArray(children)) {
     return children.map(child => removeEndThink(child))
   } else if (React.isValidElement<React.PropsWithChildren>(children) && children.props.children) {
-    const { children: childChildren, ...restProps } = children.props
+    const { children: childChildren, ...props } = children.props
     return React.cloneElement(
       children,
-      restProps,
+      props,
       removeEndThink(childChildren),
     )
   }

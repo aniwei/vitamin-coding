@@ -2,12 +2,12 @@ import clsx from 'clsx'
 import * as React from 'react'
 import type { FC } from 'react'
 
-type Props = {
+interface AddButtonProps {
   className?: string
   onClick: () => void
 }
 
-const AddButton: FC<Props> = ({
+export const AddButton: FC<AddButtonProps> = ({
   className,
   onClick,
 }) => {
@@ -17,4 +17,6 @@ const AddButton: FC<Props> = ({
     </div>
   )
 }
+
+AddButton.displayName = 'AddButton'
 export default React.memo(AddButton)

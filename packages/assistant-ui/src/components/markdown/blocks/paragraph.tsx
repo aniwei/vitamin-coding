@@ -40,6 +40,7 @@ export const Paragraph = memo(({ node }: ParagraphProps) => {
         </div>
       )
     }
+    
     return <div className="markdown-p">{children}</div>
   }
 

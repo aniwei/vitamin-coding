@@ -7,15 +7,14 @@ import { clsx } from 'clsx'
 import * as React from 'react'
 import type { MermaidConfig } from 'mermaid'
 
-// --- Module-level state ---
 let isMermaidInitialized = false
 const diagramCache = new Map<string, string>()
 let mermaidAPI: typeof mermaid.mermaidAPI | null = null
 
-if (typeof window !== 'undefined')
+if (typeof window !== 'undefined') {
   mermaidAPI = mermaid.mermaidAPI
+}
 
-// --- Theme configurations ---
 const THEMES = {
   light: {
     name: 'Light Theme',
@@ -53,7 +52,6 @@ const THEMES = {
   },
 }
 
-// Shared base config — deduplicates initMermaid and configureMermaid
 const BASE_MERMAID_CONFIG: MermaidConfig = {
   startOnLoad: false,
   fontFamily: 'sans-serif',
@@ -76,7 +74,6 @@ const BASE_MERMAID_CONFIG: MermaidConfig = {
   },
 }
 
-// --- Helpers ---
 
 function cleanUpSvgCode(svgCode: string): string {
   return svgCode.replaceAll('<br>', '<br/>')
@@ -118,8 +115,9 @@ function prepareMermaidCode(mermaidCode: string, style: 'classic' | 'handDrawn')
       .replace(/fill="[^"]*"/g, '')
       .replace(/stroke="[^"]*"/g, '')
 
-    if (!code.startsWith('graph') && !code.startsWith('flowchart'))
+    if (!code.startsWith('graph') && !code.startsWith('flowchart')) {
       code = `graph TD\n${code}`
+    }
   }
 
   return code
@@ -140,13 +138,11 @@ function svgToBase64(svgGraph: string): Promise<string> {
       reader.onerror = reject
       reader.readAsDataURL(blob)
     })
-  }
-  catch {
+  } catch {
     return Promise.resolve('')
   }
 }
 
-// Uses module-level THEMES — themes param removed.
 function processSvgForTheme(svg: string, isDark: boolean, isHandDrawn: boolean): string {
   let processedSvg = svg
 
@@ -161,8 +157,7 @@ function processSvgForTheme(svg: string, isDark: boolean, isHandDrawn: boolean):
         .replace(/fill="#[a-fA-F0-9]{6}"/g, `fill="${THEMES.dark.nodeColors[0].bg}"`)
         .replace(/stroke="#[a-fA-F0-9]{6}"/g, `stroke="${THEMES.dark.connectionColor}"`)
         .replace(/stroke-width="1"/g, 'stroke-width="1.5"')
-    }
-    else {
+    } else {
       let i = 0
       const nodeColorRegex = /fill="#[a-fA-F0-9]{6}"[^>]*class="node-[^"]*"/g
       processedSvg = processedSvg.replace(nodeColorRegex, (match: string) => {
@@ -175,15 +170,13 @@ function processSvgForTheme(svg: string, isDark: boolean, isHandDrawn: boolean):
         .replace(/<path [^>]*stroke="#[a-fA-F0-9]{6}"/g, `<path stroke="${THEMES.dark.connectionColor}" stroke-width="1.5"`)
         .replace(/<(line|polyline) [^>]*stroke="#[a-fA-F0-9]{6}"/g, `<$1 stroke="${THEMES.dark.connectionColor}" stroke-width="1.5"`)
     }
-  }
-  else {
+  } else {
     if (isHandDrawn) {
       processedSvg = processedSvg
         .replace(/fill="#[a-fA-F0-9]{6}"/g, `fill="${THEMES.light.nodeColors[0].bg}"`)
         .replace(/stroke="#[a-fA-F0-9]{6}"/g, `stroke="${THEMES.light.connectionColor}"`)
         .replace(/stroke-width="1"/g, 'stroke-width="1.5"')
-    }
-    else {
+    } else {
       let i = 0
       const nodeColorRegex = /fill="#[a-fA-F0-9]{6}"[^>]*class="node-[^"]*"/g
       processedSvg = processedSvg.replace(nodeColorRegex, (match: string) => {
@@ -202,8 +195,9 @@ function processSvgForTheme(svg: string, isDark: boolean, isHandDrawn: boolean):
 }
 
 function isMermaidCodeComplete(code: string): boolean {
-  if (!code || code.trim().length === 0)
+  if (!code || code.trim().length === 0) {
     return false
+  }
 
   try {
     const trimmedCode = code.trim()
@@ -220,16 +214,13 @@ function isMermaidCodeComplete(code: string): boolean {
 
     const hasValidStart = /^(graph|flowchart|sequenceDiagram|classDiagram|classDef|class|stateDiagram|gantt|pie|er|journey|requirementDiagram|mindmap)/.test(trimmedCode)
 
-    // Relying on Mermaid's own parser for structural validation is more robust
-    // than a bracket-balance check (which false-negatives on shapes like `A>B]`).
     const hasNoSyntaxErrors = !trimmedCode.includes('undefined')
       && !trimmedCode.includes('[object Object]')
       && trimmedCode.split('\n').every(line =>
         !(line.includes('-->') && !/\S+\s*-->\s*\S+/.exec(line)))
 
     return hasValidStart && hasNoSyntaxErrors
-  }
-  catch (error) {
+  } catch (error) {
     console.error('Mermaid code validation error:', error)
     return false
   }
@@ -241,20 +232,19 @@ function waitForDOMElement(callback: () => Promise<any>, maxAttempts = 3, delay 
     const tryRender = async () => {
       try {
         resolve(await callback())
-      }
-      catch (error) {
+      } catch (error) {
         attempts++
-        if (attempts < maxAttempts)
+        if (attempts < maxAttempts) {
           setTimeout(tryRender, delay)
-        else
+        } else {
           reject(error)
+        }
       }
     }
+
     tryRender()
   })
 }
-
-// --- Mermaid initialization ---
 
 const initMermaid = () => {
   if (typeof window !== 'undefined' && !isMermaidInitialized) {
@@ -270,16 +260,14 @@ const initMermaid = () => {
         },
       })
       isMermaidInitialized = true
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Mermaid initialization error:', error)
       return null
     }
   }
+
   return isMermaidInitialized
 }
-
-// --- Component ---
 
 interface MermaidDiagramProps {
   code: string
@@ -306,26 +294,29 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = (props) => {
 
   const renderMermaidChart = async (code: string, style: 'classic' | 'handDrawn') => {
     if (style === 'handDrawn') {
-      if (containerRef.current)
+      if (containerRef.current) {
         containerRef.current.innerHTML = `<div id="${chartId}"></div>`
+      }
 
       await new Promise(resolve => setTimeout(resolve, 30))
 
-      if (typeof window !== 'undefined' && mermaidAPI)
+      if (typeof window !== 'undefined' && mermaidAPI) {
         return await mermaidAPI.render(chartId, code)
+      }
 
       const { svg } = await mermaid.render(chartId, code)
       return { svg }
-    }
-    else {
+    } else {
       const renderWithRetry = async () => {
-        /* v8 ignore next */
-        if (containerRef.current)
+        if (containerRef.current) {
           containerRef.current.innerHTML = `<div id="${chartId}"></div>`
+        }
+
         await new Promise(resolve => setTimeout(resolve, 30))
         const { svg } = await mermaid.render(chartId, code)
         return { svg }
       }
+
       return await waitForDOMElement(renderWithRetry)
     }
   }
@@ -336,18 +327,19 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = (props) => {
       diagramCache.clear()
       isMermaidInitialized = false
       initMermaid()
-    }
-    catch (reinitError) {
+    } catch (reinitError) {
       console.error('Failed to re-initialize Mermaid after error:', reinitError)
     }
+
     setError(`Rendering failed: ${(err as Error).message || 'Unknown error. Please check the console.'}`)
     setLoading(false)
   }
 
   useEffect(() => {
     const api = initMermaid()
-    if (api)
+    if (api) {
       setInitialized(true)
+    }
   }, [])
 
   // Sync external theme prop, but allow internal toggles to override.
@@ -362,7 +354,6 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = (props) => {
   }, [props.theme, resetDiagram])
 
   const renderDiagram = useCallback(async (primitiveCode: string) => {
-    /* v8 ignore next */
     if (!initialized || !containerRef.current) {
       /* v8 ignore next */
       setLoading(false)
@@ -396,12 +387,10 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = (props) => {
             return `${taskName} :${finalParams}`
           })
           .join('\n')
-      }
-      else if (trimmedCode.startsWith('mindmap') || trimmedCode.startsWith('sequenceDiagram')) {
+      } else if (trimmedCode.startsWith('mindmap') || trimmedCode.startsWith('sequenceDiagram')) {
         // These diagram types are sensitive to syntax transformations — pass through directly.
         finalCode = trimmedCode
-      }
-      else {
+      } else {
         finalCode = prepareMermaidCode(primitiveCode, renderStyle)
       }
 
@@ -415,15 +404,15 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = (props) => {
       diagramCache.set(cacheKey, cleanedSvg)
       setSVG(cleanedSvg)
       setLoading(false)
-    }
-    catch (err) {
+    } catch (err) {
       handleRenderError(err)
     }
   }, [chartId, initialized, renderStyle, currentTheme])
 
   const configureMermaid = useCallback((primitiveCode: string) => {
-    if (typeof window === 'undefined' || !initialized)
+    if (typeof window === 'undefined' || !initialized) {
       return false
+    }
 
     const themeVars = THEMES[currentTheme]
     const isFlowchart = primitiveCode.trim().startsWith('graph') || primitiveCode.trim().startsWith('flowchart')
@@ -455,8 +444,7 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = (props) => {
           tertiaryColor: themeVars.tertiaryColor,
         }
       }
-    }
-    else {
+    } else {
       config.theme = 'default'
       config.themeCSS = `
         .node rect { fill-opacity: 0.85; }
@@ -485,16 +473,16 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = (props) => {
     try {
       mermaid.initialize(config)
       return true
-    }
-    catch (error) {
+    } catch (error) {
       console.error('Config error:', error)
       return false
     }
   }, [currentTheme, initialized, renderStyle])
 
   useEffect(() => {
-    if (!initialized)
+    if (!initialized) {
       return
+    }
 
     if (!props.code || props.code.length < 10) {
       setLoading(false)
@@ -502,8 +490,9 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = (props) => {
       return
     }
 
-    if (renderTimeoutRef.current)
+    if (renderTimeoutRef.current) {
       clearTimeout(renderTimeoutRef.current)
+    }
 
     setLoading(true)
 
@@ -522,8 +511,9 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = (props) => {
         return
       }
 
-      if (configureMermaid(props.code))
+      if (configureMermaid(props.code)) {
         renderDiagram(props.code)
+      }
     }, 300)
 
     return () => {
@@ -533,14 +523,17 @@ const MermaidDiagram: React.FC<MermaidDiagramProps> = (props) => {
 
   useEffect(() => {
     return () => {
-      if (renderTimeoutRef.current)
+      if (renderTimeoutRef.current) {
         clearTimeout(renderTimeoutRef.current)
+      }
     }
   }, [])
 
   const handlePreviewClick = async () => {
-    if (!svg)
+    if (!svg) {
       return
+    }
+    
     const base64 = await svgToBase64(svg)
     setPreviewUrl(base64)
   }

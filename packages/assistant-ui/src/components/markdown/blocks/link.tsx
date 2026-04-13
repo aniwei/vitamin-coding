@@ -5,7 +5,6 @@ export const isValidUrl = (url: string): boolean => {
   return validPrefixes.some(prefix => url.startsWith(prefix))
 }
 
-
 interface LinkProps {
   node: {
     properties?: { href?: string | string[]

@@ -9,7 +9,7 @@ interface SVGButtonProps {
   setIsSVG: React.Dispatch<React.SetStateAction<boolean>>
 }
 
-const SVGButton: React.FC<SVGButtonProps> = ({
+export const SVGButton: React.FC<SVGButtonProps> = ({
   isSVG,
   setIsSVG,
 }) => {
@@ -20,4 +20,5 @@ const SVGButton: React.FC<SVGButtonProps> = ({
   )
 }
 
+SVGButton.displayName = 'SVGButton'
 export default SVGButton

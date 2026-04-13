@@ -1,5 +1,5 @@
 import { RiCloseCircleFill, RiSearchLine } from '@remixicon/react'
-import { useRef, useState } from 'react'
+import { memo, useRef, useState } from 'react'
 import { clsx } from 'clsx'
 import type { FC } from 'react'
 
@@ -11,12 +11,12 @@ interface SearchInputProps {
   onChange: (v: string) => void
 }
 
-export const SearchInput: FC<SearchInputProps> = ({
+export const SearchInput: FC<SearchInputProps> = memo(({
   placeholder,
   className,
   value,
-  onChange,
   white,
+  onChange,
 }) => {
   const inputRef = useRef<HTMLInputElement>(null)
   const composing = useRef<boolean>(false)
@@ -65,8 +65,8 @@ export const SearchInput: FC<SearchInputProps> = ({
         onBlur={() => setFocus(false)}
         autoComplete="off"
       />
-      {value && (
-        <button
+      {
+        value && <button
           type="button"
           aria-label="Clear"
           className="group/clear flex h-4 w-4 shrink-0 cursor-pointer items-center justify-center border-none bg-transparent p-0"
@@ -74,12 +74,10 @@ export const SearchInput: FC<SearchInputProps> = ({
             onChange('')
             inputRef.current?.focus()
           }}
-        >
-          <RiCloseCircleFill className="h-4 w-4 text-text-quaternary group-hover/clear:text-text-tertiary" />
-        </button>
-      )}
+        ><RiCloseCircleFill className="h-4 w-4 text-text-quaternary group-hover/clear:text-text-tertiary" /></button>
+      }
     </div>
   )
-}
+})
 
 export default SearchInput
