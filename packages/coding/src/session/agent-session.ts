@@ -1,5 +1,5 @@
 import { randomUUID } from 'node:crypto'
-import { Subscription, type Events } from '@vitamin/shared'
+import { Subscription } from '@vitamin/shared'
 import { createToolHookExecutor } from './hooks'
 import { calculate, type AssistantMessage } from '@vitamin/ai'
 import { createHookRegistry } from '@vitamin/hooks'
@@ -25,14 +25,6 @@ import type {
   PromptOptions,
 } from './types'
 
-interface AgentSessionEvents extends Events {
-  session_start: (sessionId: string) => void
-  session_end: (sessionId: string) => void
-  prompt_start: (sessionId: string, prompt: string) => void
-  prompt_end: (sessionId: string) => void
-  error: (sessionId: string, error: Error) => void
-}
-
 interface Deferred<T> {
   resolve: (value: T) => void
   reject: (reason?: unknown) => void
@@ -51,7 +43,7 @@ function createDeferred<T>(): Deferred<T> {
   return { resolve, reject, promise }
 }
 
-export class AgentSession extends Subscription<AgentSessionEvents> {
+export class AgentSession extends Subscription {
   readonly session: Session<AgentMessage>
   readonly workspaceDir: string
 
@@ -147,8 +139,15 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
     this.agentUnsubs.push(this.agent.on('tool_call_start', this.onToolCallStart))
     this.agentUnsubs.push(this.agent.on('tool_call_end', this.onToolCallEnd))
 
-    this.emit('session_start', this.id)
     this.logger.info('Session %s initialized with model %s', this.id, this.model.id)
+  }
+
+  /**
+   * 由 CodingSessionManager 在 session.created hook 执行完毕后调用。
+   * 此时 EventBridge 已完成订阅，session_start 事件可被正确接收。
+   */
+  notifyCreated(): void {
+    this.publish({ session_start: [{ type: 'session_start' as const, sessionId: this.id }] })
   }
 
   onStreamEvent = async (event: StreamEvent): Promise<void> => {
@@ -319,7 +318,7 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
         )
       }
     } else {
-      this.emit('prompt_start', this.id, text)
+      this.publish({ prompt_start: [{ type: 'prompt_start' as const, sessionId: this.id, text }] })
 
       this.logger.info('Session %s prompt started', this.id)
 
@@ -362,7 +361,7 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
     await this.hookRegistry.execute('chat.message.before', beforeInput, beforeOutput)
 
     if (beforeOutput.cancelled) {
-      this.emit('prompt_end', this.id)
+      this.publish({ prompt_end: [{ type: 'prompt_end' as const, sessionId: this.id }] })
       return
     }
 
@@ -487,7 +486,7 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
         }),
       )
 
-      this.emit('prompt_end', this.id)
+      this.publish({ prompt_end: [{ type: 'prompt_end' as const, sessionId: this.id }] })
       this.logger.info('Session %s prompt finished', this.id)
 
       // 通知 session 进入空闲状态
@@ -505,7 +504,7 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
         error: err,
       })
 
-      this.emit('error', this.id, err)
+      this.publish({ error: [{ type: 'error' as const, sessionId: this.id, error: err }] })
       this.logger.error('Session %s prompt failed: %s', this.id, err.message)
       throw error
     }
@@ -548,6 +547,7 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
       messageCount,
     })
 
+    this.publish({ compaction_start: [{ type: 'compaction_start' as const, sessionId: this.id, messageCount }] })
     this.logger.info('Session %s compacting %d message(s)', this.id, compactedCount)
 
     this.session.compact(summary, compactedCount)
@@ -559,6 +559,7 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
       retainedCount,
     })
 
+    this.publish({ compaction_end: [{ type: 'compaction_end' as const, sessionId: this.id, retainedCount }] })
     this.logger.info(
       'Session %s compaction finished, retained %d message(s)',
       this.id,
@@ -635,7 +636,7 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
     )
   }
 
-  override subscribe(subscriber: AgentSessionSubscriber): () => void
+  override subscribe(callback: AgentSessionSubscriber): () => void
   override subscribe<K extends string>(
     type: K,
     callback: (...args: unknown[]) => void,
@@ -797,7 +798,7 @@ export class AgentSession extends Subscription<AgentSessionEvents> {
     this.agentUnsubs.length = 0
 
     this.agent.abort()
-    this.emit('session_end', this.id)
+    this.publish({ session_end: [{ type: 'session_end' as const, sessionId: this.id }] })
     this.removeAllListeners()
 
     this.logger.info('Session %s disposed', this.id)

@@ -163,15 +163,6 @@ export class CodingService {
     const bridge = new EventBridge(session, this.ws)
     bridge.attach()
     this.bridges.set(session.id, bridge)
-
-    this.ws.broadcast({
-      type: 'Session.activity',
-      data: {
-        action: 'created',
-        sessionId: session.id,
-        timestamp: new Date().toISOString(),
-      },
-    })
   }
 
   detachSession(sessionId: string): void {

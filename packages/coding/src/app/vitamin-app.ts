@@ -171,7 +171,7 @@ export class VitaminApp implements VitaminContext {
       this.globalLogSubscription = attachLogListener((data) => {
         const log = data as { name: string; level: string; msg: string }
         if (log.name === logger.name) {
-          this.devtools?.logger.publish(log)
+          this.devtools?.sendLog(log)
         }
       })
     }

@@ -188,16 +188,9 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
       })
   }
 
-  logger(message: unknown): void {
+  forwardLog(message: unknown): void {
     this.worker?.postMessage({
       type: 'Log.entryAdded',
-      message: JSON.stringify(message),
-    })
-  }
-
-  session(message: unknown): void {
-    this.worker?.postMessage({
-      type: 'Session.update',
       message: JSON.stringify(message),
     })
   }
@@ -309,11 +302,5 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
 
     this.workerStopped = true
     this.emit('Debugger.stopped')
-  }
-}
-
-export class DevtoolsService extends Service {
-  constructor(options: ServiceOptions = {}, breakpoints: Breakpoints = new Breakpoints()) {
-    super(breakpoints, options)
   }
 }

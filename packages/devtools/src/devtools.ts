@@ -1,7 +1,6 @@
 import { Service } from './service'
 import { Breakpoints } from './tools/breakpoints'
 import { Debugger } from './tools/debugger'
-import { Logger } from './tools/logger'
 
 interface DevtoolsOptions {
   port?: number
@@ -9,20 +8,17 @@ interface DevtoolsOptions {
 
 export class Devtools {
   public readonly service: Service
-  private breakpoints: Breakpoints
-
-  public debugger: Debugger
-  public logger: Logger
+  public readonly debugger: Debugger
+  private readonly breakpoints: Breakpoints
 
   constructor(options: DevtoolsOptions = {}) {
     this.breakpoints = new Breakpoints()
-
-    this.service = new Service(this.breakpoints, {
-      port: options.port,
-    })
-
+    this.service = new Service(this.breakpoints, { port: options.port })
     this.debugger = new Debugger(this.service, this.breakpoints)
-    this.logger = new Logger(this.service)
+  }
+
+  sendLog(message: unknown): void {
+    this.service.forwardLog(message)
   }
 
   start() {
@@ -35,6 +31,5 @@ export class Devtools {
 }
 
 export const createDevtools = (options: DevtoolsOptions) => {
-  const devtools = new Devtools(options)
-  return devtools
+  return new Devtools(options)
 }

@@ -150,6 +150,11 @@ export class CodingSessionManager {
       sessionId: id,
       metadata: {},
     })
+
+    // session.created hook 执行完毕后，EventBridge 已完成订阅，
+    // 此时发布 session_start 事件可被正确接收。
+    agentSession.notifyCreated()
+
     this.logger.info('Session %s created', id)
 
     return agentSession
