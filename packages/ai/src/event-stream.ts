@@ -35,7 +35,9 @@ export class EventStream<E, R> implements AsyncIterable<E> {
   }
 
   push(event: E): void {
-    if (this.done) return
+    if (this.done) {
+      return
+    }
 
     if (this.waiters.length > 0) {
       const waiter = this.waiters.shift()
@@ -50,7 +52,9 @@ export class EventStream<E, R> implements AsyncIterable<E> {
   }
 
   complete(result: R): void {
-    if (this.done) return
+    if (this.done) {
+      return
+    }
 
     this.done = true
     this.cachedResult = result
@@ -64,7 +68,9 @@ export class EventStream<E, R> implements AsyncIterable<E> {
   }
 
   fail(error: Error): void {
-    if (this.done) return
+    if (this.done) {
+      return
+    }
     this.done = true
     this.error = error
     this.reject?.(error)

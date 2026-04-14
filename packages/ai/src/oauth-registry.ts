@@ -45,7 +45,9 @@ export class OAuthRegistry {
     }
 
     let creds = credentials[providerId]
-    if (!creds) return null
+    if (!creds) {
+      return null
+    }
 
     if (Date.now() >= creds.expires) {
       creds = await provider.refreshToken(creds)

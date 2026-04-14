@@ -65,7 +65,9 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
   }
 
   subscribeClient(clientId: string, sessionId: string): void {
-    if (!sessionId) return
+    if (!sessionId) {
+      return
+    }
     if (!this.sessionSubscriptions.has(sessionId)) {
       this.sessionSubscriptions.set(sessionId, new Set())
     }
@@ -73,7 +75,9 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
   }
 
   unsubscribeClient(clientId: string, sessionId: string): void {
-    if (!sessionId) return
+    if (!sessionId) {
+      return
+    }
     this.sessionSubscriptions.get(sessionId)?.delete(clientId)
   }
 

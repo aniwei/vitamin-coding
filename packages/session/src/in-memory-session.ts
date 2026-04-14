@@ -164,7 +164,9 @@ export class InMemorySession<T = unknown> implements Session<T> {
   }
 
   private walkBranch(): SessionEntry<T>[] {
-    if (!this._leafId) return []
+    if (!this._leafId) {
+      return []
+    }
 
     const path: SessionEntry<T>[] = []
     let current = this.entryMap.get(this._leafId)

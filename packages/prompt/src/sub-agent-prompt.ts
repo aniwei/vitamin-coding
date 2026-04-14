@@ -73,7 +73,9 @@ export function assembleGenericSubAgentPrompt(
 }
 
 export function resolveAgentToolNames(defaultTools?: string[]): string[] {
-  if (!defaultTools || defaultTools.length === 0) return []
+  if (!defaultTools || defaultTools.length === 0) {
+    return []
+  }
 
   const resolved = new Set<string>()
   for (const name of defaultTools) {
@@ -100,7 +102,9 @@ export function resolveAgentProfile(
 ): AgentProfile | undefined {
   // Exact match
   const exact = profiles.find((p) => p.name === agentName)
-  if (exact) return exact
+  if (exact) {
+    return exact
+  }
 
   // Fuzzy match: supports quality-reviewer / spec-reviewer / explore and similar aliases
   const lower = agentName.toLowerCase()

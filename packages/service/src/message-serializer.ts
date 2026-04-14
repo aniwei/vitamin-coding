@@ -45,7 +45,9 @@ function extractTextContent(msg: AgentMessage): string {
 }
 
 function extractToolCalls(msg: AgentMessage): SerializedToolCall[] {
-  if (!Array.isArray(msg.content)) return []
+  if (!Array.isArray(msg.content)) {
+    return []
+  }
   return (msg.content as unknown[])
     .filter((b): b is ToolCall => (b as ToolCall).type === 'tool_call')
     .map((b) => ({

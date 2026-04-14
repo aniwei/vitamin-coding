@@ -22,13 +22,17 @@ export function createOutputTruncationHook(
         }
       }
 
-      if (totalSize <= maxOutputSize) return
+      if (totalSize <= maxOutputSize) {
+        return
+      }
 
       // 截断文本内容
       let remaining = maxOutputSize
       const truncatedContent = content
         .map((part) => {
-          if (part.type !== 'text') return part
+          if (part.type !== 'text') {
+            return part
+          }
           if (remaining <= 0) {
             return { type: 'text' as const, text: '' }
           }

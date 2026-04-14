@@ -173,7 +173,9 @@ export class CodingSessionManager {
 
   async removeSession(id: string): Promise<boolean> {
     const agentSession = this.sessions.get(id)
-    if (!agentSession) return false
+    if (!agentSession) {
+      return false
+    }
 
     agentSession.dispose()
     this.sessions.delete(id)
@@ -201,10 +203,14 @@ export class CodingSessionManager {
   async forkSession(sourceId: string, newId?: string): Promise<AgentSession | undefined> {
     const sourceSession = this.sessions.get(sourceId)
     const sourceConfig = this.configs.get(sourceId)
-    if (!sourceSession || !sourceConfig) return undefined
+    if (!sourceSession || !sourceConfig) {
+      return undefined
+    }
 
     const sourceRaw = sourceSession.session
-    if (!(sourceRaw instanceof InMemorySession)) return undefined
+    if (!(sourceRaw instanceof InMemorySession)) {
+      return undefined
+    }
 
     const id = newId ?? crypto.randomUUID()
     this.prepareCapacity(id)
@@ -245,7 +251,9 @@ export class CodingSessionManager {
 
   async save(id: string): Promise<void> {
     const agentSession = this.sessions.get(id)
-    if (!agentSession) return
+    if (!agentSession) {
+      return
+    }
 
     const rawSession = agentSession.session
     if (rawSession instanceof InMemorySession) {
@@ -269,13 +277,19 @@ export class CodingSessionManager {
    * 若未提供 configProvider 则返回 null。
    */
   async restore(id: string): Promise<AgentSession | null> {
-    if (!this.configProvider) return null
+    if (!this.configProvider) {
+      return null
+    }
 
     const existing = this.sessions.get(id)
-    if (existing) return existing
+    if (existing) {
+      return existing
+    }
 
     const snapshot = await this.persistence.load(id)
-    if (!snapshot) return null
+    if (!snapshot) {
+      return null
+    }
 
     if (!this.canAccommodate(id)) {
       throw new Error(`Max sessions (${this.maxSessions}) reached, cannot restore ${id}.`)
@@ -298,18 +312,26 @@ export class CodingSessionManager {
    * 若未提供 configProvider 则直接返回 0。
    */
   async restoreAll(): Promise<number> {
-    if (!this.configProvider) return 0
+    if (!this.configProvider) {
+      return 0
+    }
 
     const ids = await this.persistence.list()
     let restored = 0
 
     for (const id of ids) {
-      if (this.sessions.has(id)) continue
+      if (this.sessions.has(id)) {
+        continue
+      }
 
       const snapshot = await this.persistence.load(id)
-      if (!snapshot) continue
+      if (!snapshot) {
+        continue
+      }
 
-      if (!this.canAccommodate(id)) break
+      if (!this.canAccommodate(id)) {
+        break
+      }
 
       const rawSession = new InMemorySession<AgentMessage>(snapshot.id)
       rawSession.restoreEntries(snapshot.entries, snapshot.metadata, snapshot.leafId)
@@ -350,7 +372,9 @@ export class CodingSessionManager {
   }
 
   private prepareCapacity(incomingId: string): void {
-    if (this.sessions.has(incomingId)) return
+    if (this.sessions.has(incomingId)) {
+      return
+    }
 
     if (this.sessions.size + 1 > this.threshold) {
       this.collectIdle()
@@ -362,7 +386,9 @@ export class CodingSessionManager {
   }
 
   private canAccommodate(incomingId: string): boolean {
-    if (this.sessions.has(incomingId)) return true
+    if (this.sessions.has(incomingId)) {
+      return true
+    }
 
     if (this.sessions.size + 1 > this.threshold) {
       this.collectIdle()

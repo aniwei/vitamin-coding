@@ -50,7 +50,9 @@ async function tryResolveExecutablePath(
   const toolPath = getThirdPartyToolBinaryDir(target, toolName) + ext
 
   try {
-    if (existsSync(toolPath)) return toolPath
+    if (existsSync(toolPath)) {
+      return toolPath
+    }
   } catch {
     logger.debug(`Error checking existence of ${toolPath}, will try PATH lookup: %s`, toolPath)
   }
@@ -170,7 +172,9 @@ export abstract class BinaryToolExecutor implements BinaryTool {
 
   async ensure(): Promise<string> {
     const existing = await tryResolveExecutablePath(this.name, this.cacheDir)
-    if (existing) return existing
+    if (existing) {
+      return existing
+    }
 
     if (SETTING_OFFLINE_MODE_ENABLED) {
       throw new Error(`${this.name} not found and offline mode is enabled`)

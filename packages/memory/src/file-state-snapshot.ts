@@ -103,7 +103,9 @@ export class FileStateManager {
         .filter((e) => !IGNORED_DIRS.has(e.name) && !e.name.startsWith('.'))
         .sort((a, b) => {
           // directories first
-          if (a.isDirectory() !== b.isDirectory()) return a.isDirectory() ? -1 : 1
+          if (a.isDirectory() !== b.isDirectory()) {
+            return a.isDirectory() ? -1 : 1
+          }
           return a.name.localeCompare(b.name)
         })
         .slice(0, MAX_ENTRIES_PER_DIR)
@@ -159,9 +161,13 @@ export class FileStateManager {
 
 function formatAge(ms: number): string {
   const seconds = Math.floor(ms / 1000)
-  if (seconds < 60) return `${seconds}s`
+  if (seconds < 60) {
+    return `${seconds}s`
+  }
   const minutes = Math.floor(seconds / 60)
-  if (minutes < 60) return `${minutes}m`
+  if (minutes < 60) {
+    return `${minutes}m`
+  }
   const hours = Math.floor(minutes / 60)
   return `${hours}h`
 }

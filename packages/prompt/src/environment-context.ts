@@ -16,11 +16,15 @@ export async function collectEnvironment(
     platform: `${process.platform}/${process.arch}`,
   }
 
-  if (!exec) return snapshot
+  if (!exec) {
+    return snapshot
+  }
 
   try {
     const branch = (await exec('git rev-parse --abbrev-ref HEAD', workspaceDir)).trim()
-    if (branch) snapshot.gitBranch = branch
+    if (branch) {
+      snapshot.gitBranch = branch
+    }
   } catch {
     // Not in a git repository, ignore
   }

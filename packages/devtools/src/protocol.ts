@@ -121,10 +121,14 @@ export type DebugCommand =
   | { type: 'stop'; seq: number; reason?: string }
 
 export function isDebugCommand(input: unknown): input is DebugCommand {
-  if (!input || typeof input !== 'object') return false
+  if (!input || typeof input !== 'object') {
+    return false
+  }
 
   const value = input as Record<string, unknown>
-  if (typeof value.type !== 'string' || typeof value.seq !== 'number') return false
+  if (typeof value.type !== 'string' || typeof value.seq !== 'number') {
+    return false
+  }
 
   switch (value.type) {
     case 'next':
@@ -141,7 +145,9 @@ export function isDebugCommand(input: unknown): input is DebugCommand {
 }
 
 export function isDebuggerEvent(input: unknown): input is DebuggerEvent {
-  if (!input || typeof input !== 'object') return false
+  if (!input || typeof input !== 'object') {
+    return false
+  }
   const value = input as Record<string, unknown>
 
   if (value.type !== 'Debugger.paused') {

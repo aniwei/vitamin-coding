@@ -53,10 +53,14 @@ export function createRalphLoopHook(): HookSpec {
 
 // 检测工具调用序列中的循环模式
 function detectLoop(sequence: string[]): string[] | null {
-  if (sequence.length < MIN_PATTERN_LENGTH * REPETITION_THRESHOLD) return null
+  if (sequence.length < MIN_PATTERN_LENGTH * REPETITION_THRESHOLD) {
+    return null
+  }
 
   for (let patternLen = MIN_PATTERN_LENGTH; patternLen <= MAX_PATTERN_LENGTH; patternLen++) {
-    if (sequence.length < patternLen * REPETITION_THRESHOLD) continue
+    if (sequence.length < patternLen * REPETITION_THRESHOLD) {
+      continue
+    }
 
     // 取最近的 patternLen 个调用作为候选模式
     const candidatePattern = sequence.slice(-patternLen)

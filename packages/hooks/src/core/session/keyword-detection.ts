@@ -11,7 +11,9 @@ export function createKeywordDetectionHook(): HookSpec {
     priority: 30,
     handle(input, output) {
       const text = extractText(input.message)
-      if (!text) return
+      if (!text) {
+        return
+      }
 
       const lower = text.toLowerCase()
       const hasPlan = PLAN_KEYWORDS.some((kw) => lower.includes(kw))
@@ -28,11 +30,17 @@ export function createKeywordDetectionHook(): HookSpec {
 }
 
 function extractText(message: unknown): string | null {
-  if (typeof message !== 'object' || message === null) return null
-  if (!('content' in message)) return null
+  if (typeof message !== 'object' || message === null) {
+    return null
+  }
+  if (!('content' in message)) {
+    return null
+  }
 
   const content = (message as { content: unknown }).content
-  if (typeof content === 'string') return content
+  if (typeof content === 'string') {
+    return content
+  }
   if (Array.isArray(content)) {
     return content
       .filter(

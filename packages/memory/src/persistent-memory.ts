@@ -48,7 +48,9 @@ export class PersistentMemory {
 
   // 启动文件监听（热重载）
   watching(): void {
-    if (this.unwatch || !this.store.watch) return
+    if (this.unwatch || !this.store.watch) {
+      return
+    }
     this.unwatch = this.store.watch(this.sources, (path) => {
       log.info(`Memory source changed: ${path}, reloading...`)
       void this.reload()

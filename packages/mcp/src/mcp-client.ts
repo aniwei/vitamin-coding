@@ -107,7 +107,9 @@ export class McpClient {
 
   // 建立连接并完成 initialize 握手
   async connect(): Promise<void> {
-    if (this.status === 'ready') return
+    if (this.status === 'ready') {
+      return
+    }
 
     this.status = 'connecting'
 

@@ -101,6 +101,7 @@ export class VitaminApp implements VitaminContext {
   private disposed = false
   private settingsLoaded = false
   private defaultToolPreset: 'minimal' | 'standard' | 'full' = 'full'
+  private currentPermissionMode: PermissionMode = 'auto'
 
   public get tools(): AgentTool[] {
     return this.toolRegistry.getAvailable(this.defaultToolPreset).map((tool) => ({
@@ -265,7 +266,9 @@ export class VitaminApp implements VitaminContext {
   //   ③ model_slots.default / settings.model（全局默认，无 slot 时也走这里）
   //   ④ this.defaultModel（构造时传入的兜底）
   private resolveModel(explicitModel: Model | undefined, slot: WorkflowSlot | undefined): Model {
-    if (explicitModel) return explicitModel
+    if (explicitModel) {
+      return explicitModel
+    }
 
     const modelSlots = this.settings.get('model_slots')
     const globalModel = this.settings.get('model')
@@ -278,7 +281,9 @@ export class VitaminApp implements VitaminContext {
       ).resolve(slot)
     }
 
-    if (this.defaultModel) return this.defaultModel
+    if (this.defaultModel) {
+      return this.defaultModel
+    }
 
     throw new Error(
       'No model configured. Set model in .vitamin/config.jsonc or pass modelId to createVitamin().',
@@ -286,15 +291,19 @@ export class VitaminApp implements VitaminContext {
   }
 
   // ── Layer 2b: Tools resolver ─────────────────────────────────────────────
-  // ① options.tools → 完全 override，忽略 agent 配置
-  // ② agentToolNames → 从全量工具中按白名单过滤
-  // ③ 全量工具
+  // options.tools → 完全 override，忽略 agent 配置
+  // agentToolNames → 从全量工具中按白名单过滤
+  // 全量工具
   private resolveTools(
     explicitTools: AgentTool[] | undefined,
     agentToolNames: string[] | undefined,
   ): AgentTool[] {
-    if (explicitTools) return explicitTools
-    if (agentToolNames?.length) return filterToolsByNames(this.tools, agentToolNames)
+    if (explicitTools) {
+      return explicitTools
+    }
+    if (agentToolNames?.length) {
+      return filterToolsByNames(this.tools, agentToolNames)
+    }
     return this.tools
   }
 
@@ -369,8 +378,12 @@ export class VitaminApp implements VitaminContext {
     const promptRefresh =
       options.promptRefresh ??
       (async () => {
-        if (options.systemPrompt !== undefined) return options.systemPrompt
-        if (agent.systemPrompt !== undefined) return agent.systemPrompt
+        if (options.systemPrompt !== undefined) {
+          return options.systemPrompt
+        }
+        if (agent.systemPrompt !== undefined) {
+          return agent.systemPrompt
+        }
 
         if (promptPreset === 'subagent' && options.agentName) {
           return this.promptManager.assemblePreset({
@@ -536,6 +549,7 @@ export class VitaminApp implements VitaminContext {
 
   private initToolRegistry(options: VitaminAppOptions): ToolRegistry {
     const skillProvider = options.skillProvider
+
     const loadSkill: LoadSkill = skillProvider
       ? (path) => skillProvider.load(path)
       : async () => ({
@@ -598,7 +612,9 @@ export class VitaminApp implements VitaminContext {
         remove: async (id: string) => this.removeSession(id),
         compact: async (id: string) => {
           const s = this.getSession(id)
-          if (!s) return false
+          if (!s) {
+            return false
+          }
           await s.compact('Compacted by session_manager tool', 1)
           return true
         },
@@ -644,49 +660,55 @@ export class VitaminApp implements VitaminContext {
     permissions?: PermissionPolicySetting[]
     disabled_tools?: string[]
   }): void {
-    const permissionToolSets = createPermissionToolSetsFromRegistry(this.toolRegistry.getAll())
+    const toolSets = createPermissionToolSetsFromRegistry(this.toolRegistry.getAll())
 
-    // 1. permission_mode 变更 → 重新注册 mode 策略
-    if (setting.permission_mode) {
-      this.permissionRegistry.unregister('mode::bypass')
-      this.permissionRegistry.unregister('mode::auto')
-      this.permissionRegistry.unregister('mode::confirm')
-      this.permissionRegistry.unregister('mode::strict')
-      this.permissionRegistry.unregister('mode::readonly')
-      this.permissionRegistry.register(
-        createPermissionModePolicy(setting.permission_mode, permissionToolSets),
-      )
+    this.syncModePolicy(setting.permission_mode, toolSets)
+    this.syncDisabledToolsPolicy(setting.disabled_tools)
+    this.syncUserPolicies(setting.permissions)
+
+    this.logger.debug(
+      'Permission policies synced: %d policies active',
+      this.permissionRegistry.getAll().length,
+    )
+  }
+
+  private syncModePolicy(
+    mode: PermissionMode | undefined,
+    toolSets: ReturnType<typeof createPermissionToolSetsFromRegistry>,
+  ): void {
+    if (!mode || mode === this.currentPermissionMode) {
+      return
     }
 
-    // 2. disabled_tools 变更 → 重新注册 disabled-tools 策略
-    if (setting.disabled_tools && setting.disabled_tools.length > 0) {
-      this.permissionRegistry.unregister('setting::disabled-tools')
-      this.permissionRegistry.register(createDisabledToolsPolicy(setting.disabled_tools))
+    this.permissionRegistry.unregister(`mode::${this.currentPermissionMode}`)
+    this.permissionRegistry.register(createPermissionModePolicy(mode, toolSets))
+    this.currentPermissionMode = mode
+  }
+
+  private syncDisabledToolsPolicy(disabledTools: string[] | undefined): void {
+    if (disabledTools && disabledTools.length > 0) {
+      this.permissionRegistry.register(createDisabledToolsPolicy(disabledTools))
     } else {
       this.permissionRegistry.unregister('setting::disabled-tools')
     }
+  }
 
-    // 3. 用户自定义策略 → 先清除旧的 user:: 前缀策略，再编译注册
+  private syncUserPolicies(permissions: PermissionPolicySetting[] | undefined): void {
     for (const p of this.permissionRegistry.getAll()) {
       if (p.name.startsWith('user::')) {
         this.permissionRegistry.unregister(p.name)
       }
     }
 
-    if (setting.permissions) {
-      for (const pc of setting.permissions) {
-        const policy = compilePolicyFromSetting({
-          ...pc,
-          name: `user::${pc.name}`,
-        })
-        this.permissionRegistry.register(policy)
-      }
+    if (!permissions) {
+      return
     }
 
-    this.logger.debug(
-      'Permission policies synced: %d policies active',
-      this.permissionRegistry.getAll().length,
-    )
+    for (const pc of permissions) {
+      this.permissionRegistry.register(
+        compilePolicyFromSetting({ ...pc, name: `user::${pc.name}` }),
+      )
+    }
   }
 
   private ensureNotDisposed(): void {

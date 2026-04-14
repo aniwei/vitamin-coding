@@ -9,7 +9,9 @@ export function createAnthropicEffortHook(): HookSpec {
     priority: 10,
     handle(input, output) {
       // 仅对 Anthropic 模型调整
-      if (input.provider !== 'anthropic') return
+      if (input.provider !== 'anthropic') {
+        return
+      }
 
       // 如果未显式设置 thinkingLevel，使用默认策略
       if (!output.thinkingLevel) {

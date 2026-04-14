@@ -32,7 +32,9 @@ export function formatSymbolKind(kind: number): string {
 }
 
 export function formatSeverity(severity: number | undefined): string {
-  if (!severity) return 'unknown'
+  if (!severity) {
+    return 'unknown'
+  }
   return SEVERITY_MAP[severity] || `unknown(${severity})`
 }
 
@@ -71,7 +73,9 @@ export function filterDiagnosticsBySeverity(
   diagnostics: Diagnostic[],
   severityFilter?: 'error' | 'warning' | 'information' | 'hint' | 'all',
 ): Diagnostic[] {
-  if (!severityFilter || severityFilter === 'all') return diagnostics
+  if (!severityFilter || severityFilter === 'all') {
+    return diagnostics
+  }
 
   const severityMap: Record<string, number> = {
     error: 1,
@@ -87,7 +91,9 @@ export function filterDiagnosticsBySeverity(
 export function formatPrepareRenameResult(
   result: PrepareRenameResult | PrepareRenameDefaultBehavior | Range | null,
 ): string {
-  if (!result) return 'Cannot rename at this position'
+  if (!result) {
+    return 'Cannot rename at this position'
+  }
 
   if ('defaultBehavior' in result) {
     return result.defaultBehavior
@@ -126,7 +132,9 @@ export function formatTextEdit(edit: TextEdit): string {
 }
 
 export function formatWorkspaceEdit(edit: WorkspaceEdit | null): string {
-  if (!edit) return 'No changes'
+  if (!edit) {
+    return 'No changes'
+  }
 
   const lines: string[] = []
 
@@ -143,10 +151,13 @@ export function formatWorkspaceEdit(edit: WorkspaceEdit | null): string {
   if (edit.documentChanges) {
     for (const change of edit.documentChanges) {
       if ('kind' in change) {
-        if (change.kind === 'create') lines.push(`Create: ${change.uri}`)
-        else if (change.kind === 'rename')
+        if (change.kind === 'create') {
+          lines.push(`Create: ${change.uri}`)
+        } else if (change.kind === 'rename') {
           lines.push(`Rename: ${change.oldUri} -> ${change.newUri}`)
-        else if (change.kind === 'delete') lines.push(`Delete: ${change.uri}`)
+        } else if (change.kind === 'delete') {
+          lines.push(`Delete: ${change.uri}`)
+        }
       } else {
         const filePath = uriToPath(change.textDocument.uri)
         lines.push(`File: ${filePath}`)

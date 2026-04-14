@@ -22,7 +22,9 @@ export class TypedEventEmitter<T extends Events> {
 
   emit<K extends keyof T>(event: K, ...args: Parameters<T[K]>): void {
     const set = this.listeners[event]
-    if (!set) return
+    if (!set) {
+      return
+    }
     for (const listener of set) {
       ;(listener as (...listenerArgs: Parameters<T[K]>) => void)(...args)
     }

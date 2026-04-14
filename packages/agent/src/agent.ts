@@ -236,7 +236,9 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
 
   private transitionTo(to: AgentStatus): void {
     const from = this.state.status
-    if (from === to) return
+    if (from === to) {
+      return
+    }
 
     const allowed = VALID_TRANSITIONS[from]
     if (!allowed?.has(to)) {

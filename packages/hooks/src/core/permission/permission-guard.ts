@@ -49,9 +49,15 @@ export class PermissionGuardHook {
   }
 
   private extractPath(args: Record<string, unknown>): string | undefined {
-    if (typeof args.path === 'string') return args.path
-    if (typeof args.file_path === 'string') return args.file_path
-    if (typeof args.filePath === 'string') return args.filePath
+    if (typeof args.path === 'string') {
+      return args.path
+    }
+    if (typeof args.file_path === 'string') {
+      return args.file_path
+    }
+    if (typeof args.filePath === 'string') {
+      return args.filePath
+    }
     return undefined
   }
 }

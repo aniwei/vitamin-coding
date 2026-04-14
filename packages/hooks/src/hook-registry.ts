@@ -207,7 +207,9 @@ export class HookRegistry {
     output: HookOutput<T>,
   ): Promise<void> {
     const hooks = this.getSortedInterceptorHooks(timing)
-    if (hooks.length === 0) return
+    if (hooks.length === 0) {
+      return
+    }
 
     for (const hook of hooks) {
       try {
@@ -221,7 +223,9 @@ export class HookRegistry {
 
   async emit<T extends ObserverTiming>(timing: T, input: HookInput<T>): Promise<void> {
     const hooks = this.getSortedObserverHooks(timing)
-    if (hooks.length === 0) return
+    if (hooks.length === 0) {
+      return
+    }
 
     for (const hook of hooks) {
       try {

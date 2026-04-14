@@ -50,7 +50,9 @@ function deepMerge(
   const result = { ...target }
 
   for (const [key, value] of Object.entries(source)) {
-    if (value === undefined) continue
+    if (value === undefined) {
+      continue
+    }
 
     if (isPlainObject(value) && isPlainObject(result[key])) {
       result[key] = deepMerge(result[key], value)
@@ -68,7 +70,9 @@ function merge(...layers: Partial<VitaminSetting>[]): Partial<VitaminSetting> {
 
   if (higher) {
     for (const [key, value] of Object.entries(higher)) {
-      if (value === undefined) continue
+      if (value === undefined) {
+        continue
+      }
 
       if (Array.isArray(result[key]) && Array.isArray(value)) {
         const existing = result[key] as string[]
@@ -94,10 +98,14 @@ function loadSettingFromEnv(): Partial<VitaminSetting> {
   const setting: Partial<VitaminSetting> = {}
 
   const model = process.env.VITAMIN_MODEL
-  if (model) setting.model = model
+  if (model) {
+    setting.model = model
+  }
 
   const theme = process.env.VITAMIN_THEME
-  if (theme) setting.theme = theme
+  if (theme) {
+    setting.theme = theme
+  }
 
   const logLevel = process.env.VITAMIN_LOG_LEVEL
   if (logLevel) {

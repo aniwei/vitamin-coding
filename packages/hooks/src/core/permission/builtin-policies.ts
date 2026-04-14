@@ -36,7 +36,9 @@ export function createPermissionToolSetsFromRegistry(
   const fileWriteTools = new Set<string>()
 
   for (const tool of tools) {
-    if (!tool.name) continue
+    if (!tool.name) {
+      continue
+    }
 
     if (tool.readonly === true) {
       readonlyTools.add(tool.name)

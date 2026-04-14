@@ -47,7 +47,9 @@ export async function executeSequential(options: {
   let currentInput = input
 
   for (let i = 0; i < pipeline.length; i++) {
-    if (signal.aborted) break
+    if (signal.aborted) {
+      break
+    }
 
     const agentId = pipeline[i]!
     const agentDef = agents.get(agentId)!

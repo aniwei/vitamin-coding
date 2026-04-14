@@ -47,7 +47,9 @@ export class McpManager extends TypedEventEmitter<McpEvents> {
   /** 从配置初始化所有 MCP Server */
   async connectAll(servers: Record<string, McpServerConfig>): Promise<void> {
     const entries = Object.entries(servers)
-    if (entries.length === 0) return
+    if (entries.length === 0) {
+      return
+    }
 
     logger.info('Connecting to %d MCP servers...', entries.length)
 
@@ -215,7 +217,9 @@ export class McpManager extends TypedEventEmitter<McpEvents> {
   get connectedCount(): number {
     let count = 0
     for (const client of this.clients.values()) {
-      if (client.getStatus() === 'ready') count++
+      if (client.getStatus() === 'ready') {
+        count++
+      }
     }
     return count
   }

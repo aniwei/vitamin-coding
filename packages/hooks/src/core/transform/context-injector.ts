@@ -30,7 +30,9 @@ export function createContextInjectorHook(config: ContextInjectorConfig): HookSp
         }
       }
 
-      if (contexts.length === 0) return
+      if (contexts.length === 0) {
+        return
+      }
 
       // 注入系统消息到消息列表头部
       const contextMessage = {

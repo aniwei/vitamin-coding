@@ -129,13 +129,17 @@ export async function* stream(options: HttpRequestOptions): AsyncIterable<SseEve
 
     while (true) {
       const { done, value } = await reader.read()
-      if (done) break
+      if (done) {
+        break
+      }
 
       parser.feed(decoder.decode(value, { stream: true }))
 
       while (queue.length > 0) {
         const event = queue.shift()
-        if (event) yield event
+        if (event) {
+          yield event
+        }
       }
     }
 
@@ -143,10 +147,14 @@ export async function* stream(options: HttpRequestOptions): AsyncIterable<SseEve
 
     while (queue.length > 0) {
       const event = queue.shift()
-      if (event) yield event
+      if (event) {
+        yield event
+      }
     }
   } catch (error) {
-    if (error instanceof NetworkError) throw error
+    if (error instanceof NetworkError) {
+      throw error
+    }
     if (error instanceof DOMException && error.name === 'AbortError') {
       throw new NetworkError('Stream aborted or timed out', {
         code: 'TIMEOUT',

@@ -8,9 +8,13 @@ export function createThinkingValidatorHook(): HookSpec {
     priority: 20,
     handle(_input, output) {
       output.messages = output.messages.map((msg) => {
-        if (!isAssistantMessage(msg)) return msg
+        if (!isAssistantMessage(msg)) {
+          return msg
+        }
         const content = getAssistantContent(msg)
-        if (!Array.isArray(content)) return msg
+        if (!Array.isArray(content)) {
+          return msg
+        }
 
         const filtered = content.filter((part: Record<string, unknown>) => {
           if (

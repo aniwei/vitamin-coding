@@ -6,12 +6,13 @@
   },
   "rules": {
     "no-unused-vars": "off",
+    "no-empty": "error",
+    "curly": ["error", "all"],
+    "prefer-const": "error",
+    "prefer-template": "warn",
     "typescript/no-unused-vars": "error",
     "typescript/no-explicit-any": "error",
     "typescript/no-non-null-assertion": "warn",
-    "no-empty": "error",
-    "prefer-const": "error",
-    "prefer-template": "warn",
     "unicorn/no-array-for-each": "warn"
   },
   "ignorePatterns": [

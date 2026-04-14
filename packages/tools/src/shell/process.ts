@@ -24,7 +24,9 @@ const createExecuteResult = (): SpawnExecuteResult => ({
 
 const kill = (child: ChildProcess) => {
   const pid = child.pid
-  if (!pid) return
+  if (!pid) {
+    return
+  }
 
   try {
     switch (process.platform) {

@@ -57,14 +57,18 @@ export function prune(
   // 执行 prune — 克隆消息列表
   const result = messages.map((msg, i) => {
     // 保护范围内的消息不动
-    if (i >= protectBoundary) return msg
+    if (i >= protectBoundary) {
+      return msg
+    }
 
     // 只处理 tool_result 消息
     if (msg.role === 'tool_result') {
       const toolMsg = msg as ToolResultMessage
 
       // 受保护的 tool 不裁剪
-      if (protectedToolSet.has(toolMsg.toolName)) return msg
+      if (protectedToolSet.has(toolMsg.toolName)) {
+        return msg
+      }
 
       return pruneToolResult(toolMsg, estimator)
     }
@@ -102,7 +106,9 @@ function pruneToolResult(
   const originalText = msg.content.map((c) => (c.type === 'text' ? c.text : '')).join('')
   const originalTokens = estimator(originalText)
 
-  if (originalTokens < 100) return msg // 小输出不值得裁剪
+  if (originalTokens < 100) {
+    return msg
+  } // 小输出不值得裁剪
 
   return {
     ...msg,
@@ -121,15 +127,23 @@ function pruneAssistantToolCalls(
   truncateToolSet: Set<string>,
   maxLength: number,
 ): Message {
-  if (!Array.isArray(msg.content)) return msg
+  if (!Array.isArray(msg.content)) {
+    return msg
+  }
 
   let changed = false
   const newContent = msg.content.map((part) => {
-    if (part.type !== 'tool_call') return part
-    if (!truncateToolSet.has(part.name)) return part
+    if (part.type !== 'tool_call') {
+      return part
+    }
+    if (!truncateToolSet.has(part.name)) {
+      return part
+    }
 
     const argsStr = JSON.stringify(part.arguments)
-    if (argsStr.length <= maxLength) return part
+    if (argsStr.length <= maxLength) {
+      return part
+    }
 
     changed = true
     return {
@@ -141,7 +155,9 @@ function pruneAssistantToolCalls(
     }
   })
 
-  if (!changed) return msg
+  if (!changed) {
+    return msg
+  }
 
   return { ...msg, content: newContent }
 }

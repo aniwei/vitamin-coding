@@ -101,7 +101,9 @@ async function scanDirectory(
     const skillDir = path.join(dir, entry.name)
     const skillFile = path.join(skillDir, SKILL_FILENAME)
 
-    if (!fs.existsSync(skillFile)) continue
+    if (!fs.existsSync(skillFile)) {
+      continue
+    }
 
     const skill = await tryParseSkill(skillDir, skillFile, source)
     if (skill) {
@@ -155,7 +157,9 @@ function listSupportingFiles(skillDir: string): string[] {
  */
 export function getDefaultGlobalSkillDirs(): string[] {
   const home = process.env['HOME'] ?? process.env['USERPROFILE'] ?? ''
-  if (!home) return []
+  if (!home) {
+    return []
+  }
 
   return [path.join(home, '.vitamin', 'skills')]
 }
@@ -164,6 +168,8 @@ export function getDefaultGlobalSkillDirs(): string[] {
  * 检查 skill source type
  */
 export function resolveSourceType(dir: string, workspaceDir: string): SkillSourceType {
-  if (dir.startsWith(workspaceDir)) return 'project'
+  if (dir.startsWith(workspaceDir)) {
+    return 'project'
+  }
   return 'global'
 }

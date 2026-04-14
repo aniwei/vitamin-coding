@@ -84,12 +84,16 @@ export class ToolRegistry {
         }
       }
 
-      if (allDeleted) this.version++
+      if (allDeleted) {
+        this.version++
+      }
       return allDeleted
     }
 
     const deleted = this.tools.delete(name)
-    if (deleted) this.version++
+    if (deleted) {
+      this.version++
+    }
     return deleted
   }
 
@@ -148,11 +152,15 @@ export class ToolRegistry {
         lines.push(tool.description)
       }
 
-      if (snippet) lines.push(`Example:\n\`\`\`\n${snippet}\n\`\`\``)
+      if (snippet) {
+        lines.push(`Example:\n\`\`\`\n${snippet}\n\`\`\``)
+      }
       parts.push(lines.join('\n'))
     }
 
-    if (parts.length === 0) return ''
+    if (parts.length === 0) {
+      return ''
+    }
     return `### Tool Usage Guidelines\n\n${parts.join('\n\n')}`
   }
 

@@ -73,8 +73,12 @@ export class CircuitBreaker {
   }
 
   isOpen(): boolean {
-    if (!this.enabled) return false
-    if (this.openedAt === null) return false
+    if (!this.enabled) {
+      return false
+    }
+    if (this.openedAt === null) {
+      return false
+    }
 
     // 半开：距上次打开超过 resetTimeoutMs 则自动尝试恢复
     if (Date.now() - this.openedAt >= this.resetTimeoutMs) {

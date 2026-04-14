@@ -18,7 +18,9 @@ export function createRulesInjectorHook(projectRoot: string): HookSpec {
     priority: 30,
     async handle(input, output) {
       // 仅对写入类工具注入规则
-      if (!INJECTION_TOOLS.has(input.toolName)) return
+      if (!INJECTION_TOOLS.has(input.toolName)) {
+        return
+      }
 
       const rules = await loadRules(projectRoot)
       if (rules) {

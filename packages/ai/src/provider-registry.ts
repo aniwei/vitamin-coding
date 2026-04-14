@@ -41,7 +41,9 @@ export class ProviderRegistry {
 
   get(api: Api): ProviderStream {
     const cached = this.instances.get(api)
-    if (cached) return cached
+    if (cached) {
+      return cached
+    }
 
     const factory = this.factories.get(api)
     if (!factory) {
@@ -82,22 +84,30 @@ export class ProviderRegistry {
   }
 
   async hasCredential(provider: Provider): Promise<boolean> {
-    if (!this.authStore) return false
+    if (!this.authStore) {
+      return false
+    }
     return this.authStore.hasCredential(provider)
   }
 
   async resolveAccessKey(api: Api): Promise<string | null> {
-    if (!this.authStore) return null
+    if (!this.authStore) {
+      return null
+    }
     return this.authStore.getCredentialKey(api)
   }
 
   async resolveBaseUrl(api: Api): Promise<string | null> {
-    if (!this.authStore) return null
+    if (!this.authStore) {
+      return null
+    }
     return this.authStore.getBaseUrl(api)
   }
 
   async storeAccessKey(api: Api, key: string): Promise<void> {
-    if (!this.authStore) return
+    if (!this.authStore) {
+      return
+    }
     this.authStore.setCredentialKey(api, key)
     await this.authStore.save()
   }

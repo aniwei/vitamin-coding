@@ -117,7 +117,9 @@ export class CodingService {
   }
 
   async start(): Promise<void> {
-    if (this.started) return
+    if (this.started) {
+      return
+    }
 
     this.server.on('upgrade', this.onUpgrade)
     this.ws.on('message', this.onWsMessage)
@@ -148,7 +150,9 @@ export class CodingService {
   }
 
   async stop(): Promise<void> {
-    if (!this.started) return
+    if (!this.started) {
+      return
+    }
 
     // 与 start() 顺序相反，确保拆除干净
     this.bridge?.detach()
@@ -172,7 +176,9 @@ export class CodingService {
   }
 
   attachSession(session: AgentSession): void {
-    if (this.bridges.has(session.id)) return
+    if (this.bridges.has(session.id)) {
+      return
+    }
 
     const bridge = new EventBridge(session, this.ws)
     bridge.attach()

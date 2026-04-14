@@ -30,13 +30,19 @@ export function createSessionLearningHooks(
     name: 'session-end-learning',
     timing: 'session.idle',
     handle: async (input) => {
-      if (triggered.has(input.sessionId)) return
+      if (triggered.has(input.sessionId)) {
+        return
+      }
 
       const session = getSession(input.sessionId)
-      if (!session) return
+      if (!session) {
+        return
+      }
 
       const messageCount = session.session.messages().length
-      if (messageCount < 6) return
+      if (messageCount < 6) {
+        return
+      }
 
       triggered.add(input.sessionId)
       logger.info('Session idle, prompting for learning: %s', input.sessionId)

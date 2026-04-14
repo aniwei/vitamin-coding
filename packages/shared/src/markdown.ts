@@ -63,8 +63,12 @@ export function createFrontmatterProcessor(): MarkdownProcessor {
 
 /** 递归提取节点的纯文本内容 */
 export function getNodeText(node: MdastNode): string {
-  if (node.value !== undefined) return node.value
-  if (!node.children) return ''
+  if (node.value !== undefined) {
+    return node.value
+  }
+  if (!node.children) {
+    return ''
+  }
   return node.children.map(getNodeText).join('')
 }
 
@@ -73,7 +77,9 @@ export function getNodeText(node: MdastNode): string {
  * 处理同一段落内含多个 bold label 的情况。
  */
 export function extractBoldLabels(node: MdastNode): Array<{ label: string; rest: string }> {
-  if (node.type !== 'paragraph' || !node.children?.length) return []
+  if (node.type !== 'paragraph' || !node.children?.length) {
+    return []
+  }
   const results: Array<{ label: string; rest: string }> = []
   const children = node.children
 
@@ -85,7 +91,9 @@ export function extractBoldLabels(node: MdastNode): Array<{ label: string; rest:
         const label = strongText.slice(0, -1)
         const restParts: string[] = []
         for (let j = i + 1; j < children.length; j++) {
-          if (children[j]!.type === 'strong') break
+          if (children[j]!.type === 'strong') {
+            break
+          }
           restParts.push(getNodeText(children[j]!))
         }
         results.push({ label, rest: restParts.join('').trim() })
@@ -104,7 +112,9 @@ export function extractInlineCodes(node: MdastNode): string[] {
       codes.push(n.value)
     }
     if (n.children) {
-      for (const child of n.children) walk(child)
+      for (const child of n.children) {
+        walk(child)
+      }
     }
   }
   walk(node)
@@ -118,7 +128,9 @@ export function countChecks(items: MdastNode[]): { total: number; checked: numbe
   for (const item of items) {
     if (item.type === 'listItem' && typeof item.checked === 'boolean') {
       total++
-      if (item.checked) checked++
+      if (item.checked) {
+        checked++
+      }
     }
   }
   return { total, checked }

@@ -51,20 +51,26 @@ function extractRecord(
 
 function parseChatQuery(data: Record<string, unknown>): ChatQueryData | null {
   const message = extractString(data, 'message')
-  if (!message) return null
+  if (!message) {
+    return null
+  }
   return { message, sessionId: extractString(data, 'sessionId') }
 }
 
 function parseChatApproval(data: Record<string, unknown>): ChatApprovalData | null {
   const approvalId = extractString(data, 'approvalId')
   const approved = extractBoolean(data, 'approved')
-  if (!approvalId || approved === undefined) return null
+  if (!approvalId || approved === undefined) {
+    return null
+  }
   return { approvalId, approved, sessionId: extractString(data, 'sessionId') }
 }
 
 function parseChatAskUserResponse(data: Record<string, unknown>): ChatAskUserResponseData | null {
   const requestId = extractString(data, 'requestId')
-  if (!requestId) return null
+  if (!requestId) {
+    return null
+  }
   const cancelled = data.cancelled === true
   const answers = cancelled ? null : (extractRecord(data, 'answers') ?? null)
   return { requestId, answers, cancelled, sessionId: extractString(data, 'sessionId') }
@@ -75,7 +81,9 @@ function parseChatPlanApprovalResponse(
 ): ChatPlanApprovalResponseData | null {
   const requestId = extractString(data, 'requestId')
   const action = extractString(data, 'action')
-  if (!requestId || !action) return null
+  if (!requestId || !action) {
+    return null
+  }
   return {
     requestId,
     action,
@@ -86,7 +94,9 @@ function parseChatPlanApprovalResponse(
 
 function parseSessionSubscribe(data: Record<string, unknown>): SessionSubscribeData | null {
   const sessionId = extractString(data, 'sessionId')
-  if (!sessionId) return null
+  if (!sessionId) {
+    return null
+  }
   return { sessionId }
 }
 
@@ -103,7 +113,9 @@ function parseDebuggerSetBreakpoint(
 ): DebuggerSetBreakpointData | null {
   const point = extractString(data, 'point')
   const enabled = extractBoolean(data, 'enabled')
-  if (point === undefined || enabled === undefined) return null
+  if (point === undefined || enabled === undefined) {
+    return null
+  }
   return { point, enabled }
 }
 
@@ -111,7 +123,9 @@ function parseDebuggerSetBreakpointsActive(
   data: Record<string, unknown>,
 ): DebuggerSetBreakpointsActiveData | null {
   const active = extractBoolean(data, 'active')
-  if (active === undefined) return null
+  if (active === undefined) {
+    return null
+  }
   return { active }
 }
 
@@ -133,38 +147,50 @@ export class InboundRouter {
       // ── Session subscription ────────────────────────────────────────────────
       case 'Session.subscribe': {
         const parsed = parseSessionSubscribe(data)
-        if (parsed) this.ws.subscribeClient(clientId, parsed.sessionId)
+        if (parsed) {
+          this.ws.subscribeClient(clientId, parsed.sessionId)
+        }
         break
       }
 
       case 'Session.unsubscribe': {
         const parsed = parseSessionSubscribe(data)
-        if (parsed) this.ws.unsubscribeClient(clientId, parsed.sessionId)
+        if (parsed) {
+          this.ws.unsubscribeClient(clientId, parsed.sessionId)
+        }
         break
       }
 
       // ── Chat business commands ──────────────────────────────────────────────
       case 'Chat.query': {
         const parsed = parseChatQuery(data)
-        if (parsed) this.handleQuery(parsed)
+        if (parsed) {
+          this.handleQuery(parsed)
+        }
         break
       }
 
       case 'Chat.approval': {
         const parsed = parseChatApproval(data)
-        if (parsed) this.handleApproval(parsed)
+        if (parsed) {
+          this.handleApproval(parsed)
+        }
         break
       }
 
       case 'Chat.askUserResponse': {
         const parsed = parseChatAskUserResponse(data)
-        if (parsed) this.handleAskUserResponse(parsed)
+        if (parsed) {
+          this.handleAskUserResponse(parsed)
+        }
         break
       }
 
       case 'Chat.planApprovalResponse': {
         const parsed = parseChatPlanApprovalResponse(data)
-        if (parsed) this.handlePlanApprovalResponse(parsed)
+        if (parsed) {
+          this.handlePlanApprovalResponse(parsed)
+        }
         break
       }
 
@@ -178,13 +204,17 @@ export class InboundRouter {
 
       case 'Debugger.setBreakpoint': {
         const parsed = parseDebuggerSetBreakpoint(data)
-        if (parsed) this.handleDebugSetBreakpoint(parsed)
+        if (parsed) {
+          this.handleDebugSetBreakpoint(parsed)
+        }
         break
       }
 
       case 'Debugger.setBreakpointsActive': {
         const parsed = parseDebuggerSetBreakpointsActive(data)
-        if (parsed) this.handleDebugSetBreakpointsActive(parsed)
+        if (parsed) {
+          this.handleDebugSetBreakpointsActive(parsed)
+        }
         break
       }
 
@@ -199,7 +229,9 @@ export class InboundRouter {
 
   private handleQuery({ message, sessionId }: ChatQueryData): void {
     const session = this.resolveSession(sessionId)
-    if (!session) return
+    if (!session) {
+      return
+    }
 
     session.prompt(message).catch((err: Error) => {
       this.ws.sendToSession(session.id, {
@@ -211,7 +243,9 @@ export class InboundRouter {
 
   private handleApproval({ approvalId, approved, sessionId }: ChatApprovalData): void {
     const session = this.resolveSession(sessionId)
-    if (!session) return
+    if (!session) {
+      return
+    }
 
     session.resolveApproval(approvalId, approved)
     logger.debug(`${approved ? 'approval' : 'rejection'} for session ${session.id}`)
@@ -219,7 +253,9 @@ export class InboundRouter {
 
   private handleAskUserResponse({ requestId, answers, sessionId }: ChatAskUserResponseData): void {
     const session = this.resolveSession(sessionId)
-    if (!session) return
+    if (!session) {
+      return
+    }
 
     session.resolveAskUser(requestId, answers)
     logger.debug(`ask_user response for session ${session.id}`)
@@ -232,7 +268,9 @@ export class InboundRouter {
     sessionId,
   }: ChatPlanApprovalResponseData): void {
     const session = this.resolveSession(sessionId)
-    if (!session) return
+    if (!session) {
+      return
+    }
 
     session.resolvePlanApproval(requestId, action, feedback)
     logger.debug(`plan ${action} for session ${session.id}`)
@@ -243,7 +281,9 @@ export class InboundRouter {
     { seq, pauseId, depth }: DebuggerCommandData,
     rawData: Record<string, unknown>,
   ): void {
-    if (!this.bridge) return
+    if (!this.bridge) {
+      return
+    }
 
     const payload = extractRecord(rawData, 'payload') as PauseResumePayload | undefined
 
@@ -259,12 +299,16 @@ export class InboundRouter {
   }
 
   private handleDebugSetBreakpoint({ point, enabled }: DebuggerSetBreakpointData): void {
-    if (!this.bridge) return
+    if (!this.bridge) {
+      return
+    }
     this.bridge.send({ type: 'setBreakpoint', seq: Date.now(), point, enabled })
   }
 
   private handleDebugSetBreakpointsActive({ active }: DebuggerSetBreakpointsActiveData): void {
-    if (!this.bridge) return
+    if (!this.bridge) {
+      return
+    }
     this.bridge.send({ type: 'setBreakpointsActive', seq: Date.now(), active })
   }
 }

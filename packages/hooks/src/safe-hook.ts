@@ -10,7 +10,9 @@ export function safeCreateHook(
   factory: () => HookSpec,
   options: { enabled: boolean },
 ): HookSpec | null {
-  if (!options.enabled) return null
+  if (!options.enabled) {
+    return null
+  }
   try {
     return factory()
   } catch (error) {

@@ -35,7 +35,9 @@ export class ModelSlot {
     if (Array.isArray(specOrSpecs)) {
       for (const spec of specOrSpecs) {
         const model = this.registry.tryResolve(spec)
-        if (model) return model
+        if (model) {
+          return model
+        }
       }
       return this.registry.resolve(this.default)
     }

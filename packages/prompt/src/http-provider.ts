@@ -19,7 +19,9 @@ export class HttpPromptProvider implements PromptProvider {
     try {
       const response = await this.request(`/prompts/${encodeURIComponent(key)}`)
       if (!response.ok) {
-        if (response.status === 404) return null
+        if (response.status === 404) {
+          return null
+        }
         throw new Error(`Remote prompt load failed: ${response.status}`)
       }
       return (await response.json()) as PromptEntry

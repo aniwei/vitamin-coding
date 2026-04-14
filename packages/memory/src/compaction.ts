@@ -76,7 +76,9 @@ export function findCutPoint(
   let adjustedCutIndex = rawCutIndex
   while (adjustedCutIndex < messages.length) {
     const msg = messages[adjustedCutIndex]!
-    if (msg.role === 'user' || msg.role === 'assistant') break
+    if (msg.role === 'user' || msg.role === 'assistant') {
+      break
+    }
     adjustedCutIndex++
   }
 
@@ -117,7 +119,9 @@ export function needsCompaction(
   estimator = defaultEstimateTokens,
 ): boolean {
   const cfg = { ...DEFAULT_COMPACTION_CONFIG, ...config }
-  if (!cfg.enabled) return false
+  if (!cfg.enabled) {
+    return false
+  }
 
   const triggerTokens = resolveContextSize(cfg.trigger, contextWindow)
   const currentTokens = estimateMessagesTokens(messages, estimator)
@@ -257,14 +261,18 @@ function extractFileOps(messages: readonly Message[]): { read: string[]; modifie
   const modified = new Set<string>()
 
   for (const msg of messages) {
-    if (msg.role !== 'tool_result') continue
+    if (msg.role !== 'tool_result') {
+      continue
+    }
 
     const toolMsg = msg
     const toolName = toolMsg.toolName
     const content = messageToText(msg)
     const pathMatch = content.match(/(?:^|\s)(\/[^\s]+\.[a-z]+)/i)
 
-    if (!pathMatch?.[1]) continue
+    if (!pathMatch?.[1]) {
+      continue
+    }
 
     // 根据 tool 名称分类
     if (fileReadToolSet.has(toolName)) {

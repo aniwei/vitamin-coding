@@ -60,11 +60,17 @@ export class OperationalLearningStore {
     for (const lesson of this.lessons.values()) {
       let score = 0
 
-      if (lesson.trigger.toLowerCase().includes(lowerQuery)) score += 3
-      if (lesson.insight.toLowerCase().includes(lowerQuery)) score += 2
+      if (lesson.trigger.toLowerCase().includes(lowerQuery)) {
+        score += 3
+      }
+      if (lesson.insight.toLowerCase().includes(lowerQuery)) {
+        score += 2
+      }
 
       for (const tag of lesson.tags) {
-        if (tag.toLowerCase().includes(lowerQuery)) score += 1
+        if (tag.toLowerCase().includes(lowerQuery)) {
+          score += 1
+        }
       }
 
       if (score > 0) {
@@ -142,7 +148,9 @@ export class OperationalLearningStore {
   }
 
   private async persist(): Promise<void> {
-    if (!this.path) return
+    if (!this.path) {
+      return
+    }
 
     const data = {
       lessons: [...this.lessons.values()],

@@ -281,8 +281,12 @@ export function mergeUsage(a: Usage, b: Usage): Usage {
 }
 
 export function getTokensFromUsage(message: Message): number | null {
-  if (message.role !== 'assistant') return null
+  if (message.role !== 'assistant') {
+    return null
+  }
   const usage = (message as AssistantMessage).usage
-  if (!usage) return null
+  if (!usage) {
+    return null
+  }
   return usage.inputTokens + usage.outputTokens
 }

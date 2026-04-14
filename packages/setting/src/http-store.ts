@@ -41,7 +41,9 @@ export class RemoteSettingStore implements SettingStore {
         },
       )
 
-      if (response.status === 404) return undefined
+      if (response.status === 404) {
+        return undefined
+      }
       if (!response.ok) {
         logger.warn({ status: response.status, path }, 'Remote setting read failed')
         return undefined

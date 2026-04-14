@@ -155,7 +155,9 @@ async function runTurn(
 
   for await (const event of es) {
     emit({ type: 'stream_event', event })
-    if (signal.aborted) throw new AbortError()
+    if (signal.aborted) {
+      throw new AbortError()
+    }
   }
 
   const assistantMessage = await es.result()
@@ -230,7 +232,9 @@ async function runTools(
 
   // 执行单个工具（含完整生命周期事件）
   const executeSingleTool = async (toolCall: ToolCall) => {
-    if (signal.aborted) throw new AbortError()
+    if (signal.aborted) {
+      throw new AbortError()
+    }
 
     emit({
       type: 'tool_call_start',
@@ -281,7 +285,9 @@ async function runTools(
 
   // mutation 工具：串行执行，每步前检查 steering
   for (const toolCall of mutationCalls) {
-    if (signal.aborted) throw new AbortError()
+    if (signal.aborted) {
+      throw new AbortError()
+    }
 
     const steering = await getSteeringMessages()
     if (steering.length > 0) {
@@ -351,13 +357,17 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
     await pause('loop_start', 0)
 
     outer: while (true) {
-      if (signal.aborted) throw new AbortError()
+      if (signal.aborted) {
+        throw new AbortError()
+      }
 
       emit({ type: 'status_change', from: currentStatus, to: 'streaming' })
       currentStatus = 'streaming'
 
       while (true) {
-        if (signal.aborted) throw new AbortError()
+        if (signal.aborted) {
+          throw new AbortError()
+        }
 
         if (toolTurnCount > (context.maxToolTurns ?? 25)) {
           throw new MaxToolTurnsError(context.maxToolTurns ?? 25)
@@ -489,7 +499,9 @@ function consume(result: PauseResult | undefined, target: PayloadApplyTarget): v
   }
 
   const payload = result?.payload
-  if (!payload) return
+  if (!payload) {
+    return
+  }
 
   if (payload.systemPrompt !== undefined) {
     target.setSystemPrompt(payload.systemPrompt)

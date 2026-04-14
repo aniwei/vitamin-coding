@@ -19,11 +19,15 @@ export function createCommentCheckerHook(): HookSpec {
     priority: 20,
     handle(input, output) {
       // 仅检查写入类工具
-      if (!WRITE_TOOLS.has(input.toolName)) return
+      if (!WRITE_TOOLS.has(input.toolName)) {
+        return
+      }
 
       // 检查参数中的代码内容
       const code = extractCodeContent(input.args)
-      if (!code) return
+      if (!code) {
+        return
+      }
 
       const violations = detectAiComments(code)
       if (violations.length > 0) {
@@ -64,8 +68,14 @@ function detectAiComments(code: string): CommentViolation[] {
 }
 
 function extractCodeContent(args: Record<string, unknown>): string | null {
-  if (typeof args.content === 'string') return args.content
-  if (typeof args.newString === 'string') return args.newString
-  if (typeof args.new_string === 'string') return args.new_string
+  if (typeof args.content === 'string') {
+    return args.content
+  }
+  if (typeof args.newString === 'string') {
+    return args.newString
+  }
+  if (typeof args.new_string === 'string') {
+    return args.new_string
+  }
   return null
 }

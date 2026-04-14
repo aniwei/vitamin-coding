@@ -197,7 +197,9 @@ async function find(
 
   for (const raw of lines) {
     const line = raw.replace(/\r$/, '').trim()
-    if (!line) continue
+    if (!line) {
+      continue
+    }
 
     const hadTrailingSlash = line.endsWith('/') || line.endsWith('\\')
     let relativePath = line

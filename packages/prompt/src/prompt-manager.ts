@@ -38,7 +38,9 @@ export class PromptManager {
 
   async load(key: string): Promise<string | null> {
     const entry = await this.provider.load(key)
-    if (!entry) return null
+    if (!entry) {
+      return null
+    }
     this.cache.set(entry.key, entry.content, entry.version)
     return entry.content
   }

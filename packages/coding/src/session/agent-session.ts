@@ -793,12 +793,16 @@ export class AgentSession extends Subscription {
   }
 
   dispose(): void {
-    if (this.disposed) return
+    if (this.disposed) {
+      return
+    }
 
     this.disposed = true
     this.rejectPendingGates()
 
-    for (const unsub of this.agentUnsubs) unsub()
+    for (const unsub of this.agentUnsubs) {
+      unsub()
+    }
     this.agentUnsubs.length = 0
 
     this.agent.abort()

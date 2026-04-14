@@ -199,7 +199,9 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
    */
   buildCatalog(): string {
     const available = this.getAvailable()
-    if (available.length === 0) return ''
+    if (available.length === 0) {
+      return ''
+    }
 
     const lines = ['## Available Skills', '']
     for (const { definition } of available) {

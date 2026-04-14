@@ -115,7 +115,9 @@ function parseRgJsonOutput(stdout: string): RgMatch[] {
   const matches: RgMatch[] = []
 
   for (const line of stdout.split('\n')) {
-    if (!line.trim()) continue
+    if (!line.trim()) {
+      continue
+    }
 
     try {
       const parsed = JSON.parse(line)
@@ -301,9 +303,13 @@ async function grep(
       outputBlocks.push(block)
 
       // Track truncated lines
-      if (match.text.length > GREP_MAX_LINE_LENGTH) linesTruncated++
+      if (match.text.length > GREP_MAX_LINE_LENGTH) {
+        linesTruncated++
+      }
       for (const ctx of [...context.before, ...context.after]) {
-        if (ctx.text.length > GREP_MAX_LINE_LENGTH) linesTruncated++
+        if (ctx.text.length > GREP_MAX_LINE_LENGTH) {
+          linesTruncated++
+        }
       }
     }
   }

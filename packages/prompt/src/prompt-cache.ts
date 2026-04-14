@@ -36,7 +36,9 @@ export class PromptCache {
   }
 
   assemble(basePrompt: string): string {
-    if (this.assembled !== null) return this.assembled
+    if (this.assembled !== null) {
+      return this.assembled
+    }
 
     const parts = [basePrompt]
     for (const section of this.sections.values()) {

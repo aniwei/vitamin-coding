@@ -26,10 +26,14 @@ export function createFileGuardHook(): HookSpec {
     priority: 10,
     handle(input, output) {
       // 仅检查写入类工具
-      if (!WRITE_TOOLS.has(input.toolName)) return
+      if (!WRITE_TOOLS.has(input.toolName)) {
+        return
+      }
 
       const filePath = extractPath(input.args)
-      if (!filePath) return
+      if (!filePath) {
+        return
+      }
 
       for (const pattern of PROTECTED_PATTERNS) {
         if (pattern.test(filePath)) {
@@ -44,8 +48,14 @@ export function createFileGuardHook(): HookSpec {
 
 // 从工具参数中提取文件路径
 function extractPath(args: Record<string, unknown>): string | null {
-  if (typeof args.path === 'string') return args.path
-  if (typeof args.file_path === 'string') return args.file_path
-  if (typeof args.filePath === 'string') return args.filePath
+  if (typeof args.path === 'string') {
+    return args.path
+  }
+  if (typeof args.file_path === 'string') {
+    return args.file_path
+  }
+  if (typeof args.filePath === 'string') {
+    return args.filePath
+  }
   return null
 }
