@@ -12,6 +12,7 @@ import { type IncomingMessage, type Server } from 'node:http'
 import type { CodingServiceOptions, WebSocketClientMessage } from './types'
 import type { Socket } from 'node:net'
 import type { AgentSession, VitaminContext } from '@vitamin/coding'
+import { defineHook } from '@vitamin/hooks'
 
 const logger = createLogger('@vitamin/service')
 
@@ -75,18 +76,19 @@ export class CodingService {
   }
 
   registerHooks(vitamin: VitaminContext): void {
-    vitamin.hookRegistry.register({
-      name: 'service_session_attach',
-      timing: 'session.created',
-      priority: 5,
-      enabled: true,
-      handle: ({ sessionId }) => {
-        const session = this.getSession(sessionId)
-        if (session) {
-          this.attachSession(session)
-        }
-      },
-    })
+    vitamin.hookRegistry.register(
+      defineHook({
+        name: 'service_session_attach',
+        timing: 'session.created',
+        priority: 5,
+        handle: ({ sessionId }) => {
+          const session = this.getSession(sessionId)
+          if (session) {
+            this.attachSession(session)
+          }
+        },
+      }),
+    )
   }
 
   unregisterHooks(vitamin: VitaminContext): void {

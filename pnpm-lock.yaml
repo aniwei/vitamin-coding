@@ -321,6 +321,9 @@ importers:
       '@vitamin/devtools':
         specifier: workspace:*
         version: link:../devtools
+      '@vitamin/hooks':
+        specifier: workspace:*
+        version: link:../hooks
       '@vitamin/shared':
         specifier: workspace:*
         version: link:../shared
