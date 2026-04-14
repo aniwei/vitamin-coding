@@ -3,34 +3,34 @@ import Badge from '@/components/badge'
 import Checkbox from '@/components/checkbox'
 import SearchInput from '@/components/search-input'
 import Button from '@/components/button'
-import { useCallback, useMemo, useState } from 'react'
+import { memo, useCallback, useMemo, useState } from 'react'
 import { clsx } from 'clsx'
 
 import SearchMenu from '@/assets/search-menu.svg'
 import type { FC } from 'react'
 
-interface CheckboxListOption {
+type CheckboxListOption = {
   label: string
   value: string
   disabled?: boolean
 }
 
-interface CheckboxListProps {
+type CheckboxListProps = {
   title?: string
   label?: string
   description?: string
   options: CheckboxListOption[]
   value?: string[]
-  onChange?: (value: string[]) => void
   disabled?: boolean
   containerClassName?: string
   showSelectAll?: boolean
   showCount?: boolean
   showSearch?: boolean
   maxHeight?: string | number
+  onChange?: (value: string[]) => void
 }
 
-export const CheckboxList: FC<CheckboxListProps> = ({
+export const CheckboxList: FC<CheckboxListProps> = memo(({
   title = '',
   label,
   description,
@@ -165,7 +165,6 @@ export const CheckboxList: FC<CheckboxListProps> = ({
         <div
           className="p-1"
           style={maxHeight ? { maxHeight, overflowY: 'auto' } : {}}
-          data-testid="options-container"
         >
           {
             !filteredOptions.length
@@ -174,7 +173,7 @@ export const CheckboxList: FC<CheckboxListProps> = ({
                     searchQuery
                       ? <div className="flex flex-col items-center justify-center gap-2">
                           <img alt="search menu" src={SearchMenu.src} width={32} />
-                          <span className="text-text-secondary system-sm-regular">{t('operation.noSearchResults', { ns: 'common', content: title })}</span>
+                          <span className="text-text-secondary system-sm-regular">No results found</span>
                           <Button variant="secondary-accent" size="small" onClick={() => setSearchQuery('')}>Reset</Button>
                       </div>
                       : 'No options available'
@@ -219,6 +218,7 @@ export const CheckboxList: FC<CheckboxListProps> = ({
       </div>
     </div>
   )
-}
+})
 
+CheckboxList.displayName = 'CheckboxList'
 export default CheckboxList

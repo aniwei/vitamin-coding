@@ -5,14 +5,15 @@ type SubmittedContentProps = {
   content: string
 }
 
-const SubmittedContent = ({
+export const SubmittedContent: React.FC<SubmittedContentProps> = ({
   content,
-}: SubmittedContentProps) => {
+}) => {
   return (
-    <div data-testid="submitted-content">
+    <div>
       <Markdown content={content} />
     </div>
   )
 }
 
+SubmittedContent.displayName = 'SubmittedContent'
 export default React.memo(SubmittedContent)

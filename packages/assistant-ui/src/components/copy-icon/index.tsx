@@ -1,4 +1,4 @@
-import { useCallback } from 'react'
+import { memo, useCallback } from 'react'
 import { useClipboard } from '@/hooks/use-clipboard'
 import { Tooltip, TooltipContent, TooltipTrigger } from '@/components/ui/tooltip'
 
@@ -6,7 +6,7 @@ interface CopyIconProps {
   content: string
 }
 
-const CopyIcon: React.FC<CopyIconProps> = ({ content }) => {
+export const CopyIcon: React.FC<CopyIconProps> = memo(({ content }) => {
   const { copied, copy, reset } = useClipboard()
 
   const onCopy = useCallback(() => {
@@ -14,8 +14,7 @@ const CopyIcon: React.FC<CopyIconProps> = ({ content }) => {
   }, [copy, content])
 
   const tooltipText = copied
-    ? 'Copied'
-    : 'Copy'
+    ? 'Copied' : 'Copy'
 
   const safeTooltipText = tooltipText || ''
 
@@ -42,6 +41,7 @@ const CopyIcon: React.FC<CopyIconProps> = ({ content }) => {
       <TooltipContent>{safeTooltipText}</TooltipContent>
     </Tooltip>
   )
-}
+})
 
+CopyIcon.displayName = 'CopyIcon'
 export default CopyIcon

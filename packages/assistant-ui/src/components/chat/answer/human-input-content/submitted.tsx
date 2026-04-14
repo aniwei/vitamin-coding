@@ -1,7 +1,7 @@
-import type { SubmittedHumanInputContentProps } from './types'
-import { useMemo } from 'react'
 import ExecutedAction from './executed-action'
 import SubmittedContent from './submitted-content'
+import { useMemo } from 'react'
+import type { SubmittedHumanInputContentProps } from './types'
 
 export const SubmittedHumanInputContent = ({
   formData,

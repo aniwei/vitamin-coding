@@ -1,9 +1,9 @@
 import { clsx } from 'clsx'
-import { useCallback } from 'react'
+import { memo, useCallback } from 'react'
 
 const IndeterminateIcon = () => {
   return (
-    <div data-testid="indeterminate-icon">
+    <div>
       <svg xmlns="http://www.w3.org/2000/svg" width="12" height="12" viewBox="0 0 12 12" fill="none">
         <path d="M2.5 6H9.5" stroke="currentColor" strokeWidth="1.5" strokeLinecap="round" />
       </svg>
@@ -11,22 +11,22 @@ const IndeterminateIcon = () => {
   )
 }
 
-interface CheckboxProps {
+type CheckboxProps = {
   id?: string
   checked?: boolean
-  onCheck?: (event: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => void
   className?: string
   disabled?: boolean
   indeterminate?: boolean
+  onCheck?: (event: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => void
 }
 
-export const Checkbox: React.FC<CheckboxProps> = ({
+export const Checkbox: React.FC<CheckboxProps> = memo(({
   id,
   checked,
-  onCheck,
   className,
   disabled,
   indeterminate,
+  onCheck,
 }) => {
   const handleCheck = useCallback((event: React.MouseEvent<HTMLDivElement> | React.KeyboardEvent<HTMLDivElement>) => {
     if (disabled) {
@@ -65,16 +65,14 @@ export const Checkbox: React.FC<CheckboxProps> = ({
       )}
       onClick={handleCheck}
       onKeyDown={handleKeyDown}
-      data-testid={`checkbox-${id}`}
       role="checkbox"
-      aria-checked={indeterminate ? 'mixed' : !!checked}
-      aria-disabled={!!disabled}
       tabIndex={disabled ? -1 : 0}
     >
       {!checked && indeterminate && <IndeterminateIcon />}
       {checked && <div className="i-ri-check-line h-3 w-3" />}
     </div>
   )
-}
+})
 
+Checkbox.displayName = 'Checkbox'
 export default Checkbox

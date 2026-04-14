@@ -4,7 +4,7 @@ import * as React from 'react'
 import type { VariantProps } from 'class-variance-authority'
 import type { CSSProperties, FC } from 'react'
 
-const dividerVariants = cva('', {
+const dv = cva('', {
   variants: {
     type: {
       horizontal: 'my-2 h-[0.5px] w-full',
@@ -21,13 +21,14 @@ const dividerVariants = cva('', {
   },
 })
 
-interface DividerProps extends VariantProps<typeof dividerVariants> {
+type DividerProps = {
   className?: string
   style?: CSSProperties
-}
+} & VariantProps<typeof dv> 
 
 export const Divider: FC<DividerProps> = ({ type, backgroundStyle, className = '', style }) => {
-  return <div className={clsx(dividerVariants({ type, backgroundStyle }), 'shrink-0', className)} style={style} data-testid="divider"></div>
+  return <div className={clsx(dv({ type, backgroundStyle }), 'shrink-0', className)} style={style} data-testid="divider"></div>
 }
 
+Divider.displayName = 'Divider'
 export default Divider

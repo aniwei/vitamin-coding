@@ -1,12 +1,11 @@
-'use client'
+import Button from '@/components/button'
+import ContentItem from './content-item'
+import { useCallback, useState } from 'react'
+import { getButtonStyle, initializeInputs, splitByOutputVar } from './utils'
+import * as React from 'react'
 import type { HumanInputFormProps } from './types'
 import type { ButtonProps } from '@/components/button'
 import type { UserAction } from '@/app/components/workflow/nodes/human-input/types'
-import * as React from 'react'
-import { useCallback, useState } from 'react'
-import Button from '@/components/button'
-import ContentItem from './content-item'
-import { getButtonStyle, initializeInputs, splitByOutputVar } from './utils'
 
 const HumanInputForm = ({
   formData,
