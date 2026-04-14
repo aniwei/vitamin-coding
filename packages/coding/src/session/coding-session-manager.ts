@@ -50,7 +50,6 @@ export interface RemoteSessionManagerOptions extends CodingSessionManagerOptions
   timeoutMs?: number
 }
 
-// 组合层：将 ProviderRegistry + aiStream 组装成 StreamFunction
 // @vitamin/agent 不感知具体 LLM 实现，由此处注入
 function makeStream(registry: ProviderRegistry): StreamFunction {
   return (context, signal) => {
@@ -60,29 +59,23 @@ function makeStream(registry: ProviderRegistry): StreamFunction {
 }
 
 export class CodingSessionManager {
-  // 单一数据源：sessions Map 就是所有在线 session 的权威状态
   private readonly sessions = new Map<string, AgentSession>()
-  // 记录每个 session 的配置，供 forkSession 复用
   private readonly configs = new Map<string, ResolvedSessionConfig>()
 
-  // 持久化层（统一接口，内存 / 磁盘 / 远端三种实现）
   private readonly persistence: SessionPersistence<AgentMessage>
 
-  // Capacity 管理
   private readonly maxSessions: number
   private readonly idleTimeoutMs: number
   private readonly threshold: number
 
-  // 活跃 session 跟踪
   private activeSessionId?: string
 
-  // 跨切面依赖
   private readonly stream: StreamFunction
   private readonly hookRegistry: HookRegistry
   private readonly logger: Logger
   private readonly devtools?: Devtools
 
-  // restore / restoreAll 路径使用的配置工厂（非静态快照）
+  // 供 restore / restoreAll 路径使用，确保每次拿到最新配置
   private readonly configProvider?: () => ResolvedSessionConfig
 
   constructor(options: CodingSessionManagerOptions, persistence: SessionPersistence<AgentMessage>) {

@@ -16,7 +16,6 @@ export type {
   EventBridgeMapper,
   IMessageSender,
   LogEntryData,
-  // Per-message data types
   ChatQueryData,
   ChatApprovalData,
   ChatAskUserResponseData,

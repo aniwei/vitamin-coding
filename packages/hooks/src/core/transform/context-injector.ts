@@ -11,9 +11,7 @@ export interface ContextProvider {
   getContext: () => string | Promise<string | null> | null
 }
 
-export function createContextInjectorHook(
-  config: ContextInjectorConfig,
-): HookSpec {
+export function createContextInjectorHook(config: ContextInjectorConfig): HookSpec {
   return defineHook({
     name: 'context-injector',
     timing: 'messages.transform',

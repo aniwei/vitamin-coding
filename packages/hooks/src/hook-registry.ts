@@ -17,7 +17,14 @@ import {
   createBackgroundEndHook,
 } from './core/background/background-tracker'
 
-import type { HookHandle, HookInput, HookOutput, HookTiming, InterceptorTiming, ObserverTiming } from './types'
+import type {
+  HookHandle,
+  HookInput,
+  HookOutput,
+  HookTiming,
+  InterceptorTiming,
+  ObserverTiming,
+} from './types'
 import {
   type HookSpec,
   type ObserverRuntimeHook,
@@ -133,9 +140,7 @@ export class HookRegistry {
   register(spec: HookSpec): void {
     this.hooks[spec.timing].push(spec)
 
-    logger.debug(
-      `Hook registered: ${spec.name} (timing=${spec.timing}, priority=${spec.priority})`,
-    )
+    logger.debug(`Hook registered: ${spec.name} (timing=${spec.timing}, priority=${spec.priority})`)
   }
 
   registerAll(specs: HookSpec[]): void {

@@ -166,7 +166,13 @@ export class VitaminApp implements VitaminContext {
       this.devtools = new Devtools({ port })
 
       this.globalLogSubscription = attachLogListener((data) => {
-        if (typeof data === 'object' && data !== null && 'name' in data && 'level' in data && 'msg' in data) {
+        if (
+          typeof data === 'object' &&
+          data !== null &&
+          'name' in data &&
+          'level' in data &&
+          'msg' in data
+        ) {
           const log = data as { name: string; level: string; msg: string }
           if (log.name === logger.name) {
             this.devtools?.sendLog(log)
@@ -196,13 +202,11 @@ export class VitaminApp implements VitaminContext {
         workspaceDir: this.workspaceDir,
       })
 
-    // 初始化 FileStateManager 和 OperationalLearningStore
     this.fileStateManager = new FileStateManager()
     this.learningStore = new OperationalLearningStore({
       path: `${this.workspaceDir}/.vitamin/lessons.json`,
     })
 
-    // 初始化 PromptManager（默认使用内置 prompts 目录）
     const promptProvider = createPromptProvider(
       options.prompt ?? {
         type: 'local',
@@ -212,7 +216,6 @@ export class VitaminApp implements VitaminContext {
 
     this.promptManager = new PromptManager({ provider: promptProvider })
 
-    // 三大子系统初始化
     this.codingSessionManager = this.initSessionManager(options, defaultModel)
     this.orchestrator = this.initOrchestrator()
     this.toolRegistry = this.initToolRegistry(options)
@@ -220,7 +223,6 @@ export class VitaminApp implements VitaminContext {
     this.permissionRegistry = permissionRegistry
     this.auditLog = auditLog
 
-    // 注册 hooks
     this.registerHooks()
   }
 
@@ -356,17 +358,14 @@ export class VitaminApp implements VitaminContext {
   ): Promise<ResolvedSessionConfig & { id?: string }> {
     const promptPreset = options.promptPreset ?? (options.agentName ? 'subagent' : 'main')
 
-    // Layer 1: 读取所有来源（纯同步，无决策）
     const agent = this.readAgentSources(options.agentName, promptPreset)
 
-    // slot 合并：调用方 > agentConfig > agentProfile.tier 映射
+    // slot 优先级：调用方 > agentConfig > agentProfile.tier 映射
     const slot = options.slot ?? agent.slot ?? TIER_TO_SLOT[agent.profileTier ?? '']
 
-    // Layer 2: 各字段独立决策
     const model = this.resolveModel(options.model, slot)
     const tools = this.resolveTools(options.tools, agent.toolNames)
 
-    // ── Prompt ──────────────────────────────────────────────────────────────
     const promptRefresh =
       options.promptRefresh ??
       (async () => {
@@ -428,14 +427,14 @@ export class VitaminApp implements VitaminContext {
   // ── Private init methods ─────────────────────────────────────────────────
 
   /**
-   * SessionManager 初始化：根据存储方式（disk / remote / memory）创建对应实现。
+   * SessionManager: configProvider 仅供 restore 路径使用，
+   * 正常 createSession 走 resolveSessionConfig 完整解析。
    */
   private initSessionManager(
     options: VitaminAppOptions,
     defaultModel: Model | undefined,
   ): CodingSessionManager {
-    // configProvider 仅供 restore / restoreAll 路径使用；
-    // 正常 createSession 路径会通过 resolveSessionConfig 完整解析。
+    // configProvider 仅供 restore / restoreAll 路径使用
     const configProvider: (() => ResolvedSessionConfig) | undefined = defaultModel
       ? () => ({
           model: defaultModel,
@@ -468,7 +467,7 @@ export class VitaminApp implements VitaminContext {
       if (!options.sessionFetch || !options.sessionGetAuth) {
         throw new Error(
           'sessionFetch and sessionGetAuth are required when using sessionUrl. ' +
-          'Pass them in VitaminAppOptions.',
+            'Pass them in VitaminAppOptions.',
         )
       }
       return createRemoteCodingSessionManager({
@@ -483,9 +482,6 @@ export class VitaminApp implements VitaminContext {
     return createInMemoryCodingSessionManager(managerOptions)
   }
 
-  /**
-   * Orchestrator 初始化：注入 agent 运行回调。
-   */
   private initOrchestrator(): Orchestrator {
     const run = async (runOptions: {
       prompt: string
@@ -538,18 +534,21 @@ export class VitaminApp implements VitaminContext {
     })
   }
 
-  /**
-   * ToolRegistry 初始化：注册所有工具，注入回调。
-   */
   private initToolRegistry(options: VitaminAppOptions): ToolRegistry {
     const skillProvider = options.skillProvider
     const loadSkill: LoadSkill = skillProvider
       ? (path) => skillProvider.load(path)
-      : async () => ({ success: false, error: 'Skill provider not configured. Pass skillProvider to createVitamin().' })
+      : async () => ({
+          success: false,
+          error: 'Skill provider not configured. Pass skillProvider to createVitamin().',
+        })
 
     const executeSkill: ExecuteSkill = skillProvider
       ? (name, input, parameters) => skillProvider.execute(name, input, parameters)
-      : async () => ({ success: false, error: 'Skill provider not configured. Pass skillProvider to createVitamin().' })
+      : async () => ({
+          success: false,
+          error: 'Skill provider not configured. Pass skillProvider to createVitamin().',
+        })
 
     const registry = createToolRegistry(this.workspaceDir, {
       callAgent: this.orchestrator.callAgent,
@@ -615,9 +614,6 @@ export class VitaminApp implements VitaminContext {
     return registry
   }
 
-  /**
-   * 权限系统初始化：基于 toolRegistry 推导工具集合，注册守卫 hook。
-   */
   private initPermissions(): {
     permissionRegistry: PermissionPolicyRegistry
     auditLog: PermissionAuditLog
@@ -635,18 +631,11 @@ export class VitaminApp implements VitaminContext {
     this.hookRegistry.register(
       createToolGuidanceHook(this.toolRegistry, () => this.defaultToolPreset),
     )
-    this.hookRegistry.register(
-      createEnvironmentInjectionHook(this.workspaceDir),
-    )
-    this.hookRegistry.register(
-      createLessonInjectionHook(this.learningStore, this.promptManager),
-    )
+    this.hookRegistry.register(createEnvironmentInjectionHook(this.workspaceDir))
+    this.hookRegistry.register(createLessonInjectionHook(this.learningStore, this.promptManager))
     this.hookRegistry.registerAll(createPhaseTrackingHooks())
     this.hookRegistry.registerAll(
-      createSessionLearningHooks(
-        (id) => this.getSession(id),
-        this.promptManager,
-      ),
+      createSessionLearningHooks((id) => this.getSession(id), this.promptManager),
     )
   }
 

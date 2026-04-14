@@ -22,9 +22,7 @@ export interface ToolErrorTrackerConfig {
   decayWindowMs?: number
 }
 
-export function createToolErrorTrackerHook(
-  config?: ToolErrorTrackerConfig,
-): HookSpec {
+export function createToolErrorTrackerHook(config?: ToolErrorTrackerConfig): HookSpec {
   const threshold = config?.circuitBreakerThreshold ?? 5
   const decayMs = config?.decayWindowMs ?? 120_000
 

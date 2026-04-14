@@ -18,13 +18,8 @@ const logger = createLogger('@vitamin/tools:find')
 const FindArgsSchema = z.object({
   pattern: z
     .string()
-    .describe(
-      'File name pattern with optional wildcards (*, ?), e.g. "*.ts", "data-??.json"',
-    ),
-  path: z
-    .string()
-    .optional()
-    .describe('Search starting path (default is project root)'),
+    .describe('File name pattern with optional wildcards (*, ?), e.g. "*.ts", "data-??.json"'),
+  path: z.string().optional().describe('Search starting path (default is project root)'),
   limit: z
     .number()
     .int()
@@ -82,18 +77,8 @@ export function createFind(
   }
 }
 
-async function prepareSearchArgs(
-  pattern: string,
-  normalizedSearchDir: string,
-  limit: number,
-) {
-  const args: string[] = [
-    '--glob',
-    '--color=never',
-    '--hidden',
-    '--max-results',
-    String(limit),
-  ]
+async function prepareSearchArgs(pattern: string, normalizedSearchDir: string, limit: number) {
+  const args: string[] = ['--glob', '--color=never', '--hidden', '--max-results', String(limit)]
 
   const ignores = new Set<string>()
   const root = join(normalizedSearchDir, '.gitignore')
@@ -137,16 +122,12 @@ async function find(
 
     if (results.length === 0) {
       return {
-        content: [
-          { type: 'text' as const, text: 'No files found matching pattern' },
-        ],
+        content: [{ type: 'text' as const, text: 'No files found matching pattern' }],
       }
     }
 
     const relativized = results.map((path) =>
-      path.startsWith(targetDir)
-        ? path.slice(targetDir.length + 1)
-        : relative(targetDir, path),
+      path.startsWith(targetDir) ? path.slice(targetDir.length + 1) : relative(targetDir, path),
     )
 
     const resultLimitReached = relativized.length >= limit
@@ -184,9 +165,7 @@ async function find(
 
   const fd = await binaryExecutorRegistry?.ensure('fd')
   if (!fd) {
-    throw new Error(
-      'Find tool requires a glob implementation or fd binary available',
-    )
+    throw new Error('Find tool requires a glob implementation or fd binary available')
   }
 
   const args = await prepareSearchArgs(pattern, targetDir, limit)
@@ -199,8 +178,7 @@ async function find(
       content: [
         {
           type: 'text',
-          text:
-            result.stderr?.trim() || `fd exited with code ${result.exitCode}`,
+          text: result.stderr?.trim() || `fd exited with code ${result.exitCode}`,
         },
       ],
     }

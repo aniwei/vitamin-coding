@@ -12,9 +12,7 @@ export interface IdleContinuationConfig {
   resumeWork: (sessionId: string) => void
 }
 
-export function createIdleContinuationHook(
-  config: IdleContinuationConfig,
-): HookSpec {
+export function createIdleContinuationHook(config: IdleContinuationConfig): HookSpec {
   return defineHook({
     name: 'idle-continuation',
     timing: 'session.idle',

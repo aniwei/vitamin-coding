@@ -11,9 +11,7 @@ import type { HookSpec } from '../../hook-spec'
 let cachedRules: string | null = null
 let cacheProjectRoot: string | null = null
 
-export function createRulesInjectorHook(
-  projectRoot: string,
-): HookSpec {
+export function createRulesInjectorHook(projectRoot: string): HookSpec {
   return defineHook({
     name: 'rules-injector',
     timing: 'tool.execute.before',

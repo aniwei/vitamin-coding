@@ -16,7 +16,6 @@ export interface SessionContext<T = unknown> {
   messages: T[]
 }
 
-// Session 元数据
 export interface SessionMetadata {
   createdAt: number
   lastActiveAt: number
@@ -97,7 +96,7 @@ export interface RemoteStorageOptions {
 
 export type StorageOptions = FileStorageOptions | RemoteStorageOptions
 
-// Session-specific pagination: sortBy 包含 session 域的字段（lastActiveAt）
+// sortBy 比 @vitamin/persistence 多了 lastActiveAt（session 域字段）
 export interface PaginationOptions {
   page: number
   pageSize?: number

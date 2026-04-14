@@ -142,7 +142,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
           : typeof rawTime === 'string'
             ? rawTime
             : new Date().toISOString()
-            
+
       const entry: LogEntryData = {
         id: ++this.logId,
         timestamp,

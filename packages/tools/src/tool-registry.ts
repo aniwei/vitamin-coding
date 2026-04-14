@@ -4,7 +4,8 @@ import {
 } from './binary/binary-executor-registry'
 import { registerBuiltinTools, type RegisterBuiltinOptions } from './register-builtin'
 import type { AgentTool } from '@vitamin/agent'
-import type { RegisteredTool, ToolMetadata, ToolPreset, ToolRegistrationOptions } from './types'
+import type { ToolPreset } from '@vitamin/setting'
+import type { RegisteredTool, ToolMetadata, ToolRegistrationOptions } from './types'
 
 const PRESET_INCLUDES: Record<ToolPreset, Set<ToolPreset>> = {
   minimal: new Set(['minimal']),
@@ -110,7 +111,7 @@ export class ToolRegistry {
   }
 
   getAvailable(preset: ToolPreset = 'standard'): RegisteredTool[] {
-    const includes = PRESET_INCLUDES[preset]
+    const includes = PRESET_INCLUDES[preset] ?? PRESET_INCLUDES.standard
     return this.getAll().filter((tool) => includes.has(tool.metadata.preset))
   }
 

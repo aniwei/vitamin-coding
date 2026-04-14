@@ -77,12 +77,7 @@ export type {
 } from './lsp'
 
 // 注册表类型
-export type {
-  ToolMetadata,
-  RegisteredTool,
-  ToolRegistrationOptions,
-  ToolFactory,
-} from './types'
+export type { ToolMetadata, RegisteredTool, ToolRegistrationOptions, ToolFactory } from './types'
 
 // Binary 工具执行器
 export {

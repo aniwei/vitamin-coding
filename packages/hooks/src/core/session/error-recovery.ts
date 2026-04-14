@@ -27,9 +27,7 @@ const DEFAULT_RECOVERABLE_PATTERNS = [
 // 每 session 的重试计数
 const retryCounters = new Map<string, number>()
 
-export function createErrorRecoveryHook(
-  config?: Partial<ErrorRecoveryConfig>,
-): HookSpec {
+export function createErrorRecoveryHook(config?: Partial<ErrorRecoveryConfig>): HookSpec {
   const maxRetries = config?.maxRetries ?? 3
   const patterns = config?.recoverablePatterns ?? DEFAULT_RECOVERABLE_PATTERNS
   const recoverFn = config?.recover

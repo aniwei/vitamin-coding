@@ -22,7 +22,7 @@ import type { PauseResumePayload } from '@vitamin/devtools'
 
 const logger = createLogger('@vitamin/service:inbound-router')
 
-// ─── Data extraction helpers (runtime-safe, no blind casts) ──────────────────
+// ─── Data extraction helpers ─────────────────────────────────────────────────
 
 function extractString(data: Record<string, unknown>, key: string): string | undefined {
   const v = data[key]
@@ -39,7 +39,10 @@ function extractNumber(data: Record<string, unknown>, key: string): number | und
   return typeof v === 'number' ? v : undefined
 }
 
-function extractRecord(data: Record<string, unknown>, key: string): Record<string, unknown> | undefined {
+function extractRecord(
+  data: Record<string, unknown>,
+  key: string,
+): Record<string, unknown> | undefined {
   const v = data[key]
   return v !== null && typeof v === 'object' && !Array.isArray(v)
     ? (v as Record<string, unknown>)
@@ -67,11 +70,18 @@ function parseChatAskUserResponse(data: Record<string, unknown>): ChatAskUserRes
   return { requestId, answers, cancelled, sessionId: extractString(data, 'sessionId') }
 }
 
-function parseChatPlanApprovalResponse(data: Record<string, unknown>): ChatPlanApprovalResponseData | null {
+function parseChatPlanApprovalResponse(
+  data: Record<string, unknown>,
+): ChatPlanApprovalResponseData | null {
   const requestId = extractString(data, 'requestId')
   const action = extractString(data, 'action')
   if (!requestId || !action) return null
-  return { requestId, action, feedback: extractString(data, 'feedback'), sessionId: extractString(data, 'sessionId') }
+  return {
+    requestId,
+    action,
+    feedback: extractString(data, 'feedback'),
+    sessionId: extractString(data, 'sessionId'),
+  }
 }
 
 function parseSessionSubscribe(data: Record<string, unknown>): SessionSubscribeData | null {
@@ -88,14 +98,18 @@ function parseDebuggerCommand(data: Record<string, unknown>): DebuggerCommandDat
   }
 }
 
-function parseDebuggerSetBreakpoint(data: Record<string, unknown>): DebuggerSetBreakpointData | null {
+function parseDebuggerSetBreakpoint(
+  data: Record<string, unknown>,
+): DebuggerSetBreakpointData | null {
   const point = extractString(data, 'point')
   const enabled = extractBoolean(data, 'enabled')
   if (point === undefined || enabled === undefined) return null
   return { point, enabled }
 }
 
-function parseDebuggerSetBreakpointsActive(data: Record<string, unknown>): DebuggerSetBreakpointsActiveData | null {
+function parseDebuggerSetBreakpointsActive(
+  data: Record<string, unknown>,
+): DebuggerSetBreakpointsActiveData | null {
   const active = extractBoolean(data, 'active')
   if (active === undefined) return null
   return { active }
@@ -180,9 +194,7 @@ export class InboundRouter {
   }
 
   private resolveSession(sessionId?: string) {
-    return sessionId
-      ? this.vitamin.getSession(sessionId)
-      : this.vitamin.getActiveSession()
+    return sessionId ? this.vitamin.getSession(sessionId) : this.vitamin.getActiveSession()
   }
 
   private handleQuery({ message, sessionId }: ChatQueryData): void {
@@ -213,7 +225,12 @@ export class InboundRouter {
     logger.debug(`ask_user response for session ${session.id}`)
   }
 
-  private handlePlanApprovalResponse({ requestId, action, feedback, sessionId }: ChatPlanApprovalResponseData): void {
+  private handlePlanApprovalResponse({
+    requestId,
+    action,
+    feedback,
+    sessionId,
+  }: ChatPlanApprovalResponseData): void {
     const session = this.resolveSession(sessionId)
     if (!session) return
 

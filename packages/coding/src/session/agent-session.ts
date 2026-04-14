@@ -547,7 +547,9 @@ export class AgentSession extends Subscription {
       messageCount,
     })
 
-    this.publish({ compaction_start: [{ type: 'compaction_start' as const, sessionId: this.id, messageCount }] })
+    this.publish({
+      compaction_start: [{ type: 'compaction_start' as const, sessionId: this.id, messageCount }],
+    })
     this.logger.info('Session %s compacting %d message(s)', this.id, compactedCount)
 
     this.session.compact(summary, compactedCount)
@@ -559,7 +561,9 @@ export class AgentSession extends Subscription {
       retainedCount,
     })
 
-    this.publish({ compaction_end: [{ type: 'compaction_end' as const, sessionId: this.id, retainedCount }] })
+    this.publish({
+      compaction_end: [{ type: 'compaction_end' as const, sessionId: this.id, retainedCount }],
+    })
     this.logger.info(
       'Session %s compaction finished, retained %d message(s)',
       this.id,

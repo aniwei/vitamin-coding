@@ -1,8 +1,6 @@
-// 关键词检测 Hook — 检测 plan/build 等触发词
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'
 
-// plan/build 模式关键词
 const PLAN_KEYWORDS = ['plan', 'design', 'architect', 'roadmap', 'blueprint']
 const BUILD_KEYWORDS = ['build', 'implement', 'create', 'develop', 'construct']
 
@@ -29,7 +27,6 @@ export function createKeywordDetectionHook(): HookSpec {
   })
 }
 
-// 从消息中提取文本内容
 function extractText(message: unknown): string | null {
   if (typeof message !== 'object' || message === null) return null
   if (!('content' in message)) return null

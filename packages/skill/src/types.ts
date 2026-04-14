@@ -1,6 +1,4 @@
-// @vitamin/skill — Skill 类型定义
 // 兼容 Agent Skills 开放标准 (agentskills.io/specification)
-// 参考 superpowers / gstack / infiAgent SKILL.md 格式
 
 import type { Events } from '@vitamin/shared'
 
@@ -125,11 +123,8 @@ export interface SkillEvents extends Events {
 // ─── Skill Provider 接口（供上层 VitaminApp 注入） ───
 
 /**
- * SkillProvider — skill 功能的消费方接口。
- *
  * 上层（如 VitaminApp）通过此接口注入 skill 能力。
  * 未注入时 skill 相关工具返回"功能未配置"提示。
- * 实现方（如 SkillRegistry）应实现此接口。
  */
 export interface SkillProvider {
   /** 从指定路径加载 SKILL.md 定义 */
