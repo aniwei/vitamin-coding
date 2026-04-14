@@ -1,7 +1,27 @@
 import ImageGallery from '@/components/image-gallery'
 import { memo, useEffect, useMemo, useState } from 'react'
-import { getMarkdownImageURL } from './utils'
+import { getMarkdownImageURL } from '../shared'
 import type { SimplePluginInfo } from '../streamdown-wrapper'
+
+const useBlobUrl = (data: Blob | undefined): string | undefined => {
+  const [blobUrl, setBlobUrl] = useState<string>()
+
+  useEffect(() => {
+    if (!data) {
+      setBlobUrl(undefined)
+      return
+    }
+
+    const objectUrl = URL.createObjectURL(data)
+    setBlobUrl(objectUrl)
+
+    return () => {
+      URL.revokeObjectURL(objectUrl)
+    }
+  }, [data])
+
+  return blobUrl
+}
 
 interface ImageProps {
   src: string
@@ -15,29 +35,11 @@ export const PluginImage: React.FC<ImageProps> = memo(({
   pluginInfo 
 }) => {
   const { pluginId } = pluginInfo || {}
-  const [blobUrl, setBlobUrl] = useState<string>()
-
-  useEffect(() => {
-    if (!data) {
-      setBlobUrl(undefined)
-     
-    } else {
-      const objectUrl = URL.createObjectURL(data)
-      setBlobUrl(objectUrl)
-    }
-
-    return () => {
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl)
-      }
-    }
-  }, [data])
+  const blobUrl = useBlobUrl(data)
 
   const url = useMemo(() => {
-    if (blobUrl) {
+    if (blobUrl)
       return blobUrl
-    }
-      
     return getMarkdownImageURL(src, pluginId)
   }, [blobUrl, pluginId, src])
 

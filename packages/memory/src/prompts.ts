@@ -95,7 +95,9 @@ export function buildTurnPrefixPrompt(turnPrefixMessages: string): string {
 }
 
 export function buildMemoryInjection(memories: Map<string, string>): string {
-  if (memories.size === 0) return ''
+  if (memories.size === 0) {
+    return ''
+  }
 
   const parts: string[] = ['<agent_memory>']
 

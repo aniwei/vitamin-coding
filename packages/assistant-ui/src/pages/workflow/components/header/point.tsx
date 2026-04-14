@@ -1,7 +1,7 @@
 import Button from '@/components/button'
 import useTheme from '@/hooks/use-theme'
 import { memo } from 'react'
-import { Env as Icon } from '@/components/icons/src/vender/line/others'
+import { Env as Icon } from '@/components/icons/line/others'
 import { clsx } from 'clsx'
 
 interface PointProps {

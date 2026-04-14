@@ -18,6 +18,7 @@ import {
   Think,
   Video,
 } from './blocks'
+import { getAllowedTagAttributes, getAllowedTagNames, urlTransform } from './shared'
 import type { ComponentType } from 'react'
 import type { Components, StreamdownProps } from 'streamdown'
 
@@ -43,97 +44,37 @@ const mathPlugin = createMathPlugin({
   singleDollarTextMath: false,
 })
 
-export const urlTransform = (
-  uri: string
-): string | undefined => {
-  const PERMITTED_SCHEME_REGEX = /^(https?|ircs?|mailto|xmpp|abbr):$/i
-
-  if (uri.startsWith('#')) {
-    return uri
-  }
-
-  if (uri.startsWith('//')) {
-    return uri
-  }
-
-  const colonIndex = uri.indexOf(':')
-  if (colonIndex === -1) {
-    return uri
-  }
-
-  const slashIndex = uri.indexOf('/')
-  const questionMarkIndex = uri.indexOf('?')
-  const hashIndex = uri.indexOf('#')
-
-  if (
-    (slashIndex !== -1 && colonIndex > slashIndex) || 
-    (questionMarkIndex !== -1 && colonIndex > questionMarkIndex) || 
-    (hashIndex !== -1 && colonIndex > hashIndex)
-  ) {
-    return uri
-  }
-
-  const scheme = uri.substring(0, colonIndex + 1).toLowerCase()
-  if (PERMITTED_SCHEME_REGEX.test(scheme)) {
-    return uri
-  }
-
-  if (scheme === 'data:') {
-    return uri
-  }
-
-  return undefined
-}
-
-const ALLOWED_TAGS: Record<string, string[]> = {
-  button: ['dataVariant', 'dataSize', 'dataMessage', 'dataLink'],
-  form: ['dataFormat'],
-  input: ['type', 'name', 'value', 'placeholder', 'checked', 'dataTip', 'dataOptions'],
-  textarea: ['name', 'placeholder', 'value'],
-  label: ['htmlFor'],
-  details: ['dataThink'],
-  video: ['src'],
-  audio: ['src'],
-  source: ['src'],
-  mark: [],
-  sub: [],
-  sup: [],
-  kbd: [],
-  // custom tags from human input node
-  variable: ['dataPath'],
-  section: ['dataName'],
-}
-
 function buildRehypePlugins(extraPlugins?: PluggableList): PluggableList {
   const [sanitizePlugin, defaultSanitizeSchema]
     = defaultRehypePlugins.sanitize as [Pluggable, SanitizeSchema]
+  const allowedTagNames = getAllowedTagNames()
 
   const tagNamesSet = new Set([
     ...(defaultSanitizeSchema.tagNames ?? []),
-    ...Object.keys(ALLOWED_TAGS),
+    ...allowedTagNames,
   ])
 
   const mergedAttributes: Record<string, AttributeDefinition[]> = {
     ...(defaultSanitizeSchema.attributes ?? {}),
   }
 
-  for (const tag of Object.keys(ALLOWED_TAGS)) {
+  for (const tag of allowedTagNames) {
+    const tagAllowedAttributes = getAllowedTagAttributes(tag)
     const existing = mergedAttributes[tag]
 
     if (existing) {
-      const overrideNames = new Set(ALLOWED_TAGS[tag])
+      const overrideNames = new Set(tagAllowedAttributes)
       const filtered = existing.filter((entry) => {
         const name = typeof entry === 'string' ? entry : entry[0]
         return !overrideNames.has(name as string)
       })
 
-      mergedAttributes[tag] = [...filtered, ...ALLOWED_TAGS[tag]]
+      mergedAttributes[tag] = [...filtered, ...tagAllowedAttributes]
     } else {
-      mergedAttributes[tag] = ALLOWED_TAGS[tag]
+      mergedAttributes[tag] = tagAllowedAttributes
     }
   }
 
-  
   const { input: _inputRequired, ...requiredRest } = (defaultSanitizeSchema.required ?? {})
   const clobber = (defaultSanitizeSchema.clobber ?? []).filter(k => k !== 'name')
 
@@ -186,19 +127,19 @@ const useComponents = (
       : <Image src={String(props.src ?? '')} />
     
 
-    const P = (props: { children?: React.ReactNode }) => pluginInfo 
-      ? <PluginParagraph {...props} pluginInfo={pluginInfo} /> 
+    const P = (props: { children?: React.ReactNode, node?: any }) => pluginInfo 
+      ? <PluginParagraph {...props} data={undefined} pluginInfo={pluginInfo} /> 
       : <Paragraph {...props} />
 
 
     return {
       code: Code,
-      video: Video,
-      audio: Audio,
-      a: Link,
+      video: Video as ComponentType,
+      audio: Audio as ComponentType,
+      a: Link as ComponentType,
       img: Img,
       p: P,
-      button: Button,
+      button: Button as ComponentType,
       form: Form as ComponentType,
       details: Think as ComponentType,
       ...customComponents,

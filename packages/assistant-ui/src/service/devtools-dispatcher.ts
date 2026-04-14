@@ -1,4 +1,4 @@
-import { ws } from './websocket'
+import { ws } from './ws'
 import { useDevtoolsStore } from '../stores/devtools'
 import { useLogStore } from '../stores/logs'
 import type { Breakpoint, CommandRejectCode, DebugSnapshot } from '../types/devtools'

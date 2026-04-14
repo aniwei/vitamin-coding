@@ -9,7 +9,6 @@ export type {
   PermissionMode,
   PermissionRuleConfig,
   PermissionPolicySetting,
-  WorkflowSlot,
   SettingWarning,
   ConfigWarning,
   LoadSettingOptions,
@@ -24,7 +23,6 @@ export {
   TOOL_PRESETS,
   VITAMIN_DEFAULT_CONFIG,
   VITAMIN_SETTING_KEYS,
-  WORKFLOW_SLOTS,
 } from './types'
 
 export { migrate, registerMigration, resetMigrations } from './migrator'
@@ -50,5 +48,4 @@ export { RemoteSettingStore } from './http-store'
 export { InMemorySettingStore } from './memory-store'
 export { createFileSettingStore, createHttpSettingStore } from './persistence-store'
 
-// Presets (JSON data)
 export { BUILTIN_AGENT_PROFILES, TASK_TYPE_PROFILE_MAP } from './presets'

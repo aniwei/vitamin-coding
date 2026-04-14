@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import Button from '@/components/button'
-import { GlobalVariable } from '@/components/icons/src/vender/line/others'
+import { GlobalVariable } from '@/components/icons/line/others'
 import { useInputFieldPanel } from '@/app/components/rag-pipeline/hooks'
 import { useStore } from '@/app/components/workflow/store'
 import useTheme from '@/hooks/use-theme'

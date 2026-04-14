@@ -1,4 +1,4 @@
-import { ChevronRight } from '@/components/icons/src/vender/line/arrows'
+import { ChevronRight } from '@/components/icons/line/arrows'
 
 export default function ContentSwitch({
   count,

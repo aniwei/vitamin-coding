@@ -95,7 +95,9 @@ export class StdioTransport implements McpTransport {
   private processBuffer(): void {
     while (this.buffer.length > 0) {
       const headerEnd = this.buffer.indexOf('\r\n\r\n')
-      if (headerEnd === -1) break
+      if (headerEnd === -1) {
+        break
+      }
 
       const header = this.buffer.slice(0, headerEnd)
       const match = /Content-Length:\s*(\d+)/i.exec(header)
@@ -108,7 +110,9 @@ export class StdioTransport implements McpTransport {
       const bodyStart = headerEnd + 4
       const bodyEnd = bodyStart + contentLength
 
-      if (this.buffer.length < bodyEnd) break
+      if (this.buffer.length < bodyEnd) {
+        break
+      }
 
       const body = this.buffer.slice(bodyStart, bodyEnd)
       this.buffer = this.buffer.slice(bodyEnd)
@@ -205,7 +209,9 @@ export class SseTransport implements McpTransport {
 
   private async consumeStream(response: Response): Promise<void> {
     const reader = response.body?.getReader()
-    if (!reader) return
+    if (!reader) {
+      return
+    }
 
     const decoder = new TextDecoder()
     let buffer = ''
@@ -213,7 +219,9 @@ export class SseTransport implements McpTransport {
     try {
       while (true) {
         const { done, value } = await reader.read()
-        if (done) break
+        if (done) {
+          break
+        }
 
         buffer += decoder.decode(value, { stream: true })
         const lines = buffer.split('\n')

@@ -1,4 +1,4 @@
-import { ChatBotSlim } from '@/components/icons/src/vender/line/communication'
+import { ChatBotSlim } from '@/components/icons/line/communication'
 
 export const Empty = () => {
 

@@ -43,9 +43,13 @@ export interface DiskSessionManagerOptions extends CodingSessionManagerOptions {
 
 export interface RemoteSessionManagerOptions extends CodingSessionManagerOptions {
   sessionUrl: string
+  /** fetch 实现（必填）。在浏览器环境可传 globalThis.fetch，Node.js 需传兼容实现。 */
+  fetch: typeof globalThis.fetch
+  /** 返回认证 token 的工厂函数（必填）。 */
+  getAuth: () => Promise<{ token: string }>
+  timeoutMs?: number
 }
 
-// 组合层：将 ProviderRegistry + aiStream 组装成 StreamFunction
 // @vitamin/agent 不感知具体 LLM 实现，由此处注入
 function makeStream(registry: ProviderRegistry): StreamFunction {
   return (context, signal) => {
@@ -55,29 +59,23 @@ function makeStream(registry: ProviderRegistry): StreamFunction {
 }
 
 export class CodingSessionManager {
-  // 单一数据源：sessions Map 就是所有在线 session 的权威状态
   private readonly sessions = new Map<string, AgentSession>()
-  // 记录每个 session 的配置，供 forkSession 复用
   private readonly configs = new Map<string, ResolvedSessionConfig>()
 
-  // 持久化层（统一接口，内存 / 磁盘 / 远端三种实现）
   private readonly persistence: SessionPersistence<AgentMessage>
 
-  // Capacity 管理
   private readonly maxSessions: number
   private readonly idleTimeoutMs: number
   private readonly threshold: number
 
-  // 活跃 session 跟踪
   private activeSessionId?: string
 
-  // 跨切面依赖
   private readonly stream: StreamFunction
   private readonly hookRegistry: HookRegistry
   private readonly logger: Logger
   private readonly devtools?: Devtools
 
-  // restore / restoreAll 路径使用的配置工厂（非静态快照）
+  // 供 restore / restoreAll 路径使用，确保每次拿到最新配置
   private readonly configProvider?: () => ResolvedSessionConfig
 
   constructor(options: CodingSessionManagerOptions, persistence: SessionPersistence<AgentMessage>) {
@@ -155,7 +153,7 @@ export class CodingSessionManager {
     // 此时发布 session_start 事件可被正确接收。
     agentSession.notifyCreated()
 
-    this.logger.info('Session %s created', id)
+    this.logger.info({ sessionId: id }, 'Session created')
 
     return agentSession
   }
@@ -175,7 +173,9 @@ export class CodingSessionManager {
 
   async removeSession(id: string): Promise<boolean> {
     const agentSession = this.sessions.get(id)
-    if (!agentSession) return false
+    if (!agentSession) {
+      return false
+    }
 
     agentSession.dispose()
     this.sessions.delete(id)
@@ -191,7 +191,7 @@ export class CodingSessionManager {
       sessionId: id,
       metadata: {},
     })
-    this.logger.info('Session %s removed', id)
+    this.logger.info({ sessionId: id }, 'Session removed')
 
     return true
   }
@@ -203,10 +203,14 @@ export class CodingSessionManager {
   async forkSession(sourceId: string, newId?: string): Promise<AgentSession | undefined> {
     const sourceSession = this.sessions.get(sourceId)
     const sourceConfig = this.configs.get(sourceId)
-    if (!sourceSession || !sourceConfig) return undefined
+    if (!sourceSession || !sourceConfig) {
+      return undefined
+    }
 
     const sourceRaw = sourceSession.session
-    if (!(sourceRaw instanceof InMemorySession)) return undefined
+    if (!(sourceRaw instanceof InMemorySession)) {
+      return undefined
+    }
 
     const id = newId ?? crypto.randomUUID()
     this.prepareCapacity(id)
@@ -241,13 +245,15 @@ export class CodingSessionManager {
     this.sessions.set(id, agentSession)
     this.configs.set(id, forkedConfig)
 
-    this.logger.info('Session %s forked from %s', id, sourceId)
+    this.logger.info({ sessionId: id, sourceId }, 'Session forked')
     return agentSession
   }
 
   async save(id: string): Promise<void> {
     const agentSession = this.sessions.get(id)
-    if (!agentSession) return
+    if (!agentSession) {
+      return
+    }
 
     const rawSession = agentSession.session
     if (rawSession instanceof InMemorySession) {
@@ -271,13 +277,19 @@ export class CodingSessionManager {
    * 若未提供 configProvider 则返回 null。
    */
   async restore(id: string): Promise<AgentSession | null> {
-    if (!this.configProvider) return null
+    if (!this.configProvider) {
+      return null
+    }
 
     const existing = this.sessions.get(id)
-    if (existing) return existing
+    if (existing) {
+      return existing
+    }
 
     const snapshot = await this.persistence.load(id)
-    if (!snapshot) return null
+    if (!snapshot) {
+      return null
+    }
 
     if (!this.canAccommodate(id)) {
       throw new Error(`Max sessions (${this.maxSessions}) reached, cannot restore ${id}.`)
@@ -291,7 +303,7 @@ export class CodingSessionManager {
     this.sessions.set(id, agentSession)
     this.configs.set(id, config)
 
-    this.logger.info('Session %s restored', id)
+    this.logger.info({ sessionId: id }, 'Session restored')
     return agentSession
   }
 
@@ -300,18 +312,26 @@ export class CodingSessionManager {
    * 若未提供 configProvider 则直接返回 0。
    */
   async restoreAll(): Promise<number> {
-    if (!this.configProvider) return 0
+    if (!this.configProvider) {
+      return 0
+    }
 
     const ids = await this.persistence.list()
     let restored = 0
 
     for (const id of ids) {
-      if (this.sessions.has(id)) continue
+      if (this.sessions.has(id)) {
+        continue
+      }
 
       const snapshot = await this.persistence.load(id)
-      if (!snapshot) continue
+      if (!snapshot) {
+        continue
+      }
 
-      if (!this.canAccommodate(id)) break
+      if (!this.canAccommodate(id)) {
+        break
+      }
 
       const rawSession = new InMemorySession<AgentMessage>(snapshot.id)
       rawSession.restoreEntries(snapshot.entries, snapshot.metadata, snapshot.leafId)
@@ -323,7 +343,7 @@ export class CodingSessionManager {
       restored++
     }
 
-    this.logger.info('Restored %d session(s)', restored)
+    this.logger.info({ count: restored }, 'Sessions restored')
     return restored
   }
 
@@ -352,7 +372,9 @@ export class CodingSessionManager {
   }
 
   private prepareCapacity(incomingId: string): void {
-    if (this.sessions.has(incomingId)) return
+    if (this.sessions.has(incomingId)) {
+      return
+    }
 
     if (this.sessions.size + 1 > this.threshold) {
       this.collectIdle()
@@ -364,7 +386,9 @@ export class CodingSessionManager {
   }
 
   private canAccommodate(incomingId: string): boolean {
-    if (this.sessions.has(incomingId)) return true
+    if (this.sessions.has(incomingId)) {
+      return true
+    }
 
     if (this.sessions.size + 1 > this.threshold) {
       this.collectIdle()
@@ -407,11 +431,9 @@ export function createRemoteCodingSessionManager(
 
   const persistence = new RemoteSessionPersistence<AgentMessage>({
     baseUrl: sessionUrl,
-    fetch() {
-      throw new Error('Fetch implementation is required for RemoteSessionPersistence')
-    },
-    getAuth: async () => ({ token: '' }),
-    timeoutMs: 30_000,
+    fetch: options.fetch,
+    getAuth: options.getAuth,
+    timeoutMs: options.timeoutMs ?? 30_000,
   })
 
   return new CodingSessionManager(options, persistence)

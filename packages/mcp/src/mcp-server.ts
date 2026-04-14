@@ -55,7 +55,9 @@ export class VitaminMcpServer {
       // Content-Length framing
       while (true) {
         const headerEnd = buffer.indexOf('\r\n\r\n')
-        if (headerEnd === -1) break
+        if (headerEnd === -1) {
+          break
+        }
 
         const header = buffer.substring(0, headerEnd)
         const match = header.match(/Content-Length:\s*(\d+)/i)
@@ -67,7 +69,9 @@ export class VitaminMcpServer {
         const contentLength = parseInt(match[1]!, 10)
         const bodyStart = headerEnd + 4
 
-        if (buffer.length < bodyStart + contentLength) break
+        if (buffer.length < bodyStart + contentLength) {
+          break
+        }
 
         const body = buffer.substring(bodyStart, bodyStart + contentLength)
         buffer = buffer.substring(bodyStart + contentLength)
@@ -187,8 +191,12 @@ export class VitaminMcpServer {
         id: request.id,
         result: {
           content: (result.content ?? []).map((c) => {
-            if (c.type === 'text') return { type: 'text', text: c.text }
-            if (c.type === 'image') return { type: 'image', data: c.source, mimeType: c.mime }
+            if (c.type === 'text') {
+              return { type: 'text', text: c.text }
+            }
+            if (c.type === 'image') {
+              return { type: 'image', data: c.source, mimeType: c.mime }
+            }
             return { type: 'text', text: JSON.stringify(c) }
           }),
           isError: result.isError ?? false,

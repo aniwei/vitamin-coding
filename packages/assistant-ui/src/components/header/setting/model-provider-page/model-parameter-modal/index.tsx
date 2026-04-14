@@ -15,7 +15,7 @@ import type {
 } from '@/app/components/workflow/types'
 import { useMemo, useRef, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { ArrowNarrowLeft } from '@/components/icons/src/vender/line/arrows'
+import { ArrowNarrowLeft } from '@/components/icons/line/arrows'
 import Loading from '@/components/loading'
 import {
   Popover,

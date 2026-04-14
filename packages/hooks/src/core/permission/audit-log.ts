@@ -30,8 +30,12 @@ export class PermissionAuditLog {
 
   getEntries(filter?: { sessionId?: string; effect?: RuleEffect }): PermissionAuditEntry[] {
     let result = this.entries
-    if (filter?.sessionId) result = result.filter((e) => e.sessionId === filter.sessionId)
-    if (filter?.effect) result = result.filter((e) => e.decision.effect === filter.effect)
+    if (filter?.sessionId) {
+      result = result.filter((e) => e.sessionId === filter.sessionId)
+    }
+    if (filter?.effect) {
+      result = result.filter((e) => e.decision.effect === filter.effect)
+    }
     return result
   }
 

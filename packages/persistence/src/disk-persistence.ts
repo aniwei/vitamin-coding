@@ -50,7 +50,9 @@ export abstract class DiskPersistence<S> {
       const data = await readFile(filePath, 'utf-8')
       return this.codec.decode(data)
     } catch (error) {
-      if (isEnoent(error)) return null
+      if (isEnoent(error)) {
+        return null
+      }
       throw new PersistenceError(`Failed to load "${id}"`, { cause: error })
     }
   }
@@ -135,7 +137,9 @@ export abstract class DiskPersistence<S> {
   }
 
   private async ensureDir(): Promise<void> {
-    if (this.initialized) return
+    if (this.initialized) {
+      return
+    }
 
     await mkdir(this.baseDir, { recursive: true })
     this.initialized = true

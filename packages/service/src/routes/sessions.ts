@@ -1,7 +1,5 @@
 import { Hono } from 'hono'
-import { existsSync, statSync, readdirSync } from 'node:fs'
-import { resolve, dirname, join } from 'node:path'
-import { homedir } from 'node:os'
+import { serializeSessionMessages } from '../message-serializer'
 import type { CodingService } from '../coding-service'
 
 export function createSessionsRoute(context: CodingService): Hono {
@@ -37,7 +35,7 @@ export function createSessionsRoute(context: CodingService): Hono {
   })
 
   app.get('/current', (c) => {
-    const session = context.vitamin.sessionManager.active
+    const session = context.getActiveSession()
     if (!session) {
       return c.json({ status: 'error', message: 'no active session' }, 404)
     }
@@ -50,127 +48,34 @@ export function createSessionsRoute(context: CodingService): Hono {
   })
 
   app.get('/bridge-info', (c) => {
-    const session = context.vitamin.sessionManager.active
+    const session = context.getActiveSession()
     return c.json({
       bridgeMode: false,
       sessionId: session?.id ?? null,
     })
   })
 
-  app.post('/verify-path', async (c) => {
-    const body = await c.req.json<{ path: string }>()
-    const targetPath = body.path
-
-    if (!targetPath) {
-      return c.json({ exists: false, isDirectory: false, error: 'path is required' })
-    }
-
-    const resolved = targetPath.startsWith('~')
-      ? resolve(homedir(), targetPath.slice(2))
-      : resolve(targetPath)
-
-    try {
-      const stat = statSync(resolved)
-      return c.json({
-        exists: true,
-        isDirectory: stat.isDirectory(),
-        path: resolved,
-      })
-    } catch {
-      return c.json({ exists: false, isDirectory: false, path: resolved })
-    }
-  })
-
-  app.post('/browse-directory', async (c) => {
-    const body = await c.req.json<{ path?: string; showHidden?: boolean }>()
-    const targetPath = body.path || context.vitamin.workspaceDir || homedir()
-    const showHidden = body.showHidden ?? false
-
-    const resolved = targetPath.startsWith('~')
-      ? resolve(homedir(), targetPath.slice(2))
-      : resolve(targetPath)
-
-    if (!existsSync(resolved)) {
-      return c.json({
-        currentPath: resolved,
-        parentPath: dirname(resolved),
-        directories: [],
-        error: 'path does not exist',
-      })
-    }
-
-    try {
-      const entries = readdirSync(resolved, { withFileTypes: true })
-      const directories = entries
-        .filter((e) => e.isDirectory())
-        .filter((e) => showHidden || !e.name.startsWith('.'))
-        .map((e) => ({ name: e.name, path: join(resolved, e.name) }))
-        .sort((a, b) => a.name.localeCompare(b.name))
-
-      return c.json({
-        currentPath: resolved,
-        parentPath: dirname(resolved),
-        directories,
-        error: null,
-      })
-    } catch (err: unknown) {
-      return c.json({
-        currentPath: resolved,
-        parentPath: dirname(resolved),
-        directories: [],
-        error: (err as Error).message,
-      })
-    }
-  })
-
-  app.get('/files', (c) => {
-    const query = c.req.query('query')
-    try {
-      const entries = readdirSync(context.vitamin.workspaceDir, { withFileTypes: true })
-      let files = entries.map((e) => ({
-        path: join(context.vitamin.workspaceDir, e.name),
-        name: e.name,
-        isFile: e.isFile(),
-      }))
-      if (query) {
-        const q = query.toLowerCase()
-        files = files.filter((f) => f.name.toLowerCase().includes(q))
-      }
-      return c.json({ files })
-    } catch {
-      return c.json({ files: [] })
-    }
-  })
-
   app.get('/:id/messages', (c) => {
     const session = context.getSession(c.req.param('id'))
-
     if (!session) {
       return c.json([], 404)
     }
-
-    // TODO: add pagination support
-    // @ts-ignore
-    return c.json(serializeMessages(session))
+    return c.json(serializeSessionMessages(session))
   })
 
   app.post('/:id/resume', (c) => {
     const session = context.getSession(c.req.param('id'))
-
     if (!session) {
       return c.json({ status: 'error', message: 'session not found' }, 404)
     }
-
     return c.json({ status: 'ok', message: 'resumed', sessionId: session.id })
   })
 
   app.get('/:id/export', (c) => {
     const session = context.getSession(c.req.param('id'))
-
     if (!session) {
       return c.json({ status: 'error', message: 'session not found' }, 404)
     }
-
     return c.json({
       id: session.id,
       messages: session.session.messages(),
@@ -180,65 +85,21 @@ export function createSessionsRoute(context: CodingService): Hono {
 
   app.get('/:id/model', (c) => {
     const session = context.getSession(c.req.param('id'))
-
     if (!session) {
       return c.json({}, 404)
     }
-
     const model = session.model
     return c.json(model ? { id: model.id, provider: model.provider } : {})
   })
 
   app.put('/:id/model', async (c) => {
     await c.req.json()
-
-    return c.json({
-      status: 'ok',
-      message: 'model overlay updated',
-    })
+    return c.json({ status: 'ok', message: 'model overlay updated' })
   })
 
-  app.delete('/:id/model', (c) => {
-    return c.json({
-      status: 'ok',
-      message: 'model overlay cleared',
-    })
+  app.delete('/:id/model', (_c) => {
+    return _c.json({ status: 'ok', message: 'model overlay cleared' })
   })
 
   return app
-}
-
-type RawContent = {
-  type: string
-  text?: string
-  id?: string
-  name?: string
-  arguments?: Record<string, unknown>
-}
-type RawMessage = { role: string; content: string | RawContent[]; timestamp?: unknown }
-
-function serializeMessages(session: { session: { messages(): unknown[] } }) {
-  const messages = session.session.messages() as RawMessage[]
-  return messages.map((msg) => ({
-    role: msg.role,
-    content:
-      typeof msg.content === 'string'
-        ? msg.content
-        : Array.isArray(msg.content)
-          ? msg.content
-              .filter((b) => b.type === 'text')
-              .map((b) => b.text)
-              .join('')
-          : '',
-    timestamp: msg.timestamp,
-    toolCalls: Array.isArray(msg.content)
-      ? msg.content
-          .filter((b) => b.type === 'tool_call')
-          .map((b) => ({
-            id: b.id,
-            name: b.name,
-            parameters: b.arguments ?? {},
-          }))
-      : [],
-  }))
 }

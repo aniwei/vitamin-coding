@@ -2,7 +2,7 @@
 
 import { RiHourglass2Fill } from '@remixicon/react'
 import dayjs from 'dayjs'
-import { useGlobalPublicStore } from '@/context/global-context'
+import { useGlobalPublicStore } from '@/context/app-context'
 import { LicenseStatus } from '@/types/feature'
 import PremiumBadge from '../../base/premium-badge'
 

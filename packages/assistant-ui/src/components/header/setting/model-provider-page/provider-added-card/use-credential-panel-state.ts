@@ -1,6 +1,6 @@
 import type { ModelProvider } from '../declarations'
 import { useCredentialStatus } from '@/app/components/header/account-setting/model-provider-page/model-auth/hooks'
-import { useSystemFeaturesQuery } from '@/context/global-context'
+import { useSystemFeaturesQuery } from '@/context/app-context'
 import {
   PreferredProviderTypeEnum,
 } from '../declarations'

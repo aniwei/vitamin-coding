@@ -18,7 +18,9 @@ const modelId = process.env.CODING_EXAMPLE_MODEL_ID ?? 'github-copilot/gemini-2.
 const prompt = process.env.CODING_EXAMPLE_PROMPT ?? '在 app 创建一个 vite react typescript 项目'
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
-  if (!value) return fallback
+  if (!value) {
+    return fallback
+  }
 
   const parsed = Number.parseInt(value, 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
@@ -77,7 +79,9 @@ async function main() {
     for (const m of messages) {
       if ('role' in m && m.role === 'assistant' && Array.isArray(m.content)) {
         for (const p of m.content) {
-          if ('type' in p && p.type === 'tool_call') toolCallCount++
+          if ('type' in p && p.type === 'tool_call') {
+            toolCallCount++
+          }
         }
       }
     }

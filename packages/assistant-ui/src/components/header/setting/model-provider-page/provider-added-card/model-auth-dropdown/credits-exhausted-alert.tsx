@@ -1,5 +1,5 @@
 import { Trans, useTranslation } from 'react-i18next'
-import { CreditsCoin } from '@/components/icons/src/vender/line/financeAndECommerce'
+import { CreditsCoin } from '@/components/icons/line/financeAndECommerce'
 import { useModalContextSelector } from '@/context/modal-context'
 import { formatNumber } from '@/utils/format'
 import { useTrialCredits } from '../use-trial-credits'

@@ -28,12 +28,12 @@ const abv = cva('action-btn', {
   },
 })
 
-interface ActionButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof abv> {
+type ActionButtonProps = {
   size?: 'xs' | 's' | 'm' | 'l' | 'xl'
   state?: ActionButtonState
   styleCss?: CSSProperties
   ref?: React.Ref<HTMLButtonElement>
-}
+} & React.ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof abv>
 
 function getActionButtonState(state: ActionButtonState) {
   switch (state) {
@@ -58,7 +58,7 @@ export const ActionButton: React.FC<ActionButtonProps> = memo(({
   children, 
   ref, 
   disabled, 
-  ...props 
+  ...props
 }) => {
   return (
     <button

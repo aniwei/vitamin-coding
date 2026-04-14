@@ -1,5 +1,4 @@
 
-
 import Button from '@/components/button'
 import Checkbox from '@/components/checkbox'
 // import DatePicker from '@/app/components/base/date-and-time-picker/date-picker'
@@ -14,6 +13,7 @@ import {
   SelectTrigger, 
   SelectValue 
 } from '@/components/ui/select'
+import { isValidButtonVariant } from '../shared'
 import { 
   useCallback, 
   useMemo, 
@@ -59,20 +59,6 @@ function isSafeName(name: unknown): name is string {
     && name.length <= 128
     && SAFE_NAME_RE.test(name)
     && !PROTOTYPE_POISON_KEYS.has(name)
-}
-
-const validButtonVariants = new Set<string>([
-  'primary',
-  'warning',
-  'secondary',
-  'secondary-accent',
-  'ghost',
-  'ghost-accent',
-  'tertiary',
-])
-
-function isValidButtonVariant(variant: string): boolean {
-  return validButtonVariants.has(variant)
 }
 
 const validButtonSizes = new Set<string>(['small', 'medium', 'large'])

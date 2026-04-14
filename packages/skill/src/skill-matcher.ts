@@ -25,10 +25,14 @@ export function matchSkills(
 
   for (const registered of skills.values()) {
     // 跳过 disabled 和 error 状态
-    if (registered.status === 'disabled' || registered.status === 'error') continue
+    if (registered.status === 'disabled' || registered.status === 'error') {
+      continue
+    }
 
     // 只匹配 auto-trigger 的 skill
-    if (registered.definition.metadata.trigger === 'manual') continue
+    if (registered.definition.metadata.trigger === 'manual') {
+      continue
+    }
 
     const match = scoreSkill(registered, queryLower, queryTokens)
     if (match.relevance >= minRelevance) {
@@ -39,7 +43,9 @@ export function matchSkills(
   // 按 relevance 降序 → 按 priority 升序
   matches.sort((a, b) => {
     const relDiff = b.relevance - a.relevance
-    if (Math.abs(relDiff) > 0.01) return relDiff
+    if (Math.abs(relDiff) > 0.01) {
+      return relDiff
+    }
     return (
       (a.skill.definition.metadata.priority ?? 100) - (b.skill.definition.metadata.priority ?? 100)
     )
@@ -79,7 +85,9 @@ function scoreSkill(
 
   let descMatches = 0
   for (const token of queryTokens) {
-    if (token.length < 3) continue
+    if (token.length < 3) {
+      continue
+    }
     if (descLower.includes(token)) {
       descMatches++
       matchedKeywords.push(token)
@@ -104,9 +112,13 @@ function scoreSkill(
 
   // 4. 双向共词匹配奖励
   for (const descToken of descTokens) {
-    if (descToken.length < 4) continue
+    if (descToken.length < 4) {
+      continue
+    }
     for (const queryToken of queryTokens) {
-      if (queryToken.length < 4) continue
+      if (queryToken.length < 4) {
+        continue
+      }
       if (descToken === queryToken && !matchedKeywords.includes(descToken)) {
         score += 0.05
         matchedKeywords.push(descToken)

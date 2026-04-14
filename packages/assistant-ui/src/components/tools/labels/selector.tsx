@@ -6,7 +6,7 @@ import { noop } from 'es-toolkit/function'
 import { useMemo, useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import Checkbox from '@/components/checkbox'
-import { Tag03 } from '@/components/icons/src/vender/line/financeAndECommerce'
+import { Tag03 } from '@/components/icons/line/financeAndECommerce'
 import Input from '@/components/input'
 import {
 import { clsx } from 'clsx'

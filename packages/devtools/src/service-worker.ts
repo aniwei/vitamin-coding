@@ -235,7 +235,9 @@ export class ServiceWorker {
 
   private findPause(pauseId: string): PendingPause | undefined {
     const idx = this.pauses.findIndex((p) => p.pauseId === pauseId)
-    if (idx === -1) return undefined
+    if (idx === -1) {
+      return undefined
+    }
     return this.pauses.splice(idx, 1)[0]
   }
 

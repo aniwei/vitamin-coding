@@ -1,6 +1,6 @@
 import { RiFontSize } from '@remixicon/react'
 import { memo } from 'react'
-import { Check } from '@/components/icons/src/vender/line/general'
+import { Check } from '@/components/icons/line/general'
 import {
   Popover,
   PopoverContent,

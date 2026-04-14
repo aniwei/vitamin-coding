@@ -20,8 +20,8 @@ import { useTranslation } from 'react-i18next'
 import Badge from '@/components/badge'
 import Button from '@/components/button'
 import AuthForm from '@/components/form/form-scenarios/auth'
-import { LinkExternal02 } from '@/components/icons/src/vender/line/general'
-import { Lock01 } from '@/components/icons/src/vender/solid/security'
+import { LinkExternal02 } from '@/components/icons/line/general'
+import { Lock01 } from '@/components/icons/solid/security'
 import Loading from '@/components/loading'
 import {
   Alert,

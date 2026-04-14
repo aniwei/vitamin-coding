@@ -56,7 +56,9 @@ export class SettingWatcher extends TypedEventEmitter<WatcherEvents> implements 
 
   private onChange = (path: string): void => {
     const existing = this.debounceTimers.get(path)
-    if (existing) clearTimeout(existing)
+    if (existing) {
+      clearTimeout(existing)
+    }
 
     this.debounceTimers.set(
       path,

@@ -1,7 +1,7 @@
 import clsx from 'clsx'
 import { useState } from 'react'
 import * as React from 'react'
-import { ArrowNarrowLeft } from '@/components/icons/src/vender/line/arrows'
+import { ArrowNarrowLeft } from '@/components/icons/line/arrows'
 import type { INavSelectorProps } from './nav-selector'
 import NavSelector from './nav-selector'
 import { Link } from 'react-router-dom'

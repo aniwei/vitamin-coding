@@ -12,8 +12,8 @@ import {
   useRef,
   useState,
 } from 'react'
-import { User } from '@/components/icons/src/public/avatar'
-// import { Markdown } from '@/components/markdown'
+import { User } from '@/components/icons/avatar'
+import { Markdown } from '@/components/markdown'
 import { toast } from '@/components/ui/toast'
 import { CssTransform } from './embedded-chatbot/theme/utils'
 import { useChatContext } from './context'
@@ -114,28 +114,31 @@ const Question: FC<QuestionProps> = memo(({
 
   const handleSwitchSibling = useCallback((direction: 'prev' | 'next') => {
     if (direction === 'prev') {
-      if (item.prevSibling)
+      if (item.prevSibling) {
         switchSibling?.(item.prevSibling)
-    }
-    else {
-      if (item.nextSibling)
+      }
+    } else {
+      if (item.nextSibling) {
         switchSibling?.(item.nextSibling)
+      }
     }
   }, [switchSibling, item.prevSibling, item.nextSibling])
 
   const getContentWidth = () => {
-    /* v8 ignore next 2 -- @preserve */
-    if (contentRef.current)
+    if (contentRef.current) {
       setContentWidth(contentRef.current?.clientWidth)
+    }
   }
 
   useEffect(() => {
-    /* v8 ignore next 2 -- @preserve */
-    if (!contentRef.current)
+    if (!contentRef.current) {
       return
+    }
+
     const resizeObserver = new ResizeObserver(() => {
       getContentWidth()
     })
+
     resizeObserver.observe(contentRef.current)
     return () => {
       resizeObserver.disconnect()
@@ -184,10 +187,10 @@ const Question: FC<QuestionProps> = memo(({
           style={(!editing && theme?.chatBubbleColorStyle) ? CssTransform(theme.chatBubbleColorStyle) : {}}
         >
           
-          {!editing
-            ? <div>{content}</div> //TODO <Markdown content={content} />
-            : (
-                <div className="flex flex-col gap-4">
+          {
+            !editing
+              ? <Markdown content={content} />
+              : <div className="flex flex-col gap-4">
                   <div className="max-h-[158px] overflow-y-auto overflow-x-hidden pr-1">
                     <Textarea
                       className={clsx(
@@ -207,7 +210,7 @@ const Question: FC<QuestionProps> = memo(({
                     <Button className="min-w-24" variant="primary" onClick={handleResend} data-testid="save-edit-btn">Save</Button>
                   </div>
                 </div>
-              )}
+          }
           {!editing && (
             <ContentSwitch
               count={item.siblingCount}

@@ -1,29 +1,45 @@
 import VideoGallery from '@/components/video-gallery'
-import { memo } from 'react'
-import * as React from 'react'
+import { memo, useMemo } from 'react'
+
+interface MediaNode {
+  properties?: { src?: string | string[] }
+  children?: { properties?: { src?: string | string[] } }[]
+}
+
+const normalizeMediaSrc = (src?: string | string[]): string[] => {
+  if (Array.isArray(src)) {
+    return src.filter((item): item is string => typeof item === 'string' && item.length > 0)
+  }
+
+  if (typeof src === 'string' && src.length > 0)
+    return [src]
+
+  return []
+}
+
+const useMediaSrcs = (node: MediaNode): string[] => {
+  return useMemo(() => {
+    const childSrcs = (node.children ?? []).flatMap((child) => {
+      return normalizeMediaSrc(child.properties?.src)
+    })
+
+    if (childSrcs.length > 0)
+      return childSrcs
+
+    return normalizeMediaSrc(node.properties?.src)
+  }, [node])
+}
 
 interface VideoProps {
-  node: {
-    properties?: { src?: string | string[]
-      [key: string]: any
-    }
-    children?: { properties?: { src?: string } }[]
-    [key: string]: any
-  }
+  node: MediaNode
 }
 
 
 export const Video: React.FC<VideoProps> = memo(({ node }) => {
-  const srcs = node.children?.filter((child: any) => 'properties' in child).map((child: any) => (child as any).properties.src) || []
-  
-  if (srcs.length === 0) {
-    const src = node.properties?.src
-    if (src) {
-      return <VideoGallery key={src} srcs={[src]} />
-    }
+  const srcs = useMediaSrcs(node)
 
+  if (srcs.length === 0)
     return null
-  }
 
   return <VideoGallery key={srcs.join()} srcs={srcs} />
 })

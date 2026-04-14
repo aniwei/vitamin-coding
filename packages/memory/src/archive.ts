@@ -39,7 +39,9 @@ export class InMemoryArchiveStorage implements ArchiveStorage {
 
   async read(archivePath: string): Promise<string> {
     const record = this.archives.get(archivePath)
-    if (!record) throw new Error(`Archive not found: ${archivePath}`)
+    if (!record) {
+      throw new Error(`Archive not found: ${archivePath}`)
+    }
     return record.content
   }
 
@@ -85,7 +87,9 @@ export class LocalArchiveStorage implements ArchiveStorage {
 
     const entries: ArchiveEntry[] = []
     for (const file of files) {
-      if (!file.startsWith('compaction-') || !file.endsWith('.md')) continue
+      if (!file.startsWith('compaction-') || !file.endsWith('.md')) {
+        continue
+      }
 
       const path = join(dir, file)
       const fileStat = await stat(path)

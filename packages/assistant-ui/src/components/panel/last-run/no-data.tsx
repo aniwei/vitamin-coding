@@ -4,7 +4,7 @@ import { RiPlayLine } from '@remixicon/react'
 import * as React from 'react'
 import { useTranslation } from 'react-i18next'
 import Button from '@/components/button'
-import { ClockPlay } from '@/components/icons/src/vender/line/time'
+import { ClockPlay } from '@/components/icons/line/time'
 
 type Props = {
   canSingleRun: boolean

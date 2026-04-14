@@ -4,7 +4,7 @@ import { fireEvent, render, screen, waitFor } from '@testing-library/react'
 import userEvent from '@testing-library/user-event'
 import { vi } from 'vitest'
 import { useAppContext } from '@/context/app-context'
-import { useGlobalPublicStore } from '@/context/global-context'
+import { useGlobalPublicStore } from '@/context/app-context'
 import { useWorkspacePermissions } from '@/service/use-workspace'
 import TransferOwnership from '../transfer-ownership'
 

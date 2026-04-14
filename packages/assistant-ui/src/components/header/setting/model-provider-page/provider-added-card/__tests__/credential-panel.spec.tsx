@@ -84,7 +84,7 @@ vi.mock('@/app/components/header/indicator', () => ({
   default: ({ color }: { color: string }) => <div data-testid="indicator" data-color={color} />,
 }))
 
-vi.mock('@/components/icons/src/vender/line/alertsAndFeedback/Warning', () => ({
+vi.mock('@/components/icons/line/alertsAndFeedback/Warning', () => ({
   default: (props: Record<string, unknown>) => <div data-testid="warning-icon" className={props.className as string} />,
 }))
 

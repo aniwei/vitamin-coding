@@ -5,7 +5,7 @@ import type {
   FormValue,
   ModelLoadBalancingConfig,
 } from './declarations'
-import { AnthropicShortLight, Deepseek, Gemini, Grok, OpenaiSmall, Tongyi } from '@/components/icons/src/public/llm'
+import { AnthropicShortLight, Deepseek, Gemini, Grok, OpenaiSmall, Tongyi } from '@/components/icons/llm'
 import {
   deleteModelProvider,
   setModelProvider,

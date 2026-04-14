@@ -17,7 +17,14 @@ import {
   createBackgroundEndHook,
 } from './core/background/background-tracker'
 
-import type { HookHandle, HookInput, HookOutput, HookTiming, InterceptorTiming, ObserverTiming } from './types'
+import type {
+  HookHandle,
+  HookInput,
+  HookOutput,
+  HookTiming,
+  InterceptorTiming,
+  ObserverTiming,
+} from './types'
 import {
   type HookSpec,
   type ObserverRuntimeHook,
@@ -133,9 +140,7 @@ export class HookRegistry {
   register(spec: HookSpec): void {
     this.hooks[spec.timing].push(spec)
 
-    logger.debug(
-      `Hook registered: ${spec.name} (timing=${spec.timing}, priority=${spec.priority})`,
-    )
+    logger.debug({ name: spec.name, timing: spec.timing, priority: spec.priority }, 'Hook registered')
   }
 
   registerAll(specs: HookSpec[]): void {
@@ -165,7 +170,7 @@ export class HookRegistry {
         this.hooks[timing] = filtered
         removed = true
 
-        logger.debug(`Hook unregistered: ${name} (timing=${timing})`)
+        logger.debug({ name, timing }, 'Hook unregistered')
       }
     }
     return removed
@@ -174,12 +179,12 @@ export class HookRegistry {
   // 运行时屏蔽，不从 bucket 移除，便于快速恢复
   disable(name: string): void {
     this.disabled.add(name)
-    logger.debug(`Hook disabled: ${name}`)
+    logger.debug({ name }, 'Hook disabled')
   }
 
   enable(name: string): void {
     this.disabled.delete(name)
-    logger.debug(`Hook enabled: ${name}`)
+    logger.debug({ name }, 'Hook enabled')
   }
 
   getRegistered(timing?: HookTiming): RegisteredHookInfo[] {
@@ -202,28 +207,32 @@ export class HookRegistry {
     output: HookOutput<T>,
   ): Promise<void> {
     const hooks = this.getSortedInterceptorHooks(timing)
-    if (hooks.length === 0) return
+    if (hooks.length === 0) {
+      return
+    }
 
     for (const hook of hooks) {
       try {
         await hook.handle(input, output)
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        logger.error(`Hook ${hook.name} (timing=${timing}) failed: ${message}`)
+        logger.error({ name: hook.name, timing, err: message }, 'Hook failed')
       }
     }
   }
 
   async emit<T extends ObserverTiming>(timing: T, input: HookInput<T>): Promise<void> {
     const hooks = this.getSortedObserverHooks(timing)
-    if (hooks.length === 0) return
+    if (hooks.length === 0) {
+      return
+    }
 
     for (const hook of hooks) {
       try {
         await hook.handle(input)
       } catch (error) {
         const message = error instanceof Error ? error.message : String(error)
-        logger.error(`Hook ${hook.name} (timing=${timing}) failed: ${message}`)
+        logger.error({ name: hook.name, timing, err: message }, 'Hook failed')
       }
     }
   }

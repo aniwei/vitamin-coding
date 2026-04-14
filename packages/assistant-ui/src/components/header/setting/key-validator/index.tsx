@@ -1,6 +1,6 @@
 import type { Form, KeyFrom, Status, ValidateValue } from './declarations'
 import { useState } from 'react'
-import { LinkExternal02 } from '@/components/icons/src/vender/line/general'
+import { LinkExternal02 } from '@/components/icons/line/general'
 import { useEventEmitterContextContext } from '@/context/event-emitter'
 import { useValidate } from './hooks'
 import KeyInput from './KeyInput'

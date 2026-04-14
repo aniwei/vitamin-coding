@@ -2,7 +2,7 @@ import type { FC } from 'react'
 import { RiArrowDownSLine } from '@remixicon/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { Check } from '@/components/icons/src/vender/line/general'
+import { Check } from '@/components/icons/line/general'
 import {
 import { clsx } from 'clsx'
   PortalToFollowElem,

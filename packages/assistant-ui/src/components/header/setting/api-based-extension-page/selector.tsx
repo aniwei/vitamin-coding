@@ -7,7 +7,7 @@ import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
 import {
   ArrowUpRight,
-} from '@/components/icons/src/vender/line/arrows'
+} from '@/components/icons/line/arrows'
 import {
   PortalToFollowElem,
   PortalToFollowElemContent,

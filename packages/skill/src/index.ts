@@ -1,5 +1,3 @@
-// @vitamin/skill 模块入口
-
 export { SkillRegistry, createSkillRegistry } from './skill-registry'
 export type { SkillRegistryOptions } from './skill-registry'
 
@@ -21,4 +19,5 @@ export type {
   SkillExecutionContext,
   SkillExecutionResult,
   SkillEvents,
+  SkillProvider,
 } from './types'

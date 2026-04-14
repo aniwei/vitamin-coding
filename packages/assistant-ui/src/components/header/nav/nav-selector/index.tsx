@@ -15,7 +15,7 @@ import { debounce } from 'es-toolkit/compat'
 import { Fragment, useCallback } from 'react'
 import { useNavigate } from 'react-router-dom'
 import { clsx } from 'clsx'
-import { FileArrow01, FilePlus01, FilePlus02 } from '@/components/icons/src/vender/line/files'
+import { FileArrow01, FilePlus01, FilePlus02 } from '@/components/icons/line/files'
 
 export interface NavItem {
   id: string

@@ -1,8 +1,7 @@
 import { useCallback, useRef, useState } from 'react'
 import { writeTextToClipboard } from '@/shared/clipboard'
 import { noop } from 'es-toolkit/compat'
-import { useStableHandler } from './use-stable-handler-only-when-you-know-what-you-are-doing-or-you-will-be-fired'
-import 'client-only'
+import { useStableHandle } from './use-stable-handle'
 
 interface UseClipboard {
   timeout?: number
@@ -22,18 +21,18 @@ export function useClipboard({
   const [copied, setCopied] = useState(false)
   const copyTimeoutRef = useRef<number | null>(null)
 
-  const stablizedOnCopyError = useStableHandler<[e: Error], void>(onError || noop)
+  const stablizedOnCopyError = useStableHandle<[e: Error], void>(onError || noop)
 
-  const handleCopyResult = useCallback((isCopied: boolean) => {
+  const handleCopyResult = useCallback((copied: boolean) => {
     if (copyTimeoutRef.current) {
       clearTimeout(copyTimeoutRef.current)
     }
 
-    if (isCopied) {
+    if (copied) {
       copyTimeoutRef.current = window.setTimeout(() => setCopied(false), timeout)
     }
 
-    setCopied(isCopied)
+    setCopied(copied)
   }, [timeout])
 
   const handleCopyError = useCallback((e: Error) => {
@@ -47,7 +46,6 @@ export function useClipboard({
     } catch (e) {
       if (usePromptAsFallback) {
         try {
-          // eslint-disable-next-line no-alert -- prompt as fallback in case of copy error
           window.prompt(promptFallbackText, valueToCopy)
         }
         catch (e2) {

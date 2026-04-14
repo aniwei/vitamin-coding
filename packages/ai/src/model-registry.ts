@@ -5,8 +5,12 @@ import type { Provider, Model, ModelSpec, Api } from './types'
 
 // 将 ModelSpec 规范化为字符串 id
 function specToId(spec: ModelSpec): string {
-  if (typeof spec === 'string') return spec
-  if ('id' in spec && typeof spec.id === 'string') return spec.id
+  if (typeof spec === 'string') {
+    return spec
+  }
+  if ('id' in spec && typeof spec.id === 'string') {
+    return spec.id
+  }
   return `${spec.provider}/${spec.name}`
 }
 
@@ -59,7 +63,9 @@ export class ModelRegistry {
 
     // 注册表精确命中
     const registered = this.models.get(id)
-    if (registered) return registered
+    if (registered) {
+      return registered
+    }
 
     // 有默认模型模板时，用 spec 信息覆盖模板
     if (this.defaultModel) {

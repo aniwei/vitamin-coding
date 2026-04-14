@@ -30,10 +30,14 @@ export type {
 export type {
   AgentSessionOptions,
   AgentSessionInfo,
-  AgentSessionEvent,
-  AgentSessionEventType,
-  AgentSessionSubscriber,
-  AskUserQuestion,
   CreateAgentSessionOptions,
   PromptOptions,
 } from './session/types'
+
+export {
+  createToolGuidanceHook,
+  createEnvironmentInjectionHook,
+  createLessonInjectionHook,
+  createPhaseTrackingHooks,
+  createSessionLearningHooks,
+} from './hooks'

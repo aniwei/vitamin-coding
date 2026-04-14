@@ -10,12 +10,14 @@ export function safeCreateHook(
   factory: () => HookSpec,
   options: { enabled: boolean },
 ): HookSpec | null {
-  if (!options.enabled) return null
+  if (!options.enabled) {
+    return null
+  }
   try {
     return factory()
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    logger.error(`Hook ${name} creation failed: ${message}`)
+    logger.error({ name, err: message }, 'Hook creation failed')
     return null
   }
 }

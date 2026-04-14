@@ -11,16 +11,16 @@ import type { HookSpec } from '../../hook-spec'
 let cachedRules: string | null = null
 let cacheProjectRoot: string | null = null
 
-export function createRulesInjectorHook(
-  projectRoot: string,
-): HookSpec {
+export function createRulesInjectorHook(projectRoot: string): HookSpec {
   return defineHook({
     name: 'rules-injector',
     timing: 'tool.execute.before',
     priority: 30,
     async handle(input, output) {
       // 仅对写入类工具注入规则
-      if (!INJECTION_TOOLS.has(input.toolName)) return
+      if (!INJECTION_TOOLS.has(input.toolName)) {
+        return
+      }
 
       const rules = await loadRules(projectRoot)
       if (rules) {

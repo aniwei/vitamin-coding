@@ -15,7 +15,9 @@ export function createLoggerRoute(context: CodingService): Hono {
   const app = new Hono()
 
   app.get('/history', (c) => {
-    if (!context.bridge) return c.json({ entries: [], total: 0 })
+    if (!context.bridge) {
+      return c.json({ entries: [], total: 0 })
+    }
 
     const limit = Math.min(Number(c.req.query('limit') ?? 100), 2000)
     const level = c.req.query('level')
@@ -37,7 +39,9 @@ export function createLoggerRoute(context: CodingService): Hono {
 
   app.get('/stream', (c) => {
     // TODO
-    if (!context.bridge) return c.text('debugger not enabled', 503)
+    if (!context.bridge) {
+      return c.text('debugger not enabled', 503)
+    }
 
     return streamSSE(c, async (stream) => {
       const unsubscribe = context.bridge?.on('log', (entry) => {

@@ -126,17 +126,23 @@ export class SessionManager<T = unknown> {
 
       // 标签过滤：要求 session 包含 criteria 中的所有标签
       if (criteria.tags && criteria.tags.length > 0) {
-        if (!criteria.tags.every((t) => meta.tags.includes(t))) return false
+        if (!criteria.tags.every((t) => meta.tags.includes(t))) {
+          return false
+        }
       }
 
       // 其他元数据过滤
-      if (criteria.createdAfter !== undefined && meta.createdAt < criteria.createdAfter)
+      if (criteria.createdAfter !== undefined && meta.createdAt < criteria.createdAfter) {
         return false
-      if (criteria.createdBefore !== undefined && meta.createdAt > criteria.createdBefore)
+      }
+      if (criteria.createdBefore !== undefined && meta.createdAt > criteria.createdBefore) {
         return false
+      }
       if (criteria.hasParent !== undefined) {
         const hasParent = meta.parentSessionId !== undefined
-        if (criteria.hasParent !== hasParent) return false
+        if (criteria.hasParent !== hasParent) {
+          return false
+        }
       }
 
       if (criteria.titleContains && (!meta.title || !meta.title.includes(criteria.titleContains))) {
@@ -215,10 +221,14 @@ export class SessionManager<T = unknown> {
   }
 
   async save(id: string): Promise<void> {
-    if (!this.persistence) return
+    if (!this.persistence) {
+      return
+    }
     const session = this.store.getSession(id)
 
-    if (!session) return
+    if (!session) {
+      return
+    }
 
     if (session instanceof InMemorySession) {
       const snapshot = session.toSnapshot()
@@ -231,17 +241,23 @@ export class SessionManager<T = unknown> {
   }
 
   async restore(id: string): Promise<Session<T> | null> {
-    if (!this.persistence) return null
+    if (!this.persistence) {
+      return null
+    }
 
     const snapshot = await this.persistence.load(id)
-    if (!snapshot) return null
+    if (!snapshot) {
+      return null
+    }
 
     this.ensureCapacity(this.requiredCapacityFor(snapshot.id))
     return this.restoreWithSnapshot(snapshot)
   }
 
   async saveAll(): Promise<void> {
-    if (!this.persistence) return
+    if (!this.persistence) {
+      return
+    }
 
     for (const session of this.store.listSessions()) {
       await this.save(session.id)
@@ -249,7 +265,9 @@ export class SessionManager<T = unknown> {
   }
 
   async restoreAll(): Promise<number> {
-    if (!this.persistence) return 0
+    if (!this.persistence) {
+      return 0
+    }
 
     const ids = await this.persistence.list()
 

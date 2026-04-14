@@ -1,5 +1,5 @@
 import { memo } from 'react'
-import { useGlobalPublicStore } from '@/context/global-context'
+import { useGlobalPublicStore } from '@/context/app-context'
 import { useGetDataSourceListAuth } from '@/service/use-datasource'
 import Card from './card'
 import InstallFromMarketplace from './install-from-marketplace'

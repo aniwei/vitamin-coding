@@ -6,12 +6,33 @@ import { PassThrough } from 'node:stream'
 import { Subscription } from './subscrption'
 
 export type { Logger } from 'pino'
+export type LogLevel = pino.Level
 
-const require = createRequire(import.meta.url)
+export interface LoggerOptions {
+  level: LogLevel
+  destination: string
+}
+
+// ── Internals ────────────────────────────────────────────────────────────────
+
+const VALID_LEVELS: ReadonlySet<string> = new Set<LogLevel>([
+  'trace',
+  'debug',
+  'info',
+  'warn',
+  'error',
+  'fatal',
+])
+
+function toLogLevel(value: string): LogLevel {
+  return VALID_LEVELS.has(value) ? (value as LogLevel) : 'info'
+}
+
+const pinoRequire = createRequire(import.meta.url)
 
 function isPrettyAvailable(): boolean {
   try {
-    require.resolve('pino-pretty')
+    pinoRequire.resolve('pino-pretty')
     return true
   } catch {
     return false
@@ -20,32 +41,31 @@ function isPrettyAvailable(): boolean {
 
 function createTransportTargets(
   destination: string,
-  level: string = 'info',
+  level: LogLevel,
 ): pino.TransportTargetOptions[] {
-  const targets: pino.TransportTargetOptions[] = [
-    {
-      target: 'pino/file',
-      options: { destination, mkdir: true },
-      level,
-    },
-  ]
+  const fileTarget: pino.TransportTargetOptions = {
+    target: 'pino/file',
+    options: { destination, mkdir: true },
+    level,
+  }
+
+  let stdoutTarget: pino.TransportTargetOptions
 
   if (isPrettyAvailable()) {
-    targets.push({
+    stdoutTarget = {
       target: 'pino-pretty',
       options: { colorize: true },
       level,
-    })
+    }
   } else {
-    // 无 pino-pretty 时退回标准输出
-    targets.push({
+    stdoutTarget = {
       target: 'pino/file',
       options: { destination: 1 },
       level,
-    })
+    }
   }
 
-  return targets
+  return [fileTarget, stdoutTarget]
 }
 
 const logPassThrough = new PassThrough()
@@ -66,40 +86,34 @@ export function attachLogListener(callback: (log: unknown) => void) {
 }
 
 let root: pino.Logger | null = null
+let rootLevel: LogLevel = toLogLevel(LOG_LEVEL)
 
-export function ensureLogger(level: string, destination: string): pino.Logger {
+export function ensureLogger(level: LogLevel, destination: string): pino.Logger {
   root ??= pino(
     { level },
     pino.multistream([
-      { level: level as pino.Level, stream: logPassThrough },
-      {
-        level: level as pino.Level,
-        stream: pino.transport({ targets: createTransportTargets(destination, level) }),
-      },
+      { level, stream: logPassThrough },
+      { level, stream: pino.transport({ targets: createTransportTargets(destination, level) }) },
     ]),
   )
 
+  rootLevel = toLogLevel(root.level)
   return root
 }
 
-interface LoggerOptions {
-  level: 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal'
-  destination: string
-}
-
 export function createLogger(name: string, options?: LoggerOptions): pino.Logger {
-  ensureLogger(options?.level ?? LOG_LEVEL, options?.destination ?? LOG_FILE)
+  ensureLogger(options?.level ?? toLogLevel(LOG_LEVEL), options?.destination ?? LOG_FILE)
+  invariant(root, 'Root logger is not initialized')
 
-  invariant(root, `Root logger is not initialized`)
   return root.child(
     { name },
     {
-      level: options?.level ?? LOG_LEVEL,
+      level: options?.level ?? rootLevel,
     },
   )
 }
 
 export function getRootLogger(): pino.Logger {
-  invariant(root, `Root logger is not initialized`)
+  invariant(root, 'Root logger is not initialized')
   return root
 }

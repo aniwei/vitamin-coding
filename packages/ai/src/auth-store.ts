@@ -48,13 +48,19 @@ export class AuthStore {
     await this.ensureInitialized()
     const entry = this.cache.get(provider)
 
-    if (entry?.type === 'api_key') return entry.key
-    if (entry?.type === 'oauth') return this.resolveOAuthAccessKey(provider, entry)
+    if (entry?.type === 'api_key') {
+      return entry.key
+    }
+    if (entry?.type === 'oauth') {
+      return this.resolveOAuthAccessKey(provider, entry)
+    }
 
     const env = this.env.get(provider)
     if (env) {
       const key = process.env[env]
-      if (key) return key
+      if (key) {
+        return key
+      }
     }
 
     return null
@@ -62,7 +68,9 @@ export class AuthStore {
 
   async hasCredential(provider: Provider): Promise<boolean> {
     await this.ensureInitialized()
-    if (this.cache.has(provider)) return true
+    if (this.cache.has(provider)) {
+      return true
+    }
 
     const env = this.env.get(provider)
     return !!(env && process.env[env])
@@ -71,7 +79,9 @@ export class AuthStore {
   async getBaseUrl(provider: Provider): Promise<string | null> {
     await this.ensureInitialized()
     const entry = this.cache.get(provider)
-    if (entry?.type === 'api_key' && entry.baseUrl) return entry.baseUrl
+    if (entry?.type === 'api_key' && entry.baseUrl) {
+      return entry.baseUrl
+    }
     return null
   }
 
@@ -117,7 +127,9 @@ export class AuthStore {
   }
 
   async save(): Promise<void> {
-    if (!this.dirty) return
+    if (!this.dirty) {
+      return
+    }
 
     const obj: AuthFileData = {}
     for (const [k, v] of this.cache) {
@@ -146,7 +158,9 @@ export class AuthStore {
     entry: OAuthEntry,
   ): Promise<string | null> {
     const oauthProvider = this.oauth.get(provider)
-    if (!oauthProvider) return null
+    if (!oauthProvider) {
+      return null
+    }
 
     if (Date.now() < entry.expires) {
       return oauthProvider.getAccessKey(entry)
@@ -164,7 +178,9 @@ export class AuthStore {
   }
 
   async ensureInitialized(): Promise<void> {
-    if (this.loaded) return
+    if (this.loaded) {
+      return
+    }
     this.loaded = true
 
     try {

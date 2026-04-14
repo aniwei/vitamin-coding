@@ -14,12 +14,16 @@ import type {
 const logger = createLogger('@vitamin/hooks:permission')
 
 function matchesScopeAgent(scope: PolicyScope, agentName: string): boolean {
-  if (!scope.agents || scope.agents.length === 0) return true
+  if (!scope.agents || scope.agents.length === 0) {
+    return true
+  }
   return scope.agents.includes('*') || scope.agents.includes(agentName)
 }
 
 function matchesScopeSession(scope: PolicyScope, sessionId: string): boolean {
-  if (!scope.sessions || scope.sessions.length === 0) return true
+  if (!scope.sessions || scope.sessions.length === 0) {
+    return true
+  }
   return scope.sessions.includes('*') || scope.sessions.includes(sessionId)
 }
 
@@ -30,17 +34,25 @@ function matchesScope(scope: PolicyScope, ctx: PermissionContext): boolean {
 function matchesRule(match: RuleMatch, ctx: PermissionContext): boolean {
   // tools 匹配
   if (match.tools && match.tools.length > 0) {
-    if (!match.tools.includes(ctx.toolName)) return false
+    if (!match.tools.includes(ctx.toolName)) {
+      return false
+    }
   }
   // paths 匹配
   if (match.paths && match.paths.length > 0) {
-    if (!ctx.filePath) return false
-    const pathMatched = match.paths.some((pattern) => pattern.test(ctx.filePath!))
-    if (!pathMatched) return false
+    if (!ctx.filePath) {
+      return false
+    }
+    const pathMatched = match.paths.some((pattern) => pattern.test(ctx.filePath as string))
+    if (!pathMatched) {
+      return false
+    }
   }
   // 自定义条件
   if (match.condition) {
-    if (!match.condition(ctx)) return false
+    if (!match.condition(ctx)) {
+      return false
+    }
   }
   return true
 }
@@ -61,19 +73,22 @@ export class PermissionPolicyRegistry {
     this.policies.push(policy)
     this.policies.sort((a, b) => a.priority - b.priority)
     logger.debug(
-      `Permission policy registered: ${policy.name} (priority=${policy.priority}, rules=${policy.rules.length})`,
+      { name: policy.name, priority: policy.priority, rules: policy.rules.length },
+      'Permission policy registered',
     )
   }
 
   registerAll(policies: PermissionPolicy[]): void {
-    for (const p of policies) this.register(p)
+    for (const p of policies) {
+      this.register(p)
+    }
   }
 
   unregister(name: string): boolean {
     const idx = this.policies.findIndex((p) => p.name === name)
     if (idx >= 0) {
       this.policies.splice(idx, 1)
-      logger.debug(`Permission policy unregistered: ${name}`)
+      logger.debug({ name }, 'Permission policy unregistered')
       return true
     }
     return false
@@ -87,8 +102,12 @@ export class PermissionPolicyRegistry {
     let evaluated = 0
 
     for (const policy of this.policies) {
-      if (!policy.enabled) continue
-      if (!matchesScope(policy.scope, context)) continue
+      if (!policy.enabled) {
+        continue
+      }
+      if (!matchesScope(policy.scope, context)) {
+        continue
+      }
       evaluated++
 
       for (const rule of policy.rules) {

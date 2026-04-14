@@ -3,8 +3,8 @@ import type {
   Model,
   ModelProvider,
 } from '../declarations'
-import { OpenaiYellow } from '@/components/icons/src/public/llm'
-import { Group } from '@/components/icons/src/vender/other'
+import { OpenaiYellow } from '@/components/icons/llm'
+import { Group } from '@/components/icons/other'
 import useTheme from '@/hooks/use-theme'
 import { renderI18nObject } from '@/i18n-config'
 import { Theme } from '@/types/app'

@@ -61,7 +61,9 @@ export class InMemorySessionStore<T = unknown> implements SessionStore<T> {
     newId: string = crypto.randomUUID(),
   ): Promise<Session<T> | undefined> {
     const source = this.sessions.get(sourceId)
-    if (!source) return undefined
+    if (!source) {
+      return undefined
+    }
 
     const snapshot = source.toSnapshot()
     const forked = new InMemorySession<T>(newId, sourceId, snapshot.entries.length)

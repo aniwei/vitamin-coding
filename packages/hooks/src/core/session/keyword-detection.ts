@@ -1,8 +1,6 @@
-// 关键词检测 Hook — 检测 plan/build 等触发词
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'
 
-// plan/build 模式关键词
 const PLAN_KEYWORDS = ['plan', 'design', 'architect', 'roadmap', 'blueprint']
 const BUILD_KEYWORDS = ['build', 'implement', 'create', 'develop', 'construct']
 
@@ -13,7 +11,9 @@ export function createKeywordDetectionHook(): HookSpec {
     priority: 30,
     handle(input, output) {
       const text = extractText(input.message)
-      if (!text) return
+      if (!text) {
+        return
+      }
 
       const lower = text.toLowerCase()
       const hasPlan = PLAN_KEYWORDS.some((kw) => lower.includes(kw))
@@ -29,18 +29,26 @@ export function createKeywordDetectionHook(): HookSpec {
   })
 }
 
-// 从消息中提取文本内容
 function extractText(message: unknown): string | null {
-  if (typeof message !== 'object' || message === null) return null
-  const msg = message as Record<string, unknown>
-  if (typeof msg.content === 'string') return msg.content
-  if (Array.isArray(msg.content)) {
-    return msg.content
+  if (typeof message !== 'object' || message === null) {
+    return null
+  }
+  if (!('content' in message)) {
+    return null
+  }
+
+  const content = (message as { content: unknown }).content
+  if (typeof content === 'string') {
+    return content
+  }
+  if (Array.isArray(content)) {
+    return content
       .filter(
         (part: unknown): part is { type: string; text: string } =>
           typeof part === 'object' &&
           part !== null &&
-          (part as Record<string, unknown>).type === 'text',
+          'type' in part &&
+          (part as { type: unknown }).type === 'text',
       )
       .map((part) => part.text)
       .join(' ')

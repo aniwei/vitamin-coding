@@ -53,7 +53,9 @@ export abstract class RemotePersistence<S> {
       method: 'GET',
     })
 
-    if (response.status === 404) return null
+    if (response.status === 404) {
+      return null
+    }
     return this.codec.decode(await response.text())
   }
 

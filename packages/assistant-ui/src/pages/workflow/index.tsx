@@ -1,7 +1,6 @@
 import { memo, useCallback } from 'react'
 import ReactFlow, {
   Background,
-  MiniMap,
   ReactFlowProvider,
   SelectionMode,
 } from 'reactflow'
@@ -11,7 +10,6 @@ import CustomNode from './components/nodes'
 import IterationStartNode from './components/nodes/iteration-start'
 import LoopStartNode from './components/nodes/loop-start'
 import CustomNoteNode from './components/note-node'
-import ZoomInOut from './components/zoom-in-out'
 import CustomConnectionLine from './components/custom-connection-line'
 import {
   CUSTOM_EDGE,
@@ -22,9 +20,9 @@ import { CUSTOM_ITERATION_START_NODE } from './constants'
 import { CUSTOM_LOOP_START_NODE } from './constants'
 import { CUSTOM_NOTE_NODE } from './constants'
 import { CUSTOM_SIMPLE_NODE } from './constants'
-import { clsx } from 'clsx'
 import { ChatBot } from './components/chat-bot'
 import { Header } from './components/header'
+import { clsx } from 'clsx'
 
 
 import type {
@@ -42,6 +40,7 @@ import 'reactflow/dist/style.css'
 import './index.module.css'
 import Panel from '../../components/panel'
 import Inspect from './components/inspect'
+import Operator from './components/operator'
 
 
 
@@ -85,19 +84,7 @@ const WorkflowMain: React.FC<WorkflowPreviewProps> = memo(({
         >
           <>
             <Header />
-            <MiniMap
-              pannable
-              zoomable
-              style={{
-                width: 102,
-                height: 72,
-              }}
-              maskColor="var(--color-workflow-minimap-bg)"
-              className={clsx('absolute! bottom-14! z-9 m-0! h-[72px]! w-[102px]! rounded-lg! border-[0.5px]! border-divider-subtle! bg-background-default-subtle! shadow-md! shadow-shadow-shadow-5!', miniMapToRight ? 'right-4!' : 'left-4!')}
-            />
-            <div className="absolute bottom-4 left-4 z-9 mt-1 flex items-center gap-2">
-              <ZoomInOut />
-            </div>
+            
           </>
           <ReactFlow
             nodeTypes={nodeTypes}
@@ -127,8 +114,9 @@ const WorkflowMain: React.FC<WorkflowPreviewProps> = memo(({
               color="var(--color-workflow-canvas-workflow-dot-color)"
             />
           </ReactFlow>
+          
           <Panel />
-          <Inspect />
+          <Operator />
         </div>
       </div>
     </Layout>

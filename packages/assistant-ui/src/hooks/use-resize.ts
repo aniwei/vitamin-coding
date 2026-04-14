@@ -5,7 +5,7 @@ import {
   useState,
 } from 'react'
 
-interface UseResizeParams {
+interface UseResize {
   direction?: 'horizontal' | 'vertical' | 'both'
   triggerDirection?: 'top' | 'right' | 'bottom' | 'left' | 'top-right' | 'top-left' | 'bottom-right' | 'bottom-left'
   minWidth?: number
@@ -15,7 +15,7 @@ interface UseResizeParams {
   onResized?: (width: number, height: number) => void
   onResize?: (width: number, height: number) => void
 }
-export const useResize = (params?: UseResizeParams) => {
+export const useResize = (params?: UseResize) => {
   const {
     direction = 'both',
     triggerDirection = 'bottom-right',
@@ -32,7 +32,7 @@ export const useResize = (params?: UseResizeParams) => {
   const startYRef = useRef(0)
   const containerWidthRef = useRef(0)
   const containerHeightRef = useRef(0)
-  
+
   const isResizingRef = useRef(false)
   const [prevUserSelectStyle, setPrevUserSelectStyle] = useState(() => getComputedStyle(document.body).userSelect)
 

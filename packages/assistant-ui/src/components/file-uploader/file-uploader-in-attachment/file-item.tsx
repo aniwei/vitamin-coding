@@ -10,7 +10,7 @@ import {
 } from 'react'
 import ActionButton from '@/components/action-button'
 import { PreviewMode } from '@/components/features/types'
-import { ReplayLine } from '@/components/icons/src/vender/other'
+import { ReplayLine } from '@/components/icons/other'
 import ImagePreview from '@/components/image-uploader/image-preview'
 import ProgressCircle from '@/components/progress-bar/progress-circle'
 import { SupportUploadFileTypes } from '@/app/components/workflow/types'

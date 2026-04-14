@@ -55,7 +55,9 @@ export class PersistenceBackedArchiveStorage implements ArchiveStorage {
 
   async read(archivePath: string): Promise<string> {
     const snapshot = await this.persistence.load(archivePath)
-    if (!snapshot) throw new Error(`Archive not found: ${archivePath}`)
+    if (!snapshot) {
+      throw new Error(`Archive not found: ${archivePath}`)
+    }
     return snapshot.data.content
   }
 

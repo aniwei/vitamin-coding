@@ -1,5 +1,5 @@
-import { TerminalSquare } from '@/components/icons/src/vender/solid/development'
-import { Beaker02 } from '@/components/icons/src/vender/solid/education'
+import { TerminalSquare } from '@/components/icons/solid/development'
+import { Beaker02 } from '@/components/icons/solid/education'
 import { useAppContext } from '@/context/app-context'
 import { current } from 'immer'
 

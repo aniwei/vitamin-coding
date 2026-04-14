@@ -1,3 +1,4 @@
+import type { SkillProvider } from '@vitamin/skill'
 import type { AgentTool } from '@vitamin/agent'
 import type { AuthStore, Model, ProviderRegistry } from '@vitamin/ai'
 import type { ModelRegistry } from '@vitamin/ai'
@@ -9,7 +10,7 @@ import type { SettingsManager } from '@vitamin/resources'
 import type { CodingSessionManager } from './session/coding-session-manager'
 import type { AgentSessionInfo, AgentSessionOptions } from './session/types'
 import type { AgentSession } from './session/agent-session'
-import type { Logger } from '@vitamin/shared'
+import type { Logger, LogLevel } from '@vitamin/shared'
 import type { Devtools } from '@vitamin/devtools'
 
 export interface VitaminContext {
@@ -33,6 +34,7 @@ export interface VitaminContext {
   stop(): Promise<void>
   createSession(options?: Partial<AgentSessionOptions>): Promise<AgentSession>
   getSession(id: string): AgentSession | undefined
+  getActiveSession(): AgentSession | undefined
   listSessions(): AgentSessionInfo[]
   removeSession(id: string): Promise<boolean>
   forkSession(sourceId: string, newId?: string): Promise<AgentSession | undefined>
@@ -43,7 +45,7 @@ export interface VitaminAppOptions {
   inspect: boolean
   logger: {
     name: string
-    level: 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal'
+    level: LogLevel
     destination: string
   }
 
@@ -62,4 +64,16 @@ export interface VitaminAppOptions {
   resourceManager?: ResourceManager
   /** prompt 提供者配置，默认使用内置 prompts 目录 */
   prompt?: PromptProviderOptions
+  /**
+   * skill 实现注入点（可选）。
+   * 未提供时 skill_load / skill_execute 工具仍注册，但返回"功能未配置"提示。
+   * 未来可注入基于 @vitamin/skill 的完整实现。
+   */
+  skillProvider?: SkillProvider
+  /**
+   * 使用远端 session 存储时必填（sessionUrl 指定时生效）。
+   */
+  sessionFetch?: typeof globalThis.fetch
+  sessionGetAuth?: () => Promise<{ token: string }>
+  sessionTimeoutMs?: number
 }

@@ -35,13 +35,17 @@ export function getLanguageId(ext: string): string {
 // ─── Server installation check ───────────────────────────────────────────────
 
 export function isServerInstalled(command: string[]): boolean {
-  if (command.length === 0) return false
+  if (command.length === 0) {
+    return false
+  }
 
   const cmd = command[0]!
 
   // Absolute paths
   if (cmd.includes('/') || cmd.includes('\\')) {
-    if (existsSync(cmd)) return true
+    if (existsSync(cmd)) {
+      return true
+    }
   }
 
   const isWindows = process.platform === 'win32'
@@ -67,7 +71,9 @@ export function isServerInstalled(command: string[]): boolean {
 
   for (const p of paths) {
     for (const suffix of exts) {
-      if (existsSync(join(p, cmd + suffix))) return true
+      if (existsSync(join(p, cmd + suffix))) {
+        return true
+      }
     }
   }
 
@@ -81,12 +87,16 @@ export function isServerInstalled(command: string[]): boolean {
 
   for (const base of additionalBases) {
     for (const suffix of exts) {
-      if (existsSync(join(base, cmd + suffix))) return true
+      if (existsSync(join(base, cmd + suffix))) {
+        return true
+      }
     }
   }
 
   // Node runtime always available
-  if (cmd === 'node') return true
+  if (cmd === 'node') {
+    return true
+  }
 
   return false
 }
@@ -94,7 +104,9 @@ export function isServerInstalled(command: string[]): boolean {
 // ─── Config loading ──────────────────────────────────────────────────────────
 
 function loadJsonFile<T>(path: string): T | null {
-  if (!existsSync(path)) return null
+  if (!existsSync(path)) {
+    return null
+  }
   try {
     return parseJsonc(readFileSync(path, 'utf-8')) as T
   } catch {
@@ -104,9 +116,13 @@ function loadJsonFile<T>(path: string): T | null {
 
 function detectConfigFilePath(base: string): string {
   const jsonc = base + '.jsonc'
-  if (existsSync(jsonc)) return jsonc
+  if (existsSync(jsonc)) {
+    return jsonc
+  }
   const json = base + '.json'
-  if (existsSync(json)) return json
+  if (existsSync(json)) {
+    return json
+  }
   return jsonc // default to .jsonc even if not found
 }
 
@@ -123,10 +139,14 @@ function loadAllConfigs(): Map<ConfigSource, ConfigJson> {
   const configs = new Map<ConfigSource, ConfigJson>()
 
   const project = loadJsonFile<ConfigJson>(paths.project)
-  if (project) configs.set('project', project)
+  if (project) {
+    configs.set('project', project)
+  }
 
   const user = loadJsonFile<ConfigJson>(paths.user)
-  if (user) configs.set('user', user)
+  if (user) {
+    configs.set('user', user)
+  }
 
   return configs
 }
@@ -141,15 +161,21 @@ function getMergedServers(): ServerWithSource[] {
 
   for (const source of sources) {
     const config = configs.get(source)
-    if (!config?.lsp) continue
+    if (!config?.lsp) {
+      continue
+    }
 
     for (const [id, entry] of Object.entries(config.lsp)) {
       if (entry.disabled) {
         disabled.add(id)
         continue
       }
-      if (seen.has(id)) continue
-      if (!entry.command || !entry.extensions) continue
+      if (seen.has(id)) {
+        continue
+      }
+      if (!entry.command || !entry.extensions) {
+        continue
+      }
 
       servers.push({
         id,
@@ -166,7 +192,9 @@ function getMergedServers(): ServerWithSource[] {
 
   // Append builtin servers that aren't overridden/disabled
   for (const [id, config] of Object.entries(BUILTIN_SERVERS)) {
-    if (disabled.has(id) || seen.has(id)) continue
+    if (disabled.has(id) || seen.has(id)) {
+      continue
+    }
     servers.push({
       id,
       command: config.command,
@@ -242,9 +270,13 @@ export function getAllServers(): Array<{
   const disabled = new Set<string>()
 
   for (const config of configs.values()) {
-    if (!config.lsp) continue
+    if (!config.lsp) {
+      continue
+    }
     for (const [id, entry] of Object.entries(config.lsp)) {
-      if (entry.disabled) disabled.add(id)
+      if (entry.disabled) {
+        disabled.add(id)
+      }
     }
   }
 
@@ -260,7 +292,9 @@ export function getAllServers(): Array<{
   const seen = new Set<string>()
 
   for (const server of servers) {
-    if (seen.has(server.id)) continue
+    if (seen.has(server.id)) {
+      continue
+    }
     result.push({
       id: server.id,
       installed: isServerInstalled(server.command),
@@ -273,7 +307,9 @@ export function getAllServers(): Array<{
   }
 
   for (const id of disabled) {
-    if (seen.has(id)) continue
+    if (seen.has(id)) {
+      continue
+    }
     const builtin = BUILTIN_SERVERS[id]
     result.push({
       id,

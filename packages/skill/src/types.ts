@@ -1,6 +1,4 @@
-// @vitamin/skill — Skill 类型定义
 // 兼容 Agent Skills 开放标准 (agentskills.io/specification)
-// 参考 superpowers / gstack / infiAgent SKILL.md 格式
 
 import type { Events } from '@vitamin/shared'
 
@@ -120,4 +118,21 @@ export interface SkillEvents extends Events {
   skill_unloaded: (info: { name: string }) => void
   skill_error: (info: { name: string; error: string }) => void
   skill_executed: (info: { name: string; success: boolean; durationMs: number }) => void
+}
+
+// ─── Skill Provider 接口（供上层 VitaminApp 注入） ───
+
+/**
+ * 上层（如 VitaminApp）通过此接口注入 skill 能力。
+ * 未注入时 skill 相关工具返回"功能未配置"提示。
+ */
+export interface SkillProvider {
+  /** 从指定路径加载 SKILL.md 定义 */
+  load(path: string): Promise<{ success: boolean; name?: string; error?: string }>
+  /** 执行已加载的 skill */
+  execute(
+    name: string,
+    input?: string,
+    parameters?: Record<string, string>,
+  ): Promise<SkillExecutionResult>
 }

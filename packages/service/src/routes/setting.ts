@@ -5,7 +5,7 @@ export function createSettingRoute(service: CodingService): Hono {
   const app = new Hono()
 
   app.get('/', (c) => {
-    const active = service.vitamin.sessionManager.active
+    const active = service.getActiveSession()
     return c.json({
       workingDirectory: service.vitamin.workspaceDir,
       model: active?.model?.id,

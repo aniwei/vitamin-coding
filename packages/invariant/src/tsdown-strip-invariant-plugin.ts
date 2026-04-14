@@ -11,26 +11,40 @@ type StripInvariantPluginOptions = {
 }
 
 function isProcessEnvNodeEnv(node: ts.Node): boolean {
-  if (!ts.isPropertyAccessExpression(node)) return false
-  if (node.name.text !== 'NODE_ENV') return false
+  if (!ts.isPropertyAccessExpression(node)) {
+    return false
+  }
+  if (node.name.text !== 'NODE_ENV') {
+    return false
+  }
 
   const envExpr = node.expression
-  if (!ts.isPropertyAccessExpression(envExpr)) return false
-  if (envExpr.name.text !== 'env') return false
+  if (!ts.isPropertyAccessExpression(envExpr)) {
+    return false
+  }
+  if (envExpr.name.text !== 'env') {
+    return false
+  }
 
   const processExpr = envExpr.expression
   return ts.isIdentifier(processExpr) && processExpr.text === 'process'
 }
 
 function isProductionGuard(node: ts.Expression): boolean {
-  if (!ts.isBinaryExpression(node)) return false
+  if (!ts.isBinaryExpression(node)) {
+    return false
+  }
 
   const isNotEqual =
     node.operatorToken.kind === ts.SyntaxKind.ExclamationEqualsEqualsToken ||
     node.operatorToken.kind === ts.SyntaxKind.ExclamationEqualsToken
 
-  if (!isNotEqual) return false
-  if (!isProcessEnvNodeEnv(node.left)) return false
+  if (!isNotEqual) {
+    return false
+  }
+  if (!isProcessEnvNodeEnv(node.left)) {
+    return false
+  }
 
   return ts.isStringLiteral(node.right) && node.right.text === 'production'
 }
@@ -42,12 +56,20 @@ function collectInvariantLocalNames(
   const localNames = new Set<string>()
 
   for (const statement of sourceFile.statements) {
-    if (!ts.isImportDeclaration(statement)) continue
-    if (!ts.isStringLiteral(statement.moduleSpecifier)) continue
-    if (statement.moduleSpecifier.text !== invariantImportSource) continue
+    if (!ts.isImportDeclaration(statement)) {
+      continue
+    }
+    if (!ts.isStringLiteral(statement.moduleSpecifier)) {
+      continue
+    }
+    if (statement.moduleSpecifier.text !== invariantImportSource) {
+      continue
+    }
 
     const clause = statement.importClause
-    if (!clause || !clause.namedBindings || !ts.isNamedImports(clause.namedBindings)) continue
+    if (!clause || !clause.namedBindings || !ts.isNamedImports(clause.namedBindings)) {
+      continue
+    }
 
     for (const element of clause.namedBindings.elements) {
       const importedName = element.propertyName?.text ?? element.name.text
@@ -64,7 +86,9 @@ function containsInvariantCall(node: ts.Node, invariantLocalNames: Set<string>):
   let found = false
 
   const visit = (current: ts.Node) => {
-    if (found) return
+    if (found) {
+      return
+    }
 
     if (
       ts.isCallExpression(current) &&
@@ -87,8 +111,12 @@ function stripInvariantFromImport(
   invariantImportSource: string,
   factory: ts.NodeFactory,
 ): ts.ImportDeclaration | undefined {
-  if (!ts.isStringLiteral(importDecl.moduleSpecifier)) return importDecl
-  if (importDecl.moduleSpecifier.text !== invariantImportSource) return importDecl
+  if (!ts.isStringLiteral(importDecl.moduleSpecifier)) {
+    return importDecl
+  }
+  if (importDecl.moduleSpecifier.text !== invariantImportSource) {
+    return importDecl
+  }
 
   const clause = importDecl.importClause
   if (!clause || !clause.namedBindings || !ts.isNamedImports(clause.namedBindings)) {
@@ -171,7 +199,9 @@ export function createStripInvariantInProductionPlugin(
   return {
     name: 'strip-invariant-in-production',
     transform(code, id) {
-      if (!options.filter.test(id)) return null
+      if (!options.filter.test(id)) {
+        return null
+      }
 
       const transformed = transformSource(code, id, invariantImportSource)
       return { code: transformed }

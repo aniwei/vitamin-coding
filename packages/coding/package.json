@@ -48,6 +48,7 @@
     "@vitamin/session": "workspace:*",
     "@vitamin/setting": "workspace:*",
     "@vitamin/shared": "workspace:*",
+    "@vitamin/skill": "workspace:*",
     "@vitamin/tools": "workspace:*"
   }
 }

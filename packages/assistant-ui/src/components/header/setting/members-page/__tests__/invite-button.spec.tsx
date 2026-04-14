@@ -3,7 +3,7 @@ import type { ICurrentWorkspace } from '@/models/common'
 import { render, screen } from '@testing-library/react'
 import { vi } from 'vitest'
 import { useAppContext } from '@/context/app-context'
-import { useGlobalPublicStore } from '@/context/global-context'
+import { useGlobalPublicStore } from '@/context/app-context'
 import { useWorkspacePermissions } from '@/service/use-workspace'
 import InviteButton from '../invite-button'
 

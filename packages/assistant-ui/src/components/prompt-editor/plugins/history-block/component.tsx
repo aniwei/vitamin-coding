@@ -5,7 +5,7 @@ import {
 } from '@remixicon/react'
 import { useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { MessageClockCircle } from '@/components/icons/src/vender/solid/general'
+import { MessageClockCircle } from '@/components/icons/solid/general'
 import {
   PortalToFollowElem,
   PortalToFollowElemContent,

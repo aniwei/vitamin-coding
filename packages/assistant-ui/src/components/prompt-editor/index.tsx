@@ -26,7 +26,7 @@ import {
 } from 'lexical'
 import * as React from 'react'
 import { useEffect, useState } from 'react'
-import { useEventBusContext } from '@/context/event-bus'
+import { useEventBus } from '@/context/event-bus'
 import { clsx } from 'clsx'
 import {
   UPDATE_DATASETS_EVENT_EMITTER,
@@ -120,7 +120,7 @@ const PromptEditor: FC<PromptEditorProps> = ({
   isSupportFileVar,
   shortcutPopups = [],
 }) => {
-  const { eventBus } = useEventBusContext()
+  const { eventBus } = useEventBus()
   const initialConfig: InitialConfigType = {
     theme: {
       paragraph: 'group-[.clamp]:line-clamp-5 group-focus/editable:line-clamp-none!',

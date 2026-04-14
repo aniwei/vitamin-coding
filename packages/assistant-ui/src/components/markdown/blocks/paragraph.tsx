@@ -1,30 +1,13 @@
 import ImageGallery from '@/components/image-gallery'
 import { memo } from 'react'
-
-interface MdastNode {
-  tagName?: string
-  children?: MdastNode[]
-  [key: string]: unknown
-}
-
-const hasImageChild = (children: MdastNode[] | undefined): boolean => {
-  return children?.some((child) => {
-    if (child.tagName === 'img') {
-      return true
-    }
-
-    return child.children 
-      ? hasImageChild(child.children) 
-      : false
-  }) ?? false
-}
+import { hasImageChild } from '../shared'
 
 interface ParagraphProps {
-  node: any
+  node?: any
 }
 
 export const Paragraph = memo(({ node }: ParagraphProps) => {
-  const children = node.children
+  const children = node?.children
   const hasImage = hasImageChild(children)
 
   if (hasImage) {

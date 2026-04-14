@@ -6,7 +6,7 @@ import type {
 } from '../declarations'
 import { useCallback, useState } from 'react'
 import { useTranslation } from 'react-i18next'
-import { CreditsCoin } from '@/components/icons/src/vender/line/financeAndECommerce'
+import { CreditsCoin } from '@/components/icons/line/financeAndECommerce'
 import {
   Popover,
   PopoverContent,

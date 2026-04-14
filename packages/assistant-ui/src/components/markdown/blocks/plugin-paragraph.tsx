@@ -1,30 +1,50 @@
 import ImageGallery from '@/components/image-gallery'
-import { useEffect, useMemo, useState } from 'react'
-import { getMarkdownImageURL, hasImageChild } from './utils'
+import { memo, useEffect, useMemo, useState } from 'react'
+import { getMarkdownImageURL, hasImageChild } from '../shared'
 import * as React from 'react'
 
 import type { ExtraProps } from 'streamdown'
 import type { SimplePluginInfo } from '../streamdown-wrapper'
 
-interface HastChildNode {
+type HastChildNode = {
   tagName?: string
   properties?: { src?: string, [key: string]: unknown }
 }
 
-interface PluginParagraphProps {
+type PluginParagraphProps = {
   pluginInfo?: SimplePluginInfo
   node?: ExtraProps['node']
   children?: React.ReactNode
   data: Blob | undefined
 }
 
-export const PluginParagraph: React.FC<PluginParagraphProps> = ({ 
+const useBlobUrl = (data: Blob | undefined): string | undefined => {
+  const [blobUrl, setBlobUrl] = useState<string>()
+
+  useEffect(() => {
+    if (!data) {
+      setBlobUrl(undefined)
+      return
+    }
+
+    const objectUrl = URL.createObjectURL(data)
+    setBlobUrl(objectUrl)
+
+    return () => {
+      URL.revokeObjectURL(objectUrl)
+    }
+  }, [data])
+
+  return blobUrl
+}
+
+export const PluginParagraph: React.FC<PluginParagraphProps> = memo(({ 
   pluginInfo, 
   data,
   node, 
   children 
 }) => {
-  const { pluginUniqueIdentifier, pluginId } = pluginInfo || {}
+  const { pluginId } = pluginInfo || {}
   const childrenNode = node?.children as HastChildNode[] | undefined
   const firstChild = childrenNode?.[0]
   const isImageParagraph = firstChild?.tagName === 'img'
@@ -32,31 +52,14 @@ export const PluginParagraph: React.FC<PluginParagraphProps> = ({
     ? firstChild?.properties?.src 
     : undefined
 
-  const [blobUrl, setBlobUrl] = useState<string>()
-
-  useEffect(() => {
-    if (!data) {
-      setBlobUrl(undefined)
-    } else {
-      const objectUrl = URL.createObjectURL(data as Blob)
-      setBlobUrl(objectUrl)
-    }
-
-    return () => {
-      if (blobUrl) {
-        URL.revokeObjectURL(blobUrl)
-      }
-    }
-  }, [data])
+  const blobUrl = useBlobUrl(data)
 
   const url = useMemo(() => {
-    if (blobUrl) {
+    if (blobUrl)
       return blobUrl
-    }
 
-    if (isImageParagraph && imageSrc) {
+    if (isImageParagraph && imageSrc)
       return getMarkdownImageURL(imageSrc, pluginId)
-    }
 
     return ''
   }, [blobUrl, imageSrc, isImageParagraph, pluginId])
@@ -77,4 +80,6 @@ export const PluginParagraph: React.FC<PluginParagraphProps> = ({
   }
 
   return <p>{children}</p>
-}
+})
+
+PluginParagraph.displayName = 'PluginParagraph'

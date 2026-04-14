@@ -1,7 +1,4 @@
-import {
-  spawn as childProcessSpawn,
-  type ChildProcess,
-} from 'node:child_process'
+import { spawn as childProcessSpawn, type ChildProcess } from 'node:child_process'
 
 type ProgressCallback = (chunk: Buffer) => void
 
@@ -27,7 +24,9 @@ const createExecuteResult = (): SpawnExecuteResult => ({
 
 const kill = (child: ChildProcess) => {
   const pid = child.pid
-  if (!pid) return
+  if (!pid) {
+    return
+  }
 
   try {
     switch (process.platform) {
@@ -42,9 +41,7 @@ const kill = (child: ChildProcess) => {
         try {
           process.kill(pid, 'SIGKILL')
         } catch {
-          console.warn(
-            `Failed to kill process ${pid}, it may still be running.`,
-          )
+          console.warn(`Failed to kill process ${pid}, it may still be running.`)
         }
       }
     }

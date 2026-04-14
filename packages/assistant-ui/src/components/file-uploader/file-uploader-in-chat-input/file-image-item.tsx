@@ -5,7 +5,7 @@ import {
 } from '@remixicon/react'
 import { useState } from 'react'
 import Button from '@/components/button'
-import { ReplayLine } from '@/components/icons/src/vender/other'
+import { ReplayLine } from '@/components/icons/other'
 import ImagePreview from '@/components/image-uploader/image-preview'
 import ProgressCircle from '@/components/progress-bar/progress-circle'
 import { downloadUrl } from '@/utils/download'

@@ -4,7 +4,8 @@ import {
 } from './binary/binary-executor-registry'
 import { registerBuiltinTools, type RegisterBuiltinOptions } from './register-builtin'
 import type { AgentTool } from '@vitamin/agent'
-import type { RegisteredTool, ToolMetadata, ToolPreset, ToolRegistrationOptions } from './types'
+import type { ToolPreset } from '@vitamin/setting'
+import type { RegisteredTool, ToolMetadata, ToolRegistrationOptions } from './types'
 
 const PRESET_INCLUDES: Record<ToolPreset, Set<ToolPreset>> = {
   minimal: new Set(['minimal']),
@@ -83,12 +84,16 @@ export class ToolRegistry {
         }
       }
 
-      if (allDeleted) this.version++
+      if (allDeleted) {
+        this.version++
+      }
       return allDeleted
     }
 
     const deleted = this.tools.delete(name)
-    if (deleted) this.version++
+    if (deleted) {
+      this.version++
+    }
     return deleted
   }
 
@@ -110,7 +115,7 @@ export class ToolRegistry {
   }
 
   getAvailable(preset: ToolPreset = 'standard'): RegisteredTool[] {
-    const includes = PRESET_INCLUDES[preset]
+    const includes = PRESET_INCLUDES[preset] ?? PRESET_INCLUDES.standard
     return this.getAll().filter((tool) => includes.has(tool.metadata.preset))
   }
 
@@ -147,11 +152,15 @@ export class ToolRegistry {
         lines.push(tool.description)
       }
 
-      if (snippet) lines.push(`Example:\n\`\`\`\n${snippet}\n\`\`\``)
+      if (snippet) {
+        lines.push(`Example:\n\`\`\`\n${snippet}\n\`\`\``)
+      }
       parts.push(lines.join('\n'))
     }
 
-    if (parts.length === 0) return ''
+    if (parts.length === 0) {
+      return ''
+    }
     return `### Tool Usage Guidelines\n\n${parts.join('\n\n')}`
   }
 

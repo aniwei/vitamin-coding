@@ -24,7 +24,9 @@ export function findWorkspaceRoot(filePath: string): string {
   let prevDir = ''
   while (dir !== prevDir) {
     for (const marker of WORKSPACE_MARKERS) {
-      if (existsSync(join(dir, marker))) return dir
+      if (existsSync(join(dir, marker))) {
+        return dir
+      }
     }
     prevDir = dir
     dir = dirname(dir)

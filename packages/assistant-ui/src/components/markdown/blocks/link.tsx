@@ -1,27 +1,28 @@
 import { isValidUrl } from '../shared'
+import { memo } from 'react'
 import * as React from 'react'
 
 interface LinkProps {
-  node: {
+  node?: {
     properties?: { href?: string | string[]
       [key: string]: any
     }
     children?: { value?: string }[]
     [key: string]: any
   }
-  children: React.ReactNode
-  onSend: (text: string) => void
+  children?: React.ReactNode
+  onSend?: (text: string) => void
   [key: string]: any
 }
 
-export const Link: React.FC<LinkProps> = ({ 
+export const Link: React.FC<LinkProps> = memo(({ 
   node, 
   children, 
   onSend, 
   ...props 
 }) => {
   if (
-    node.properties?.href && 
+    node?.properties?.href && 
     node.properties.href?.toString().startsWith('abbr')
   ) {
     const hiddenText = decodeURIComponent(node.properties.href.toString().split('abbr:')[1])
@@ -32,7 +33,7 @@ export const Link: React.FC<LinkProps> = ({
       title={node.children?.[0]?.value || ''}
     >{node.children?.[0]?.value || ''}</abbr>
   } else {
-    const href = props.href || node.properties?.href
+    const href = props.href || node?.properties?.href
 
     if (href && /^#[\w-]+$/.test(href.toString())) {
       const handleClick = (e: React.MouseEvent<HTMLAnchorElement>) => {
@@ -67,6 +68,8 @@ export const Link: React.FC<LinkProps> = ({
       className="cursor-pointer underline decoration-primary-700! decoration-dashed"
     >{children || 'Download'}</a>
   }
-}
+})
+
+Link.displayName = 'Link'
 
 export default Link

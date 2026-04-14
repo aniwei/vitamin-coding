@@ -50,14 +50,18 @@ export class DisposableStack implements Disposable {
   }
 
   [Symbol.dispose](): void {
-    if (this.disposed) return
+    if (this.disposed) {
+      return
+    }
     this.disposed = true
 
     const errors: Error[] = []
     for (let i = this.cleanups.length - 1; i >= 0; i--) {
       try {
         const cleanup = this.cleanups[i]
-        if (cleanup) cleanup()
+        if (cleanup) {
+          cleanup()
+        }
       } catch (error) {
         errors.push(error instanceof Error ? error : new Error(String(error)))
       }
@@ -111,14 +115,18 @@ export class AsyncDisposableStack implements AsyncDisposable {
   }
 
   async [Symbol.asyncDispose](): Promise<void> {
-    if (this.disposed) return
+    if (this.disposed) {
+      return
+    }
     this.disposed = true
 
     const errors: Error[] = []
     for (let i = this.cleanups.length - 1; i >= 0; i--) {
       try {
         const cleanup = this.cleanups[i]
-        if (cleanup) await cleanup()
+        if (cleanup) {
+          await cleanup()
+        }
       } catch (error) {
         errors.push(error instanceof Error ? error : new Error(String(error)))
       }

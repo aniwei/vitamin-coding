@@ -80,9 +80,13 @@ function sanitizeSurrogates(text: string): string {
 // 部分 provider 在消息含 tool_calls/tool_result 时要求 tools 参数存在（参照 pi-mono）
 function hasToolHistory(messages: Message[]): boolean {
   for (const msg of messages) {
-    if (msg.role === 'tool_result') return true
+    if (msg.role === 'tool_result') {
+      return true
+    }
     if (msg.role === 'assistant') {
-      if (msg.content.some((b) => b.type === 'tool_call')) return true
+      if (msg.content.some((b) => b.type === 'tool_call')) {
+        return true
+      }
     }
   }
   return false
@@ -104,7 +108,9 @@ function buildOpenAIMessages(context: StreamContext): unknown[] {
         result.push({
           role: 'user',
           content: msg.content.map((part) => {
-            if (part.type === 'text') return { type: 'text', text: sanitizeSurrogates(part.text) }
+            if (part.type === 'text') {
+              return { type: 'text', text: sanitizeSurrogates(part.text) }
+            }
             if (part.type === 'image') {
               return {
                 type: 'image_url',
@@ -136,7 +142,9 @@ function buildOpenAIMessages(context: StreamContext): unknown[] {
         .join('')
 
       // 跳过无内容且无 tool_calls 的 assistant 消息（参照 pi-mono）
-      if (!textParts && toolCalls.length === 0) continue
+      if (!textParts && toolCalls.length === 0) {
+        continue
+      }
 
       result.push({
         role: 'assistant',
@@ -303,7 +311,9 @@ class GitHubCopilotStream implements ProviderStream {
   async resolveKey(): Promise<string> {
     if (this.resolveOAuthAccessKey) {
       const key = await this.resolveOAuthAccessKey()
-      if (key) return key
+      if (key) {
+        return key
+      }
     }
 
     throw new ProviderError('Missing GitHub Copilot token.', {
@@ -343,7 +353,9 @@ class GitHubCopilotStream implements ProviderStream {
     })
 
     for await (const event of sse) {
-      if (event.data === '[DONE]') break
+      if (event.data === '[DONE]') {
+        break
+      }
 
       try {
         const data = JSON.parse(event.data) as Record<string, unknown>
@@ -364,11 +376,15 @@ class GitHubCopilotStream implements ProviderStream {
         }
 
         const choices = data.choices as Array<Record<string, unknown>> | undefined
-        if (!choices || choices.length === 0) continue
+        if (!choices || choices.length === 0) {
+          continue
+        }
 
         const choice = choices[0]!
         const delta = choice.delta as Record<string, unknown> | undefined
-        if (!delta) continue
+        if (!delta) {
+          continue
+        }
 
         // 发送 start 事件
         if (!started) {

@@ -1,9 +1,9 @@
 import type { ReactNode } from 'react'
 import { useTranslation } from 'react-i18next'
 import Button from '@/components/button'
-import { Brush01 } from '@/components/icons/src/vender/solid/editor'
-import { Scales02 } from '@/components/icons/src/vender/solid/FinanceAndECommerce'
-import { Target04 } from '@/components/icons/src/vender/solid/general'
+import { Brush01 } from '@/components/icons/solid/editor'
+import { Scales02 } from '@/components/icons/solid/FinanceAndECommerce'
+import { Target04 } from '@/components/icons/solid/general'
 import {
   DropdownMenu,
   DropdownMenuContent,

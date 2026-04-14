@@ -1,7 +1,7 @@
 import { clsx } from 'clsx'
 import { flow } from 'es-toolkit/compat'
 import { memo, useMemo, lazy } from 'react'
-import { preprocessLaTeX, preprocessThinkTag } from './markdown-utils'
+import { preprocessLaTeX, preprocessThinkTag } from './shared'
 import type { SimplePluginInfo, StreamdownWrapperProps } from './streamdown-wrapper'
 
 const StreamdownWrapper = lazy(() => import('./streamdown-wrapper'))

@@ -9,9 +9,9 @@ import ExploreNav from './explore-nav'
 import ToolsNav from './tools-nav'
 import SessionNav from './session-nav'
 import { Link, useLocation } from 'react-router-dom'
-import { WorkspaceProvider } from '@/context/workspace-context-provider'
+import { WorkspaceProvider } from '@/context/workspace-context'
 import { useState } from 'react'
-import { useEventBusContext } from '@/context/event-bus'
+import { useEventBus } from '@/context/event-bus'
 import s from './index.module.css'
 
 
@@ -24,7 +24,7 @@ const Header = () => {
   const isPipelineCanvas = pathname.endsWith('/pipeline')
   const workflowCanvasMaximize = localStorage.getItem('workflow-canvas-maximize') === 'true'
   const [hideHeader, setHideHeader] = useState(workflowCanvasMaximize)
-  const { eventBus } = useEventBusContext()
+  const { eventBus } = useEventBus()
 
   eventBus?.useSubscription((v: any) => {
     if (v?.type === 'workflow-canvas-maximize')

@@ -22,15 +22,22 @@ export function routeSessionEvent(event: AgentSessionEvent): WebSocketMessage[] 
   switch (event.type) {
     // ── 会话生命周期 ──────────────────────────────────────────────────────────
     case 'session_start':
-      return [{ type: 'Session.activity', data: { sessionId: sid, action: 'created', timestamp: now() } }]
+      return [
+        { type: 'Session.activity', data: { sessionId: sid, action: 'created', timestamp: now() } },
+      ]
 
     case 'session_end':
-      return [{ type: 'Session.activity', data: { sessionId: sid, action: 'ended', timestamp: now() } }]
+      return [
+        { type: 'Session.activity', data: { sessionId: sid, action: 'ended', timestamp: now() } },
+      ]
 
     // ── Prompt 生命周期 ───────────────────────────────────────────────────────
     case 'prompt_start':
       return [
-        { type: 'Chat.userMessage', data: { sessionId: sid, content: event.text, timestamp: now() } },
+        {
+          type: 'Chat.userMessage',
+          data: { sessionId: sid, content: event.text, timestamp: now() },
+        },
         { type: 'Chat.messageStart', data: { sessionId: sid, role: 'assistant' } },
       ]
 
@@ -43,13 +50,33 @@ export function routeSessionEvent(event: AgentSessionEvent): WebSocketMessage[] 
 
     // ── Agent 执行状态 ────────────────────────────────────────────────────────
     case 'streaming_start':
-      return [{ type: 'Session.statusUpdate', data: { sessionId: sid, status: 'streaming', model: event.model } }]
+      return [
+        {
+          type: 'Session.statusUpdate',
+          data: { sessionId: sid, status: 'streaming', model: event.model },
+        },
+      ]
 
     case 'streaming_end':
-      return [{ type: 'Session.statusUpdate', data: { sessionId: sid, status: 'idle', model: event.model, stopReason: event.stopReason } }]
+      return [
+        {
+          type: 'Session.statusUpdate',
+          data: {
+            sessionId: sid,
+            status: 'idle',
+            model: event.model,
+            stopReason: event.stopReason,
+          },
+        },
+      ]
 
     case 'turn_start':
-      return [{ type: 'Chat.progress', data: { sessionId: sid, phase: 'turn', turnIndex: event.turnIndex } }]
+      return [
+        {
+          type: 'Chat.progress',
+          data: { sessionId: sid, phase: 'turn', turnIndex: event.turnIndex },
+        },
+      ]
 
     case 'turn_end':
       return []
@@ -121,7 +148,9 @@ export function routeSessionEvent(event: AgentSessionEvent): WebSocketMessage[] 
       ]
 
     case 'ask_user_resolved':
-      return [{ type: 'Chat.askUserResolved', data: { sessionId: sid, requestId: event.requestId } }]
+      return [
+        { type: 'Chat.askUserResolved', data: { sessionId: sid, requestId: event.requestId } },
+      ]
 
     // ── 计划审批 ──────────────────────────────────────────────────────────────
     case 'plan_approval_required':
@@ -142,10 +171,20 @@ export function routeSessionEvent(event: AgentSessionEvent): WebSocketMessage[] 
 
     // ── 上下文压缩 ────────────────────────────────────────────────────────────
     case 'compaction_start':
-      return [{ type: 'Session.statusUpdate', data: { sessionId: sid, status: 'compacting', messageCount: event.messageCount } }]
+      return [
+        {
+          type: 'Session.statusUpdate',
+          data: { sessionId: sid, status: 'compacting', messageCount: event.messageCount },
+        },
+      ]
 
     case 'compaction_end':
-      return [{ type: 'Session.statusUpdate', data: { sessionId: sid, status: 'idle', retainedCount: event.retainedCount } }]
+      return [
+        {
+          type: 'Session.statusUpdate',
+          data: { sessionId: sid, status: 'idle', retainedCount: event.retainedCount },
+        },
+      ]
 
     // ── 错误 ──────────────────────────────────────────────────────────────────
     case 'error':
@@ -165,16 +204,30 @@ export function routeSessionEvent(event: AgentSessionEvent): WebSocketMessage[] 
 function routeStreamEvent(sessionId: string, event: StreamEvent): WebSocketMessage[] {
   switch (event.type) {
     case 'text_delta':
-      return [{ type: 'Chat.messageChunk', data: { sessionId, content: event.delta, role: 'assistant' } }]
+      return [
+        { type: 'Chat.messageChunk', data: { sessionId, content: event.delta, role: 'assistant' } },
+      ]
 
     case 'thinking_start':
-      return [{ type: 'Chat.thinkingBlock', data: { sessionId, action: 'start', index: event.index } }]
+      return [
+        { type: 'Chat.thinkingBlock', data: { sessionId, action: 'start', index: event.index } },
+      ]
 
     case 'thinking_delta':
-      return [{ type: 'Chat.thinkingBlock', data: { sessionId, action: 'delta', delta: event.delta, index: event.index } }]
+      return [
+        {
+          type: 'Chat.thinkingBlock',
+          data: { sessionId, action: 'delta', delta: event.delta, index: event.index },
+        },
+      ]
 
     case 'thinking_end':
-      return [{ type: 'Chat.thinkingBlock', data: { sessionId, action: 'end', content: event.content, index: event.index } }]
+      return [
+        {
+          type: 'Chat.thinkingBlock',
+          data: { sessionId, action: 'end', content: event.content, index: event.index },
+        },
+      ]
 
     case 'error':
       return [{ type: 'Runtime.error', data: { sessionId, message: event.error.message } }]

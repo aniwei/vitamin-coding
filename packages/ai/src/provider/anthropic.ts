@@ -26,10 +26,14 @@ async function resolveBaseUrl(
   resolver?: AnthropicBaseUrlResolver,
 ): Promise<string> {
   const envUrl = process.env['ANTHROPIC_BASE_URL']
-  if (envUrl) return envUrl
+  if (envUrl) {
+    return envUrl
+  }
   if (resolver) {
     const authUrl = await resolver()
-    if (authUrl) return authUrl
+    if (authUrl) {
+      return authUrl
+    }
   }
   return modelBaseUrl
 }
@@ -245,11 +249,15 @@ class AnthropicStream implements ProviderStream {
   async resolveKey(_model: Model): Promise<string> {
     if (this.resolveCredential) {
       const key = await this.resolveCredential()
-      if (key) return key
+      if (key) {
+        return key
+      }
     }
 
     const envKey = process.env['ANTHROPIC_API_KEY']
-    if (envKey) return envKey
+    if (envKey) {
+      return envKey
+    }
 
     throw new ProviderError(
       'Missing Anthropic API key. Set ANTHROPIC_API_KEY or configure via auth file.',
@@ -316,9 +324,12 @@ class AnthropicStream implements ProviderStream {
             const u = event.message.usage
             state.inputTokens = u.input_tokens
             state.outputTokens = u.output_tokens
-            if (u.cache_read_input_tokens != null) state.cacheReadTokens = u.cache_read_input_tokens
-            if (u.cache_creation_input_tokens != null)
+            if (u.cache_read_input_tokens != null) {
+              state.cacheReadTokens = u.cache_read_input_tokens
+            }
+            if (u.cache_creation_input_tokens != null) {
               state.cacheWriteTokens = u.cache_creation_input_tokens
+            }
             break
           }
 

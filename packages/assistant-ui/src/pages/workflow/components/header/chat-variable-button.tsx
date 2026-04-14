@@ -1,6 +1,6 @@
 import { memo } from 'react'
 import Button from '@/components/button'
-import { BubbleX } from '@/components/icons/src/vender/line/others'
+import { BubbleX } from '@/components/icons/line/others'
 import { useStore } from '@/app/components/workflow/store'
 import useTheme from '@/hooks/use-theme'
 import { clsx } from 'clsx'

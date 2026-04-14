@@ -26,7 +26,9 @@ const DEFAULT_MODELS = [
 ]
 
 function parsePositiveInt(value: string | undefined, fallback: number): number {
-  if (!value) return fallback
+  if (!value) {
+    return fallback
+  }
 
   const parsed = Number.parseInt(value, 10)
   return Number.isFinite(parsed) && parsed > 0 ? parsed : fallback
@@ -34,7 +36,9 @@ function parsePositiveInt(value: string | undefined, fallback: number): number {
 
 function getModels(): string[] {
   const raw = process.env.CODING_EXAMPLE_MODELS
-  if (!raw) return DEFAULT_MODELS
+  if (!raw) {
+    return DEFAULT_MODELS
+  }
 
   return raw
     .split(',')

@@ -88,7 +88,9 @@ class DefaultToolExecutor implements ToolExecutor {
     const consume = (
       result: { command: { type: string }; payload: PauseResumePayload | null } | undefined,
     ): void => {
-      if (!result) return
+      if (!result) {
+        return
+      }
       if (result.command.type === 'stop') {
         throw new AbortError('Stopped by debugger')
       }
@@ -232,7 +234,9 @@ class DefaultToolExecutor implements ToolExecutor {
     const results = new Map<string, ToolResult>()
 
     for (const toolCall of toolCalls) {
-      if (signal.aborted) break
+      if (signal.aborted) {
+        break
+      }
 
       // 检查 steering 队列
       const steeringMessages = await checkSteering()

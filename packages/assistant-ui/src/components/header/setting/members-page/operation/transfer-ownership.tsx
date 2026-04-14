@@ -7,7 +7,7 @@ import { Fragment } from 'react'
 import { useTranslation } from 'react-i18next'
 import Loading from '@/components/loading'
 import { useAppContext } from '@/context/app-context'
-import { useGlobalPublicStore } from '@/context/global-context'
+import { useGlobalPublicStore } from '@/context/app-context'
 import { useWorkspacePermissions } from '@/service/use-workspace'
 import clsx from 'clsx'
 

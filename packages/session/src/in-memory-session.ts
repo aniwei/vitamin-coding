@@ -77,7 +77,6 @@ export class InMemorySession<T = unknown> implements Session<T> {
     return this.sessionEntries
   }
 
-  // 沿当前分支从 root 到 leaf 的有序条目
   branchEntries(): ReadonlyArray<SessionEntry<T>> {
     return this.walkBranch()
   }
@@ -87,7 +86,7 @@ export class InMemorySession<T = unknown> implements Session<T> {
 
     let lastCompactionIndex = -1
     for (let i = branch.length - 1; i >= 0; i--) {
-      if (branch[i]!.type === 'compaction') {
+      if (branch[i]?.type === 'compaction') {
         lastCompactionIndex = i
         break
       }
@@ -149,10 +148,9 @@ export class InMemorySession<T = unknown> implements Session<T> {
     }
     Object.assign(this.meta, meta)
     this._leafId =
-      restoredLeafId ?? (entries.length > 0 ? entries[entries.length - 1]!.id : undefined)
+      restoredLeafId ?? (entries.length > 0 ? entries[entries.length - 1]?.id : undefined)
   }
 
-  // 导出快照
   toSnapshot(): {
     entries: SessionEntry<T>[]
     metadata: SessionMetadata
@@ -165,9 +163,10 @@ export class InMemorySession<T = unknown> implements Session<T> {
     }
   }
 
-  // 内部：从 leafId 沿 parentId 链回溯，返回 root → leaf 顺序
   private walkBranch(): SessionEntry<T>[] {
-    if (!this._leafId) return []
+    if (!this._leafId) {
+      return []
+    }
 
     const path: SessionEntry<T>[] = []
     let current = this.entryMap.get(this._leafId)
@@ -181,13 +180,12 @@ export class InMemorySession<T = unknown> implements Session<T> {
     return path
   }
 
-  // 内部: 获取当前分支上未压缩的 message 条目
   private getBranchMessageEntries(): Array<SessionEntry<T> & { type: 'message' }> {
     const branch = this.walkBranch()
 
     let lastCompactionIndex = -1
     for (let i = branch.length - 1; i >= 0; i--) {
-      if (branch[i]!.type === 'compaction') {
+      if (branch[i]?.type === 'compaction') {
         lastCompactionIndex = i
         break
       }

@@ -38,7 +38,9 @@ function parseSearchResults(html: string, limit: number): SearchResult[] {
 
     // Extract URL from the first <a href="..."> in the result block
     const urlMatch = block.match(/<a\s+href="(https?:\/\/[^"]+)"[^>]*class="[^"]*svelte-/)
-    if (!urlMatch) continue
+    if (!urlMatch) {
+      continue
+    }
 
     const url = urlMatch[1]!
 

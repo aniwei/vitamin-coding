@@ -12,6 +12,7 @@ import { type IncomingMessage, type Server } from 'node:http'
 import type { CodingServiceOptions, WebSocketClientMessage } from './types'
 import type { Socket } from 'node:net'
 import type { AgentSession, VitaminContext } from '@vitamin/coding'
+import { defineHook } from '@vitamin/hooks'
 
 const logger = createLogger('@vitamin/service')
 
@@ -75,18 +76,19 @@ export class CodingService {
   }
 
   registerHooks(vitamin: VitaminContext): void {
-    vitamin.hookRegistry.register({
-      name: 'service_session_attach',
-      timing: 'session.created',
-      priority: 5,
-      enabled: true,
-      handle: ({ sessionId }) => {
-        const session = this.getSession(sessionId)
-        if (session) {
-          this.attachSession(session)
-        }
-      },
-    })
+    vitamin.hookRegistry.register(
+      defineHook({
+        name: 'service_session_attach',
+        timing: 'session.created',
+        priority: 5,
+        handle: ({ sessionId }) => {
+          const session = this.getSession(sessionId)
+          if (session) {
+            this.attachSession(session)
+          }
+        },
+      }),
+    )
   }
 
   unregisterHooks(vitamin: VitaminContext): void {
@@ -98,7 +100,7 @@ export class CodingService {
   }
 
   getActiveSession(): AgentSession | undefined {
-    return this.vitamin.sessionManager.active
+    return this.vitamin.getActiveSession()
   }
 
   private readonly onUpgrade = (req: IncomingMessage, socket: Socket, head: Buffer): void => {
@@ -115,7 +117,9 @@ export class CodingService {
   }
 
   async start(): Promise<void> {
-    if (this.started) return
+    if (this.started) {
+      return
+    }
 
     this.server.on('upgrade', this.onUpgrade)
     this.ws.on('message', this.onWsMessage)
@@ -126,7 +130,7 @@ export class CodingService {
       this.server.listen(this.port, this.host, () => {
         this.started = true
         this.bridge?.attach()
-        logger.info(`service started on http://${this.host}:${this.port}`)
+        logger.info({ host: this.host, port: this.port }, 'service started')
         resolve()
       })
 
@@ -146,7 +150,9 @@ export class CodingService {
   }
 
   async stop(): Promise<void> {
-    if (!this.started) return
+    if (!this.started) {
+      return
+    }
 
     // 与 start() 顺序相反，确保拆除干净
     this.bridge?.detach()
@@ -170,7 +176,9 @@ export class CodingService {
   }
 
   attachSession(session: AgentSession): void {
-    if (this.bridges.has(session.id)) return
+    if (this.bridges.has(session.id)) {
+      return
+    }
 
     const bridge = new EventBridge(session, this.ws)
     bridge.attach()

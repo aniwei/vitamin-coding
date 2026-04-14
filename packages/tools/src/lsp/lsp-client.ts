@@ -217,7 +217,9 @@ export class LSPClient {
     while (true) {
       if (this.contentLength === -1) {
         const headerEnd = this.buffer.indexOf('\r\n\r\n')
-        if (headerEnd === -1) break
+        if (headerEnd === -1) {
+          break
+        }
 
         const header = this.buffer.subarray(0, headerEnd).toString('ascii')
         for (const line of header.split('\r\n')) {
@@ -235,7 +237,9 @@ export class LSPClient {
         this.buffer = this.buffer.subarray(headerEnd + 4)
       }
 
-      if (this.buffer.length < this.contentLength) break
+      if (this.buffer.length < this.contentLength) {
+        break
+      }
 
       const body = this.buffer.subarray(0, this.contentLength).toString('utf-8')
       this.buffer = this.buffer.subarray(this.contentLength)
@@ -268,7 +272,9 @@ export class LSPClient {
     }
 
     const method = msg.method as string | undefined
-    if (!method) return
+    if (!method) {
+      return
+    }
 
     // Server-initiated notification
     if (!('id' in msg)) {
@@ -287,7 +293,9 @@ export class LSPClient {
       const params = msg.params as { items?: Array<{ section?: string }> }
       const items = params?.items ?? []
       const result = items.map((item) => {
-        if (item.section === 'json') return { validate: { enable: true } }
+        if (item.section === 'json') {
+          return { validate: { enable: true } }
+        }
         return {}
       })
       this.respond(id, result)
@@ -337,15 +345,21 @@ export class LSPClient {
   }
 
   private sendNotification(method: string, params?: unknown): void {
-    if (!this.process?.stdin?.writable) return
-    if (this.processExited || (this.process && this.process.exitCode !== null)) return
+    if (!this.process?.stdin?.writable) {
+      return
+    }
+    if (this.processExited || (this.process && this.process.exitCode !== null)) {
+      return
+    }
 
     const body = JSON.stringify({ jsonrpc: '2.0', method, params })
     this.process.stdin.write(encodeMessage(body))
   }
 
   private respond(id: number, result: unknown): void {
-    if (!this.process?.stdin?.writable) return
+    if (!this.process?.stdin?.writable) {
+      return
+    }
     const body = JSON.stringify({ jsonrpc: '2.0', id, result })
     this.process.stdin.write(encodeMessage(body))
   }
@@ -374,7 +388,9 @@ export class LSPClient {
     }
 
     const prevText = this.lastSyncedText.get(uri)
-    if (prevText === text) return
+    if (prevText === text) {
+      return
+    }
 
     const nextVersion = (this.documentVersions.get(uri) ?? 1) + 1
     this.documentVersions.set(uri, nextVersion)
@@ -512,7 +528,9 @@ class LSPServerManager {
   }
 
   private startCleanupTimer(): void {
-    if (this.cleanupInterval) return
+    if (this.cleanupInterval) {
+      return
+    }
     this.cleanupInterval = setInterval(() => this.cleanupIdleClients(), 60_000)
     // Don't keep process alive just for cleanup
     if (this.cleanupInterval.unref) {
@@ -675,7 +693,9 @@ class LSPServerManager {
 
   warmupClient(root: string, server: ResolvedServer): void {
     const key = this.getKey(root, server.id)
-    if (this.clients.has(key)) return
+    if (this.clients.has(key)) {
+      return
+    }
 
     const client = new LSPClient(root, server)
     const initStartedAt = Date.now()

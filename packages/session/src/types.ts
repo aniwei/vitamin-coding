@@ -1,3 +1,5 @@
+import type { PaginatedResult } from '@vitamin/persistence'
+
 export type SessionEntry<T = unknown> =
   | { type: 'message'; id: string; parentId?: string; message: T; timestamp: number }
   | {
@@ -14,7 +16,6 @@ export interface SessionContext<T = unknown> {
   messages: T[]
 }
 
-// Session 元数据
 export interface SessionMetadata {
   createdAt: number
   lastActiveAt: number
@@ -95,19 +96,10 @@ export interface RemoteStorageOptions {
 
 export type StorageOptions = FileStorageOptions | RemoteStorageOptions
 
+// sortBy 比 @vitamin/persistence 多了 lastActiveAt（session 域字段）
 export interface PaginationOptions {
   page: number
   pageSize?: number
   order?: 'asc' | 'desc'
   sortBy?: 'lastActiveAt' | 'createdAt'
-}
-
-export interface PaginatedResult<T> {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
-  hasNext: boolean
-  hasPrevious: boolean
 }

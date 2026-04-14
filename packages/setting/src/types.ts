@@ -1,10 +1,7 @@
 import type { SettingStore } from './store'
 import type { WorkflowSlot } from '@vitamin/ai'
-export type { WorkflowSlot } from '@vitamin/ai'
-export { WORKFLOW_SLOTS } from '@vitamin/ai'
 
 export interface AgentOptions {
-  // 模型名称
   model?: string
   description?: string
   system_prompt?: string
@@ -14,7 +11,6 @@ export interface AgentOptions {
   default_workflow_slot?: WorkflowSlot
   max_tool_turns?: number
   temperature?: number
-  // 最大生成长度
   max_tokens?: number
   thinking_budget?: number
   disabled?: boolean
@@ -103,37 +99,30 @@ export interface ToolsConfig {
 }
 
 export interface WorkflowReview {
-  // 是否在子 agent 完成后自动执行质量审查
   enabled?: boolean
   [key: string]: unknown
 }
 
 export interface WorkflowRetry {
-  // 是否启用任务自动重试
   enabled?: boolean
-  // 最大尝试次数
   maxAttempts?: number
   [key: string]: unknown
 }
 
 export interface WorkflowCircuitBreaker {
-  // 是否启用熔断器
   enabled?: boolean
-  // 连续失败多少次后开启熔断
   failureThreshold?: number
-  // 熔断恢复超时 (ms)
+  /** ms */
   timeoutMs?: number
   [key: string]: unknown
 }
 
 export interface WorkflowRouting {
-  // 是否启用智能 agent 路由
   enabled?: boolean
   [key: string]: unknown
 }
 
 export interface WorkflowOptions {
-  // 总开关: 是否启用默认工程工作流 (默认 true)
   enabled?: boolean
   review?: WorkflowReview
   retry?: WorkflowRetry
@@ -221,7 +210,6 @@ export const VITAMIN_SETTING_KEYS = [
 
 export type VitaminSettingKey = (typeof VITAMIN_SETTING_KEYS)[number]
 
-// 配置加载/解析过程中产生的警告
 export interface SettingWarning {
   key: string
   message: string

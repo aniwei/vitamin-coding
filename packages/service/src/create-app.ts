@@ -6,6 +6,7 @@ import { createSessionsRoute } from './routes/sessions'
 import { createSettingRoute } from './routes/setting'
 import { createDevtoolsRoute } from './routes/devtools'
 import { createLoggerRoute } from './routes/logs'
+import { createWorkspaceRoute } from './routes/workspace'
 import type { Devtools } from '@vitamin/devtools'
 import type { CodingService } from './coding-service'
 import type { DebugBridge } from './debug-bridge'
@@ -34,6 +35,7 @@ export function createApp(context: CodingService, options: AppOptions = {}): Hon
   app.route('/api/health', createHealthRoute(context))
   app.route('/api/chat', createChatRoute(context))
   app.route('/api/sessions', createSessionsRoute(context))
+  app.route('/api/sessions', createWorkspaceRoute(context))
   app.route('/api/setting', createSettingRoute(context))
   app.route('/api/devtools', createDevtoolsRoute(context, options.devtools || null))
   app.route('/api/logs', createLoggerRoute(context))

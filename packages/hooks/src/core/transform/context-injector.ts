@@ -11,9 +11,7 @@ export interface ContextProvider {
   getContext: () => string | Promise<string | null> | null
 }
 
-export function createContextInjectorHook(
-  config: ContextInjectorConfig,
-): HookSpec {
+export function createContextInjectorHook(config: ContextInjectorConfig): HookSpec {
   return defineHook({
     name: 'context-injector',
     timing: 'messages.transform',
@@ -32,7 +30,9 @@ export function createContextInjectorHook(
         }
       }
 
-      if (contexts.length === 0) return
+      if (contexts.length === 0) {
+        return
+      }
 
       // 注入系统消息到消息列表头部
       const contextMessage = {

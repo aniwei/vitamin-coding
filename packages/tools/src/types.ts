@@ -1,6 +1,5 @@
 import type { AgentTool } from '@vitamin/agent'
 import type { ToolPreset } from '@vitamin/setting'
-export type { ToolPreset } from '@vitamin/setting'
 
 export interface ToolMetadata {
   preset: ToolPreset
