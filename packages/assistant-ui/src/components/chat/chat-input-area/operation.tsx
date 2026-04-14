@@ -6,7 +6,7 @@ import { memo } from 'react'
 import type { FC, Ref } from 'react'
 import type { ChatTheme } from '../theme-context'
 
-interface OperationProps {
+type OperationProps = {
   readonly?: boolean
   onSend: () => void
   theme?: ChatTheme | null

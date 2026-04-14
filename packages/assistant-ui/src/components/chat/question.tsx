@@ -23,20 +23,20 @@ import type { Theme } from './embedded-chatbot/theme/theme-context'
 import type { ChatItem } from './types'
 
 
-interface QuestionProps {
+type QuestionProps = {
   item: ChatItem
   questionIcon?: ReactNode
   theme: Theme | null | undefined
-  enableEdit?: boolean
-  switchSibling?: (siblingMessageId: string) => void
+  editable?: boolean
   hideAvatar?: boolean
+  switchSibling?: (siblingMessageId: string) => void
 }
 
-const Question: FC<QuestionProps> = memo(({
+export const Question: FC<QuestionProps> = memo(({
   item,
   questionIcon,
   theme,
-  enableEdit = true,
+  editable = true,
   switchSibling,
   hideAvatar,
 }) => {
@@ -157,12 +157,10 @@ const Question: FC<QuestionProps> = memo(({
       <div className={clsx('group relative mr-4 flex max-w-full items-start overflow-x-hidden pl-14', editing && 'flex-1')}>
         <div className={clsx('mr-2 gap-1', editing ? 'hidden' : 'flex')}>
           <div
-            data-testid="action-container"
             className="absolute hidden gap-0.5 radius-lg border-[0.5px] border-components-actionbar-border bg-components-actionbar-bg p-0.5 shadow-md backdrop-blur-xs group-hover:flex"
             style={{ right: contentWidth + 8 }}
           >
             <ActionButton
-              data-testid="copy-btn"
               onClick={() => {
                 copy(content)
                 toast.success('Copy successfully')
@@ -170,16 +168,15 @@ const Question: FC<QuestionProps> = memo(({
             >
               <div className="i-ri-clipboard-line h-4 w-4" />
             </ActionButton>
-            {enableEdit && (
-              <ActionButton data-testid="edit-btn" onClick={handleEdit}>
+            {
+              editable && <ActionButton onClick={handleEdit}>
                 <div className="i-ri-edit-line h-4 w-4" />
               </ActionButton>
-            )}
+            }
           </div>
         </div>
         <div
           ref={contentRef}
-          data-testid="question-content"
           className={clsx(
             'w-full px-4 py-3 text-sm',
             !editing && 'rounded-2xl bg-background-gradient-bg-fill-chat-bubble-bg-3 text-text-primary',
@@ -207,34 +204,35 @@ const Question: FC<QuestionProps> = memo(({
                     />
                   </div>
                   <div className="flex items-center justify-end gap-2">
-                    <Button className="min-w-24" onClick={handleCancelEditing} data-testid="cancel-edit-btn">Cancel</Button>
-                    <Button className="min-w-24" variant="primary" onClick={handleResend} data-testid="save-edit-btn">Save</Button>
+                    <Button className="min-w-24" onClick={handleCancelEditing} >Cancel</Button>
+                    <Button className="min-w-24" variant="primary" onClick={handleResend} >Save</Button>
                   </div>
                 </div>
           }
-          {!editing && (
-            <ContentSwitch
+          {
+            !editing && <ContentSwitch
               count={item.siblingCount}
               currentIndex={item.siblingIndex}
               prevDisabled={!item.prevSibling}
               nextDisabled={!item.nextSibling}
               switchSibling={handleSwitchSibling}
             />
-          )}
+          }
         </div>
         <div className="mt-1 h-[18px]" />
       </div>
-      {!hideAvatar && (
-        <div className="h-10 w-10 shrink-0">
+      {
+        !hideAvatar && <div className="h-10 w-10 shrink-0">
           {
             questionIcon || <div className="h-full w-full rounded-full border-[0.5px] border-black/5">
               <User className="question-default-user-icon h-full w-full" />
             </div>
           }
         </div>
-      )}
+      }
     </div>
   )
 })
 
+Question.displayName = 'Question'
 export default Question

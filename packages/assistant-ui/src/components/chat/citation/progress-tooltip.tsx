@@ -1,20 +1,18 @@
-import type { FC } from 'react'
 import { useState } from 'react'
-import { useTranslation } from 'react-i18next'
 import {
   PortalToFollowElem,
   PortalToFollowElemContent,
   PortalToFollowElemTrigger,
 } from '@/components/portal-to-follow-elem'
+import type { FC } from 'react'
 
 type ProgressTooltipProps = {
   data: number
 }
 
-const ProgressTooltip: FC<ProgressTooltipProps> = ({
+export const ProgressTooltip: FC<ProgressTooltipProps> = ({
   data,
 }) => {
-  const { t } = useTranslation()
   const [open, setOpen] = useState(false)
 
   return (
@@ -27,10 +25,9 @@ const ProgressTooltip: FC<ProgressTooltipProps> = ({
         onMouseEnter={() => setOpen(true)}
         onMouseLeave={() => setOpen(false)}
       >
-        <div data-testid="progress-trigger-content" className="flex grow items-center">
+        <div className="flex grow items-center">
           <div className="mr-1 h-1.5 w-16 overflow-hidden rounded-[3px] border border-components-progress-gray-border">
             <div
-              data-testid="progress-bar-fill"
               className="h-full bg-components-progress-gray-progress"
               style={{ width: `${data * 100}%` }}
             >
@@ -40,8 +37,8 @@ const ProgressTooltip: FC<ProgressTooltipProps> = ({
         </div>
       </PortalToFollowElemTrigger>
       <PortalToFollowElemContent style={{ zIndex: 1001 }}>
-        <div data-testid="progress-tooltip-popup" className="rounded-lg bg-components-tooltip-bg p-3 text-text-quaternary shadow-lg system-xs-medium">
-          {t('chat.citation.hitScore', { ns: 'common' })}
+        <div className="rounded-lg bg-components-tooltip-bg p-3 text-text-quaternary shadow-lg system-xs-medium">
+          Hit Score
           {' '}
           {data}
         </div>
@@ -50,4 +47,5 @@ const ProgressTooltip: FC<ProgressTooltipProps> = ({
   )
 }
 
+ProgressTooltip.displayName = 'ProgressTooltip'
 export default ProgressTooltip

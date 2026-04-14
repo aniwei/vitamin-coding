@@ -1,10 +1,10 @@
-import type { FC } from 'react'
-import * as React from 'react'
 import {
   Tooltip as UiTooltip,
   TooltipContent,
   TooltipTrigger,
 } from '@/components/ui/tooltip'
+import * as React from 'react'
+import type { FC } from 'react'
 
 type TooltipProps = {
   data: number | string
@@ -12,7 +12,7 @@ type TooltipProps = {
   icon: React.ReactNode
 }
 
-const Tooltip: FC<TooltipProps> = ({
+export const Tooltip: FC<TooltipProps> = React.memo(({
   data,
   text,
   icon,
@@ -40,6 +40,7 @@ const Tooltip: FC<TooltipProps> = ({
       </TooltipContent>
     </UiTooltip>
   )
-}
+})
 
+Tooltip.displayName = 'Tooltip'
 export default Tooltip
