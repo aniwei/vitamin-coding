@@ -9,7 +9,6 @@ export type {
   PermissionMode,
   PermissionRuleConfig,
   PermissionPolicySetting,
-  WorkflowSlot,
   SettingWarning,
   ConfigWarning,
   LoadSettingOptions,
@@ -24,7 +23,6 @@ export {
   TOOL_PRESETS,
   VITAMIN_DEFAULT_CONFIG,
   VITAMIN_SETTING_KEYS,
-  WORKFLOW_SLOTS,
 } from './types'
 
 export { migrate, registerMigration, resetMigrations } from './migrator'

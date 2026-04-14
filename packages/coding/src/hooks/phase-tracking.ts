@@ -47,9 +47,9 @@ export function createPhaseTrackingHooks(): HookSpec[] {
     priority: 50,
     handle: async (input) => {
       const message = input.message
-      if (message.role === 'assistant' && message.content) {
-        for (const part of message.content as Array<{ type: string; text?: string }>) {
-          if (part.type === 'text' && part.text) {
+      if (message.role === 'assistant' && Array.isArray(message.content)) {
+        for (const part of message.content) {
+          if (typeof part === 'object' && part !== null && 'type' in part && 'text' in part && part.type === 'text' && typeof part.text === 'string') {
             const phase = extractPhaseFromMessage(part.text)
             if (phase) {
               const history = phaseTracker.get(input.sessionId) ?? []

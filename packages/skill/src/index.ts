@@ -21,4 +21,5 @@ export type {
   SkillExecutionContext,
   SkillExecutionResult,
   SkillEvents,
+  SkillProvider,
 } from './types'

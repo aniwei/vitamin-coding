@@ -228,6 +228,8 @@ export class InboundRouter {
   ): void {
     if (!this.bridge) return
 
+    const payload = extractRecord(rawData, 'payload') as PauseResumePayload | undefined
+
     this.bridge.send(
       {
         type: method,
@@ -235,7 +237,7 @@ export class InboundRouter {
         ...(pauseId !== undefined ? { pauseId } : {}),
         ...(depth !== undefined ? { depth } : {}),
       },
-      rawData.payload as PauseResumePayload | undefined,
+      payload,
     )
   }
 

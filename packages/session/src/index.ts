@@ -42,7 +42,6 @@ export type {
   SessionManagerOptions,
   SessionFilter,
   PaginationOptions,
-  PaginatedResult,
   StorageOptions,
   RemoteStorageOptions,
 } from './types'

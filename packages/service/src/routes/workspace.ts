@@ -75,7 +75,7 @@ export function createWorkspaceRoute(context: CodingService): Hono {
         currentPath: resolved,
         parentPath: dirname(resolved),
         directories: [],
-        error: (err as Error).message,
+        error: err instanceof Error ? err.message : String(err),
       })
     }
   })

@@ -32,15 +32,18 @@ export function createKeywordDetectionHook(): HookSpec {
 // 从消息中提取文本内容
 function extractText(message: unknown): string | null {
   if (typeof message !== 'object' || message === null) return null
-  const msg = message as Record<string, unknown>
-  if (typeof msg.content === 'string') return msg.content
-  if (Array.isArray(msg.content)) {
-    return msg.content
+  if (!('content' in message)) return null
+
+  const content = (message as { content: unknown }).content
+  if (typeof content === 'string') return content
+  if (Array.isArray(content)) {
+    return content
       .filter(
         (part: unknown): part is { type: string; text: string } =>
           typeof part === 'object' &&
           part !== null &&
-          (part as Record<string, unknown>).type === 'text',
+          'type' in part &&
+          (part as { type: unknown }).type === 'text',
       )
       .map((part) => part.text)
       .join(' ')

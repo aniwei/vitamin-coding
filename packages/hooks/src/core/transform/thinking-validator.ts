@@ -18,25 +18,23 @@ export function createThinkingValidatorHook(): HookSpec {
         const filtered = content.filter((part: Record<string, unknown>) => {
           if (
             part.type === 'thinking' &&
-            (!part.thinking || (part.thinking as string).trim() === '')
+            (typeof part.thinking !== 'string' || part.thinking.trim() === '')
           ) {
             return false
           }
           return true
         })
 
-        return { ...msg, content: filtered } as typeof msg
+        return { ...msg, content: filtered }
       })
     },
   })
 }
 
-function isAssistantMessage(msg: unknown): boolean {
-  if (typeof msg !== 'object' || msg === null) return false
-  return (msg as Record<string, unknown>).role === 'assistant'
+function isAssistantMessage(msg: unknown): msg is { role: 'assistant'; content: unknown } {
+  return typeof msg === 'object' && msg !== null && 'role' in msg && msg.role === 'assistant'
 }
 
-function getAssistantContent(msg: unknown): unknown {
-  if (typeof msg !== 'object' || msg === null) return undefined
-  return (msg as Record<string, unknown>).content
+function getAssistantContent(msg: { role: 'assistant'; content: unknown }): unknown {
+  return msg.content
 }

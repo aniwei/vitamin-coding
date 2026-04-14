@@ -1,3 +1,4 @@
+import type { SkillProvider } from '@vitamin/skill'
 import type { AgentTool } from '@vitamin/agent'
 import type { AuthStore, Model, ProviderRegistry } from '@vitamin/ai'
 import type { ModelRegistry } from '@vitamin/ai'
@@ -37,19 +38,6 @@ export interface VitaminContext {
   listSessions(): AgentSessionInfo[]
   removeSession(id: string): Promise<boolean>
   forkSession(sourceId: string, newId?: string): Promise<AgentSession | undefined>
-}
-
-/**
- * SkillProvider — skill 功能的扩展接口。
- *
- * VitaminApp 当前不内置 skill 实现（入口预留），调用方可注入此接口。
- * 未注入时，skill_load / skill_execute 工具会返回"功能未配置"的错误提示。
- */
-export interface SkillProvider {
-  /** 从指定路径加载 SKILL.md 定义 */
-  load(path: string): Promise<{ success: boolean; name?: string; error?: string }>
-  /** 执行已加载的 skill */
-  execute(name: string, input?: string, parameters?: Record<string, string>): Promise<{ success: boolean; output?: string; error?: string }>
 }
 
 export interface VitaminAppOptions {

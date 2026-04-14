@@ -1,7 +1,5 @@
 import type { SettingStore } from './store'
 import type { WorkflowSlot } from '@vitamin/ai'
-export type { WorkflowSlot } from '@vitamin/ai'
-export { WORKFLOW_SLOTS } from '@vitamin/ai'
 
 export interface AgentOptions {
   // 模型名称

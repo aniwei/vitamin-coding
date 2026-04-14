@@ -132,8 +132,6 @@ export class VitaminApp implements VitaminContext {
       inspect,
       logger,
       projectConfigPath,
-      sessionDir,
-      sessionUrl,
       maxSessions,
       maxToolTurns,
       port,
@@ -168,9 +166,11 @@ export class VitaminApp implements VitaminContext {
       this.devtools = new Devtools({ port })
 
       this.globalLogSubscription = attachLogListener((data) => {
-        const log = data as { name: string; level: string; msg: string }
-        if (log.name === logger.name) {
-          this.devtools?.sendLog(log)
+        if (typeof data === 'object' && data !== null && 'name' in data && 'level' in data && 'msg' in data) {
+          const log = data as { name: string; level: string; msg: string }
+          if (log.name === logger.name) {
+            this.devtools?.sendLog(log)
+          }
         }
       })
     }
@@ -212,184 +212,13 @@ export class VitaminApp implements VitaminContext {
 
     this.promptManager = new PromptManager({ provider: promptProvider })
 
-    // configProvider 仅供 restore / restoreAll 路径使用；
-    // 正常 createSession 路径会通过 resolveSessionConfig 完整解析。
-    // 使用 factory function 而非静态快照，确保每次 restore 拿到最新配置。
-    const configProvider: (() => ResolvedSessionConfig) | undefined = defaultModel
-      ? () => ({
-          model: defaultModel,
-          systemPrompt: '',
-          tools: [],
-          thinkingLevel: 'medium' as const,
-          maxToolTurns: this.maxToolTurns,
-          promptRefresh: () => this.promptManager.assemblePreset({ preset: 'main' }),
-          workspaceDir: this.workspaceDir,
-        })
-      : undefined
-
-    const managerOptions = {
-      maxSessions,
-      hookRegistry: this.hookRegistry,
-      providerRegistry: this.providerRegistry,
-      logger: this.logger,
-      devtools: this.devtools ?? undefined,
-      configProvider,
-    }
-
-    if (sessionDir) {
-      this.codingSessionManager = createDiskCodingSessionManager({
-        ...managerOptions,
-        sessionDir,
-      })
-    } else if (sessionUrl) {
-      if (!options.sessionFetch || !options.sessionGetAuth) {
-        throw new Error(
-          'sessionFetch and sessionGetAuth are required when using sessionUrl. ' +
-          'Pass them in VitaminAppOptions.',
-        )
-      }
-      this.codingSessionManager = createRemoteCodingSessionManager({
-        ...managerOptions,
-        sessionUrl,
-        fetch: options.sessionFetch,
-        getAuth: options.sessionGetAuth,
-        timeoutMs: options.sessionTimeoutMs,
-      })
-    } else {
-      this.codingSessionManager = createInMemoryCodingSessionManager(managerOptions)
-    }
-
-    const run = async (options: {
-      prompt: string
-      sessionId?: string
-      sessionMode: 'ephemeral' | 'sticky'
-      agentName?: string
-      slot?: WorkflowSlot
-      promptContext?: SubAgentPromptContext
-    }) => {
-      const startTime = Date.now()
-
-      let session: AgentSession
-      if (options.sessionMode === 'sticky' && options.sessionId) {
-        const existing = this.getSession(options.sessionId)
-        if (existing) {
-          session = existing
-        } else {
-          session = await this.createSession({
-            id: options.sessionId,
-            agentName: options.agentName,
-            slot: options.slot,
-            promptContext: options.promptContext,
-          })
-        }
-      } else {
-        session = await this.createSession({
-          agentName: options.agentName,
-          slot: options.slot,
-          promptContext: options.promptContext,
-        })
-      }
-
-      await session.prompt(options.prompt)
-      const text = getLastAssistantText(session.session.messages())
-
-      // ephemeral 模式：执行完后清理
-      if (options.sessionMode === 'ephemeral') {
-        await this.removeSession(session.id)
-      }
-
-      return {
-        text,
-        sessionId: session.id,
-        durationMs: Date.now() - startTime,
-      }
-    }
-
-    // 创建 orchestrator — 注入真实回调
-    this.orchestrator = new Orchestrator({
-      hookRegistry: this.hookRegistry,
-      runSession: run,
-    })
-
-    // Skill 功能入口：由调用方注入 skillProvider 实现。
-    // 未注入时工具仍存在（方便 agent 感知功能），但返回明确的"未配置"提示。
-    const skillProvider = options.skillProvider
-    const loadSkill: LoadSkill = skillProvider
-      ? (path) => skillProvider.load(path)
-      : async () => ({ success: false, error: 'Skill provider not configured. Pass skillProvider to createVitamin().' })
-
-    const executeSkill: ExecuteSkill = skillProvider
-      ? (name, input, parameters) => skillProvider.execute(name, input, parameters)
-      : async () => ({ success: false, error: 'Skill provider not configured. Pass skillProvider to createVitamin().' })
-
-    this.toolRegistry = createToolRegistry(this.workspaceDir, {
-      callAgent: this.orchestrator.callAgent,
-      loadSkill,
-      executeSkill,
-      dispatchTask: this.orchestrator.dispatchTask,
-      createTask: this.orchestrator.createTask,
-      getTask: this.orchestrator.getTask,
-      listTasks: this.orchestrator.listTasks,
-      updateTask: this.orchestrator.updateTask,
-      getBackgroundOutput: this.orchestrator.getBackgroundOutput,
-      cancelBackground: this.orchestrator.cancelBackground,
-      clarifyRequest: this.orchestrator.clarifyRequest,
-      captureFileState: async (input) => {
-        const snapshot = await this.fileStateManager.capture({
-          workspaceDir: this.workspaceDir,
-          recentFiles: input.recentFiles,
-          planStatus: input.planStatus,
-        })
-        return {
-          success: true,
-          summary: this.fileStateManager.formatSnapshot(snapshot),
-          timestamp: snapshot.timestamp,
-        }
-      },
-      learn: async (lesson) => {
-        const saved = await this.learningStore.save({
-          tags: lesson.tags,
-          trigger: lesson.trigger,
-          insight: lesson.insight,
-          sourceSessionId: lesson.sessionId,
-        })
-        return { success: true, lessonId: saved.id }
-      },
-      writeTodos: this.orchestrator.writeTodos,
-      sessionManager: {
-        list: async () =>
-          this.listSessions().map((session) => ({
-            id: session.id,
-            title: session.id,
-            messageCount: session.messageCount,
-          })),
-        create: async () => {
-          const session = await this.createSession()
-          return { id: session.id }
-        },
-        remove: async (id: string) => this.removeSession(id),
-        compact: async (id: string) => {
-          const session = this.getSession(id)
-          if (!session) return false
-          await session.compact('Compacted by session_manager tool', 1)
-          return true
-        },
-      },
-    })
-
-    // 仅移除 skill 类别工具（orchestration 工具现在有真实回调，保留）
-    const skillTools = this.toolRegistry.getByCategory('skill').map((tool) => tool.name)
-    if (skillTools.length > 0) {
-      this.toolRegistry.unregister(skillTools)
-    }
-
-    // 初始化权限系统（基于当前 toolRegistry 动态推导读/写工具集合）
-    const permissionToolSets = createPermissionToolSetsFromRegistry(this.toolRegistry.getAll())
-    this.auditLog = new PermissionAuditLog()
-    this.permissionRegistry = createPermissionRegistry({
-      toolSets: permissionToolSets,
-    })
-    this.hookRegistry.register(createPermissionGuardHook(this.permissionRegistry, this.auditLog))
+    // 三大子系统初始化
+    this.codingSessionManager = this.initSessionManager(options, defaultModel)
+    this.orchestrator = this.initOrchestrator()
+    this.toolRegistry = this.initToolRegistry(options)
+    const { permissionRegistry, auditLog } = this.initPermissions()
+    this.permissionRegistry = permissionRegistry
+    this.auditLog = auditLog
 
     // 注册 hooks
     this.registerHooks()
@@ -594,6 +423,212 @@ export class VitaminApp implements VitaminContext {
 
   async forkSession(sourceId: string, newId?: string): Promise<AgentSession | undefined> {
     return this.codingSessionManager.forkSession(sourceId, newId)
+  }
+
+  // ── Private init methods ─────────────────────────────────────────────────
+
+  /**
+   * SessionManager 初始化：根据存储方式（disk / remote / memory）创建对应实现。
+   */
+  private initSessionManager(
+    options: VitaminAppOptions,
+    defaultModel: Model | undefined,
+  ): CodingSessionManager {
+    // configProvider 仅供 restore / restoreAll 路径使用；
+    // 正常 createSession 路径会通过 resolveSessionConfig 完整解析。
+    const configProvider: (() => ResolvedSessionConfig) | undefined = defaultModel
+      ? () => ({
+          model: defaultModel,
+          systemPrompt: '',
+          tools: [],
+          thinkingLevel: 'medium' as const,
+          maxToolTurns: this.maxToolTurns,
+          promptRefresh: () => this.promptManager.assemblePreset({ preset: 'main' }),
+          workspaceDir: this.workspaceDir,
+        })
+      : undefined
+
+    const managerOptions = {
+      maxSessions: options.maxSessions,
+      hookRegistry: this.hookRegistry,
+      providerRegistry: this.providerRegistry,
+      logger: this.logger,
+      devtools: this.devtools ?? undefined,
+      configProvider,
+    }
+
+    if (options.sessionDir) {
+      return createDiskCodingSessionManager({
+        ...managerOptions,
+        sessionDir: options.sessionDir,
+      })
+    }
+
+    if (options.sessionUrl) {
+      if (!options.sessionFetch || !options.sessionGetAuth) {
+        throw new Error(
+          'sessionFetch and sessionGetAuth are required when using sessionUrl. ' +
+          'Pass them in VitaminAppOptions.',
+        )
+      }
+      return createRemoteCodingSessionManager({
+        ...managerOptions,
+        sessionUrl: options.sessionUrl,
+        fetch: options.sessionFetch,
+        getAuth: options.sessionGetAuth,
+        timeoutMs: options.sessionTimeoutMs,
+      })
+    }
+
+    return createInMemoryCodingSessionManager(managerOptions)
+  }
+
+  /**
+   * Orchestrator 初始化：注入 agent 运行回调。
+   */
+  private initOrchestrator(): Orchestrator {
+    const run = async (runOptions: {
+      prompt: string
+      sessionId?: string
+      sessionMode: 'ephemeral' | 'sticky'
+      agentName?: string
+      slot?: WorkflowSlot
+      promptContext?: SubAgentPromptContext
+    }) => {
+      const startTime = Date.now()
+
+      let session: AgentSession
+      if (runOptions.sessionMode === 'sticky' && runOptions.sessionId) {
+        const existing = this.getSession(runOptions.sessionId)
+        if (existing) {
+          session = existing
+        } else {
+          session = await this.createSession({
+            id: runOptions.sessionId,
+            agentName: runOptions.agentName,
+            slot: runOptions.slot,
+            promptContext: runOptions.promptContext,
+          })
+        }
+      } else {
+        session = await this.createSession({
+          agentName: runOptions.agentName,
+          slot: runOptions.slot,
+          promptContext: runOptions.promptContext,
+        })
+      }
+
+      await session.prompt(runOptions.prompt)
+      const text = getLastAssistantText(session.session.messages())
+
+      if (runOptions.sessionMode === 'ephemeral') {
+        await this.removeSession(session.id)
+      }
+
+      return {
+        text,
+        sessionId: session.id,
+        durationMs: Date.now() - startTime,
+      }
+    }
+
+    return new Orchestrator({
+      hookRegistry: this.hookRegistry,
+      runSession: run,
+    })
+  }
+
+  /**
+   * ToolRegistry 初始化：注册所有工具，注入回调。
+   */
+  private initToolRegistry(options: VitaminAppOptions): ToolRegistry {
+    const skillProvider = options.skillProvider
+    const loadSkill: LoadSkill = skillProvider
+      ? (path) => skillProvider.load(path)
+      : async () => ({ success: false, error: 'Skill provider not configured. Pass skillProvider to createVitamin().' })
+
+    const executeSkill: ExecuteSkill = skillProvider
+      ? (name, input, parameters) => skillProvider.execute(name, input, parameters)
+      : async () => ({ success: false, error: 'Skill provider not configured. Pass skillProvider to createVitamin().' })
+
+    const registry = createToolRegistry(this.workspaceDir, {
+      callAgent: this.orchestrator.callAgent,
+      loadSkill,
+      executeSkill,
+      dispatchTask: this.orchestrator.dispatchTask,
+      createTask: this.orchestrator.createTask,
+      getTask: this.orchestrator.getTask,
+      listTasks: this.orchestrator.listTasks,
+      updateTask: this.orchestrator.updateTask,
+      getBackgroundOutput: this.orchestrator.getBackgroundOutput,
+      cancelBackground: this.orchestrator.cancelBackground,
+      clarifyRequest: this.orchestrator.clarifyRequest,
+      captureFileState: async (input) => {
+        const snapshot = await this.fileStateManager.capture({
+          workspaceDir: this.workspaceDir,
+          recentFiles: input.recentFiles,
+          planStatus: input.planStatus,
+        })
+        return {
+          success: true,
+          summary: this.fileStateManager.formatSnapshot(snapshot),
+          timestamp: snapshot.timestamp,
+        }
+      },
+      learn: async (lesson) => {
+        const saved = await this.learningStore.save({
+          tags: lesson.tags,
+          trigger: lesson.trigger,
+          insight: lesson.insight,
+          sourceSessionId: lesson.sessionId,
+        })
+        return { success: true, lessonId: saved.id }
+      },
+      writeTodos: this.orchestrator.writeTodos,
+      sessionManager: {
+        list: async () =>
+          this.listSessions().map((s) => ({
+            id: s.id,
+            title: s.id,
+            messageCount: s.messageCount,
+          })),
+        create: async () => {
+          const s = await this.createSession()
+          return { id: s.id }
+        },
+        remove: async (id: string) => this.removeSession(id),
+        compact: async (id: string) => {
+          const s = this.getSession(id)
+          if (!s) return false
+          await s.compact('Compacted by session_manager tool', 1)
+          return true
+        },
+      },
+    })
+
+    // 仅移除 skill 类别工具（orchestration 工具现在有真实回调，保留）
+    const skillTools = registry.getByCategory('skill').map((tool) => tool.name)
+    if (skillTools.length > 0) {
+      registry.unregister(skillTools)
+    }
+
+    return registry
+  }
+
+  /**
+   * 权限系统初始化：基于 toolRegistry 推导工具集合，注册守卫 hook。
+   */
+  private initPermissions(): {
+    permissionRegistry: PermissionPolicyRegistry
+    auditLog: PermissionAuditLog
+  } {
+    const permissionToolSets = createPermissionToolSetsFromRegistry(this.toolRegistry.getAll())
+    const auditLog = new PermissionAuditLog()
+    const permissionRegistry = createPermissionRegistry({
+      toolSets: permissionToolSets,
+    })
+    this.hookRegistry.register(createPermissionGuardHook(permissionRegistry, auditLog))
+    return { permissionRegistry, auditLog }
   }
 
   private registerHooks(): void {
