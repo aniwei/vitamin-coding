@@ -1,13 +1,11 @@
 import ReactEcharts from 'echarts-for-react'
 import ActionButton from '@/components/action-button'
 import CopyIcon from '@/components/copy-icon'
-import ErrorBoundary from '@/components/markdown/error-boundary'
+import ErrorBoundary from '@/components/error-boundary'
 import SVGButton from '@/components/svg-button'
 import useTheme from '@/hooks/use-theme'
-import SVGGallery from '@/components/svg-gallery' 
+import SVGGallery from '@/components/svg-gallery'
 import Music from './music'
-
-import { Theme } from '@/types'
 import { 
   lazy, 
   memo, 
@@ -19,11 +17,19 @@ import {
   useState 
 } from 'react'
 import { highlight } from './shiki-highlight'
-
+import { Theme } from '@/types'
+import { debounce } from 'es-toolkit/compat'
 import type { JSX } from 'react'
 import type { BundledLanguage, BundledTheme } from 'shiki/bundle/web'
 
-const MermaidDiagram = lazy(() => import('@/components/mermaid'))
+const Mermaid = lazy(() => import('@/components/mermaid'))
+
+const DEBOUNCE_MS = 200
+const MAX_FINISHED_EVENTS = 3
+
+const ECHARTS_STYLE: React.CSSProperties = { height: '350px', width: '100%' }
+const ECHARTS_OPTS = { renderer: 'canvas', width: 'auto' } as const
+const ECHARTS_ERROR_OPTION = { title: { text: 'ECharts error - Wrong option.' } }
 
 const capitalizationLanguageNames: Record<string, string> = {
   sql: 'SQL',
@@ -54,11 +60,198 @@ const getCorrectCapitalizationLanguageName = (language: string) => {
     return 'Plain'
   }
 
-  if (language in capitalizationLanguageNames) {
-    return capitalizationLanguageNames[language]
+  return capitalizationLanguageNames[language]
+    ?? language.charAt(0).toUpperCase() + language.substring(1)
+}
+
+// ─── Utilities ───────────────────────────────────────────────────────
+
+function isJsonStructureBalanced(str: string, open: string, close: string): boolean {
+  return str.startsWith(open) && str.endsWith(close)
+    && str.split(open).length === str.split(close).length
+}
+
+function isJsonComplete(str: string): boolean {
+  return isJsonStructureBalanced(str, '{', '}') || isJsonStructureBalanced(str, '[', ']')
+}
+
+function isJsonIncomplete(str: string): boolean {
+  if (str.length < 5) {
+    return true
   }
 
-  return language.charAt(0).toUpperCase() + language.substring(1)
+  if (str.startsWith('{') && (!str.endsWith('}') || str.split('{').length !== str.split('}').length)) {
+    return true
+  }
+
+  if (str.startsWith('[') && (!str.endsWith(']') || str.split('[').length !== str.split(']').length)) {
+    return true
+  }
+
+  if (str.split('"').length % 2 !== 1) {
+    return true
+  }
+
+  if (str.includes('{"') && !str.includes('"}')) {
+    return true
+  }
+
+  return false
+}
+
+function tryParseJsonObject(str: string): object | null {
+  try {
+    const parsed = JSON.parse(str)
+    return typeof parsed === 'object' && parsed !== null ? parsed : null
+  }
+  catch {
+    return null
+  }
+}
+
+// ─── Hooks ───────────────────────────────────────────────────────────
+
+type ChartState = 'loading' | 'success' | 'error'
+
+function useTimerCleanup() {
+  const clearTimer = useCallback((ref: React.MutableRefObject<ReturnType<typeof setTimeout> | null>) => {
+    if (ref.current) {
+      clearTimeout(ref.current)
+      ref.current = null
+    }
+  }, [])
+  return clearTimer
+}
+
+function useCharts(language: string | undefined, children: React.ReactNode) {
+  const [chartState, setChartState] = useState<ChartState>('loading')
+  const [chartOption, setChartOption] = useState<any>(null)
+
+  const contentRef = useRef('')
+  const processedRef = useRef(false)
+  const chartInstanceRef = useRef<any>(null)
+  const chartReadyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+  const finishedCountRef = useRef(0)
+  const isInitialRenderRef = useRef(true)
+  const echartsRef = useRef<any>(null)
+
+  const clearTimer = useTimerCleanup()
+
+  const debouncedResize = useRef(debounce(() => { 
+    chartInstanceRef.current?.resize() 
+  }, DEBOUNCE_MS)).current
+
+  const handleChartReady = useCallback((instance: any) => {
+    chartInstanceRef.current = instance
+    clearTimer(chartReadyTimerRef)
+    chartReadyTimerRef.current = setTimeout(() => {
+      chartInstanceRef.current?.resize()
+      chartReadyTimerRef.current = null
+    }, DEBOUNCE_MS)
+  }, [clearTimer])
+
+  const echartsEvents = useMemo(() => ({
+    finished: () => {
+      finishedCountRef.current++
+      if (finishedCountRef.current <= MAX_FINISHED_EVENTS && chartInstanceRef.current) {
+        debouncedResize()
+      }
+    },  // debouncedResize is stable (useRef), dep is for readability
+  }), [debouncedResize])
+
+  const handleRef = useCallback((e: any) => {
+    if (e && isInitialRenderRef.current) {
+      echartsRef.current = e
+      isInitialRenderRef.current = false
+    }
+  }, [])
+
+  const resetFinishedCount = useCallback(() => {
+    finishedCountRef.current = 0
+  }, [])
+
+  // Window resize listener
+  useEffect(() => {
+    if (language !== 'echarts' || !chartInstanceRef.current) {
+      return
+    }
+
+    const handleResize = () => {
+      if (chartInstanceRef.current) {
+        debouncedResize()
+      }
+    }
+
+    window.addEventListener('resize', handleResize)
+    return () => {
+      window.removeEventListener('resize', handleResize)
+      debouncedResize.cancel()
+      clearTimer(chartReadyTimerRef)
+      chartInstanceRef.current = null
+    }
+  }, [language, debouncedResize, clearTimer])
+
+  // Cleanup on unmount
+  useEffect(() => {
+    return () => {
+      debouncedResize.cancel()
+      clearTimer(chartReadyTimerRef)
+      chartInstanceRef.current = null
+      echartsRef.current = null
+    }
+  }, [clearTimer, debouncedResize])
+
+  // Parse chart content (streaming or complete)
+  useEffect(() => {
+    if (language !== 'echarts') {
+      return
+    }
+
+    if (!contentRef.current) {
+      setChartState('loading')
+      processedRef.current = false
+    }
+
+    const newContent = String(children).replace(/\n$/, '')
+    if (contentRef.current === newContent) {
+      return
+    }
+
+    contentRef.current = newContent
+
+    const trimmed = newContent.trim()
+    if (!trimmed) {
+      return
+    }
+
+    if (processedRef.current) {
+      return
+    }
+
+    const shouldTryParse = isJsonComplete(trimmed) || !isJsonIncomplete(trimmed)
+    if (!shouldTryParse) {
+      return
+    }
+
+    const parsed = tryParseJsonObject(trimmed)
+    if (parsed) {
+      setChartOption(parsed)
+      setChartState('success')
+    } else {
+      setChartState('error')
+    }
+    processedRef.current = true
+  }, [language, children])
+
+  return {
+    chartState,
+    chartOption,
+    echartsRef,
+    echartsEvents,
+    handleChartReady,
+    handleRef,
+    resetFinishedCount,
+  }
 }
 
 interface ShikiCodeProps {
@@ -68,7 +261,7 @@ interface ShikiCodeProps {
   initial?: JSX.Element
 }
 
-export const ShikiCode: React.FC<ShikiCodeProps> = memo(({ code, language, theme, initial }) => {
+const ShikiCode: React.FC<ShikiCodeProps> = memo(({ code, language, theme, initial }) => {
   const [nodes, setNodes] = useState(initial)
 
   useLayoutEffect(() => {
@@ -89,14 +282,12 @@ export const ShikiCode: React.FC<ShikiCodeProps> = memo(({ code, language, theme
       }
     })
 
-    return () => {
-      cancelled = true
-    }
+    return () => { cancelled = true }
   }, [code, language, theme])
 
   if (!nodes) {
-    return <pre 
-      style={{
+    return (
+      <pre style={{
         paddingLeft: 12,
         borderBottomLeftRadius: '10px',
         borderBottomRightRadius: '10px',
@@ -104,16 +295,13 @@ export const ShikiCode: React.FC<ShikiCodeProps> = memo(({ code, language, theme
         margin: 0,
         overflow: 'auto',
       }}
-    ><code>{code}</code></pre>
+      ><code>{code}</code></pre>
+    )
   }
 
   return (
     <div
-      style={{
-        borderBottomLeftRadius: '10px',
-        borderBottomRightRadius: '10px',
-        overflow: 'auto',
-      }}
+      style={{ borderBottomLeftRadius: '10px', borderBottomRightRadius: '10px', overflow: 'auto' }}
       className="shiki-line-numbers [&_pre]:m-0! [&_pre]:rounded-t-none! [&_pre]:rounded-b-[10px]! [&_pre]:bg-components-input-bg-normal! [&_pre]:py-2!"
     >{nodes}</div>
   )
@@ -121,426 +309,238 @@ export const ShikiCode: React.FC<ShikiCodeProps> = memo(({ code, language, theme
 
 ShikiCode.displayName = 'ShikiCode'
 
-interface EChartsEventParams {
-  type: string
-  seriesIndex?: number
-  dataIndex?: number
-  name?: string
-  value?: any
-  currentIndex?: number // Added for timeline events
-  [key: string]: any
+const Loading: React.FC<{ isDark: boolean }> = memo(({ isDark }) => (
+  <div style={{
+    minHeight: '350px',
+    width: '100%',
+    display: 'flex',
+    flexDirection: 'column',
+    alignItems: 'center',
+    justifyContent: 'center',
+    borderBottomLeftRadius: '10px',
+    borderBottomRightRadius: '10px',
+    backgroundColor: isDark ? 'var(--color-components-input-bg-normal)' : 'transparent',
+    color: 'var(--color-text-secondary)',
+  }}
+  >
+    <div style={{ marginBottom: '12px', width: '24px', height: '24px' }}>
+      <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ animation: 'spin 1.5s linear infinite' }}>
+        <style>
+          {`@keyframes spin { 0% { transform: rotate(0deg); } 100% { transform: rotate(360deg); } }`}
+        </style>
+        <circle opacity="0.2" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
+        <path d="M12 2C6.47715 2 2 6.47715 2 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
+      </svg>
+    </div>
+    <div style={{ fontFamily: 'var(--font-family)', fontSize: '14px' }}>
+      Chart loading...
+    </div>
+  </div>
+))
+
+Loading.displayName = 'Loading'
+
+interface ChartProps {
+  option: any
+  isDark: boolean
+  echartsEvents: Record<string, any>
+  handleChartReady: (instance: any) => void
+  handleRef: (e: any) => void
+  resetFinishedCount: () => void
 }
 
-const Loading = () => {
-  const { theme } = useTheme()
-  const isDark = theme === Theme.dark
+const Chart: React.FC<ChartProps> = memo(({
+  option,
+  isDark,
+  echartsEvents,
+  handleChartReady,
+  handleRef,
+  resetFinishedCount,
+}) => {
+  useEffect(() => { 
+    resetFinishedCount() 
+  }, [option, resetFinishedCount])
 
   return (
-    <div 
-      style={{
-        minHeight: '350px',
-        width: '100%',
-        display: 'flex',
-        flexDirection: 'column',
-        alignItems: 'center',
-        justifyContent: 'center',
-        borderBottomLeftRadius: '10px',
-        borderBottomRightRadius: '10px',
-        backgroundColor: isDark ? 'var(--color-components-input-bg-normal)' : 'transparent',
-        color: 'var(--color-text-secondary)',
-      }}
-    >
-      <div style={{
-        marginBottom: '12px',
-        width: '24px',
-        height: '24px',
-      }}
-      >
-        <svg width="24" height="24" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg" style={{ animation: 'spin 1.5s linear infinite' }}>
-          <style>
-            {`
-              @keyframes spin {
-                0% { transform: rotate(0deg); }
-                100% { transform: rotate(360deg); }
-              }
-            `}
-          </style>
-          <circle opacity="0.2" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="2" />
-          <path d="M12 2C6.47715 2 2 6.47715 2 12" stroke="currentColor" strokeWidth="2" strokeLinecap="round" />
-        </svg>
-      </div>
-      <div style={{
-        fontFamily: 'var(--font-family)',
-        fontSize: '14px',
-      }}
-      >Chart loading...</div>
+    <div style={{
+      minWidth: '300px',
+      minHeight: '350px',
+      width: '100%',
+      overflowX: 'auto',
+      borderBottomLeftRadius: '10px',
+      borderBottomRightRadius: '10px',
+      transition: 'background-color 0.3s ease',
+    }}>
+      <ErrorBoundary>
+        <ReactEcharts
+          ref={handleRef}
+          option={option}
+          style={ECHARTS_STYLE}
+          theme={isDark ? 'dark' : undefined}
+          opts={ECHARTS_OPTS}
+          notMerge={false}
+          lazyUpdate={false}
+          onEvents={echartsEvents}
+          onChartReady={handleChartReady}
+        />
+      </ErrorBoundary>
     </div>
   )
-}
+})
 
-interface UseContent {
-  theme: Theme
-  state: string
-  children: React.ReactNode
-  language: string
+Chart.displayName = 'Chart'
+
+const ChartsError: React.FC<{ isDark: boolean; echartsRef: React.RefObject<any> }> = memo(({ isDark, echartsRef }) => (
+  <div style={{
+    minWidth: '300px',
+    minHeight: '350px',
+    width: '100%',
+    overflowX: 'auto',
+    borderBottomLeftRadius: '10px',
+    borderBottomRightRadius: '10px',
+    transition: 'background-color 0.3s ease',
+  }}>
+    <ErrorBoundary>
+      <ReactEcharts
+        ref={echartsRef}
+        option={ECHARTS_ERROR_OPTION}
+        style={ECHARTS_STYLE}
+        theme={isDark ? 'dark' : undefined}
+        opts={ECHARTS_OPTS}
+        notMerge={true}
+      />
+    </ErrorBoundary>
+  </div>
+))
+
+ChartsError.displayName = 'ChartsError'
+
+interface CodeHeaderProps {
+  languageShowName: string
+  language?: string
   isSVG: boolean
+  setIsSVG: React.Dispatch<React.SetStateAction<boolean>>
+  copyContent: string
 }
 
-const useContent = ({
-  theme,
-  state,
-  children,
+const CodeHeader: React.FC<CodeHeaderProps> = memo(({
+  languageShowName,
   language,
-  isSVG
-}: UseContent) => {
-  return useMemo(() => {
-    const isDark = theme === Theme.dark
-    const content = String(children).replace(/\n$/, '')
-    
-    switch (language) {
-      case 'mermaid':
-        return <MermaidDiagram code={content} theme={theme as 'light' | 'dark'} />
-      case 'echarts': {
-        if (state === 'loading') {
-          return <Loading />
-        }
+  isSVG,
+  setIsSVG,
+  copyContent,
+}) => (
+  <div className="flex h-8 items-center justify-between rounded-t-[10px] border-b border-divider-subtle bg-components-input-bg-normal p-1 pl-3">
+    <div className="system-xs-semibold-uppercase text-text-secondary">{languageShowName}</div>
+    <div className="flex items-center gap-1">
+      {language === 'svg' && <SVGButton isSVG={isSVG} setIsSVG={setIsSVG} />}
+      <ActionButton>
+        <CopyIcon content={copyContent} />
+      </ActionButton>
+    </div>
+  </div>
+))
 
-        // Success state: show the chart
-        if (state === 'success' && finalChartOption) {
-          // Reset finished event counter
-          finishedEventCountRef.current = 0
+CodeHeader.displayName = 'CodeHeader'
 
-          return (
-            <div style={{
-              minWidth: '300px',
-              minHeight: '350px',
-              width: '100%',
-              overflowX: 'auto',
-              borderBottomLeftRadius: '10px',
-              borderBottomRightRadius: '10px',
-              transition: 'background-color 0.3s ease',
-            }}
-            >
-              <ErrorBoundary>
-                <ReactEcharts
-                  ref={(e) => {
-                    if (e && isInitialRenderRef.current) {
-                      echartsRef.current = e
-                      isInitialRenderRef.current = false
-                    }
-                  }}
-                  option={finalChartOption}
-                  style={echartsStyle}
-                  theme={isDark ? 'dark' : 'light'}
-                  opts={echartsOpts}
-                  notMerge={false}
-                  lazyUpdate={false}
-                  onEvents={echartsEvents}
-                  onChartReady={handleChartReady}
-                />
-              </ErrorBoundary>
-            </div>
-          )
-        }
-
-        const errorOption = {
-          title: {
-            text: 'ECharts error - Wrong option.',
-          },
-        }
-
-        return (
-          <div style={{
-            minWidth: '300px',
-            minHeight: '350px',
-            width: '100%',
-            overflowX: 'auto',
-            borderBottomLeftRadius: '10px',
-            borderBottomRightRadius: '10px',
-            transition: 'background-color 0.3s ease',
-          }}
-          >
-            <ErrorBoundary>
-              <ReactEcharts
-                ref={echartsRef}
-                option={errorOption}
-                style={echartsStyle}
-                theme={isDarkMode ? 'dark' : undefined}
-                opts={echartsOpts}
-                notMerge={true}
-              />
-            </ErrorBoundary>
-          </div>
-        )
-      }
-      case 'svg':
-        if (isSVG) {
-          return <ErrorBoundary>
-            <SVGGallery content={content} />
-          </ErrorBoundary>
-        }
-        break
-      case 'abc':
-        return <ErrorBoundary>
-          <Music children={content} />
-        </ErrorBoundary>
-      default:
-        return <ShikiCode
-          code={content}
-          language={language || 'text'}
-          theme={isDark ? 'github-dark' : 'github-light'}
-        />
-    }
-  }, [
-    children, 
-    language, 
-    isSVG, 
-    finalChartOption, 
-    props, 
-    theme, 
-    match, 
-    chartState, 
-    echartsStyle, 
-    echartsOpts, 
-    handleChartReady, 
-    echartsEvents
-  ])
-}
-
-interface CodeProps {
+interface CodeProps extends React.ComponentPropsWithoutRef<'code'> {
   inline?: boolean
-  className?: string
-  children?: React.ReactNode
 }
 
-export const Code: React.FC<CodeProps> = memo(({ 
-  inline, 
-  className, 
-  children = '', 
-  ...props 
-}) => {
+const Code: React.FC<CodeProps> = memo(({ inline, className, children = '', ...props }) => {
   const { theme } = useTheme()
   const [isSVG, setIsSVG] = useState(true)
-  const [chartState, setChartState] = useState<'loading' | 'success' | 'error'>('loading')
-  const [finalChartOption, setFinalChartOption] = useState<any>(null)
-  const echartsRef = useRef<any>(null)
-  const contentRef = useRef<string>('')
-  const processedRef = useRef<boolean>(false) 
-  const isInitialRenderRef = useRef<boolean>(true)
-  const chartInstanceRef = useRef<any>(null)
-  const resizeTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const chartReadyTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
-  const finishedEventCountRef = useRef<number>(0) 
+
   const match = /language-(\w+)/.exec(className || '')
   const language = match?.[1]
   const languageShowName = getCorrectCapitalizationLanguageName(language || '')
+  const isDark = theme === Theme.dark
+  const content = String(children).replace(/\n$/, '')
 
-  const clearResizeTimer = useCallback(() => {
-    if (!resizeTimerRef.current) {
-      return
-    }
+  const {
+    chartState,
+    chartOption,
+    echartsRef,
+    echartsEvents,
+    handleChartReady,
+    handleRef,
+    resetFinishedCount,
+  } = useCharts(language, children)
 
-    clearTimeout(resizeTimerRef.current)
-    resizeTimerRef.current = null
-  }, [])
-
-  const clearChartReadyTimer = useCallback(() => {
-    if (!chartReadyTimerRef.current) {
-      return
-    }
-
-    clearTimeout(chartReadyTimerRef.current)
-    chartReadyTimerRef.current = null
-  }, [])
-
-  const echartsStyle = useMemo(() => ({
-    height: '350px',
-    width: '100%',
-  }), [])
-
-  const echartsOpts = useMemo(() => ({
-    renderer: 'canvas',
-    width: 'auto',
-  }) as any, [])
-
-  const debouncedResize = useCallback(() => {
-    clearResizeTimer()
-
-    resizeTimerRef.current = setTimeout(() => {
-      if (chartInstanceRef.current)
-        chartInstanceRef.current.resize()
-      resizeTimerRef.current = null
-    }, 200)
-  }, [clearResizeTimer])
-
-  const onChartReady = useCallback((instance: any) => {
-    chartInstanceRef.current = instance
-
-    clearChartReadyTimer()
-    chartReadyTimerRef.current = setTimeout(() => {
-      if (chartInstanceRef.current) {
-        chartInstanceRef.current.resize()
-      }
-
-      chartReadyTimerRef.current = null
-    }, 200)
-  }, [clearChartReadyTimer])
-
-  const echartsEvents = useMemo(() => ({
-    finished: (_params: EChartsEventParams) => {
-      finishedEventCountRef.current++
-      if (finishedEventCountRef.current > 3) {
-        return
-      }
-
-      if (chartInstanceRef.current) {
-        debouncedResize()
-      }
-    },
-  }), [debouncedResize])
-
-  // Handle container resize for echarts
-  useEffect(() => {
-    if (language !== 'echarts' || !chartInstanceRef.current) {
-      return
-    }
-
-    const handleResize = () => {
-      if (chartInstanceRef.current) {
-        debouncedResize()
-      }
-    }
-
-    window.addEventListener('resize', handleResize)
-
-    return () => {
-      window.removeEventListener('resize', handleResize)
-      clearResizeTimer()
-      clearChartReadyTimer()
-      chartInstanceRef.current = null
-    }
-  }, [language, debouncedResize, clearResizeTimer, clearChartReadyTimer])
-
-  useEffect(() => {
-    return () => {
-      clearResizeTimer()
-      clearChartReadyTimer()
-      chartInstanceRef.current = null
-      echartsRef.current = null
-    }
-  }, [clearResizeTimer, clearChartReadyTimer])
-  
-  useEffect(() => {
-    if (language !== 'echarts') {
-      return
-    }
-
-    if (!contentRef.current) {
-      setChartState('loading')
-      processedRef.current = false
-    }
-
-    const newContent = String(children).replace(/\n$/, '')
-    if (contentRef.current === newContent) {
-      return
-    }
-
-    contentRef.current = newContent
-
-    const trimmedContent = newContent.trim()
-    if (!trimmedContent) {
-      return
-    }
-
-    const isCompleteJson = (
-      trimmedContent.startsWith('{') && trimmedContent.endsWith('}') && 
-      trimmedContent.split('{').length === trimmedContent.split('}').length) || 
-      (
-        trimmedContent.startsWith('[') && trimmedContent.endsWith(']') && 
-        trimmedContent.split('[').length === trimmedContent.split(']').length
-      ) 
-
-    
-    if (isCompleteJson && !processedRef.current) {
-      try {
-        const parsed = JSON.parse(trimmedContent)
-        if (typeof parsed === 'object' && parsed !== null) {
-          setFinalChartOption(parsed)
-          setChartState('success')
-          processedRef.current = true
-          return
+  const code = useMemo(() => {
+    switch (language) {
+      case 'mermaid':
+        return <Mermaid 
+          code={content} 
+          theme={theme as 'light' | 'dark'} 
+        />
+      case 'echarts': {
+        if (chartState === 'loading') {
+          return <Loading isDark={isDark} />
         }
-      } catch {
-        setChartState('error')
-        processedRef.current = true
-        return
-      }
-    }
 
-    const isIncomplete = trimmedContent.length < 5 || (
-      trimmedContent.startsWith('{') && (
-        !trimmedContent.endsWith('}') || 
-        trimmedContent.split('{').length !== trimmedContent.split('}').length)
-    ) || (
-      trimmedContent.startsWith('[') && (
-        !trimmedContent.endsWith(']') || 
-        trimmedContent.split('[').length !== trimmedContent.split('}').length)
-    )
-            || (trimmedContent.split('"').length % 2 !== 1)
-            || (trimmedContent.includes('{"') && !trimmedContent.includes('"}'))
-
-    if (!isIncomplete && !processedRef.current) {
-      let isValidOption = false
-
-      try {
-        const parsed = JSON.parse(trimmedContent)
-        if (typeof parsed === 'object' && parsed !== null) {
-          setFinalChartOption(parsed)
-          isValidOption = true
+        if (chartState === 'success' && chartOption) {
+          return (
+            <Chart
+              option={chartOption}
+              isDark={isDark}
+              echartsEvents={echartsEvents}
+              handleChartReady={handleChartReady}
+              handleRef={handleRef}
+              resetFinishedCount={resetFinishedCount}
+            />
+          )
         }
-      } catch {
-        setChartState('error')
-        processedRef.current = true
-      }
 
-      if (isValidOption) {
-        setChartState('success')
-        processedRef.current = true
+        return <ChartsError isDark={isDark} echartsRef={echartsRef} />
       }
+      case 'svg':
+        if (isSVG) {
+          return (
+            <ErrorBoundary>
+              <SVGGallery content={content} />
+            </ErrorBoundary>
+          )
+        }
+
+        return (
+          <ShikiCode
+            code={content}
+            language="svg"
+            theme={isDark ? 'github-dark' : 'github-light'}
+          />
+        )
+      case 'abc':
+        return (
+          <ErrorBoundary>
+            <Music children={content} />
+          </ErrorBoundary>
+        )
+      default:
+        return (
+          <ShikiCode
+            code={content}
+            language={language || 'text'}
+            theme={isDark ? 'github-dark' : 'github-light'}
+          />
+        )
     }
-  }, [language, children])
-
-  const content = useContent({
-    theme,
-    state: chartState,
-    children,
-    language: language || '',
-  })
+  }, [content, language, isSVG, chartOption, theme, chartState, isDark, echartsEvents, handleChartReady, handleRef, resetFinishedCount, echartsRef])
 
   if (inline || !match) {
-    return <code 
-      {...props} 
-      className={className}
-    >{children}</code>
+    return <code {...props} className={className}>{children}</code>
   }
 
   return (
     <div className="relative">
-      <div className="flex h-8 items-center justify-between rounded-t-[10px] border-b border-divider-subtle bg-components-input-bg-normal p-1 pl-3">
-        <div className="system-xs-semibold-uppercase text-text-secondary">{languageShowName}</div>
-        <div className="flex items-center gap-1">
-          { 
-            language === 'svg' && <SVGButton 
-              isSVG={isSVG} 
-              setIsSVG={setIsSVG} 
-            /> 
-          }
-          <ActionButton>
-            <CopyIcon content={String(children).replace(/\n$/, '')} />
-          </ActionButton>
-        </div>
-      </div>
-      {content}
+      <CodeHeader
+        languageShowName={languageShowName}
+        language={language}
+        isSVG={isSVG}
+        setIsSVG={setIsSVG}
+        copyContent={content}
+      />
+      {code}
     </div>
   )
 })

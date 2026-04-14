@@ -1,9 +1,5 @@
+import { isValidUrl } from '../shared'
 import * as React from 'react'
-
-export const isValidUrl = (url: string): boolean => {
-  const validPrefixes = ['http:', 'https:', '//', 'mailto:', 'data:']
-  return validPrefixes.some(prefix => url.startsWith(prefix))
-}
 
 interface LinkProps {
   node: {

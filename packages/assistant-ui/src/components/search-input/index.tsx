@@ -46,6 +46,7 @@ export const SearchInput: FC<SearchInputProps> = memo(({
         value={composing.current ? compositionValue : value}
         onChange={(e) => {
           const newValue = e.target.value
+          
           if (composing.current) {
             setCompositionValue(newValue)
           } else {

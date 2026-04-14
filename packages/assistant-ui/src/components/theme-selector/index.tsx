@@ -1,5 +1,3 @@
-'use client'
-
 import { useTheme } from 'next-themes'
 import { useState } from 'react'
 import {
@@ -60,11 +58,11 @@ export default function ThemeSelector() {
             <div className="flex grow items-center justify-start px-1">
               <span className="system-md-regular">Light</span>
             </div>
-            {theme === 'light' && (
-              <div className="flex h-4 w-4 shrink-0 items-center justify-center">
+            {
+              theme === 'light' && <div className="flex h-4 w-4 shrink-0 items-center justify-center">
                 <span className="i-ri-check-line h-4 w-4 text-text-accent" data-testid="light-icon" />
               </div>
-            )}
+            }
           </button>
           <button
             type="button"
@@ -75,11 +73,11 @@ export default function ThemeSelector() {
             <div className="flex grow items-center justify-start px-1">
               <span className="system-md-regular">Dark</span>
             </div>
-            {theme === 'dark' && (
-              <div className="flex h-4 w-4 shrink-0 items-center justify-center">
+            {
+              theme === 'dark' && <div className="flex h-4 w-4 shrink-0 items-center justify-center">
                 <span className="i-ri-check-line h-4 w-4 text-text-accent" data-testid="dark-icon" />
               </div>
-            )}
+            }
           </button>
           <button
             type="button"
@@ -90,11 +88,11 @@ export default function ThemeSelector() {
             <div className="flex grow items-center justify-start px-1">
               <span className="system-md-regular">Auto</span>
             </div>
-            {theme === 'system' && (
-              <div className="flex h-4 w-4 shrink-0 items-center justify-center">
+            {
+              theme === 'system' && <div className="flex h-4 w-4 shrink-0 items-center justify-center">
                 <span className="i-ri-check-line h-4 w-4 text-text-accent" data-testid="system-icon" />
               </div>
-            )}
+            }
           </button>
         </div>
       </PopoverContent>

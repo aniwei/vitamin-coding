@@ -21,6 +21,7 @@ export const Audio: React.FC<AudioProps> = memo(({ node }) => {
 
     return null
   }
+  
   return <AudioGallery key={srcs.join()} srcs={srcs} />
 })
 

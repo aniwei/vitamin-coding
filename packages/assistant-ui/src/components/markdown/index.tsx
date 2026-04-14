@@ -32,12 +32,15 @@ export const Markdown: React.FC<MarkdownProps> = memo((props) => {
   const latexContent = useMemo(() => preprocess(content), [content])
 
   return (
-    <div className={clsx(
-      'markdown-body', 
-      'text-text-primary!', 
-      className)}
+    <div 
+      className={clsx(
+        'markdown-body', 
+        'text-text-primary!', 
+        className
+      )}
     >
       <StreamdownWrapper
+        mode={mode}
         pluginInfo={pluginInfo}
         latexContent={latexContent}
         customComponents={customComponents}
@@ -45,11 +48,11 @@ export const Markdown: React.FC<MarkdownProps> = memo((props) => {
         remarkPlugins={remarkPlugins}
         rehypePlugins={rehypePlugins}
         animating={animating}
-        mode={mode}
       />
     </div>
   )
 })
 
 Markdown.displayName = 'Markdown'
+
 export default Markdown

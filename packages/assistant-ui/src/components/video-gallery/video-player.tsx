@@ -2,43 +2,39 @@ import * as React from 'react'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import s from './index.module.css'
 
-const PlayIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M8 5V19L19 12L8 5Z" fill="currentColor" />
-  </svg>
-)
+const PlayIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M8 5V19L19 12L8 5Z" fill="currentColor" />
+</svg>
 
-const PauseIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M6 19H10V5H6V19ZM14 5V19H18V5H14Z" fill="currentColor" />
-  </svg>
-)
 
-const MuteIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M3 9V15H7L12 20V4L7 9H3ZM16.5 12C16.5 10.23 15.48 8.71 14 7.97V16.02C15.48 15.29 16.5 13.77 16.5 12ZM14 3.23V5.29C16.89 6.15 19 8.83 19 12C19 15.17 16.89 17.85 14 18.71V20.77C18.01 19.86 21 16.28 21 12C21 7.72 18.01 4.14 14 3.23Z" fill="currentColor" />
-  </svg>
-)
+const PauseIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M6 19H10V5H6V19ZM14 5V19H18V5H14Z" fill="currentColor" />
+</svg>
 
-const UnmuteIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M4.34 2.93L2.93 4.34L7.29 8.7L7 9H3V15H7L12 20V13.41L16.18 17.59C15.69 17.96 15.16 18.27 14.58 18.5V20.58C15.94 20.22 17.15 19.56 18.13 18.67L19.66 20.2L21.07 18.79L4.34 2.93ZM10 15.17L7.83 13H5V11H7.83L10 8.83V15.17ZM19 12C19 12.82 18.85 13.61 18.59 14.34L20.12 15.87C20.68 14.7 21 13.39 21 12C21 7.72 18.01 4.14 14 3.23V5.29C16.89 6.15 19 8.83 19 12ZM12 4L10.12 5.88L12 7.76V4ZM16.5 12C16.5 10.23 15.48 8.71 14 7.97V10.18L16.45 12.63C16.48 12.43 16.5 12.22 16.5 12Z" fill="currentColor" />
-  </svg>
-)
+const MuteIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M3 9V15H7L12 20V4L7 9H3ZM16.5 12C16.5 10.23 15.48 8.71 14 7.97V16.02C15.48 15.29 16.5 13.77 16.5 12ZM14 3.23V5.29C16.89 6.15 19 8.83 19 12C19 15.17 16.89 17.85 14 18.71V20.77C18.01 19.86 21 16.28 21 12C21 7.72 18.01 4.14 14 3.23Z" fill="currentColor" />
+</svg>
 
-const FullscreenIcon = () => (
-  <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
-    <path d="M7 14H5V19H10V17H7V14ZM5 10H7V7H10V5H5V10ZM17 17H14V19H19V14H17V17ZM14 5V7H17V10H19V5H14Z" fill="currentColor" />
-  </svg>
-)
+
+const UnmuteIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M4.34 2.93L2.93 4.34L7.29 8.7L7 9H3V15H7L12 20V13.41L16.18 17.59C15.69 17.96 15.16 18.27 14.58 18.5V20.58C15.94 20.22 17.15 19.56 18.13 18.67L19.66 20.2L21.07 18.79L4.34 2.93ZM10 15.17L7.83 13H5V11H7.83L10 8.83V15.17ZM19 12C19 12.82 18.85 13.61 18.59 14.34L20.12 15.87C20.68 14.7 21 13.39 21 12C21 7.72 18.01 4.14 14 3.23V5.29C16.89 6.15 19 8.83 19 12ZM12 4L10.12 5.88L12 7.76V4ZM16.5 12C16.5 10.23 15.48 8.71 14 7.97V10.18L16.45 12.63C16.48 12.43 16.5 12.22 16.5 12Z" fill="currentColor" />
+</svg>
+
+
+const FullscreenIcon = () => <svg width="20" height="20" viewBox="0 0 24 24" fill="none" xmlns="http://www.w3.org/2000/svg">
+  <path d="M7 14H5V19H10V17H7V14ZM5 10H7V7H10V5H5V10ZM17 17H14V19H19V14H17V17ZM14 5V7H17V10H19V5H14Z" fill="currentColor" />
+</svg>
 
 interface VideoPlayerProps {
   src?: string 
   srcs?: string[]
 }
 
-export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
-  const [isPlaying, setIsPlaying] = useState(false)
+export const VideoPlayer: React.FC<VideoPlayerProps> = ({ 
+  src,
+  srcs
+}) => {
+  const [playing, setPlaying] = useState(false)
   const [currentTime, setCurrentTime] = useState(0)
   const [duration, setDuration] = useState(0)
   const [isMuted, setIsMuted] = useState(false)
@@ -46,19 +42,19 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
   const [isDragging, setIsDragging] = useState(false)
   const [isControlsVisible, setIsControlsVisible] = useState(true)
   const [hoverTime, setHoverTime] = useState<number | null>(null)
+  const [isSmallSize, setIsSmallSize] = useState(false)
   
   const videoRef = useRef<HTMLVideoElement>(null)
   const progressRef = useRef<HTMLDivElement>(null)
   const volumeRef = useRef<HTMLDivElement>(null)
   const controlsTimeoutRef = useRef<NodeJS.Timeout | null>(null)
-  const [isSmallSize, setIsSmallSize] = useState(false)
   const containerRef = useRef<HTMLDivElement>(null)
 
   useEffect(() => {
     const video = videoRef.current
-    /* v8 ignore next 2 -- video element is expected post-mount; null guard protects against lifecycle timing during mount/unmount. @preserve */
-    if (!video)
+    if (!video) {
       return
+    }
 
     const setVideoData = () => {
       setDuration(video.duration)
@@ -70,7 +66,7 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
     }
 
     const handleEnded = () => {
-      setIsPlaying(false)
+      setPlaying(false)
     }
 
     video.addEventListener('loadedmetadata', setVideoData)
@@ -82,37 +78,40 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
       video.removeEventListener('timeupdate', setVideoTime)
       video.removeEventListener('ended', handleEnded)
     }
-  }, [src, srcs])
+  }, [])
 
   useEffect(() => {
     return () => {
-      if (controlsTimeoutRef.current)
+      if (controlsTimeoutRef.current) {
         clearTimeout(controlsTimeoutRef.current)
+      }
     }
   }, [])
 
   const showControls = useCallback(() => {
     setIsControlsVisible(true)
-    if (controlsTimeoutRef.current)
+    if (controlsTimeoutRef.current) {
       clearTimeout(controlsTimeoutRef.current)
+    }
 
     controlsTimeoutRef.current = setTimeout(() => setIsControlsVisible(false), 3000)
   }, [])
 
   const togglePlayPause = useCallback(() => {
     const video = videoRef.current
-    /* v8 ignore next -- click handler can race with unmount in tests/runtime; guard prevents calling methods on a detached video node. @preserve */
     if (video) {
-      if (isPlaying)
+      if (playing) {
         video.pause()
-      else video.play().catch(error => console.error('Error playing video:', error))
-      setIsPlaying(!isPlaying)
+      } else {
+        video.play().catch(error => console.error('Error playing video:', error))
+      }
+
+      setPlaying(!playing)
     }
-  }, [isPlaying])
+  }, [playing])
 
   const toggleMute = useCallback(() => {
     const video = videoRef.current
-    /* v8 ignore next -- defensive null-check for ref lifecycle edges before mutating media properties. @preserve */
     if (video) {
       const newMutedState = !video.muted
       video.muted = newMutedState
@@ -124,11 +123,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
 
   const toggleFullscreen = useCallback(() => {
     const video = videoRef.current
-    /* v8 ignore next -- defensive null-check so fullscreen calls are skipped if video ref is detached. @preserve */
     if (video) {
-      if (document.fullscreenElement)
+      if (document.fullscreenElement) {
         document.exitFullscreen()
-      else video.requestFullscreen()
+      } else {
+        video.requestFullscreen()
+      }
     }
   }, [])
 
@@ -141,15 +141,18 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
   const updateVideoProgress = useCallback((clientX: number, updateTime = false) => {
     const progressBar = progressRef.current
     const video = videoRef.current
-    /* v8 ignore next -- progress callbacks may fire while refs are not yet attached or already torn down; guard avoids invalid DOM access. @preserve */
+
     if (progressBar && video) {
       const rect = progressBar.getBoundingClientRect()
       const pos = (clientX - rect.left) / rect.width
       const newTime = pos * video.duration
+
       if (newTime >= 0 && newTime <= video.duration) {
         setHoverTime(newTime)
-        if (isDragging || updateTime)
+
+        if (isDragging || updateTime) {
           video.currentTime = newTime
+        }
       }
     }
   }, [isDragging])
@@ -159,8 +162,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
   }, [updateVideoProgress])
 
   const handleMouseLeave = useCallback(() => {
-    if (!isDragging)
+    if (!isDragging) {
       setHoverTime(null)
+    }
   }, [isDragging])
 
   const handleProgressClick = useCallback((e: React.MouseEvent<HTMLDivElement>) => {
@@ -176,9 +180,10 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
 
   useEffect(() => {
     const handleGlobalMouseMove = (e: MouseEvent) => {
-      /* v8 ignore next -- global mousemove listener remains registered briefly; skip updates once dragging has ended. @preserve */
-      if (isDragging)
+      
+      if (isDragging) {
         updateVideoProgress(e.clientX)
+      }
     }
 
     const handleGlobalMouseUp = () => {
@@ -198,9 +203,9 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
   }, [isDragging, updateVideoProgress])
 
   const checkSize = useCallback(() => {
-    /* v8 ignore next 2 -- container ref may be null before first paint or after unmount while resize events are in flight. @preserve */
-    if (containerRef.current)
+    if (containerRef.current) {
       setIsSmallSize(containerRef.current.offsetWidth < 400)
+    }
   }, [])
 
   useEffect(() => {
@@ -224,14 +229,16 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
   }, [])
 
   return (
-    <div ref={containerRef} className={s.videoPlayer} onMouseMove={showControls} onMouseEnter={showControls} data-testid="video-player-container">
-      <video ref={videoRef} src={src} className={s.video} data-testid="video-element">
-        {/* If srcs array is provided, render multiple source elements */}
-        {srcs && srcs.map((srcUrl, index) => (
-          <source key={index} src={srcUrl} />
-        ))}
+    <div ref={containerRef} className={s.videoPlayer} onMouseMove={showControls} onMouseEnter={showControls}>
+      <video ref={videoRef} src={src} className={s.video}>
+        {
+          srcs && srcs.map((srcUrl, index) => <source 
+            key={index} 
+            src={srcUrl} 
+          />)
+        }
       </video>
-      <div className={`${s.controls} ${isControlsVisible ? s.visible : s.hidden} ${isSmallSize ? s.smallSize : ''}`} data-testid="video-controls" data-is-visible={isControlsVisible}>
+      <div className={`${s.controls} ${isControlsVisible ? s.visible : s.hidden} ${isSmallSize ? s.smallSize : ''}`}>
         <div className={s.overlay}>
           <div className={s.progressBarContainer}>
             <div
@@ -241,41 +248,41 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
               onMouseMove={handleMouseMove}
               onMouseLeave={handleMouseLeave}
               onMouseDown={handleMouseDown}
-              data-testid="video-progress-bar"
             >
               <div className={s.progress} style={{ width: `${(currentTime / duration) * 100}%` }} />
-              {hoverTime !== null && (
-                <div
-                  className={s.hoverTimeIndicator}
-                  style={{ left: `${(hoverTime / duration) * 100}%` }}
-                  data-testid="video-hover-time"
-                >
-                  {formatTime(hoverTime)}
-                </div>
-              )}
+                {
+                  hoverTime !== null && (
+                    <div
+                      className={s.hoverTimeIndicator}
+                      style={{ left: `${(hoverTime / duration) * 100}%` }}
+                    >
+                      {formatTime(hoverTime)}
+                    </div>
+                  )
+                }
             </div>
           </div>
           <div className={s.controlsContent}>
             <div className={s.leftControls}>
-              <button type="button" className={s.playPauseButton} onClick={togglePlayPause} data-testid="video-play-pause-button">
-                {isPlaying ? <PauseIcon /> : <PlayIcon />}
+              <button type="button" className={s.playPauseButton} onClick={togglePlayPause}>
+                { playing ? <PauseIcon /> : <PlayIcon /> }
               </button>
-              {!isSmallSize && (
-                <span className={s.time} data-testid="video-time-display">
-                  {formatTime(currentTime)}
-                  {' '}
-                  /
-                  {' '}
-                  {formatTime(duration)}
-                </span>
-              )}
+              {
+                !isSmallSize && (
+                  <span className={s.time}>
+                    {formatTime(currentTime)}
+                    {' '} / {' '}
+                    {formatTime(duration)}
+                  </span>
+                )
+              }
             </div>
             <div className={s.rightControls}>
-              <button type="button" className={s.muteButton} onClick={toggleMute} data-testid="video-mute-button">
-                {isMuted ? <UnmuteIcon /> : <MuteIcon />}
+              <button type="button" className={s.muteButton} onClick={toggleMute}>
+                { isMuted ? <UnmuteIcon /> : <MuteIcon /> }
               </button>
-              {!isSmallSize && (
-                <div className={s.volumeControl}>
+              {
+                !isSmallSize && <div className={s.volumeControl}>
                   <div
                     ref={volumeRef}
                     className={s.volumeSlider}
@@ -290,13 +297,12 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
                       document.addEventListener('mousemove', handleMouseMove)
                       document.addEventListener('mouseup', handleMouseUp)
                     }}
-                    data-testid="video-volume-slider"
                   >
                     <div className={s.volumeLevel} style={{ width: `${volume * 100}%` }} />
                   </div>
                 </div>
-              )}
-              <button type="button" className={s.fullscreenButton} onClick={toggleFullscreen} data-testid="video-fullscreen-button">
+              }
+              <button type="button" className={s.fullscreenButton} onClick={toggleFullscreen}>
                 <FullscreenIcon />
               </button>
             </div>
@@ -307,4 +313,5 @@ export const VideoPlayer: React.FC<VideoPlayerProps> = ({ src }) => {
   )
 }
 
+VideoPlayer.displayName = 'VideoPlayer'
 export default VideoPlayer

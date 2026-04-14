@@ -1,7 +1,7 @@
 
 import { Component } from 'react'
 
-export default class ErrorBoundary extends Component {
+export class ErrorBoundary extends Component {
   constructor(props: any) {
     super(props)
     this.state = { hasError: false }
@@ -29,3 +29,6 @@ export default class ErrorBoundary extends Component {
     return this.props.children
   }
 }
+
+
+export default ErrorBoundary

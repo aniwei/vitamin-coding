@@ -1,7 +1,7 @@
 import { Button as BaseButton } from '@/components/button'
 import { clsx } from 'clsx'
 import { memo, useCallback } from 'react'
-import { isValidUrl } from './utils'
+import { isValidUrl } from '../shared'
 
 interface ButtonProps {
   node: {

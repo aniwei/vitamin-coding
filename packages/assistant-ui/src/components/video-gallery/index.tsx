@@ -18,4 +18,5 @@ export const VideoGallery: React.FC<VideoGalleryProps> = React.memo(({ srcs }) =
   )
 })
 
+VideoGallery.displayName = 'VideoGallery'
 export default VideoGallery

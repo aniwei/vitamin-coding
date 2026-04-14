@@ -12,4 +12,6 @@ export const Image: React.FC<ImageProps> = memo(({ src }) => {
   </div>
 })
 
+Image.displayName = 'Image'
+
 export default Image

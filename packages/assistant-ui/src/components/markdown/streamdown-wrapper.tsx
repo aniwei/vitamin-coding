@@ -137,10 +137,8 @@ function buildRehypePlugins(extraPlugins?: PluggableList): PluggableList {
   const { input: _inputRequired, ...requiredRest } = (defaultSanitizeSchema.required ?? {})
   const clobber = (defaultSanitizeSchema.clobber ?? []).filter(k => k !== 'name')
 
-  if (ALLOW_INLINE_STYLES) {
-    const globalAttrs = mergedAttributes['*'] ?? []
-    mergedAttributes['*'] = [...globalAttrs, 'style']
-  }
+  const globalAttrs = mergedAttributes['*'] ?? []
+  mergedAttributes['*'] = [...globalAttrs, 'style']
 
   const customSchema: SanitizeSchema = {
     ...defaultSanitizeSchema,
