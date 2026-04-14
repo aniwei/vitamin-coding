@@ -153,7 +153,7 @@ export class CodingSessionManager {
     // 此时发布 session_start 事件可被正确接收。
     agentSession.notifyCreated()
 
-    this.logger.info('Session %s created', id)
+    this.logger.info({ sessionId: id }, 'Session created')
 
     return agentSession
   }
@@ -191,7 +191,7 @@ export class CodingSessionManager {
       sessionId: id,
       metadata: {},
     })
-    this.logger.info('Session %s removed', id)
+    this.logger.info({ sessionId: id }, 'Session removed')
 
     return true
   }
@@ -245,7 +245,7 @@ export class CodingSessionManager {
     this.sessions.set(id, agentSession)
     this.configs.set(id, forkedConfig)
 
-    this.logger.info('Session %s forked from %s', id, sourceId)
+    this.logger.info({ sessionId: id, sourceId }, 'Session forked')
     return agentSession
   }
 
@@ -303,7 +303,7 @@ export class CodingSessionManager {
     this.sessions.set(id, agentSession)
     this.configs.set(id, config)
 
-    this.logger.info('Session %s restored', id)
+    this.logger.info({ sessionId: id }, 'Session restored')
     return agentSession
   }
 
@@ -343,7 +343,7 @@ export class CodingSessionManager {
       restored++
     }
 
-    this.logger.info('Restored %d session(s)', restored)
+    this.logger.info({ count: restored }, 'Sessions restored')
     return restored
   }
 

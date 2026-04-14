@@ -348,7 +348,7 @@ export class VitaminApp implements VitaminContext {
     const config = await this.resolveSessionConfig(options)
     const agentSession = await this.codingSessionManager.createSession(config)
 
-    this.logger.info('Session created: %s', agentSession.id)
+    this.logger.info({ sessionId: agentSession.id }, 'Session created')
     return agentSession
   }
 
@@ -428,7 +428,7 @@ export class VitaminApp implements VitaminContext {
   async removeSession(id: string): Promise<boolean> {
     const removed = await this.codingSessionManager.removeSession(id)
     if (removed) {
-      this.logger.info('Session removed: %s', id)
+      this.logger.info({ sessionId: id }, 'Session removed')
     }
     return removed
   }

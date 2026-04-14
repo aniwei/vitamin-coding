@@ -100,7 +100,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
     })
 
     this.socket.on('error', (err) => {
-      logger.warn(`debug bridge error: ${err.message}`)
+      logger.warn({ err: err.message }, 'debug bridge error')
     })
   }
 

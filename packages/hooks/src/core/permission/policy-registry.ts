@@ -43,7 +43,7 @@ function matchesRule(match: RuleMatch, ctx: PermissionContext): boolean {
     if (!ctx.filePath) {
       return false
     }
-    const pathMatched = match.paths.some((pattern) => pattern.test(ctx.filePath!))
+    const pathMatched = match.paths.some((pattern) => pattern.test(ctx.filePath as string))
     if (!pathMatched) {
       return false
     }
@@ -73,7 +73,8 @@ export class PermissionPolicyRegistry {
     this.policies.push(policy)
     this.policies.sort((a, b) => a.priority - b.priority)
     logger.debug(
-      `Permission policy registered: ${policy.name} (priority=${policy.priority}, rules=${policy.rules.length})`,
+      { name: policy.name, priority: policy.priority, rules: policy.rules.length },
+      'Permission policy registered',
     )
   }
 
@@ -87,7 +88,7 @@ export class PermissionPolicyRegistry {
     const idx = this.policies.findIndex((p) => p.name === name)
     if (idx >= 0) {
       this.policies.splice(idx, 1)
-      logger.debug(`Permission policy unregistered: ${name}`)
+      logger.debug({ name }, 'Permission policy unregistered')
       return true
     }
     return false

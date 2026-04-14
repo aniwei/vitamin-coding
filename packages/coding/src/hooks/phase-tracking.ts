@@ -62,7 +62,7 @@ export function createPhaseTrackingHooks(): HookSpec[] {
               const history = phaseTracker.get(input.sessionId) ?? []
               history.push(phase)
               phaseTracker.set(input.sessionId, history)
-              logger.debug('Phase extracted: %s (session=%s)', phase, input.sessionId)
+              logger.debug({ phase, sessionId: input.sessionId }, 'Phase extracted')
             }
           }
         }

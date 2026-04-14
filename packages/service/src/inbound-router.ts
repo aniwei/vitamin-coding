@@ -141,7 +141,7 @@ export class InboundRouter {
   dispatch(clientId: string, message: WebSocketClientMessage): void {
     const { type, data } = message
 
-    logger.debug(`message from client ${clientId}: ${type}`)
+    logger.debug({ clientId, type }, 'message from client')
 
     switch (type) {
       // ── Session subscription ────────────────────────────────────────────────
@@ -219,7 +219,7 @@ export class InboundRouter {
       }
 
       default:
-        logger.debug(`unknown client message type: ${type}`)
+        logger.debug({ type }, 'unknown client message type')
     }
   }
 
@@ -248,7 +248,7 @@ export class InboundRouter {
     }
 
     session.resolveApproval(approvalId, approved)
-    logger.debug(`${approved ? 'approval' : 'rejection'} for session ${session.id}`)
+    logger.debug({ sessionId: session.id, approved }, 'approval resolved')
   }
 
   private handleAskUserResponse({ requestId, answers, sessionId }: ChatAskUserResponseData): void {
@@ -258,7 +258,7 @@ export class InboundRouter {
     }
 
     session.resolveAskUser(requestId, answers)
-    logger.debug(`ask_user response for session ${session.id}`)
+    logger.debug({ sessionId: session.id, requestId }, 'ask_user resolved')
   }
 
   private handlePlanApprovalResponse({
@@ -273,7 +273,7 @@ export class InboundRouter {
     }
 
     session.resolvePlanApproval(requestId, action, feedback)
-    logger.debug(`plan ${action} for session ${session.id}`)
+    logger.debug({ sessionId: session.id, action, requestId }, 'plan approval resolved')
   }
 
   private handleDebugCommand(

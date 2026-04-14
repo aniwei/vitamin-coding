@@ -139,7 +139,7 @@ export class AgentSession extends Subscription {
     this.agentUnsubs.push(this.agent.on('tool_call_start', this.onToolCallStart))
     this.agentUnsubs.push(this.agent.on('tool_call_end', this.onToolCallEnd))
 
-    this.logger.info('Session %s initialized with model %s', this.id, this.model.id)
+    this.logger.info({ sessionId: this.id, model: this.model.id }, 'Session initialized')
   }
 
   /**
@@ -320,7 +320,7 @@ export class AgentSession extends Subscription {
     } else {
       this.publish({ prompt_start: [{ type: 'prompt_start' as const, sessionId: this.id, text }] })
 
-      this.logger.info('Session %s prompt started', this.id)
+      this.logger.info({ sessionId: this.id }, 'Session prompt started')
 
       if (this.promptRefresh) {
         const refreshed = await this.promptRefresh()
@@ -374,10 +374,8 @@ export class AgentSession extends Subscription {
     const messages: AgentMessage[] = []
 
     this.logger.info(
-      'Session %s context built with %d message(s)%s',
-      this.id,
-      ctx.messages.length,
-      ctx.summary ? ' and summary' : '',
+      { sessionId: this.id, messages: ctx.messages.length, hasSummary: Boolean(ctx.summary) },
+      'Session context built',
     )
 
     if (ctx.summary) {
@@ -487,7 +485,7 @@ export class AgentSession extends Subscription {
       )
 
       this.publish({ prompt_end: [{ type: 'prompt_end' as const, sessionId: this.id }] })
-      this.logger.info('Session %s prompt finished', this.id)
+      this.logger.info({ sessionId: this.id }, 'Session prompt finished')
 
       // 通知 session 进入空闲状态
       await this.hookRegistry.emit('session.idle', {
@@ -505,7 +503,7 @@ export class AgentSession extends Subscription {
       })
 
       this.publish({ error: [{ type: 'error' as const, sessionId: this.id, error: err }] })
-      this.logger.error('Session %s prompt failed: %s', this.id, err.message)
+      this.logger.error({ sessionId: this.id, err: err.message }, 'Session prompt failed')
       throw error
     }
   }
@@ -550,7 +548,7 @@ export class AgentSession extends Subscription {
     this.publish({
       compaction_start: [{ type: 'compaction_start' as const, sessionId: this.id, messageCount }],
     })
-    this.logger.info('Session %s compacting %d message(s)', this.id, compactedCount)
+    this.logger.info({ sessionId: this.id, count: compactedCount }, 'Session compacting')
 
     this.session.compact(summary, compactedCount)
 
@@ -564,11 +562,7 @@ export class AgentSession extends Subscription {
     this.publish({
       compaction_end: [{ type: 'compaction_end' as const, sessionId: this.id, retainedCount }],
     })
-    this.logger.info(
-      'Session %s compaction finished, retained %d message(s)',
-      this.id,
-      retainedCount,
-    )
+    this.logger.info({ sessionId: this.id, retained: retainedCount }, 'Session compaction finished')
   }
 
   private persistNewMessages(messages: AgentMessage[], startIndex: number): void {
@@ -587,13 +581,15 @@ export class AgentSession extends Subscription {
     const cost = calculate(this.model, usage)
 
     this.logger.info(
-      'Session %s usage input=%d output=%d cacheRead=%d cacheWrite=%d estimatedCost=$%s',
-      this.id,
-      usage.inputTokens,
-      usage.outputTokens,
-      usage.cacheReadTokens,
-      usage.cacheWriteTokens,
-      cost.total.toFixed(6),
+      {
+        sessionId: this.id,
+        input: usage.inputTokens,
+        output: usage.outputTokens,
+        cacheRead: usage.cacheReadTokens,
+        cacheWrite: usage.cacheWriteTokens,
+        estimatedCost: cost.total.toFixed(6),
+      },
+      'Session usage',
     )
   }
 
@@ -656,7 +652,12 @@ export class AgentSession extends Subscription {
         subscriberOrType(event as AgentSessionEvent)
       })
     }
-    return super.subscribe(subscriberOrType, callback!, once)
+
+    if (!callback) {
+      throw new Error('callback is required when subscribing by type')
+    }
+
+    return super.subscribe(subscriberOrType, callback, once)
   }
 
   async requestApproval(
@@ -681,7 +682,7 @@ export class AgentSession extends Subscription {
       ],
     })
 
-    this.logger.info('Session %s approval requested for tool %s (%s)', this.id, toolName, id)
+    this.logger.info({ sessionId: this.id, toolName, approvalId: id }, 'Approval requested')
 
     try {
       return await deferred.promise
@@ -698,12 +699,7 @@ export class AgentSession extends Subscription {
           { type: 'approval_resolved' as const, sessionId: this.id, id: approvalId, approved },
         ],
       })
-      this.logger.info(
-        'Session %s approval %s for %s',
-        this.id,
-        approved ? 'granted' : 'denied',
-        approvalId,
-      )
+      this.logger.info({ sessionId: this.id, approvalId, approved }, 'Approval resolved')
     }
   }
 
@@ -718,7 +714,7 @@ export class AgentSession extends Subscription {
       ],
     })
 
-    this.logger.info('Session %s ask-user requested (%s)', this.id, requestId)
+    this.logger.info({ sessionId: this.id, requestId }, 'Ask-user requested')
 
     try {
       return await deferred.promise
@@ -733,7 +729,7 @@ export class AgentSession extends Subscription {
       this.publish({
         ask_user_resolved: [{ type: 'ask_user_resolved' as const, sessionId: this.id, requestId }],
       })
-      this.logger.info('Session %s ask-user resolved for %s', this.id, requestId)
+      this.logger.info({ sessionId: this.id, requestId }, 'Ask-user resolved')
     }
   }
 
@@ -748,7 +744,7 @@ export class AgentSession extends Subscription {
       ],
     })
 
-    this.logger.info('Session %s plan approval requested (%s)', this.id, requestId)
+    this.logger.info({ sessionId: this.id, requestId }, 'Plan approval requested')
 
     try {
       return await deferred.promise
@@ -765,7 +761,7 @@ export class AgentSession extends Subscription {
           { type: 'plan_approval_resolved' as const, sessionId: this.id, requestId, action },
         ],
       })
-      this.logger.info('Session %s plan %s for %s', this.id, action, requestId)
+      this.logger.info({ sessionId: this.id, action, requestId }, 'Plan approval resolved')
     }
   }
 
@@ -809,7 +805,7 @@ export class AgentSession extends Subscription {
     this.publish({ session_end: [{ type: 'session_end' as const, sessionId: this.id }] })
     this.removeAllListeners()
 
-    this.logger.info('Session %s disposed', this.id)
+    this.logger.info({ sessionId: this.id }, 'Session disposed')
   }
 }
 

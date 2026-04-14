@@ -32,7 +32,7 @@ export {
 export type { Disposable, AsyncDisposable } from './disposable'
 
 export { createLogger, getRootLogger, attachLogListener } from './logger'
-export type { Logger } from './logger'
+export type { Logger, LogLevel, LoggerOptions } from './logger'
 
 export { mkdirp, rimraf, exists, mime, isFile, isDirectory } from './fs-extra'
 

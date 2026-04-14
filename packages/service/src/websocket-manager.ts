@@ -101,7 +101,7 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
     const clientId = String(++this.clientId)
     this.clients.set(clientId, ws)
 
-    logger.debug(`client connected: ${clientId}`)
+    logger.debug({ clientId }, 'client connected')
     this.sendToClient(clientId, { type: 'Runtime.connected', data: { clientId } })
 
     ws.on('message', (raw: Buffer) => {
@@ -109,7 +109,7 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
         const parsed = JSON.parse(raw.toString()) as unknown
         const message = this.normalizeClientMessage(parsed)
         if (!message) {
-          logger.warn(`invalid message from client ${clientId}`)
+          logger.warn({ clientId }, 'invalid message')
           return
         }
 
@@ -117,10 +117,9 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
           return
         }
 
-        // Forward to handler
         this.emit('message', clientId, message)
       } catch {
-        logger.warn(`invalid message from client ${clientId}`)
+        logger.warn({ clientId }, 'invalid message')
       }
     })
 
@@ -131,11 +130,11 @@ export class WebSocketManager extends TypedEventEmitter<WebSocketManagerEvents> 
         subscribers.delete(clientId)
       }
 
-      logger.debug(`client disconnected: ${clientId}`)
+      logger.debug({ clientId }, 'client disconnected')
     })
 
     ws.on('error', (err) => {
-      logger.warn(`client ${clientId} error: ${err.message}`)
+      logger.warn({ clientId, err: err.message }, 'client error')
     })
   }
 

@@ -45,12 +45,12 @@ export function createSessionLearningHooks(
       }
 
       triggered.add(input.sessionId)
-      logger.info('Session idle, prompting for learning: %s', input.sessionId)
+      logger.info({ sessionId: input.sessionId }, 'Session idle, prompting for learning')
       try {
         const sessionEndPrompt = await promptManager.loadSessionEndLearningPrompt()
         await session.prompt(sessionEndPrompt ?? '')
       } catch (err) {
-        logger.warn('Learning prompt failed for session %s: %s', input.sessionId, err)
+        logger.warn({ sessionId: input.sessionId, err: String(err) }, 'Learning prompt failed')
       }
     },
   })

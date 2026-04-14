@@ -130,7 +130,7 @@ export class CodingService {
       this.server.listen(this.port, this.host, () => {
         this.started = true
         this.bridge?.attach()
-        logger.info(`service started on http://${this.host}:${this.port}`)
+        logger.info({ host: this.host, port: this.port }, 'service started')
         resolve()
       })
 

@@ -10,7 +10,7 @@ import type { SettingsManager } from '@vitamin/resources'
 import type { CodingSessionManager } from './session/coding-session-manager'
 import type { AgentSessionInfo, AgentSessionOptions } from './session/types'
 import type { AgentSession } from './session/agent-session'
-import type { Logger } from '@vitamin/shared'
+import type { Logger, LogLevel } from '@vitamin/shared'
 import type { Devtools } from '@vitamin/devtools'
 
 export interface VitaminContext {
@@ -45,7 +45,7 @@ export interface VitaminAppOptions {
   inspect: boolean
   logger: {
     name: string
-    level: 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal'
+    level: LogLevel
     destination: string
   }
 

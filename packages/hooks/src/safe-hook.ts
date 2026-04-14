@@ -17,7 +17,7 @@ export function safeCreateHook(
     return factory()
   } catch (error) {
     const message = error instanceof Error ? error.message : String(error)
-    logger.error(`Hook ${name} creation failed: ${message}`)
+    logger.error({ name, err: message }, 'Hook creation failed')
     return null
   }
 }
