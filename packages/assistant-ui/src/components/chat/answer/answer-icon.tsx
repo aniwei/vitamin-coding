@@ -4,7 +4,7 @@ import { memo, type FC } from 'react'
 
 init({ data })
 
-interface AnswerIconProps {
+type AnswerIconProps = {
   icon?: string | null
   background?: string | null
   imageUrl?: string | null
@@ -26,4 +26,5 @@ export const AnswerIcon: FC<AnswerIconProps> = memo(({
   )
 })
 
+AnswerIcon.displayName = 'AnswerIcon'
 export default AnswerIcon

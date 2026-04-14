@@ -119,4 +119,5 @@ export const Citation: FC<CitationProps> = memo(({
   )
 })
 
+Citation.displayName = 'Citation'
 export default Citation

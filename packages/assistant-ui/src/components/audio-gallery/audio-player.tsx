@@ -1,4 +1,4 @@
-import useTheme from '@/hooks/use-theme'
+import { useTheme } from '@/hooks/use-theme'
 import { useCallback, useEffect, useRef, useState } from 'react'
 import { toast } from '@/components/ui/toast'
 import { Theme } from '@/types'
@@ -48,7 +48,7 @@ const useAudio = (
   return audioRef
 }
 
-interface AudioPlayerProps {
+type AudioPlayerProps = {
   src?: string 
   srcs?: string[]
 }

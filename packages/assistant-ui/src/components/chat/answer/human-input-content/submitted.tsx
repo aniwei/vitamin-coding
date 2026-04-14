@@ -1,4 +1,4 @@
-import type { SubmittedHumanInputContentProps } from './type'
+import type { SubmittedHumanInputContentProps } from './types'
 import { useMemo } from 'react'
 import ExecutedAction from './executed-action'
 import SubmittedContent from './submitted-content'

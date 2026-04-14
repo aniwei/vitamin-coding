@@ -4,14 +4,14 @@ import type { FC } from 'react'
 
 import s from './index.module.css'
 
-interface LoadingAnimationProps {
+type LoadingAnimationProps = {
   type: 'text' | 'avatar'
 }
 
 export const LoadingAnimation: FC<LoadingAnimationProps> = React.memo(({
   type,
 }) => {
-  return <div className={clsx(s['dot-flashing'], s[type])} />
+  return <div className={clsx(s.dotFlashing, s[type])} />
 })
 
 export default LoadingAnimation

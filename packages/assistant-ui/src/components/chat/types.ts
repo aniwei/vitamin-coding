@@ -1,4 +1,4 @@
-import { Annotation } from '@/types'
+import { Annotation, WorkflowRunningStatus } from '@/types'
 
 
 export type ExtraContent
@@ -27,13 +27,13 @@ export enum InputVarType {
   number = 'number',
   url = 'url',
   files = 'files',
-  json = 'json', // obj, array
-  jsonObject = 'json_object', // only object support define json schema
-  contexts = 'contexts', // knowledge retrieval
-  iterator = 'iterator', // iteration input
+  json = 'json', 
+  jsonObject = 'json_object',
+  contexts = 'contexts',
+  iterator = 'iterator',
   singleFile = 'file',
   multiFiles = 'file-list',
-  loop = 'loop', // loop input
+  loop = 'loop',
   checkbox = 'checkbox',
 }
 
@@ -65,6 +65,7 @@ export interface ChatSetting extends Omit<ModelConfig, 'model'> {
 }
 
 export interface WorkflowProcess {
+  status: WorkflowRunningStatus
   expand?: boolean // for UI
   resultText?: string
 }

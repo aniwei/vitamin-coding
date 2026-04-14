@@ -5,10 +5,9 @@ import { memo } from 'react'
 import type { FC } from 'react'
 import type { OnSend } from './types'
 
-interface TryToAskProps {
+type TryToAskProps = {
   suggestedQuestions: string[]
   onSend: OnSend
-
 }
 
 export const TryToAsk: FC<TryToAskProps> = memo(({
@@ -41,4 +40,5 @@ export const TryToAsk: FC<TryToAskProps> = memo(({
   )
 })
 
+TryToAsk.displayName = 'TryToAsk'
 export default TryToAsk

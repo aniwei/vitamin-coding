@@ -1,19 +1,16 @@
-import type { FC } from 'react'
-import type {
-  ChatItem,
-} from '../../types'
+import Thought from '@/components/chat/thought'
 import { memo } from 'react'
-import Thought from '@/components/chat/chat/thought'
-import { FileList } from '@/components/file-uploader'
-import { getProcessedFilesFromResponse } from '@/components/file-uploader/utils'
 import { Markdown } from '@/components/markdown'
+import type { FC } from 'react'
+import type { ChatItem } from '../types'
 
 type AgentContentProps = {
   item: ChatItem
   responding?: boolean
   content?: string
 }
-const AgentContent: FC<AgentContentProps> = ({
+
+export const AgentContent: FC<AgentContentProps> = memo(({
   item,
   responding,
   content,
@@ -25,51 +22,31 @@ const AgentContent: FC<AgentContentProps> = ({
 
   if (annotation?.logAnnotation) {
     return (
-      <Markdown
-        content={annotation?.logAnnotation.content || ''}
-        data-testid="agent-content-markdown"
-      />
+      <Markdown content={annotation?.logAnnotation.content || ''} />
     )
   }
 
   return (
     <div data-testid="agent-content-container">
-      {content ? (
-        <Markdown
-          content={content}
-          data-testid="agent-content-markdown"
-        />
-      ) : agent_thoughts?.map((thought, index) => (
-        <div key={index} className="px-2 py-1" data-testid="agent-thought-item">
-          {thought.thought && (
-            <Markdown
-              content={thought.thought}
-              data-testid="agent-thought-markdown"
-            />
-          )}
-          {/* {item.tool} */}
-          {/* perhaps not use tool */}
-          {!!thought.tool && (
-            <Thought
-              thought={thought}
-              isFinished={!!thought.observation || !responding}
-            />
-          )}
-
-          {
-            !!thought.message_files?.length && (
-              <FileList
-                files={getProcessedFilesFromResponse(thought.message_files.map((item: any) => ({ ...item, related_id: item.id })))}
-                showDeleteAction={false}
-                showDownloadAction={true}
-                canPreview={true}
-              />
-            )
-          }
-        </div>
-      ))}
+      {
+        content 
+          ? <Markdown content={content} />
+          : agent_thoughts?.map((thought, index) => (
+            <div key={index} className="px-2 py-1">
+              { thought.thought && <Markdown content={thought.thought} /> }
+              
+              {
+                !!thought.tool && <Thought
+                  thought={thought}
+                  isFinished={!!thought.observation || !responding}
+                />
+              }
+            </div>
+          ))
+      }
     </div>
   )
-}
+})
 
-export default memo(AgentContent)
+AgentContent.displayName = 'AgentContent'
+export default AgentContent

@@ -1,10 +1,10 @@
-import type { ContentItemProps } from './type'
-import * as React from 'react'
+import Textarea from '@/components/textarea'
 import { useMemo } from 'react'
 import { Markdown } from '@/components/markdown'
-import Textarea from '@/components/textarea'
+import * as React from 'react'
+import type { ContentItemProps } from './types'
 
-const ContentItem = ({
+export const ContentItem = ({
   content,
   formInputFields,
   inputs,

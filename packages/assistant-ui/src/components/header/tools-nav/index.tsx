@@ -9,9 +9,9 @@ type ToolsNavProps = {
   className?: string
 }
 
-const ToolsNav = ({
+export const ToolsNav: React.FC<ToolsNavProps> = ({
   className,
-}: ToolsNavProps) => {
+}) => {
   const activated = useMatch('/tools/*')
   
   return (

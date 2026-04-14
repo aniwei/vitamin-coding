@@ -1,7 +1,7 @@
 import { useTheme as useBaseTheme } from 'next-themes'
 import { Theme } from '@/types'
 
-const useTheme = () => {
+export const useTheme = () => {
   const { theme, resolvedTheme, ...rest } = useBaseTheme()
   return {
     // only returns 'light' or 'dark' theme

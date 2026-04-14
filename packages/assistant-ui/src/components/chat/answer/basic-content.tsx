@@ -1,12 +1,14 @@
-import type { FC } from 'react'
-import type { ChatItem } from '../../types'
 import { memo } from 'react'
 import { Markdown } from '@/components/markdown'
 import { clsx } from 'clsx'
+import type { FC } from 'react'
+import type { ChatItem } from '../types'
+
 type BasicContentProps = {
   item: ChatItem
 }
-const BasicContent: FC<BasicContentProps> = ({
+
+export const BasicContent: FC<BasicContentProps> = memo(({
   item,
 }) => {
   const {
@@ -23,8 +25,6 @@ const BasicContent: FC<BasicContentProps> = ({
     )
   }
 
-  // Preserve Windows UNC paths and similar backslash-heavy strings by
-  // wrapping them in inline code so Markdown renders backslashes verbatim.
   let displayContent = content
   if (typeof content === 'string' && /^\\\\\S.*/.test(content) && !/^`.*`$/.test(content)) {
     displayContent = `\`${content}\``
@@ -36,9 +36,9 @@ const BasicContent: FC<BasicContentProps> = ({
         item.isError && 'text-[#F04438]!',
       )}
       content={displayContent}
-      data-testid="basic-content-markdown"
     />
   )
-}
+})
 
-export default memo(BasicContent)
+BasicContent.displayName = 'BasicContent'
+export default BasicContent

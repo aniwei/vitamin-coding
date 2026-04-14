@@ -11,18 +11,18 @@ import More from './more'
 // import Operation from './operation'
 import SuggestedQuestions from './suggested-questions'
 import WorkflowProcessItem from './workflow-process'
-import { memo, useCallback, useEffect, useRef, useState } from 'react'
+import { 
+  memo, 
+  useCallback, 
+  useEffect, 
+  useRef, 
+  useState 
+} from 'react'
 import { clsx } from 'clsx'
 import { useChatContext } from '../context'
 
-import type {
-  FC,
-  ReactNode,
-} from 'react'
-import type {
-  ChatSetting,
-  ChatItem,
-} from '../types'
+import type { FC, ReactNode } from 'react'
+import type { ChatSetting, ChatItem } from '../types'
 
 interface AnswerProps {
   item: ChatItem
@@ -168,17 +168,14 @@ export const Answer: FC<AnswerProps> = memo(({
                   />
                 )
               } */}
-              {/** Render workflow process */}
-              {/* {
-                workflowProcess && (
-                  <WorkflowProcessItem
-                    data={workflowProcess}
-                    item={item}
-                    hideProcessDetail={hideProcessDetail}
-                    readonly={hideProcessDetail ? undefined : undefined}
-                  />
-                )
-              } */}
+              {
+                workflowProcess && <WorkflowProcessItem
+                  data={workflowProcess}
+                  item={item}
+                  hideProcessDetail={hideProcessDetail}
+                  readonly={hideProcessDetail ? undefined : undefined}
+                />
+              }
               {/* {
                 humanInputFormDataList && humanInputFormDataList.length > 0 && (
                   <HumanInputFormList
@@ -201,15 +198,13 @@ export const Answer: FC<AnswerProps> = memo(({
                 && !responding
                 && contentIsEmpty
                 && !hasAgentThoughts
-                && (
-                  <ContentSwitch
-                    count={item.siblingCount}
-                    currentIndex={item.siblingIndex}
-                    prevDisabled={!item.prevSibling}
-                    nextDisabled={!item.nextSibling}
-                    switchSibling={handleSwitchSibling}
-                  />
-                )
+                && <ContentSwitch
+                  count={item.siblingCount}
+                  currentIndex={item.siblingIndex}
+                  prevDisabled={!item.prevSibling}
+                  nextDisabled={!item.nextSibling}
+                  switchSibling={handleSwitchSibling}
+                />
               }
             </div>
           </div>
@@ -261,22 +256,21 @@ export const Answer: FC<AnswerProps> = memo(({
               
               <SuggestedQuestions item={item} />
               {
-                !!citation?.length && !responding && (
-                  <Citation data={citation} showHitInfo={setting?.supportCitationHitInfo} />
-                )
+                !!citation?.length && !responding && <Citation 
+                  data={citation} 
+                  showHitInfo={setting?.supportCitationHitInfo} 
+                />
               }
               {
                 typeof item.siblingCount === 'number'
                 && item.siblingCount > 1
-                && (
-                  <ContentSwitch
-                    count={item.siblingCount}
-                    currentIndex={item.siblingIndex}
-                    prevDisabled={!item.prevSibling}
-                    nextDisabled={!item.nextSibling}
-                    switchSibling={handleSwitchSibling}
-                  />
-                )
+                && <ContentSwitch
+                  count={item.siblingCount}
+                  currentIndex={item.siblingIndex}
+                  prevDisabled={!item.prevSibling}
+                  nextDisabled={!item.nextSibling}
+                  switchSibling={handleSwitchSibling}
+                />
               }
             </div>
           </div>
@@ -284,7 +278,12 @@ export const Answer: FC<AnswerProps> = memo(({
 
         {/* Original single block layout (when no human inputs) */}
         {!hasHumanInputs && (
-          <div className={clsx('group relative pr-10', answerContainerInner)} data-testid="chat-answer-container-inner">
+          <div 
+            className={clsx(
+              'group relative pr-10', 
+              answerContainerInner
+            )}
+          >
             <div
               ref={contentRef}
               className={clsx(

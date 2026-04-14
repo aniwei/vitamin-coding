@@ -1,4 +1,4 @@
-import type { UnsubmittedHumanInputContentProps } from './type'
+import type { UnsubmittedHumanInputContentProps } from './types'
 import ExpirationTime from './expiration-time'
 import HumanInputForm from './human-input-form'
 import Tips from './tips'

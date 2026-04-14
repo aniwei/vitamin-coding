@@ -15,8 +15,9 @@ import {
 import { User } from '@/components/icons/avatar'
 import { Markdown } from '@/components/markdown'
 import { toast } from '@/components/ui/toast'
-import { CssTransform } from './embedded-chatbot/theme/utils'
+import { cssTransform } from '@/shared/css'
 import { useChatContext } from './context'
+
 import type { FC, ReactNode } from 'react'
 import type { Theme } from './embedded-chatbot/theme/theme-context'
 import type { ChatItem } from './types'
@@ -184,7 +185,7 @@ const Question: FC<QuestionProps> = memo(({
             !editing && 'rounded-2xl bg-background-gradient-bg-fill-chat-bubble-bg-3 text-text-primary',
             editing && 'rounded-[24px] border-[3px] border-components-option-card-option-selected-border bg-components-panel-bg-blur shadow-lg',
           )}
-          style={(!editing && theme?.chatBubbleColorStyle) ? CssTransform(theme.chatBubbleColorStyle) : {}}
+          style={(!editing && theme?.chatBubbleColorStyle) ? cssTransform(theme.chatBubbleColorStyle) : {}}
         >
           
           {

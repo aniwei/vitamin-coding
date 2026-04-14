@@ -1,26 +1,23 @@
-import type { FC } from 'react'
 import { clsx } from 'clsx'
-import type {
-  ChatItem,
-  Feedback,
-} from '../types'
 import copy from 'copy-to-clipboard'
 import {
   memo,
   useMemo,
   useState,
 } from 'react'
-import { useTranslation } from 'react-i18next'
+import Log from '../log'
 import EditReplyModal from '@/app/components/app/annotation/edit-annotation-modal'
 import ActionButton, { ActionButtonState } from '@/components/action-button'
-import Log from '@/components/chat/chat/log'
 import AnnotationCtrlButton from '@/components/features/new-feature-panel/annotation-reply/annotation-ctrl-button'
 import Modal from '@/components/modal/modal'
 import NewAudioButton from '@/components/new-audio-button'
 import Textarea from '@/components/textarea'
-import Tooltip from '@/components/tooltip'
+import Tooltip from '@/components/ui/tooltip'
 import { toast } from '@/components/ui/toast'
 import { useChatContext } from '../context'
+
+import type { ChatItem, Feedback } from '../types'
+import type { FC } from 'react'
 
 type OperationProps = {
   item: ChatItem
@@ -33,7 +30,7 @@ type OperationProps = {
   noChatInput?: boolean
 }
 
-const Operation: FC<OperationProps> = ({
+export const Operation: FC<OperationProps> = ({
   item,
   question,
   index,
@@ -43,7 +40,6 @@ const Operation: FC<OperationProps> = ({
   hasWorkflowProcess,
   noChatInput,
 }) => {
-  const { t } = useTranslation()
   const {
     config,
     onAnnotationAdded,
@@ -87,8 +83,8 @@ const Operation: FC<OperationProps> = ({
   const shouldShowUserFeedbackBar = !isOpeningStatement && config?.supportFeedback && !!onFeedback && !config?.supportAnnotation
   const shouldShowAdminFeedbackBar = !isOpeningStatement && config?.supportFeedback && !!onFeedback && !!config?.supportAnnotation
 
-  const userFeedbackLabel = t('table.header.userRate', { ns: 'appLog' }) || 'User feedback'
-  const adminFeedbackLabel = t('table.header.adminRate', { ns: 'appLog' }) || 'Admin feedback'
+  const userFeedbackLabel = 'User feedback'
+  const adminFeedbackLabel = 'Admin feedback'
   const feedbackTooltipClassName = 'max-w-[260px]'
 
   const buildFeedbackTooltip = (feedbackData?: Feedback | null, label = userFeedbackLabel) => {
@@ -96,12 +92,13 @@ const Operation: FC<OperationProps> = ({
       return label
 
     const ratingLabel = feedbackData.rating === 'like'
-      ? (t('detail.operation.like', { ns: 'appLog' }) || 'like')
-      : (t('detail.operation.dislike', { ns: 'appLog' }) || 'dislike')
+      ? 'like'
+      : 'dislike'
     const feedbackText = feedbackData.content?.trim()
 
-    if (feedbackText)
+    if (feedbackText) {
       return `${label}: ${ratingLabel} - ${feedbackText}`
+    }
 
     return `${label}: ${ratingLabel}`
   }
@@ -114,10 +111,11 @@ const Operation: FC<OperationProps> = ({
 
     const nextFeedback = rating === null ? { rating: null } : { rating, content }
 
-    if (target === 'admin')
+    if (target === 'admin') {
       setAdminLocalFeedback(nextFeedback)
-    else
+    } else {
       setUserLocalFeedback(nextFeedback)
+    }
   }
 
   const handleLikeClick = (target: 'user' | 'admin') => {
@@ -170,7 +168,6 @@ const Operation: FC<OperationProps> = ({
           !hasWorkflowProcess && positionRight && 'top-[9px]!',
         )}
         style={(!hasWorkflowProcess && positionRight) ? { left: contentWidth + 8 } : {}}
-        data-testid="operation-bar"
       >
         {shouldShowUserFeedbackBar && !humanInputFormDataList?.length && (
           <div className={clsx(

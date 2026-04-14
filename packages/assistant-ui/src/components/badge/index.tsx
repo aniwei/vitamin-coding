@@ -23,14 +23,14 @@ const bv = cva('badge', {
   },
 })
 
-interface BadgeProps extends React.HTMLAttributes<HTMLDivElement>, VariantProps<typeof bv> {
+type BadgeProps = {
   size?: 's' | 'm' | 'l'
   iconOnly?: boolean
   uppercase?: boolean
   state?: BadgeState
   styleCss?: CSSProperties
   children?: ReactNode
-}
+} & React.HTMLAttributes<HTMLDivElement> & VariantProps<typeof bv>
 
 function getBadgeState(state: BadgeState) {
   switch (state) {
@@ -63,7 +63,9 @@ export const Badge: React.FC<BadgeProps> = ({
           ? iconOnly ? 'p-[3px]' : 'px-[5px] py-[3px]'
           : size === 'l'
             ? iconOnly ? 'p-1.5' : 'px-2 py-1'
-            : iconOnly ? 'p-1' : 'px-[5px] py-[2px]', uppercase ? 'system-2xs-medium-uppercase' : 'system-2xs-medium')}
+            : iconOnly ? 'p-1' : 'px-[5px] py-[2px]', 
+        uppercase ? 'system-2xs-medium-uppercase' : 'system-2xs-medium'
+      )}
       {...props}
     >{children}</div>
   )
@@ -71,5 +73,5 @@ export const Badge: React.FC<BadgeProps> = ({
 
 Badge.displayName = 'Badge'
 
-export default Badge
 export { BadgeState, bv }
+export default Badge

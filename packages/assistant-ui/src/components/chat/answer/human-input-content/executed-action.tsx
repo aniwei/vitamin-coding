@@ -1,4 +1,4 @@
-import type { ExecutedAction as ExecutedActionType } from './type'
+import type { ExecutedAction as ExecutedActionType } from './types'
 import { memo } from 'react'
 import { Trans } from 'react-i18next'
 import Divider from '@/components/divider'

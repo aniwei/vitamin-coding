@@ -1,17 +1,15 @@
 import Button from '@/components/button'
 
-import {
-  RiSendPlane2Fill,
-} from '@remixicon/react'
+import { RiSendPlane2Fill } from '@remixicon/react'
 import { noop } from 'es-toolkit/function'
 import { memo } from 'react'
 import type { FC, Ref } from 'react'
-import type { Theme } from '../embedded-chatbot/theme/theme-context'
+import type { ChatTheme } from '../theme-context'
 
 interface OperationProps {
   readonly?: boolean
   onSend: () => void
-  theme?: Theme | null
+  theme?: ChatTheme | null
   ref?: Ref<HTMLDivElement>
 }
 
@@ -22,9 +20,7 @@ export const Operation: FC<OperationProps> = memo(({
   onSend,
 }) => {
   return (
-    <div
-      className="flex shrink-0 items-center justify-end"
-    >
+    <div className="flex shrink-0 items-center justify-end">
       <div
         ref={ref}
         className="flex items-center pl-1"
@@ -33,8 +29,7 @@ export const Operation: FC<OperationProps> = memo(({
           className="ml-3 w-8 px-0 radius-full"
           variant="primary"
           onClick={readonly ? noop : onSend}
-          data-testid="send-button"
-          style={theme ? { backgroundColor: theme.primaryColor } : {}}
+          style={ theme ? { backgroundColor: theme.primaryColor } : {} }
         >
           <RiSendPlane2Fill className="h-4 w-4" />
         </Button>
@@ -44,5 +39,4 @@ export const Operation: FC<OperationProps> = memo(({
 })
 
 Operation.displayName = 'Operation'
-
 export default Operation

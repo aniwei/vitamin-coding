@@ -3,7 +3,7 @@ import Textarea from 'react-textarea-autosize'
 import Operation from './operation'
 import { clsx } from 'clsx'
 import { useTextArea } from './use-textarea'
-import type { Theme } from '../embedded-chatbot/theme/theme-context'
+import type { ChatTheme } from '../theme-context'
 import type { InputForm, OnSend } from '../types'
 
 interface ChatInputAreaProps {
@@ -12,7 +12,7 @@ interface ChatInputAreaProps {
   onSend?: OnSend
   inputs?: Record<string, any>
   inputsForm?: InputForm[]
-  theme?: Theme | null
+  theme?: ChatTheme | null
   responding?: boolean
   disabled?: boolean
   enterToSend?: boolean

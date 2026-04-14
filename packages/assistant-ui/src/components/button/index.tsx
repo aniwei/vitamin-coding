@@ -31,13 +31,13 @@ const bv = cva('btn', {
   },
 })
 
-export interface ButtonProps extends React.ButtonHTMLAttributes<HTMLButtonElement>, VariantProps<typeof bv> {
+export type ButtonProps = {
   loading?: boolean
   spinnerClassName?: string
   ref?: React.Ref<HTMLButtonElement>
   render?: React.ReactElement
   focusableWhenDisabled?: boolean
-}
+} & React.ButtonHTMLAttributes<HTMLButtonElement> & VariantProps<typeof bv>
 
 export const Button = ({
   className,
@@ -65,15 +65,19 @@ export const Button = ({
       {...props}
       disabled={isDisabled}
       focusableWhenDisabled={focusableWhenDisabled}
-      aria-busy={loading || undefined}
     >
       {children}
-      {loading && <Spinner loading={loading} className={clsx('ml-1! h-3! w-3! border-2! text-white!', spinnerClassName)} />}
+      {
+        loading && <Spinner 
+          loading={loading} 
+          className={clsx('ml-1! h-3! w-3! border-2! text-white!', spinnerClassName)} 
+        />
+      }
     </BaseButton>
   )
 }
 
 Button.displayName = 'Button'
 
-export default Button
 export { bv }
+export default Button

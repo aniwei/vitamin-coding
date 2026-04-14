@@ -5,6 +5,7 @@ export const useTextArea = () => {
   const textareaRef = useRef<HTMLTextAreaElement | undefined>(undefined)
   const textValueRef = useRef<HTMLDivElement>(null)
   const holdSpaceRef = useRef<HTMLDivElement>(null)
+  
   const [isMultipleLine, setIsMultipleLine] = useState(false)
 
   const onComputeHeight = useCallback(() => {

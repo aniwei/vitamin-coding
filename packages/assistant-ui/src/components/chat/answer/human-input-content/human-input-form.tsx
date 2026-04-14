@@ -1,5 +1,5 @@
 'use client'
-import type { HumanInputFormProps } from './type'
+import type { HumanInputFormProps } from './types'
 import type { ButtonProps } from '@/components/button'
 import type { UserAction } from '@/app/components/workflow/nodes/human-input/types'
 import * as React from 'react'

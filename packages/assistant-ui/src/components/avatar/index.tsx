@@ -17,17 +17,9 @@ const classes = {
 
 export type AvatarSize = keyof typeof classes
 
-interface AvatarProps {
-  name: string
-  avatar: string | null
+type AvatarRootProps = {
   size?: AvatarSize
-  className?: string
-  onLoadingStatusChange?: (status: ImageLoadingStatus) => void
-}
-
-interface AvatarRootProps extends React.ComponentPropsWithRef<typeof BaseAvatar.Root> {
-  size?: AvatarSize
-}
+} & React.ComponentPropsWithRef<typeof BaseAvatar.Root>
 
 export const AvatarRoot: React.FC<AvatarRootProps> = ({
   size = 'md',
@@ -64,8 +56,10 @@ export const AvatarImage: React.FC<AvatarImageProps> = ({
 
 AvatarImage.displayName = 'AvatarImage'
 
-interface AvatarFallbackProps extends React.ComponentPropsWithRef<typeof BaseAvatar.Fallback> {
+type AvatarFallbackProps = {
+  className?: string
   size?: AvatarSize
+  children?: React.ReactNode
 }
 
 export const AvatarFallback: React.FC<AvatarFallbackProps> = ({
@@ -87,7 +81,7 @@ export const AvatarFallback: React.FC<AvatarFallbackProps> = ({
 
 AvatarFallback.displayName = 'AvatarFallback'
 
-interface AvatarProps {
+type AvatarProps = {
   name: string
   avatar: string | null
   size?: AvatarSize

@@ -1,11 +1,11 @@
-.dot-flashing {
+.dotFlashing {
   position: relative;
   animation: dot-flashing 1s infinite linear alternate;
   animation-delay: 0.5s;
 }
 
-.dot-flashing::before,
-.dot-flashing::after {
+.dotFlashing::before,
+.dotFlashing::after {
   content: "";
   display: inline-block;
   position: absolute;
@@ -13,11 +13,11 @@
   animation: dot-flashing 1s infinite linear alternate;
 }
 
-.dot-flashing::before {
+.dotFlashing::before {
   animation-delay: 0s;
 }
 
-.dot-flashing::after {
+.dotFlashing::after {
   animation-delay: 1s;
 }
 

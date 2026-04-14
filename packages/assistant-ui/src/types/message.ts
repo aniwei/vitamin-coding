@@ -1,47 +1,3 @@
-export enum Theme {
-  light = 'light',
-  dark = 'dark',
-  system = 'system',
-}
-
-export interface SystemFeatures {
-  
-}
-
-export const defaultSystemFeatures: SystemFeatures = {
-  
-}
-
-export interface Workspace {
-  
-}
-
-export interface Session {
-  id: string
-  pinned: boolean
-  title: string
-  workspaceDir?: string
-  createdAt: string
-  updatedAt?: string
-  messageCount: number
-  tokenUsage?: Record<string, number>
-  status?: 'active' | 'answered' | 'open'
-  hasSessionModel?: boolean
-}
-
-export interface Model {
-  id: string
-  name: string
-  description: string
-}
-
-export interface Provider {
-  id: string
-  name: string
-  description: string
-  models: Model[]
-}
-
 export interface WebSocketMessage {
   type:
     | 'Chat.userMessage'
@@ -79,23 +35,4 @@ export interface WebSocketMessage {
     | 'Debugger.breakpointsChanged'
     | 'Log.entryAdded'
   data: unknown
-}
-
-
-export interface LogAnnotation {
-  id: string
-  content: string
-  account: {
-    id: string
-    name: string
-    email: string
-  }
-  created_at: number
-}
-
-export interface Annotation {
-  id: string
-  authorName: string
-  logAnnotation?: LogAnnotation
-  created_at?: number
 }

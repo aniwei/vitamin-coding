@@ -1,13 +1,45 @@
-import type { ChatItem, WorkflowProcess } from '../types'
+
 
 import { clsx } from 'clsx'
 import {
+  memo,
   useEffect,
   useState,
 } from 'react'
-import TracingPanel from '@/components/workflow/run/tracing-panel'
-import { WorkflowRunningStatus } from '@/components/workflow/types'
-interface WorkflowProcessProps {
+// import TracingPanel from '@/components/workflow/run/tracing-panel'
+import { WorkflowRunningStatus } from '@/types'
+import type { ChatItem, WorkflowProcess } from '../types'
+
+
+type WorkflowProcessIconProps = {
+  status: WorkflowRunningStatus
+}
+
+const WorkflowProcessIcon: React.FC<WorkflowProcessIconProps> = ({ status }) => {
+  switch (status) {
+    case WorkflowRunningStatus.Running:
+      return <div
+        className="i-ri-loader-2-line mr-1 h-3.5 w-3.5 shrink-0 animate-spin text-text-tertiary"
+      />
+    case WorkflowRunningStatus.Succeeded:
+      return <div
+        className="i-custom-vender-solid-general-check-circle mr-1 h-3.5 w-3.5 shrink-0 text-text-success"
+      />
+    case WorkflowRunningStatus.Failed:
+      return <div
+        className="i-ri-error-warning-fill mr-1 h-3.5 w-3.5 shrink-0 text-text-destructive"
+      />
+    case WorkflowRunningStatus.Paused:
+      return <div
+        className="i-ri-pause-circle-fill mr-1 h-3.5 w-3.5 shrink-0 text-text-warning-secondary"
+      />
+    default:
+      throw new Error('Invalid workflow status')
+  }
+}
+
+  
+type WorkflowProcessItemProps = {
   data: WorkflowProcess
   item?: ChatItem
   expand?: boolean
@@ -16,7 +48,7 @@ interface WorkflowProcessProps {
   readonly?: boolean
 }
 
-const WorkflowProcessItem: React.FC<WorkflowProcessProps> = ({
+export const WorkflowProcessItem: React.FC<WorkflowProcessItemProps> = memo(({
   data,
   expand = false,
   hideInfo = false,
@@ -29,7 +61,7 @@ const WorkflowProcessItem: React.FC<WorkflowProcessProps> = ({
   const succeeded = data.status === WorkflowRunningStatus.Succeeded
   const failed = data.status === WorkflowRunningStatus.Failed || data.status === WorkflowRunningStatus.Stopped
   const paused = data.status === WorkflowRunningStatus.Paused
-  const latestNode = data.tracing[data.tracing.length - 1]
+  // const latestNode = data.tracing[data.tracing.length - 1]
 
   useEffect(() => setCollapse(!expand), [expand])
 
@@ -41,7 +73,9 @@ const WorkflowProcessItem: React.FC<WorkflowProcessProps> = ({
     <div
       className={clsx(
         '-mx-1 rounded-xl px-2.5',
-        collapse ? 'border-l-[0.25px] border-components-panel-border py-[7px]' : 'border-[0.5px] border-components-panel-border-subtle px-1 pb-1 pt-[7px]',
+        collapse 
+          ? 'border-l-[0.25px] border-components-panel-border py-[7px]' 
+          : 'border-[0.5px] border-components-panel-border-subtle px-1 pb-1 pt-[7px]',
         running && !collapse && 'bg-background-section-burn',
         succeeded && !collapse && 'bg-state-success-hover',
         failed && !collapse && 'bg-state-destructive-hover',
@@ -58,59 +92,39 @@ const WorkflowProcessItem: React.FC<WorkflowProcessProps> = ({
         )}
         onClick={() => setCollapse(!collapse)}
       >
-        {
-          running && (
-            <div
-              className="i-ri-loader-2-line mr-1 h-3.5 w-3.5 shrink-0 animate-spin text-text-tertiary"
-              data-testid="status-icon-running"
-            />
-          )
-        }
-        {
-          succeeded && (
-            <div
-              className="i-custom-vender-solid-general-check-circle mr-1 h-3.5 w-3.5 shrink-0 text-text-success"
-              data-testid="status-icon-success"
-            />
-          )
-        }
-        {
-          failed && (
-            <div
-              className="i-ri-error-warning-fill mr-1 h-3.5 w-3.5 shrink-0 text-text-destructive"
-              data-testid="status-icon-failed"
-            />
-          )
-        }
-        {
-          paused && (
-            <div
-              className="i-ri-pause-circle-fill mr-1 h-3.5 w-3.5 shrink-0 text-text-warning-secondary"
-              data-testid="status-icon-paused"
-            />
-          )
-        }
+        <WorkflowProcessIcon 
+          status={data.status} 
+        />
+        
         <div
-          className={clsx('text-text-secondary system-xs-medium', !collapse && 'grow')}
-          data-testid="workflow-process-title"
+          className={clsx(
+            'text-text-secondary system-xs-medium', 
+            !collapse && 'grow'
+          )}
         >
-          {!collapse ? t('common.workflowProcess', { ns: 'workflow' }) : latestNode?.title}
+          { !collapse ? '' : '' }
         </div>
-        <div className={clsx('i-ri-arrow-right-s-line ml-1 h-4 w-4 text-text-tertiary', !collapse && 'rotate-90')} />
+        <div 
+          className={clsx(
+            'i-ri-arrow-right-s-line ml-1 h-4 w-4 text-text-tertiary', 
+            !collapse && 'rotate-90'
+          )} 
+        />
       </div>
       {
         !collapse && (
           <div className="mt-1.5">
-            <TracingPanel
+            {/* <TracingPanel
               list={data.tracing}
               hideNodeInfo={hideInfo}
               hideNodeProcessDetail={hideProcessDetail}
-            />
+            /> */}
           </div>
         )
       }
     </div>
   )
-}
+})
 
+WorkflowProcessItem.displayName = 'WorkflowProcessItem'
 export default WorkflowProcessItem
