@@ -100,7 +100,7 @@ export class CodingService {
   }
 
   getActiveSession(): AgentSession | undefined {
-    return this.vitamin.sessionManager.active
+    return this.vitamin.getActiveSession()
   }
 
   private readonly onUpgrade = (req: IncomingMessage, socket: Socket, head: Buffer): void => {

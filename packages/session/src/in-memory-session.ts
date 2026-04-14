@@ -87,7 +87,7 @@ export class InMemorySession<T = unknown> implements Session<T> {
 
     let lastCompactionIndex = -1
     for (let i = branch.length - 1; i >= 0; i--) {
-      if (branch[i]!.type === 'compaction') {
+      if (branch[i]?.type === 'compaction') {
         lastCompactionIndex = i
         break
       }
@@ -149,7 +149,7 @@ export class InMemorySession<T = unknown> implements Session<T> {
     }
     Object.assign(this.meta, meta)
     this._leafId =
-      restoredLeafId ?? (entries.length > 0 ? entries[entries.length - 1]!.id : undefined)
+      restoredLeafId ?? (entries.length > 0 ? entries[entries.length - 1]?.id : undefined)
   }
 
   // 导出快照
@@ -187,7 +187,7 @@ export class InMemorySession<T = unknown> implements Session<T> {
 
     let lastCompactionIndex = -1
     for (let i = branch.length - 1; i >= 0; i--) {
-      if (branch[i]!.type === 'compaction') {
+      if (branch[i]?.type === 'compaction') {
         lastCompactionIndex = i
         break
       }

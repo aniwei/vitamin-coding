@@ -43,6 +43,11 @@ export interface DiskSessionManagerOptions extends CodingSessionManagerOptions {
 
 export interface RemoteSessionManagerOptions extends CodingSessionManagerOptions {
   sessionUrl: string
+  /** fetch 实现（必填）。在浏览器环境可传 globalThis.fetch，Node.js 需传兼容实现。 */
+  fetch: typeof globalThis.fetch
+  /** 返回认证 token 的工厂函数（必填）。 */
+  getAuth: () => Promise<{ token: string }>
+  timeoutMs?: number
 }
 
 // 组合层：将 ProviderRegistry + aiStream 组装成 StreamFunction
@@ -407,11 +412,9 @@ export function createRemoteCodingSessionManager(
 
   const persistence = new RemoteSessionPersistence<AgentMessage>({
     baseUrl: sessionUrl,
-    fetch() {
-      throw new Error('Fetch implementation is required for RemoteSessionPersistence')
-    },
-    getAuth: async () => ({ token: '' }),
-    timeoutMs: 30_000,
+    fetch: options.fetch,
+    getAuth: options.getAuth,
+    timeoutMs: options.timeoutMs ?? 30_000,
   })
 
   return new CodingSessionManager(options, persistence)

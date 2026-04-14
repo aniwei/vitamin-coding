@@ -37,3 +37,11 @@ export type {
   CreateAgentSessionOptions,
   PromptOptions,
 } from './session/types'
+
+export {
+  createToolGuidanceHook,
+  createEnvironmentInjectionHook,
+  createLessonInjectionHook,
+  createPhaseTrackingHooks,
+  createSessionLearningHooks,
+} from './hooks'

@@ -33,9 +33,23 @@ export interface VitaminContext {
   stop(): Promise<void>
   createSession(options?: Partial<AgentSessionOptions>): Promise<AgentSession>
   getSession(id: string): AgentSession | undefined
+  getActiveSession(): AgentSession | undefined
   listSessions(): AgentSessionInfo[]
   removeSession(id: string): Promise<boolean>
   forkSession(sourceId: string, newId?: string): Promise<AgentSession | undefined>
+}
+
+/**
+ * SkillProvider — skill 功能的扩展接口。
+ *
+ * VitaminApp 当前不内置 skill 实现（入口预留），调用方可注入此接口。
+ * 未注入时，skill_load / skill_execute 工具会返回"功能未配置"的错误提示。
+ */
+export interface SkillProvider {
+  /** 从指定路径加载 SKILL.md 定义 */
+  load(path: string): Promise<{ success: boolean; name?: string; error?: string }>
+  /** 执行已加载的 skill */
+  execute(name: string, input?: string, parameters?: Record<string, string>): Promise<{ success: boolean; output?: string; error?: string }>
 }
 
 export interface VitaminAppOptions {
@@ -62,4 +76,16 @@ export interface VitaminAppOptions {
   resourceManager?: ResourceManager
   /** prompt 提供者配置，默认使用内置 prompts 目录 */
   prompt?: PromptProviderOptions
+  /**
+   * skill 实现注入点（可选）。
+   * 未提供时 skill_load / skill_execute 工具仍注册，但返回"功能未配置"提示。
+   * 未来可注入基于 @vitamin/skill 的完整实现。
+   */
+  skillProvider?: SkillProvider
+  /**
+   * 使用远端 session 存储时必填（sessionUrl 指定时生效）。
+   */
+  sessionFetch?: typeof globalThis.fetch
+  sessionGetAuth?: () => Promise<{ token: string }>
+  sessionTimeoutMs?: number
 }

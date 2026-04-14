@@ -1,26 +1,20 @@
 import WebSocket from 'ws'
 import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
 import { routeDebugEvent } from './debug-event-router'
-import type { IMessageSender } from './types'
+import type { IMessageSender, LogEntryData } from './types'
 import type { Devtools } from '@vitamin/devtools'
 import type { PauseResumePayload } from '@vitamin/devtools'
 
 const logger = createLogger('@vitamin/service:debug-bridge')
 
-export interface LogEntry {
-  id: number
-  timestamp: string
-  level: string
-  module: string
-  message: string
-  data?: Record<string, unknown>
-}
+/** @deprecated Use LogEntryData from './types' instead */
+export type LogEntry = LogEntryData
 
 interface DebugBridgeEvents extends Events {
   'Debugger.paused': (data: Record<string, unknown>) => void
   'Debugger.resumed': (data: Record<string, unknown>) => void
   'Debugger.commandRejected': (data: Record<string, unknown>) => void
-  'Log.entryAdded': (entry: LogEntry) => void
+  'Log.entryAdded': (entry: LogEntryData) => void
 }
 
 interface SendCommand {
@@ -34,7 +28,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
   private logId = 0
   private socket: WebSocket | null = null
   private timer: ReturnType<typeof setTimeout> | null = null
-  private readonly logs: LogEntry[] = []
+  private readonly logs: LogEntryData[] = []
 
   constructor(
     private readonly devtools: Devtools,
@@ -78,7 +72,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
     }
   }
 
-  getLogs(): LogEntry[] {
+  getLogs(): LogEntryData[] {
     return [...this.logs]
   }
 
@@ -148,7 +142,8 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
           : typeof rawTime === 'string'
             ? rawTime
             : new Date().toISOString()
-      const entry: LogEntry = {
+            
+      const entry: LogEntryData = {
         id: ++this.logId,
         timestamp,
         level: this.normalizeLevel(event.level),
@@ -164,7 +159,7 @@ export class DebugBridge extends TypedEventEmitter<DebugBridgeEvents> {
 
       this.sender.broadcast({
         type: 'Log.entryAdded',
-        data: { entry: entry as unknown as Record<string, unknown> },
+        data: { entry },
       })
 
       this.emit('Log.entryAdded', entry)

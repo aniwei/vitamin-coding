@@ -28,18 +28,20 @@ import {
   createRemoteCodingSessionManager,
 } from '../session/coding-session-manager'
 import {
+  createToolGuidanceHook,
+  createEnvironmentInjectionHook,
+  createLessonInjectionHook,
+  createPhaseTrackingHooks,
+  createSessionLearningHooks,
+} from '../hooks'
+import {
   PromptManager,
   resolveAgentProfile,
   resolveAgentToolNames,
   createPromptProvider,
-  buildLessonInjection,
-  extractPhaseFromMessage,
-  injectPhaseContext,
-  collectEnvironment,
-  formatEnvironmentBlock,
   BUILTIN_PROMPTS_DIR,
 } from '@vitamin/prompt'
-import type { AgentProfile, PhaseAnnotation, SubAgentPromptContext } from '@vitamin/prompt'
+import type { AgentProfile, SubAgentPromptContext } from '@vitamin/prompt'
 import { BUILTIN_AGENT_PROFILES } from '@vitamin/setting'
 
 import type { AgentTool } from '@vitamin/agent'
@@ -99,9 +101,6 @@ export class VitaminApp implements VitaminContext {
   private disposed = false
   private settingsLoaded = false
   private defaultToolPreset: 'minimal' | 'standard' | 'full' = 'full'
-
-  private readonly phaseTracker = new Map<string, string[]>()
-  private readonly learningTriggeredSessions = new Set<string>()
 
   public get tools(): AgentTool[] {
     return this.toolRegistry.getAvailable(this.defaultToolPreset).map((tool) => ({
@@ -243,9 +242,18 @@ export class VitaminApp implements VitaminContext {
         sessionDir,
       })
     } else if (sessionUrl) {
+      if (!options.sessionFetch || !options.sessionGetAuth) {
+        throw new Error(
+          'sessionFetch and sessionGetAuth are required when using sessionUrl. ' +
+          'Pass them in VitaminAppOptions.',
+        )
+      }
       this.codingSessionManager = createRemoteCodingSessionManager({
         ...managerOptions,
         sessionUrl,
+        fetch: options.sessionFetch,
+        getAuth: options.sessionGetAuth,
+        timeoutMs: options.sessionTimeoutMs,
       })
     } else {
       this.codingSessionManager = createInMemoryCodingSessionManager(managerOptions)
@@ -303,15 +311,16 @@ export class VitaminApp implements VitaminContext {
       runSession: run,
     })
 
-    const loadSkill: LoadSkill = async () => ({
-      success: false,
-      error: `Loading skills is not available in this environment.`,
-    })
+    // Skill 功能入口：由调用方注入 skillProvider 实现。
+    // 未注入时工具仍存在（方便 agent 感知功能），但返回明确的"未配置"提示。
+    const skillProvider = options.skillProvider
+    const loadSkill: LoadSkill = skillProvider
+      ? (path) => skillProvider.load(path)
+      : async () => ({ success: false, error: 'Skill provider not configured. Pass skillProvider to createVitamin().' })
 
-    const executeSkill: ExecuteSkill = async () => ({
-      success: false,
-      error: `Executing skills is not available in this environment.`,
-    })
+    const executeSkill: ExecuteSkill = skillProvider
+      ? (name, input, parameters) => skillProvider.execute(name, input, parameters)
+      : async () => ({ success: false, error: 'Skill provider not configured. Pass skillProvider to createVitamin().' })
 
     this.toolRegistry = createToolRegistry(this.workspaceDir, {
       callAgent: this.orchestrator.callAgent,
@@ -505,7 +514,6 @@ export class VitaminApp implements VitaminContext {
 
   /**
    * ── Layer 3: Session config assembler ────────────────────────────────────
-   * 唯一做优先级 merge 的地方，每个字段的来源一目了然。
    *
    * 优先级（高 → 低）：
    *   model:        options.model > slot(model_slots) > settings.model > defaultModel
@@ -568,6 +576,10 @@ export class VitaminApp implements VitaminContext {
     return this.codingSessionManager.getSession(id)
   }
 
+  getActiveSession(): AgentSession | undefined {
+    return this.codingSessionManager.active
+  }
+
   listSessions(): AgentSessionInfo[] {
     return this.codingSessionManager.listSessions()
   }
@@ -585,126 +597,21 @@ export class VitaminApp implements VitaminContext {
   }
 
   private registerHooks(): void {
-    // system-prompt.transform: 注入工具 snippet / guideline 到 system prompt
-    this.hookRegistry.on(
-      'system-prompt.transform',
-      'tool-guidance-injection',
-      async (_input, output) => {
-        const guidance = this.toolRegistry.buildToolGuidance(this.defaultToolPreset)
-        if (guidance) {
-          output.systemPrompt = `${output.systemPrompt}\n\n${guidance}`
-        }
-      },
-      20,
+    this.hookRegistry.register(
+      createToolGuidanceHook(this.toolRegistry, () => this.defaultToolPreset),
     )
-
-    // system-prompt.transform: 注入运行时环境上下文（工作目录、git 状态、日期）
-    this.hookRegistry.on(
-      'system-prompt.transform',
-      'environment-injection',
-      async (_input, output) => {
-        const exec = async (cmd: string, cwd: string) => {
-          const { execSync } = await import('node:child_process')
-          return execSync(cmd, { cwd, encoding: 'utf-8', timeout: 5000 })
-        }
-        try {
-          const env = await collectEnvironment(this.workspaceDir, exec)
-          const block = formatEnvironmentBlock(env)
-          output.systemPrompt = `${output.systemPrompt}\n\n${block}`
-        } catch {
-          // 环境收集失败不应中断 prompt 组装
-        }
-      },
-      25,
+    this.hookRegistry.register(
+      createEnvironmentInjectionHook(this.workspaceDir),
     )
-
-    // system-prompt.transform: 注入相关历史经验到 system prompt
-    this.hookRegistry.on(
-      'system-prompt.transform',
-      'lesson-injection',
-      async (_input, output) => {
-        const lessons = await this.learningStore.list()
-        if (lessons.length > 0) {
-          const template = (await this.promptManager.loadRuntimeLessonsTemplate()) ?? undefined
-          const injection = buildLessonInjection(lessons, template)
-          if (injection) {
-            output.systemPrompt = `${output.systemPrompt}\n\n${injection}`
-          }
-        }
-      },
-      40,
+    this.hookRegistry.register(
+      createLessonInjectionHook(this.learningStore, this.promptManager),
     )
-
-    // system-prompt.transform: 注入当前 phase 上下文
-    this.hookRegistry.on(
-      'system-prompt.transform',
-      'phase-injection',
-      async (input, output) => {
-        const history = this.phaseTracker.get(input.sessionId)
-        const currentPhase = history?.[history.length - 1]
-        if (history && history.length > 0 && currentPhase) {
-          const annotation: PhaseAnnotation = {
-            currentPhase,
-            phaseHistory: history,
-          }
-          output.systemPrompt = injectPhaseContext(output.systemPrompt, annotation)
-        }
-      },
-      30,
-    )
-
-    // chat.message.after: 从 LLM 回复中提取 phase 标注并存储
-    this.hookRegistry.on(
-      'chat.message.after',
-      'phase-extraction',
-      async (input) => {
-        const message = input.message
-        if (message.role === 'assistant' && message.content) {
-          for (const part of message.content) {
-            if (part.type === 'text') {
-              const phase = extractPhaseFromMessage(part.text)
-              if (phase) {
-                const history = this.phaseTracker.get(input.sessionId) ?? []
-                history.push(phase)
-                this.phaseTracker.set(input.sessionId, history)
-                this.logger.debug('Phase extracted: %s (session=%s)', phase, input.sessionId)
-              }
-            }
-          }
-        }
-      },
-      50,
-    )
-
-    // session.idle: 触发经验提取（每个 session 仅触发一次）
-    this.hookRegistry.on(
-      'session.idle',
-      'session-end-learning',
-      async (input) => {
-        if (this.learningTriggeredSessions.has(input.sessionId)) {
-          return
-        }
-
-        const session = this.getSession(input.sessionId)
-        if (!session) {
-          return
-        }
-
-        const messageCount = session.session.messages().length
-        if (messageCount < 6) {
-          return
-        }
-
-        this.learningTriggeredSessions.add(input.sessionId)
-        this.logger.info('Session idle, prompting for learning: %s', input.sessionId)
-        try {
-          const sessionEndPrompt = await this.promptManager.loadSessionEndLearningPrompt()
-          await session.prompt(sessionEndPrompt ?? '')
-        } catch (err) {
-          this.logger.warn('Learning prompt failed for session %s: %s', input.sessionId, err)
-        }
-      },
-      50,
+    this.hookRegistry.registerAll(createPhaseTrackingHooks())
+    this.hookRegistry.registerAll(
+      createSessionLearningHooks(
+        (id) => this.getSession(id),
+        this.promptManager,
+      ),
     )
   }
 

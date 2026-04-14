@@ -95,6 +95,9 @@ export interface RemoteStorageOptions {
 
 export type StorageOptions = FileStorageOptions | RemoteStorageOptions
 
+import type { PaginatedResult } from '@vitamin/persistence'
+
+// Session-specific pagination: sortBy 包含 session 域的字段（lastActiveAt）
 export interface PaginationOptions {
   page: number
   pageSize?: number
@@ -102,12 +105,5 @@ export interface PaginationOptions {
   sortBy?: 'lastActiveAt' | 'createdAt'
 }
 
-export interface PaginatedResult<T> {
-  items: T[]
-  total: number
-  page: number
-  pageSize: number
-  totalPages: number
-  hasNext: boolean
-  hasPrevious: boolean
-}
+// PaginatedResult 与 @vitamin/persistence 结构一致，直接复用以避免重复定义
+export type { PaginatedResult } from '@vitamin/persistence'
