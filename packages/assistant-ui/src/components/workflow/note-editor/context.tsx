@@ -1,16 +1,7 @@
-'use client'
-
 import { LinkNode } from '@lexical/link'
-import {
-  ListItemNode,
-  ListNode,
-} from '@lexical/list'
+import { ListItemNode, ListNode } from '@lexical/list'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
-import {
-  createContext,
-  memo,
-  useRef,
-} from 'react'
+import { createContext, memo, useRef } from 'react'
 import { createNoteEditorStore } from './store'
 import theme from './theme'
 

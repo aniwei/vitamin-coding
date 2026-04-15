@@ -1,13 +1,12 @@
 
-import { memo, useCallback, useEffect, useMemo, useRef } from 'react'
-import { MiniMap } from 'reactflow'
-import Inspector from '../inspect'
-// import VariableTrigger from '../inspect/trigger'
+import Console from '../console'
 import ZoomInOut from './zoom-in-out'
+import { MiniMap } from 'reactflow'
+import { memo, useCallback, useRef } from 'react'
 import type { Node } from 'reactflow'
 
 
-const Operator = () => {
+export const Operator = memo(() => {
   const bottomPanelRef = useRef<HTMLDivElement>(null)
   
   const getMiniMapNodeClassName = useCallback((node: Node) => {
@@ -20,11 +19,9 @@ const Operator = () => {
     <div
       ref={bottomPanelRef}
       className="absolute bottom-0 left-0 right-0 z-10 px-1"
-      style={
-        {
-          width: `calc(100% - ${bottomPanelRef.current?.offsetWidth ?? 0}px)`,
-        }
-      }
+      style={{
+        width: `calc(100% - ${bottomPanelRef.current?.offsetWidth ?? 0}px)`,
+      }}
     >
       <div className="flex justify-between px-1 pb-2">
         <div className="relative">
@@ -43,9 +40,10 @@ const Operator = () => {
           <ZoomInOut />
         </div>
       </div>
-      <Inspector />
+      <Console />
     </div>
   )
-}
+})  
 
+Operator.displayName = 'Operator'
 export default Operator

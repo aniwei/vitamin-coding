@@ -1,34 +1,31 @@
-import {
-  memo,
-  useRef,
-} from 'react'
-import { THEME_MAP } from '../constants'
-import {
-  NoteEditor,
-  NoteEditorContextProvider,
-} from './note-editor'
 import { clsx } from 'clsx'
+import { memo, useRef } from 'react'
+import { NoteEditor, NoteEditorContextProvider } from './note-editor'
 import type { NodeProps } from 'reactflow'
 import type { NoteNodeType } from './types'
 
-const NoteNode: React.FC<NodeProps<NoteNodeType>> = memo(({
-  data
+type NoteNodeProps = {
+  theme: Record<string, string>
+} & NodeProps<NoteNodeType>
+
+export const NoteNode: React.FC<NoteNodeProps> = memo(({
+  data,
+  theme,
 }) => {
   const ref = useRef<HTMLDivElement | null>(null)
-  const theme = data.theme
 
   return (
     <div
+      ref={ref}
       className={clsx(
         'relative flex flex-col rounded-md border shadow-xs hover:shadow-md',
-        THEME_MAP[theme].bg,
-        data.selected ? THEME_MAP[theme].border : 'border-black/5',
+        theme.background,
+        data.selected ? theme.border : 'border-black/5',
       )}
       style={{
         width: data.width,
         height: data.height,
       }}
-      ref={ref}
     >
       <NoteEditorContextProvider
         value={data.text}
@@ -38,15 +35,12 @@ const NoteNode: React.FC<NodeProps<NoteNodeType>> = memo(({
           <div
             className={clsx(
               'h-2 shrink-0 rounded-t-md opacity-50',
-              THEME_MAP[theme].title,
+              theme.title,
             )}
           >
           </div>
           <div className="grow overflow-y-auto px-3 py-2.5">
-            <div className={clsx(
-              data.selected && 'nodrag nopan nowheel cursor-text',
-            )}
-            >
+            <div className={clsx(data.selected && 'nodrag nopan nowheel cursor-text')}>
               <NoteEditor
                 containerElement={ref.current}
                 placeholder=""
@@ -54,11 +48,9 @@ const NoteNode: React.FC<NodeProps<NoteNodeType>> = memo(({
             </div>
           </div>
           {
-            data.showAuthor && (
-              <div className="p-3 pt-0 text-xs text-text-tertiary">
-                {data.author}
-              </div>
-            )
+            data.showAuthor && <div className="p-3 pt-0 text-xs text-text-tertiary">
+              {data.author}
+            </div>
           }
         </>
       </NoteEditorContextProvider>
@@ -66,4 +58,5 @@ const NoteNode: React.FC<NodeProps<NoteNodeType>> = memo(({
   )
 })
 
+NoteNode.displayName = 'NoteNode'
 export default NoteNode

@@ -12,8 +12,8 @@ export const ChatBox: React.FC<ChatBoxProps> = ({ chatList }) => {
         <Chat 
           chatList={chatList} 
           chatNode={chatList.length === 0 ? <Empty /> : null}
-          chatContainerClassName="px-3 pt-6"
-          chatFooterClassName="px-3 pt-10 pb-10"
+          containerClassName="px-3 pt-6"
+          footerClassName="px-3 pt-10 pb-10"
         />
       </div>
       <div

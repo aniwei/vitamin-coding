@@ -8,8 +8,8 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { clsx } from 'clsx'
-import { THEME_MAP } from '@/pages/workflow/constants'
-import { NoteTheme } from '@/pages/workflow/types'
+import { THEME_MAP } from '@/pages/flow/constants'
+import { NoteTheme } from '../../types'
 
 export const COLOR_LIST = [
   {
@@ -62,10 +62,11 @@ const ColorPicker = memo(({
     >
       <PopoverTrigger
         render={(
-          <div className={clsx(
-            'flex h-8 w-8 cursor-pointer items-center justify-center rounded-md hover:bg-black/5',
-            open && 'bg-black/5',
-          )}
+          <div 
+            className={clsx(
+              'flex h-8 w-8 cursor-pointer items-center justify-center rounded-md hover:bg-black/5',
+              open && 'bg-black/5',
+            )}
           >
             <div
               className={clsx(

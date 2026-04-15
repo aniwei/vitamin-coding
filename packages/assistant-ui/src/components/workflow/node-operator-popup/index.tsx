@@ -22,6 +22,7 @@ type PanelOperatorProps = {
   inNode?: boolean
   showHelpLink?: boolean
 }
+
 const PanelOperator = ({
   id,
   data,

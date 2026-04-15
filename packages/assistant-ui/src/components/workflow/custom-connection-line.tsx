@@ -1,15 +1,15 @@
 import { memo } from 'react'
-import {
-  getBezierPath,
-  Position,
-} from 'reactflow'
+import { getBezierPath, Position } from 'reactflow'
 import type { ConnectionLineComponentProps } from 'reactflow'
 
 
-const CustomConnectionLine: React.FC<ConnectionLineComponentProps> = memo(({ fromX, fromY, toX, toY }) => {
-  const [
-    edgePath,
-  ] = getBezierPath({
+export const CustomConnectionLine: React.FC<ConnectionLineComponentProps> = memo(({ 
+  fromX, 
+  fromY, 
+  toX, 
+  toY 
+}) => {
+  const [edgePath] = getBezierPath({
     sourceX: fromX,
     sourceY: fromY,
     sourcePosition: Position.Right,
@@ -38,4 +38,5 @@ const CustomConnectionLine: React.FC<ConnectionLineComponentProps> = memo(({ fro
   )
 })
 
+CustomConnectionLine.displayName = 'CustomConnectionLine'
 export default CustomConnectionLine

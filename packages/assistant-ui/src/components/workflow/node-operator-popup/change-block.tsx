@@ -1,17 +1,16 @@
+import BlockSelector from '@/components/workflow/block-selector'
 import { intersection } from 'es-toolkit/array'
 import {
   memo,
   useCallback,
   useMemo,
 } from 'react'
-import BlockSelector from '@/components/workflow/block-selector'
 import {
   useAvailableBlocks,
   useIsChatMode,
   useNodesInteractions,
 } from '@/app/components/workflow/hooks'
 import { useHooksStore } from '@/app/components/workflow/hooks-store'
-import useNodes from '@/app/components/workflow/store/workflow/use-nodes'
 import { BlockEnum, isTriggerNode } from '@/app/components/workflow/types'
 
 import { FlowType } from '@/types/common'
@@ -27,12 +26,12 @@ type ChangeBlockProps = {
   nodeData: Node['data']
   sourceHandle: string
 }
-const ChangeBlock = ({
+
+export const ChangeBlock: React.FC<ChangeBlockProps> = ({
   nodeId,
   nodeData,
   sourceHandle,
-}: ChangeBlockProps) => {
-  const { t } = useTranslation()
+}) => {
   const { handleNodeChange } = useNodesInteractions()
   const {
     availablePrevBlocks,

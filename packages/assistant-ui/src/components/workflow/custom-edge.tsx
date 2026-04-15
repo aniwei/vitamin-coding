@@ -1,14 +1,7 @@
 import CustomEdgeLinearGradientRender from './custom-edge-linear-gradient-render'
-import {
-  memo,
-  useMemo,
-} from 'react'
-import {
-  BaseEdge,
-  getBezierPath,
-  Position,
-} from 'reactflow'
-import { NodeRunningStatus, ErrorHandleTypeEnum } from '../types'
+import { memo, useMemo } from 'react'
+import { BaseEdge, getBezierPath, Position } from 'reactflow'
+import { NodeRunningStatus, ErrorHandleTypeEnum } from './types'
 import type { EdgeProps } from 'reactflow'
 
 export const getEdgeColor = (

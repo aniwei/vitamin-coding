@@ -10,13 +10,7 @@ export type EventBusMessage = {
 }
 
 export type EventBusValue = string | EventBusMessage
-
-export const EventBus = createContext<{ 
-  eventBus: EventEmitter<EventBusValue> | null 
-}>({
-  eventBus: null
-})
-
+export const EventBus = createContext<EventEmitter<EventBusValue> | null >(null)
 export const useEventBus = () => useContext(EventBus)
 
 type EventBusContextProviderProps = {
@@ -29,7 +23,7 @@ export const EventBusContextProvider = ({
   const eventBus = useEventEmitter<EventBusValue>()
 
   return (
-    <EventBus.Provider value={{ eventBus }}>
+    <EventBus.Provider value={eventBus}>
       {children}
     </EventBus.Provider>
   )

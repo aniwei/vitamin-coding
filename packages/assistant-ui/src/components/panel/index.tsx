@@ -9,7 +9,7 @@ import {
 } from 'react'
 import { useResize } from '@/hooks/use-resize'
 import type { FC, ReactNode } from 'react'
-import type { Node } from '../../pages/workflow/types'
+import type { Node } from '../../pages/flow/types'
 
 interface PanelProps {
   id: Node['id']

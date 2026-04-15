@@ -1,15 +1,11 @@
 import Panel from './panel'
 import { debounce } from 'es-toolkit/compat'
-import {
-  useCallback,
-  useMemo,
-  useState,
-} from 'react'
-import { clsx } from 'clsx'
+import { memo, useCallback, useState } from 'react'
 import { useResize } from '@/hooks/use-resize'
+import { clsx } from 'clsx'
 import type { FC } from 'react'
 
-export const Inspector: FC = () => {
+export const Console: FC = memo(() => {
   const [height, setHeight] = useState(320)
   const handleResize = useCallback((width: number, height: number) => {
     localStorage.setItem('workflow-inspector-panel-height', `${height}`)
@@ -39,11 +35,10 @@ export const Inspector: FC = () => {
         ref={containerRef}
         className={clsx('overflow-hidden rounded-2xl border-[0.5px] border-components-panel-border bg-components-panel-bg shadow-xl')}
         style={{ height: `${height}px` }}
-      >
-        <Panel />
-      </div>
+      ><Panel /></div>
     </div>
   )
-}
+})
 
-export default Inspector
+Console.displayName = 'Console'
+export default Console

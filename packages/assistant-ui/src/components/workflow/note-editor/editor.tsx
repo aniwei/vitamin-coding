@@ -1,6 +1,4 @@
-'use client'
 
-import type { EditorState } from 'lexical'
 import { ClickableLinkPlugin } from '@lexical/react/LexicalClickableLinkPlugin'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
@@ -9,23 +7,21 @@ import { LinkPlugin } from '@lexical/react/LexicalLinkPlugin'
 import { ListPlugin } from '@lexical/react/LexicalListPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
-import {
-  memo,
-  useCallback,
-} from 'react'
+import { memo, useCallback } from 'react'
 // import TreeView from '@/components/prompt-editor/plugins/tree-view'
 import Placeholder from '@/components/prompt-editor/plugins/placeholder'
 import FormatDetectorPlugin from './plugins/format-detector-plugin'
 import LinkEditorPlugin from './plugins/link-editor-plugin'
+import type { EditorState } from 'lexical'
 
-interface EditorProps {
+type EditorProps = {
   placeholder?: string
   onChange?: (editorState: EditorState) => void
   containerElement: HTMLDivElement | null
   setShortcutsEnabled?: (v: boolean) => void
 }
 
-const Editor: React.FC<EditorProps> = ({
+export const Editor: React.FC<EditorProps> = memo(({
   placeholder = 'write you note...',
   onChange,
   containerElement,
@@ -61,6 +57,7 @@ const Editor: React.FC<EditorProps> = ({
       {/* <TreeView /> */}
     </div>
   )
-}
+})
 
-export default memo(Editor)
+Editor.displayName = 'NoteEditor'
+export default Editor
