@@ -513,7 +513,7 @@ ws.on('Chat.messageComplete', (message) => {
   if (!sid) return
   console.log('[Frontend] Received message_complete')
   useChatStore.setState((state) => ({
-    ...patchSession(state, sid, { isLoading: false, queuedMessages: [] }),
+    ...patchSession(state, sid, { isLoading: false, queuedMessages: [], progressMessage: null }),
   }))
 })
 
@@ -524,6 +524,7 @@ ws.on('Runtime.error', (message) => {
     ...patchSession(state, sid, {
       error: message.data.message,
       isLoading: false,
+      progressMessage: null,
     }),
   }))
   useToastStore.getState().addToast(message.data.message || 'An error occurred', 'error')

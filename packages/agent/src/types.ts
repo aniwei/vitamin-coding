@@ -53,6 +53,21 @@ export type AgentEvent =
   | { type: 'abort' }
   | { type: 'compaction_needed'; tokenCount: number; threshold: number }
 
+// ── 从 AgentEvent 自动推导的工具类型 ──────────────────────────────────────────
+
+export type AgentEventType = AgentEvent['type']
+
+export type AgentEventOf<T extends AgentEventType> = Extract<AgentEvent, { type: T }>
+
+export type AgentEventPayload<T extends AgentEventType> = Omit<AgentEventOf<T>, 'type'>
+
+// TypedEventEmitter 的事件映射，从 AgentEvent union 推导
+export type AgentEvents = {
+  [K in AgentEventType]: keyof AgentEventPayload<K> extends never
+    ? () => void
+    : (payload: AgentEventPayload<K>) => void
+} & import('@vitamin/shared').Events
+
 // 工具调用事件信息
 export interface ToolCallEvent {
   id: string

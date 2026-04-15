@@ -150,7 +150,7 @@ export class AgentSession extends Subscription {
     this.publish({ session_start: [{ type: 'session_start' as const, sessionId: this.id }] })
   }
 
-  onStreamEvent = async (event: StreamEvent): Promise<void> => {
+  onStreamEvent = async ({ event }: { event: StreamEvent }): Promise<void> => {
     this.publish({
       stream_event: [
         {
