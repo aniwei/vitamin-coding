@@ -11,7 +11,7 @@ import { useChatLayout } from './use-chat-layout'
 import type { FC, ReactNode } from 'react'
 import type { Emoji } from '@/components/tools/types'
 import type { InputForm } from './types'
-import type { ThemeBuilder } from './embedded-chatbot/theme/theme-context'
+import type { ChatThemeBuilder } from './theme-context'
 import type {
   ChatSetting,
   ChatItem,
@@ -28,16 +28,13 @@ export interface ChatProps {
   setting?: ChatSetting
   responding?: boolean
   noStopResponding?: boolean
-  onStopResponding?: () => void
   noChatInput?: boolean
-  onSend?: OnSend
   inputs?: Record<string, any>
   inputsForm?: InputForm[]
-  onRegenerate?: OnRegenerate
-  chatContainerClassName?: string
+  containerClassName?: string
   containerInnerClassName?: string
-  chatFooterClassName?: string
-  chatFooterInnerClassName?: string
+  footerClassName?: string
+  footerInnerClassName?: string
   suggestedQuestions?: string[]
   showPromptLog?: boolean
   questionIcon?: ReactNode
@@ -48,7 +45,7 @@ export interface ChatProps {
   answerContainerInner?: string
   hideProcessDetail?: boolean
   hideLogModal?: boolean
-  themeBuilder?: ThemeBuilder
+  themeBuilder?: ChatThemeBuilder
   showFeatureBar?: boolean
   showFileUpload?: boolean
   spacing?: boolean
@@ -56,6 +53,9 @@ export interface ChatProps {
   sidebarCollapseState?: boolean
   hideAvatar?: boolean
   enterToSend?: boolean
+  onSend?: OnSend
+  onStopResponding?: () => void
+  onRegenerate?: OnRegenerate
   onAnnotationEdited?: (question: string, answer: string, index: number) => void
   onAnnotationAdded?: (annotationId: string, authorName: string, question: string, answer: string, index: number) => void
   onAnnotationRemoved?: (index: number) => void
@@ -71,41 +71,41 @@ export const Chat: FC<ChatProps> = memo(({
   isTryApp,
   readonly = false,
   setting,
-  onSend,
   inputs,
   inputsForm,
-  onRegenerate,
   chatList,
   responding,
   noStopResponding,
-  onStopResponding,
   noChatInput,
-  chatContainerClassName,
+  containerClassName,
   containerInnerClassName,
-  chatFooterClassName,
-  chatFooterInnerClassName,
+  footerClassName,
+  footerInnerClassName,
   showPromptLog,
   questionIcon,
   answerIcon,
-  onAnnotationAdded,
-  onAnnotationEdited,
-  onAnnotationRemoved,
   chatNode,
   disableFeedback,
-  onFeedback,
   answerContainerInner,
   hideProcessDetail,
   hideLogModal,
   themeBuilder,
-  switchSibling,
   showFeatureBar,
   showFileUpload,
-  onFeatureBarClick,
   spacing,
   inputDisabled,
   sidebarCollapseState,
   hideAvatar,
   enterToSend,
+  onSend,
+  onRegenerate,
+  onStopResponding,
+  onAnnotationAdded,
+  onAnnotationEdited,
+  onAnnotationRemoved,
+  onFeedback,
+  switchSibling,
+  onFeatureBarClick,
   onHumanInputFormSubmit,
   getHumanInputNodeData,
 }) => {
@@ -141,7 +141,11 @@ export const Chat: FC<ChatProps> = memo(({
       <div className={clsx('relative h-full', isTryApp && 'flex flex-col')}>
         <div
           ref={containerRef}
-          className={clsx('relative h-full overflow-x-hidden overflow-y-auto', isTryApp && 'h-0 grow', chatContainerClassName)}
+          className={clsx(
+            'relative h-full overflow-x-hidden overflow-y-auto', 
+            isTryApp && 'h-0 grow', 
+            containerClassName
+          )}
         >
           {chatNode}
           <div
@@ -184,7 +188,7 @@ export const Chat: FC<ChatProps> = memo(({
                     item={item}
                     questionIcon={questionIcon}
                     theme={themeBuilder?.theme}
-                    enableEdit={setting?.questionEditEnable}
+                    editable={setting?.questionEditEnable}
                     switchSibling={switchSibling}
                     hideAvatar={hideAvatar}
                   />
@@ -196,12 +200,17 @@ export const Chat: FC<ChatProps> = memo(({
         <div
           className={clsx(
             'absolute bottom-0 z-10 flex justify-center bg-chat-input-mask', 
-            (!noChatInput || !noStopResponding) && chatFooterClassName)}
+            (!noChatInput || !noStopResponding) && footerClassName
+          )}
           ref={footerRef}
         >
           <div
             ref={footerInnerRef}
-            className={clsx('relative', chatFooterInnerClassName, isTryApp && 'px-0')}
+            className={clsx(
+              'relative', 
+              footerInnerClassName, 
+              isTryApp && 'px-0'
+            )}
           >
             {
               !noStopResponding && responding && (
@@ -232,4 +241,5 @@ export const Chat: FC<ChatProps> = memo(({
   )
 })
 
+Chat.displayName = 'Chat'
 export default Chat

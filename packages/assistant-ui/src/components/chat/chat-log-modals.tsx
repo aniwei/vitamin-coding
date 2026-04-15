@@ -1,7 +1,7 @@
 import AgentLogModal from '@/components/agent-log-modal'
 import PromptLogModal from '@/components/prompt-log-modal'
 import type { FC } from 'react'
-import type { ChatItem } from '../../types'
+import type { ChatItem } from './types'
 
 type ChatLogModalsProps = {
   width: number
@@ -24,13 +24,14 @@ const ChatLogModals: FC<ChatLogModalsProps> = ({
   setShowPromptLogModal,
   setShowAgentLogModal,
 }) => {
-  if (hideLogModal)
+  if (hideLogModal) {
     return null
+  }
 
   return (
     <>
-      {showPromptLogModal && (
-        <PromptLogModal
+      {
+        showPromptLogModal && <PromptLogModal
           width={width}
           currentLogItem={currentLogItem}
           onCancel={() => {
@@ -38,9 +39,9 @@ const ChatLogModals: FC<ChatLogModalsProps> = ({
             setShowPromptLogModal(false)
           }}
         />
-      )}
-      {showAgentLogModal && (
-        <AgentLogModal
+      }
+      {
+        showAgentLogModal && <AgentLogModal
           width={width}
           currentLogItem={currentLogItem}
           onCancel={() => {
@@ -48,9 +49,10 @@ const ChatLogModals: FC<ChatLogModalsProps> = ({
             setShowAgentLogModal(false)
           }}
         />
-      )}
+      }
     </>
   )
 }
 
+ChatLogModals.displayName = 'ChatLogModals'
 export default ChatLogModals

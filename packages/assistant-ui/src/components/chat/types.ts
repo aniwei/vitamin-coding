@@ -46,7 +46,7 @@ export interface InputForm {
   [key: string]: any
 }
 
-export interface ChatSetting extends Omit<ModelConfig, 'model'> {
+export interface ChatSetting extends Omit<ModelSetting, 'model'> {
   supportAnnotation?: boolean
   appId?: string
   questionEditEnable?: boolean
@@ -85,7 +85,7 @@ export interface CitationItem {
   word_count: number
 }
 
-export interface ThoughtItem {
+export type ThoughtItem = {
   id: string
   tool: string // plugin or dataset. May has multi.
   thought: string
@@ -97,19 +97,19 @@ export interface ThoughtItem {
   position: number
 }
 
-export interface Feedback {
+export type Feedback = {
   rating: 'like' | 'dislike'
   content?: string | null
 }
 
-export interface MessageMore {
+export type MessageMore = {
   time: string
   tokens: number
   latency: number | string
   tokens_per_second?: number | string
 }
 
-export interface ChatItem {
+export type ChatItem = {
   id: string
   content: string
   citation?: CitationItem[]
@@ -122,7 +122,7 @@ export interface ChatItem {
   useCurrentUserAvatar?: boolean
   isOpeningStatement?: boolean
   suggestedQuestions?: string[]
-  log?: { role: string, text: string, files?: FileEntity[] }[]
+  log?: { role: string, text: string }[]
   agent_thoughts?: ThoughtItem[]
   workflow_run_id?: string
   // for agent log

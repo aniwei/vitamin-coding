@@ -3,9 +3,9 @@ import {
 } from '@remixicon/react'
 import { t } from 'i18next'
 import { useState } from 'react'
-import ActionButton, { ActionButtonState } from '@/app/components/base/action-button'
-import { AudioPlayerManager } from '@/app/components/base/audio-btn/audio.player.manager'
-import Tooltip from '@/app/components/base/tooltip'
+import ActionButton, { ActionButtonState } from '@/components/action-button'
+import { AudioPlayerManager } from '@/components/audio-btn/audio.player.manager'
+import Tooltip from '@/components/ui/tooltip'
 import { useParams, usePathname } from '@/hooks/use-navigation'
 
 type AudioBtnProps = {

@@ -9,7 +9,7 @@ import ExploreNav from './explore-nav'
 import ToolsNav from './tools-nav'
 import SessionNav from './session-nav'
 import { Link, useLocation } from 'react-router-dom'
-import { WorkspaceProvider } from '@/context/workspace-context'
+// import { WorkspaceProvider } from '@/context/workspace-context'
 import { useState } from 'react'
 import { useEventBus } from '@/context/event-bus'
 import s from './index.module.css'
@@ -37,10 +37,10 @@ const Header = () => {
         <div className="flex min-w-0 flex-1 items-center pl-3 pr-2 min-[1280px]:pr-3">
           <Logo />
           <div className="mx-1.5 shrink-0 font-light text-divider-deep">/</div>
-          <WorkspaceProvider>
+          {/* <WorkspaceProvider> */}
             <div>111</div>
             {/* <WorkplaceSelector /> */}
-          </WorkspaceProvider>
+          {/* </WorkspaceProvider> */}
         </div>
         <div className="flex items-center space-x-2">
           {/* <ExploreNav className="flex items-center relative px-3 h-8 rounded-xl font-medium text-sm cursor-pointer" /> */}

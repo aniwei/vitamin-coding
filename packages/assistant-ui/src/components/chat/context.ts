@@ -1,7 +1,8 @@
 import { createContext, useContext } from 'use-context-selector'
 import type { ChatProps } from './index'
 
-export type ChatContextValue = Pick<ChatProps, 'setting'
+export type ChatContextValue = Pick<ChatProps, 
+  'setting'
   | 'responding'
   | 'chatList'
   | 'showPromptLog'

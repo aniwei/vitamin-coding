@@ -21,7 +21,7 @@ export const Tooltip: FC<TooltipProps> = React.memo(({
     <UiTooltip>
       <TooltipTrigger
         render={(
-          <div data-testid="tooltip-trigger-content" className="mr-6 flex items-center">
+          <div className="mr-6 flex items-center">
             {icon}
             {data}
           </div>
@@ -32,7 +32,7 @@ export const Tooltip: FC<TooltipProps> = React.memo(({
         className="z-1001"
         popupClassName="border-none bg-transparent p-0 shadow-none"
       >
-        <div data-testid="tooltip-popup" className="rounded-lg bg-components-tooltip-bg p-3 text-text-quaternary shadow-lg system-xs-medium">
+        <div className="rounded-lg bg-components-tooltip-bg p-3 text-text-quaternary shadow-lg system-xs-medium">
           {text}
           {' '}
           {data}

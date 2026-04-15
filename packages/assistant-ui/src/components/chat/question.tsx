@@ -19,14 +19,14 @@ import { cssTransform } from '@/shared/css'
 import { useChatContext } from './context'
 
 import type { FC, ReactNode } from 'react'
-import type { Theme } from './embedded-chatbot/theme/theme-context'
+import type { ChatTheme } from './theme-context'
 import type { ChatItem } from './types'
 
 
 type QuestionProps = {
   item: ChatItem
   questionIcon?: ReactNode
-  theme: Theme | null | undefined
+  theme: ChatTheme | null | undefined
   editable?: boolean
   hideAvatar?: boolean
   switchSibling?: (siblingMessageId: string) => void
@@ -113,18 +113,6 @@ export const Question: FC<QuestionProps> = memo(({
     }, 50)
   }, [clearCompositionEndTimer])
 
-  const handleSwitchSibling = useCallback((direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
-      if (item.prevSibling) {
-        switchSibling?.(item.prevSibling)
-      }
-    } else {
-      if (item.nextSibling) {
-        switchSibling?.(item.nextSibling)
-      }
-    }
-  }, [switchSibling, item.prevSibling, item.nextSibling])
-
   const getContentWidth = () => {
     if (contentRef.current) {
       setContentWidth(contentRef.current?.clientWidth)
@@ -154,8 +142,18 @@ export const Question: FC<QuestionProps> = memo(({
 
   return (
     <div className="mb-2 flex justify-end last:mb-0">
-      <div className={clsx('group relative mr-4 flex max-w-full items-start overflow-x-hidden pl-14', editing && 'flex-1')}>
-        <div className={clsx('mr-2 gap-1', editing ? 'hidden' : 'flex')}>
+      <div 
+        className={clsx(
+          'group relative mr-4 flex max-w-full items-start overflow-x-hidden pl-14', 
+          editing && 'flex-1'
+        )}
+      >
+        <div 
+          className={clsx(
+            'mr-2 gap-1', 
+            editing ? 'hidden' : 'flex'
+          )}
+        >
           <div
             className="absolute hidden gap-0.5 radius-lg border-[0.5px] border-components-actionbar-border bg-components-actionbar-bg p-0.5 shadow-md backdrop-blur-xs group-hover:flex"
             style={{ right: contentWidth + 8 }}
@@ -208,15 +206,6 @@ export const Question: FC<QuestionProps> = memo(({
                     <Button className="min-w-24" variant="primary" onClick={handleResend} >Save</Button>
                   </div>
                 </div>
-          }
-          {
-            !editing && <ContentSwitch
-              count={item.siblingCount}
-              currentIndex={item.siblingIndex}
-              prevDisabled={!item.prevSibling}
-              nextDisabled={!item.nextSibling}
-              switchSibling={handleSwitchSibling}
-            />
           }
         </div>
         <div className="mt-1 h-[18px]" />

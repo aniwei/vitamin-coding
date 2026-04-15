@@ -1,39 +1,40 @@
-import type { FC, ReactNode } from 'react'
-import {
-  createContext,
-  useContext,
-  useContextSelector,
-} from 'use-context-selector'
+import { createContext, useRef } from 'react'
+import { createStore } from 'zustand/vanilla'
+import type { StateCreator } from 'zustand'
 
-export type AppContextValue = {
-
+type SliceFromInjection = {}
+type Shape = SliceFromInjection
+type CreateStoreOptions = {
+  injectStoreSlice?: StateCreator<SliceFromInjection>
 }
 
-export const AppContext = createContext<AppContextValue>({
+export const createAppStore = (options: CreateStoreOptions) => {
+  const { injectStoreSlice } = options || {}
 
-})
-
-export function useSelector<T>(selector: (value: AppContextValue) => T): T {
-  return useContextSelector(AppContext, selector)
+  return createStore<Shape>((...args: Parameters<StateCreator<SliceFromInjection>>) => ({
+    ...(injectStoreSlice?.(...args) || {} as SliceFromInjection),
+  }))
 }
 
-export const useAppContext = () => useContext(AppContext)
 
-interface AppContextProviderProps {
-  children: ReactNode
+type Store = ReturnType<typeof createAppStore>
+export const AppContext = createContext<Store | null>(null)
+
+type AppProviderProps = {
+  children: React.ReactNode
+  injectStoreSlice?: StateCreator<SliceFromInjection>
 }
 
-export const AppContextProvider: FC<AppContextProviderProps> = ({ children }) => {
+export const AppContextProvider = ({ children, injectStoreSlice }: AppProviderProps) => {
+  const storeRef = useRef<Store | undefined>(undefined)
+
+  if (!storeRef.current) {
+    storeRef.current = createAppStore({ injectStoreSlice })
+  }
+
   return (
-    <AppContext.Provider value={{
-
-    }}
-    >
-      <div className="flex h-full flex-col overflow-y-auto">
-        <div className="relative flex grow flex-col overflow-y-auto overflow-x-hidden bg-background-body">
-          {children}
-        </div>
-      </div>
+    <AppContext.Provider value={storeRef.current}>
+      {children}
     </AppContext.Provider>
   )
 }

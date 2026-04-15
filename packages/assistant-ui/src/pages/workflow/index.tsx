@@ -4,26 +4,29 @@ import ReactFlow, {
   ReactFlowProvider,
   SelectionMode,
 } from 'reactflow'
+import CustomEdge from '@/components/workflow/custom-edge'
+import CustomNode from '@/components/workflow/nodes'
+import IterationStartNode from '@/components/workflow/nodes/iteration-start'
+import LoopStartNode from '@/components/workflow/nodes/loop-start'
+import CustomNoteNode from '@/components/workflow/note-node'
+import CustomConnectionLine from '@/components/workflow/custom-connection-line'
+import Panel from '@/components/panel'
+import Inspect from '@/components/workflow/inspect'
+import Operator from '@/components/workflow/operator'
 import Layout from './layout'
-import CustomEdge from './components/custom-edge'
-import CustomNode from './components/nodes'
-import IterationStartNode from './components/nodes/iteration-start'
-import LoopStartNode from './components/nodes/loop-start'
-import CustomNoteNode from './components/note-node'
-import CustomConnectionLine from './components/custom-connection-line'
-import {
+import { ChatBox } from '@/components/workflow/chat-box'
+import { Header } from '@/components/workflow/header'
+
+import { clsx } from 'clsx'
+import { 
+  ITERATION_CHILDREN_Z_INDEX,
+  CUSTOM_ITERATION_START_NODE,
+  CUSTOM_LOOP_START_NODE,
+  CUSTOM_NOTE_NODE,
+  CUSTOM_SIMPLE_NODE,
   CUSTOM_EDGE,
   CUSTOM_NODE,
-  ITERATION_CHILDREN_Z_INDEX,
 } from './constants'
-import { CUSTOM_ITERATION_START_NODE } from './constants'
-import { CUSTOM_LOOP_START_NODE } from './constants'
-import { CUSTOM_NOTE_NODE } from './constants'
-import { CUSTOM_SIMPLE_NODE } from './constants'
-import { ChatBot } from './components/chat-bot'
-import { Header } from './components/header'
-import { clsx } from 'clsx'
-
 
 import type {
   EdgeChange,
@@ -31,18 +34,10 @@ import type {
   Viewport,
 } from 'reactflow'
 
-import type {
-  Edge,
-  Node,
-} from './types'
+import type { Edge, Node,} from '@/components/workflow/types'
 
 import 'reactflow/dist/style.css'
 import './index.module.css'
-import Panel from '../../components/panel'
-import Inspect from './components/inspect'
-import Operator from './components/operator'
-
-
 
 const nodeTypes = {
   [CUSTOM_NODE]: CustomNode,
@@ -76,16 +71,13 @@ const WorkflowMain: React.FC<WorkflowPreviewProps> = memo(({
   return (
     <Layout sessionId="your-session-id">
       <div className="flex row h-full w-full">
-        <ChatBot chatList={[]} />
+        <ChatBox chatList={[]} />
       
         <div
           id="workflow-container"
           className={clsx('relative h-full w-full', className)}
         >
-          <>
-            <Header />
-            
-          </>
+          <Header />
           <ReactFlow
             nodeTypes={nodeTypes}
             edgeTypes={edgeTypes}

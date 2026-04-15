@@ -1,5 +1,11 @@
 import Popup from './popup'
-import { memo, useEffect, useMemo, useRef, useState } from 'react'
+import { 
+  memo, 
+  useEffect, 
+  useMemo, 
+  useRef, 
+  useState 
+} from 'react'
 import type { FC } from 'react'
 import type { CitationItem } from '../types'
 
@@ -15,6 +21,7 @@ type CitationProps = {
   showHitInfo?: boolean
   containerClassName?: string
 }
+
 export const Citation: FC<CitationProps> = memo(({
   data,
   showHitInfo,
@@ -53,19 +60,19 @@ export const Citation: FC<CitationProps> = memo(({
       if (totalWidth + i * 4 > containerWidth) {
         totalWidth -= elesRef.current[i].clientWidth
 
-        if (totalWidth + 34 > containerWidth)
+        if (totalWidth + 34 > containerWidth) {
           limit = i - 1
-        else
+        } else {
           limit = i
+        }
 
         break
-      }
-      else {
+      } else {
         limit = i + 1
       }
     }
+
     setLimitNumberInOneLine(limit)
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [])
 
   const resourcesLength = resources.length
@@ -84,9 +91,7 @@ export const Citation: FC<CitationProps> = memo(({
               data-testid="citation-measurement-item"
               className="absolute left-0 top-0 -z-10 mb-1 mr-1 h-7 w-auto max-w-[240px] whitespace-nowrap pl-7 pr-2 text-xs opacity-0"
               ref={(ele: HTMLDivElement | null) => { elesRef.current[index] = ele! }}
-            >
-              {res.documentName}
-            </div>
+            >{res.documentName}</div>
           ))
         }
         {
@@ -100,19 +105,16 @@ export const Citation: FC<CitationProps> = memo(({
           ))
         }
         {
-          limitNumberInOneLine < resourcesLength && (
-            <div
-              data-testid="citation-more-toggle"
-              className="flex h-7 cursor-pointer items-center rounded-lg bg-components-panel-bg px-2 text-text-tertiary system-xs-medium"
-              onClick={() => setShowMore(v => !v)}
-            >
-              {
-                !showMore
-                  ? `+ ${resourcesLength - limitNumberInOneLine}`
-                  : <div className="i-ri-arrow-down-s-line h-4 w-4 rotate-180 text-text-tertiary" />
-              }
-            </div>
-          )
+          limitNumberInOneLine < resourcesLength && <div
+            className="flex h-7 cursor-pointer items-center rounded-lg bg-components-panel-bg px-2 text-text-tertiary system-xs-medium"
+            onClick={() => setShowMore(v => !v)}
+          >
+            {
+              showMore
+                ? <div className="i-ri-arrow-down-s-line h-4 w-4 rotate-180 text-text-tertiary" />
+                : `+ ${resourcesLength - limitNumberInOneLine}`
+            }
+          </div>
         }
       </div>
     </div>

@@ -36,6 +36,7 @@ export const useCheckInputsForms = () => {
     }
     return true
   }, [])
+  
   return {
     checkInputsForm,
   }
