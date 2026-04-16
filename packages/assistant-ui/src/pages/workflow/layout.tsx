@@ -26,4 +26,5 @@ const WorkflowLayout: FC<WorkflowLayoutProps> = React.memo((props) => {
   )
 })
 
+WorkflowLayout.displayName = 'WorkflowLayout'
 export default WorkflowLayout

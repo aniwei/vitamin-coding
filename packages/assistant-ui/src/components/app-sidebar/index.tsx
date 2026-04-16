@@ -7,7 +7,6 @@ import NavLink from './nav-link'
 import ToggleButton from './toggle-button'
 import { useHover, useKeyPress } from 'ahooks'
 import { useCallback, useEffect, useState } from 'react'
-import { useEventBus } from '@/context/event-bus'
 import { clsx } from 'clsx'
 import { getKeyboardKeyCodeBySystem } from '@/shared/keyboard'
 import * as React from 'react'
@@ -42,13 +41,14 @@ const AppSidebar: React.FC<AppSidebarProps> = ({
   const isPipelineCanvas = pathname.endsWith('/pipeline')
   const workflowCanvasMaximize = localStorage.getItem('workflow-canvas-maximize') === 'true'
   const [hideHeader, setHideHeader] = useState(workflowCanvasMaximize)
-  const { eventBus } = useEventBus()
 
-  eventBus?.useSubscription((v: any) => {
-    if (v?.type === 'workflow-canvas-maximize') {
-      setHideHeader(v.payload)
-    }
-  })
+  // TODO
+  // const { eventBus } = useEventBus()
+  // eventBus?.useSubscription((v: any) => {
+  //   if (v?.type === 'workflow-canvas-maximize') {
+  //     setHideHeader(v.payload)
+  //   }
+  // })
 
   useKeyPress(`${getKeyboardKeyCodeBySystem('ctrl')}.b`, (e) => {
     e.preventDefault()

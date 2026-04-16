@@ -1,9 +1,4 @@
-import type { Node } from '@/app/components/workflow/types'
-import {
-  memo,
-  useMemo,
-} from 'react'
-import { useTranslation } from 'react-i18next'
+import React, { memo, useMemo } from 'react'
 import { useEdges } from 'reactflow'
 import { CollectionType } from '@/app/components/tools/types'
 import {
@@ -13,7 +8,7 @@ import {
   useNodesReadOnly,
   useNodesSyncDraft,
 } from '@/app/components/workflow/hooks'
-import ShortcutsName from '@/app/components/workflow/shortcuts-name'
+import ShortcutsName from '../../shortcuts-name'
 import { BlockEnum } from '@/app/components/workflow/types'
 import {
   canRunBySingle,
@@ -21,30 +16,29 @@ import {
 import { useAllWorkflowTools } from '@/service/use-tools'
 import { canFindTool } from '@/utils'
 import ChangeBlock from './change-block'
+import type { Node } from '../types'
 
-type PanelOperatorPopupProps = {
+type OperatorPopupProps = {
   id: string
   data: Node['data']
-  onClosePopup: () => void
+  readonly?: boolean
   showHelpLink?: boolean
+  onClosePopup: () => void
+  onNodeSelect: () => void
 }
-const PanelOperatorPopup = ({
+
+export const OperatorPopup: React.FC<OperatorPopupProps> = memo(({
   id,
   data,
-  onClosePopup,
+  readonly,
   showHelpLink,
-}: PanelOperatorPopupProps) => {
-  const { t } = useTranslation()
+  onClosePopup,
+  onNodeSelect,
+}) => {
   const edges = useEdges()
-  const {
-    handleNodeDelete,
-    handleNodesDuplicate,
-    handleNodeSelect,
-    handleNodesCopy,
-  } = useNodesInteractions()
+
   const { handleNodeDataUpdate } = useNodeDataUpdate()
   const { handleSyncWorkflowDraft } = useNodesSyncDraft()
-  const { nodesReadOnly } = useNodesReadOnly()
   const edge = edges.find(edge => edge.target === id)
   const nodeMetaData = useNodeMetaData({ id, data } as Node)
   const showChangeBlock = !nodeMetaData.isTypeFixed && !nodesReadOnly
@@ -68,10 +62,7 @@ const PanelOperatorPopup = ({
               {
                 canRunBySingle(data.type, isChildNode) && (
                   <div
-                    className={`
-                      flex h-8 cursor-pointer items-center rounded-lg px-3 text-sm text-text-secondary
-                      hover:bg-state-base-hover
-                    `}
+                    className="flex h-8 cursor-pointer items-center rounded-lg px-3 text-sm text-text-secondary hover:bg-state-base-hover"
                     onClick={() => {
                       handleNodeSelect(id)
                       handleNodeDataUpdate({ id, data: { _isSingleRun: true } })
@@ -198,6 +189,7 @@ const PanelOperatorPopup = ({
       </div>
     </div>
   )
-}
+})
 
-export default memo(PanelOperatorPopup)
+OperatorPopup.displayName = 'OperatorPopup'
+export default OperatorPopup

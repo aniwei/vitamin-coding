@@ -2,10 +2,10 @@ import { clsx } from 'clsx'
 import { memo, useRef } from 'react'
 import { NoteEditor, NoteEditorContextProvider } from './note-editor'
 import type { NodeProps } from 'reactflow'
-import type { NoteNodeType } from './types'
+import type { NoteNodeType, NoteThemeShape } from './types'
 
 type NoteNodeProps = {
-  theme: Record<string, string>
+  theme: NoteThemeShape
 } & NodeProps<NoteNodeType>
 
 export const NoteNode: React.FC<NoteNodeProps> = memo(({

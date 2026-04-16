@@ -1,18 +1,15 @@
 
 import { memo } from 'react'
-import {
-  Handle,
-  Position,
-} from 'reactflow'
 import { clsx } from 'clsx'
+import { Handle, Position } from 'reactflow'
 import { BlockEnum, type Node } from './types'
 
-type NodeHandleProps = Pick<Node, 'id' | 'data'> & {
+type NodeHandleProps = {
   handleId: string
   handleClassName?: string
-}
+} & Pick<Node, 'id' | 'data'>
   
-export const NodeTargetHandle = memo(({
+export const NodeTargetHandle: React.FC<NodeHandleProps> = memo(({
   data,
   handleId,
   handleClassName,
@@ -31,10 +28,10 @@ export const NodeTargetHandle = memo(({
           'transition-all hover:scale-125',
           !connected && 'after:opacity-0',
           (
-            data.type === BlockEnum.Start || 
-            data.type === BlockEnum.TriggerWebhook ||
-            data.type === BlockEnum.TriggerSchedule ||
-            data.type === BlockEnum.TriggerPlugin
+            data.type === BlockEnum.Start 
+            || data.type === BlockEnum.TriggerWebhook 
+            || data.type === BlockEnum.TriggerSchedule 
+            || data.type === BlockEnum.TriggerPlugin
           ) && 'opacity-0',
           handleClassName,
         )}
@@ -46,11 +43,13 @@ export const NodeTargetHandle = memo(({
 
 NodeTargetHandle.displayName = 'NodeTargetHandle'
 
-export const NodeSourceHandle = memo(({
+
+
+export const NodeSourceHandle: React.FC<NodeHandleProps> = memo(({
   data,
   handleId,
   handleClassName,
-}: NodeHandleProps) => {
+}) => {
   const connected = data._connectedSourceHandleIds?.includes(handleId)
 
   return (

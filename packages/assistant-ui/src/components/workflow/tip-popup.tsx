@@ -7,13 +7,13 @@ import {
 } from '@/components/ui/tooltip'
 import { memo } from 'react'
 
-interface TipPopupProps {
+type TipPopupProps = {
   title: string
   children: React.ReactElement
   shortcuts?: string[]
 }
 
-const TipPopup: React.FC<TipPopupProps> = memo(({
+export const TipPopup: React.FC<TipPopupProps> = memo(({
   title,
   children,
   shortcuts,
@@ -27,14 +27,15 @@ const TipPopup: React.FC<TipPopupProps> = memo(({
           variant="plain"
           popupClassName="bg-transparent p-0 shadow-none"
         >
-        <div className="flex items-center gap-1 rounded-lg border-[0.5px] border-components-panel-border bg-components-tooltip-bg p-1.5 shadow-lg backdrop-blur-[5px]">
-          <span className="system-xs-medium text-text-secondary">{title}</span>
-          { shortcuts && <ShortcutsName keys={shortcuts} /> }
-        </div>
+          <div className="flex items-center gap-1 rounded-lg border-[0.5px] border-components-panel-border bg-components-tooltip-bg p-1.5 shadow-lg backdrop-blur-[5px]">
+            <span className="system-xs-medium text-text-secondary">{title}</span>
+            { shortcuts && <ShortcutsName keys={shortcuts} /> }
+          </div>
         </TooltipContent>
       </Tooltip>
     </TooltipProvider>
   )
 })
 
+TipPopup.displayName = 'TipPopup'
 export default TipPopup

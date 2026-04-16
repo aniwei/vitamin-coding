@@ -1,5 +1,5 @@
-import type { OffsetOptions } from '@floating-ui/react'
-import type { Node } from '@/app/components/workflow/types'
+import clsx from 'clsx'
+import OperatorPopup from './operator-popup'
 import { RiMoreFill } from '@remixicon/react'
 import {
   memo,
@@ -7,13 +7,14 @@ import {
   useState,
 } from 'react'
 import {
-  PortalToFollowElem,
-  PortalToFollowElemContent,
-  PortalToFollowElemTrigger,
-} from '@/app/components/base/portal-to-follow-elem'
-import PanelOperatorPopup from './panel-operator-popup'
+  Popover,
+  PopoverContent,
+  PopoverTrigger,
+} from '@/components/ui/popover'
+import type { OffsetOptions } from '@floating-ui/react'
+import type { Node } from '../types'
 
-type PanelOperatorProps = {
+type OperatorProps = {
   id: string
   data: Node['data']
   triggerClassName?: string
@@ -23,7 +24,11 @@ type PanelOperatorProps = {
   showHelpLink?: boolean
 }
 
-const PanelOperator = ({
+function isOffsetObject(value: OffsetOptions): value is { mainAxis?: number, crossAxis?: number } {
+  return typeof value === 'object' && value !== null
+}
+
+export const Operator: React.FC<OperatorProps> = ({
   id,
   data,
   triggerClassName,
@@ -33,45 +38,56 @@ const PanelOperator = ({
   },
   onOpenChange,
   showHelpLink = true,
-}: PanelOperatorProps) => {
+}) => {
   const [open, setOpen] = useState(false)
+  const sideOffset = typeof offset === 'number' ? offset : (isOffsetObject(offset) ? (offset.mainAxis ?? 0) : 0)
+  const alignOffset = isOffsetObject(offset) ? (offset.crossAxis ?? 0) : 0
 
   const handleOpenChange = useCallback((newOpen: boolean) => {
     setOpen(newOpen)
 
-    if (onOpenChange)
+    if (onOpenChange) {
       onOpenChange(newOpen)
+    }
   }, [onOpenChange])
 
   return (
-    <PortalToFollowElem
-      placement="bottom-end"
-      offset={offset}
+    <Popover
       open={open}
       onOpenChange={handleOpenChange}
     >
-      <PortalToFollowElemTrigger onClick={() => handleOpenChange(!open)}>
-        <div
-          className={`
-            flex h-6 w-6 cursor-pointer items-center justify-center rounded-md
-            hover:bg-state-base-hover
-            ${open && 'bg-state-base-hover'}
-            ${triggerClassName}
-          `}
-        >
-          <RiMoreFill className="h-4 w-4 text-text-tertiary" />
-        </div>
-      </PortalToFollowElemTrigger>
-      <PortalToFollowElemContent className="z-11">
-        <PanelOperatorPopup
+      <PopoverTrigger
+        onClick={() => handleOpenChange(!open)}
+        render={(
+          <div
+            className={clsx(
+              'flex h-6 w-6 cursor-pointer items-center justify-center rounded-md',
+              'hover:bg-state-base-hover',
+              open && 'bg-state-base-hover',
+              triggerClassName
+            )}
+          >
+            <RiMoreFill className="h-4 w-4 text-text-tertiary" />
+          </div>
+        )}
+      />
+      <PopoverContent
+        placement="bottom-end"
+        sideOffset={sideOffset}
+        alignOffset={alignOffset}
+        className="z-11"
+        popupClassName="border-none bg-transparent p-0 shadow-none"
+      >
+        <OperatorPopup
           id={id}
           data={data}
-          onClosePopup={() => setOpen(false)}
+          onClosePopup={() => handleOpenChange(false)}
           showHelpLink={showHelpLink}
         />
-      </PortalToFollowElemContent>
-    </PortalToFollowElem>
+      </PopoverContent>
+    </Popover>
   )
 }
 
-export default memo(PanelOperator)
+Operator.displayName = 'Operator'
+export default Operator

@@ -14,7 +14,6 @@ import ReactFlow, {
 import { useStableHandle } from '@/hooks/use-stable-handle'
 import { Node, Edge, ControlMode } from './types'
 
-
 type WorkflowProps = {
   nodes: Node[]
   edges: Edge[]
@@ -81,8 +80,7 @@ export const Workflow: React.FC<WorkflowProps> = memo(props => {
   return (
     <div
       className={clsx(
-        'workflow workflow-node-animation',
-        'relative h-full w-full min-w-[960px]',
+        'workflow workflow-node-animation relative h-full w-full min-w-[960px]',
         readonly && 'workflow-panel-animation',
       )}
       ref={containerRef}
@@ -127,3 +125,6 @@ export const Workflow: React.FC<WorkflowProps> = memo(props => {
     </div>
   )
 })
+
+Workflow.displayName = 'Workflow'
+export default Workflow

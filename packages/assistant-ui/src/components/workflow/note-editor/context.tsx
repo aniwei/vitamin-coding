@@ -13,11 +13,11 @@ type NoteEditorContextProviderProps = {
   children: React.JSX.Element | string | (React.JSX.Element | string)[]
   editable?: boolean
 }
-export const NoteEditorContextProvider = memo(({
+export const NoteEditorContextProvider: React.FC<NoteEditorContextProviderProps> = memo(({
   value,
   children,
   editable = true,
-}: NoteEditorContextProviderProps) => {
+}) => {
   const storeRef = useRef<NoteEditorStore | undefined>(undefined)
 
   if (!storeRef.current)

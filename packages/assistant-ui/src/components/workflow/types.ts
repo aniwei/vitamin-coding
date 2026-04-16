@@ -3,6 +3,15 @@ import type {
   Node as ReactFlowNode
 } from 'reactflow'
 
+export enum CustomNodeType {
+  CustomNode = 'custom',
+  CustomEdge = 'custom',
+  CustomIterationStartNode = 'custom-iteration-start',
+  CustomLoopStartNode = 'custom-loop-start',
+  CustomNoteNode = 'custom-note',
+  CustomSimpleNode = 'custom-simple',
+}
+
 export enum ControlMode {
   Pointer = 'pointer',
   Hand = 'hand',
@@ -23,6 +32,8 @@ export enum WorkflowVersion {
 }
 
 export interface CommonNode<T = {}> {
+  _connectedSourceHandleIds?: string[]
+  _connectedTargetHandleIds?: string[]
   isInIteration?: boolean
   iteration_id?: string
   selected?: boolean
@@ -115,7 +126,7 @@ export enum BlockEnum {
   TriggerPlugin = 'trigger-plugin',
 }
 
-export interface NoteNodeType  {
+export type NoteNodeType = {
   text: string
   theme: NoteTheme
   author: string
@@ -130,4 +141,54 @@ export type ModelSetting = {
   name: string
   mode: string
   completion_params: Record<string, any>
+}
+
+export type NoteThemeShape = {
+  outer: string
+  title: string
+  background: string
+  border: string
+}
+
+const noteThemes: Record<NoteTheme, NoteThemeShape> = {
+  [NoteTheme.Blue]: {
+    outer: 'border-util-colors-blue-blue-500',
+    title: 'bg-util-colors-blue-blue-100',
+    background: 'bg-util-colors-blue-blue-50',
+    border: 'border-util-colors-blue-blue-300',
+  },
+  [NoteTheme.Cyan]: {
+    outer: 'border-util-colors-cyan-cyan-500',
+    title: 'bg-util-colors-cyan-cyan-100',
+    background: 'bg-util-colors-cyan-cyan-50',
+    border: 'border-util-colors-cyan-cyan-300',
+  },
+  [NoteTheme.Green]: {
+    outer: 'border-util-colors-green-green-500',
+    title: 'bg-util-colors-green-green-100',
+    background: 'bg-util-colors-green-green-50',
+    border: 'border-util-colors-green-green-300',
+  },
+  [NoteTheme.Yellow]: {
+    outer: 'border-util-colors-yellow-yellow-500',
+    title: 'bg-util-colors-yellow-yellow-100',
+    background: 'bg-util-colors-yellow-yellow-50',
+    border: 'border-util-colors-yellow-yellow-300',
+  },
+  [NoteTheme.Pink]: {
+    outer: 'border-util-colors-pink-pink-500',
+    title: 'bg-util-colors-pink-pink-100',
+    background: 'bg-util-colors-pink-pink-50',
+    border: 'border-util-colors-pink-pink-300',
+  },
+  [NoteTheme.Violet]: {
+    outer: 'border-util-colors-violet-violet-500',
+    title: 'bg-util-colors-violet-violet-100',
+    background: 'bg-util-colors-violet-violet-100',
+    border: 'border-util-colors-violet-violet-300',
+  }
+}
+
+export const getNoteTheme = (themeName: NoteTheme): NoteThemeShape => {
+  return noteThemes[themeName]
 }

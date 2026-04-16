@@ -8,39 +8,39 @@ import {
   PopoverTrigger,
 } from '@/components/ui/popover'
 import { clsx } from 'clsx'
-import { THEME_MAP } from '@/pages/flow/constants'
+import { getNoteTheme } from '@/components/workflow/types'
 import { NoteTheme } from '../../types'
 
 export const COLOR_LIST = [
   {
     key: NoteTheme.Blue,
-    inner: THEME_MAP[NoteTheme.Blue].title,
-    outer: THEME_MAP[NoteTheme.Blue].outer,
+    inner: getNoteTheme(NoteTheme.Blue).title,
+    outer: getNoteTheme(NoteTheme.Blue).outer,
   },
   {
     key: NoteTheme.Cyan,
-    inner: THEME_MAP[NoteTheme.Cyan].title,
-    outer: THEME_MAP[NoteTheme.Cyan].outer,
+    inner: getNoteTheme(NoteTheme.Cyan).title,
+    outer: getNoteTheme(NoteTheme.Cyan).outer,
   },
   {
     key: NoteTheme.Green,
-    inner: THEME_MAP[NoteTheme.Green].title,
-    outer: THEME_MAP[NoteTheme.Green].outer,
+    inner: getNoteTheme(NoteTheme.Green).title,
+    outer: getNoteTheme(NoteTheme.Green).outer,
   },
   {
     key: NoteTheme.Yellow,
-    inner: THEME_MAP[NoteTheme.Yellow].title,
-    outer: THEME_MAP[NoteTheme.Yellow].outer,
+    inner: getNoteTheme(NoteTheme.Yellow).title,
+    outer: getNoteTheme(NoteTheme.Yellow).outer,
   },
   {
     key: NoteTheme.Pink,
-    inner: THEME_MAP[NoteTheme.Pink].title,
-    outer: THEME_MAP[NoteTheme.Pink].outer,
+    inner: getNoteTheme(NoteTheme.Pink).title,
+    outer: getNoteTheme(NoteTheme.Pink).outer,
   },
   {
     key: NoteTheme.Violet,
-    inner: THEME_MAP[NoteTheme.Violet].title,
-    outer: THEME_MAP[NoteTheme.Violet].outer,
+    inner: getNoteTheme(NoteTheme.Violet).title,
+    outer: getNoteTheme(NoteTheme.Violet).outer,
   },
 ]
 
@@ -71,7 +71,7 @@ const ColorPicker = memo(({
             <div
               className={clsx(
                 'h-4 w-4 rounded-full border border-black/5',
-                THEME_MAP[theme].title,
+                getNoteTheme(theme).title,
               )}
             >
             </div>
@@ -118,4 +118,5 @@ const ColorPicker = memo(({
   )
 })
 
+ColorPicker.displayName = 'ColorPicker'
 export default ColorPicker

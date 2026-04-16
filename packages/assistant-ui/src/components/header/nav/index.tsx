@@ -1,84 +1,79 @@
 import clsx from 'clsx'
-import { useState } from 'react'
-import * as React from 'react'
-import { ArrowNarrowLeft } from '@/components/icons/line/arrows'
-import type { INavSelectorProps } from './nav-selector'
 import NavSelector from './nav-selector'
+import { useState } from 'react'
+import { ArrowNarrowLeft } from '@/components/icons/line/arrows'
 import { Link } from 'react-router-dom'
+import * as React from 'react'
+import type { NavSelectorProps } from './nav-selector'
 
-type INavProps = {
+type NavProps = {
   icon: React.ReactNode
   activeIcon?: React.ReactNode
   text: string
   activeSegment: string | string[]
   link: string
-  isApp: boolean
-} & INavSelectorProps
+} & NavSelectorProps
 
-const Nav = ({
+export const Nav: React.FC<NavProps> = ({
   icon,
   activeIcon,
   text,
   activeSegment,
   link,
-  curNav,
-  navigationItems,
+  currentNav,
+  navigations,
   createText,
   onCreate,
   onLoadMore,
-  isLoadingMore,
-  isApp,
-}: INavProps) => {
-  const [hovered, setHovered] = useState(false)
+  loadingMore,
+}) => {
   const segment = ''
+  const [hovered, setHovered] = useState(false)
   const isActivated = Array.isArray(activeSegment) ? activeSegment.includes(segment!) : segment === activeSegment
 
   return (
-    <div className={`
-      flex h-8 max-w-[670px] shrink-0 items-center rounded-xl px-0.5 text-sm font-medium max-[1024px]:max-w-[400px]
-      ${isActivated && 'bg-components-main-nav-nav-button-bg-active font-semibold shadow-md'}
-      ${!curNav && !isActivated && 'hover:bg-components-main-nav-nav-button-bg-hover'}
-    `}
+    <div 
+      className={clsx(
+        'flex h-8 max-w-[670px] shrink-0 items-center rounded-xl px-0.5 text-sm font-medium max-[1024px]:max-w-[400px]',
+        isActivated && 'bg-components-main-nav-nav-button-bg-active font-semibold shadow-md',
+        !currentNav && !isActivated && 'hover:bg-components-main-nav-nav-button-bg-hover'
+      )}
     >
       <Link to={link}>
         <div
           onClick={(e) => {
-            // Don't clear state if opening in new tab/window
             if (e.metaKey || e.ctrlKey || e.shiftKey || e.button !== 0) {
               return
             }
             // setAppDetail()
           }}
-          className={clsx('flex h-7 cursor-pointer items-center radius-lg px-2.5', isActivated ? 'text-components-main-nav-nav-button-text-active' : 'text-components-main-nav-nav-button-text', curNav && isActivated && 'hover:bg-components-main-nav-nav-button-bg-active-hover')}
+          className={clsx('flex h-7 cursor-pointer items-center radius-lg px-2.5', isActivated ? 'text-components-main-nav-nav-button-text-active' : 'text-components-main-nav-nav-button-text', currentNav && isActivated && 'hover:bg-components-main-nav-nav-button-bg-active-hover')}
           onMouseEnter={() => setHovered(true)}
           onMouseLeave={() => setHovered(false)}
         >
           <div>
             {
-              (hovered && curNav)
+              hovered && currentNav
                 ? <ArrowNarrowLeft className="h-4 w-4" />
                 : isActivated
                   ? activeIcon
                   : icon
             }
           </div>
-          <div className="ml-2 max-[1024px]:hidden">
-            {text}
-          </div>
+          <div className="ml-2 max-[1024px]:hidden">{text}</div>
         </div>
       </Link>
       {
-        curNav && isActivated && (
+        currentNav && isActivated && (
           <>
             <div className="font-light text-divider-deep">/</div>
             <NavSelector
-              isApp={isApp}
-              curNav={curNav}
-              navigationItems={navigationItems}
+              currentNav={currentNav}
+              navigations={navigations}
               createText={createText}
               onCreate={onCreate}
               onLoadMore={onLoadMore}
-              isLoadingMore={isLoadingMore}
+              loadingMore={loadingMore}
             />
           </>
         )
@@ -87,4 +82,5 @@ const Nav = ({
   )
 }
 
+Nav.displayName = 'Nav'
 export default Nav
