@@ -140,7 +140,10 @@ export class HookRegistry {
   register(spec: HookSpec): void {
     this.hooks[spec.timing].push(spec)
 
-    logger.debug({ name: spec.name, timing: spec.timing, priority: spec.priority }, 'Hook registered')
+    logger.debug(
+      { hookName: spec.name, timing: spec.timing, priority: spec.priority },
+      'Hook registered',
+    )
   }
 
   registerAll(specs: HookSpec[]): void {
@@ -170,7 +173,7 @@ export class HookRegistry {
         this.hooks[timing] = filtered
         removed = true
 
-        logger.debug({ name, timing }, 'Hook unregistered')
+        logger.debug({ hookName: name, timing }, 'Hook unregistered')
       }
     }
     return removed
@@ -179,12 +182,12 @@ export class HookRegistry {
   // 运行时屏蔽，不从 bucket 移除，便于快速恢复
   disable(name: string): void {
     this.disabled.add(name)
-    logger.debug({ name }, 'Hook disabled')
+    logger.debug({ hookName: name }, 'Hook disabled')
   }
 
   enable(name: string): void {
     this.disabled.delete(name)
-    logger.debug({ name }, 'Hook enabled')
+    logger.debug({ hookName: name }, 'Hook enabled')
   }
 
   getRegistered(timing?: HookTiming): RegisteredHookInfo[] {

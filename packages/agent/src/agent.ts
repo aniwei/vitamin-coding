@@ -7,20 +7,15 @@ import { createToolExecutor } from './tool-executor'
 import type { AssistantMessage, Message as LlmMessage } from '@vitamin/ai'
 import type {
   AgentConfig,
-  AgentEvent,
+  AgentEvents,
   AgentMessage,
   AgentRunContext,
   AgentState,
   AgentStatus,
-  ToolCallEvent,
-  ToolResult,
 } from './types'
-import type { Events } from '@vitamin/shared'
-import type { StreamEvent } from '@vitamin/ai'
 
 const logger = createLogger('@vitamin/agent')
 
-// Agent 状态合法转换表
 const VALID_TRANSITIONS: Record<AgentStatus, Set<AgentStatus>> = {
   idle: new Set(['streaming', 'aborted', 'error']),
   streaming: new Set(['tool_executing', 'completed', 'aborted', 'error']),
@@ -30,32 +25,12 @@ const VALID_TRANSITIONS: Record<AgentStatus, Set<AgentStatus>> = {
   aborted: new Set(['streaming', 'idle', 'error']),
 }
 
-// Agent 事件映射
-interface AgentEvents extends Events {
-  status_change: (event: { from: AgentStatus; to: AgentStatus }) => void
-  turn_start: (event: { turnIndex: number }) => void
-  turn_end: (event: { turnIndex: number; message: AssistantMessage }) => void
-  stream_event: (event: StreamEvent) => void
-  streaming_start: (event: { model: string }) => void
-  streaming_end: (event: { model: string; stopReason: string }) => void
-  tool_call_start: (event: { toolCall: ToolCallEvent }) => void
-  tool_call_end: (event: { toolCall: ToolCallEvent; result: ToolResult }) => void
-  tool_result_received: (event: { toolCallId: string; isError: boolean }) => void
-  messages_updated: (event: { count: number }) => void
-  steering_injected: (event: { messages: AgentMessage[] }) => void
-  follow_up_start: (event: { messages: AgentMessage[] }) => void
-  error: (error: Error) => void
-  abort: () => void
-  compaction_needed: (event: { tokenCount: number; threshold: number }) => void
-}
-
 export class Agent extends TypedEventEmitter<AgentEvents> {
   private state: AgentState
   private abortController: AbortController | null = null
   private steeringQueue: AgentMessage[] = []
   private followUpQueue: AgentMessage[] = []
 
-  // 基础设施配置 — 构造时确定，所有 run() 共享
   private readonly stream: import('./types').StreamFunction
   private readonly agentLogger: import('@vitamin/shared').Logger
   private readonly maxToolTurns: number
@@ -97,16 +72,31 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
       currentStreamMessage: null,
       error: undefined,
     }
+
+    this.on('status_change', ({ from: _, to }) => {
+      this.state.status = to
+      this.state.isStreaming = to === 'streaming'
+    })
+
+    this.on('turn_end', ({ message }) => {
+      this.state.turnCount++
+      this.state.currentStreamMessage = null
+      this.state.tokenUsage.input += message.usage.inputTokens
+      this.state.tokenUsage.output += message.usage.outputTokens
+      this.state.tokenUsage.cacheRead += message.usage.cacheReadTokens
+    })
+
+    this.on('stream_event', ({ event }) => {
+      if (event.type === 'start') {
+        this.state.currentStreamMessage = event.partial
+      }
+    })
   }
 
-  // 获取当前状态快照
   getState(): Readonly<AgentState> {
     return { ...this.state }
   }
 
-  // 核心方法 — 执行 Agent 循环。
-  // messages 数组会被 workLoop 就地修改（追加 assistant/tool_result 消息），
-  // 调用方负责将变更持久化到 Session。
   async run(context: AgentRunContext): Promise<AssistantMessage> {
     if (
       this.state.status !== 'idle' &&
@@ -165,7 +155,6 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
 
     try {
       const result = await workLoop({
-        // 执行参数（来自 AgentRunContext）
         model: context.model,
         systemPrompt: context.systemPrompt,
         messages: context.messages,
@@ -174,18 +163,15 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
         temperature: context.temperature,
         convertToLLM: context.convertToLLM ?? defaultConvertToLLM,
         transformContext: context.transformContext,
-        // 配置（来自 AgentConfig，在 Agent 实例间共享）
         maxToolTurns: this.maxToolTurns,
         devtools: this.devtools,
         logger: this.agentLogger,
-        // 队列接入
         getSteeringMessages: () => this.drainSteeringQueue(),
         getFollowUpMessages: () => this.drainFollowUpQueue(),
-        // 注入
         toolExecutor,
         stream: this.stream,
         signal,
-        emit: (event: AgentEvent) => this.handleLoopEvent(event),
+        emitter: this,
         initialStatus: this.state.status,
       })
 
@@ -199,39 +185,12 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
 
       this.state.error = error instanceof Error ? error : new Error(String(error))
       this.transitionTo('error')
-      this.emit('error', this.state.error)
+      this.emit('error', { error: this.state.error })
       throw this.state.error
     } finally {
       this.abortController = null
       this.state.isStreaming = false
     }
-  }
-
-  // 内部: 同步状态（纯 reducer）
-  private syncState(event: AgentEvent): void {
-    if (event.type === 'status_change') {
-      this.state.status = event.to
-      this.state.isStreaming = event.to === 'streaming'
-    }
-
-    if (event.type === 'turn_end') {
-      this.state.turnCount++
-      this.state.currentStreamMessage = null
-      const usage = event.message.usage
-      this.state.tokenUsage.input += usage.inputTokens
-      this.state.tokenUsage.output += usage.outputTokens
-      this.state.tokenUsage.cacheRead += usage.cacheReadTokens
-    }
-
-    if (event.type === 'stream_event' && event.event.type === 'start') {
-      this.state.currentStreamMessage = event.event.partial
-    }
-  }
-
-  // 内部: 处理循环事件 = 同步状态 + 向外转发
-  private handleLoopEvent(event: AgentEvent): void {
-    this.syncState(event)
-    this.emit(event.type, event as never)
   }
 
   private transitionTo(to: AgentStatus): void {
@@ -263,12 +222,10 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
   }
 }
 
-// 默认消息转换 — AgentMessage 直接当作 LLM Message
 function defaultConvertToLLM(messages: AgentMessage[]) {
   return messages.filter((m) => typeof m === 'object' && m !== null && 'role' in m) as LlmMessage[]
 }
 
-// 工厂函数
 export function createAgent(config: AgentConfig): Agent {
   return new Agent(config)
 }

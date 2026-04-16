@@ -10,10 +10,19 @@ import type {
 import type { DebugSnapshot, PauseResult } from '@vitamin/devtools'
 import { AbortError, MaxToolTurnsError } from './errors'
 import type { ToolExecutor } from './tool-executor'
-import type { AgentEvent, AgentMessage, AgentStatus, AgentTool, StreamFunction } from './types'
+import type {
+  AgentEventType,
+  AgentEvents,
+  AgentMessage,
+  AgentStatus,
+  AgentTool,
+  StreamFunction,
+} from './types'
 import type { MessageSummaryItem } from '@vitamin/devtools'
 
-type Emit = (event: AgentEvent) => void
+interface Emitter {
+  emit<K extends AgentEventType>(type: K, ...args: Parameters<AgentEvents[K]>): void
+}
 type SnapshotMetadata = Record<string, string | number | boolean | null>
 
 // WorkLoopContext — workLoop 引擎的完整执行契约，由 Agent.runLoop() 组装
@@ -39,7 +48,7 @@ export interface WorkLoopContext {
   toolExecutor: ToolExecutor
   stream: StreamFunction
   signal: AbortSignal
-  emit: Emit
+  emitter: Emitter
   initialStatus?: AgentStatus
 }
 
@@ -61,7 +70,12 @@ async function runTurn(
   turnIndex: number,
   lastTokenUsage: { input: number; output: number } | undefined,
 ): Promise<AssistantMessage> {
-  const { signal, emit, devtools, logger } = ctx
+  const {
+    signal,
+    emitter,
+    devtools,
+    logger,
+  } = ctx
 
   const pause = (
     point: DebugSnapshot['point'],
@@ -154,7 +168,7 @@ async function runTurn(
   const es = ctx.stream(streamContext, signal)
 
   for await (const event of es) {
-    emit({ type: 'stream_event', event })
+    emitter.emit('stream_event', { event })
     if (signal.aborted) {
       throw new AbortError()
     }
@@ -185,7 +199,15 @@ async function runTools(
   turnIndex: number,
   lastTokenUsage: { input: number; output: number } | undefined,
 ): Promise<{ steeringInjected: boolean }> {
-  const { toolExecutor, messages, signal, emit, devtools, logger, getSteeringMessages } = ctx
+  const {
+    toolExecutor,
+    messages,
+    signal,
+    emitter,
+    devtools,
+    logger,
+    getSteeringMessages,
+  } = ctx
 
   const pause = (
     point: DebugSnapshot['point'],
@@ -226,7 +248,7 @@ async function runTools(
 
   if (steeringMessages.length > 0) {
     messages.push(...steeringMessages)
-    emit({ type: 'steering_injected', messages: steeringMessages })
+    emitter.emit('steering_injected', { messages: steeringMessages })
     return { steeringInjected: true }
   }
 
@@ -236,8 +258,7 @@ async function runTools(
       throw new AbortError()
     }
 
-    emit({
-      type: 'tool_call_start',
+    emitter.emit('tool_call_start', {
       toolCall: {
         id: toolCall.id,
         name: toolCall.name,
@@ -262,8 +283,7 @@ async function runTools(
     }
     messages.push(toolResultMessage)
 
-    emit({
-      type: 'tool_call_end',
+    emitter.emit('tool_call_end', {
       toolCall: {
         id: toolCall.id,
         name: toolCall.name,
@@ -292,7 +312,7 @@ async function runTools(
     const steering = await getSteeringMessages()
     if (steering.length > 0) {
       messages.push(...steering)
-      emit({ type: 'steering_injected', messages: steering })
+      emitter.emit('steering_injected', { messages: steering })
       return { steeringInjected: true }
     }
 
@@ -312,7 +332,13 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
   let currentStatus: AgentStatus = context.initialStatus ?? 'idle'
   let lastTokenUsage: { input: number; output: number } | undefined
 
-  const { messages, signal, logger, devtools, emit } = context
+  const {
+    messages,
+    signal,
+    logger,
+    devtools,
+    emitter,
+  } = context
 
   // LLM 参数的可变快照 — devtools 在 model_before 可修改，影响后续 turn
   const params: MutableLLMParams = {
@@ -361,7 +387,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
         throw new AbortError()
       }
 
-      emit({ type: 'status_change', from: currentStatus, to: 'streaming' })
+      emitter.emit('status_change', { from: currentStatus, to: 'streaming' })
       currentStatus = 'streaming'
 
       while (true) {
@@ -373,7 +399,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
           throw new MaxToolTurnsError(context.maxToolTurns ?? 25)
         }
 
-        emit({ type: 'turn_start', turnIndex })
+        emitter.emit('turn_start', { turnIndex })
         logger.info('Turn %d started', turnIndex + 1)
 
         const assistantMessage = await runTurn(context, params, turnIndex, lastTokenUsage)
@@ -385,18 +411,18 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
           output: assistantMessage.usage.outputTokens,
         }
 
-        emit({ type: 'turn_end', turnIndex, message: assistantMessage })
+        emitter.emit('turn_end', { turnIndex, message: assistantMessage })
         turnIndex++
 
         if (hasToolCalls(assistantMessage)) {
-          emit({ type: 'status_change', from: currentStatus, to: 'tool_executing' })
+          emitter.emit('status_change', { from: currentStatus, to: 'tool_executing' })
           currentStatus = 'tool_executing'
 
           await runTools(assistantMessage, context, turnIndex, lastTokenUsage)
 
           toolTurnCount++
 
-          emit({ type: 'status_change', from: currentStatus, to: 'streaming' })
+          emitter.emit('status_change', { from: currentStatus, to: 'streaming' })
           currentStatus = 'streaming'
           continue
         }
@@ -419,7 +445,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
       if (followUpMessages.length > 0) {
         messages.push(...followUpMessages)
         logger.info('Queued %d follow-up message(s)', followUpMessages.length)
-        emit({ type: 'follow_up_start', messages: followUpMessages })
+        emitter.emit('follow_up_start', { messages: followUpMessages })
         continue outer
       }
 
