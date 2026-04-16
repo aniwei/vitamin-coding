@@ -1,51 +1,18 @@
-import type { InitialConfigType } from '@lexical/react/LexicalComposer'
-import type {
-  EditorState,
-  LexicalCommand,
-} from 'lexical'
-import type { FC } from 'react'
-import type { Hotkey } from './plugins/shortcuts-popup-plugin'
-import type {
-  ContextBlockType,
-  CurrentBlockType,
-  ErrorMessageBlockType,
-  ExternalToolBlockType,
-  HistoryBlockType,
-  HITLInputBlockType,
-  LastRunBlockType,
-  QueryBlockType,
-  RequestURLBlockType,
-  VariableBlockType,
-  WorkflowVariableBlockType,
-} from './types'
+import PromptEditorContent from './prompt-editor-content'
 import { CodeNode } from '@lexical/code'
 import { LexicalComposer } from '@lexical/react/LexicalComposer'
-import {
-  $getRoot,
-  TextNode,
-} from 'lexical'
-import * as React from 'react'
+import { $getRoot, TextNode } from 'lexical'
 import { useEffect, useState } from 'react'
-import { useEventBus } from '@/context/event-bus'
 import { clsx } from 'clsx'
 import {
   UPDATE_DATASETS_EVENT_EMITTER,
   UPDATE_HISTORY_EVENT_EMITTER,
 } from './constants'
-import {
-  ContextBlockNode,
-} from './plugins/context-block'
-import {
-  CurrentBlockNode,
-} from './plugins/current-block'
+import { ContextBlockNode } from './plugins/context-block'
+import { CurrentBlockNode } from './plugins/current-block'
 import { CustomTextNode } from './plugins/custom-text/node'
-import {
-  ErrorMessageBlockNode,
-} from './plugins/error-message-block'
-import {
-  HistoryBlockNode,
-} from './plugins/history-block'
-
+import { ErrorMessageBlockNode } from './plugins/error-message-block'
+import { HistoryBlockNode } from './plugins/history-block'
 import {
   HITLInputNode,
 } from './plugins/hitl-input-block'
@@ -62,8 +29,26 @@ import { VariableValueBlockNode } from './plugins/variable-value-block/node'
 import {
   WorkflowVariableBlockNode,
 } from './plugins/workflow-variable-block'
-import PromptEditorContent from './prompt-editor-content'
+
 import { textToEditorState } from './utils'
+import * as React from 'react'
+import type { InitialConfigType } from '@lexical/react/LexicalComposer'
+import type { EditorState, LexicalCommand } from 'lexical'
+import type { FC } from 'react'
+import type { Hotkey } from './plugins/shortcuts-popup-plugin'
+import type {
+  ContextBlockType,
+  CurrentBlockType,
+  ErrorMessageBlockType,
+  ExternalToolBlockType,
+  HistoryBlockType,
+  HITLInputBlockType,
+  LastRunBlockType,
+  QueryBlockType,
+  RequestURLBlockType,
+  VariableBlockType,
+  WorkflowVariableBlockType,
+} from './types'
 
 export type PromptEditorProps = {
   instanceId?: string
@@ -75,9 +60,6 @@ export type PromptEditorProps = {
   style?: React.CSSProperties
   value?: string
   editable?: boolean
-  onChange?: (text: string) => void
-  onBlur?: () => void
-  onFocus?: () => void
   contextBlock?: ContextBlockType
   queryBlock?: QueryBlockType
   requestURLBlock?: RequestURLBlockType
@@ -91,9 +73,12 @@ export type PromptEditorProps = {
   lastRunBlock?: LastRunBlockType
   isSupportFileVar?: boolean
   shortcutPopups?: Array<{ hotkey: Hotkey, Popup: React.ComponentType<{ onClose: () => void, onInsert: (command: LexicalCommand<unknown>, params: any[]) => void }> }>
+  onChange?: (text: string) => void
+  onBlur?: () => void
+  onFocus?: () => void
 }
 
-const PromptEditor: FC<PromptEditorProps> = ({
+export const PromptEditor: FC<PromptEditorProps> = React.memo(({
   instanceId,
   compact,
   wrapperClassName,
@@ -154,8 +139,10 @@ const PromptEditor: FC<PromptEditorProps> = ({
     const text = editorState.read(() => {
       return $getRoot().getChildren().map(p => p.getTextContent()).join('\n')
     })
-    if (onChange)
+
+    if (onChange) {
       onChange(text)
+    }
   }
 
   useEffect(() => {
@@ -182,11 +169,11 @@ const PromptEditor: FC<PromptEditorProps> = ({
     <LexicalComposer initialConfig={{ ...initialConfig, editable }}>
       <div className={clsx('relative', wrapperClassName)} ref={onRef}>
         <PromptEditorContent
+          style={style}
           compact={compact}
           className={className}
           placeholder={placeholder}
           placeholderClassName={placeholderClassName}
-          style={style}
           shortcutPopups={shortcutPopups}
           contextBlock={contextBlock}
           queryBlock={queryBlock}
@@ -200,15 +187,16 @@ const PromptEditor: FC<PromptEditorProps> = ({
           errorMessageBlock={errorMessageBlock}
           lastRunBlock={lastRunBlock}
           isSupportFileVar={isSupportFileVar}
-          onBlur={onBlur}
-          onFocus={onFocus}
           instanceId={instanceId}
           floatingAnchorElem={floatingAnchorElem}
+          onBlur={onBlur}
+          onFocus={onFocus}
           onEditorChange={handleEditorChange}
         />
       </div>
     </LexicalComposer>
   )
-}
+})
 
+PromptEditor.displayName = 'PromptEditor'
 export default PromptEditor
