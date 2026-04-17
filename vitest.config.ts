@@ -6,6 +6,9 @@ export default defineConfig({
     alias: {
       '@vitamin/env': resolve(__dirname, 'packages/env/src/index.ts'),
       '@vitamin/invariant': resolve(__dirname, 'packages/invariant/src/index.ts'),
+      '@vitamin/shared/browser/event-emitter': resolve(__dirname, 'packages/shared/src/browser/event-emitter.ts'),
+      '@vitamin/shared/browser/subscription': resolve(__dirname, 'packages/shared/src/browser/subscription.ts'),
+      '@vitamin/shared/browser': resolve(__dirname, 'packages/shared/src/browser/index.ts'),
       '@vitamin/shared': resolve(__dirname, 'packages/shared/src/index.ts'),
       '@vitamin/dispatcher': resolve(__dirname, 'packages/dispatcher/src/index.ts'),
       '@vitamin/ai': resolve(__dirname, 'packages/ai/src/index.ts'),

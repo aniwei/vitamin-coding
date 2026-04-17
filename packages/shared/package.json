@@ -11,6 +11,18 @@
     ".": {
       "types": "./dist/index.d.ts",
       "import": "./dist/index.js"
+    },
+    "./browser": {
+      "types": "./dist/browser/index.d.ts",
+      "import": "./dist/browser/index.js"
+    },
+    "./browser/event-emitter": {
+      "types": "./dist/browser/event-emitter.d.ts",
+      "import": "./dist/browser/event-emitter.js"
+    },
+    "./browser/subscription": {
+      "types": "./dist/browser/subscription.d.ts",
+      "import": "./dist/browser/subscription.js"
     }
   },
   "publishConfig": {

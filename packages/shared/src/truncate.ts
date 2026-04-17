@@ -1,23 +1,13 @@
 export interface TruncatedResult {
-  // content 可能是完整内容，也可能是被截断的内容，取决于是否超过限制
   content: string
-  // 是否发生了截断
   truncated: boolean
-  // 哪个限制被触发: "lines", "bytes", 先判断是否有截断
   truncatedBy: 'lines' | 'bytes'
-  // 原始内容的总行数
   totalLines: number
-  // 原始内容的总字节数
   totalBytes: number
-  // 截断输出的完整行数
   outputLines: number
-  // 截断输出的字节数
   outputBytes: number
-  // 最后一行是否被部分截断（仅适用于尾部截断的边缘情况）
   lastLinePartial: boolean
-  // 第一行是否超过字节限制（用于头部截断）
   firstLineExceedsLimit: boolean
-  // 使用的行数限制
   options: TruncateOptions
 }
 
