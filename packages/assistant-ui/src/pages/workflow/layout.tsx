@@ -19,7 +19,7 @@ const WorkflowLayout: FC<WorkflowLayoutProps> = React.memo((props) => {
   return (
     <div className={clsx(s.app, 'h-full w-full relative flex overflow-hidden')}>
       <AppSideBar navigation={[]} />
-      <div className="grow overflow-hidden bg-components-panel-bg">
+      <div className="flex grow overflow-hidden bg-components-panel-bg">
         {children}
       </div>
     </div>

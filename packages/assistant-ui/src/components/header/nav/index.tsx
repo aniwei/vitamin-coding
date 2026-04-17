@@ -2,7 +2,7 @@ import clsx from 'clsx'
 import NavSelector from './nav-selector'
 import { useState } from 'react'
 import { ArrowNarrowLeft } from '@/components/icons/line/arrows'
-import { Link } from 'react-router-dom'
+import { Link, useMatch } from 'react-router-dom'
 import * as React from 'react'
 import type { NavSelectorProps } from './nav-selector'
 
@@ -27,7 +27,8 @@ export const Nav: React.FC<NavProps> = ({
   onLoadMore,
   loadingMore,
 }) => {
-  const segment = ''
+  const segment = useMatch('/:segment/*')?.params.segment
+
   const [hovered, setHovered] = useState(false)
   const isActivated = Array.isArray(activeSegment) ? activeSegment.includes(segment!) : segment === activeSegment
 

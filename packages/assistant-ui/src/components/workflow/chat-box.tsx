@@ -7,13 +7,18 @@ type ChatBoxProps = ChatProps
 export const ChatBox: React.FC<ChatBoxProps> = ({ chatList }) => {
   return (
 
-    <div className="relative flex h-full w-1/3 grow flex-col overflow-y-auto" style={{ borderColor: 'rgba(0, 0, 0, 0.02)' }}>
-      <div className="flex grow flex-col border-r-[0.5px] border-components-panel-border bg-chatbot-bg">
+    <div 
+      className="relative flex h-full grow flex-col shink-0 w-[720px]" 
+      style={{ borderColor: 'rgba(0, 0, 0, 0.02)' }}
+    >
+      <div 
+        className="flex grow flex-col border-r-[0.5px] border-components-panel-border bg-chatbot-bg"
+      >
         <Chat 
           chatList={chatList} 
           chatNode={chatList.length === 0 ? <Empty /> : null}
           containerClassName="px-3 pt-6"
-          footerClassName="px-3 pt-10 pb-10"
+          footerClassName="px-3 pt-10 pb-20"
         />
       </div>
       <div

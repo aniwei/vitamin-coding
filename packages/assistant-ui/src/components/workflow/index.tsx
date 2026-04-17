@@ -80,7 +80,7 @@ export const Workflow: React.FC<WorkflowProps> = memo(props => {
   return (
     <div
       className={clsx(
-        'workflow workflow-node-animation relative h-full w-full min-w-[960px]',
+        'workflow workflow-node-animation relative h-full w-full',
         readonly && 'workflow-panel-animation',
       )}
       ref={containerRef}

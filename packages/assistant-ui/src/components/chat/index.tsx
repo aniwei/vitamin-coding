@@ -20,7 +20,75 @@ import type {
   OnSend,
 } from './types'
 
-export interface ChatProps {
+type ChatListProps = {
+  chatList: ChatItem[],
+  themeBuilder?: ChatThemeBuilder
+  setting?: ChatSetting,
+  responding?: boolean,
+  showPromptLog?: boolean,
+  questionIcon?: ReactNode,
+  answerIcon?: ReactNode,
+  answerContainerInner?: string,
+  hideProcessDetail?: boolean,
+  noChatInput?: boolean,
+  hideAvatar?: boolean,
+  switchSibling?: (siblingMessageId: string) => void,
+  onHumanInputFormSubmit?: (formToken: string, formData: any) => Promise<void>
+}
+
+const ChatList: FC<ChatListProps> = ({ 
+  chatList,
+  themeBuilder,
+  setting,
+  responding,
+  showPromptLog,
+  questionIcon,
+  answerIcon,
+  answerContainerInner,
+  hideProcessDetail,
+  noChatInput,
+  hideAvatar,
+  switchSibling,
+  onHumanInputFormSubmit,
+}) => {
+  return  chatList.map((item, index) => {
+    if (item.isAnswer) {
+      const isLast = item.id === chatList.at(-1)?.id
+
+      return (
+        <Answer
+          key={item.id}
+          item={item}
+          question={chatList[index - 1]?.content}
+          index={index}
+          setting={setting}
+          answerIcon={answerIcon}
+          responding={isLast && responding}
+          showPromptLog={showPromptLog}
+          answerContainerInner={answerContainerInner}
+          hideProcessDetail={hideProcessDetail}
+          noChatInput={noChatInput}
+          switchSibling={switchSibling}
+          hideAvatar={hideAvatar}
+          onHumanInputFormSubmit={onHumanInputFormSubmit}
+        />
+      )
+    }
+
+    return (
+      <Question
+        key={item.id}
+        item={item}
+        questionIcon={questionIcon}
+        theme={themeBuilder?.theme}
+        editable={setting?.questionEditEnable}
+        switchSibling={switchSibling}
+        hideAvatar={hideAvatar}
+      />
+    )
+  })
+}
+export type ChatProps = {
   title?: string
   isTryApp?: boolean
   readonly?: boolean
@@ -157,44 +225,7 @@ export const Chat: FC<ChatProps> = memo(({
               isTryApp && 'px-0'
             )}
           >
-            {
-              chatList.map((item, index) => {
-                if (item.isAnswer) {
-                  const isLast = item.id === chatList.at(-1)?.id
-
-                  return (
-                    <Answer
-                      key={item.id}
-                      item={item}
-                      question={chatList[index - 1]?.content}
-                      index={index}
-                      setting={setting}
-                      answerIcon={answerIcon}
-                      responding={isLast && responding}
-                      showPromptLog={showPromptLog}
-                      answerContainerInner={answerContainerInner}
-                      hideProcessDetail={hideProcessDetail}
-                      noChatInput={noChatInput}
-                      switchSibling={switchSibling}
-                      hideAvatar={hideAvatar}
-                      onHumanInputFormSubmit={onHumanInputFormSubmit}
-                    />
-                  )
-                }
-
-                return (
-                  <Question
-                    key={item.id}
-                    item={item}
-                    questionIcon={questionIcon}
-                    theme={themeBuilder?.theme}
-                    editable={setting?.questionEditEnable}
-                    switchSibling={switchSibling}
-                    hideAvatar={hideAvatar}
-                  />
-                )
-              })
-            }
+            <ChatList chatList={chatList} />
           </div>
         </div>
         <div
