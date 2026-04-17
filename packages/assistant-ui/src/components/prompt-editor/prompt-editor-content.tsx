@@ -1,29 +1,9 @@
-import type {
 import { clsx } from 'clsx'
-  EditorState,
-  LexicalCommand,
-} from 'lexical'
-import type { FC } from 'react'
-import type { Hotkey } from './plugins/shortcuts-popup-plugin'
-import type {
-  ContextBlockType,
-  CurrentBlockType,
-  ErrorMessageBlockType,
-  ExternalToolBlockType,
-  HistoryBlockType,
-  HITLInputBlockType,
-  LastRunBlockType,
-  QueryBlockType,
-  RequestURLBlockType,
-  VariableBlockType,
-  WorkflowVariableBlockType,
-} from './types'
 import { ContentEditable } from '@lexical/react/LexicalContentEditable'
 import { LexicalErrorBoundary } from '@lexical/react/LexicalErrorBoundary'
 import { HistoryPlugin } from '@lexical/react/LexicalHistoryPlugin'
 import { OnChangePlugin } from '@lexical/react/LexicalOnChangePlugin'
 import { RichTextPlugin } from '@lexical/react/LexicalRichTextPlugin'
-import * as React from 'react'
 import ComponentPickerBlock from './plugins/component-picker-block'
 import {
   ContextBlock,
@@ -68,6 +48,27 @@ import {
   WorkflowVariableBlock,
   WorkflowVariableBlockReplacementBlock,
 } from './plugins/workflow-variable-block'
+import * as React from 'react'
+import type {
+  EditorState,
+  LexicalCommand,
+} from 'lexical'
+import type { FC } from 'react'
+import type { Hotkey } from './plugins/shortcuts-popup-plugin'
+import type {
+  ContextBlockType,
+  CurrentBlockType,
+  ErrorMessageBlockType,
+  ExternalToolBlockType,
+  HistoryBlockType,
+  HITLInputBlockType,
+  LastRunBlockType,
+  QueryBlockType,
+  RequestURLBlockType,
+  VariableBlockType,
+  WorkflowVariableBlockType,
+} from './types'
+
 
 type ShortcutPopup = {
   hotkey: Hotkey
@@ -93,14 +94,14 @@ type PromptEditorContentProps = {
   errorMessageBlock?: ErrorMessageBlockType
   lastRunBlock?: LastRunBlockType
   isSupportFileVar?: boolean
-  onBlur?: () => void
-  onFocus?: () => void
   instanceId?: string
   floatingAnchorElem: HTMLDivElement | null
+  onBlur?: () => void
+  onFocus?: () => void
   onEditorChange: (editorState: EditorState) => void
 }
 
-const PromptEditorContent: FC<PromptEditorContentProps> = ({
+const PromptEditorContent: FC<PromptEditorContentProps> = React.memo(({
   compact,
   className,
   placeholder,
@@ -119,10 +120,10 @@ const PromptEditorContent: FC<PromptEditorContentProps> = ({
   errorMessageBlock,
   lastRunBlock,
   isSupportFileVar,
-  onBlur,
-  onFocus,
   instanceId,
   floatingAnchorElem,
+  onBlur,
+  onFocus,
   onEditorChange,
 }) => {
   return (
@@ -147,11 +148,13 @@ const PromptEditorContent: FC<PromptEditorContentProps> = ({
         )}
         ErrorBoundary={LexicalErrorBoundary}
       />
-      {shortcutPopups.map(({ hotkey, Popup }, idx) => (
-        <ShortcutsPopupPlugin key={idx} hotkey={hotkey}>
-          {(closePortal, onInsert) => <Popup onClose={closePortal} onInsert={onInsert} />}
-        </ShortcutsPopupPlugin>
-      ))}
+      {
+        shortcutPopups.map(({ hotkey, Popup }, idx) => (
+          <ShortcutsPopupPlugin key={idx} hotkey={hotkey}>
+            {(closePortal, onInsert) => <Popup onClose={closePortal} onInsert={onInsert} />}
+          </ShortcutsPopupPlugin>
+        ))
+      }
       <ComponentPickerBlock
         triggerString="/"
         contextBlock={contextBlock}
@@ -247,11 +250,10 @@ const PromptEditorContent: FC<PromptEditorContentProps> = ({
       <OnBlurBlock onBlur={onBlur} onFocus={onFocus} />
       <UpdateBlock instanceId={instanceId} />
       <HistoryPlugin />
-      {floatingAnchorElem && (
-        <DraggableBlockPlugin anchorElem={floatingAnchorElem} />
-      )}
+      { floatingAnchorElem && <DraggableBlockPlugin anchorElem={floatingAnchorElem} /> }
     </>
   )
-}
+})
 
+PromptEditorContent.displayName = 'PromptEditorContent'
 export default PromptEditorContent
