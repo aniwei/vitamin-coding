@@ -5,6 +5,7 @@ import * as React from 'react'
 
 import type { ExtraProps } from 'streamdown'
 import type { SimplePluginInfo } from '../streamdown-wrapper'
+import { MdastNode } from '../types'
 
 type HastChildNode = {
   tagName?: string
@@ -13,7 +14,7 @@ type HastChildNode = {
 
 type PluginParagraphProps = {
   pluginInfo?: SimplePluginInfo
-  node?: ExtraProps['node']
+  node?: MdastNode
   children?: React.ReactNode
   data: Blob | undefined
 }

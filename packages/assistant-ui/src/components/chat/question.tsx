@@ -29,7 +29,6 @@ type QuestionProps = {
   theme: ChatTheme | null | undefined
   editable?: boolean
   hideAvatar?: boolean
-  switchSibling?: (siblingMessageId: string) => void
 }
 
 export const Question: FC<QuestionProps> = memo(({
@@ -37,7 +36,6 @@ export const Question: FC<QuestionProps> = memo(({
   questionIcon,
   theme,
   editable = true,
-  switchSibling,
   hideAvatar,
 }) => {
   const { content } = item
@@ -77,11 +75,13 @@ export const Question: FC<QuestionProps> = memo(({
   }, [content])
 
   const handleEditInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
-    if (e.key !== 'Enter' || e.shiftKey)
+    if (e.key !== 'Enter' || e.shiftKey) {
       return
+    }
 
-    if (e.nativeEvent.isComposing)
+    if (e.nativeEvent.isComposing) {
       return
+    }
 
     if (isComposingRef.current) {
       e.preventDefault()

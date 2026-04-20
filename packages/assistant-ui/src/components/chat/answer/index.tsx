@@ -36,7 +36,6 @@ interface AnswerProps {
   hideProcessDetail?: boolean
   noChatInput?: boolean
   hideAvatar?: boolean
-  switchSibling?: (siblingMessageId: string) => void
   onHumanInputFormSubmit?: (formToken: string, formData: any) => Promise<void>
 }
 
@@ -51,7 +50,6 @@ export const Answer: FC<AnswerProps> = memo(({
   answerContainerInner,
   hideProcessDetail,
   noChatInput,
-  switchSibling,
   hideAvatar,
   onHumanInputFormSubmit,
 }) => {
@@ -121,16 +119,7 @@ export const Answer: FC<AnswerProps> = memo(({
     }
   }, [])
 
-  const handleSwitchSibling = useCallback((direction: 'prev' | 'next') => {
-    if (direction === 'prev') {
-      if (item.prevSibling)
-        switchSibling?.(item.prevSibling)
-    }
-    else {
-      if (item.nextSibling)
-        switchSibling?.(item.nextSibling)
-    }
-  }, [switchSibling, item.prevSibling, item.nextSibling])
+  
 
   const contentIsEmpty = typeof content === 'string' && content.trim() === ''
 
@@ -192,20 +181,6 @@ export const Answer: FC<AnswerProps> = memo(({
                   />
                 )
               } */}
-              {
-                typeof item.siblingCount === 'number'
-                && item.siblingCount > 1
-                && !responding
-                && contentIsEmpty
-                && !hasAgentThoughts
-                && <ContentSwitch
-                  count={item.siblingCount}
-                  currentIndex={item.siblingIndex}
-                  prevDisabled={!item.prevSibling}
-                  nextDisabled={!item.nextSibling}
-                  switchSibling={handleSwitchSibling}
-                />
-              }
             </div>
           </div>
         )}
@@ -259,17 +234,6 @@ export const Answer: FC<AnswerProps> = memo(({
                 !!citation?.length && !responding && <Citation 
                   data={citation} 
                   showHitInfo={setting?.supportCitationHitInfo} 
-                />
-              }
-              {
-                typeof item.siblingCount === 'number'
-                && item.siblingCount > 1
-                && <ContentSwitch
-                  count={item.siblingCount}
-                  currentIndex={item.siblingIndex}
-                  prevDisabled={!item.prevSibling}
-                  nextDisabled={!item.nextSibling}
-                  switchSibling={handleSwitchSibling}
                 />
               }
             </div>
@@ -342,17 +306,6 @@ export const Answer: FC<AnswerProps> = memo(({
               {
                 !!citation?.length && !responding && (
                   <Citation data={citation} showHitInfo={setting?.supportCitationHitInfo} />
-                )
-              }
-              {
-                typeof item.siblingCount === 'number' && item.siblingCount > 1 && (
-                  <ContentSwitch
-                    count={item.siblingCount}
-                    currentIndex={item.siblingIndex}
-                    prevDisabled={!item.prevSibling}
-                    nextDisabled={!item.nextSibling}
-                    switchSibling={handleSwitchSibling}
-                  />
                 )
               }
             </div>

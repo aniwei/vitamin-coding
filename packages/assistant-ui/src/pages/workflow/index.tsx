@@ -77,7 +77,9 @@ const WorkflowMain: React.FC<WorkflowMainProps> = (props) => {
   return (
     <ReactFlowProvider>
       <Layout sessionId={sessionId}>
-        <ChatBox chatList={[]} />
+        <ChatBox chatList={[
+          { id: 'q1', isAnswer: false, content: '<img />First question' }
+        ]} />
         <Workflow 
           nodes={nodes}
           edges={edges}

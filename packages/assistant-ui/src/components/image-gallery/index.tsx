@@ -5,7 +5,7 @@ import { clsx } from 'clsx'
 import * as React from 'react'
 import type { FC } from 'react'
 
-import s from './style.module.css'
+import s from './index.module.css'
 
 
 const getWidthStyle = (imgNum: number) => {

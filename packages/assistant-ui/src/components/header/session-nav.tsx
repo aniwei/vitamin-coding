@@ -42,7 +42,7 @@ const SessionNav: React.FC<SessionNavProps> = (props) => {
       <Nav
         icon={<RiRobot2Line className="h-4 w-4" />}
         activeIcon={<RiRobot2Fill className="h-4 w-4" />}
-        text="Session"
+        text={sessionId}
         activeSegment={['sessions', 'session']}
         link="/sessions"
         currentNav={currentNav}

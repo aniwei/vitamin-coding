@@ -68,7 +68,6 @@ const ChatList: FC<ChatListProps> = ({
           answerContainerInner={answerContainerInner}
           hideProcessDetail={hideProcessDetail}
           noChatInput={noChatInput}
-          switchSibling={switchSibling}
           hideAvatar={hideAvatar}
           onHumanInputFormSubmit={onHumanInputFormSubmit}
         />

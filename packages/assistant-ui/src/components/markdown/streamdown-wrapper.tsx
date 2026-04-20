@@ -23,6 +23,7 @@ import type { ComponentType } from 'react'
 import type { Components, StreamdownProps } from 'streamdown'
 
 import 'katex/dist/katex.min.css'
+import { MdastNode } from './types'
 
 type PluggableList = NonNullable<StreamdownProps['rehypePlugins']>
 type Pluggable = PluggableList[number]
@@ -119,17 +120,21 @@ const useComponents = (
   customComponents?: Components
 ) => {
   return  useMemo(() => {
-    const Img = (props: { src?: string }) => pluginInfo 
-      ? <PluginImage 
-        src={String(props.src ?? '')} 
-        pluginInfo={pluginInfo} 
-      /> 
-      : <Image src={String(props.src ?? '')} />
+    const Img = (props: { src?: string }) => {
+      return pluginInfo 
+        ? <PluginImage 
+          src={String(props.src ?? '')} 
+          pluginInfo={pluginInfo} 
+        /> 
+        : <Image src={String(props.src ?? '')} />
+    }
     
 
-    const P = (props: { children?: React.ReactNode, node?: any }) => pluginInfo 
-      ? <PluginParagraph {...props} data={undefined} pluginInfo={pluginInfo} /> 
-      : <Paragraph {...props} />
+    const P = (props: { children?: React.ReactNode, node?: MdastNode }) => {
+      return pluginInfo 
+        ? <PluginParagraph {...props} data={undefined} pluginInfo={pluginInfo} /> 
+        : <Paragraph {...props} />
+    }
 
 
     return {
@@ -172,10 +177,7 @@ const StreamdownWrapper: React.FC<StreamdownWrapperProps> = memo((props) => {
     return ['iframe', 'head', 'html', 'meta', 'link', 'style', 'body', ...(props.disallowedTags || [])]
   }, [props.disallowedTags])
 
-  const components = useComponents(
-    pluginInfo, 
-    customComponents
-  )
+  const components = useComponents(pluginInfo, customComponents)
 
   return (
     <Streamdown

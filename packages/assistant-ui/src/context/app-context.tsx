@@ -19,6 +19,8 @@ export const createAppStore = (options: CreateStoreOptions) => {
   const { injectStoreSlice } = options || {}
 
   return createStore<Shape>((...args: Parameters<StateCreator<SliceFromInjection>>) => ({
+    width: 0,
+    height: 0,
     eventBus: new EventBus(),
     ...(injectStoreSlice?.(...args) || {} as SliceFromInjection),
   }))
