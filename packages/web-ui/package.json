@@ -12,6 +12,12 @@
     "build": "next build",
     "start": "next start",
     "build:local": "cross-env NO_HTTPS='1' next build",
+    "dev:vite": "concurrently -n client,server -c cyan,magenta \"pnpm dev:client\" \"pnpm dev:server\"",
+    "dev:client": "vite --config client/vite.config.ts",
+    "dev:server": "tsx watch server/src/index.ts",
+    "build:vite": "vite build --config client/vite.config.ts && tsdown --config server/tsdown.config.ts",
+    "start:vite": "node server/dist/index.js",
+    "check-types:vite": "tsc -p client/tsconfig.json --noEmit && tsc -p server/tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
@@ -130,7 +136,16 @@
     "undici": "^7.18.2",
     "vaul": "^1.1.2",
     "zod": "^4.2.1",
-    "zustand": "^5.0.9"
+    "zustand": "^5.0.9",
+    "react-router-dom": "^7.14.1",
+    "hono": "^4.12.14",
+    "@hono/node-server": "^1.19.14",
+    "i18next": "^26.0.6",
+    "react-i18next": "^17.0.4",
+    "i18next-http-backend": "^3.0.5",
+    "i18next-browser-languagedetector": "^8.2.1",
+    "@fontsource-variable/geist": "^5.2.8",
+    "@fontsource-variable/geist-mono": "^5.2.7"
   },
   "devDependencies": {
     "@better-auth-kit/seed": "^1.0.12",
@@ -155,7 +170,12 @@
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4"
+    "vitest": "^3.2.4",
+    "vite": "^8.0.9",
+    "@vitejs/plugin-react": "^6.0.1",
+    "concurrently": "^9.2.1",
+    "tsdown": "^0.21.9",
+    "@tailwindcss/vite": "^4.2.2"
   },
   "lint-staged": {
     "*.{js,json,mjs,ts,yaml,tsx,css}": [

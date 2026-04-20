@@ -1,0 +1,27 @@
+{
+  "extends": "../tsconfig.json",
+  "compilerOptions": {
+    "target": "ES2022",
+    "lib": ["ES2022"],
+    "module": "ESNext",
+    "moduleResolution": "bundler",
+    "noEmit": true,
+    "strict": true,
+    "skipLibCheck": true,
+    "esModuleInterop": true,
+    "resolveJsonModule": true,
+    "isolatedModules": true,
+    "types": ["node"],
+    "baseUrl": ".",
+    "paths": {
+      "@/*": ["src/*"],
+      "lib/*": ["../src/lib/*"],
+      "app-types/*": ["../src/types/*"],
+      "auth/*": ["../src/lib/auth/*"],
+      "logger": ["../src/lib/logger.ts"],
+      "load-env": ["../src/lib/load-env.ts"],
+      "ui/*": ["../src/components/ui/*"]
+    }
+  },
+  "include": ["src", "tsdown.config.ts"]
+}
