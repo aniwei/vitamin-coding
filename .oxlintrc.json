@@ -22,7 +22,6 @@
     "*.md",
     "**/*.test.ts",
     "**/*.spec.ts",
-    "packages/web-ui",
     "packages/cli"
   ]
 }
