@@ -25,8 +25,8 @@ import { ChatApiSchemaRequestBody, ChatAttachment, ChatModel } from 'app-types/c
 import { useToRef } from '@/hooks/use-latest'
 import { isShortcutEvent, Shortcuts } from 'lib/keyboard-shortcuts'
 import { Button } from 'ui/button'
-import { deleteThreadAction } from '@/app/api/chat/actions'
-import { useRouter } from 'next/navigation'
+import { deleteThreadAction } from '@/lib/compat/server-actions/chat'
+import { useNavigate } from 'react-router-dom'
 import { ArrowDown, Loader, FilePlus } from 'lucide-react'
 import {
   Dialog,
@@ -36,10 +36,10 @@ import {
   DialogHeader,
   DialogTitle,
 } from 'ui/dialog'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Think } from 'ui/think'
 import { useGenerateThreadTitle } from '@/hooks/queries/use-generate-thread-title'
-import dynamic from 'next/dynamic'
+import { lazy, Suspense } from 'react'
 import { useMounted } from '@/hooks/use-mounted'
 import { getStorageManager } from 'lib/browser-stroage'
 import { AnimatePresence, motion } from 'framer-motion'
@@ -52,13 +52,9 @@ type Props = {
   selectedChatModel?: string
 }
 
-const LightRays = dynamic(() => import('ui/light-rays'), {
-  ssr: false,
-})
+const LightRays = lazy(() => import('ui/light-rays'))
 
-const Particles = dynamic(() => import('ui/particles'), {
-  ssr: false,
-})
+const Particles = lazy(() => import('ui/particles'))
 
 const debounce = createDebounce()
 
@@ -490,18 +486,18 @@ function DeleteThreadPopup({
 }) {
   const t = useTranslations()
   const [isDeleting, setIsDeleting] = useState(false)
-  const router = useRouter()
+  const navigate = useNavigate()
   const handleDelete = useCallback(() => {
     setIsDeleting(true)
     safe(() => deleteThreadAction(threadId))
       .watch(() => setIsDeleting(false))
       .ifOk(() => {
         toast.success(t('Chat.Thread.threadDeleted'))
-        router.push('/')
+        navigate('/')
       })
       .ifFail(() => toast.error(t('Chat.Thread.failedToDeleteThread')))
       .watch(() => onClose())
-  }, [threadId, router])
+  }, [threadId, navigate])
   return (
     <Dialog open={open} onOpenChange={onClose}>
       <DialogContent>

@@ -31,14 +31,14 @@ import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'u
 import { Textarea } from 'ui/textarea'
 import { NodeIcon } from '../node-icon'
 import { TextShimmer } from 'ui/text-shimmer'
-import { generateObjectAction } from '@/app/api/chat/actions'
+import { generateObjectAction } from '@/lib/compat/server-actions/chat'
 import { appStore } from '@/app/store'
 import { notify } from 'lib/notify'
 import { SelectModel } from '@/components/select-model'
 
 import { useCopy } from '@/hooks/use-copy'
 import { NodeResultPopup } from '../node-result-popup'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 const debounce = createDebounce()
 

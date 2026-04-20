@@ -9,7 +9,7 @@ import { objectFlow } from 'lib/utils'
 import { Button } from 'ui/button'
 import { Label } from 'ui/label'
 import { useReactFlow } from '@xyflow/react'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 
 export const InputNodeDataConfig = memo(function ({ data }: { data: InputNodeData }) {

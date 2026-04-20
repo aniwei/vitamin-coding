@@ -92,3 +92,49 @@ userRoutes.get('/stats', async (c) => {
     return c.json({ error: error.message || 'Failed to get stats' }, 500)
   }
 })
+
+/** PUT /api/user/details — 更新当前用户基本信息（name/image） */
+userRoutes.put('/details', async (c) => {
+  try {
+    const session = c.get('session')!
+    const { name, image } = await c.req.json()
+    await (await import('../auth')).auth.api.updateUser({
+      returnHeaders: true,
+      body: { ...(name !== undefined && { name }), ...(image !== undefined && { image }) },
+      headers: c.req.raw.headers,
+    })
+    const user = await getUser(c.req.raw.headers, session.user.id)
+    return c.json({ success: true, user })
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to update user' }, 500)
+  }
+})
+
+/** PUT /api/user/password — 修改密码 */
+userRoutes.put('/password', async (c) => {
+  try {
+    const { currentPassword, newPassword } = await c.req.json()
+    await (await import('../auth')).auth.api.changePassword({
+      returnHeaders: true,
+      body: { currentPassword, newPassword, revokeOtherSessions: false },
+      headers: c.req.raw.headers,
+    })
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to update password' }, 500)
+  }
+})
+
+/** DELETE /api/user — 删除当前账号 */
+userRoutes.delete('/', async (c) => {
+  try {
+    await (await import('../auth')).auth.api.deleteUser({
+      returnHeaders: true,
+      body: {},
+      headers: c.req.raw.headers,
+    })
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to delete account' }, 500)
+  }
+})

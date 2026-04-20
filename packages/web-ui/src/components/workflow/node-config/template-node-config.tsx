@@ -12,7 +12,7 @@ import { InfoIcon } from 'lucide-react'
 import { TipTapMentionJsonContent } from 'app-types/util'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { useWorkflowStore } from '@/app/store/workflow.store'
 
 interface TemplateNodeConfigProps {

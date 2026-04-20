@@ -4,9 +4,9 @@ import type { UIMessage } from 'ai'
 import { Button } from './ui/button'
 import { type Dispatch, type SetStateAction, useState, useMemo, useEffect } from 'react'
 import { Textarea } from './ui/textarea'
-import { deleteMessagesByChatIdAfterTimestampAction } from '@/app/api/chat/actions'
+import { deleteMessagesByChatIdAfterTimestampAction } from '@/lib/compat/server-actions/chat'
 import type { UseChatHelpers } from '@ai-sdk/react'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Loader } from 'lucide-react'
 
 export type MessageEditorProps = {

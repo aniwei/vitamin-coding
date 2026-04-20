@@ -1,5 +1,5 @@
 import { CheckIcon, CopyCheckIcon, HashIcon, TypeIcon, PlusIcon, TrashIcon } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Dispatch, SetStateAction, useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Button } from 'ui/button'

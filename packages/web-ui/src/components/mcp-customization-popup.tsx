@@ -6,7 +6,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import useSWR from 'swr'
 import { cn, fetcher } from 'lib/utils'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import {
   McpServerCustomization,
   MCPServerInfo,

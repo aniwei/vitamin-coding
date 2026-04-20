@@ -12,7 +12,7 @@ import { safe } from 'ts-safe'
 
 import { toast } from 'sonner'
 import { mutate } from 'swr'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { PencilIcon, Trash2Icon } from 'lucide-react'
 
 interface WorkflowContextMenuProps {

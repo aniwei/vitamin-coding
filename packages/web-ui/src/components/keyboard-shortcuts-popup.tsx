@@ -3,7 +3,7 @@
 import { getShortcutKeyList, isShortcutEvent, Shortcuts } from 'lib/keyboard-shortcuts'
 
 import { Dialog, DialogContent, DialogDescription, DialogTitle } from 'ui/dialog'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { useShallow } from 'zustand/shallow'
 import { appStore } from '@/app/store'
 import { useEffect } from 'react'

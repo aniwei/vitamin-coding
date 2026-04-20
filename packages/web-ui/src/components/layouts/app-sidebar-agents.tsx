@@ -1,7 +1,7 @@
 'use client'
 
 import { SidebarMenuAction } from 'ui/sidebar'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { SidebarMenuButton, SidebarMenuSkeleton } from 'ui/sidebar'
 import { SidebarGroupContent, SidebarMenu, SidebarMenuItem } from 'ui/sidebar'
 import { SidebarGroup } from 'ui/sidebar'
@@ -11,14 +11,14 @@ import { useMounted } from '@/hooks/use-mounted'
 
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { useCallback, useMemo, useState } from 'react'
 import { useAgents } from '@/hooks/queries/use-agents'
 import { Avatar, AvatarFallback, AvatarImage } from 'ui/avatar'
 import { AgentDropdown } from '../agent/agent-dropdown'
 
 import { appStore } from '@/app/store'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { ChatMention } from 'app-types/chat'
 import { BACKGROUND_COLORS, EMOJI_DATA } from 'lib/const'
 import { cn } from 'lib/utils'
@@ -29,7 +29,7 @@ const DISPLAY_LIMIT = 5 // Number of agents to show when collapsed
 export function AppSidebarAgents({ userRole }: { userRole?: string | null }) {
   const mounted = useMounted()
   const t = useTranslations()
-  const router = useRouter()
+  const navigate = useNavigate()
   const [expanded, setExpanded] = useState(false)
   const { bookmarkedAgents, myAgents, isLoading, sharedAgents } = useAgents({
     limit: 50,
@@ -74,14 +74,14 @@ export function AppSidebarAgents({ userRole }: { userRole?: string | null }) {
           }
         })
       } else {
-        router.push('/')
+        navigate('/')
 
         appStore.setState(() => ({
           pendingThreadMention: newMention,
         }))
       }
     },
-    [agents, router],
+    [agents, navigate],
   )
 
   return (
@@ -90,14 +90,14 @@ export function AppSidebarAgents({ userRole }: { userRole?: string | null }) {
         <SidebarMenu className='group/agents' data-testid='agents-sidebar-menu'>
           <SidebarMenuItem>
             <SidebarMenuButton asChild className='font-semibold'>
-              <Link href='/agents' data-testid='agents-link'>
+              <Link to='/agents' data-testid='agents-link'>
                 {t('Layout.agents')}
               </Link>
             </SidebarMenuButton>
             {canCreateAgent(userRole) && (
               <SidebarMenuAction
                 className='group-hover/agents:opacity-100 opacity-0 transition-opacity'
-                onClick={() => router.push('/agent/new')}
+                onClick={() => navigate('/agent/new')}
                 data-testid='sidebar-create-agent-button'
               >
                 <Tooltip>
@@ -122,7 +122,7 @@ export function AppSidebarAgents({ userRole }: { userRole?: string | null }) {
             <div className='px-2 mt-1'>
               {canCreateAgent(userRole) ? (
                 <Link
-                  href={'/agent/new'}
+                  to={'/agent/new'}
                   className='bg-input/40 py-8 px-4 hover:bg-input/100 rounded-lg cursor-pointer flex justify-between items-center text-xs overflow-hidden'
                   data-testid='sidebar-create-agent-link'
                 >

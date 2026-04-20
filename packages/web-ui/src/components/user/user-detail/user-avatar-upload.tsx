@@ -8,7 +8,7 @@ import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from 'ui/popover'
 import { Button } from 'ui/button'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 import { EmojiAvatarDialog } from './emoji-avatar-dialog'
 import { DefaultAvatarDialog } from './default-avatar-dialog'

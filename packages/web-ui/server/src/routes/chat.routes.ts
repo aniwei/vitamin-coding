@@ -18,6 +18,8 @@ import {
   convertToModelMessages,
   createUIMessageStream,
   createUIMessageStreamResponse,
+  generateObject,
+  jsonSchema,
   smoothStream,
   stepCountIs,
   streamText,
@@ -46,6 +48,7 @@ import {
   buildUserSystemPrompt,
   buildToolCallUnsupportedModelSystemPrompt,
   buildSpeechSystemPrompt,
+  generateExampleToolSchemaPrompt,
 } from 'lib/ai/prompts'
 import { chatApiSchemaRequestBodySchema, type ChatMention, type ChatMetadata } from 'app-types/chat'
 import type { ChatModel } from 'app-types/chat'
@@ -54,7 +57,7 @@ import type { McpServerCustomizationsPrompt } from 'app-types/mcp'
 import { errorIf, safe } from 'ts-safe'
 import { serverCache } from 'lib/cache'
 import { CacheKeys } from 'lib/cache/cache-keys'
-import { generateUUID } from 'lib/utils'
+import { generateUUID, toAny } from 'lib/utils'
 import { nanoBananaTool, openaiImageTool } from 'lib/ai/tools/image'
 import { ImageToolName } from 'lib/ai/tools'
 import { serverFileStorage } from 'lib/file-storage'
@@ -455,12 +458,12 @@ chatRoutes.post('/export', async (c) => {
     const { threadId, expiresAt } = ChatExportByThreadIdSchema.parse(await c.req.json())
     const isAccess = await chatRepository.checkAccess(threadId, session.user.id)
     if (!isAccess) return c.text('Unauthorized', 401)
-    await chatExportRepository.exportChat({
+    const exportId = await chatExportRepository.exportChat({
       threadId,
       exporterId: session.user.id,
       expiresAt: expiresAt ?? undefined,
     })
-    return c.json({ message: 'Chat exported successfully' })
+    return c.json(exportId)
   } catch (error: any) {
     return c.json({ error: error.message || 'Failed to export chat' }, 500)
   }
@@ -520,5 +523,29 @@ chatRoutes.post('/openai-realtime', async (c) => {
     return new Response(r.body, { status: 200, headers: { 'Content-Type': 'application/json' } })
   } catch (error: any) {
     return c.json({ error: error.message }, 500)
+  }
+})
+
+/** POST /api/chat/generate-example-schema — AI 生成 MCP 工具参数示例 */
+chatRoutes.post('/generate-example-schema', async (c) => {
+  try {
+    const { model, toolInfo, prompt } = await c.req.json()
+    if (!toolInfo) return c.json({ error: 'toolInfo is required' }, 400)
+    const llmModel = customModelProvider.getModel(model)
+    const schema = jsonSchema(
+      toAny({
+        ...toolInfo.inputSchema,
+        properties: toolInfo.inputSchema?.properties ?? {},
+        additionalProperties: false,
+      }),
+    )
+    const { object } = await generateObject({
+      model: llmModel,
+      schema,
+      prompt: generateExampleToolSchemaPrompt({ toolInfo, prompt }),
+    })
+    return c.json(object)
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Failed to generate schema' }, 500)
   }
 })

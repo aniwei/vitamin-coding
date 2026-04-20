@@ -1,9 +1,9 @@
 'use client'
-import { deleteThreadAction, updateThreadAction } from '@/app/api/chat/actions'
+import { deleteThreadAction, updateThreadAction } from '@/lib/compat/server-actions/chat'
 import { appStore } from '@/app/store'
 import { useToRef } from '@/hooks/use-latest'
 import { Archive, ChevronRight, Loader, PencilLine, Trash, UploadIcon } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { type PropsWithChildren, useState } from 'react'
 import { toast } from 'sonner'
 import { mutate } from 'swr'
@@ -28,8 +28,8 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from 'ui/dropdown-menu'
-import { useTranslations } from 'next-intl'
-import { addItemToArchiveAction } from '@/app/api/archive/actions'
+import { useTranslations } from '@/hooks/use-translations'
+import { addItemToArchiveAction } from '@/lib/compat/server-actions/archive'
 import { useShallow } from 'zustand/shallow'
 import { ChatExportPopup } from './export/chat-export-popup'
 
@@ -42,9 +42,9 @@ type Props = PropsWithChildren<{
 }>
 
 export function ThreadDropdown({ threadId, children, beforeTitle, onDeleted, side, align }: Props) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const t = useTranslations()
-  const push = useToRef(router.push)
+  const push = useToRef(navigate)
 
   const [currentThreadId, archiveList] = appStore(
     useShallow((state) => [state.currentThreadId, state.archiveList]),
@@ -102,8 +102,7 @@ export function ThreadDropdown({ threadId, children, beforeTitle, onDeleted, sid
         if (isOk) {
           toast.success(t('Archive.itemAddedToArchive'))
           if (location.pathname.startsWith(`/archive/${archiveId}`)) {
-            router.refresh()
-          }
+            }
         } else {
           toast.error(error.message || t('Archive.failedToCreateArchive'))
         }

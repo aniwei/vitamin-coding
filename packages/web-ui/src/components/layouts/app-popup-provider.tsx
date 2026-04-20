@@ -1,50 +1,29 @@
 'use client'
 
-import dynamic from 'next/dynamic'
+import { lazy, Suspense } from 'react'
 
-const KeyboardShortcutsPopup = dynamic(
-  () => import('@/components/keyboard-shortcuts-popup').then((mod) => mod.KeyboardShortcutsPopup),
-  {
-    ssr: false,
-  },
+const KeyboardShortcutsPopup = lazy(() =>
+  import('@/components/keyboard-shortcuts-popup').then((mod) => ({ default: mod.KeyboardShortcutsPopup }))
 )
 
-const ChatPreferencesPopup = dynamic(
-  () => import('@/components/chat-preferences-popup').then((mod) => mod.ChatPreferencesPopup),
-  {
-    ssr: false,
-  },
+const ChatPreferencesPopup = lazy(() =>
+  import('@/components/chat-preferences-popup').then((mod) => ({ default: mod.ChatPreferencesPopup }))
 )
 
-const ChatBotVoice = dynamic(
-  () => import('@/components/chat-bot-voice').then((mod) => mod.ChatBotVoice),
-  {
-    ssr: false,
-  },
+const ChatBotVoice = lazy(() =>
+  import('@/components/chat-bot-voice').then((mod) => ({ default: mod.ChatBotVoice }))
 )
 
-const ChatBotTemporary = dynamic(
-  () => import('@/components/chat-bot-temporary').then((mod) => mod.ChatBotTemporary),
-  {
-    ssr: false,
-  },
+const ChatBotTemporary = lazy(() =>
+  import('@/components/chat-bot-temporary').then((mod) => ({ default: mod.ChatBotTemporary }))
 )
 
-const McpCustomizationPopup = dynamic(
-  () => import('@/components/mcp-customization-popup').then((mod) => mod.McpCustomizationPopup),
-  {
-    ssr: false,
-  },
+const McpCustomizationPopup = lazy(() =>
+  import('@/components/mcp-customization-popup').then((mod) => ({ default: mod.McpCustomizationPopup }))
 )
 
-const UserSettingsPopup = dynamic(
-  () =>
-    import('@/components/user/user-detail/user-settings-popup').then(
-      (mod) => mod.UserSettingsPopup,
-    ),
-  {
-    ssr: false,
-  },
+const UserSettingsPopup = lazy(() =>
+  import('@/components/user/user-detail/user-settings-popup').then((mod) => ({ default: mod.UserSettingsPopup }))
 )
 
 export function AppPopupProvider({
@@ -54,12 +33,12 @@ export function AppPopupProvider({
 }) {
   return (
     <>
-      <KeyboardShortcutsPopup />
-      <ChatPreferencesPopup />
-      <UserSettingsPopup userSettingsComponent={userSettingsComponent} />
-      <ChatBotVoice />
-      <ChatBotTemporary />
-      <McpCustomizationPopup />
+      <Suspense fallback={null}><KeyboardShortcutsPopup /></Suspense>
+      <Suspense fallback={null}><ChatPreferencesPopup /></Suspense>
+      <Suspense fallback={null}><UserSettingsPopup userSettingsComponent={userSettingsComponent} /></Suspense>
+      <Suspense fallback={null}><ChatBotVoice /></Suspense>
+      <Suspense fallback={null}><ChatBotTemporary /></Suspense>
+      <Suspense fallback={null}><McpCustomizationPopup /></Suspense>
     </>
   )
 }

@@ -1,7 +1,7 @@
 'use client'
 import { ArrowUpRight } from 'lucide-react'
-import Link from 'next/link'
-import { useTranslations } from 'next-intl'
+import { Link } from 'react-router-dom'
+import { useTranslations } from '@/hooks/use-translations'
 import { MCPIcon } from 'ui/mcp-icon'
 
 import { NotionIcon } from 'ui/notion-icon'
@@ -121,7 +121,7 @@ export function MCPOverview() {
   return (
     <div className='flex flex-col gap-4'>
       <Link
-        href='/mcp/create'
+        to='/mcp/create'
         className='rounded-lg overflow-hidden cursor-pointer p-12 text-center relative group transition-all duration-300 '
       >
         <div className='flex flex-col items-center justify-center space-y-4 my-20'>

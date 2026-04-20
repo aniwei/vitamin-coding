@@ -1,7 +1,7 @@
 'use client'
 
 import { useState } from 'react'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { Label } from '@/components/ui/label'
@@ -14,7 +14,7 @@ import { authClient } from 'auth/client'
 import { toast } from 'sonner'
 import { GithubIcon } from 'ui/github-icon'
 import { GoogleIcon } from 'ui/google-icon'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { MicrosoftIcon } from 'ui/microsoft-icon'
 import { SocialAuthenticationProvider } from 'app-types/authentication'
 
@@ -163,7 +163,7 @@ export default function SignIn({
           {signUpEnabled && (
             <div className='my-8 text-center text-sm text-muted-foreground'>
               {t('noAccount')}
-              <Link href='/sign-up' className='underline-offset-4 text-primary'>
+              <Link to='/sign-up' className='underline-offset-4 text-primary'>
                 {t('signUp')}
               </Link>
             </div>

@@ -3,16 +3,16 @@ import { MCPCard } from '@/components/mcp-card'
 import { canCreateMCP } from 'lib/auth/client-permissions'
 
 import { Button } from '@/components/ui/button'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { MCPOverview, RECOMMENDED_MCPS } from '@/components/mcp-overview'
 
 import { Skeleton } from 'ui/skeleton'
 
 import { ScrollArea } from 'ui/scroll-area'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { MCPIcon } from 'ui/mcp-icon'
 import { useMcpList } from '@/hooks/queries/use-mcp-list'
-import dynamic from 'next/dynamic'
+import { lazy, Suspense } from 'react'
 import { useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Loader2 } from 'lucide-react'
@@ -23,12 +23,10 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from 'ui/dropdown-menu'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { BasicUser } from 'app-types/user'
 
-const LightRays = dynamic(() => import('@/components/ui/light-rays'), {
-  ssr: false,
-})
+const LightRays = lazy(() => import('@/components/ui/light-rays'))
 
 interface MCPDashboardProps {
   message?: string
@@ -37,7 +35,7 @@ interface MCPDashboardProps {
 
 export default function MCPDashboard({ message, user }: MCPDashboardProps) {
   const t = useTranslations('MCP')
-  const router = useRouter()
+  const navigate = useNavigate()
 
   // Check if user can create MCP connections using Better Auth permissions
   const canCreate = canCreateMCP(user?.role)
@@ -80,7 +78,7 @@ export default function MCPDashboard({ message, user }: MCPDashboardProps) {
     const params = new URLSearchParams()
     params.set('name', mcp.name)
     params.set('config', JSON.stringify(mcp.config))
-    router.push(`/mcp/create?${params.toString()}`)
+    navigate(`/mcp/create?${params.toString()}`)
   }
 
   const particle = useMemo(() => {
@@ -179,14 +177,14 @@ export default function MCPDashboard({ message, user }: MCPDashboardProps) {
               ) : null}
 
               {canCreate && (
-                <Link href='https://smithery.ai/' target='_blank' className='hidden sm:block'>
+                <Link to='https://smithery.ai/' target='_blank' className='hidden sm:block'>
                   <Button className='font-semibold' variant={'ghost'}>
                     {t('marketplace')}
                   </Button>
                 </Link>
               )}
               {canCreate && (
-                <Link href='/mcp/create'>
+                <Link to='/mcp/create'>
                   <Button
                     className='font-semibold bg-input/20'
                     variant='outline'

@@ -1,7 +1,7 @@
 'use client'
 
 import { SidebarGroupLabel, SidebarMenuSub } from 'ui/sidebar'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import {
   SidebarMenuAction,
   SidebarMenuButton,
@@ -21,16 +21,16 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from 'ui/dropdown-menu'
-import { deleteThreadsAction, deleteUnarchivedThreadsAction } from '@/app/api/chat/actions'
+import { deleteThreadsAction, deleteUnarchivedThreadsAction } from '@/lib/compat/server-actions/chat'
 import { fetcher } from 'lib/utils'
 import { toast } from 'sonner'
 import { useShallow } from 'zustand/shallow'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import useSWR, { mutate } from 'swr'
 import { handleErrorWithToast } from 'ui/shared-toast'
 import { useMemo, useState } from 'react'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { TextShimmer } from 'ui/text-shimmer'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 import { deduplicateByKey, groupBy } from 'lib/utils'
@@ -45,7 +45,7 @@ const MAX_THREADS_COUNT = 40
 
 export function AppSidebarThreads() {
   const mounted = useMounted()
-  const router = useRouter()
+  const navigate = useNavigate()
   const t = useTranslations('Layout')
   const [storeMutate, currentThreadId, generatingTitleThreadIds] = appStore(
     useShallow((state) => [state.mutate, state.currentThreadId, state.generatingTitleThreadIds]),
@@ -138,7 +138,7 @@ export function AppSidebarThreads() {
       loading: t('deletingAllChats'),
       success: () => {
         mutate('/api/thread')
-        router.push('/')
+        navigate('/')
         return t('allChatsDeleted')
       },
       error: t('failedToDeleteAllChats'),
@@ -150,7 +150,7 @@ export function AppSidebarThreads() {
       loading: t('deletingUnarchivedChats'),
       success: () => {
         mutate('/api/thread')
-        router.push('/')
+        navigate('/')
         return t('unarchivedChatsDeleted')
       },
       error: t('failedToDeleteUnarchivedChats'),
@@ -240,7 +240,7 @@ export function AppSidebarThreads() {
                                   className='group-hover/thread:bg-transparent!'
                                   isActive={currentThreadId === thread.id}
                                 >
-                                  <Link href={`/chat/${thread.id}`} className='flex items-center'>
+                                  <Link to={`/chat/${thread.id}`} className='flex items-center'>
                                     {generatingTitleThreadIds.includes(thread.id) ? (
                                       <TextShimmer className='truncate min-w-0'>
                                         {thread.title || 'New Chat'}

@@ -1,7 +1,7 @@
 import { WorkflowToolKey } from 'lib/ai/workflow/workflow.interface'
 import { groupBy } from 'lib/utils'
 import { ChevronDownIcon, WrenchIcon } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { ReactNode, useMemo, useState } from 'react'
 import { Button } from 'ui/button'
 import {

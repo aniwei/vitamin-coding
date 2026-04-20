@@ -19,7 +19,7 @@ import { useCopy } from '@/hooks/use-copy'
 import { Button } from 'ui/button'
 import { cn, errorToString } from 'lib/utils'
 import { Alert, AlertDescription, AlertTitle } from 'ui/alert'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 export function NodeResultPopup({
   history,

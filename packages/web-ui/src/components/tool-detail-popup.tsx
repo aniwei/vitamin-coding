@@ -19,7 +19,7 @@ import { safe } from 'ts-safe'
 import { handleErrorWithToast } from 'ui/shared-toast'
 import useSWR from 'swr'
 import { cn, fetcher } from 'lib/utils'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Skeleton } from 'ui/skeleton'
 import { Tooltip, TooltipTrigger, TooltipContent } from 'ui/tooltip'
 

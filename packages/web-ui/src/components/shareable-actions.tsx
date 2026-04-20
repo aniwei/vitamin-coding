@@ -1,8 +1,8 @@
 'use client'
 
 import { Lock, Eye, Globe, Bookmark, BookmarkCheck, Trash2, Loader2 } from 'lucide-react'
-import { useTranslations } from 'next-intl'
-import { useRouter } from 'next/navigation'
+import { useTranslations } from '@/hooks/use-translations'
+import { useNavigate } from 'react-router-dom'
 import { Button } from 'ui/button'
 import {
   DropdownMenu,
@@ -94,7 +94,7 @@ export function ShareableActions({
   disabled = false,
 }: ShareableActionsProps) {
   const t = useTranslations()
-  const router = useRouter()
+  const navigate = useNavigate()
 
   const isAnyLoading = useMemo(
     () => isVisibilityChangeLoading || isBookmarkToggleLoading || isDeleteLoading,
@@ -220,7 +220,7 @@ export function ShareableActions({
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                router.push(editHref)
+                navigate(editHref)
               }}
             >
               <WriteIcon className='size-4' />

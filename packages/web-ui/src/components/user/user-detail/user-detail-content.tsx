@@ -1,5 +1,5 @@
 import { getUser, getUserAccounts, getUserIdAndCheckAccess } from 'lib/user/server'
-import { notFound } from 'next/navigation'
+
 import { UserDetail } from './user-detail'
 import { UserStatsCardLoader, UserStatsCardLoaderSkeleton } from './user-stats-card-loader'
 import { Suspense } from 'react'

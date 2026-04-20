@@ -14,7 +14,7 @@ import {
 } from './chat-preferences-content'
 import { UserIcon, X, Share2 } from 'lucide-react'
 import { Button } from 'ui/button'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { MCPIcon } from 'ui/mcp-icon'
 
 export function ChatPreferencesPopup() {

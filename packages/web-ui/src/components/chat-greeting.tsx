@@ -3,7 +3,7 @@
 import { motion } from 'framer-motion'
 import { useMemo } from 'react'
 import { FlipWords } from 'ui/flip-words'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import useSWR from 'swr'
 import { BasicUser } from 'app-types/user'
 import { fetcher } from 'lib/utils'

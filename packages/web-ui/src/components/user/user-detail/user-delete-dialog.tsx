@@ -1,4 +1,4 @@
-import { deleteUserAction } from '@/app/api/user/actions'
+import { deleteUserAction } from '@/lib/compat/server-actions/user'
 import { DeleteUserActionState } from '@/app/api/user/validations'
 import {
   AlertDialog,
@@ -14,11 +14,10 @@ import {
 import { SubmitButton } from './user-submit-button'
 import { BasicUserWithLastLogin } from 'app-types/user'
 import { useActionState, useState } from 'react'
-import Form from 'next/form'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { Input } from 'ui/input'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { useProfileTranslations } from '@/hooks/use-profile-translations'
 
 export function UserDeleteDialog({
@@ -30,7 +29,7 @@ export function UserDeleteDialog({
   children?: React.ReactNode
   view?: 'admin' | 'user'
 }) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const { t } = useProfileTranslations(view)
   const tCommon = useTranslations('Common')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -40,7 +39,7 @@ export function UserDeleteDialog({
       const result = await deleteUserAction({}, formData)
 
       if (result?.success) {
-        router.replace(result.redirect || '/admin')
+        navigate(result.redirect || '/admin', { replace: true })
         toast.success(t('userDeletedSuccessfully'))
         setShowDeleteDialog(false)
       } else {
@@ -97,14 +96,14 @@ export function UserDeleteDialog({
           >
             {tCommon('cancel')}
           </AlertDialogCancel>
-          <Form action={deleteFormAction}>
+          <form action={deleteFormAction}>
             <input type='hidden' name='userId' value={user.id} />
             <AlertDialogAction asChild>
               <SubmitButton variant='destructive' disabled={confirmName !== user.name}>
                 {t('deleteUser')}
               </SubmitButton>
             </AlertDialogAction>
-          </Form>
+          </form>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

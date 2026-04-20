@@ -11,8 +11,7 @@ import { Badge } from 'ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 import { Edit3, Check, X, User, Mail } from 'lucide-react'
 import { toast } from 'sonner'
-import Form from 'next/form'
-import { updateUserDetailsAction } from '@/app/api/user/actions'
+import { updateUserDetailsAction } from '@/lib/compat/server-actions/user'
 import { UpdateUserActionState } from '@/app/api/user/validations'
 import { BasicUserWithLastLogin } from 'app-types/user'
 import { getUserAvatar } from 'lib/user/utils'
@@ -68,7 +67,7 @@ export function UserInfoCard({
     if (isEditing) {
       return (
         <div className='rounded-md px-2 py-1 -mx-2 bg-muted/20'>
-          <Form action={detailsUpdateFormAction} className='flex items-center gap-2 w-full'>
+          <form action={detailsUpdateFormAction} className='flex items-center gap-2 w-full'>
             <input type='hidden' name='userId' value={user.id} />
             <div className='flex items-center gap-2 flex-1 min-w-0'>
               {icon}
@@ -101,7 +100,7 @@ export function UserInfoCard({
                 <X className='h-3 w-3' />
               </Button>
             </div>
-          </Form>
+          </form>
         </div>
       )
     }

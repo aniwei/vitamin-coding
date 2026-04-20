@@ -22,7 +22,7 @@ import { Input } from 'ui/input'
 import { JSONSchema7 } from 'json-schema'
 import { findAccessibleNodeIds } from 'lib/ai/workflow/shared.workflow'
 import { cn } from 'lib/utils'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 interface VariableSelectProps {
   currentNodeId: string

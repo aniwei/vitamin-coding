@@ -3,7 +3,7 @@
 import { useReactFlow } from '@xyflow/react'
 import { NodeKind, WorkflowNodeData } from 'lib/ai/workflow/workflow.interface'
 import { Trash2Icon } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { useCallback } from 'react'
 import { toast } from 'sonner'
 

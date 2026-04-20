@@ -20,12 +20,12 @@ import { SelectModel } from './select-model'
 import { appStore, UploadedFile } from '@/app/store'
 import { useShallow } from 'zustand/shallow'
 import { ChatMention, ChatModel } from 'app-types/chat'
-import dynamic from 'next/dynamic'
+import { lazy, Suspense } from 'react'
 import { ToolModeDropdown } from './tool-mode-dropdown'
 
 import { ToolSelectDropdown } from './tool-select-dropdown'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Editor } from '@tiptap/react'
 import { WorkflowSummary } from 'app-types/workflow'
 import { Avatar, AvatarFallback, AvatarImage } from 'ui/avatar'
@@ -73,12 +73,14 @@ interface PromptInputProps {
   onFocus?: () => void
 }
 
-const ChatMentionInput = dynamic(() => import('./chat-mention-input'), {
-  ssr: false,
-  loading() {
-    return <div className='h-[2rem] w-full animate-pulse'></div>
-  },
-})
+const _ChatMentionInput = lazy(() => import('./chat-mention-input'))
+function ChatMentionInput(props: React.ComponentProps<typeof _ChatMentionInput>) {
+  return (
+    <Suspense fallback={<div className='h-[2rem] w-full animate-pulse'></div>}>
+      <_ChatMentionInput {...props} />
+    </Suspense>
+  )
+}
 
 export default function PromptInput({
   placeholder,

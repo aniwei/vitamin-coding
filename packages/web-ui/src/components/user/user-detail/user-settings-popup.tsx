@@ -5,7 +5,7 @@ import { useShallow } from 'zustand/shallow'
 import { Drawer, DrawerContent, DrawerDescription, DrawerPortal, DrawerTitle } from 'ui/drawer'
 import { Button } from 'ui/button'
 import { X } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 export function UserSettingsPopup({
   userSettingsComponent,

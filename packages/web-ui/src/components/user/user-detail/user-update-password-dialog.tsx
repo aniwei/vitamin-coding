@@ -12,14 +12,13 @@ import { AlertDialogHeader } from 'ui/alert-dialog'
 import { useActionState, useState } from 'react'
 import { toast } from 'sonner'
 import { SubmitButton } from './user-submit-button'
-import Form from 'next/form'
-import { updateUserPasswordAction } from '@/app/api/user/actions'
+import { updateUserPasswordAction } from '@/lib/compat/server-actions/user'
 import { UpdateUserPasswordActionState, UpdateUserPasswordError } from '@/app/api/user/validations'
 import { passwordRegexPattern, passwordRequirementsText } from 'lib/validations/password'
 
 import { Input } from 'ui/input'
 import { useProfileTranslations } from '@/hooks/use-profile-translations'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 export function UpdateUserPasswordDialog({
   children,
@@ -78,7 +77,7 @@ export function UpdateUserPasswordDialog({
           <AlertDialogTitle>{t('updatePasswordTitle')}</AlertDialogTitle>
           <AlertDialogDescription>{t('changeUserPassword')}</AlertDialogDescription>
         </AlertDialogHeader>
-        <Form action={resetPasswordFormAction}>
+        <form action={resetPasswordFormAction}>
           <input type='hidden' name='userId' value={userId} />
           <div className='space-y-4 my-4'>
             {isCurrentUser && (
@@ -135,7 +134,7 @@ export function UpdateUserPasswordDialog({
               </SubmitButton>
             </AlertDialogAction>
           </AlertDialogFooter>
-        </Form>
+        </form>
       </AlertDialogContent>
     </AlertDialog>
   )

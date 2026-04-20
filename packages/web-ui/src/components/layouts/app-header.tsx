@@ -9,10 +9,10 @@ import { Separator } from 'ui/separator'
 import { useEffect, useMemo } from 'react'
 import { ThreadDropdown } from '../thread-dropdown'
 import { appStore } from '@/app/store'
-import { usePathname, useSearchParams } from 'next/navigation'
+import { useLocation, useSearchParams } from 'react-router-dom'
 import { useShallow } from 'zustand/shallow'
 import { getShortcutKeyList, Shortcuts } from 'lib/keyboard-shortcuts'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { TextShimmer } from 'ui/text-shimmer'
 import { buildReturnUrl } from 'lib/admin/navigation-utils'
 import { BackButton } from '@/components/layouts/back-button'
@@ -21,8 +21,8 @@ export function AppHeader() {
   const t = useTranslations()
   const [appStoreMutate] = appStore(useShallow((state) => [state.mutate]))
   const { toggleSidebar, open } = useSidebar()
-  const currentPaths = usePathname()
-  const searchParams = useSearchParams()
+  const { pathname: currentPaths } = useLocation()
+  const [searchParams] = useSearchParams()
 
   const showActionButtons = useMemo(() => {
     if (currentPaths.startsWith('/admin')) {

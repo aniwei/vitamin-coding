@@ -4,7 +4,7 @@ import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } f
 import { Button } from 'ui/button'
 import EmojiPicker, { Theme, EmojiClickData } from 'emoji-picker-react'
 import { useTheme } from 'next-themes'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 interface EmojiAvatarDialogProps {
   open: boolean

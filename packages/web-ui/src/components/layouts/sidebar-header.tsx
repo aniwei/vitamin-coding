@@ -1,7 +1,7 @@
 'use client'
 
-import Link from 'next/link'
-import { usePathname } from 'next/navigation'
+import { Link } from 'react-router-dom'
+import { useLocation } from 'react-router-dom'
 import { useEffect, useRef } from 'react'
 import {
   SidebarHeader,
@@ -31,7 +31,7 @@ export function SidebarHeaderShared({
 }: SidebarHeaderSharedProps) {
   const { toggleSidebar, setOpenMobile, open } = useSidebar()
   const isMobile = useIsMobile()
-  const pathname = usePathname()
+  const { pathname } = useLocation()
   const currentPath = useRef<string | null>(null)
 
   // Handle shortcuts (only for main app sidebar)
@@ -68,7 +68,7 @@ export function SidebarHeaderShared({
       <SidebarMenu>
         <SidebarMenuItem className='flex items-center gap-0.5 mb-1'>
           <SidebarMenuButton asChild className='hover:bg-transparent'>
-            <Link href={href} onClick={handleLinkClick}>
+            <Link to={href} onClick={handleLinkClick}>
               <h4 className='font-bold'>{title}</h4>
               {showMobileToggle && (
                 <div

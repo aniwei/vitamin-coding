@@ -16,7 +16,7 @@ import {
 } from './message-parts'
 import { ChevronDown, ChevronUp, TriangleAlertIcon } from 'lucide-react'
 import { Button } from 'ui/button'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { ChatMetadata } from 'app-types/chat'
 
 interface Props {

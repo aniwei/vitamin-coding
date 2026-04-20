@@ -17,7 +17,7 @@ import { nextTick } from 'lib/utils'
 import { ToolNodeDataConfig } from './node-config/tool-node-config'
 import { HttpNodeConfig } from './node-config/http-node-config'
 import { TemplateNodeConfig } from './node-config/template-node-config'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 export function SelectedNodeConfigTab({ node }: { node: UINode }) {
   const t = useTranslations()

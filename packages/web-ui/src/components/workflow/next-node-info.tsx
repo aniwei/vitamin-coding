@@ -8,7 +8,7 @@ import { PlusIcon, Unlink } from 'lucide-react'
 import { NodeSelect } from './node-select'
 import { useUpdate } from '@/hooks/use-update'
 import { createAppendNode } from './create-append-node'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 
 interface NextNodeInfoProps {

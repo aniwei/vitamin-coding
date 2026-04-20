@@ -1,7 +1,7 @@
 'use client'
 
 import { useEffect, useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { experimental_useObject } from '@ai-sdk/react'
 import { ChatModel } from 'app-types/chat'
 import { AgentGenerateSchema } from 'app-types/agent'

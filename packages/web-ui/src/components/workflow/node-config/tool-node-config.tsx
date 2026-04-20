@@ -14,7 +14,7 @@ import { SelectModel } from '@/components/select-model'
 import { OutputSchemaMentionInput } from '../output-schema-mention-input'
 import { useWorkflowStore } from '@/app/store/workflow.store'
 import { MCPIcon } from 'ui/mcp-icon'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 import { useMcpList } from '@/hooks/queries/use-mcp-list'
 

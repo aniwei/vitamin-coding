@@ -7,7 +7,7 @@ import { MCPIcon } from 'ui/mcp-icon'
 import { ChatMention } from 'app-types/chat'
 
 import MentionInput from './mention-input'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Popover, PopoverContent, PopoverTrigger } from 'ui/popover'
 
 import { appStore } from '@/app/store'

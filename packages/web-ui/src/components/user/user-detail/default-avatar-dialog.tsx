@@ -6,7 +6,7 @@ import { Button } from 'ui/button'
 import { cn } from '@/lib/utils'
 import { Check } from 'lucide-react'
 import { Avatar, AvatarFallback, AvatarImage } from 'ui/avatar'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 interface DefaultAvatarDialogProps {
   open: boolean

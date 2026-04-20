@@ -8,7 +8,7 @@ import { Textarea } from './ui/textarea'
 import JsonView from './ui/json-view'
 import { toast } from 'sonner'
 import { safe } from 'ts-safe'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { createDebounce, fetcher, isNull, safeJSONParse } from 'lib/utils'
 import { handleErrorWithToast } from 'ui/shared-toast'
 import { mutate } from 'swr'
@@ -17,8 +17,8 @@ import { isMaybeMCPServerConfig, isMaybeRemoteConfig } from 'lib/ai/mcp/is-mcp-c
 
 import { Alert, AlertDescription, AlertTitle } from 'ui/alert'
 import { z } from 'zod'
-import { useTranslations } from 'next-intl'
-import { existMcpClientByServerNameAction } from '@/app/api/mcp/actions'
+import { useTranslations } from '@/hooks/use-translations'
+import { existMcpClientByServerNameAction } from '@/lib/compat/server-actions/mcp'
 
 interface MCPEditorProps {
   initialConfig?: MCPServerConfig
@@ -55,7 +55,7 @@ export default function MCPEditor({ initialConfig, name: initialName, id }: MCPE
 
   // State for form fields
   const [name, setName] = useState<string>(initialName ?? '')
-  const router = useRouter()
+  const navigate = useNavigate()
   const [config, setConfig] = useState<MCPServerConfig>(initialConfig as MCPServerConfig)
   const [jsonString, setJsonString] = useState<string>(
     initialConfig ? JSON.stringify(initialConfig, null, 2) : '',
@@ -134,7 +134,7 @@ export default function MCPEditor({ initialConfig, name: initialName, id }: MCPE
       .ifOk(() => {
         toast.success(t('MCP.configurationSavedSuccessfully'))
         mutate('/api/mcp/list')
-        router.push('/mcp')
+        navigate('/mcp')
       })
       .ifFail(handleErrorWithToast)
       .watch(() => setIsLoading(false))

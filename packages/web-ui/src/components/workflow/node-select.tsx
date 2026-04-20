@@ -9,7 +9,7 @@ import {
   DropdownMenuTrigger,
 } from 'ui/dropdown-menu'
 import { NodeIcon } from './node-icon'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 
 const unSupportedKinds: NodeKind[] = [NodeKind.Code]

@@ -2,7 +2,7 @@
 
 import { Card, CardContent, CardDescription, CardFooter, CardHeader, CardTitle } from 'ui/card'
 import { Avatar, AvatarFallback, AvatarImage } from 'ui/avatar'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { format } from 'date-fns'
 import { cn } from 'lib/utils'
 import { ShareableActions, type Visibility } from './shareable-actions'
@@ -10,7 +10,7 @@ import { WorkflowSummary } from 'app-types/workflow'
 import { AgentSummary } from 'app-types/agent'
 import { MCPServerInfo } from 'app-types/mcp'
 import { MCPIcon } from 'ui/mcp-icon'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 
 export interface ShareableIcon {
   value?: string
@@ -50,7 +50,7 @@ export function ShareableCard({
   const isBookmarked = type === 'mcp' ? undefined : (item as AgentSummary).isBookmarked
 
   return (
-    <Link href={href} title={item.name}>
+    <Link to={href} title={item.name}>
       <Card
         className={cn(
           'w-full min-h-[196px] @container transition-colors group flex flex-col gap-3 cursor-pointer hover:bg-input',

@@ -2,7 +2,7 @@
 
 import { NodeKind } from 'lib/ai/workflow/workflow.interface'
 import { useMemo } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 import { NodeIcon } from './node-icon'
 import { BlocksIcon, ChevronsLeftRightEllipsisIcon, Terminal } from 'lucide-react'

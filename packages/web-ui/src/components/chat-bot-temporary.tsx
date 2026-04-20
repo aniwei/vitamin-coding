@@ -21,7 +21,7 @@ import { Separator } from 'ui/separator'
 import { DefaultChatTransport, UIMessage } from 'ai'
 import { useShallow } from 'zustand/shallow'
 import { isShortcutEvent, Shortcuts } from 'lib/keyboard-shortcuts'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import {
   Dialog,
   DialogContent,

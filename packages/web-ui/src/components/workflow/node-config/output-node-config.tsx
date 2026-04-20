@@ -13,7 +13,7 @@ import { Button } from 'ui/button'
 import { cleanVariableName, generateUniqueKey } from 'lib/utils'
 import { Label } from 'ui/label'
 import { findJsonSchemaByPath } from 'lib/ai/workflow/shared.workflow'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 export const OutputNodeDataConfig = memo(function ({ data }: { data: OutputNodeData }) {
   const { getNodes, updateNodeData } = useReactFlow()

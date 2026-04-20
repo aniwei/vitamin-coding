@@ -25,7 +25,7 @@ import { handleErrorWithToast } from 'ui/shared-toast'
 import { mutate } from 'swr'
 import { allNodeValidate } from 'lib/ai/workflow/node-validate'
 import { toast } from 'sonner'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { arrangeNodes } from 'lib/ai/workflow/arrange-nodes'
 import { EditWorkflowPopup } from './edit-workflow-popup'
 

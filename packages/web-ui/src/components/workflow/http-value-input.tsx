@@ -10,7 +10,7 @@ import { UINode } from 'lib/ai/workflow/workflow.interface'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 import { VariableMentionItem } from './variable-mention-item'
 import { findAvailableSchemaBySource } from 'lib/ai/workflow/shared.workflow'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { cn, exclude } from 'lib/utils'
 
 interface HttpValueInputProps {

@@ -9,11 +9,11 @@ import { Loader2, Sparkles, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { useFileUpload } from '@/hooks/use-presigned-upload'
 import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'ui/select'
-import { generateAvatarImageAction } from '@/app/api/user/actions'
+import { generateAvatarImageAction } from '@/lib/compat/server-actions/user'
 import { OpenAIIcon } from 'ui/openai-icon'
 import { GrokIcon } from 'ui/grok-icon'
 import { GeminiIcon } from 'ui/gemini-icon'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Avatar, AvatarImage, AvatarFallback } from 'ui/avatar'
 
 interface GenerateAvatarDialogProps {

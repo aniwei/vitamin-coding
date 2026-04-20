@@ -9,8 +9,7 @@ import { Badge } from 'ui/badge'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 import { User } from 'lucide-react'
 import { toast } from 'sonner'
-import Form from 'next/form'
-import { updateUserDetailsAction, updateUserImageAction } from '@/app/api/user/actions'
+import { updateUserDetailsAction, updateUserImageAction } from '@/lib/compat/server-actions/user'
 import { UpdateUserActionState } from '@/app/api/user/validations'
 import { BasicUserWithLastLogin } from 'app-types/user'
 import { getUserAvatar } from 'lib/user/utils'
@@ -82,7 +81,7 @@ export function UserDetailFormCard({
       </CardHeader>
 
       <CardContent className='h-full'>
-        <Form action={detailsUpdateFormAction} className='space-y-6 h-full flex flex-col'>
+        <form action={detailsUpdateFormAction} className='space-y-6 h-full flex flex-col'>
           <input type='hidden' name='userId' value={user.id} />
 
           {/* Avatar Upload Section */}
@@ -163,7 +162,7 @@ export function UserDetailFormCard({
               {isPending ? tCommon('saving') : t('saveChanges')}
             </SubmitButton>
           </div>
-        </Form>
+        </form>
       </CardContent>
     </Card>
   )

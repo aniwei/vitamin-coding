@@ -14,10 +14,9 @@ import { UserRoleNames, userRolesInfo } from 'app-types/roles'
 import { BasicUserWithLastLogin } from 'app-types/user'
 import { useActionState, useState } from 'react'
 import { toast } from 'sonner'
-import { updateUserRolesAction } from '@/app/api/admin/actions'
+import { updateUserRolesAction } from '@/lib/compat/server-actions/admin'
 import { UpdateUserRoleActionState } from '@/app/api/admin/validations'
-import Form from 'next/form'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { useProfileTranslations } from '@/hooks/use-profile-translations'
 
 export function UserRoleSelector({
@@ -75,7 +74,7 @@ export function UserRoleSelector({
     <AlertDialog open={isOpen} onOpenChange={handleOpenChange}>
       {children && <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>}
       <AlertDialogContent>
-        <Form action={roleFormAction}>
+        <form action={roleFormAction}>
           <input type='hidden' name='userId' value={user.id} />
 
           <AlertDialogHeader>
@@ -127,7 +126,7 @@ export function UserRoleSelector({
             </AlertDialogCancel>
             <SubmitButton>{t('updateRole')}</SubmitButton>
           </div>
-        </Form>
+        </form>
       </AlertDialogContent>
     </AlertDialog>
   )

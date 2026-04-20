@@ -2,7 +2,6 @@ import { getUserSessions } from 'lib/user/server'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'ui/card'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'ui/table'
 import { format } from 'date-fns'
-import { getTranslations } from 'next-intl/server'
 
 interface UserSessionsProps {
   userId: string

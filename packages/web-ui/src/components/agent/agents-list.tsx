@@ -1,11 +1,11 @@
 'use client'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { AgentSummary, AgentUpdateSchema } from 'app-types/agent'
 import { Card, CardDescription, CardHeader, CardTitle } from 'ui/card'
 import { Button } from 'ui/button'
 import { Plus, ArrowUpRight } from 'lucide-react'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { BackgroundPaths } from 'ui/background-paths'
 import { useBookmark } from '@/hooks/queries/use-bookmark'
 import { useMutateAgents } from '@/hooks/queries/use-agents'
@@ -109,7 +109,7 @@ export function AgentsList({
           {t('Layout.agents')}
         </h1>
         {canCreate && (
-          <Link href='/agent/new'>
+          <Link to='/agent/new'>
             <Button variant='ghost' data-testid='create-agent-button'>
               <Plus />
               {t('Agent.newAgent')}
@@ -128,7 +128,7 @@ export function AgentsList({
 
           <div className='grid gap-4 md:grid-cols-2 lg:grid-cols-3'>
             {canCreate && (
-              <Link href='/agent/new'>
+              <Link to='/agent/new'>
                 <Card
                   className='relative bg-secondary overflow-hidden cursor-pointer hover:bg-input transition-colors h-[196px]'
                   data-testid='create-agent-card'

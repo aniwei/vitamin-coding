@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from 'ui/avatar'
 import { Skeleton } from 'ui/skeleton'
 import { authClient } from 'auth/client'
 import { notify } from 'lib/notify'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 
 function deepReplyCount(comment: ChatExportCommentWithUser): number {
   if (comment.replies?.length) {
@@ -41,7 +41,7 @@ export default function Comments({
   const scrollRef = useRef<HTMLDivElement>(null)
   const [replyTo, setReplyTo] = useState<ChatExportCommentWithUser | null>(null)
 
-  const router = useRouter()
+  const navigate = useNavigate()
 
   const { data, isLoading } = useSWR<ChatExportCommentWithUser[]>(
     isLoggedIn ? `/api/export/${id}/comments` : null,
@@ -86,7 +86,7 @@ export default function Comments({
         })
         .then((answer) => {
           if (answer) {
-            router.push('/sign-in')
+            navigate('/sign-in')
           }
         })
     } else {

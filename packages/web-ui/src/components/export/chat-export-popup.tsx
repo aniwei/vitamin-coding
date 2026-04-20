@@ -1,6 +1,6 @@
-import { exportChatAction } from '@/app/api/chat/actions'
+import { exportChatAction } from '@/lib/compat/server-actions/chat'
 import { LinkIcon, Loader } from 'lucide-react'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useCallback, useState } from 'react'
 import { toast } from 'sonner'
 import { safe } from 'ts-safe'
@@ -13,7 +13,7 @@ import {
   DialogTitle,
   DialogTrigger,
 } from 'ui/dialog'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 type Props = {
   threadId: string
@@ -24,7 +24,7 @@ type Props = {
 }
 
 export function ChatExportPopup(props: Props) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const t = useTranslations()
   const [isExporting, setIsExporting] = useState(false)
 
@@ -41,13 +41,13 @@ export function ChatExportPopup(props: Props) {
         navigator.clipboard.writeText(link).then(() => {
           toast.success(t('Chat.Thread.linkCopied'))
         })
-        router.push(`/export/${exportId}`)
+        navigate(`/export/${exportId}`)
       })
       .ifFail((error) => {
         toast.error(error.message || 'Failed to export chat')
       })
       .unwrap()
-  }, [props.threadId, router])
+  }, [props.threadId, navigate])
 
   return (
     <Dialog open={props.open} onOpenChange={props.onOpenChange}>

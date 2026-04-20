@@ -1,7 +1,7 @@
 'use client'
 
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { ChatMention } from 'app-types/chat'
 import { DefaultToolName } from 'lib/ai/tools'
 import { cn, noop } from 'lib/utils'

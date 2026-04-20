@@ -1,7 +1,7 @@
 import { Hono } from 'hono'
 import type { AppEnv } from '../app'
 import { requireAuth } from '../middleware/require-auth'
-import { canCreateMCP, canManageMCPServer } from '../middleware/permissions'
+import { canCreateMCP, canManageMCPServer, isAdmin } from '../middleware/permissions'
 import {
   mcpRepository,
   mcpServerCustomizationRepository,
@@ -62,6 +62,93 @@ mcpRoutes.get('/list', async (c) => {
     } as MCPServerInfo
   })
   return c.json(result)
+})
+
+// ── /api/mcp/:id (GET) ────────────────────────────────────────────────────
+mcpRoutes.get('/:id', async (c) => {
+  const { id } = c.req.param()
+  const clientEntry = await mcpClientsManager.getClient(id)
+  if (!clientEntry) return c.json({ error: 'MCP client not found' }, 404)
+  return c.json({ ...clientEntry.client.getInfo(), id })
+})
+
+// ── /api/mcp/:id/call-tool (POST) ─────────────────────────────────────────
+mcpRoutes.post('/:id/call-tool', async (c) => {
+  const { id } = c.req.param()
+  try {
+    const { toolName, input } = await c.req.json()
+    if (!toolName) return c.json({ error: 'toolName is required' }, 400)
+    const result = await mcpClientsManager.toolCall(id, toolName, input ?? {})
+    return c.json(result)
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Tool call failed' }, 500)
+  }
+})
+
+// ── /api/mcp/:id/refresh (POST) ───────────────────────────────────────────
+mcpRoutes.post('/:id/refresh', async (c) => {
+  const { id } = c.req.param()
+  try {
+    await mcpClientsManager.refreshClient(id)
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Refresh failed' }, 500)
+  }
+})
+
+// ── /api/mcp/:id/authorize (POST) ─────────────────────────────────────────
+mcpRoutes.post('/:id/authorize', async (c) => {
+  const { id } = c.req.param()
+  try {
+    await mcpClientsManager.refreshClient(id)
+    const client = await mcpClientsManager.getClient(id)
+    if ((client as any)?.client?.status !== 'authorizing') {
+      return c.json({ error: 'Not Authorizing' }, 400)
+    }
+    const authUrl = (client as any)?.client?.getAuthorizationUrl?.()?.toString()
+    return c.json({ authorizationUrl: authUrl })
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Authorization failed' }, 500)
+  }
+})
+
+// ── /api/mcp/:id/check-token (GET) ────────────────────────────────────────
+mcpRoutes.get('/:id/check-token', async (c) => {
+  const { id } = c.req.param()
+  try {
+    const session = await mcpOAuthRepository.getAuthenticatedSession(id)
+    await mcpClientsManager.getClient(id).catch(() => null)
+    return c.json({ hasToken: !!session?.tokens })
+  } catch (error: any) {
+    return c.json({ hasToken: false })
+  }
+})
+
+// ── /api/mcp/:id/share (PUT) ──────────────────────────────────────────────
+mcpRoutes.put('/:id/share', async (c) => {
+  const session = c.get('session')!
+  const { id } = c.req.param()
+  try {
+    if (!isAdmin(session)) return c.json({ error: 'Only administrators can feature MCP servers' }, 403)
+    const { visibility } = await c.req.json()
+    await pgMcpRepository.updateVisibility(id, visibility)
+    return c.json({ success: true })
+  } catch (error: any) {
+    return c.json({ error: error.message || 'Share failed' }, 500)
+  }
+})
+
+// ── /api/mcp/exists/:serverName (GET) ─────────────────────────────────────
+mcpRoutes.get('/exists/:serverName', async (c) => {
+  const { serverName } = c.req.param()
+  const session = c.get('session')!
+  try {
+    const servers = await pgMcpRepository.selectAllForUser(session.user.id)
+    const exists = servers.some((s) => s.name === serverName)
+    return c.json({ exists })
+  } catch (error: any) {
+    return c.json({ exists: false })
+  }
 })
 
 // ── /api/mcp/:id (DELETE) ─────────────────────────────────────────────────

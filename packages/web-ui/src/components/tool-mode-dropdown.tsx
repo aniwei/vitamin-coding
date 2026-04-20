@@ -5,7 +5,7 @@ import { getShortcutKeyList, isShortcutEvent, Shortcuts } from 'lib/keyboard-sho
 import { Check, CheckIcon, ClipboardCheck, Infinity, PenOff, Settings2 } from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from 'ui/button'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 import {
   DropdownMenu,

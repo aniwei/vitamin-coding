@@ -1,7 +1,7 @@
 'use client'
 
 import { ChevronDownIcon, WrenchIcon } from 'lucide-react'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { PropsWithChildren } from 'react'
 import { Button } from 'ui/button'
 

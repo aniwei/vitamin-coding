@@ -13,7 +13,7 @@ import { Skeleton } from 'ui/skeleton'
 import { BackgroundPaths } from 'ui/background-paths'
 import { ShareableCard } from '@/components/shareable-card'
 import { DBEdge, DBNode, DBWorkflow, WorkflowSummary } from 'app-types/workflow'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import {
   DropdownMenu,
   DropdownMenuContent,
@@ -22,7 +22,7 @@ import {
 } from 'ui/dropdown-menu'
 import { BabyResearch, GetWeather } from 'lib/ai/workflow/examples'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { Dialog, DialogContent, DialogTitle, DialogTrigger } from 'ui/dialog'
 import { WorkflowGreeting } from '@/components/workflow/workflow-greeting'
 import { notify } from 'lib/notify'
@@ -61,7 +61,7 @@ interface WorkflowListPageProps {
 
 export default function WorkflowListPage({ userRole }: WorkflowListPageProps = {}) {
   const t = useTranslations()
-  const router = useRouter()
+  const navigate = useNavigate()
   const { data: session } = authClient.useSession()
   const currentUserId = session?.user?.id
   const [isVisibilityChangeLoading, setIsVisibilityChangeLoading] = useState(false)
@@ -82,7 +82,7 @@ export default function WorkflowListPage({ userRole }: WorkflowListPageProps = {
   }) => {
     const workflowId = await createWithExample(exampleWorkflow)
     mutate('/api/workflow')
-    router.push(`/workflow/${workflowId}`)
+    navigate(`/workflow/${workflowId}`)
   }
 
   const updateVisibility = async (

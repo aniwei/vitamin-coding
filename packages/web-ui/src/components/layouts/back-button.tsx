@@ -2,7 +2,7 @@
 
 import { Button } from 'ui/button'
 import { ArrowLeft } from 'lucide-react'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 
 interface BackButtonProps extends React.HTMLAttributes<HTMLAnchorElement> {
   returnUrl: string
@@ -11,7 +11,7 @@ interface BackButtonProps extends React.HTMLAttributes<HTMLAnchorElement> {
 
 export function BackButton({ returnUrl, title, ...props }: BackButtonProps) {
   return (
-    <Link href={returnUrl} {...props}>
+    <Link to={returnUrl} {...props}>
       <Button variant='ghost' size='sm' className='hover:bg-muted'>
         <ArrowLeft className='mr-2 h-4 w-4' />
         {title}

@@ -34,13 +34,13 @@ import { SelectModel } from './select-model'
 import {
   deleteMessageAction,
   deleteMessagesByChatIdAfterTimestampAction,
-} from '@/app/api/chat/actions'
+} from '@/lib/compat/server-actions/chat'
 
 import { toast } from 'sonner'
 import { safe } from 'ts-safe'
 import { ChatMetadata, ChatModel, ManualToolConfirmTag } from 'app-types/chat'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { extractMCPToolId } from 'lib/ai/mcp/mcp-tool-id'
 import { Separator } from 'ui/separator'
 
@@ -55,7 +55,7 @@ import { DefaultToolName, ImageToolName } from 'lib/ai/tools'
 import { Shortcut, getShortcutKeyList, isShortcutEvent } from 'lib/keyboard-shortcuts'
 
 import { WorkflowInvocation } from './tool-invocation/workflow-invocation'
-import dynamic from 'next/dynamic'
+import { lazy, Suspense } from 'react'
 import { notify } from 'lib/notify'
 import { ModelProviderIcon } from 'ui/model-provider-icon'
 import { appStore } from '@/app/store'
@@ -605,54 +605,28 @@ const loading = memo(function Loading() {
   )
 })
 
-const PieChart = dynamic(() => import('./tool-invocation/pie-chart').then((mod) => mod.PieChart), {
-  ssr: false,
-  loading,
-})
+const PieChart = lazy(() => import('./tool-invocation/pie-chart').then((mod) => ({ default: mod.PieChart })))
 
-const BarChart = dynamic(() => import('./tool-invocation/bar-chart').then((mod) => mod.BarChart), {
-  ssr: false,
-  loading,
-})
+const BarChart = lazy(() => import('./tool-invocation/bar-chart').then((mod) => ({ default: mod.BarChart })))
 
-const LineChart = dynamic(
-  () => import('./tool-invocation/line-chart').then((mod) => mod.LineChart),
-  {
-    ssr: false,
-    loading,
-  },
+const LineChart = lazy(
+  () => import('./tool-invocation/line-chart').then((mod) => ({ default: mod.LineChart })),
 )
 
-const InteractiveTable = dynamic(
-  () => import('./tool-invocation/interactive-table').then((mod) => mod.InteractiveTable),
-  {
-    ssr: false,
-    loading,
-  },
+const InteractiveTable = lazy(
+  () => import('./tool-invocation/interactive-table').then((mod) => ({ default: mod.InteractiveTable })),
 )
 
-const WebSearchToolInvocation = dynamic(
-  () => import('./tool-invocation/web-search').then((mod) => mod.WebSearchToolInvocation),
-  {
-    ssr: false,
-    loading,
-  },
+const WebSearchToolInvocation = lazy(
+  () => import('./tool-invocation/web-search').then((mod) => ({ default: mod.WebSearchToolInvocation })),
 )
 
-const CodeExecutor = dynamic(
-  () => import('./tool-invocation/code-executor').then((mod) => mod.CodeExecutor),
-  {
-    ssr: false,
-    loading,
-  },
+const CodeExecutor = lazy(
+  () => import('./tool-invocation/code-executor').then((mod) => ({ default: mod.CodeExecutor })),
 )
 
-const ImageGeneratorToolInvocation = dynamic(
-  () => import('./tool-invocation/image-generator').then((mod) => mod.ImageGeneratorToolInvocation),
-  {
-    ssr: false,
-    loading,
-  },
+const ImageGeneratorToolInvocation = lazy(
+  () => import('./tool-invocation/image-generator').then((mod) => ({ default: mod.ImageGeneratorToolInvocation })),
 )
 
 // Local shortcuts for tool invocation approval/rejection
@@ -799,45 +773,49 @@ export const ToolMessagePart = memo(
 
     const CustomToolComponent = useMemo(() => {
       if (toolName === DefaultToolName.WebSearch || toolName === DefaultToolName.WebContent) {
-        return <WebSearchToolInvocation part={part} />
+        return <Suspense fallback={<loading />}><WebSearchToolInvocation part={part} /></Suspense>
       }
 
       if (toolName === ImageToolName) {
-        return <ImageGeneratorToolInvocation part={part} />
+        return <Suspense fallback={<loading />}><ImageGeneratorToolInvocation part={part} /></Suspense>
       }
 
       if (toolName === DefaultToolName.JavascriptExecution) {
         return (
-          <CodeExecutor
-            part={part}
-            key={part.toolCallId}
-            onResult={onToolCallDirect}
-            type='javascript'
-          />
+          <Suspense fallback={<loading />}>
+            <CodeExecutor
+              part={part}
+              key={part.toolCallId}
+              onResult={onToolCallDirect}
+              type='javascript'
+            />
+          </Suspense>
         )
       }
 
       if (toolName === DefaultToolName.PythonExecution) {
         return (
-          <CodeExecutor
-            part={part}
-            key={part.toolCallId}
-            onResult={onToolCallDirect}
-            type='python'
-          />
+          <Suspense fallback={<loading />}>
+            <CodeExecutor
+              part={part}
+              key={part.toolCallId}
+              onResult={onToolCallDirect}
+              type='python'
+            />
+          </Suspense>
         )
       }
 
       if (state === 'output-available') {
         switch (toolName) {
           case DefaultToolName.CreatePieChart:
-            return <PieChart key={`${toolCallId}-${toolName}`} {...(input as any)} />
+            return <Suspense fallback={<loading />}><PieChart key={`${toolCallId}-${toolName}`} {...(input as any)} /></Suspense>
           case DefaultToolName.CreateBarChart:
-            return <BarChart key={`${toolCallId}-${toolName}`} {...(input as any)} />
+            return <Suspense fallback={<loading />}><BarChart key={`${toolCallId}-${toolName}`} {...(input as any)} /></Suspense>
           case DefaultToolName.CreateLineChart:
-            return <LineChart key={`${toolCallId}-${toolName}`} {...(input as any)} />
+            return <Suspense fallback={<loading />}><LineChart key={`${toolCallId}-${toolName}`} {...(input as any)} /></Suspense>
           case DefaultToolName.CreateTable:
-            return <InteractiveTable key={`${toolCallId}-${toolName}`} {...(input as any)} />
+            return <Suspense fallback={<loading />}><InteractiveTable key={`${toolCallId}-${toolName}`} {...(input as any)} /></Suspense>
         }
       }
       return null

@@ -15,7 +15,7 @@ import { Card, CardContent, CardHeader } from 'ui/card'
 import JsonView from 'ui/json-view'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 import { memo, useCallback, useMemo, useState } from 'react'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { useSWRConfig } from 'swr'
 import { safe } from 'ts-safe'
 
@@ -24,13 +24,13 @@ import {
   refreshMcpClientAction,
   removeMcpClientAction,
   shareMcpServerAction,
-} from '@/app/api/mcp/actions'
+} from '@/lib/compat/server-actions/mcp'
 import { ShareableActions, type Visibility } from './shareable-actions'
 
 import type { MCPServerInfo, MCPToolInfo } from 'app-types/mcp'
 
 import { ToolDetailPopup } from './tool-detail-popup'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Separator } from 'ui/separator'
 import { Avatar, AvatarFallback, AvatarImage } from 'ui/avatar'
 import { appStore } from '@/app/store'
@@ -195,7 +195,7 @@ export const MCPCard = memo(function MCPCard({
               </div>
             ) : (
               <Link
-                href={`/mcp/test/${encodeURIComponent(id)}`}
+                to={`/mcp/test/${encodeURIComponent(id)}`}
                 className='cursor-pointer hidden sm:block'
               >
                 <Button variant='ghost' size='icon'>

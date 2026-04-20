@@ -11,14 +11,14 @@ import { ChevronLeft, Loader, Check, X } from 'lucide-react'
 import { toast } from 'sonner'
 import { safe } from 'ts-safe'
 import { UserZodSchema } from 'app-types/user'
-import { existsByEmailAction, signUpAction } from '@/app/api/auth/actions'
-import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { existsByEmailAction, signUpAction } from '@/lib/compat/server-actions/auth'
+import { useNavigate } from 'react-router-dom'
+import { useTranslations } from '@/hooks/use-translations'
 
 export default function EmailSignUp({ isFirstUser }: { isFirstUser: boolean }) {
   const t = useTranslations()
   const [step, setStep] = useState(1)
-  const router = useRouter()
+  const navigate = useNavigate()
   const [isLoading, setIsLoading] = useState(false)
   const [formData, setFormData] = useObjectState({
     email: '',
@@ -92,7 +92,7 @@ export default function EmailSignUp({ isFirstUser }: { isFirstUser: boolean }) {
     ).unwrap()
     if (success) {
       toast.success(message)
-      router.push('/')
+      navigate('/')
     } else {
       toast.error(message)
     }

@@ -1,6 +1,6 @@
 'use client'
 import { Sidebar, SidebarContent, SidebarFooter } from 'ui/sidebar'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { useEffect } from 'react'
 
 import { AppSidebarMenus } from './app-sidebar-menus'
@@ -14,20 +14,19 @@ import { BasicUser } from 'app-types/user'
 
 export function AppSidebar({ user }: { user?: BasicUser }) {
   const userRole = user?.role
-  const router = useRouter()
+  const navigate = useNavigate()
 
   // Handle new chat shortcut (specific to main app)
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
       if (isShortcutEvent(e, Shortcuts.openNewChat)) {
         e.preventDefault()
-        router.push('/')
-        router.refresh()
-      }
+        navigate('/')
+        }
     }
     window.addEventListener('keydown', handleKeyDown)
     return () => window.removeEventListener('keydown', handleKeyDown)
-  }, [router])
+  }, [navigate])
 
   return (
     <Sidebar collapsible='offcanvas' className='border-r border-sidebar-border/80'>
@@ -36,9 +35,8 @@ export function AppSidebar({ user }: { user?: BasicUser }) {
         href='/'
         enableShortcuts={true}
         onLinkClick={() => {
-          router.push('/')
-          router.refresh()
-        }}
+          navigate('/')
+          }}
       />
 
       <SidebarContent className='mt-2 overflow-hidden relative'>

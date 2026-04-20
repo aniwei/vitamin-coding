@@ -30,7 +30,7 @@ import { cn, generateUUID } from 'lib/utils'
 import { NodeSelect } from '../node-select'
 import { useUpdate } from '@/hooks/use-update'
 import { createAppendNode } from '../create-append-node'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Input } from 'ui/input'
 
 export function ConditionNodeDataConfig({ data }: { data: ConditionNodeData }) {

@@ -1,7 +1,7 @@
 'use client'
 
 import { useTransition, useCallback, useRef } from 'react'
-import { useRouter, useSearchParams } from 'next/navigation'
+import { useNavigate, useSearchParams } from 'react-router-dom'
 import { format } from 'date-fns'
 import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'ui/table'
 import { Badge } from 'ui/badge'
@@ -14,11 +14,10 @@ import { AdminUserListItem } from 'app-types/admin'
 import { cn } from 'lib/utils'
 import { useDebounce } from '@/hooks/use-debounce'
 import { TablePagination } from 'ui/table-pagination'
-import Form from 'next/form'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { SortableHeader } from 'ui/sortable-header'
 import { getUserAvatar } from 'lib/user/utils'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { UserRoleBadges } from '@/components/user/user-detail/user-role-badges'
 import { UserStatusBadge } from '@/components/user/user-detail/user-status-badge'
 import { buildUserDetailUrl } from '@/lib/admin/navigation-utils'
@@ -49,8 +48,8 @@ export function UsersTable({
   sortBy = DEFAULT_SORT_BY,
   sortDirection = DEFAULT_SORT_DIRECTION,
 }: UsersTableProps) {
-  const router = useRouter()
-  const searchParams = useSearchParams()
+  const navigate = useNavigate()
+  const [searchParams] = useSearchParams()
   const [_, startTransition] = useTransition()
   const formRef = useRef<HTMLFormElement>(null)
   const inputRef = useRef<HTMLInputElement>(null)
@@ -107,7 +106,7 @@ export function UsersTable({
     (field: string) => {
       const newSortDirection = sortBy === field && sortDirection === 'asc' ? 'desc' : 'asc'
 
-      router.push(
+      navigate(
         buildUrl({
           sortBy: field,
           sortDirection: newSortDirection,
@@ -115,7 +114,7 @@ export function UsersTable({
         }),
       )
     },
-    [sortBy, sortDirection, router, buildUrl],
+    [sortBy, sortDirection, navigate, buildUrl],
   )
 
   const handleRowClick = (userId: string) => {
@@ -123,7 +122,7 @@ export function UsersTable({
       // Get current search params as string
       const currentSearchString = searchParams.toString()
       const url = buildUserDetailUrl(userId, currentSearchString)
-      router.push(url)
+      navigate(url)
     })
   }
 
@@ -131,7 +130,7 @@ export function UsersTable({
     <div className='space-y-4 w-full'>
       <div className='flex items-center gap-4'>
         <div className='relative flex-1 max-w-sm'>
-          <Form action={baseUrl} ref={formRef}>
+          <form action={baseUrl} ref={formRef}>
             {page !== 1 && <input type='hidden' name='page' value={1} />}
             {sortBy !== DEFAULT_SORT_BY && <input type='hidden' name='sortBy' value={sortBy} />}
             {sortDirection !== DEFAULT_SORT_DIRECTION && (
@@ -154,10 +153,10 @@ export function UsersTable({
               }}
               data-testid='users-search-input'
             />
-          </Form>
+          </form>
         </div>
         {(query || sortBy !== DEFAULT_SORT_BY || sortDirection !== DEFAULT_SORT_DIRECTION) && (
-          <Link href={baseUrl} className={cn('shrink-0', buttonVariants({ variant: 'outline' }))}>
+          <Link to={baseUrl} className={cn('shrink-0', buttonVariants({ variant: 'outline' }))}>
             <X className='h-4 w-4 mr-1' />
             {t('clear')}
           </Link>

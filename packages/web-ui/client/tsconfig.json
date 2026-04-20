@@ -17,7 +17,13 @@
     "types": ["vite/client", "node"],
     "baseUrl": ".",
     "paths": {
-      "@/*": ["src/*"]
+      "@/*": ["../src/*"],
+      "ui/*": ["../src/components/ui/*"],
+      "auth/*": ["../src/lib/auth/*"],
+      "app-types/*": ["../src/types/*"],
+      "lib/*": ["../src/lib/*"],
+      "logger": ["../src/lib/logger.ts"],
+      "load-env": ["../src/lib/load-env.ts"]
     }
   },
   "include": ["src", "vite.config.ts"]

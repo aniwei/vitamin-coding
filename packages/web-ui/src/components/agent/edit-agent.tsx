@@ -1,8 +1,8 @@
 'use client'
 
 import { useCallback, useMemo, useRef, useState } from 'react'
-import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useNavigate } from 'react-router-dom'
+import { useTranslations } from '@/hooks/use-translations'
 import { toast } from 'sonner'
 import { useMutateAgents } from '@/hooks/queries/use-agents'
 import { useMcpList } from '@/hooks/queries/use-mcp-list'
@@ -75,7 +75,7 @@ export default function EditAgent({
 }: EditAgentProps) {
   const t = useTranslations()
   const mutateAgents = useMutateAgents()
-  const router = useRouter()
+  const navigate = useNavigate()
 
   const [openGenerateAgentDialog, setOpenGenerateAgentDialog] = useState(false)
   const [isSaving, setIsSaving] = useState(false)
@@ -160,7 +160,7 @@ export default function EditAgent({
         .ifOk((updatedAgent) => {
           mutateAgents(updatedAgent)
           toast.success(t('Agent.updated'))
-          router.push(`/agents`)
+          navigate(`/agents`)
         })
         .ifFail(handleErrorWithToast)
         .watch(() => setIsSaving(false))
@@ -177,12 +177,12 @@ export default function EditAgent({
         .ifOk((updatedAgent) => {
           mutateAgents(updatedAgent)
           toast.success(t('Agent.created'))
-          router.push(`/agents`)
+          navigate(`/agents`)
         })
         .ifFail(handleErrorWithToast)
         .watch(() => setIsSaving(false))
     }
-  }, [agent, userId, mutateAgents, router, initialAgent, t])
+  }, [agent, userId, mutateAgents, navigate, initialAgent, t])
 
   const updateVisibility = useCallback(
     async (visibility: Visibility) => {
@@ -225,11 +225,11 @@ export default function EditAgent({
       .ifOk(() => {
         mutateAgents({ id: initialAgent.id }, true)
         toast.success(t('Agent.deleted'))
-        router.push('/agents')
+        navigate('/agents')
       })
       .ifFail(handleErrorWithToast)
       .watch(() => setIsSaving(false))
-  }, [initialAgent?.id, mutateAgents, router, t])
+  }, [initialAgent?.id, mutateAgents, navigate, t])
 
   const handleBookmarkToggle = useCallback(async () => {
     if (!initialAgent?.id || isBookmarkToggleLoading) return

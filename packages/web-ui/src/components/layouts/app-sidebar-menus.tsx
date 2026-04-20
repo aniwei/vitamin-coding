@@ -12,10 +12,10 @@ import { SidebarMenu, SidebarMenuItem } from 'ui/sidebar'
 import { SidebarGroupContent } from 'ui/sidebar'
 
 import { SidebarGroup } from 'ui/sidebar'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { getShortcutKeyList, Shortcuts } from 'lib/keyboard-shortcuts'
-import { useRouter } from 'next/navigation'
-import { useTranslations } from 'next-intl'
+import { useNavigate } from 'react-router-dom'
+import { useTranslations } from '@/hooks/use-translations'
 import { MCPIcon } from 'ui/mcp-icon'
 import { WriteIcon } from 'ui/write-icon'
 import { FolderOpenIcon, FolderSearchIcon, PlusIcon, Waypoints } from 'lucide-react'
@@ -28,7 +28,7 @@ import { BasicUser } from 'app-types/user'
 import { AppSidebarAdmin } from './app-sidebar-menu-admin'
 
 export function AppSidebarMenus({ user }: { user?: BasicUser }) {
-  const router = useRouter()
+  const navigate = useNavigate()
   const t = useTranslations('')
   const { setOpenMobile } = useSidebar()
   const [expandedArchive, setExpandedArchive] = useState(false)
@@ -46,13 +46,12 @@ export function AppSidebarMenus({ user }: { user?: BasicUser }) {
           <Tooltip>
             <SidebarMenuItem className='mb-1'>
               <Link
-                href='/'
+                to='/'
                 onClick={(e) => {
                   e.preventDefault()
                   setOpenMobile(false)
-                  router.push(`/`)
-                  router.refresh()
-                }}
+                  navigate(`/`)
+                  }}
               >
                 <SidebarMenuButton className='flex font-semibold group/new-chat bg-input/20 border border-border/40'>
                   <WriteIcon className='size-4' />
@@ -75,7 +74,7 @@ export function AppSidebarMenus({ user }: { user?: BasicUser }) {
         <SidebarMenu>
           <Tooltip>
             <SidebarMenuItem>
-              <Link href='/mcp'>
+              <Link to='/mcp'>
                 <SidebarMenuButton className='font-semibold'>
                   <MCPIcon className='size-4 fill-accent-foreground' />
                   {t('Layout.mcpConfiguration')}
@@ -87,7 +86,7 @@ export function AppSidebarMenus({ user }: { user?: BasicUser }) {
         <SidebarMenu>
           <Tooltip>
             <SidebarMenuItem>
-              <Link href='/workflow'>
+              <Link to='/workflow'>
                 <SidebarMenuButton className='font-semibold'>
                   <Waypoints className='size-4' />
                   {t('Layout.workflow')}
@@ -142,7 +141,7 @@ export function AppSidebarMenus({ user }: { user?: BasicUser }) {
                   archives!.map((archive) => (
                     <SidebarMenuSubItem
                       onClick={() => {
-                        router.push(`/archive/${archive.id}`)
+                        navigate(`/archive/${archive.id}`)
                       }}
                       key={archive.id}
                       className='cursor-pointer'

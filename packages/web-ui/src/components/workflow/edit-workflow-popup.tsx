@@ -28,10 +28,10 @@ import { z } from 'zod'
 import { DBWorkflow, WorkflowIcon } from 'app-types/workflow'
 import { handleErrorWithToast } from 'ui/shared-toast'
 import { toast } from 'sonner'
-import { useRouter } from 'next/navigation'
+import { useNavigate } from 'react-router-dom'
 import { cn, createDebounce } from 'lib/utils'
 import { mutate } from 'swr'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { BACKGROUND_COLORS } from 'lib/const'
 
 const colorUpdateDebounce = createDebounce()
@@ -98,7 +98,7 @@ export function EditWorkflowPopup({
 
   const [config, setConfig] = useObjectState<typeof defaultConfig>(getInitialConfig())
 
-  const router = useRouter()
+  const navigate = useNavigate()
 
   const [loading, setLoading] = useState(false)
 
@@ -118,7 +118,7 @@ export function EditWorkflowPopup({
           onOpenChange?.(false)
           mutate('/api/workflow')
           if (submitAfterRoute) {
-            router.push(`/workflow/${workflow.id}`)
+            navigate(`/workflow/${workflow.id}`)
           }
           onSave?.(workflow)
         })

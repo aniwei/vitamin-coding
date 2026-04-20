@@ -5,10 +5,10 @@ import { Badge } from 'ui/badge'
 import { cn } from 'lib/utils'
 import { BasicUserWithLastLogin } from 'app-types/user'
 import { toast } from 'sonner'
-import { updateUserBanStatusAction } from '@/app/api/admin/actions'
+import { updateUserBanStatusAction } from '@/lib/compat/server-actions/admin'
 import { UpdateUserBanStatusActionState } from '@/app/api/admin/validations'
 import { useProfileTranslations } from '@/hooks/use-profile-translations'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 import { Edit2 } from 'lucide-react'
 import {
@@ -21,7 +21,6 @@ import {
   AlertDialogAction,
   AlertDialogTrigger,
 } from 'ui/alert-dialog'
-import Form from 'next/form'
 import { SubmitButton } from './user-submit-button'
 
 export function UserStatusBadge({
@@ -119,7 +118,7 @@ export function UserStatusBadge({
             </AlertDialogDescription>
           </AlertDialogHeader>
 
-          <Form action={banStatusAction}>
+          <form action={banStatusAction}>
             <input type='hidden' name='userId' value={user.id} />
             <input type='hidden' name='banned' value={user.banned ? 'true' : 'false'} />
             <div className='flex justify-end gap-2'>
@@ -148,7 +147,7 @@ export function UserStatusBadge({
                 </SubmitButton>
               </AlertDialogAction>
             </div>
-          </Form>
+          </form>
         </AlertDialogContent>
       </AlertDialog>
     </>

@@ -1,10 +1,10 @@
 'use client'
 
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { buttonVariants } from '@/components/ui/button'
 import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
 import { cn } from 'lib/utils'
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 import { SocialAuthenticationProvider } from 'app-types/authentication'
 import SocialProviders from './social-providers'
 import { Mail } from 'lucide-react'
@@ -46,7 +46,7 @@ export default function SignUpPage({
       <CardContent className='flex flex-col gap-2'>
         {emailAndPasswordEnabled && (
           <Link
-            href='/sign-up/email'
+            to='/sign-up/email'
             data-testid='email-signup-button'
             className={cn(buttonVariants({ variant: 'default' }), 'w-full')}
           >

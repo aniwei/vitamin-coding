@@ -24,7 +24,7 @@ import {
   WrenchIcon,
   X,
 } from 'lucide-react'
-import Link from 'next/link'
+import { Link } from 'react-router-dom'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Badge } from 'ui/badge'
@@ -54,7 +54,7 @@ import {
 import { Input } from 'ui/input'
 import { MCPIcon } from 'ui/mcp-icon'
 
-import { useTranslations } from 'next-intl'
+import { useTranslations } from '@/hooks/use-translations'
 
 import { Switch } from 'ui/switch'
 import { useShallow } from 'zustand/shallow'
@@ -569,7 +569,7 @@ function McpServerSelector() {
       {!selectedMcpServerList.length ? (
         <div className='text-sm text-muted-foreground w-full h-full flex flex-col items-center justify-center py-6'>
           <div>{t('noMcpServersDetected')}</div>
-          <Link href='/mcp'>
+          <Link to='/mcp'>
             <Button variant={'ghost'} className='mt-2 text-primary flex items-center gap-1'>
               {t('addServer')} <ChevronRight className='size-4' />
             </Button>
@@ -845,7 +845,7 @@ function AgentSelector({ onSelectAgent }: { onSelectAgent?: (agent: AgentSummary
     if (myAgents.length + bookmarkedAgents.length > 0) return null
     return (
       <Link
-        href={'/agent/new'}
+        to={'/agent/new'}
         className='py-8 px-4 hover:bg-input/100 rounded-lg cursor-pointer flex justify-between items-center text-xs overflow-hidden'
       >
         <div className='gap-1 z-10'>
