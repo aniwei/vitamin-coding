@@ -45,37 +45,38 @@
 
 :root {
   --radius: 0.75rem;
-  --background: oklch(1 0 0);
-  --foreground: oklch(0.141 0.005 285.823);
-  --card: oklch(1 0 0);
-  --card-foreground: oklch(0.141 0.005 285.823);
-  --popover: oklch(1 0 0);
-  --popover-foreground: oklch(0.141 0.005 285.823);
-  --primary: oklch(0.21 0.006 285.885);
-  --primary-foreground: oklch(0.985 0 0);
-  --secondary: oklch(0.967 0.001 286.375);
-  --secondary-foreground: oklch(0.21 0.006 285.885);
-  --muted: oklch(0.967 0.001 286.375);
-  --muted-foreground: oklch(0.552 0.016 285.938);
-  --accent: oklch(0.967 0.001 286.375);
-  --accent-foreground: oklch(0.21 0.006 285.885);
-  --destructive: oklch(0.577 0.245 27.325);
-  --border: oklch(0.92 0.004 286.32);
-  --input: oklch(0.92 0.004 286.32);
-  --ring: oklch(0.705 0.015 286.067);
-  --chart-1: hsl(221.2 83.2% 53.3%);
-  --chart-2: hsl(212 95% 68%);
-  --chart-3: hsl(216 92% 60%);
-  --chart-4: hsl(210 98% 78%);
-  --chart-5: hsl(212 97% 87%);
-  --sidebar: oklch(0.985 0 0);
-  --sidebar-foreground: oklch(0.141 0.005 285.823);
-  --sidebar-primary: oklch(0.21 0.006 285.885);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(0.967 0.001 286.375);
-  --sidebar-accent-foreground: oklch(0.21 0.006 285.885);
-  --sidebar-border: oklch(0.92 0.004 286.32);
-  --sidebar-ring: oklch(0.705 0.015 286.067);
+  --background: hsl(220 20% 99%);
+  --foreground: hsl(220 43% 11%);
+  --card: hsl(0 0% 100%);
+  --card-foreground: hsl(220 43% 11%);
+  --popover: hsl(0 0% 100%);
+  --popover-foreground: hsl(220 43% 11%);
+  --primary: hsl(227 89% 54%);
+  --primary-foreground: hsl(0 0% 100%);
+  --secondary: hsl(220 17% 96%);
+  --secondary-foreground: hsl(221 39% 24%);
+  --muted: hsl(220 17% 96%);
+  --muted-foreground: hsl(220 15% 46%);
+  --accent: hsl(212 91% 94%);
+  --accent-foreground: hsl(222 84% 30%);
+  --destructive: hsl(4 86% 58%);
+  --destructive-foreground: hsl(0 0% 100%);
+  --border: hsl(216 16% 84%);
+  --input: hsl(216 16% 84%);
+  --ring: hsl(227 89% 54%);
+  --chart-1: hsl(227 89% 54%);
+  --chart-2: hsl(198 88% 49%);
+  --chart-3: hsl(142 76% 39%);
+  --chart-4: hsl(36 92% 50%);
+  --chart-5: hsl(4 86% 58%);
+  --sidebar: hsl(220 20% 99%);
+  --sidebar-foreground: hsl(220 43% 11%);
+  --sidebar-primary: hsl(227 89% 54%);
+  --sidebar-primary-foreground: hsl(0 0% 100%);
+  --sidebar-accent: hsl(220 17% 96%);
+  --sidebar-accent-foreground: hsl(221 39% 24%);
+  --sidebar-border: hsl(216 16% 84%);
+  --sidebar-ring: hsl(227 89% 54%);
 }
 .light {
   [data-theme="zinc"] {
@@ -764,32 +765,32 @@
 }
 
 .dark {
-  --background: hsl(220 6% 9%);
-  --foreground: oklch(0.985 0 0);
-  --card: oklch(0.21 0.006 285.885);
-  --card-foreground: oklch(0.985 0 0);
-  --popover: oklch(0.21 0.006 285.885);
-  --popover-foreground: oklch(0.985 0 0);
-  --primary: oklch(0.92 0.004 286.32);
-  --primary-foreground: oklch(0.21 0.006 285.885);
-  --secondary: oklch(0.274 0.006 286.033);
-  --secondary-foreground: oklch(0.985 0 0);
-  --muted: oklch(0.274 0.006 286.033);
-  --muted-foreground: oklch(0.705 0.015 286.067);
-  --accent: oklch(0.274 0.006 286.033);
-  --accent-foreground: oklch(0.985 0 0);
-  --destructive: oklch(0.704 0.191 22.216);
-  --border: oklch(1 0 0 / 10%);
-  --input: oklch(1 0 0 / 15%);
-  --ring: oklch(0.552 0.016 285.938);
-  --sidebar: hsl(220 6% 9%);
-  --sidebar-foreground: oklch(0.985 0 0);
-  --sidebar-primary: oklch(0.488 0.243 264.376);
-  --sidebar-primary-foreground: oklch(0.985 0 0);
-  --sidebar-accent: oklch(1 0 0 / 15%);
-  --sidebar-accent-foreground: oklch(0.985 0 0);
-  --sidebar-border: oklch(1 0 0 / 10%);
-  --sidebar-ring: oklch(0.552 0.016 285.938);
+  --background: hsl(240 4% 12%);
+  --foreground: hsl(210 20% 98%);
+  --card: hsl(240 3% 13%);
+  --card-foreground: hsl(210 20% 98%);
+  --popover: hsl(240 3% 13%);
+  --popover-foreground: hsl(210 20% 98%);
+  --primary: hsl(221 100% 58%);
+  --primary-foreground: hsl(210 20% 98%);
+  --secondary: hsl(230 6% 17%);
+  --secondary-foreground: hsl(210 20% 91%);
+  --muted: hsl(230 6% 17%);
+  --muted-foreground: hsl(218 15% 66%);
+  --accent: hsl(233 11% 16%);
+  --accent-foreground: hsl(216 16% 84%);
+  --destructive: hsl(4 86% 58%);
+  --border: hsl(240 4% 24%);
+  --input: hsl(240 4% 24%);
+  --ring: hsl(198 95% 60%);
+  --sidebar: hsl(240 4% 12%);
+  --sidebar-foreground: hsl(210 20% 98%);
+  --sidebar-primary: hsl(221 100% 58%);
+  --sidebar-primary-foreground: hsl(210 20% 98%);
+  --sidebar-accent: hsl(230 6% 17%);
+  --sidebar-accent-foreground: hsl(210 20% 91%);
+  --sidebar-border: hsl(240 4% 24%);
+  --sidebar-ring: hsl(198 95% 60%);
 
   [data-theme="zinc"] {
     --background: hsl(240 10% 3.9%);
