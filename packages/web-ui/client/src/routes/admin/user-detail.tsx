@@ -5,7 +5,6 @@ import { authClient } from 'auth/client'
 import { UserDetail } from '@/components/user/user-detail/user-detail'
 import { UserStatsCardLoaderSkeleton } from '@/components/user/user-detail/user-stats-card-loader'
 import { UserStatisticsCard } from '@/components/user/user-detail/user-statistics-card'
-import { UserDetailClientLoader } from '../../components/user-detail-client-loader'
 import { fetcher } from 'lib/utils'
 
 function UserStatsAdminClient({ userId }: { userId: string }) {

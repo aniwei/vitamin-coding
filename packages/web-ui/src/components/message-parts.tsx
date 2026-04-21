@@ -597,7 +597,7 @@ export const ReasoningPart = memo(function ReasoningPart({
 })
 ReasoningPart.displayName = 'ReasoningPart'
 
-const loading = memo(function Loading() {
+const Loading = memo(function Loading() {
   return (
     <div className='px-6 py-4'>
       <div className='h-44 w-full rounded-md opacity-0' />
@@ -773,16 +773,16 @@ export const ToolMessagePart = memo(
 
     const CustomToolComponent = useMemo(() => {
       if (toolName === DefaultToolName.WebSearch || toolName === DefaultToolName.WebContent) {
-        return <Suspense fallback={<loading />}><WebSearchToolInvocation part={part} /></Suspense>
+        return <Suspense fallback={<Loading />}><WebSearchToolInvocation part={part} /></Suspense>
       }
 
       if (toolName === ImageToolName) {
-        return <Suspense fallback={<loading />}><ImageGeneratorToolInvocation part={part} /></Suspense>
+        return <Suspense fallback={<Loading />}><ImageGeneratorToolInvocation part={part} /></Suspense>
       }
 
       if (toolName === DefaultToolName.JavascriptExecution) {
         return (
-          <Suspense fallback={<loading />}>
+          <Suspense fallback={<Loading />}>
             <CodeExecutor
               part={part}
               key={part.toolCallId}
@@ -795,7 +795,7 @@ export const ToolMessagePart = memo(
 
       if (toolName === DefaultToolName.PythonExecution) {
         return (
-          <Suspense fallback={<loading />}>
+          <Suspense fallback={<Loading />}>
             <CodeExecutor
               part={part}
               key={part.toolCallId}
@@ -809,13 +809,13 @@ export const ToolMessagePart = memo(
       if (state === 'output-available') {
         switch (toolName) {
           case DefaultToolName.CreatePieChart:
-            return <Suspense fallback={<loading />}><PieChart key={`${toolCallId}-${toolName}`} {...(input as any)} /></Suspense>
+            return <Suspense fallback={<Loading />}><PieChart key={`${toolCallId}-${toolName}`} {...(input as any)} /></Suspense>
           case DefaultToolName.CreateBarChart:
-            return <Suspense fallback={<loading />}><BarChart key={`${toolCallId}-${toolName}`} {...(input as any)} /></Suspense>
+            return <Suspense fallback={<Loading />}><BarChart key={`${toolCallId}-${toolName}`} {...(input as any)} /></Suspense>
           case DefaultToolName.CreateLineChart:
-            return <Suspense fallback={<loading />}><LineChart key={`${toolCallId}-${toolName}`} {...(input as any)} /></Suspense>
+            return <Suspense fallback={<Loading />}><LineChart key={`${toolCallId}-${toolName}`} {...(input as any)} /></Suspense>
           case DefaultToolName.CreateTable:
-            return <Suspense fallback={<loading />}><InteractiveTable key={`${toolCallId}-${toolName}`} {...(input as any)} /></Suspense>
+            return <Suspense fallback={<Loading />}><InteractiveTable key={`${toolCallId}-${toolName}`} {...(input as any)} /></Suspense>
         }
       }
       return null

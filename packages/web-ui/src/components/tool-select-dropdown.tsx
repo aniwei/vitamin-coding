@@ -146,7 +146,7 @@ export function ToolSelectDropdown({
       return mentions.map((m) => m.name)
     }
     if (toolChoice == 'none') return []
-    const translate = t.raw('defaultToolKit')
+    const translate = t.raw('defaultToolKit') as Record<string, string>
     const defaultTools = Object.values(AppDefaultToolkit)
       .filter((t) => allowedAppDefaultToolkit?.includes(t))
       .map((t) => translate[t])
@@ -778,7 +778,7 @@ function AppDefaultToolKitSelector() {
   }, [])
 
   const defaultToolInfo = useMemo(() => {
-    const raw = t.raw('Chat.Tool.defaultToolKit')
+    const raw = t.raw('Chat.Tool.defaultToolKit') as Record<string, string>
     return Object.values(AppDefaultToolkit).map((toolkit) => {
       const label = raw[toolkit] || toolkit
       const id = toolkit

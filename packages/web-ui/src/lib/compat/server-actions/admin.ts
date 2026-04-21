@@ -2,7 +2,7 @@
  * Compat shim for @/app/api/admin/actions (server actions → fetch calls)
  */
 
-type ActionState = { success: boolean; message?: string; errors?: Record<string, string[]> }
+type ActionState = { success?: boolean; message?: string; errors?: Record<string, string[]> }
 type UpdateUserRoleActionState = ActionState & { user?: any }
 type UpdateUserBanStatusActionState = ActionState & { user?: any }
 

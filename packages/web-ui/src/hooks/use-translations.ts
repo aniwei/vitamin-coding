@@ -5,15 +5,21 @@
  * Usage is identical to next-intl:
  *   const t = useTranslations('Common')
  *   t('cancel')           // → Common.cancel
- *   t('Chat.title')       // → Common.Chat.title
+ *   t.raw('toolKit')      // → raw object at Common.toolKit
  */
 import { useTranslation } from 'react-i18next'
 
-type TFunction = (key: string, options?: Record<string, unknown>) => string
+type TFunction = {
+  (key: string, options?: Record<string, unknown>): string
+  raw(key: string): unknown
+}
 
 export function useTranslations(namespace?: string): TFunction {
   const { t } = useTranslation()
-  if (!namespace) return t as TFunction
-  return (key: string, options?: Record<string, unknown>) =>
-    t(`${namespace}.${key}`, options as any) as string
+  const translate = (key: string, options?: Record<string, unknown>) =>
+    (namespace ? t(`${namespace}.${key}`, options as any) : t(key, options as any)) as string
+  translate.raw = (key: string): unknown =>
+    namespace ? t(`${namespace}.${key}`, { returnObjects: true }) : t(key, { returnObjects: true })
+  return translate as unknown as TFunction
 }
+

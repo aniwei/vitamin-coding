@@ -39,7 +39,7 @@ import {
 import { useTranslations } from '@/hooks/use-translations'
 import { Think } from 'ui/think'
 import { useGenerateThreadTitle } from '@/hooks/queries/use-generate-thread-title'
-import { lazy, Suspense } from 'react'
+import { lazy } from 'react'
 import { useMounted } from '@/hooks/use-mounted'
 import { getStorageManager } from 'lib/browser-stroage'
 import { AnimatePresence, motion } from 'framer-motion'

@@ -1,15 +1,16 @@
 /**
  * Compat shim for @/app/api/user/actions (server actions → authClient/fetch)
  */
-import { authClient } from 'auth/client'
 
-type ActionState = { success: boolean; message?: string }
+type ActionState = { success?: boolean; message?: string }
 type UpdateUserActionState = ActionState & { user?: any; currentUserUpdated?: boolean }
-type DeleteUserActionState = ActionState
+type DeleteUserActionState = ActionState & { redirect?: string }
 type UpdateUserPasswordActionState = ActionState
 
-export const updateUserImageAction = async (formData: FormData): Promise<UpdateUserActionState> => {
-  const userId = (formData.get('userId') as string) ?? ''
+export const updateUserImageAction = async (
+  _prevState: UpdateUserActionState,
+  formData: FormData,
+): Promise<UpdateUserActionState> => {
   const image = (formData.get('image') as string) ?? ''
   try {
     const res = await fetch('/api/user/details', {
@@ -28,7 +29,10 @@ export const updateUserImageAction = async (formData: FormData): Promise<UpdateU
   }
 }
 
-export const updateUserDetailsAction = async (formData: FormData): Promise<UpdateUserActionState> => {
+export const updateUserDetailsAction = async (
+  _prevState: UpdateUserActionState,
+  formData: FormData,
+): Promise<UpdateUserActionState> => {
   const name = (formData.get('name') as string) ?? undefined
   const image = (formData.get('image') as string) ?? undefined
   try {
@@ -48,20 +52,26 @@ export const updateUserDetailsAction = async (formData: FormData): Promise<Updat
   }
 }
 
-export const deleteUserAction = async (formData: FormData): Promise<DeleteUserActionState> => {
+export const deleteUserAction = async (
+  _prevState: DeleteUserActionState,
+  _formData: FormData,
+): Promise<DeleteUserActionState> => {
   try {
     const res = await fetch('/api/user', { method: 'DELETE' })
     if (!res.ok) {
       const err = await res.json().catch(() => ({}))
       return { success: false, message: err.error || 'Failed to delete account' }
     }
-    return { success: true, message: 'Account deleted' }
+    return { success: true, message: 'Account deleted', redirect: '/' }
   } catch (err: any) {
     return { success: false, message: err.message || 'Failed to delete account' }
   }
 }
 
-export const updateUserPasswordAction = async (formData: FormData): Promise<UpdateUserPasswordActionState> => {
+export const updateUserPasswordAction = async (
+  _prevState: UpdateUserPasswordActionState,
+  formData: FormData,
+): Promise<UpdateUserPasswordActionState> => {
   const currentPassword = (formData.get('currentPassword') as string) ?? ''
   const newPassword = (formData.get('newPassword') as string) ?? ''
   try {
@@ -80,14 +90,14 @@ export const updateUserPasswordAction = async (formData: FormData): Promise<Upda
   }
 }
 
-export async function generateAvatarImageAction(options: {
-  prompt?: string
-  provider?: 'openai' | 'xai' | 'nanobanana'
-}) {
+export async function generateAvatarImageAction(
+  provider: string,
+  prompt: string,
+) {
   const res = await fetch('/api/user/generate-avatar', {
     method: 'POST',
     headers: { 'Content-Type': 'application/json' },
-    body: JSON.stringify(options),
+    body: JSON.stringify({ provider, prompt }),
   })
   if (!res.ok) throw new Error('Failed to generate avatar')
   return res.json()

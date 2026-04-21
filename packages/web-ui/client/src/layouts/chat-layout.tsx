@@ -5,7 +5,7 @@ import { SidebarProvider } from 'ui/sidebar'
 import { AppSidebar } from '@/components/layouts/app-sidebar'
 import { AppHeader } from '@/components/layouts/app-header'
 import { AppPopupProvider } from '@/components/layouts/app-popup-provider'
-import { SWRConfigProvider } from '@/app/(chat)/swr-config'
+import { SWRConfigProvider } from '@/components/layouts/swr-config'
 import { UserDetailClientLoader } from '../components/user-detail-client-loader'
 
 export function ChatLayout() {
