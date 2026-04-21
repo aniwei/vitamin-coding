@@ -1,6 +1,11 @@
 import { Agent } from '@vitamin/agent'
 import type { AssistantMessage } from '@vitamin/ai'
-import type { SwarmAgentDef, SwarmContext, SwarmRunContextFactory, SwarmTurnResult } from '../types'
+import type {
+  SwarmAgentDef,
+  SwarmContext,
+  SwarmRunContextFactory,
+  SwarmTurnResult,
+} from '../types'
 
 /**
  * 执行单个 Agent 的一次回合。

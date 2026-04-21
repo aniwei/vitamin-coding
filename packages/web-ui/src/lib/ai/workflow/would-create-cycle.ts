@@ -6,7 +6,7 @@ import { Connection, Edge } from '@xyflow/react'
  */
 export function wouldCreateCycle(
   connection: Connection | Edge,
-  existingEdges: (Connection | Edge)[],
+  existingEdges: (Connection | Edge)[]
 ): boolean {
   if (!connection.source || !connection.target) {
     return false

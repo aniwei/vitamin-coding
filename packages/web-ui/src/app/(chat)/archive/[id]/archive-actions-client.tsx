@@ -53,22 +53,22 @@ export function ArchiveActionsClient({ archive }: ArchiveActionsClientProps) {
 
   return (
     <>
-      <div className='flex items-center gap-2'>
+      <div className="flex items-center gap-2">
         <Button
-          variant='ghost'
-          size='sm'
+          variant="ghost"
+          size="sm"
           onClick={() => setEditDialogOpen(true)}
-          className='h-8 px-2'
+          className="h-8 px-2"
         >
-          <Settings2 className='h-4 w-4' />
+          <Settings2 className="h-4 w-4" />
         </Button>
         <Button
-          variant='ghost'
-          size='sm'
+          variant="ghost"
+          size="sm"
           onClick={() => setDeleteDialogOpen(true)}
-          className='h-8 px-2 hover:text-destructive'
+          className="h-8 px-2 hover:text-destructive"
         >
-          <Trash2 className='h-4 w-4' />
+          <Trash2 className="h-4 w-4" />
         </Button>
       </div>
 
@@ -92,13 +92,17 @@ export function ArchiveActionsClient({ archive }: ArchiveActionsClientProps) {
           </DialogHeader>
           <DialogFooter>
             <Button
-              variant='ghost'
+              variant="ghost"
               onClick={() => setDeleteDialogOpen(false)}
               disabled={isDeleting}
             >
               {t('Common.cancel')}
             </Button>
-            <Button variant='destructive' onClick={handleDelete} disabled={isDeleting}>
+            <Button
+              variant="destructive"
+              onClick={handleDelete}
+              disabled={isDeleting}
+            >
               {isDeleting ? t('Common.deleting') : t('Common.delete')}
             </Button>
           </DialogFooter>

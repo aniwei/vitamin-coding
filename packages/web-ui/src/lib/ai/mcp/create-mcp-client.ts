@@ -14,7 +14,14 @@ import { isMaybeRemoteConfig, isMaybeStdioConfig } from './is-mcp-config'
 import logger from 'logger'
 import type { ConsolaInstance } from 'consola'
 import { colorize } from 'consola/utils'
-import { createDebounce, errorToString, generateUUID, isNull, Locker, withTimeout } from 'lib/utils'
+import {
+  createDebounce,
+  errorToString,
+  generateUUID,
+  isNull,
+  Locker,
+  withTimeout,
+} from 'lib/utils'
 
 import { safe } from 'ts-safe'
 import { BASE_URL, IS_MCP_SERVER_REMOTE_ONLY, IS_VERCEL_ENV } from 'lib/const'
@@ -56,10 +63,13 @@ export class MCPClient {
     private name: string,
     private serverConfig: MCPServerConfig,
 
-    private options: ClientOptions = {},
+    private options: ClientOptions = {}
   ) {
     this.logger = logger.withDefaults({
-      message: colorize('cyan', `[${this.id.slice(0, 4)}] MCP Client ${this.name}: `),
+      message: colorize(
+        'cyan',
+        `[${this.id.slice(0, 4)}] MCP Client ${this.name}: `
+      ),
     })
     if (options.initialToolInfo?.length) {
       this.toolInfo = options.initialToolInfo
@@ -143,7 +153,9 @@ export class MCPClient {
           software_version: '1.0.0',
         },
         onRedirectToAuthorization: async (authorizationUrl: URL) => {
-          this.logger.info('OAuth authorization required - user interaction needed')
+          this.logger.info(
+            'OAuth authorization required - user interaction needed'
+          )
           this.authorizationUrl = authorizationUrl
           throw new OAuthAuthorizationRequiredError(authorizationUrl)
         },
@@ -161,7 +173,7 @@ export class MCPClient {
           this.disconnect()
         } else {
           this.logger.info(
-            `Skipping auto-disconnect: ${this.inProgressToolCallIds.length} tool calls in progress`,
+            `Skipping auto-disconnect: ${this.inProgressToolCallIds.length} tool calls in progress`
           )
           // Reschedule the disconnect check
           this.scheduleAutoDisconnect()
@@ -210,7 +222,7 @@ export class MCPClient {
               }
               return acc
             },
-            {} as Record<string, string>,
+            {} as Record<string, string>
           ),
           cwd: process.cwd(),
         })
@@ -219,7 +231,7 @@ export class MCPClient {
           client.connect(this.transport, {
             maxTotalTimeout: MCP_MAX_TOTAL_TIMEOUT,
           }),
-          CONNET_TIMEOUT,
+          CONNET_TIMEOUT
         )
       } else if (isMaybeRemoteConfig(this.serverConfig)) {
         const config = MCPRemoteConfigZodSchema.parse(this.serverConfig)
@@ -237,12 +249,14 @@ export class MCPClient {
             client.connect(this.transport, {
               maxTotalTimeout: MCP_MAX_TOTAL_TIMEOUT,
             }),
-            CONNET_TIMEOUT,
+            CONNET_TIMEOUT
           )
         } catch (streamableHttpError: any) {
           // Check if it's OAuth error and we haven't tried OAuth yet
           if (isUnauthorized(streamableHttpError) && !this.needOauthProvider) {
-            this.logger.info('OAuth authentication required, retrying with OAuth provider')
+            this.logger.info(
+              'OAuth authentication required, retrying with OAuth provider'
+            )
             this.needOauthProvider = true
             this.locker.unlock()
             await this.disconnect()
@@ -251,7 +265,7 @@ export class MCPClient {
 
           if (!isOAuthAuthorizationRequired(streamableHttpError)) {
             this.logger.warn(
-              `Streamable HTTP connection failed, Because ${streamableHttpError.message}, falling back to SSE transport`,
+              `Streamable HTTP connection failed, Because ${streamableHttpError.message}, falling back to SSE transport`
             )
 
             this.transport = new SSEClientTransport(url, {
@@ -267,12 +281,12 @@ export class MCPClient {
                 client.connect(this.transport, {
                   maxTotalTimeout: MCP_MAX_TOTAL_TIMEOUT,
                 }),
-                CONNET_TIMEOUT,
+                CONNET_TIMEOUT
               )
             } catch (sseError) {
               if (isUnauthorized(sseError) && !this.needOauthProvider) {
                 this.logger.info(
-                  'OAuth authentication required for SSE, retrying with OAuth provider',
+                  'OAuth authentication required for SSE, retrying with OAuth provider'
                 )
                 this.needOauthProvider = true
                 this.locker.unlock()
@@ -289,7 +303,7 @@ export class MCPClient {
       }
 
       this.logger.info(
-        `Connected to MCP server in ${((Date.now() - startedAt) / 1000).toFixed(2)}s`,
+        `Connected to MCP server in ${((Date.now() - startedAt) / 1000).toFixed(2)}s`
       )
       this.client = client
       this.isConnected = true
@@ -340,7 +354,7 @@ export class MCPClient {
             name: tool.name,
             description: tool.description,
             inputSchema: tool.inputSchema,
-          }) as MCPToolInfo,
+          }) as MCPToolInfo
       )
       this.options.onToolInfoUpdate?.(this.toolInfo)
     }
@@ -378,13 +392,19 @@ export class MCPClient {
       })
       .ifOk(() => this.scheduleAutoDisconnect())
       .watch(() => {
-        this.inProgressToolCallIds = this.inProgressToolCallIds.filter((toolId) => toolId !== id)
+        this.inProgressToolCallIds = this.inProgressToolCallIds.filter(
+          (toolId) => toolId !== id
+        )
       })
       .watch((status) => {
         if (!status.isOk) {
           this.logger.error('Tool call failed', toolName, status.error)
         } else if (status.value?.isError) {
-          this.logger.error('Tool call failed content', toolName, status.value.content)
+          this.logger.error(
+            'Tool call failed content',
+            toolName,
+            status.value.content
+          )
         }
       })
       .ifFail((err) => {
@@ -408,7 +428,7 @@ export const createMCPClient = (
   id: string,
   name: string,
   serverConfig: MCPServerConfig,
-  options: ClientOptions = {},
+  options: ClientOptions = {}
 ): MCPClient => new MCPClient(id, name, serverConfig, options)
 
 class OAuthAuthorizationRequiredError extends Error {

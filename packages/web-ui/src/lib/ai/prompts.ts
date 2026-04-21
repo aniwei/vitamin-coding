@@ -4,7 +4,6 @@ import { UserPreferences } from 'app-types/user'
 import { User } from 'better-auth'
 import { createMCPToolId } from './mcp/mcp-tool-id'
 import { format } from 'date-fns'
-import { Agent } from 'app-types/agent'
 
 export const CREATE_THREAD_TITLE_PROMPT = `
 You are a chat title generation expert.
@@ -50,34 +49,21 @@ CRITICAL: Generate all output content in the same language as the user's request
 
 export const buildUserSystemPrompt = (
   user?: User,
-  userPreferences?: UserPreferences,
-  agent?: Agent,
+  userPreferences?: UserPreferences
 ) => {
-  const assistantName = agent?.name || userPreferences?.botName || 'better-chatbot'
+  const assistantName = userPreferences?.botName || 'better-chatbot'
   const currentTime = format(new Date(), "EEEE, MMMM d, yyyy 'at' h:mm:ss a")
 
   let prompt = `You are ${assistantName}`
 
-  if (agent?.instructions?.role) {
-    prompt += `. You are an expert in ${agent.instructions.role}`
-  }
-
   prompt += `. The current date and time is ${currentTime}.`
-
-  // Agent-specific instructions as primary core
-  if (agent?.instructions?.systemPrompt) {
-    prompt += `
-  # Core Instructions
-  <core_capabilities>
-  ${agent.instructions.systemPrompt}
-  </core_capabilities>`
-  }
 
   // User context section (first priority)
   const userInfo: string[] = []
   if (user?.name) userInfo.push(`Name: ${user.name}`)
   if (user?.email) userInfo.push(`Email: ${user.email}`)
-  if (userPreferences?.profession) userInfo.push(`Profession: ${userPreferences.profession}`)
+  if (userPreferences?.profession)
+    userInfo.push(`Profession: ${userPreferences.profession}`)
 
   if (userInfo.length > 0) {
     prompt += `
@@ -132,33 +118,21 @@ ${userPreferences.responseStyleExample}
 
 export const buildSpeechSystemPrompt = (
   user: User,
-  userPreferences?: UserPreferences,
-  agent?: Agent,
+  userPreferences?: UserPreferences
 ) => {
-  const assistantName = agent?.name || userPreferences?.botName || 'Assistant'
+  const assistantName = userPreferences?.botName || 'Assistant'
   const currentTime = format(new Date(), "EEEE, MMMM d, yyyy 'at' h:mm:ss a")
 
   let prompt = `You are ${assistantName}`
 
-  if (agent?.instructions?.role) {
-    prompt += `. You are an expert in ${agent.instructions.role}`
-  }
-
   prompt += `. The current date and time is ${currentTime}.`
-
-  // Agent-specific instructions as primary core
-  if (agent?.instructions?.systemPrompt) {
-    prompt += `# Core Instructions
-    <core_capabilities>
-    ${agent.instructions.systemPrompt}
-    </core_capabilities>`
-  }
 
   // User context section (first priority)
   const userInfo: string[] = []
   if (user?.name) userInfo.push(`Name: ${user.name}`)
   if (user?.email) userInfo.push(`Email: ${user.email}`)
-  if (userPreferences?.profession) userInfo.push(`Profession: ${userPreferences.profession}`)
+  if (userPreferences?.profession)
+    userInfo.push(`Profession: ${userPreferences.profession}`)
 
   if (userInfo.length > 0) {
     prompt += `
@@ -219,7 +193,7 @@ ${userPreferences.responseStyleExample}
 }
 
 export const buildMcpServerCustomizationsSystemPrompt = (
-  instructions: Record<string, McpServerCustomizationsPrompt>,
+  instructions: Record<string, McpServerCustomizationsPrompt>
 ) => {
   const prompt = Object.values(instructions).reduce((acc, v) => {
     if (!v.prompt && !Object.keys(v.tools ?? {}).length) return acc
@@ -230,7 +204,8 @@ ${
   v.tools
     ? Object.entries(v.tools)
         .map(
-          ([toolName, toolPrompt]) => `- **${createMCPToolId(v.name, toolName)}**: ${toolPrompt}`,
+          ([toolName, toolPrompt]) =>
+            `- **${createMCPToolId(v.name, toolName)}**: ${toolPrompt}`
         )
         .join('\n')
     : ''

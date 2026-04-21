@@ -29,8 +29,15 @@ function getRolePermissions(role: string | undefined | null): BetterAuthRole {
  */
 function hasPermission(
   userRoleString: string | undefined | null,
-  permission: 'use' | 'create' | 'list' | 'delete' | 'update' | 'view' | 'share',
-  resource: 'agent' | 'workflow' | 'mcp',
+  permission:
+    | 'use'
+    | 'create'
+    | 'list'
+    | 'delete'
+    | 'update'
+    | 'view'
+    | 'share',
+  resource: 'agent' | 'workflow' | 'mcp'
 ): boolean {
   const roleObject = getRolePermissions(userRoleString)
 
@@ -42,7 +49,10 @@ function hasPermission(
 
   const statements = roleObject.statements
   const resourcePermissions = statements[resource] || []
-  return Array.isArray(resourcePermissions) && resourcePermissions.includes(permission)
+  return (
+    Array.isArray(resourcePermissions) &&
+    resourcePermissions.includes(permission)
+  )
 }
 
 /**
@@ -104,7 +114,9 @@ export function canEditMCP(userRoleString?: string | null): boolean {
 /**
  * Check if user can change visibility of MCP connections (client-side)
  */
-export function canChangeVisibilityMCP(userRoleString?: string | null): boolean {
+export function canChangeVisibilityMCP(
+  userRoleString?: string | null
+): boolean {
   return hasPermission(userRoleString, 'share', 'mcp')
 }
 
@@ -120,7 +132,7 @@ export function canDeleteMCP(userRoleString?: string | null): boolean {
  */
 export function canUseResource(
   userRoleString?: string | null,
-  resourceType: 'agent' | 'workflow' | 'mcp' = 'agent',
+  resourceType: 'agent' | 'workflow' | 'mcp' = 'agent'
 ): boolean {
   return hasPermission(userRoleString, 'use', resourceType)
 }
@@ -130,7 +142,7 @@ export function canUseResource(
  */
 export function canViewResource(
   userRoleString?: string | null,
-  resourceType: 'agent' | 'workflow' | 'mcp' = 'agent',
+  resourceType: 'agent' | 'workflow' | 'mcp' = 'agent'
 ): boolean {
   return hasPermission(userRoleString, 'view', resourceType)
 }

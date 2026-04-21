@@ -35,7 +35,7 @@ export class FileStorageError extends Error {
   constructor(
     message: string,
     public code: string,
-    public cause?: unknown,
+    public cause?: unknown
   ) {
     super(message)
     this.name = 'FileStorageError'
@@ -51,7 +51,11 @@ export class FileNotFoundError extends FileStorageError {
 
 export class FileTooLargeError extends FileStorageError {
   constructor(size: number, maxSize: number, cause?: unknown) {
-    super(`File too large: ${size} bytes (max: ${maxSize} bytes)`, 'FILE_TOO_LARGE', cause)
+    super(
+      `File too large: ${size} bytes (max: ${maxSize} bytes)`,
+      'FILE_TOO_LARGE',
+      cause
+    )
     this.name = 'FileTooLargeError'
   }
 }

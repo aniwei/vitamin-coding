@@ -7,7 +7,10 @@ import { useCallback, useEffect } from 'react'
 import { mutate } from 'swr'
 import { safe } from 'ts-safe'
 
-export function useGenerateThreadTitle(option: { threadId: string; chatModel?: ChatModel }) {
+export function useGenerateThreadTitle(option: {
+  threadId: string
+  chatModel?: ChatModel
+}) {
   const { complete, completion } = useCompletion({
     api: '/api/chat/title',
   })
@@ -30,17 +33,20 @@ export function useGenerateThreadTitle(option: { threadId: string; chatModel?: C
         }
 
         return {
-          threadList: prev.threadList.map((v) => (v.id === option.threadId ? { ...v, title } : v)),
+          threadList: prev.threadList.map((v) =>
+            v.id === option.threadId ? { ...v, title } : v
+          ),
         }
       })
     },
-    [option.threadId, option.chatModel?.model, option.chatModel?.provider],
+    [option.threadId, option.chatModel?.model, option.chatModel?.provider]
   )
 
   const generateTitle = useCallback(
     (message: string) => {
       const { threadId, chatModel } = option
-      if (appStore.getState().generatingTitleThreadIds.includes(threadId)) return
+      if (appStore.getState().generatingTitleThreadIds.includes(threadId))
+        return
       appStore.setState((prev) => ({
         generatingTitleThreadIds: [...prev.generatingTitleThreadIds, threadId],
       }))
@@ -57,11 +63,13 @@ export function useGenerateThreadTitle(option: { threadId: string; chatModel?: C
         .ifOk(() => mutate('/api/thread'))
         .watch(() => {
           appStore.setState((prev) => ({
-            generatingTitleThreadIds: prev.generatingTitleThreadIds.filter((v) => v !== threadId),
+            generatingTitleThreadIds: prev.generatingTitleThreadIds.filter(
+              (v) => v !== threadId
+            ),
           }))
         })
     },
-    [updateTitle],
+    [updateTitle]
   )
 
   useEffect(() => {

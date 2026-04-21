@@ -3,7 +3,9 @@ import { getSession } from 'auth/auth-instance'
 import { chatExportRepository, chatRepository } from 'lib/db/repository'
 
 export async function POST(req: Request) {
-  const { threadId, expiresAt } = await ChatExportByThreadIdSchema.parse(await req.json())
+  const { threadId, expiresAt } = await ChatExportByThreadIdSchema.parse(
+    await req.json()
+  )
   const session = await getSession()
   if (!session) {
     return new Response('Unauthorized', { status: 401 })

@@ -1,7 +1,7 @@
 'use client'
 
 import { useState, useEffect, useCallback } from 'react'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import {
   Dialog,
   DialogClose,
@@ -74,7 +74,9 @@ export function ArchiveDialog({
           }
         })
         .ifOk(() => {
-          toast.success(isEdit ? t('Archive.archiveUpdated') : t('Archive.archiveCreated'))
+          toast.success(
+            isEdit ? t('Archive.archiveUpdated') : t('Archive.archiveCreated')
+          )
           onOpenChange?.(false)
           onSuccess?.()
           mutate('/api/archive')
@@ -105,9 +107,11 @@ export function ArchiveDialog({
   return (
     <Dialog open={open} onOpenChange={handleOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent hideClose className='sm:max-w-md'>
+      <DialogContent hideClose className="sm:max-w-md">
         <DialogHeader>
-          <DialogTitle>{isEdit ? t('Archive.editArchive') : t('Archive.addArchive')}</DialogTitle>
+          <DialogTitle>
+            {isEdit ? t('Archive.editArchive') : t('Archive.addArchive')}
+          </DialogTitle>
           <DialogDescription>
             {isEdit
               ? t('Archive.editArchiveDescription')
@@ -115,37 +119,46 @@ export function ArchiveDialog({
           </DialogDescription>
         </DialogHeader>
 
-        <div className='flex flex-col gap-4'>
-          <div className='flex flex-col gap-2'>
-            <Label htmlFor='archive-name'>{t('Archive.archiveName')}</Label>
+        <div className="flex flex-col gap-4">
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="archive-name">{t('Archive.archiveName')}</Label>
             <Input
-              id='archive-name'
+              id="archive-name"
               value={config.name}
-              onChange={(e) => setConfig((prev) => ({ ...prev, name: e.target.value }))}
+              onChange={(e) =>
+                setConfig((prev) => ({ ...prev, name: e.target.value }))
+              }
               placeholder={t('Archive.archiveName')}
-              className='bg-input border-transparent'
+              className="bg-input border-transparent"
             />
           </div>
 
-          <div className='flex flex-col gap-2'>
-            <Label htmlFor='archive-description'>{t('Archive.archiveDescription')}</Label>
+          <div className="flex flex-col gap-2">
+            <Label htmlFor="archive-description">
+              {t('Archive.archiveDescription')}
+            </Label>
             <Textarea
-              id='archive-description'
+              id="archive-description"
               value={config.description}
-              onChange={(e) => setConfig((prev) => ({ ...prev, description: e.target.value }))}
+              onChange={(e) =>
+                setConfig((prev) => ({ ...prev, description: e.target.value }))
+              }
               placeholder={t('Archive.archiveDescriptionPlaceholder')}
-              className='resize-none min-h-[100px] bg-input border-transparent'
+              className="resize-none min-h-[100px] bg-input border-transparent"
             />
           </div>
         </div>
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant='ghost'>{t('Common.cancel')}</Button>
+            <Button variant="ghost">{t('Common.cancel')}</Button>
           </DialogClose>
-          <Button onClick={handleSubmit} disabled={loading || !config.name.trim()}>
+          <Button
+            onClick={handleSubmit}
+            disabled={loading || !config.name.trim()}
+          >
             {t('Common.save')}
-            {loading && <Loader className='size-3.5 animate-spin' />}
+            {loading && <Loader className="size-3.5 animate-spin" />}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,6 +1,12 @@
 import { createLogger } from '@vitamin/shared'
 
-import type { RouterConfig, RoutingDecision, RouteRule, SwarmAgentDef, SwarmContext } from './types'
+import type {
+  RouterConfig,
+  RoutingDecision,
+  RouteRule,
+  SwarmAgentDef,
+  SwarmContext,
+} from './types'
 import { RoutingError } from './errors'
 
 const logger = createLogger('@vitamin/swarm:router')
@@ -38,12 +44,17 @@ export class SwarmRouter {
   }
 
   /** 基于规则路由 */
-  private routeByRule(input: string, agents: SwarmAgentDef[]): RoutingDecision {
+  private routeByRule(
+    input: string,
+    agents: SwarmAgentDef[],
+  ): RoutingDecision {
     const rules = this.config.rules ?? []
     const lowerInput = input.toLowerCase()
 
     // 按优先级排序
-    const sorted = [...rules].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
+    const sorted = [...rules].sort(
+      (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
+    )
 
     for (const rule of sorted) {
       if (this.matchRule(rule, lowerInput)) {
@@ -119,7 +130,10 @@ export class SwarmRouter {
   }
 
   /** 简易关键词匹配 fallback */
-  private routeByKeywordMatch(input: string, agents: SwarmAgentDef[]): RoutingDecision {
+  private routeByKeywordMatch(
+    input: string,
+    agents: SwarmAgentDef[],
+  ): RoutingDecision {
     const lowerInput = input.toLowerCase()
     let bestMatch: { agent: SwarmAgentDef; score: number } | null = null
 
@@ -152,7 +166,10 @@ export class SwarmRouter {
   }
 
   /** Fallback 到默认 Agent */
-  private fallback(agents: SwarmAgentDef[], reason: string): RoutingDecision {
+  private fallback(
+    agents: SwarmAgentDef[],
+    reason: string,
+  ): RoutingDecision {
     const fallbackId = this.config.fallbackAgentId ?? agents[0]?.id
     if (!fallbackId) {
       throw new RoutingError(`${reason} and no fallback agent configured`)

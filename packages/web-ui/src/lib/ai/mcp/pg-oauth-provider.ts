@@ -6,7 +6,10 @@ import type {
   OAuthClientMetadata,
   OAuthClientInformation,
 } from '@modelcontextprotocol/sdk/shared/auth.js'
-import { OAuthClientProvider, UnauthorizedError } from '@modelcontextprotocol/sdk/client/auth.js'
+import {
+  OAuthClientProvider,
+  UnauthorizedError,
+} from '@modelcontextprotocol/sdk/client/auth.js'
 
 import globalLogger from 'lib/logger'
 import { colorize } from 'consola/utils'
@@ -33,12 +36,12 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
       _clientMetadata: OAuthClientMetadata
       onRedirectToAuthorization: (authUrl: URL) => Promise<void>
       state?: string
-    },
+    }
   ) {
     this.logger = globalLogger.withDefaults({
       message: colorize(
         'dim',
-        `[MCP OAuth Provider ${this.config.name}-${generateUUID().slice(0, 4)}] `,
+        `[MCP OAuth Provider ${this.config.name}-${generateUUID().slice(0, 4)}] `
       ),
     })
   }
@@ -47,7 +50,9 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
     if (this.initialized) return
     // 0. If a constructor state was provided (callback/hand-off), adopt it first
     if (this.config.state) {
-      const session = await pgMcpOAuthRepository.getSessionByState(this.config.state)
+      const session = await pgMcpOAuthRepository.getSessionByState(
+        this.config.state
+      )
       if (session && session.mcpServerId === this.config.mcpServerId) {
         this.currentOAuthState = session.state || ''
         this.cachedAuthData = session
@@ -58,7 +63,7 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
     }
     // 1. Check for authenticated session first
     const authenticated = await pgMcpOAuthRepository.getAuthenticatedSession(
-      this.config.mcpServerId,
+      this.config.mcpServerId
     )
     if (authenticated) {
       this.currentOAuthState = authenticated.state || ''
@@ -70,10 +75,13 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
 
     // 2. Always create a new in-progress session when not authenticated
     this.currentOAuthState = generateUUID()
-    this.cachedAuthData = await pgMcpOAuthRepository.createSession(this.config.mcpServerId, {
-      state: this.currentOAuthState,
-      serverUrl: this.config.serverUrl,
-    })
+    this.cachedAuthData = await pgMcpOAuthRepository.createSession(
+      this.config.mcpServerId,
+      {
+        state: this.currentOAuthState,
+        serverUrl: this.config.serverUrl,
+      }
+    )
     this.initialized = true
     this.logger.info('Created new OAuth session')
   }
@@ -90,7 +98,7 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
 
     this.cachedAuthData = await pgMcpOAuthRepository.updateSessionByState(
       this.currentOAuthState,
-      data,
+      data
     )
     return this.cachedAuthData
   }
@@ -111,7 +119,10 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
     const authData = await this.getAuthData()
     if (authData?.clientInfo) {
       // Check if redirect URI matches (security check)
-      if (!authData.tokens && authData.clientInfo.redirect_uris[0] != this.redirectUrl) {
+      if (
+        !authData.tokens &&
+        authData.clientInfo.redirect_uris[0] != this.redirectUrl
+      ) {
         // Security guard: redirect URI mismatch → drop only this mismatched session by state
         if (authData.state) {
           await pgMcpOAuthRepository.deleteByState(authData.state)
@@ -126,7 +137,9 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
     return undefined
   }
 
-  async saveClientInformation(clientCredentials: OAuthClientInformationFull): Promise<void> {
+  async saveClientInformation(
+    clientCredentials: OAuthClientInformationFull
+  ): Promise<void> {
     await this.updateAuthData({
       clientInfo: clientCredentials,
     })
@@ -148,7 +161,7 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
     this.cachedAuthData = await pgMcpOAuthRepository.saveTokensAndCleanup(
       this.currentOAuthState,
       this.config.mcpServerId,
-      { tokens: accessTokens },
+      { tokens: accessTokens }
     )
 
     this.logger.info(`OAuth tokens stored successfully`)
@@ -183,7 +196,7 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
     if (!session) return
     if (session.mcpServerId !== this.config.mcpServerId) {
       this.logger.warn(
-        `Attempted to adopt state for different server (${session.mcpServerId}), ignoring`,
+        `Attempted to adopt state for different server (${session.mcpServerId}), ignoring`
       )
       return
     }
@@ -194,7 +207,7 @@ export class PgOAuthClientProvider implements OAuthClientProvider {
   }
 
   async invalidateCredentials(
-    invalidationScope: 'all' | 'client' | 'tokens' | 'verifier',
+    invalidationScope: 'all' | 'client' | 'tokens' | 'verifier'
   ): Promise<void> {
     try {
       switch (invalidationScope) {

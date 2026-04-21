@@ -15,9 +15,12 @@ export async function clickAndWaitForNavigation(
   page: Page,
   selector: string,
   urlPattern: string,
-  options = { timeout: 10000 },
+  options = { timeout: 10000 }
 ) {
-  await Promise.all([page.waitForURL(urlPattern, options), page.getByTestId(selector).click()])
+  await Promise.all([
+    page.waitForURL(urlPattern, options),
+    page.getByTestId(selector).click(),
+  ])
 }
 
 /**
@@ -28,7 +31,7 @@ export async function openDropdown(
   page: Page,
   buttonSelector: string,
   menuSelector = '[role="menu"]',
-  timeout = 5000,
+  timeout = 5000
 ) {
   const button = page.getByTestId(buttonSelector)
   await button.click()
@@ -41,7 +44,11 @@ export async function openDropdown(
 /**
  * Select an option from an open dropdown menu
  */
-export async function selectDropdownOption(page: Page, optionSelector: string, timeout = 5000) {
+export async function selectDropdownOption(
+  page: Page,
+  optionSelector: string,
+  timeout = 5000
+) {
   const option = page.getByTestId(optionSelector)
   await option.waitFor({ state: 'visible', timeout })
   await option.click()

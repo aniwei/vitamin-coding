@@ -1,4 +1,9 @@
-import { Archive, ArchiveItem, ArchiveRepository, ArchiveWithItemCount } from 'app-types/archive'
+import {
+  Archive,
+  ArchiveItem,
+  ArchiveRepository,
+  ArchiveWithItemCount,
+} from 'app-types/archive'
 import { pgDb as db } from '../db.pg'
 import { ArchiveTable, ArchiveItemTable } from '../schema.pg'
 import { and, eq, count } from 'drizzle-orm'
@@ -32,7 +37,10 @@ export const pgArchiveRepository: ArchiveRepository = {
         itemCount: count(ArchiveItemTable.id),
       })
       .from(ArchiveTable)
-      .leftJoin(ArchiveItemTable, eq(ArchiveTable.id, ArchiveItemTable.archiveId))
+      .leftJoin(
+        ArchiveItemTable,
+        eq(ArchiveTable.id, ArchiveItemTable.archiveId)
+      )
       .where(eq(ArchiveTable.userId, userId))
       .groupBy(ArchiveTable.id)
       .orderBy(ArchiveTable.updatedAt)
@@ -44,7 +52,10 @@ export const pgArchiveRepository: ArchiveRepository = {
   },
 
   async getArchiveById(id) {
-    const [result] = await db.select().from(ArchiveTable).where(eq(ArchiveTable.id, id))
+    const [result] = await db
+      .select()
+      .from(ArchiveTable)
+      .where(eq(ArchiveTable.id, id))
     return result as Archive | null
   },
 
@@ -84,7 +95,12 @@ export const pgArchiveRepository: ArchiveRepository = {
   async removeItemFromArchive(archiveId, itemId) {
     await db
       .delete(ArchiveItemTable)
-      .where(and(eq(ArchiveItemTable.archiveId, archiveId), eq(ArchiveItemTable.itemId, itemId)))
+      .where(
+        and(
+          eq(ArchiveItemTable.archiveId, archiveId),
+          eq(ArchiveItemTable.itemId, itemId)
+        )
+      )
   },
 
   async getArchiveItems(archiveId) {
@@ -107,8 +123,16 @@ export const pgArchiveRepository: ArchiveRepository = {
         updatedAt: ArchiveTable.updatedAt,
       })
       .from(ArchiveTable)
-      .innerJoin(ArchiveItemTable, eq(ArchiveTable.id, ArchiveItemTable.archiveId))
-      .where(and(eq(ArchiveItemTable.itemId, itemId), eq(ArchiveTable.userId, userId)))
+      .innerJoin(
+        ArchiveItemTable,
+        eq(ArchiveTable.id, ArchiveItemTable.archiveId)
+      )
+      .where(
+        and(
+          eq(ArchiveItemTable.itemId, itemId),
+          eq(ArchiveTable.userId, userId)
+        )
+      )
       .orderBy(ArchiveTable.name)
     return result as Archive[]
   },

@@ -2,13 +2,20 @@
 
 import { useState, useRef } from 'react'
 import { Avatar, AvatarImage, AvatarFallback } from 'ui/avatar'
-import { Camera, Loader2, Upload, Smile, Sparkles, ImageIcon } from 'lucide-react'
+import {
+  Camera,
+  Loader2,
+  Upload,
+  Smile,
+  Sparkles,
+  ImageIcon,
+} from 'lucide-react'
 import { useFileUpload } from '@/hooks/use-presigned-upload'
 import { toast } from 'sonner'
 import { cn } from '@/lib/utils'
 import { Popover, PopoverContent, PopoverTrigger } from 'ui/popover'
 import { Button } from 'ui/button'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 
 import { EmojiAvatarDialog } from './emoji-avatar-dialog'
 import { DefaultAvatarDialog } from './default-avatar-dialog'
@@ -41,7 +48,9 @@ export function UserAvatarUpload({
 
   const displayUrl = previewUrl || currentImageUrl
 
-  const handleFileSelect = async (event: React.ChangeEvent<HTMLInputElement>) => {
+  const handleFileSelect = async (
+    event: React.ChangeEvent<HTMLInputElement>
+  ) => {
     const file = event.target.files?.[0]
     if (!file) return
 
@@ -101,19 +110,19 @@ export function UserAvatarUpload({
   }
 
   return (
-    <div className='relative inline-block'>
-      <div className='relative'>
-        <Avatar className='size-26 rounded-full ring ring-border'>
+    <div className="relative inline-block">
+      <div className="relative">
+        <Avatar className="size-26 rounded-full ring ring-border">
           <AvatarImage src={displayUrl || undefined} />
-          <AvatarFallback className='text-lg font-semibold'>
+          <AvatarFallback className="text-lg font-semibold">
             {userName.slice(0, 2).toUpperCase()}
           </AvatarFallback>
         </Avatar>
 
         {/* Upload Progress Overlay */}
         {isUploading && (
-          <div className='absolute inset-0 flex items-center justify-center rounded-full bg-black/60'>
-            <Loader2 className='size-8 animate-spin text-white' />
+          <div className="absolute inset-0 flex items-center justify-center rounded-full bg-black/60">
+            <Loader2 className="size-8 animate-spin text-white" />
           </div>
         )}
 
@@ -121,56 +130,56 @@ export function UserAvatarUpload({
         <Popover open={isOpen} onOpenChange={setIsOpen}>
           <PopoverTrigger asChild>
             <Button
-              size='icon'
-              variant='secondary'
+              size="icon"
+              variant="secondary"
               className={cn(
                 'absolute bottom-0 right-0 size-8 rounded-full shadow-lg',
-                (disabled || isUploading) && 'cursor-not-allowed opacity-60',
+                (disabled || isUploading) && 'cursor-not-allowed opacity-60'
               )}
               disabled={disabled || isUploading}
             >
-              <Camera className='size-4' />
+              <Camera className="size-4" />
             </Button>
           </PopoverTrigger>
-          <PopoverContent className='w-56 p-2' align='end'>
-            <div className='flex flex-col gap-1'>
+          <PopoverContent className="w-56 p-2" align="end">
+            <div className="flex flex-col gap-1">
               <Button
-                variant='ghost'
-                className='justify-start w-full'
+                variant="ghost"
+                className="justify-start w-full"
                 onClick={handleUploadClick}
                 disabled={isUploading}
               >
-                <Upload className='mr-2 size-4' />
+                <Upload className="mr-2 size-4" />
                 {t('uploadPhoto')}
               </Button>
 
               <Button
-                variant='ghost'
-                className='justify-start w-full'
+                variant="ghost"
+                className="justify-start w-full"
                 onClick={handleDefaultAvatarClick}
                 disabled={isUploading}
               >
-                <ImageIcon className='mr-2 size-4' />
+                <ImageIcon className="mr-2 size-4" />
                 {t('chooseDefault')}
               </Button>
 
               <Button
-                variant='ghost'
-                className='justify-start w-full'
+                variant="ghost"
+                className="justify-start w-full"
                 onClick={handleEmojiClick}
                 disabled={isUploading}
               >
-                <Smile className='mr-2 size-4' />
+                <Smile className="mr-2 size-4" />
                 {t('useEmoji')}
               </Button>
 
               <Button
-                variant='ghost'
-                className='justify-start w-full'
+                variant="ghost"
+                className="justify-start w-full"
                 onClick={handleGenerateClick}
                 disabled={isUploading}
               >
-                <Sparkles className='mr-2 size-4' />
+                <Sparkles className="mr-2 size-4" />
                 {t('generateWithAI')}
               </Button>
             </div>
@@ -181,10 +190,10 @@ export function UserAvatarUpload({
       {/* Hidden File Input */}
       <input
         ref={fileInputRef}
-        type='file'
+        type="file"
         accept={ALLOWED_TYPES.join(',')}
         onChange={handleFileSelect}
-        className='hidden'
+        className="hidden"
         disabled={disabled || isUploading}
       />
 

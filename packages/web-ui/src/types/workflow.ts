@@ -59,6 +59,7 @@ export type WorkflowSummary = {
   icon?: WorkflowIcon
   visibility: Visibility
   isPublished: boolean
+  isBookmarked?: boolean
   userId: string
   userName: string
   userAvatar?: string
@@ -77,14 +78,23 @@ export interface WorkflowRepository {
       schema: ObjectJsonSchema7
     }[]
   >
-  checkAccess(workflowId: string, userId: string, readOnly?: boolean): Promise<boolean>
+  checkAccess(
+    workflowId: string,
+    userId: string,
+    readOnly?: boolean
+  ): Promise<boolean>
   selectById(id: string): Promise<DBWorkflow | null>
   save(
     workflow: PartialBy<
       DBWorkflow,
-      'id' | 'createdAt' | 'updatedAt' | 'visibility' | 'isPublished' | 'version'
+      | 'id'
+      | 'createdAt'
+      | 'updatedAt'
+      | 'visibility'
+      | 'isPublished'
+      | 'version'
     >,
-    noGenerateInputNode?: boolean,
+    noGenerateInputNode?: boolean
   ): Promise<DBWorkflow>
   saveStructure(data: {
     workflowId: string
@@ -98,7 +108,7 @@ export interface WorkflowRepository {
     id: string,
     option?: {
       ignoreNote?: boolean
-    },
+    }
   ): Promise<
     | null
     | (DBWorkflow & {
@@ -140,6 +150,5 @@ export type VercelAIWorkflowToolStreamingResult = {
   status: 'running' | 'success' | 'fail'
 }
 
-export const VercelAIWorkflowToolStreamingResultTag = tag<VercelAIWorkflowToolStreamingResult>(
-  'workflow-streaming-result',
-)
+export const VercelAIWorkflowToolStreamingResultTag =
+  tag<VercelAIWorkflowToolStreamingResult>('workflow-streaming-result')

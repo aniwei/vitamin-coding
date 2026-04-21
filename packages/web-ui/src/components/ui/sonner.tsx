@@ -9,7 +9,13 @@ const Toaster = ({ ...props }: ToasterProps) => {
   const themeBase = useMemo(() => {
     return theme == 'dark' ? 'dark' : 'default'
   }, [theme])
-  return <Sonner theme={themeBase as ToasterProps['theme']} className='toaster group ' {...props} />
+  return (
+    <Sonner
+      theme={themeBase as ToasterProps['theme']}
+      className="toaster group "
+      {...props}
+    />
+  )
 }
 
 export { Toaster }

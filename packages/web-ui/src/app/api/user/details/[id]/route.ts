@@ -3,7 +3,10 @@ import { getUser } from 'lib/user/server'
 import { canManageUser } from 'lib/auth/permissions'
 import { NextResponse, NextRequest } from 'next/server'
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const session = await getSession()
     if (!session) {
@@ -20,7 +23,7 @@ export async function GET(_request: NextRequest, { params }: { params: Promise<{
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to get user details' },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }

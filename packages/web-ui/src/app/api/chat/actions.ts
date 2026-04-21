@@ -1,13 +1,21 @@
 'use server'
 
-import { generateObject, generateText, jsonSchema, LanguageModel, type UIMessage } from 'ai'
+import {
+  generateObject,
+  generateText,
+  jsonSchema,
+  LanguageModel,
+  type UIMessage,
+} from 'ai'
 
-import { CREATE_THREAD_TITLE_PROMPT, generateExampleToolSchemaPrompt } from 'lib/ai/prompts'
+import {
+  CREATE_THREAD_TITLE_PROMPT,
+  generateExampleToolSchemaPrompt,
+} from 'lib/ai/prompts'
 
 import type { ChatModel, ChatThread } from 'app-types/chat'
 
 import {
-  agentRepository,
   chatExportRepository,
   chatRepository,
   mcpMcpToolCustomizationRepository,
@@ -24,8 +32,6 @@ import logger from 'logger'
 import { JSONSchema7 } from 'json-schema'
 import { ObjectJsonSchema7 } from 'app-types/util'
 import { jsonSchemaToZod } from 'lib/json-schema-to-zod'
-import { Agent } from 'app-types/agent'
-
 export async function getUserId() {
   const session = await getSession()
   const userId = session?.user?.id
@@ -83,14 +89,16 @@ export async function deleteThreadAction(threadId: string) {
   await chatRepository.deleteThread(threadId)
 }
 
-export async function deleteMessagesByChatIdAfterTimestampAction(messageId: string) {
+export async function deleteMessagesByChatIdAfterTimestampAction(
+  messageId: string
+) {
   'use server'
   await chatRepository.deleteMessagesByChatIdAfterTimestamp(messageId)
 }
 
 export async function updateThreadAction(
   id: string,
-  thread: Partial<Omit<ChatThread, 'createdAt' | 'updatedAt' | 'userId'>>,
+  thread: Partial<Omit<ChatThread, 'createdAt' | 'updatedAt' | 'userId'>>
 ) {
   const userId = await getUserId()
   await chatRepository.updateThread(id, { ...thread, userId })
@@ -118,7 +126,7 @@ export async function generateExampleToolSchemaAction(options: {
       ...options.toolInfo.inputSchema,
       properties: options.toolInfo.inputSchema?.properties ?? {},
       additionalProperties: false,
-    }),
+    })
   )
   const { object } = await generateObject({
     model,
@@ -141,19 +149,25 @@ export async function rememberMcpServerCustomizationsAction(userId: string) {
     return cachedMcpServerCustomizations
   }
 
-  const mcpServerCustomizations = await mcpServerCustomizationRepository.selectByUserId(userId)
-  const mcpToolCustomizations = await mcpMcpToolCustomizationRepository.selectByUserId(userId)
+  const mcpServerCustomizations =
+    await mcpServerCustomizationRepository.selectByUserId(userId)
+  const mcpToolCustomizations =
+    await mcpMcpToolCustomizationRepository.selectByUserId(userId)
 
   const serverIds: string[] = [
-    ...mcpServerCustomizations.map((mcpServerCustomization) => mcpServerCustomization.mcpServerId),
-    ...mcpToolCustomizations.map((mcpToolCustomization) => mcpToolCustomization.mcpServerId),
+    ...mcpServerCustomizations.map(
+      (mcpServerCustomization) => mcpServerCustomization.mcpServerId
+    ),
+    ...mcpToolCustomizations.map(
+      (mcpToolCustomization) => mcpToolCustomization.mcpServerId
+    ),
   ]
 
   const prompts = Array.from(new Set(serverIds)).reduce(
     (acc, serverId) => {
       const sc = mcpServerCustomizations.find((v) => v.mcpServerId == serverId)
       const tc = mcpToolCustomizations.filter(
-        (mcpToolCustomization) => mcpToolCustomization.mcpServerId === serverId,
+        (mcpToolCustomization) => mcpToolCustomization.mcpServerId === serverId
       )
       const data: McpServerCustomizationsPrompt = {
         name: sc?.serverName || tc[0]?.serverName || '',
@@ -164,13 +178,13 @@ export async function rememberMcpServerCustomizationsAction(userId: string) {
             acc[v.toolName] = v.prompt || ''
             return acc
           },
-          {} as Record<string, string>,
+          {} as Record<string, string>
         ),
       }
       acc[serverId] = data
       return acc
     },
-    {} as Record<string, McpServerCustomizationsPrompt>,
+    {} as Record<string, McpServerCustomizationsPrompt>
   )
 
   serverCache.set(key, prompts, 1000 * 60 * 30) // 30 minutes
@@ -196,17 +210,6 @@ export async function generateObjectAction({
     schema: jsonSchemaToZod(schema),
   })
   return result.object
-}
-
-export async function rememberAgentAction(agent: string | undefined, userId: string) {
-  if (!agent) return undefined
-  const key = CacheKeys.agentInstructions(agent)
-  let cachedAgent = await serverCache.get<Agent | null>(key)
-  if (!cachedAgent) {
-    cachedAgent = await agentRepository.selectAgentById(agent, userId)
-    await serverCache.set(key, cachedAgent)
-  }
-  return cachedAgent as Agent | undefined
 }
 
 export async function exportChatAction({

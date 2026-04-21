@@ -41,7 +41,9 @@ export enum BooleanConditionOperator {
  * Gets the default condition operator for a given data type.
  * Used when creating new conditions in the UI.
  */
-export function getFirstConditionOperator(type: 'string' | 'number' | 'boolean') {
+export function getFirstConditionOperator(
+  type: 'string' | 'number' | 'boolean'
+) {
   switch (type) {
     case 'string':
       return StringConditionOperator.Equals
@@ -102,7 +104,9 @@ export type ConditionBranches = {
  */
 export function checkConditionBranch(
   branch: ConditionBranch,
-  getSourceValue: (source: OutputSchemaSourceKey) => string | number | boolean | undefined,
+  getSourceValue: (
+    source: OutputSchemaSourceKey
+  ) => string | number | boolean | undefined
 ): boolean {
   // Evaluate all conditions in the branch
   const results = branch.conditions?.map((condition) => {

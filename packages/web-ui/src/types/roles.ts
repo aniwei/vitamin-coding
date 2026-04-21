@@ -9,7 +9,9 @@ export type UserRoleNames = (typeof USER_ROLES)[keyof typeof USER_ROLES]
 
 export const DEFAULT_USER_ROLE: UserRoleNames =
   process.env.DEFAULT_USER_ROLE &&
-  Object.values(USER_ROLES).includes(process.env.DEFAULT_USER_ROLE as UserRoleNames)
+  Object.values(USER_ROLES).includes(
+    process.env.DEFAULT_USER_ROLE as UserRoleNames
+  )
     ? (process.env.DEFAULT_USER_ROLE as UserRoleNames)
     : USER_ROLES.EDITOR
 
@@ -28,7 +30,8 @@ export const userRolesInfo: UserRolesInfo = {
   },
   editor: {
     label: 'Editor',
-    description: 'Default role for users who can create agents, workflows and add MCPs',
+    description:
+      'Default role for users who can create agents, workflows and add MCPs',
   },
   user: {
     label: 'User',

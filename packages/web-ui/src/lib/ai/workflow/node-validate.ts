@@ -40,9 +40,19 @@ export function validateSchema(key: string, schema: JSONSchema7) {
   return true
 }
 
-type NodeValidate<T> = (context: { node: T; nodes: UINode[]; edges: Edge[] }) => void
+type NodeValidate<T> = (context: {
+  node: T
+  nodes: UINode[]
+  edges: Edge[]
+}) => void
 
-export function allNodeValidate({ nodes, edges }: { nodes: UINode[]; edges: Edge[] }):
+export function allNodeValidate({
+  nodes,
+  edges,
+}: {
+  nodes: UINode[]
+  edges: Edge[]
+}):
   | true
   | {
       node?: UINode
@@ -76,8 +86,15 @@ export function allNodeValidate({ nodes, edges }: { nodes: UINode[]; edges: Edge
   return true
 }
 
-export const nodeValidate: NodeValidate<WorkflowNodeData> = ({ node, nodes, edges }) => {
-  if (node.kind != NodeKind.Note && nodes.filter((n) => n.data.name === node.name).length > 1) {
+export const nodeValidate: NodeValidate<WorkflowNodeData> = ({
+  node,
+  nodes,
+  edges,
+}) => {
+  if (
+    node.kind != NodeKind.Note &&
+    nodes.filter((n) => n.data.name === node.name).length > 1
+  ) {
     throw new Error('Node name must be unique')
   }
   switch (node.kind) {
@@ -98,7 +115,10 @@ export const nodeValidate: NodeValidate<WorkflowNodeData> = ({ node, nodes, edge
   }
 }
 
-export const inputNodeValidate: NodeValidate<InputNodeData> = ({ node, edges }) => {
+export const inputNodeValidate: NodeValidate<InputNodeData> = ({
+  node,
+  edges,
+}) => {
   if (!edges.some((e) => e.source === node.id)) {
     throw new Error('Input node must have an edge')
   }
@@ -109,7 +129,11 @@ export const inputNodeValidate: NodeValidate<InputNodeData> = ({ node, edges }) 
   })
 }
 
-export const outputNodeValidate: NodeValidate<OutputNodeData> = ({ node, nodes, edges }) => {
+export const outputNodeValidate: NodeValidate<OutputNodeData> = ({
+  node,
+  nodes,
+  edges,
+}) => {
   const names = node.outputData.map((data) => data.key)
   const uniqueNames = [...new Set(names)]
   if (names.length !== uniqueNames.length) {
@@ -124,10 +148,14 @@ export const outputNodeValidate: NodeValidate<OutputNodeData> = ({ node, nodes, 
       throw new Error('Variable Name is too long')
     }
     if (!data.source) throw new Error('Output data must have a source')
-    if (data.source.path.length === 0) throw new Error('Output data must have a path')
+    if (data.source.path.length === 0)
+      throw new Error('Output data must have a path')
     const sourceNode = nodes.find((n) => n.data.id === data.source?.nodeId)
     if (!sourceNode) throw new Error('Source node not found')
-    const sourceSchema = findJsonSchemaByPath(sourceNode.data.outputSchema, data.source.path)
+    const sourceSchema = findJsonSchemaByPath(
+      sourceNode.data.outputSchema,
+      data.source.path
+    )
     if (!sourceSchema) throw new Error('Source schema not found')
   })
 
@@ -140,7 +168,8 @@ export const outputNodeValidate: NodeValidate<OutputNodeData> = ({ node, nodes, 
     else current = prevNode.data as WorkflowNodeData
   }
 
-  if (current?.kind !== NodeKind.Input) throw new Error('Prev node must be a Input node')
+  if (current?.kind !== NodeKind.Input)
+    throw new Error('Prev node must be a Input node')
 }
 
 export const llmNodeValidate: NodeValidate<LLMNodeData> = ({ node }) => {
@@ -149,10 +178,13 @@ export const llmNodeValidate: NodeValidate<LLMNodeData> = ({ node }) => {
     if (!message.role) throw new Error('LLM node must have a role')
     if (!message.content) throw new Error('LLM node must have a content')
   })
-  if (node.messages.length === 0) throw new Error('LLM node must have a message')
+  if (node.messages.length === 0)
+    throw new Error('LLM node must have a message')
 }
 
-export const conditionNodeValidate: NodeValidate<ConditionNodeData> = ({ node }) => {
+export const conditionNodeValidate: NodeValidate<ConditionNodeData> = ({
+  node,
+}) => {
   const branchValidate = (branch: ConditionBranch) => {
     branch.conditions.forEach((condition) => {
       if (!condition.operator) throw new Error('Condition must have a operator')
@@ -199,7 +231,9 @@ export const httpNodeValidate: NodeValidate<HttpNodeData> = ({ node }) => {
       }
       // Check for duplicate header keys (case insensitive)
       const lowerKey = header.key.toLowerCase()
-      const duplicates = node.headers.filter((h) => h.key.toLowerCase() === lowerKey)
+      const duplicates = node.headers.filter(
+        (h) => h.key.toLowerCase() === lowerKey
+      )
       if (duplicates.length > 1) {
         throw new Error(`Duplicate header key: ${header.key}`)
       }
@@ -216,12 +250,17 @@ export const httpNodeValidate: NodeValidate<HttpNodeData> = ({ node }) => {
   }
 
   // Validate body is only used with appropriate methods
-  if (node.body !== undefined && !['POST', 'PUT', 'PATCH'].includes(node.method)) {
+  if (
+    node.body !== undefined &&
+    !['POST', 'PUT', 'PATCH'].includes(node.method)
+  ) {
     throw new Error(`Body is not allowed for ${node.method} requests`)
   }
 }
 
-export const templateNodeValidate: NodeValidate<TemplateNodeData> = ({ node }) => {
+export const templateNodeValidate: NodeValidate<TemplateNodeData> = ({
+  node,
+}) => {
   // Validate template type
   const validTypes = ['tiptap'] // Future: add "handlebars"
   if (!validTypes.includes(node.template.type)) {

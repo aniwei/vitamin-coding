@@ -2,7 +2,10 @@ import { getSession } from 'auth/server'
 import { workflowRepository } from 'lib/db/repository'
 import { canEditWorkflow, canDeleteWorkflow } from 'lib/auth/permissions'
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params
   const session = await getSession()
   if (!session) {
@@ -16,7 +19,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   return Response.json(workflow)
 }
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params
   const { visibility, isPublished } = await request.json()
 
@@ -28,9 +34,16 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   // Check if user has permission to edit workflows
   const canEdit = await canEditWorkflow()
   if (!canEdit) {
-    return Response.json({ error: 'Only editors and admins can edit workflows' }, { status: 403 })
+    return Response.json(
+      { error: 'Only editors and admins can edit workflows' },
+      { status: 403 }
+    )
   }
-  const hasAccess = await workflowRepository.checkAccess(id, session.user.id, false)
+  const hasAccess = await workflowRepository.checkAccess(
+    id,
+    session.user.id,
+    false
+  )
   if (!hasAccess) {
     return new Response('Unauthorized', { status: 401 })
   }
@@ -52,7 +65,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   return Response.json(updatedWorkflow)
 }
 
-export async function DELETE(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params
   const session = await getSession()
   if (!session) {
@@ -62,9 +78,16 @@ export async function DELETE(_: Request, { params }: { params: Promise<{ id: str
   // Check if user has permission to delete workflows
   const canDelete = await canDeleteWorkflow()
   if (!canDelete) {
-    return Response.json({ error: 'Only editors and admins can delete workflows' }, { status: 403 })
+    return Response.json(
+      { error: 'Only editors and admins can delete workflows' },
+      { status: 403 }
+    )
   }
-  const hasAccess = await workflowRepository.checkAccess(id, session.user.id, false)
+  const hasAccess = await workflowRepository.checkAccess(
+    id,
+    session.user.id,
+    false
+  )
   if (!hasAccess) {
     return new Response('Unauthorized', { status: 401 })
   }

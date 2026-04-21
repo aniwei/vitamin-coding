@@ -1,8 +1,16 @@
 'use client'
 
-import { Lock, Eye, Globe, Bookmark, BookmarkCheck, Trash2, Loader2 } from 'lucide-react'
-import { useTranslations } from '@/hooks/use-translations'
-import { useNavigate } from 'react-router-dom'
+import {
+  Lock,
+  Eye,
+  Globe,
+  Bookmark,
+  BookmarkCheck,
+  Trash2,
+  Loader2,
+} from 'lucide-react'
+import { useTranslations } from 'next-intl'
+import { useRouter } from 'next/navigation'
 import { Button } from 'ui/button'
 import {
   DropdownMenu,
@@ -23,17 +31,6 @@ const VISIBILITY_ICONS = {
 } as const
 
 const VISIBILITY_CONFIG = {
-  agent: {
-    private: {
-      label: 'Agent.private',
-      description: 'Agent.privateDescription',
-    },
-    readonly: {
-      label: 'Agent.readOnly',
-      description: 'Agent.readOnlyDescription',
-    },
-    public: { label: 'Agent.public', description: 'Agent.publicDescription' },
-  },
   workflow: {
     private: {
       label: 'Workflow.private',
@@ -61,7 +58,7 @@ const VISIBILITY_CONFIG = {
 } as const
 
 interface ShareableActionsProps {
-  type: 'agent' | 'workflow' | 'mcp'
+  type: 'workflow' | 'mcp'
   visibility?: Visibility
   isOwner: boolean
   canChangeVisibility?: boolean
@@ -94,26 +91,30 @@ export function ShareableActions({
   disabled = false,
 }: ShareableActionsProps) {
   const t = useTranslations()
-  const navigate = useNavigate()
+  const router = useRouter()
 
   const isAnyLoading = useMemo(
-    () => isVisibilityChangeLoading || isBookmarkToggleLoading || isDeleteLoading,
-    [isVisibilityChangeLoading, isBookmarkToggleLoading, isDeleteLoading],
+    () =>
+      isVisibilityChangeLoading || isBookmarkToggleLoading || isDeleteLoading,
+    [isVisibilityChangeLoading, isBookmarkToggleLoading, isDeleteLoading]
   )
 
   const VisibilityIcon = visibility ? VISIBILITY_ICONS[visibility] : null
 
-  const visibilityItems = Object.entries(VISIBILITY_CONFIG[type]).map(([value, config]) => {
-    const IconComponent = VISIBILITY_ICONS[value as keyof typeof VISIBILITY_ICONS]
-    return {
-      icon: <IconComponent className='size-4' />,
-      value: value as Visibility,
-      ...config,
+  const visibilityItems = Object.entries(VISIBILITY_CONFIG[type]).map(
+    ([value, config]) => {
+      const IconComponent =
+        VISIBILITY_ICONS[value as keyof typeof VISIBILITY_ICONS]
+      return {
+        icon: <IconComponent className="size-4" />,
+        value: value as Visibility,
+        ...config,
+      }
     }
-  })
+  )
 
   return (
-    <div className='flex items-center gap-1'>
+    <div className="flex items-center gap-1">
       {VisibilityIcon && (
         <>
           {isOwner && onVisibilityChange && canChangeVisibility ? (
@@ -123,10 +124,10 @@ export function ShareableActions({
                   <div>
                     <DropdownMenuTrigger asChild>
                       <Button
-                        variant='ghost'
-                        size='icon'
-                        className='size-8 data-[state=open]:bg-input text-muted-foreground hover:text-foreground'
-                        data-testid='visibility-button'
+                        variant="ghost"
+                        size="icon"
+                        className="size-8 data-[state=open]:bg-input text-muted-foreground hover:text-foreground"
+                        data-testid="visibility-button"
                         disabled={isAnyLoading || disabled}
                         onClick={(e) => {
                           e.preventDefault()
@@ -134,9 +135,9 @@ export function ShareableActions({
                         }}
                       >
                         {isVisibilityChangeLoading ? (
-                          <Loader2 className='size-4 animate-spin' />
+                          <Loader2 className="size-4 animate-spin" />
                         ) : (
-                          <VisibilityIcon className='size-4' />
+                          <VisibilityIcon className="size-4" />
                         )}
                       </Button>
                     </DropdownMenuTrigger>
@@ -144,19 +145,23 @@ export function ShareableActions({
                 </TooltipTrigger>
                 <TooltipContent>Change visibility</TooltipContent>
               </Tooltip>
-              <DropdownMenuContent className='max-w-sm'>
+              <DropdownMenuContent className="max-w-sm">
                 {visibilityItems.map((visibilityItem) => (
                   <DropdownMenuItem
                     key={visibilityItem.value}
-                    className='cursor-pointer'
-                    disabled={visibility === visibilityItem.value || isAnyLoading || disabled}
+                    className="cursor-pointer"
+                    disabled={
+                      visibility === visibilityItem.value ||
+                      isAnyLoading ||
+                      disabled
+                    }
                     data-testid={`visibility-${visibilityItem.value}`}
                     onClick={() => onVisibilityChange(visibilityItem.value)}
                   >
                     {visibilityItem.icon}
-                    <div className='flex flex-col px-4 gap-1'>
+                    <div className="flex flex-col px-4 gap-1">
                       <p>{t(visibilityItem.label)}</p>
-                      <p className='text-xs text-muted-foreground'>
+                      <p className="text-xs text-muted-foreground">
                         {t(visibilityItem.description)}
                       </p>
                     </div>
@@ -167,11 +172,13 @@ export function ShareableActions({
           ) : (
             <Tooltip>
               <TooltipTrigger asChild>
-                <div className='flex items-center justify-center size-8'>
-                  <VisibilityIcon className='size-4 text-muted-foreground' />
+                <div className="flex items-center justify-center size-8">
+                  <VisibilityIcon className="size-4 text-muted-foreground" />
                 </div>
               </TooltipTrigger>
-              <TooltipContent>{t(VISIBILITY_CONFIG[type][visibility!].label)}</TooltipContent>
+              <TooltipContent>
+                {t(VISIBILITY_CONFIG[type][visibility!].label)}
+              </TooltipContent>
             </Tooltip>
           )}
         </>
@@ -182,10 +189,10 @@ export function ShareableActions({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant='ghost'
-              size='icon'
-              className='size-8 text-muted-foreground hover:text-foreground'
-              data-testid='bookmark-button'
+              variant="ghost"
+              size="icon"
+              className="size-8 text-muted-foreground hover:text-foreground"
+              data-testid="bookmark-button"
               disabled={isAnyLoading || disabled}
               onClick={(e) => {
                 e.preventDefault()
@@ -194,11 +201,11 @@ export function ShareableActions({
               }}
             >
               {isBookmarkToggleLoading ? (
-                <Loader2 className='size-4 animate-spin' />
+                <Loader2 className="size-4 animate-spin" />
               ) : isBookmarked ? (
-                <BookmarkCheck className='size-4' />
+                <BookmarkCheck className="size-4" />
               ) : (
-                <Bookmark className='size-4' />
+                <Bookmark className="size-4" />
               )}
             </Button>
           </TooltipTrigger>
@@ -213,17 +220,17 @@ export function ShareableActions({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant='ghost'
-              size='icon'
-              className='size-8 text-muted-foreground hover:text-foreground'
+              variant="ghost"
+              size="icon"
+              className="size-8 text-muted-foreground hover:text-foreground"
               disabled={isAnyLoading || disabled}
               onClick={(e) => {
                 e.preventDefault()
                 e.stopPropagation()
-                navigate(editHref)
+                router.push(editHref)
               }}
             >
-              <WriteIcon className='size-4' />
+              <WriteIcon className="size-4" />
             </Button>
           </TooltipTrigger>
           <TooltipContent>{t('Common.edit')}</TooltipContent>
@@ -238,9 +245,9 @@ export function ShareableActions({
         <Tooltip>
           <TooltipTrigger asChild>
             <Button
-              variant='ghost'
-              size='icon'
-              className='size-8 text-muted-foreground hover:text-destructive'
+              variant="ghost"
+              size="icon"
+              className="size-8 text-muted-foreground hover:text-destructive"
               disabled={isAnyLoading || disabled}
               onClick={(e) => {
                 e.preventDefault()
@@ -249,9 +256,9 @@ export function ShareableActions({
               }}
             >
               {isDeleteLoading ? (
-                <Loader2 className='size-4 animate-spin' />
+                <Loader2 className="size-4 animate-spin" />
               ) : (
-                <Trash2 className='size-4' />
+                <Trash2 className="size-4" />
               )}
             </Button>
           </TooltipTrigger>

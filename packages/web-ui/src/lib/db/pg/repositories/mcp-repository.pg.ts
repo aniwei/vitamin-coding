@@ -31,7 +31,10 @@ export const pgMcpRepository: MCPRepository = {
   },
 
   async selectById(id) {
-    const [result] = await db.select().from(McpServerTable).where(eq(McpServerTable.id, id))
+    const [result] = await db
+      .select()
+      .from(McpServerTable)
+      .where(eq(McpServerTable.id, id))
     return result
   },
 
@@ -58,7 +61,12 @@ export const pgMcpRepository: MCPRepository = {
       })
       .from(McpServerTable)
       .leftJoin(UserTable, eq(McpServerTable.userId, UserTable.id))
-      .where(or(eq(McpServerTable.userId, userId), eq(McpServerTable.visibility, 'public')))
+      .where(
+        or(
+          eq(McpServerTable.userId, userId),
+          eq(McpServerTable.visibility, 'public')
+        )
+      )
       .orderBy(desc(McpServerTable.createdAt))
     return results
   },
@@ -75,7 +83,10 @@ export const pgMcpRepository: MCPRepository = {
   },
 
   async selectByServerName(name) {
-    const [result] = await db.select().from(McpServerTable).where(eq(McpServerTable.name, name))
+    const [result] = await db
+      .select()
+      .from(McpServerTable)
+      .where(eq(McpServerTable.name, name))
     return result
   },
   async updateToolInfo(id, toolInfo) {

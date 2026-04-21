@@ -37,7 +37,10 @@ export class SafeRedisCache implements Cache {
         this.redisCache = new RedisCache(redisOptions)
         logger.info('SafeRedisCache: Redis initialized successfully')
       } catch (error) {
-        logger.error('SafeRedisCache: Failed to initialize Redis, using memory cache', error)
+        logger.error(
+          'SafeRedisCache: Failed to initialize Redis, using memory cache',
+          error
+        )
         this.isRedisFailed = true
       }
     } else {
@@ -48,16 +51,19 @@ export class SafeRedisCache implements Cache {
   private async executeWithFallback<T>(
     operation: () => Promise<T>,
     fallbackOperation: () => Promise<T>,
-    operationName: string,
+    operationName: string
   ): Promise<T> {
     if (this.isRedisFailed) {
       // Check if we should retry Redis connection
       const now = Date.now()
-      if (this.retryCount < this.maxRetries && now - this.lastRetryTime > this.retryDelay) {
+      if (
+        this.retryCount < this.maxRetries &&
+        now - this.lastRetryTime > this.retryDelay
+      ) {
         this.lastRetryTime = now
         this.retryCount++
         logger.info(
-          `SafeRedisCache: Retrying Redis connection (attempt ${this.retryCount}/${this.maxRetries})`,
+          `SafeRedisCache: Retrying Redis connection (attempt ${this.retryCount}/${this.maxRetries})`
         )
 
         try {
@@ -78,7 +84,8 @@ export class SafeRedisCache implements Cache {
       try {
         return await operation()
       } catch (error) {
-        const errorMessage = error instanceof Error ? error.message : String(error)
+        const errorMessage =
+          error instanceof Error ? error.message : String(error)
 
         // Check for rate limit errors
         if (
@@ -87,9 +94,15 @@ export class SafeRedisCache implements Cache {
           errorMessage.includes('too many requests') ||
           errorMessage.includes('OOM') // Redis out of memory
         ) {
-          logger.warn(`SafeRedisCache: Redis rate limit/quota exceeded for ${operationName}`, error)
+          logger.warn(
+            `SafeRedisCache: Redis rate limit/quota exceeded for ${operationName}`,
+            error
+          )
         } else {
-          logger.error(`SafeRedisCache: Redis operation failed for ${operationName}`, error)
+          logger.error(
+            `SafeRedisCache: Redis operation failed for ${operationName}`,
+            error
+          )
         }
 
         this.isRedisFailed = true
@@ -104,7 +117,7 @@ export class SafeRedisCache implements Cache {
     return this.executeWithFallback(
       () => this.redisCache!.get<T>(key),
       () => this.serverCache.get<T>(key),
-      `get(${key})`,
+      `get(${key})`
     )
   }
 
@@ -116,7 +129,7 @@ export class SafeRedisCache implements Cache {
         await this.serverCache.set(key, value, ttlMs)
       },
       () => this.serverCache.set(key, value, ttlMs),
-      `set(${key})`,
+      `set(${key})`
     )
   }
 
@@ -124,7 +137,7 @@ export class SafeRedisCache implements Cache {
     return this.executeWithFallback(
       () => this.redisCache!.has(key),
       () => this.serverCache.has(key),
-      `has(${key})`,
+      `has(${key})`
     )
   }
 
@@ -136,7 +149,7 @@ export class SafeRedisCache implements Cache {
         await this.serverCache.delete(key)
       },
       () => this.serverCache.delete(key),
-      `delete(${key})`,
+      `delete(${key})`
     )
   }
 
@@ -148,7 +161,7 @@ export class SafeRedisCache implements Cache {
         await this.serverCache.clear()
       },
       () => this.serverCache.clear(),
-      'clear()',
+      'clear()'
     )
   }
 
@@ -156,7 +169,7 @@ export class SafeRedisCache implements Cache {
     return this.executeWithFallback(
       () => this.redisCache!.getAll(),
       () => this.serverCache.getAll(),
-      'getAll()',
+      'getAll()'
     )
   }
 

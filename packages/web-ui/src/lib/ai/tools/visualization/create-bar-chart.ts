@@ -13,9 +13,9 @@ export const createBarChartTool = createTool({
             z.object({
               seriesName: z.string(),
               value: z.number(),
-            }),
+            })
           ),
-        }),
+        })
       )
       .describe('Chart data with x-axis labels and series values'),
     title: z.string(),

@@ -22,7 +22,10 @@ export function createAzureOpenAICompatible({
     const azureBaseURL = `${baseURL}${modelName}`
 
     // Custom fetch implementation for Azure OpenAI
-    const customFetch = async (input: URL | RequestInfo, init?: RequestInit): Promise<Response> => {
+    const customFetch = async (
+      input: URL | RequestInfo,
+      init?: RequestInit
+    ): Promise<Response> => {
       let url = input.toString()
 
       // If the URL doesn't already have an API version, append it as query parameter

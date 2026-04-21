@@ -5,14 +5,20 @@ import { redirect } from 'next/navigation'
 
 export default async function SignUp() {
   const isFirstUser = await getIsFirstUser()
-  const { emailAndPasswordEnabled, socialAuthenticationProviders, signUpEnabled } = getAuthConfig()
+  const {
+    emailAndPasswordEnabled,
+    socialAuthenticationProviders,
+    signUpEnabled,
+  } = getAuthConfig()
 
   if (!signUpEnabled) {
     redirect('/sign-in')
   }
 
   const enabledProviders = (
-    Object.keys(socialAuthenticationProviders) as (keyof typeof socialAuthenticationProviders)[]
+    Object.keys(
+      socialAuthenticationProviders
+    ) as (keyof typeof socialAuthenticationProviders)[]
   ).filter((key) => socialAuthenticationProviders[key])
 
   if (emailAndPasswordEnabled && enabledProviders.length === 0) {

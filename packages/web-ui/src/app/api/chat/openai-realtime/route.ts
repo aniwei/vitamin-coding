@@ -1,12 +1,19 @@
 import { NextRequest } from 'next/server'
 import { getSession } from 'auth/server'
 import { VercelAIMcpTool } from 'app-types/mcp'
-import { filterMcpServerCustomizations, loadMcpTools, mergeSystemPrompt } from '../shared.chat'
-import { buildMcpServerCustomizationsSystemPrompt, buildSpeechSystemPrompt } from 'lib/ai/prompts'
+import {
+  filterMcpServerCustomizations,
+  loadMcpTools,
+  mergeSystemPrompt,
+} from '../shared.chat'
+import {
+  buildMcpServerCustomizationsSystemPrompt,
+  buildSpeechSystemPrompt,
+} from 'lib/ai/prompts'
 
 import { safe } from 'ts-safe'
 import { DEFAULT_VOICE_TOOLS } from 'lib/ai/speech'
-import { rememberAgentAction, rememberMcpServerCustomizationsAction } from '../actions'
+import { rememberMcpServerCustomizationsAction } from '../actions'
 import globalLogger from 'lib/logger'
 import { colorize } from 'consola/utils'
 import { getUserPreferences } from 'lib/user/server'
@@ -19,9 +26,12 @@ const logger = globalLogger.withDefaults({
 export async function POST(request: NextRequest) {
   try {
     if (!process.env.OPENAI_API_KEY) {
-      return new Response(JSON.stringify({ error: 'OPENAI_API_KEY is not set' }), {
-        status: 500,
-      })
+      return new Response(
+        JSON.stringify({ error: 'OPENAI_API_KEY is not set' }),
+        {
+          status: 500,
+        }
+      )
     }
 
     const session = await getSession()
@@ -30,18 +40,13 @@ export async function POST(request: NextRequest) {
       return new Response('Unauthorized', { status: 401 })
     }
 
-    const { voice, mentions, agentId } = (await request.json()) as {
+    const { voice, mentions } = (await request.json()) as {
       model: string
       voice: string
-      agentId?: string
       mentions: ChatMention[]
     }
 
-    const agent = await rememberAgentAction(agentId, session.user.id)
-
-    agentId && logger.info(`[${agentId}] Agent: ${agent?.name}`)
-
-    const enabledMentions = agent ? agent.instructions.mentions : mentions
+    const enabledMentions = mentions
 
     const allowedMcpTools = await loadMcpTools({ mentions: enabledMentions })
 
@@ -57,19 +62,22 @@ export async function POST(request: NextRequest) {
 
     const mcpServerCustomizations = await safe()
       .map(() => {
-        if (Object.keys(allowedMcpTools ?? {}).length === 0) throw new Error('No tools found')
+        if (Object.keys(allowedMcpTools ?? {}).length === 0)
+          throw new Error('No tools found')
         return rememberMcpServerCustomizationsAction(session.user.id)
       })
       .map((v) => filterMcpServerCustomizations(allowedMcpTools!, v))
       .orElse({})
 
-    const openAITools = Object.entries(allowedMcpTools ?? {}).map(([name, tool]) => {
-      return vercelAIToolToOpenAITool(tool, name)
-    })
+    const openAITools = Object.entries(allowedMcpTools ?? {}).map(
+      ([name, tool]) => {
+        return vercelAIToolToOpenAITool(tool, name)
+      }
+    )
 
     const systemPrompt = mergeSystemPrompt(
-      buildSpeechSystemPrompt(session.user, userPreferences ?? undefined, agent),
-      buildMcpServerCustomizationsSystemPrompt(mcpServerCustomizations),
+      buildSpeechSystemPrompt(session.user, userPreferences ?? undefined),
+      buildMcpServerCustomizationsSystemPrompt(mcpServerCustomizations)
     )
 
     const bindingTools = [...openAITools, ...DEFAULT_VOICE_TOOLS]

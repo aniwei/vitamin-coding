@@ -1,11 +1,25 @@
 'use client'
 import { useIsMobile } from '@/hooks/use-mobile'
 import Mention from '@tiptap/extension-mention'
-import { EditorContent, Range, useEditor, UseEditorOptions, Editor } from '@tiptap/react'
+import {
+  EditorContent,
+  Range,
+  useEditor,
+  UseEditorOptions,
+  Editor,
+} from '@tiptap/react'
 import StarterKit from '@tiptap/starter-kit'
 import { TipTapMentionJsonContent } from 'app-types/util'
 import { cn } from 'lib/utils'
-import { FC, useCallback, useEffect, useMemo, useRef, useState, RefObject } from 'react'
+import {
+  FC,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+  RefObject,
+} from 'react'
 import { createPortal } from 'react-dom'
 import { createRoot } from 'react-dom/client'
 
@@ -65,7 +79,9 @@ export default function MentionInput({
     range: Range
   } | null>(null)
   const containerRef = useRef<HTMLDivElement>(null)
-  const [containerWidth, setContainerWidth] = useState<number | undefined>(undefined)
+  const [containerWidth, setContainerWidth] = useState<number | undefined>(
+    undefined
+  )
   const latestContent = useRef<{
     json: TipTapMentionJsonContent
     text: string
@@ -91,7 +107,12 @@ export default function MentionInput({
             el.className = 'inline-flex'
             const root = createRoot(el)
             if (MentionItem)
-              root.render(<MentionItem label={props.node.attrs.label} id={props.node.attrs.id} />)
+              root.render(
+                <MentionItem
+                  label={props.node.attrs.label}
+                  id={props.node.attrs.id}
+                />
+              )
             return el
           },
           suggestion: {
@@ -100,7 +121,8 @@ export default function MentionInput({
               return {
                 onStart: (props) => {
                   if (fullWidthSuggestion) {
-                    const containerRect = containerRef.current?.getBoundingClientRect()
+                    const containerRect =
+                      containerRef.current?.getBoundingClientRect()
                     if (containerRect) {
                       position.current = {
                         top: containerRect.top,
@@ -148,7 +170,7 @@ export default function MentionInput({
                         label: string
                       }
                     }
-                  ).attrs,
+                  ).attrs
               )
           })
           .filter(Boolean) as { label: string; id: string }[]
@@ -208,7 +230,7 @@ export default function MentionInput({
         }
       }
     },
-    [editor, onEnter, open],
+    [editor, onEnter, open]
   )
 
   // Memoize the DOM structure
@@ -236,10 +258,13 @@ export default function MentionInput({
           setOpen(false)
         }}
         style={{
-          width: fullWidthSuggestion && containerWidth ? `${containerWidth}px` : undefined,
+          width:
+            fullWidthSuggestion && containerWidth
+              ? `${containerWidth}px`
+              : undefined,
         }}
       />,
-      document.body,
+      document.body
     )
   }, [open, disabledMention, containerWidth, fullWidthSuggestion])
 
@@ -247,7 +272,7 @@ export default function MentionInput({
     if (!editor?.isEmpty) return null
 
     return (
-      <div className='absolute top-1 left-2 text-muted-foreground pointer-events-none'>
+      <div className="absolute top-1 left-2 text-muted-foreground pointer-events-none">
         {placeholder}
       </div>
     )
@@ -265,9 +290,15 @@ export default function MentionInput({
 
   useEffect(() => {
     if (content != undefined && onChange) {
-      if (typeof content == 'string' && content != latestContent.current?.text) {
+      if (
+        typeof content == 'string' &&
+        content != latestContent.current?.text
+      ) {
         editor?.commands.setContent(content)
-      } else if (typeof content != 'string' && content != latestContent.current?.json) {
+      } else if (
+        typeof content != 'string' &&
+        content != latestContent.current?.json
+      ) {
         editor?.commands.setContent(content)
       }
     }
@@ -278,7 +309,11 @@ export default function MentionInput({
   }, [editor])
 
   return (
-    <div ref={containerRef} onClick={focus} className={cn('relative w-full', className)}>
+    <div
+      ref={containerRef}
+      onClick={focus}
+      className={cn('relative w-full', className)}
+    >
       <EditorContent editor={editor} onKeyDown={handleKeyDown} />
       {suggestion}
       {placeholderElement}

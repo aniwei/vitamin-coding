@@ -19,7 +19,7 @@ import { safe } from 'ts-safe'
 import { handleErrorWithToast } from 'ui/shared-toast'
 import useSWR from 'swr'
 import { cn, fetcher } from 'lib/utils'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { Skeleton } from 'ui/skeleton'
 import { Tooltip, TooltipTrigger, TooltipContent } from 'ui/tooltip'
 
@@ -47,8 +47,12 @@ export const ToolDetailPopup = ({
     <Dialog>
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogPortal>
-        <DialogContent className='sm:max-w-[800px] fixed p-10 overflow-hidden'>
-          <ToolDetailPopupContent onUpdate={onUpdate} tool={tool} serverId={serverId} />
+        <DialogContent className="sm:max-w-[800px] fixed p-10 overflow-hidden">
+          <ToolDetailPopupContent
+            onUpdate={onUpdate}
+            tool={tool}
+            serverId={serverId}
+          />
         </DialogContent>
       </DialogPortal>
     </Dialog>
@@ -77,7 +81,7 @@ export function ToolDetailPopupContent({
 
   const { data, isLoading, mutate } = useSWR<McpToolCustomization | null>(
     createApiUrl(serverId, tool.name),
-    fetcher,
+    fetcher
   )
 
   const startEdit = (e: any) => {
@@ -95,13 +99,13 @@ export function ToolDetailPopupContent({
         })
         .parse({
           prompt: value,
-        }),
+        })
     )
       .map((body) =>
         fetch(createApiUrl(serverId, tool.name), {
           method: 'POST',
           body: JSON.stringify(body),
-        }),
+        })
       )
       .ifOk(() => {
         mutate()
@@ -119,7 +123,7 @@ export function ToolDetailPopupContent({
     safe(() =>
       fetch(createApiUrl(serverId, tool.name), {
         method: 'DELETE',
-      }),
+      })
     )
       .ifOk(() => {
         mutate()
@@ -132,40 +136,42 @@ export function ToolDetailPopupContent({
       })
   }
   return (
-    <div className='flex flex-col overflow-y-auto h-[70vh]'>
+    <div className="flex flex-col overflow-y-auto h-[70vh]">
       <DialogHeader>
         <DialogTitle>{title || tool.name}</DialogTitle>
-        <DialogDescription className='text-xs text-muted-foreground mt-4'>
+        <DialogDescription className="text-xs text-muted-foreground mt-4">
           {tool.description}
         </DialogDescription>
       </DialogHeader>
-      <Separator className='my-4' />
+      <Separator className="my-4" />
       <div>
-        <div className='flex items-center mb-1'>
-          <h5 className='mr-auto'>
+        <div className="flex items-center mb-1">
+          <h5 className="mr-auto">
             <Tooltip>
               <TooltipTrigger asChild>
-                <span className='text-xs font-medium flex-1 flex items-center'>
+                <span className="text-xs font-medium flex-1 flex items-center">
                   {t('MCP.additionalInstructions')}
-                  <Info className='size-3 ml-1 text-muted-foreground' />
+                  <Info className="size-3 ml-1 text-muted-foreground" />
                 </span>
               </TooltipTrigger>
               <TooltipContent>
-                <p className='whitespace-pre-wrap'>{t('MCP.toolCustomizationInstructions')}</p>
+                <p className="whitespace-pre-wrap">
+                  {t('MCP.toolCustomizationInstructions')}
+                </p>
               </TooltipContent>
             </Tooltip>
           </h5>
           {processing || isLoading ? (
-            <Button size='icon' variant='ghost'>
-              <Loader className='size-3 animate-spin' />
+            <Button size="icon" variant="ghost">
+              <Loader className="size-3 animate-spin" />
             </Button>
           ) : (
             <>
               {data?.id && !editing && (
                 <Tooltip>
                   <TooltipTrigger asChild>
-                    <Button size='icon' variant='ghost' onClick={handleDelete}>
-                      <Trash2 className='size-3' />
+                    <Button size="icon" variant="ghost" onClick={handleDelete}>
+                      <Trash2 className="size-3" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>{t('Common.delete')}</TooltipContent>
@@ -175,13 +181,13 @@ export function ToolDetailPopupContent({
                 <Tooltip>
                   <TooltipTrigger asChild>
                     <Button
-                      variant='ghost'
-                      size='icon'
+                      variant="ghost"
+                      size="icon"
                       onClick={startEdit}
-                      aria-label='Edit instructions'
+                      aria-label="Edit instructions"
                     >
-                      <span className='sr-only'>Edit</span>
-                      <Pencil className='size-3' />
+                      <span className="sr-only">Edit</span>
+                      <Pencil className="size-3" />
                     </Button>
                   </TooltipTrigger>
                   <TooltipContent>{t('Common.edit')}</TooltipContent>
@@ -192,21 +198,25 @@ export function ToolDetailPopupContent({
         </div>
 
         {isLoading ? (
-          <Skeleton className='w-full h-4' />
+          <Skeleton className="w-full h-4" />
         ) : editing ? (
-          <div className='my-2'>
+          <div className="my-2">
             <Textarea
               autoFocus
               value={value}
               onChange={(e) => setValue(e.target.value)}
-              className='h-full max-h-[120px] resize-none'
+              className="h-full max-h-[120px] resize-none"
             />
-            <div className='flex gap-2 justify-end mt-2'>
-              <Button size='sm' variant='ghost' onClick={() => setEditing(false)}>
+            <div className="flex gap-2 justify-end mt-2">
+              <Button
+                size="sm"
+                variant="ghost"
+                onClick={() => setEditing(false)}
+              >
                 {t('Common.cancel')}
               </Button>
 
-              <Button size='sm' onClick={handleSave}>
+              <Button size="sm" onClick={handleSave}>
                 {t('Common.save')}
               </Button>
             </div>
@@ -215,7 +225,7 @@ export function ToolDetailPopupContent({
           <p
             className={cn(
               !data?.prompt && 'italic',
-              'text-xs text-muted-foreground whitespace-pre-wrap break-words max-h-[120px] overflow-y-auto',
+              'text-xs text-muted-foreground whitespace-pre-wrap break-words max-h-[120px] overflow-y-auto'
             )}
           >
             {data?.prompt || t('MCP.noInstructions')}
@@ -223,26 +233,26 @@ export function ToolDetailPopupContent({
         )}
       </div>
 
-      <div className='flex items-center gap-2 my-4'>
-        <h5 className='text-xs font-medium'>{t('MCP.inputSchema')}</h5>
+      <div className="flex items-center gap-2 my-4">
+        <h5 className="text-xs font-medium">{t('MCP.inputSchema')}</h5>
       </div>
       {tool.inputSchema ? (
-        <div className='overflow-y-auto max-h-[40vh] bg-card card p-4 rounded'>
+        <div className="overflow-y-auto max-h-[40vh] bg-card card p-4 rounded">
           {!isEmptySchema(tool.inputSchema) ? (
             <JsonView data={tool.inputSchema?.properties || tool.inputSchema} />
           ) : (
-            <p className='text-xs text-muted-foreground italic'>
+            <p className="text-xs text-muted-foreground italic">
               {t('MCP.noSchemaPropertiesAvailable')}
             </p>
           )}
         </div>
       ) : (
-        <p className='text-xs text-muted-foreground italic'>
+        <p className="text-xs text-muted-foreground italic">
           {t('MCP.noSchemaPropertiesAvailable')}
         </p>
       )}
 
-      <div className='absolute left-0 right-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-10' />
+      <div className="absolute left-0 right-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
     </div>
   )
 }

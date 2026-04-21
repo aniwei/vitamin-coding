@@ -31,11 +31,14 @@ export const createMCPToolId = (serverName: string, toolName: string) => {
   const maxLength = 124
   const separator = '_'
 
-  if (sanitizedServer.length + sanitizedTool.length + separator.length > maxLength) {
+  if (
+    sanitizedServer.length + sanitizedTool.length + separator.length >
+    maxLength
+  ) {
     // Allocate space proportionally
     const totalLength = sanitizedServer.length + sanitizedTool.length
     const serverPortion = Math.floor(
-      (sanitizedServer.length / totalLength) * (maxLength - separator.length),
+      (sanitizedServer.length / totalLength) * (maxLength - separator.length)
     )
     const toolPortion = maxLength - separator.length - serverPortion
 

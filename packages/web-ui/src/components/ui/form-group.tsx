@@ -10,7 +10,7 @@ export function FormGroup({ children, className }: FormGroupProps) {
     <div
       className={cn(
         'space-y-2 pb-4 border-b border-border/30 last:border-b-0 last:pb-0',
-        className,
+        className
       )}
     >
       {children}

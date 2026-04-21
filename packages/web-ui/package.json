@@ -1,9 +1,9 @@
 {
-  "name": "@vitamin/web-ui",
-  "version": "1.0.0",
+  "name": "better-chatbot",
+  "version": "1.26.0",
   "private": true,
+  "author": "cgoinglove",
   "license": "MIT",
-  "author": "aniwei",
   "type": "module",
   "scripts": {
     "dev": "next dev",
@@ -12,21 +12,15 @@
     "build": "next build",
     "start": "next start",
     "build:local": "cross-env NO_HTTPS='1' next build",
-    "dev:vite": "concurrently -n client,server -c cyan,magenta \"pnpm dev:client\" \"pnpm dev:server\"",
-    "dev:client": "vite --config client/vite.config.ts",
-    "dev:server": "tsx watch server/src/index.ts",
-    "build:vite": "vite build --config client/vite.config.ts && tsdown --config server/tsdown.config.ts",
-    "start:vite": "node server/dist/index.js",
-    "check-types:vite": "tsc -p client/tsconfig.json --noEmit && tsc -p server/tsconfig.json --noEmit",
     "test": "vitest run",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
     "test:e2e:seed": "dotenv -- tsx scripts/seed-test-users.ts",
     "test:e2e:clean": "dotenv -- tsx scripts/cleanup-all-test-data.ts",
-    "lint": "oxlint && oxfmt --check",
-    "lint:fix": "oxlint --fix && oxfmt",
-    "format": "oxfmt",
+    "lint": "oxlint .",
+    "lint:fix": "oxlint . --fix",
+    "format": "prettier --write .",
     "check-types": "tsc --noEmit",
     "initial:env": "tsx scripts/initial-env.ts",
     "openai-compatiable:init": "tsx scripts/init-openai-compatiable.ts",
@@ -136,16 +130,7 @@
     "undici": "^7.18.2",
     "vaul": "^1.1.2",
     "zod": "^4.2.1",
-    "zustand": "^5.0.9",
-    "react-router-dom": "^7.14.1",
-    "hono": "^4.12.14",
-    "@hono/node-server": "^1.19.14",
-    "i18next": "^26.0.6",
-    "react-i18next": "^17.0.4",
-    "i18next-http-backend": "^3.0.5",
-    "i18next-browser-languagedetector": "^8.2.1",
-    "@fontsource-variable/geist": "^5.2.8",
-    "@fontsource-variable/geist-mono": "^5.2.7"
+    "zustand": "^5.0.9"
   },
   "devDependencies": {
     "@better-auth-kit/seed": "^1.0.12",
@@ -163,30 +148,28 @@
     "eslint-config-next": "15.3.0",
     "husky": "^9.1.7",
     "lint-staged": "^16.2.7",
-    "oxfmt": "0.44.0",
-    "oxlint": "1.59.0",
+    "oxlint": "^1.61.0",
+    "prettier": "^3.8.3",
     "rimraf": "^6.1.2",
     "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
     "vite-tsconfig-paths": "^5.1.4",
-    "vitest": "^3.2.4",
-    "vite": "^8.0.9",
-    "@vitejs/plugin-react": "^6.0.1",
-    "concurrently": "^9.2.1",
-    "tsdown": "^0.21.9",
-    "@tailwindcss/vite": "^4.2.2"
+    "vitest": "^3.2.4"
   },
   "lint-staged": {
-    "*.{js,json,mjs,ts,yaml,tsx,css}": [
+    "*.{js,mjs,ts,tsx}": [
       "pnpm format",
       "pnpm lint:fix"
+    ],
+    "*.{json,yaml,css}": [
+      "pnpm format"
     ]
   },
+  "packageManager": "pnpm@10.2.1",
   "engines": {
     "node": ">=18"
   },
-  "packageManager": "pnpm@10.2.1",
   "pnpm": {
     "onlyBuiltDependencies": [
       "@tailwindcss/oxide",

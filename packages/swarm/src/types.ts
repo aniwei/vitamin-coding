@@ -64,11 +64,11 @@ export interface HandoffResult {
 
 /** 路由策略类型 */
 export type RoutingStrategy =
-  | 'llm' // LLM 根据 Agent 描述做选择
-  | 'rule' // 基于规则（关键词/正则）
-  | 'round-robin' // 轮转
-  | 'random' // 随机
-  | 'custom' // 自定义函数
+  | 'llm'           // LLM 根据 Agent 描述做选择
+  | 'rule'          // 基于规则（关键词/正则）
+  | 'round-robin'   // 轮转
+  | 'random'        // 随机
+  | 'custom'        // 自定义函数
 
 /** 路由决策 */
 export interface RoutingDecision {
@@ -111,11 +111,11 @@ export interface RouterConfig {
 
 /** 编排模式 */
 export type OrchestrationPattern =
-  | 'handoff' // Handoff 模式 — Agent 自行决定向谁交接
-  | 'sequential' // 流水线 — Agent 按顺序依次执行
-  | 'parallel' // 并行扇出 — 多个 Agent 同时执行，结果聚合
-  | 'hierarchical' // 层级委派 — 上级分解任务，下级执行
-  | 'router' // 路由 — 每条消息路由到专属 Agent
+  | 'handoff'       // Handoff 模式 — Agent 自行决定向谁交接
+  | 'sequential'    // 流水线 — Agent 按顺序依次执行
+  | 'parallel'      // 并行扇出 — 多个 Agent 同时执行，结果聚合
+  | 'hierarchical'  // 层级委派 — 上级分解任务，下级执行
+  | 'router'        // 路由 — 每条消息路由到专属 Agent
 
 /** 流水线步骤结果 */
 export interface PipelineStepResult {

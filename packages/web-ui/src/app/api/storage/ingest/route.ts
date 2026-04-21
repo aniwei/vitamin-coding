@@ -21,7 +21,10 @@ export async function POST(req: Request) {
 
   const key = body.key || (body.url ? storageKeyFromUrl(body.url) : undefined)
   if (!key) {
-    return NextResponse.json({ error: "Missing 'key' or 'url'" }, { status: 400 })
+    return NextResponse.json(
+      { error: "Missing 'key' or 'url'" },
+      { status: 400 }
+    )
   }
 
   // Infer type from extension when auto
@@ -35,9 +38,10 @@ export async function POST(req: Request) {
     return NextResponse.json(
       {
         error: 'Unsupported file type for ingest',
-        solution: 'Currently supported: CSV. Convert your spreadsheet to CSV or paste sample rows.',
+        solution:
+          'Currently supported: CSV. Convert your spreadsheet to CSV or paste sample rows.',
       },
-      { status: 400 },
+      { status: 400 }
     )
   }
 

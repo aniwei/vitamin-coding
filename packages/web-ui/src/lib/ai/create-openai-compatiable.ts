@@ -10,7 +10,9 @@ import { z } from 'zod'
  * @returns An object containing the loaded models and a set of models
  *          that do not support tool calls.
  */
-export function createOpenAICompatibleModels(config: OpenAICompatibleProvider[]) {
+export function createOpenAICompatibleModels(
+  config: OpenAICompatibleProvider[]
+) {
   const providers: Record<string, Record<string, LanguageModel>> = {}
   const unsupportedModels = new Set<LanguageModel>()
 
@@ -36,17 +38,21 @@ export function createOpenAICompatibleModels(config: OpenAICompatibleProvider[])
           baseURL: baseUrl!,
         })
 
-        models.forEach(({ apiName, uiName, supportsTools, apiVersion: modelApiVersion }) => {
-          if (!modelApiVersion) {
-            throw new Error(`API version is required for Azure OpenAI model: ${uiName}`)
-          }
-          const model = azureProvider(apiName, modelApiVersion)
-          providers[providerKey][uiName] = model
+        models.forEach(
+          ({ apiName, uiName, supportsTools, apiVersion: modelApiVersion }) => {
+            if (!modelApiVersion) {
+              throw new Error(
+                `API version is required for Azure OpenAI model: ${uiName}`
+              )
+            }
+            const model = azureProvider(apiName, modelApiVersion)
+            providers[providerKey][uiName] = model
 
-          if (!supportsTools) {
-            unsupportedModels.add(model)
+            if (!supportsTools) {
+              unsupportedModels.add(model)
+            }
           }
-        })
+        )
       } else {
         // Standard OpenAI-compatible providers (original implementation)
         models.forEach(({ apiName, uiName, supportsTools }) => {
@@ -74,13 +80,13 @@ const OpenAICompatibleModelSchema = z.object({
   supportsTools: z
     .boolean()
     .describe(
-      'Indicates if the model supports external tools/function calling for multi-cloud platform (MCP) servers.',
+      'Indicates if the model supports external tools/function calling for multi-cloud platform (MCP) servers.'
     ),
   apiVersion: z
     .string()
     .optional()
     .describe(
-      'For Azure OpenAI, the API version for this specific model. Required for Azure OpenAI models.',
+      'For Azure OpenAI, the API version for this specific model. Required for Azure OpenAI models.'
     ),
 })
 
@@ -95,7 +101,7 @@ export const OpenAICompatibleProviderSchema = z.object({
   apiKey: z
     .string()
     .describe(
-      "The name of the environment variable (e.g., 'OPENAI_API_KEY') for the provider's API key. This key should be stored in a .env file.",
+      "The name of the environment variable (e.g., 'OPENAI_API_KEY') for the provider's API key. This key should be stored in a .env file."
     ),
   // The base URL for the provider's API. Defaults to the provider's default API endpoint. Should be OpenAI-like.
   baseUrl: z
@@ -103,15 +109,17 @@ export const OpenAICompatibleProviderSchema = z.object({
     .url()
     .optional()
     .describe(
-      "The base URL for the provider's API. Defaults to the provider's official endpoint. Should typically follow an OpenAI-like structure (e.g., ending with '/v1').",
+      "The base URL for the provider's API. Defaults to the provider's official endpoint. Should typically follow an OpenAI-like structure (e.g., ending with '/v1')."
     ),
 })
 
 // Infer the type for a single OpenAI-compatible provider.
-export type OpenAICompatibleProvider = z.infer<typeof OpenAICompatibleProviderSchema>
+export type OpenAICompatibleProvider = z.infer<
+  typeof OpenAICompatibleProviderSchema
+>
 
 export const openaiCompatibleModelsSafeParse = (
-  providers: string | OpenAICompatibleProvider[] = [],
+  providers: string | OpenAICompatibleProvider[] = []
 ) => {
   try {
     const value = isString(providers) ? JSON.parse(providers) : providers

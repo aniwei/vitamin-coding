@@ -1,16 +1,21 @@
 import { useMemo } from 'react'
-import { useLocation, useNavigate } from 'react-router-dom'
-import { SidebarMenu, SidebarMenuSub, SidebarMenuSubButton, SidebarMenuSubItem } from 'ui/sidebar'
+import { usePathname, useRouter } from 'next/navigation'
+import {
+  SidebarMenu,
+  SidebarMenuSub,
+  SidebarMenuSubButton,
+  SidebarMenuSubItem,
+} from 'ui/sidebar'
 import { Tooltip } from 'ui/tooltip'
 import { SidebarMenuItem } from 'ui/sidebar'
 import { SidebarMenuButton } from 'ui/sidebar'
 import { Shield, Users } from 'lucide-react'
-import { Link } from 'react-router-dom'
-import { useTranslations } from '@/hooks/use-translations'
+import Link from 'next/link'
+import { useTranslations } from 'next-intl'
 
 const AppSidebarAdmin = () => {
-  const navigate = useNavigate()
-  const { pathname } = useLocation()
+  const router = useRouter()
+  const pathname = usePathname()
   const t = useTranslations('Admin')
   const shouldExpandAdmin = useMemo(() => {
     return pathname.startsWith('/admin')
@@ -25,30 +30,30 @@ const AppSidebarAdmin = () => {
         isActive: pathname.startsWith('/admin/users'),
       },
     ],
-    [t, pathname],
+    [t, pathname]
   )
 
   return (
-    <SidebarMenu className='group/admin'>
+    <SidebarMenu className="group/admin">
       <Tooltip>
         <SidebarMenuItem>
-          <Link to='/admin' data-testid='admin-sidebar-link'>
-            <SidebarMenuButton className='font-semibold'>
-              <Shield className='size-4 text-foreground' />
+          <Link href="/admin" data-testid="admin-sidebar-link">
+            <SidebarMenuButton className="font-semibold">
+              <Shield className="size-4 text-foreground" />
               {t('title')}
             </SidebarMenuButton>
           </Link>
         </SidebarMenuItem>
       </Tooltip>
       {shouldExpandAdmin && (
-        <SidebarMenuSub className='mb-2'>
+        <SidebarMenuSub className="mb-2">
           {adminNavItems.map((item) => (
             <SidebarMenuSubItem key={item.id}>
               <SidebarMenuSubButton
-                className='text-muted-foreground'
+                className="text-muted-foreground"
                 data-testid={`admin-sidebar-link-${item.id}`}
                 onClick={() => {
-                  navigate(item.url)
+                  router.push(item.url)
                 }}
                 isActive={item.isActive}
               >

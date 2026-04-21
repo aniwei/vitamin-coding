@@ -82,7 +82,8 @@ export const storageKeyFromUrl = (input: string): string | null => {
   }
 }
 
-const isArrayBufferLike = (value: unknown): value is ArrayBuffer => value instanceof ArrayBuffer
+const isArrayBufferLike = (value: unknown): value is ArrayBuffer =>
+  value instanceof ArrayBuffer
 
 const isArrayBufferView = (value: unknown): value is ArrayBufferView =>
   ArrayBuffer.isView(value as ArrayBufferView)
@@ -90,7 +91,9 @@ const isArrayBufferView = (value: unknown): value is ArrayBufferView =>
 const isBlobLike = (value: unknown): value is Blob =>
   typeof Blob !== 'undefined' && value instanceof Blob
 
-const isWebReadableStream = (value: unknown): value is ReadableStream<Uint8Array> =>
+const isWebReadableStream = (
+  value: unknown
+): value is ReadableStream<Uint8Array> =>
   typeof ReadableStream !== 'undefined' && value instanceof ReadableStream
 
 const isNodeReadableStream = (value: unknown): value is NodeJS.ReadableStream =>
@@ -202,7 +205,7 @@ export async function getBase64Data(image: {
         logger.withTag('getBase64Data').error(err)
         throw err
       }),
-      10000,
+      10000
     )
     const buffer = await response.arrayBuffer()
     return {

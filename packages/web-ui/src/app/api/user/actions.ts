@@ -26,7 +26,12 @@ import {
 
 export const updateUserImageAction = validatedActionWithUserManagePermission(
   UpdateUserDetailsSchema.pick({ userId: true, image: true }),
-  async (data, userId, userSession, isOwnResource): Promise<UpdateUserActionState> => {
+  async (
+    data,
+    userId,
+    userSession,
+    isOwnResource
+  ): Promise<UpdateUserActionState> => {
     const t = await getTranslations('User.Profile.common')
 
     try {
@@ -39,7 +44,12 @@ export const updateUserImageAction = validatedActionWithUserManagePermission(
           headers: await headers(),
         })
       } else {
-        await updateUserDetails(userId, userSession.user.name, userSession.user.email || '', image)
+        await updateUserDetails(
+          userId,
+          userSession.user.name,
+          userSession.user.email || '',
+          image
+        )
       }
 
       const user = await getUser(userId)
@@ -63,12 +73,18 @@ export const updateUserImageAction = validatedActionWithUserManagePermission(
         message: 'Failed to update profile photo',
       }
     }
-  },
+  }
 )
 
 export const updateUserDetailsAction = validatedActionWithUserManagePermission(
   UpdateUserDetailsSchema,
-  async (data, userId, userSession, isOwnResource, _formData): Promise<UpdateUserActionState> => {
+  async (
+    data,
+    userId,
+    userSession,
+    isOwnResource,
+    _formData
+  ): Promise<UpdateUserActionState> => {
     const t = await getTranslations('User.Profile.common')
 
     try {
@@ -122,7 +138,7 @@ export const updateUserDetailsAction = validatedActionWithUserManagePermission(
         message: t('failedToUpdateUserDetails'),
       }
     }
-  },
+  }
 )
 
 export const deleteUserAction = validatedActionWithAdminPermission(
@@ -148,7 +164,7 @@ export const deleteUserAction = validatedActionWithAdminPermission(
       message: t('userDeletedSuccessfully'),
       redirect: '/admin',
     }
-  },
+  }
 )
 
 export const updateUserPasswordAction = validatedActionWithUserManagePermission(
@@ -158,10 +174,14 @@ export const updateUserPasswordAction = validatedActionWithUserManagePermission(
     userId,
     _userSession,
     isOwnResource,
-    _formData,
+    _formData
   ): Promise<UpdateUserPasswordActionState> => {
     const t = await getTranslations('User.Profile.common')
-    const { newPassword, isCurrentUser: isCurrentUserParam, currentPassword } = data
+    const {
+      newPassword,
+      isCurrentUser: isCurrentUserParam,
+      currentPassword,
+    } = data
     const { hasPassword } = await getUserAccounts(userId)
 
     const isCurrentUser = isCurrentUserParam ? isOwnResource : false
@@ -206,7 +226,7 @@ export const updateUserPasswordAction = validatedActionWithUserManagePermission(
         message: t('failedToUpdatePassword'),
       }
     }
-  },
+  }
 )
 
 type ImageProvider = 'openai' | 'xai' | 'google'
@@ -223,7 +243,7 @@ interface GenerateAvatarResult {
  */
 export async function generateAvatarImageAction(
   provider: ImageProvider,
-  prompt: string,
+  prompt: string
 ): Promise<GenerateAvatarResult> {
   try {
     if (!prompt.trim()) {
@@ -299,7 +319,8 @@ Generate a profile picture that fulfills the user's request while maintaining th
     logger.error('Failed to generate avatar image:', error)
     return {
       success: false,
-      error: error instanceof Error ? error.message : 'Failed to generate image',
+      error:
+        error instanceof Error ? error.message : 'Failed to generate image',
     }
   }
 }

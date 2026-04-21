@@ -11,7 +11,7 @@ export const runMigrate = async () => {
   }).catch((err) => {
     console.error(
       `❌ PostgreSQL migrations failed. check the postgres instance is running.`,
-      err.cause,
+      err.cause
     )
     throw err
   })

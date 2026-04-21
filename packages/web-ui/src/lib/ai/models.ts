@@ -102,7 +102,7 @@ const staticFilePartSupportByModel = new Map<LanguageModel, readonly string[]>()
 
 const registerFileSupport = (
   model: LanguageModel | undefined,
-  mimeTypes: readonly string[] = DEFAULT_FILE_PART_MIME_TYPES,
+  mimeTypes: readonly string[] = DEFAULT_FILE_PART_MIME_TYPES
 ) => {
   if (!model) return
   staticFilePartSupportByModel.set(model, Array.from(mimeTypes))
@@ -114,25 +114,45 @@ registerFileSupport(staticModels.openai['gpt-5'], OPENAI_FILE_MIME_TYPES)
 registerFileSupport(staticModels.openai['gpt-5-mini'], OPENAI_FILE_MIME_TYPES)
 registerFileSupport(staticModels.openai['gpt-5-nano'], OPENAI_FILE_MIME_TYPES)
 
-registerFileSupport(staticModels.google['gemini-2.5-flash-lite'], GEMINI_FILE_MIME_TYPES)
-registerFileSupport(staticModels.google['gemini-2.5-flash'], GEMINI_FILE_MIME_TYPES)
-registerFileSupport(staticModels.google['gemini-2.5-pro'], GEMINI_FILE_MIME_TYPES)
+registerFileSupport(
+  staticModels.google['gemini-2.5-flash-lite'],
+  GEMINI_FILE_MIME_TYPES
+)
+registerFileSupport(
+  staticModels.google['gemini-2.5-flash'],
+  GEMINI_FILE_MIME_TYPES
+)
+registerFileSupport(
+  staticModels.google['gemini-2.5-pro'],
+  GEMINI_FILE_MIME_TYPES
+)
 
-registerFileSupport(staticModels.anthropic['sonnet-4.5'], ANTHROPIC_FILE_MIME_TYPES)
-registerFileSupport(staticModels.anthropic['opus-4.1'], ANTHROPIC_FILE_MIME_TYPES)
+registerFileSupport(
+  staticModels.anthropic['sonnet-4.5'],
+  ANTHROPIC_FILE_MIME_TYPES
+)
+registerFileSupport(
+  staticModels.anthropic['opus-4.1'],
+  ANTHROPIC_FILE_MIME_TYPES
+)
 
 registerFileSupport(staticModels.xai['grok-4-fast'], XAI_FILE_MIME_TYPES)
 registerFileSupport(staticModels.xai['grok-4'], XAI_FILE_MIME_TYPES)
 registerFileSupport(staticModels.xai['grok-3'], XAI_FILE_MIME_TYPES)
 registerFileSupport(staticModels.xai['grok-3-mini'], XAI_FILE_MIME_TYPES)
-registerFileSupport(staticModels.openRouter['gemini-2.0-flash-exp:free'], GEMINI_FILE_MIME_TYPES)
-
-const openaiCompatibleProviders = openaiCompatibleModelsSafeParse(
-  process.env.OPENAI_COMPATIBLE_DATA,
+registerFileSupport(
+  staticModels.openRouter['gemini-2.0-flash-exp:free'],
+  GEMINI_FILE_MIME_TYPES
 )
 
-const { providers: openaiCompatibleModels, unsupportedModels: openaiCompatibleUnsupportedModels } =
-  createOpenAICompatibleModels(openaiCompatibleProviders)
+const openaiCompatibleProviders = openaiCompatibleModelsSafeParse(
+  process.env.OPENAI_COMPATIBLE_DATA
+)
+
+const {
+  providers: openaiCompatibleModels,
+  unsupportedModels: openaiCompatibleUnsupportedModels,
+} = createOpenAICompatibleModels(openaiCompatibleProviders)
 
 const allModels = { ...openaiCompatibleModels, ...staticModels }
 

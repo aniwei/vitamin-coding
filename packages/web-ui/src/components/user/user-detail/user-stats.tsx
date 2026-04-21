@@ -15,15 +15,15 @@ export async function UserStats({ userId }: UserStatsProps) {
         <CardTitle>Usage Statistics</CardTitle>
       </CardHeader>
       <CardContent>
-        <div className='grid gap-4 md:grid-cols-2'>
-          <div className='space-y-2'>
+        <div className="grid gap-4 md:grid-cols-2">
+          <div className="space-y-2">
             <Label>Chat Threads</Label>
-            <p className='text-2xl font-bold'>{stats.threadCount}</p>
+            <p className="text-2xl font-bold">{stats.threadCount}</p>
           </div>
 
-          <div className='space-y-2'>
+          <div className="space-y-2">
             <Label>Messages Sent</Label>
-            <p className='text-2xl font-bold'>{stats.messageCount}</p>
+            <p className="text-2xl font-bold">{stats.messageCount}</p>
           </div>
         </div>
       </CardContent>

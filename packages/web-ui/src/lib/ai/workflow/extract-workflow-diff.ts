@@ -24,7 +24,7 @@ function normalizeEdge(edge: Edge) {
 
 export function extractWorkflowDiff(
   oldData: { nodes: UINode[]; edges: Edge[] },
-  newData: { nodes: UINode[]; edges: Edge[] },
+  newData: { nodes: UINode[]; edges: Edge[] }
 ) {
   const deleteNodes: UINode[] = []
   const deleteEdges: Edge[] = []
@@ -32,7 +32,9 @@ export function extractWorkflowDiff(
   const updateEdges: Edge[] = []
 
   const oldNodes = oldData.nodes
-  const newNodes = new Map<string, UINode>(newData.nodes.map((node) => [node.id, node]))
+  const newNodes = new Map<string, UINode>(
+    newData.nodes.map((node) => [node.id, node])
+  )
 
   oldNodes.forEach((node) => {
     const newNode = newNodes.get(node.id)
@@ -47,7 +49,9 @@ export function extractWorkflowDiff(
   updateNodes.push(...newNodes.values())
 
   const oldEdges = oldData.edges
-  const newEdges = new Map<string, Edge>(newData.edges.map((edge) => [edge.id, edge]))
+  const newEdges = new Map<string, Edge>(
+    newData.edges.map((edge) => [edge.id, edge])
+  )
 
   oldEdges.forEach((edge) => {
     const newEdge = newEdges.get(edge.id)

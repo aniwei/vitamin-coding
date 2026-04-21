@@ -9,7 +9,10 @@ import { httpFetchTool } from './http/fetch'
 import { jsExecutionTool } from './code/js-run-tool'
 import { pythonExecutionTool } from './code/python-run-tool'
 
-export const APP_DEFAULT_TOOL_KIT: Record<AppDefaultToolkit, Record<string, Tool>> = {
+export const APP_DEFAULT_TOOL_KIT: Record<
+  AppDefaultToolkit,
+  Record<string, Tool>
+> = {
   [AppDefaultToolkit.Visualization]: {
     [DefaultToolName.CreatePieChart]: createPieChartTool,
     [DefaultToolName.CreateBarChart]: createBarChartTool,

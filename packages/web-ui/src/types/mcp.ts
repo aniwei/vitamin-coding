@@ -1,4 +1,7 @@
-import { OAuthClientInformationFull, OAuthTokens } from '@modelcontextprotocol/sdk/shared/auth.js'
+import {
+  OAuthClientInformationFull,
+  OAuthTokens,
+} from '@modelcontextprotocol/sdk/shared/auth.js'
 import { Tool } from 'ai'
 import { tag } from 'lib/tag'
 import { z } from 'zod'
@@ -125,9 +128,11 @@ export type McpToolCustomizationRepository = {
     userId: string
     mcpServerId: string
   }) => Promise<McpToolCustomization[]>
-  selectByUserId: (userId: string) => Promise<(McpToolCustomization & { serverName: string })[]>
+  selectByUserId: (
+    userId: string
+  ) => Promise<(McpToolCustomization & { serverName: string })[]>
   upsertToolCustomization: (
-    data: PartialBy<McpToolCustomization, 'id'>,
+    data: PartialBy<McpToolCustomization, 'id'>
   ) => Promise<McpToolCustomization>
   deleteToolCustomization: (key: {
     userId: string
@@ -153,9 +158,11 @@ export type McpServerCustomizationRepository = {
     userId: string
     mcpServerId: string
   }) => Promise<(McpServerCustomization & { serverName: string }) | null>
-  selectByUserId: (userId: string) => Promise<(McpServerCustomization & { serverName: string })[]>
+  selectByUserId: (
+    userId: string
+  ) => Promise<(McpServerCustomization & { serverName: string })[]>
   upsertMcpServerCustomization: (
-    data: PartialBy<McpServerCustomization, 'id'>,
+    data: PartialBy<McpServerCustomization, 'id'>
   ) => Promise<McpServerCustomization>
   deleteMcpServerCustomizationByMcpServerIdAndUserId: (key: {
     mcpServerId: string
@@ -255,7 +262,9 @@ export type McpOAuthRepository = {
   // 1. Query methods
 
   // Get session with valid tokens (authenticated)
-  getAuthenticatedSession(mcpServerId: string): Promise<McpOAuthSession | undefined>
+  getAuthenticatedSession(
+    mcpServerId: string
+  ): Promise<McpOAuthSession | undefined>
 
   // Get session by OAuth state (for callback handling)
   getSessionByState(state: string): Promise<McpOAuthSession | undefined>
@@ -263,16 +272,22 @@ export type McpOAuthRepository = {
   // 2. Create/Update methods
 
   // Create new OAuth session
-  createSession(mcpServerId: string, data: Partial<McpOAuthSession>): Promise<McpOAuthSession>
+  createSession(
+    mcpServerId: string,
+    data: Partial<McpOAuthSession>
+  ): Promise<McpOAuthSession>
 
   // Update existing session by state
-  updateSessionByState(state: string, data: Partial<McpOAuthSession>): Promise<McpOAuthSession>
+  updateSessionByState(
+    state: string,
+    data: Partial<McpOAuthSession>
+  ): Promise<McpOAuthSession>
 
   // Save tokens and cleanup incomplete sessions
   saveTokensAndCleanup(
     state: string,
     mcpServerId: string,
-    data: Partial<McpOAuthSession>,
+    data: Partial<McpOAuthSession>
   ): Promise<McpOAuthSession>
 
   // Delete a session by its OAuth state

@@ -15,7 +15,7 @@ export async function GET() {
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to get preferences' },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }
@@ -28,7 +28,10 @@ export async function PUT(request: Request) {
     }
     const json = await request.json()
     const preferences = UserPreferencesZodSchema.parse(json)
-    const updatedUser = await userRepository.updatePreferences(session.user.id, preferences)
+    const updatedUser = await userRepository.updatePreferences(
+      session.user.id,
+      preferences
+    )
     return NextResponse.json({
       success: true,
       preferences: updatedUser.preferences,
@@ -36,7 +39,7 @@ export async function PUT(request: Request) {
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to update preferences' },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }

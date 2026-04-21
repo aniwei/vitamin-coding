@@ -3,7 +3,13 @@
 import * as React from 'react'
 import { Label, Pie, PieChart as RechartsPieChart } from 'recharts'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   ChartConfig,
   ChartContainer,
@@ -61,7 +67,20 @@ function formatLargeNumber(num: number | null | undefined): string {
     return num.toString()
   }
 
-  const units = ['', 'k', 'M', 'B', 'T', 'Qa', 'Qi', 'Sx', 'Sp', 'Oc', 'No', 'Dc']
+  const units = [
+    '',
+    'k',
+    'M',
+    'B',
+    'T',
+    'Qa',
+    'Qi',
+    'Sx',
+    'Sp',
+    'Oc',
+    'No',
+    'Dc',
+  ]
   let unitIndex = 0
   let value = num
 
@@ -116,24 +135,36 @@ export function PieChart(props: PieChartProps) {
   }, [data])
 
   return (
-    <Card className='flex flex-col bg-card'>
-      <CardHeader className='items-center pb-0 flex flex-col gap-2 relative'>
-        <CardTitle className='flex items-center'>
+    <Card className="flex flex-col bg-card">
+      <CardHeader className="items-center pb-0 flex flex-col gap-2 relative">
+        <CardTitle className="flex items-center">
           {prefix ?? 'Pie Chart - '}
           {title}
           {jsonView && (
-            <div className='absolute right-4 top-0'>
+            <div className="absolute right-4 top-0">
               <JsonViewPopup data={props} />
             </div>
           )}
         </CardTitle>
         {description && <CardDescription>{description}</CardDescription>}
       </CardHeader>
-      <CardContent className='flex-1 pb-0'>
-        <ChartContainer config={chartConfig} className='mx-auto aspect-square max-h-[300px]'>
+      <CardContent className="flex-1 pb-0">
+        <ChartContainer
+          config={chartConfig}
+          className="mx-auto aspect-square max-h-[300px]"
+        >
           <RechartsPieChart>
-            <ChartTooltip cursor={false} content={<ChartTooltipContent hideLabel />} />
-            <Pie data={chartData} dataKey='value' nameKey='name' innerRadius={60} strokeWidth={5}>
+            <ChartTooltip
+              cursor={false}
+              content={<ChartTooltipContent hideLabel />}
+            />
+            <Pie
+              data={chartData}
+              dataKey="value"
+              nameKey="name"
+              innerRadius={60}
+              strokeWidth={5}
+            >
               <Label
                 content={({ viewBox }) => {
                   if (viewBox && 'cx' in viewBox && 'cy' in viewBox) {
@@ -141,13 +172,13 @@ export function PieChart(props: PieChartProps) {
                       <text
                         x={viewBox.cx}
                         y={viewBox.cy}
-                        textAnchor='middle'
-                        dominantBaseline='middle'
+                        textAnchor="middle"
+                        dominantBaseline="middle"
                       >
                         <tspan
                           x={viewBox.cx}
                           y={viewBox.cy}
-                          className='fill-foreground text-3xl font-bold'
+                          className="fill-foreground text-3xl font-bold"
                         >
                           {formatLargeNumber(total)}
                         </tspan>
@@ -155,7 +186,7 @@ export function PieChart(props: PieChartProps) {
                           <tspan
                             x={viewBox.cx}
                             y={(viewBox.cy || 0) + 24}
-                            className='fill-muted-foreground'
+                            className="fill-muted-foreground"
                           >
                             {unit}
                           </tspan>

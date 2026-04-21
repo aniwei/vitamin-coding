@@ -4,7 +4,11 @@ import {
   TipTapMentionJsonContentPart,
 } from 'app-types/util'
 import { JSONSchema7 } from 'json-schema'
-import { UINode, OutputSchemaSourceKey, WorkflowNodeData } from './workflow.interface'
+import {
+  UINode,
+  OutputSchemaSourceKey,
+  WorkflowNodeData,
+} from './workflow.interface'
 import { exclude, isString } from 'lib/utils'
 import { DBEdge, DBNode } from 'app-types/workflow'
 import { Edge } from '@xyflow/react'
@@ -33,7 +37,9 @@ export function findAccessibleNodeIds({
     currentNodes = []
     for (const target of targets) {
       const sources = edges
-        .filter((edge) => edge.target === target && allNodeIds.includes(edge.source))
+        .filter(
+          (edge) => edge.target === target && allNodeIds.includes(edge.source)
+        )
         .map((edge) => edge.source)
       accessibleNodes.push(...sources)
       currentNodes.push(...sources)
@@ -44,13 +50,16 @@ export function findAccessibleNodeIds({
 
 export function findJsonSchemaByPath(
   schema: ObjectJsonSchema7,
-  path: string[],
+  path: string[]
 ): JSONSchema7 | undefined {
   const [key, ...rest] = path
   if (rest.length === 0) {
     return schema.properties?.[key] as JSONSchema7
   }
-  return findJsonSchemaByPath(schema.properties![key] as ObjectJsonSchema7, rest)
+  return findJsonSchemaByPath(
+    schema.properties![key] as ObjectJsonSchema7,
+    rest
+  )
 }
 
 export function findAvailableSchemaBySource({
@@ -95,7 +104,7 @@ export function findAvailableSchemaBySource({
 
 export function convertUINodeToDBNode(
   workflowId: string,
-  node: UINode,
+  node: UINode
 ): Omit<DBNode, 'createdAt' | 'updatedAt'> {
   return {
     id: node.id,
@@ -129,7 +138,7 @@ export function convertDBNodeToUINode(node: DBNode): UINode {
 
 export function convertUIEdgeToDBEdge(
   workflowId: string,
-  edge: Edge,
+  edge: Edge
 ): Omit<DBEdge, 'createdAt' | 'updatedAt'> {
   return {
     id: edge.id,
@@ -194,7 +203,9 @@ export function convertTiptapJsonToText({
   getOutput,
 }: {
   json: TipTapMentionJsonContent
-  mentionParser?: (part: Extract<TipTapMentionJsonContentPart, { type: 'mention' }>) => string
+  mentionParser?: (
+    part: Extract<TipTapMentionJsonContentPart, { type: 'mention' }>
+  ) => string
   getOutput: (key: OutputSchemaSourceKey) => any
 }): string {
   const parser =
@@ -203,7 +214,9 @@ export function convertTiptapJsonToText({
       const key = JSON.parse(part.attrs.label) as OutputSchemaSourceKey
       const mentionItem = getOutput(key) || ''
       const value =
-        typeof mentionItem == 'object' ? JSON.stringify(mentionItem) : String(mentionItem)
+        typeof mentionItem == 'object'
+          ? JSON.stringify(mentionItem)
+          : String(mentionItem)
       return value
     })
   return (

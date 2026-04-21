@@ -1,4 +1,7 @@
-import type { MCPClientsManager, MCPConfigStorage } from './create-mcp-clients-manager'
+import type {
+  MCPClientsManager,
+  MCPConfigStorage,
+} from './create-mcp-clients-manager'
 import type { McpServerInsert, McpServerSelect } from 'app-types/mcp'
 
 /**

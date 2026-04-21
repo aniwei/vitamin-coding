@@ -12,7 +12,13 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   ChartConfig,
   ChartContainer,
@@ -74,17 +80,18 @@ export function LineChart(props: LineChartProps) {
                   },
                 ]
               },
-              [] as LineChartProps['data'][number]['series'],
+              [] as LineChartProps['data'][number]['series']
             ),
           },
         ]
       },
-      [] as LineChartProps['data'],
+      [] as LineChartProps['data']
     )
   }, [data])
 
   // Get series names from the first data item (assuming all items have the same series)
-  const seriesNames = deduplicateData[0]?.series.map((item) => item.seriesName) || []
+  const seriesNames =
+    deduplicateData[0]?.series.map((item) => item.seriesName) || []
 
   // Generate chart configuration dynamically
   const chartConfig = React.useMemo(() => {
@@ -122,11 +129,11 @@ export function LineChart(props: LineChartProps) {
   }, [deduplicateData])
 
   return (
-    <Card className='bg-card'>
-      <CardHeader className='flex flex-col gap-2 relative'>
-        <CardTitle className='flex items-center'>
+    <Card className="bg-card">
+      <CardHeader className="flex flex-col gap-2 relative">
+        <CardTitle className="flex items-center">
           Line Chart - {title}
-          <div className='absolute right-4 top-0'>
+          <div className="absolute right-4 top-0">
             <JsonViewPopup
               data={{
                 ...props,
@@ -140,10 +147,15 @@ export function LineChart(props: LineChartProps) {
       <CardContent>
         <div>
           <ChartContainer config={chartConfig}>
-            <ResponsiveContainer width='100%' height='400px'>
+            <ResponsiveContainer width="100%" height="400px">
               <RechartsLineChart data={chartData}>
-                <CartesianGrid strokeDasharray='3 3' />
-                <XAxis dataKey='label' tickLine={false} axisLine={false} tickMargin={8} />
+                <CartesianGrid strokeDasharray="3 3" />
+                <XAxis
+                  dataKey="label"
+                  tickLine={false}
+                  axisLine={false}
+                  tickMargin={8}
+                />
                 <YAxis
                   tickLine={false}
                   axisLine={false}
@@ -158,12 +170,15 @@ export function LineChart(props: LineChartProps) {
                       : undefined
                   }
                 />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent />} />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent />}
+                />
                 <Legend />
                 {seriesNames.map((seriesName, index) => (
                   <Line
                     key={index}
-                    type='monotone'
+                    type="monotone"
                     name={seriesName}
                     dataKey={sanitizeCssVariableName(seriesName)}
                     stroke={`var(--color-${sanitizeCssVariableName(seriesName)})`}

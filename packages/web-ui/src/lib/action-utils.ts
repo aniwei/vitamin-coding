@@ -3,7 +3,10 @@ import { z } from 'zod'
 import { UserSession, UserSessionUser } from 'app-types/user'
 
 import { getSession } from 'auth/server'
-import { requireAdminPermission, requireUserManagePermissionFor } from './auth/permissions'
+import {
+  requireAdminPermission,
+  requireUserManagePermissionFor,
+} from './auth/permissions'
 
 // Type constraint for schemas that can have optional userId
 type SchemaWithOptionalUserId = z.ZodType<{ userId?: string }, any>
@@ -19,12 +22,12 @@ export type ActionState =
 
 type ValidatedActionFunction<S extends z.ZodType<any, any>, T> = (
   data: z.infer<S>,
-  formData: FormData,
+  formData: FormData
 ) => Promise<T>
 
 export function validatedAction<S extends z.ZodType<any, any>, T>(
   schema: S,
-  action: ValidatedActionFunction<S, T>,
+  action: ValidatedActionFunction<S, T>
 ) {
   return async (_prevState: ActionState, formData: FormData) => {
     const result = schema.safeParse(Object.fromEntries(formData))
@@ -39,12 +42,12 @@ export function validatedAction<S extends z.ZodType<any, any>, T>(
 type ValidatedActionWithUserFunction<S extends z.ZodType<any, any>, T> = (
   data: z.infer<S>,
   formData: FormData,
-  user: UserSessionUser,
+  user: UserSessionUser
 ) => Promise<T>
 
 export function validatedActionWithUser<S extends z.ZodType<any, any>, T>(
   schema: S,
-  action: ValidatedActionWithUserFunction<S, T>,
+  action: ValidatedActionWithUserFunction<S, T>
 ) {
   return async (_prevState: ActionState, formData: FormData) => {
     let session
@@ -81,16 +84,16 @@ export function validatedActionWithUser<S extends z.ZodType<any, any>, T>(
 type ValidatedActionWithSimpleAdminAccess<S extends z.ZodType<any, any>, T> = (
   data: z.infer<S>,
   formData: FormData,
-  userSession: UserSession,
+  userSession: UserSession
 ) => Promise<T>
 
 /**
  * Validates action and requires admin permissions
  */
-export function validatedActionWithAdminPermission<S extends z.ZodType<any, any>, T>(
-  schema: S,
-  action: ValidatedActionWithSimpleAdminAccess<S, T>,
-) {
+export function validatedActionWithAdminPermission<
+  S extends z.ZodType<any, any>,
+  T,
+>(schema: S, action: ValidatedActionWithSimpleAdminAccess<S, T>) {
   return async (_prevState: ActionState, formData: FormData) => {
     let userSession
     try {
@@ -124,7 +127,9 @@ export function validatedActionWithAdminPermission<S extends z.ZodType<any, any>
       return {
         success: false,
         message:
-          error instanceof Error ? error.message : 'You are not authorized to perform this action',
+          error instanceof Error
+            ? error.message
+            : 'You are not authorized to perform this action',
       } as T
     }
 
@@ -137,16 +142,16 @@ type ValidatedActionWithUserManageAccess<S extends z.ZodType<any, any>, T> = (
   userId: string,
   userSession: UserSession,
   isOwnResource: boolean,
-  formData: FormData,
+  formData: FormData
 ) => Promise<T>
 
 /**
  * Validates action and allows if user manages themselves OR has user management permissions
  */
-export function validatedActionWithUserManagePermission<S extends SchemaWithOptionalUserId, T>(
-  schema: S,
-  action: ValidatedActionWithUserManageAccess<S, T>,
-) {
+export function validatedActionWithUserManagePermission<
+  S extends SchemaWithOptionalUserId,
+  T,
+>(schema: S, action: ValidatedActionWithUserManageAccess<S, T>) {
   return async (_prevState: ActionState, formData: FormData) => {
     let userSession
     try {
@@ -182,7 +187,9 @@ export function validatedActionWithUserManagePermission<S extends SchemaWithOpti
       return {
         success: false,
         message:
-          error instanceof Error ? error.message : 'You are not authorized to perform this action',
+          error instanceof Error
+            ? error.message
+            : 'You are not authorized to perform this action',
       } as T
     }
 

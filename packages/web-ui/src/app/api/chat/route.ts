@@ -11,14 +11,14 @@ import {
 
 import { customModelProvider, isToolCallUnsupportedModel } from 'lib/ai/models'
 
-import { agentRepository, chatRepository } from 'lib/db/repository'
+import { chatRepository } from 'lib/db/repository'
 import globalLogger from 'logger'
 import {
   buildMcpServerCustomizationsSystemPrompt,
   buildUserSystemPrompt,
   buildToolCallUnsupportedModelSystemPrompt,
 } from 'lib/ai/prompts'
-import { chatApiSchemaRequestBodySchema, ChatMention, ChatMetadata } from 'app-types/chat'
+import { chatApiSchemaRequestBodySchema, ChatMetadata } from 'app-types/chat'
 
 import { errorIf, safe } from 'ts-safe'
 
@@ -34,7 +34,7 @@ import {
   loadAppDefaultTools,
   convertToSavePart,
 } from './shared.chat'
-import { rememberAgentAction, rememberMcpServerCustomizationsAction } from './actions'
+import { rememberMcpServerCustomizationsAction } from './actions'
 import { getSession } from 'auth/server'
 import { colorize } from 'consola/utils'
 import { generateUUID } from 'lib/utils'
@@ -98,8 +98,9 @@ export async function POST(request: Request) {
     if (messages.at(-1)?.id == message.id) {
       messages.pop()
     }
-    const ingestionPreviewParts = await buildCsvIngestionPreviewParts(attachments, (key) =>
-      serverFileStorage.download(key),
+    const ingestionPreviewParts = await buildCsvIngestionPreviewParts(
+      attachments,
+      (key) => serverFileStorage.download(key)
     )
     if (ingestionPreviewParts.length) {
       const baseParts = [...message.parts]
@@ -119,12 +120,15 @@ export async function POST(request: Request) {
     }
 
     if (attachments.length) {
-      const firstTextIndex = message.parts.findIndex((part: any) => part?.type === 'text')
+      const firstTextIndex = message.parts.findIndex(
+        (part: any) => part?.type === 'text'
+      )
       const attachmentParts: any[] = []
 
       attachments.forEach((attachment) => {
         const exists = message.parts.some(
-          (part: any) => part?.type === attachment.type && part?.url === attachment.url,
+          (part: any) =>
+            part?.type === attachment.type && part?.url === attachment.url
         )
         if (exists) return
 
@@ -162,23 +166,14 @@ export async function POST(request: Request) {
 
     const supportToolCall = !isToolCallUnsupportedModel(model)
 
-    const agentId = (
-      mentions.find((m) => m.type === 'agent') as Extract<ChatMention, { type: 'agent' }>
-    )?.agentId
-
-    const agent = await rememberAgentAction(agentId, session.user.id)
-
-    if (agent?.instructions?.mentions) {
-      mentions.push(...agent.instructions.mentions)
-    }
-
     const useImageTool = Boolean(imageTool?.model)
 
     const isToolCallAllowed =
-      supportToolCall && (toolChoice != 'none' || mentions.length > 0) && !useImageTool
+      supportToolCall &&
+      (toolChoice != 'none' || mentions.length > 0) &&
+      !useImageTool
 
     const metadata: ChatMetadata = {
-      agentId: agent?.id,
       toolChoice: toolChoice,
       toolCount: 0,
       chatModel: chatModel,
@@ -192,7 +187,7 @@ export async function POST(request: Request) {
             loadMcpTools({
               mentions,
               allowedMcpServers,
-            }),
+            })
           )
           .orElse({})
 
@@ -202,7 +197,7 @@ export async function POST(request: Request) {
             loadWorkFlowTools({
               mentions,
               dataStream,
-            }),
+            })
           )
           .orElse({})
 
@@ -212,7 +207,7 @@ export async function POST(request: Request) {
             loadAppDefaultTools({
               mentions,
               allowedAppDefaultToolkit,
-            }),
+            })
           )
           .orElse({})
         const inProgressToolParts = extractInProgressToolPart(message)
@@ -222,7 +217,7 @@ export async function POST(request: Request) {
               const output = await manualToolExecuteByLastMessage(
                 part,
                 { ...MCP_TOOLS, ...WORKFLOW_TOOLS, ...APP_DEFAULT_TOOLS },
-                request.signal,
+                request.signal
               )
               part.output = output
 
@@ -231,7 +226,7 @@ export async function POST(request: Request) {
                 toolCallId: part.toolCallId,
                 output,
               })
-            }),
+            })
           )
         }
 
@@ -239,21 +234,25 @@ export async function POST(request: Request) {
 
         const mcpServerCustomizations = await safe()
           .map(() => {
-            if (Object.keys(MCP_TOOLS ?? {}).length === 0) throw new Error('No tools found')
+            if (Object.keys(MCP_TOOLS ?? {}).length === 0)
+              throw new Error('No tools found')
             return rememberMcpServerCustomizationsAction(session.user.id)
           })
           .map((v) => filterMcpServerCustomizations(MCP_TOOLS!, v))
           .orElse({})
 
         const systemPrompt = mergeSystemPrompt(
-          buildUserSystemPrompt(session.user, userPreferences, agent),
+          buildUserSystemPrompt(session.user, userPreferences),
           buildMcpServerCustomizationsSystemPrompt(mcpServerCustomizations),
-          !supportToolCall && buildToolCallUnsupportedModelSystemPrompt,
+          !supportToolCall && buildToolCallUnsupportedModelSystemPrompt
         )
 
         const IMAGE_TOOL: Record<string, Tool> = useImageTool
           ? {
-              [ImageToolName]: imageTool?.model === 'google' ? nanoBananaTool : openaiImageTool,
+              [ImageToolName]:
+                imageTool?.model === 'google'
+                  ? nanoBananaTool
+                  : openaiImageTool,
             }
           : {}
         const vercelAITooles = safe({
@@ -262,7 +261,8 @@ export async function POST(request: Request) {
         })
           .map((t) => {
             const bindingTools =
-              toolChoice === 'manual' || (message.metadata as ChatMetadata)?.toolChoice === 'manual'
+              toolChoice === 'manual' ||
+              (message.metadata as ChatMetadata)?.toolChoice === 'manual'
                 ? excludeToolExecution(t)
                 : t
             return {
@@ -278,18 +278,16 @@ export async function POST(request: Request) {
           .map((t) => t.tools)
           .flat()
 
-        logger.info(
-          `${agent ? `agent: ${agent.name}, ` : ''}tool mode: ${toolChoice}, mentions: ${mentions.length}`,
-        )
+        logger.info(`tool mode: ${toolChoice}, mentions: ${mentions.length}`)
 
         logger.info(
-          `allowedMcpTools: ${allowedMcpTools.length ?? 0}, allowedAppDefaultToolkit: ${allowedAppDefaultToolkit?.length ?? 0}`,
+          `allowedMcpTools: ${allowedMcpTools.length ?? 0}, allowedAppDefaultToolkit: ${allowedAppDefaultToolkit?.length ?? 0}`
         )
         if (useImageTool) {
           logger.info(`binding tool count Image: ${imageTool?.model}`)
         } else {
           logger.info(
-            `binding tool count APP_DEFAULT: ${Object.keys(APP_DEFAULT_TOOLS ?? {}).length}, MCP: ${Object.keys(MCP_TOOLS ?? {}).length}, Workflow: ${Object.keys(WORKFLOW_TOOLS ?? {}).length}`,
+            `binding tool count APP_DEFAULT: ${Object.keys(APP_DEFAULT_TOOLS ?? {}).length}, MCP: ${Object.keys(MCP_TOOLS ?? {}).length}, Workflow: ${Object.keys(WORKFLOW_TOOLS ?? {}).length}`
           )
         }
         logger.info(`model: ${chatModel?.provider}/${chatModel?.model}`)
@@ -314,7 +312,7 @@ export async function POST(request: Request) {
                 return metadata
               }
             },
-          }),
+          })
         )
       },
 
@@ -341,12 +339,6 @@ export async function POST(request: Request) {
             parts: responseMessage.parts.map(convertToSavePart),
             metadata,
           })
-        }
-
-        if (agent) {
-          agentRepository.updateAgent(agent.id, session.user.id, {
-            updatedAt: new Date(),
-          } as any)
         }
       },
       onError: handleError,

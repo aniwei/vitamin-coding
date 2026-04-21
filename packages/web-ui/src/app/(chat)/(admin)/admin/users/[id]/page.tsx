@@ -25,7 +25,10 @@ export default async function UserDetailPage({ params }: PageProps) {
   if (!session) {
     redirect('/login')
   }
-  const [user, userAccountInfo] = await Promise.all([getUser(id), getUserAccounts(id)])
+  const [user, userAccountInfo] = await Promise.all([
+    getUser(id),
+    getUserAccounts(id),
+  ])
 
   if (!user) {
     notFound()
@@ -38,10 +41,10 @@ export default async function UserDetailPage({ params }: PageProps) {
       userAccountInfo={userAccountInfo}
       userStatsSlot={
         <Suspense fallback={<UserStatsCardLoaderSkeleton />}>
-          <UserStatsCardLoader userId={id} view='admin' />
+          <UserStatsCardLoader userId={id} view="admin" />
         </Suspense>
       }
-      view='admin'
+      view="admin"
     />
   )
 }

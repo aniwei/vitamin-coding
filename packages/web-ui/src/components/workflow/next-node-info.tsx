@@ -1,5 +1,9 @@
 import { Edge, useReactFlow } from '@xyflow/react'
-import { ConditionNodeData, NodeKind, UINode } from 'lib/ai/workflow/workflow.interface'
+import {
+  ConditionNodeData,
+  NodeKind,
+  UINode,
+} from 'lib/ai/workflow/workflow.interface'
 import { ReactNode, useCallback, useMemo } from 'react'
 import { Label } from 'ui/label'
 import { NodeIcon } from './node-icon'
@@ -8,7 +12,7 @@ import { PlusIcon, Unlink } from 'lucide-react'
 import { NodeSelect } from './node-select'
 import { useUpdate } from '@/hooks/use-update'
 import { createAppendNode } from './create-append-node'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 
 interface NextNodeInfoProps {
@@ -18,14 +22,15 @@ interface NextNodeInfoProps {
 
 export function NextNodeInfo({ node, onSelectNode }: NextNodeInfoProps) {
   const t = useTranslations()
-  const { addNodes, addEdges, updateNode, getEdges, getNodes, setEdges } = useReactFlow()
+  const { addNodes, addEdges, updateNode, getEdges, getNodes, setEdges } =
+    useReactFlow()
   const nodes = getNodes() as UINode[]
   const edges = getEdges()
   const onDisconnected = useCallback(
     (edge: Edge) => {
       setEdges(edges.filter((e) => e.id !== edge.id))
     },
-    [edges],
+    [edges]
   )
 
   const nextNodes = useMemo(() => {
@@ -60,12 +65,12 @@ export function NextNodeInfo({ node, onSelectNode }: NextNodeInfoProps) {
         })
       })
     },
-    [node.id, nodes, edges, addNodes],
+    [node.id, nodes, edges, addNodes]
   )
   return (
-    <div className='flex flex-col w-full text-muted-foreground'>
-      <Label className='text-foreground'>{t('Workflow.nextNode')}</Label>
-      <p className='my-2 text-xs'>{t('Workflow.nextNodeDescription')}</p>
+    <div className="flex flex-col w-full text-muted-foreground">
+      <Label className="text-foreground">{t('Workflow.nextNode')}</Label>
+      <p className="my-2 text-xs">{t('Workflow.nextNodeDescription')}</p>
       {node.data.kind === NodeKind.Condition ? (
         <ConditionNodeDataConnector
           node={node}
@@ -108,8 +113,12 @@ function ConditionNodeDataConnector({
 }: NodeConnectorProps) {
   const data = node.data as ConditionNodeData
   const { ifNextNodes, elseNextNodes, elseIfNextNodes } = useMemo(() => {
-    const ifNextNodes = nextNodes.filter((n) => n.edge.sourceHandle === data.branches.if.id)
-    const elseNextNodes = nextNodes.filter((n) => n.edge.sourceHandle === data.branches.else.id)
+    const ifNextNodes = nextNodes.filter(
+      (n) => n.edge.sourceHandle === data.branches.if.id
+    )
+    const elseNextNodes = nextNodes.filter(
+      (n) => n.edge.sourceHandle === data.branches.else.id
+    )
     const elseIfNextNodes = (data.branches.elseIf ?? []).map((brach) => {
       return nextNodes.filter((n) => n.edge.sourceHandle === brach.id)
     })
@@ -117,17 +126,19 @@ function ConditionNodeDataConnector({
   }, [nextNodes, node.data])
 
   return (
-    <div className='flex flex-col gap-4'>
+    <div className="flex flex-col gap-4">
       <NextNodeConnector
         node={node}
         label={
-          <div className='font-bold text-center py-1'>
-            <span className='text-blue-500'>IF</span> CASE 1
+          <div className="font-bold text-center py-1">
+            <span className="text-blue-500">IF</span> CASE 1
           </div>
         }
         nextNodes={ifNextNodes}
         onDisconnected={onDisconnected}
-        appendNode={(kind) => appendNode(kind, { sourceHandle: data.branches.if.id })}
+        appendNode={(kind) =>
+          appendNode(kind, { sourceHandle: data.branches.if.id })
+        }
         onSelectNode={onSelectNode}
       />
       {elseIfNextNodes.map((n, i) => {
@@ -136,13 +147,15 @@ function ConditionNodeDataConnector({
             key={i}
             node={node}
             label={
-              <div className='font-bold text-center py-1'>
-                <span className='text-blue-500'>ELSE IF</span> CASE {i + 2}
+              <div className="font-bold text-center py-1">
+                <span className="text-blue-500">ELSE IF</span> CASE {i + 2}
               </div>
             }
             nextNodes={n}
             onDisconnected={onDisconnected}
-            appendNode={(kind) => appendNode(kind, { sourceHandle: data.branches.elseIf![i].id })}
+            appendNode={(kind) =>
+              appendNode(kind, { sourceHandle: data.branches.elseIf![i].id })
+            }
             onSelectNode={onSelectNode}
           />
         )
@@ -151,13 +164,16 @@ function ConditionNodeDataConnector({
       <NextNodeConnector
         node={node}
         label={
-          <div className='font-bold text-center py-1'>
-            <span className='text-blue-500'>ELSE</span> CASE {elseIfNextNodes.length + 2}
+          <div className="font-bold text-center py-1">
+            <span className="text-blue-500">ELSE</span> CASE{' '}
+            {elseIfNextNodes.length + 2}
           </div>
         }
         nextNodes={elseNextNodes}
         onDisconnected={onDisconnected}
-        appendNode={(kind) => appendNode(kind, { sourceHandle: data.branches.else.id })}
+        appendNode={(kind) =>
+          appendNode(kind, { sourceHandle: data.branches.else.id })
+        }
         onSelectNode={onSelectNode}
       />
     </div>
@@ -174,28 +190,28 @@ function NextNodeConnector({
 }: NodeConnectorProps) {
   const t = useTranslations()
   return (
-    <div className='flex w-full'>
-      <div className='py-1'>
-        <div className='border p-[7px] rounded-lg flex items-center'>
+    <div className="flex w-full">
+      <div className="py-1">
+        <div className="border p-[7px] rounded-lg flex items-center">
           <NodeIcon type={node.data.kind} />
         </div>
       </div>
-      <div className='py-1'>
-        <div className='py-[7px] flex items-center'>
-          <div className='w-6 h-6 flex items-center'>
-            <div className='h-2 w-0.5 bg-border rounded-r' />
-            <div className='w-full h-[1px] bg-border' />
-            <div className='h-2 w-0.5 bg-border rounded-l' />
+      <div className="py-1">
+        <div className="py-[7px] flex items-center">
+          <div className="w-6 h-6 flex items-center">
+            <div className="h-2 w-0.5 bg-border rounded-r" />
+            <div className="w-full h-[1px] bg-border" />
+            <div className="h-2 w-0.5 bg-border rounded-l" />
           </div>
         </div>
       </div>
 
-      <div className='text-xs flex-1 min-w-0 gap-1 bg-background rounded-lg p-1 flex flex-col'>
+      <div className="text-xs flex-1 min-w-0 gap-1 bg-background rounded-lg p-1 flex flex-col">
         {label}
         {nextNodes.map((n) => {
           return (
             <div
-              className='w-full group cursor-pointer hover:bg-secondary transition-colors gap-2 border p-1.5 rounded-lg bg-card flex items-center'
+              className="w-full group cursor-pointer hover:bg-secondary transition-colors gap-2 border p-1.5 rounded-lg bg-card flex items-center"
               key={n.node.data.name}
               onClick={onSelectNode?.bind(null, n.node.data.id)}
             >
@@ -204,13 +220,13 @@ function NextNodeConnector({
               <Tooltip>
                 <TooltipTrigger asChild>
                   <button
-                    className='hover:border-destructive flex transition-colors ml-auto gap-1 border rounded  p-1 items-center'
+                    className="hover:border-destructive flex transition-colors ml-auto gap-1 border rounded  p-1 items-center"
                     onClick={(e) => {
                       e.stopPropagation()
                       onDisconnected(n.edge)
                     }}
                   >
-                    <Unlink className='size-3 group-hover:text-destructive' />
+                    <Unlink className="size-3 group-hover:text-destructive" />
                   </button>
                 </TooltipTrigger>
                 <TooltipContent>{t('Workflow.unlink')}</TooltipContent>
@@ -221,10 +237,10 @@ function NextNodeConnector({
         <NodeSelect onChange={appendNode}>
           <Button
             size={'lg'}
-            variant='ghost'
-            className='data-[state=open]:bg-secondary! text-xs w-full text-muted-foreground border border-dashed justify-start'
+            variant="ghost"
+            className="data-[state=open]:bg-secondary! text-xs w-full text-muted-foreground border border-dashed justify-start"
           >
-            <PlusIcon className='size-3' />
+            <PlusIcon className="size-3" />
             <span>{t('Workflow.addNextNode')}</span>
           </Button>
         </NodeSelect>

@@ -2,7 +2,6 @@ import { drizzle } from 'drizzle-orm/node-postgres'
 import {
   UserTable,
   SessionTable,
-  AgentTable,
   BookmarkTable,
   ChatThreadTable,
 } from '../../src/lib/db/pg/schema.pg'
@@ -29,7 +28,11 @@ async function cleanup() {
     const testUsers = await db
       .select({ id: UserTable.id })
       .from(UserTable)
-      .where(or(...testEmailPatterns.map((pattern) => like(UserTable.email, pattern))))
+      .where(
+        or(
+          ...testEmailPatterns.map((pattern) => like(UserTable.email, pattern))
+        )
+      )
 
     console.log(`Found ${testUsers.length} test users to clean up`)
 
@@ -38,13 +41,12 @@ async function cleanup() {
       console.log(`Cleaning up user: ${user.id}`)
 
       // Delete chat threads
-      await db.delete(ChatThreadTable).where(eq(ChatThreadTable.userId, user.id))
+      await db
+        .delete(ChatThreadTable)
+        .where(eq(ChatThreadTable.userId, user.id))
 
       // Delete bookmarks
       await db.delete(BookmarkTable).where(eq(BookmarkTable.userId, user.id))
-
-      // Delete agents
-      await db.delete(AgentTable).where(eq(AgentTable.userId, user.id))
 
       // Delete sessions
       await db.delete(SessionTable).where(eq(SessionTable.userId, user.id))

@@ -6,7 +6,6 @@ import {
   VerificationTable,
   ChatThreadTable,
   ChatMessageTable,
-  AgentTable,
   WorkflowTable,
   McpServerTable,
   ArchiveTable,
@@ -40,22 +39,19 @@ export async function clearAllUsers() {
   // 5. Clear workflows (depends on users)
   await pgDb.delete(WorkflowTable)
 
-  // 6. Clear agents (depends on users)
-  await pgDb.delete(AgentTable)
-
-  // 7. Clear MCP servers (depends on users)
+  // 6. Clear MCP servers (depends on users)
   await pgDb.delete(McpServerTable)
 
-  // 8. Clear sessions (depends on users)
+  // 7. Clear sessions (depends on users)
   await pgDb.delete(SessionTable)
 
-  // 9. Clear accounts (depends on users)
+  // 8. Clear accounts (depends on users)
   await pgDb.delete(AccountTable)
 
-  // 10. Clear verifications (depends on users)
+  // 9. Clear verifications (depends on users)
   await pgDb.delete(VerificationTable)
 
-  // 11. Finally clear users
+  // 10. Finally clear users
   await pgDb.delete(UserTable)
 
   console.log('✅ All users and related data cleared')

@@ -15,7 +15,11 @@ async function getLocaleFromCookie(): Promise<string | undefined> {
 
 async function getLocalFromHeader(): Promise<string | undefined> {
   const headerStore = await headers()
-  const locale = headerStore.get('accept-language')?.split(',')[0]?.trim().split('-')[0]
+  const locale = headerStore
+    .get('accept-language')
+    ?.split(',')[0]
+    ?.trim()
+    .split('-')[0]
 
   return validateLocale(locale) ? locale : undefined
 }

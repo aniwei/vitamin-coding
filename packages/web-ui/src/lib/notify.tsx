@@ -27,7 +27,13 @@ const createContainer = () => {
 }
 
 export const notify = {
-  component({ children, className }: { children: ReactNode; className?: string }) {
+  component({
+    children,
+    className,
+  }: {
+    children: ReactNode
+    className?: string
+  }) {
     return new Promise<void>((resolve) => {
       const container = createContainer()
       const root = createRoot(container)
@@ -39,13 +45,13 @@ export const notify = {
       root.render(
         <Dialog open onOpenChange={close}>
           <DialogContent className={className}>
-            <DialogHeader className='hidden'>
+            <DialogHeader className="hidden">
               <DialogTitle></DialogTitle>
               <DialogDescription></DialogDescription>
             </DialogHeader>
             {children}
           </DialogContent>
-        </Dialog>,
+        </Dialog>
       )
     })
   },
@@ -71,7 +77,7 @@ export const notify = {
               </Button>
             </DialogFooter>
           </DialogContent>
-        </Dialog>,
+        </Dialog>
       )
     })
   },
@@ -98,7 +104,7 @@ export const notify = {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>{confirm.title}</DialogTitle>
-                <DialogDescription className='whitespace-pre-wrap'>
+                <DialogDescription className="whitespace-pre-wrap">
                   {confirm.description}
                 </DialogDescription>
               </DialogHeader>
@@ -135,9 +141,11 @@ export const notify = {
             <DialogContent>
               <DialogHeader>
                 <DialogTitle>{prompt.title}</DialogTitle>
-                <DialogDescription asChild>{prompt.description}</DialogDescription>
+                <DialogDescription asChild>
+                  {prompt.description}
+                </DialogDescription>
                 <Textarea
-                  className='resize-none'
+                  className="resize-none"
                   value={text}
                   onChange={(e) => setText(e.target.value)}
                 />
@@ -146,7 +154,11 @@ export const notify = {
                 <Button variant={'ghost'} onClick={() => close()}>
                   Cancel
                 </Button>
-                <Button disabled={!text.trim()} variant={'secondary'} onClick={() => close(text)}>
+                <Button
+                  disabled={!text.trim()}
+                  variant={'secondary'}
+                  onClick={() => close(text)}
+                >
                   Confirm
                 </Button>
               </DialogFooter>

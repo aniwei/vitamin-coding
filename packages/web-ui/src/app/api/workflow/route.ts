@@ -12,8 +12,15 @@ export async function GET() {
 }
 
 export async function POST(request: Request) {
-  const { name, description, icon, id, isPublished, visibility, noGenerateInputNode } =
-    await request.json()
+  const {
+    name,
+    description,
+    icon,
+    id,
+    isPublished,
+    visibility,
+    noGenerateInputNode,
+  } = await request.json()
 
   const session = await getSession()
   if (!session) {
@@ -27,10 +34,14 @@ export async function POST(request: Request) {
     if (!canEdit) {
       return Response.json(
         { error: "You don't have permission to edit workflows" },
-        { status: 403 },
+        { status: 403 }
       )
     }
-    const hasAccess = await workflowRepository.checkAccess(id, session.user.id, false)
+    const hasAccess = await workflowRepository.checkAccess(
+      id,
+      session.user.id,
+      false
+    )
     if (!hasAccess) {
       return new Response('Unauthorized', { status: 401 })
     }
@@ -40,7 +51,7 @@ export async function POST(request: Request) {
     if (!canCreate) {
       return Response.json(
         { error: "You don't have permission to create workflows" },
-        { status: 403 },
+        { status: 403 }
       )
     }
   }
@@ -55,7 +66,7 @@ export async function POST(request: Request) {
       icon,
       userId: session.user.id,
     },
-    noGenerateInputNode,
+    noGenerateInputNode
   )
 
   return Response.json(workflow)

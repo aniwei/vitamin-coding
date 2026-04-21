@@ -2,7 +2,11 @@
 // Core JavaScript execution engine with security sandbox
 
 import { safe } from 'ts-safe'
-import { CodeRunnerOptions, CodeRunnerResult, LogEntry } from './code-runner.interface'
+import {
+  CodeRunnerOptions,
+  CodeRunnerResult,
+  LogEntry,
+} from './code-runner.interface'
 
 // Security: Block dangerous keywords that could compromise sandbox
 const FORBIDDEN_KEYWORDS = [
@@ -99,7 +103,9 @@ function validateCodeSafety(code: string): string | null {
 }
 
 // Create a controlled execution environment with safe APIs
-function createSafeEnvironment(logCapture: (type: LogEntry['type'], ...args: any[]) => void) {
+function createSafeEnvironment(
+  logCapture: (type: LogEntry['type'], ...args: any[]) => void
+) {
   const safeConsole = {
     log: (...args: any[]) => logCapture('log', ...args),
     info: (...args: any[]) => logCapture('info', ...args),

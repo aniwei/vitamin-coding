@@ -21,7 +21,9 @@ export function useThreadFileUploader(threadId?: string) {
           continue
         }
 
-        const previewUrl = file.type?.startsWith('image/') ? URL.createObjectURL(file) : undefined
+        const previewUrl = file.type?.startsWith('image/')
+          ? URL.createObjectURL(file)
+          : undefined
         const fileId = generateUUID()
         const abortController = new AbortController()
 
@@ -58,7 +60,7 @@ export function useThreadFileUploader(threadId?: string) {
                         isUploading: false,
                         progress: 100,
                       }
-                    : f,
+                    : f
                 ),
               },
             }))
@@ -66,7 +68,9 @@ export function useThreadFileUploader(threadId?: string) {
             appStoreMutate((prev) => ({
               threadFiles: {
                 ...prev.threadFiles,
-                [threadId]: (prev.threadFiles[threadId] ?? []).filter((f) => f.id !== fileId),
+                [threadId]: (prev.threadFiles[threadId] ?? []).filter(
+                  (f) => f.id !== fileId
+                ),
               },
             }))
           }
@@ -74,7 +78,9 @@ export function useThreadFileUploader(threadId?: string) {
           appStoreMutate((prev) => ({
             threadFiles: {
               ...prev.threadFiles,
-              [threadId]: (prev.threadFiles[threadId] ?? []).filter((f) => f.id !== fileId),
+              [threadId]: (prev.threadFiles[threadId] ?? []).filter(
+                (f) => f.id !== fileId
+              ),
             },
           }))
         } finally {
@@ -82,7 +88,7 @@ export function useThreadFileUploader(threadId?: string) {
         }
       }
     },
-    [threadId, appStoreMutate, upload],
+    [threadId, appStoreMutate, upload]
   )
 
   return { uploadFiles }

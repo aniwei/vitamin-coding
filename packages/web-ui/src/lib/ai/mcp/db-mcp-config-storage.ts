@@ -27,7 +27,10 @@ export function createDbBasedMCPConfigsStorage(): MCPConfigStorage {
       try {
         return mcpRepository.save(server)
       } catch (error) {
-        logger.error(`Failed to save MCP config "${server.name}" to database:`, error)
+        logger.error(
+          `Failed to save MCP config "${server.name}" to database:`,
+          error
+        )
         throw error
       }
     },
@@ -35,7 +38,10 @@ export function createDbBasedMCPConfigsStorage(): MCPConfigStorage {
       try {
         await mcpRepository.deleteById(id)
       } catch (error) {
-        logger.error(`Failed to delete MCP config "${id}" from database:",`, error)
+        logger.error(
+          `Failed to delete MCP config "${id}" from database:",`,
+          error
+        )
         throw error
       }
     },
@@ -55,14 +61,20 @@ export function createDbBasedMCPConfigsStorage(): MCPConfigStorage {
       try {
         await mcpRepository.updateToolInfo(id, toolInfo)
       } catch (error) {
-        logger.error(`Failed to update tool info for MCP server "${id}":`, error)
+        logger.error(
+          `Failed to update tool info for MCP server "${id}":`,
+          error
+        )
       }
     },
     async updateConnectionStatus(id, status) {
       try {
         await mcpRepository.updateConnectionStatus(id, status)
       } catch (error) {
-        logger.error(`Failed to update connection status for MCP server "${id}":`, error)
+        logger.error(
+          `Failed to update connection status for MCP server "${id}":`,
+          error
+        )
       }
     },
   }

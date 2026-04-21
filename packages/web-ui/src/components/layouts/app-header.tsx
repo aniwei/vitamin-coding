@@ -2,17 +2,22 @@
 
 import { useSidebar } from 'ui/sidebar'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
-import { AudioWaveformIcon, ChevronDown, MessageCircleDashed, PanelLeft } from 'lucide-react'
+import {
+  AudioWaveformIcon,
+  ChevronDown,
+  MessageCircleDashed,
+  PanelLeft,
+} from 'lucide-react'
 import { Button } from 'ui/button'
 import { Separator } from 'ui/separator'
 
 import { useEffect, useMemo } from 'react'
 import { ThreadDropdown } from '../thread-dropdown'
 import { appStore } from '@/app/store'
-import { useLocation, useSearchParams } from 'react-router-dom'
+import { usePathname, useSearchParams } from 'next/navigation'
 import { useShallow } from 'zustand/shallow'
 import { getShortcutKeyList, Shortcuts } from 'lib/keyboard-shortcuts'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { TextShimmer } from 'ui/text-shimmer'
 import { buildReturnUrl } from 'lib/admin/navigation-utils'
 import { BackButton } from '@/components/layouts/back-button'
@@ -21,8 +26,8 @@ export function AppHeader() {
   const t = useTranslations()
   const [appStoreMutate] = appStore(useShallow((state) => [state.mutate]))
   const { toggleSidebar, open } = useSidebar()
-  const { pathname: currentPaths } = useLocation()
-  const [searchParams] = useSearchParams()
+  const currentPaths = usePathname()
+  const searchParams = useSearchParams()
 
   const showActionButtons = useMemo(() => {
     if (currentPaths.startsWith('/admin')) {
@@ -35,12 +40,15 @@ export function AppHeader() {
     if (currentPaths.startsWith('/chat/')) {
       return <ThreadDropdownComponent />
     }
-    if (currentPaths.startsWith('/admin/users/') && currentPaths.split('/').length > 3) {
+    if (
+      currentPaths.startsWith('/admin/users/') &&
+      currentPaths.split('/').length > 3
+    ) {
       const searchPageParams = searchParams.get('searchPageParams')
       const returnUrl = buildReturnUrl('/admin/users', searchPageParams || '')
       return (
         <BackButton
-          data-testid='admin-users-back-button'
+          data-testid="admin-users-back-button"
           returnUrl={returnUrl}
           title={t('Admin.Users.backToUsers')}
         />
@@ -49,32 +57,32 @@ export function AppHeader() {
   }, [currentPaths, searchParams])
 
   return (
-    <header className='sticky top-0 z-50 flex items-center px-3 py-2'>
+    <header className="sticky top-0 z-50 flex items-center px-3 py-2">
       <Tooltip>
         <TooltipTrigger asChild>
           <Button
-            variant='ghost'
-            size='icon'
-            aria-label='Toggle Sidebar'
+            variant="ghost"
+            size="icon"
+            aria-label="Toggle Sidebar"
             onClick={(e) => {
               e.preventDefault()
               e.stopPropagation()
               toggleSidebar()
             }}
-            data-testid='sidebar-toggle'
+            data-testid="sidebar-toggle"
             data-state={open ? 'open' : 'closed'}
           >
             <PanelLeft />
           </Button>
         </TooltipTrigger>
-        <TooltipContent align='start' side='bottom'>
-          <div className='flex items-center gap-2'>
+        <TooltipContent align="start" side="bottom">
+          <div className="flex items-center gap-2">
             {t('KeyboardShortcuts.toggleSidebar')}
-            <div className='text-xs text-muted-foreground flex items-center gap-1'>
+            <div className="text-xs text-muted-foreground flex items-center gap-1">
               {getShortcutKeyList(Shortcuts.toggleSidebar).map((key) => (
                 <span
                   key={key}
-                  className='w-5 h-5 flex items-center justify-center bg-muted rounded '
+                  className="w-5 h-5 flex items-center justify-center bg-muted rounded "
                 >
                   {key}
                 </span>
@@ -85,35 +93,34 @@ export function AppHeader() {
       </Tooltip>
 
       {componentByPage}
-      <div className='flex-1' />
+      <div className="flex-1" />
       {showActionButtons && (
-        <div className='flex items-center gap-2'>
+        <div className="flex items-center gap-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
                 size={'icon'}
                 variant={'ghost'}
-                className='bg-secondary/40'
+                className="bg-secondary/40"
                 onClick={() => {
                   appStoreMutate((state) => ({
                     voiceChat: {
                       ...state.voiceChat,
                       isOpen: true,
-                      agentId: undefined,
                     },
                   }))
                 }}
               >
-                <AudioWaveformIcon className='size-4' />
+                <AudioWaveformIcon className="size-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent align='end' side='bottom'>
-              <div className='text-xs flex items-center gap-2'>
+            <TooltipContent align="end" side="bottom">
+              <div className="text-xs flex items-center gap-2">
                 {t('KeyboardShortcuts.toggleVoiceChat')}
-                <div className='text-xs text-muted-foreground flex items-center gap-1'>
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
                   {getShortcutKeyList(Shortcuts.toggleVoiceChat).map((key) => (
                     <span
-                      className='w-5 h-5 flex items-center justify-center bg-muted rounded '
+                      className="w-5 h-5 flex items-center justify-center bg-muted rounded "
                       key={key}
                     >
                       {key}
@@ -129,7 +136,7 @@ export function AppHeader() {
               <Button
                 size={'icon'}
                 variant={'secondary'}
-                className='bg-secondary/40'
+                className="bg-secondary/40"
                 onClick={() => {
                   appStoreMutate((state) => ({
                     temporaryChat: {
@@ -139,21 +146,23 @@ export function AppHeader() {
                   }))
                 }}
               >
-                <MessageCircleDashed className='size-4' />
+                <MessageCircleDashed className="size-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent align='end' side='bottom'>
-              <div className='text-xs flex items-center gap-2'>
+            <TooltipContent align="end" side="bottom">
+              <div className="text-xs flex items-center gap-2">
                 {t('KeyboardShortcuts.toggleTemporaryChat')}
-                <div className='text-xs text-muted-foreground flex items-center gap-1'>
-                  {getShortcutKeyList(Shortcuts.toggleTemporaryChat).map((key) => (
-                    <span
-                      className='w-5 h-5 flex items-center justify-center bg-muted rounded '
-                      key={key}
-                    >
-                      {key}
-                    </span>
-                  ))}
+                <div className="text-xs text-muted-foreground flex items-center gap-1">
+                  {getShortcutKeyList(Shortcuts.toggleTemporaryChat).map(
+                    (key) => (
+                      <span
+                        className="w-5 h-5 flex items-center justify-center bg-muted rounded "
+                        key={key}
+                      >
+                        {key}
+                      </span>
+                    )
+                  )}
                 </div>
               </div>
             </TooltipContent>
@@ -170,7 +179,7 @@ function ThreadDropdownComponent() {
       state.threadList,
       state.currentThreadId,
       state.generatingTitleThreadIds,
-    ]),
+    ])
   )
   const currentThread = useMemo(() => {
     return threadList.find((thread) => thread.id === currentThreadId)
@@ -185,25 +194,28 @@ function ThreadDropdownComponent() {
   if (!currentThread) return null
 
   return (
-    <div className='items-center gap-1 hidden md:flex'>
-      <div className='w-1 h-4'>
-        <Separator orientation='vertical' />
+    <div className="items-center gap-1 hidden md:flex">
+      <div className="w-1 h-4">
+        <Separator orientation="vertical" />
       </div>
 
-      <ThreadDropdown threadId={currentThread.id} beforeTitle={currentThread.title}>
+      <ThreadDropdown
+        threadId={currentThread.id}
+        beforeTitle={currentThread.title}
+      >
         <div>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant='ghost'
-                className='data-[state=open]:bg-input! hover:text-foreground cursor-pointer flex gap-1 items-center px-2 py-1 rounded-md hover:bg-accent'
+                variant="ghost"
+                className="data-[state=open]:bg-input! hover:text-foreground cursor-pointer flex gap-1 items-center px-2 py-1 rounded-md hover:bg-accent"
               >
                 {generatingTitleThreadIds.includes(currentThread.id) ? (
-                  <TextShimmer className='truncate max-w-60 min-w-0 mr-1'>
+                  <TextShimmer className="truncate max-w-60 min-w-0 mr-1">
                     {currentThread.title || 'New Chat'}
                   </TextShimmer>
                 ) : (
-                  <p className='truncate max-w-60 min-w-0 mr-1'>
+                  <p className="truncate max-w-60 min-w-0 mr-1">
                     {currentThread.title || 'New Chat'}
                   </p>
                 )}
@@ -211,7 +223,7 @@ function ThreadDropdownComponent() {
                 <ChevronDown size={14} />
               </Button>
             </TooltipTrigger>
-            <TooltipContent className='max-w-[200px] p-4 break-all overflow-y-auto max-h-[200px]'>
+            <TooltipContent className="max-w-[200px] p-4 break-all overflow-y-auto max-h-[200px]">
               {currentThread.title || 'New Chat'}
             </TooltipContent>
           </Tooltip>

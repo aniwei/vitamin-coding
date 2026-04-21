@@ -6,6 +6,6 @@ export const GET = async () => {
       if (a.hasAPIKey && !b.hasAPIKey) return -1
       if (!a.hasAPIKey && b.hasAPIKey) return 1
       return 0
-    }),
+    })
   )
 }

@@ -1,4 +1,4 @@
-import { deleteUserAction } from '@/lib/compat/server-actions/user'
+import { deleteUserAction } from '@/app/api/user/actions'
 import { DeleteUserActionState } from '@/app/api/user/validations'
 import {
   AlertDialog,
@@ -14,10 +14,11 @@ import {
 import { SubmitButton } from './user-submit-button'
 import { BasicUserWithLastLogin } from 'app-types/user'
 import { useActionState, useState } from 'react'
+import Form from 'next/form'
 import { toast } from 'sonner'
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 import { Input } from 'ui/input'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { useProfileTranslations } from '@/hooks/use-profile-translations'
 
 export function UserDeleteDialog({
@@ -29,7 +30,7 @@ export function UserDeleteDialog({
   children?: React.ReactNode
   view?: 'admin' | 'user'
 }) {
-  const navigate = useNavigate()
+  const router = useRouter()
   const { t } = useProfileTranslations(view)
   const tCommon = useTranslations('Common')
   const [showDeleteDialog, setShowDeleteDialog] = useState(false)
@@ -39,7 +40,7 @@ export function UserDeleteDialog({
       const result = await deleteUserAction({}, formData)
 
       if (result?.success) {
-        navigate(result.redirect || '/admin', { replace: true })
+        router.replace(result.redirect || '/admin')
         toast.success(t('userDeletedSuccessfully'))
         setShowDeleteDialog(false)
       } else {
@@ -47,25 +48,25 @@ export function UserDeleteDialog({
       }
       return result
     },
-    {},
+    {}
   )
   return (
     <AlertDialog open={showDeleteDialog} onOpenChange={setShowDeleteDialog}>
       {children && <AlertDialogTrigger asChild>{children}</AlertDialogTrigger>}
       <AlertDialogContent>
         <AlertDialogHeader>
-          <AlertDialogTitle className='flex items-center gap-2 text-destructive'>
+          <AlertDialogTitle className="flex items-center gap-2 text-destructive">
             ⚠️ {t('deleteUserTitle')}
           </AlertDialogTitle>
           <AlertDialogDescription asChild>
-            <div className='space-y-4'>
+            <div className="space-y-4">
               <p>{t('deleteUserDescription', { name: user.name })}</p>
 
-              <div className='rounded-lg border border-destructive/30 bg-destructive/5 p-3'>
-                <p className='text-sm font-medium text-destructive mb-2'>
+              <div className="rounded-lg border border-destructive/30 bg-destructive/5 p-3">
+                <p className="text-sm font-medium text-destructive mb-2">
                   {t('actionWillPermanently')}
                 </p>
-                <ul className='text-sm text-destructive/90 space-y-1'>
+                <ul className="text-sm text-destructive/90 space-y-1">
                   <li>• {t('deleteAllUserData')}</li>
                   <li>• {t('removeAllFiles')}</li>
                   <li>• {t('revokeAllAccess')}</li>
@@ -74,14 +75,14 @@ export function UserDeleteDialog({
               </div>
 
               <div>
-                <p className='text-sm font-medium text-destructive mb-2'>
+                <p className="text-sm font-medium text-destructive mb-2">
                   {t('typeNameToConfirm', { name: user.name })}
                 </p>
                 <Input
                   placeholder={t('typeToConfirm', { name: user.name })}
                   value={confirmName}
                   onChange={(e) => setConfirmName(e.target.value)}
-                  className='border-destructive/30 focus:border-destructive'
+                  className="border-destructive/30 focus:border-destructive"
                 />
               </div>
             </div>
@@ -96,14 +97,17 @@ export function UserDeleteDialog({
           >
             {tCommon('cancel')}
           </AlertDialogCancel>
-          <form action={deleteFormAction}>
-            <input type='hidden' name='userId' value={user.id} />
+          <Form action={deleteFormAction}>
+            <input type="hidden" name="userId" value={user.id} />
             <AlertDialogAction asChild>
-              <SubmitButton variant='destructive' disabled={confirmName !== user.name}>
+              <SubmitButton
+                variant="destructive"
+                disabled={confirmName !== user.name}
+              >
                 {t('deleteUser')}
               </SubmitButton>
             </AlertDialogAction>
-          </form>
+          </Form>
         </AlertDialogFooter>
       </AlertDialogContent>
     </AlertDialog>

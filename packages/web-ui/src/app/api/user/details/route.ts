@@ -14,7 +14,7 @@ export async function GET() {
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to get user details' },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }

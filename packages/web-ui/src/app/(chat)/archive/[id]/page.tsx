@@ -38,7 +38,9 @@ interface ArchiveWithThreads {
   }>
 }
 
-async function getArchiveWithThreads(archiveId: string): Promise<ArchiveWithThreads | null> {
+async function getArchiveWithThreads(
+  archiveId: string
+): Promise<ArchiveWithThreads | null> {
   const session = await getSession()
   if (!session?.user?.id) return null
 
@@ -63,7 +65,11 @@ async function getArchiveWithThreads(archiveId: string): Promise<ArchiveWithThre
   return { ...archive, threads }
 }
 
-export default async function ArchivePage({ params }: { params: Promise<{ id: string }> }) {
+export default async function ArchivePage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
   const { id } = await params
   const session = await getSession()
 
@@ -80,33 +86,37 @@ export default async function ArchivePage({ params }: { params: Promise<{ id: st
   return (
     <>
       <>
-        <div className='absolute opacity-30 pointer-events-none top-0 left-0 w-full h-full z-10 fade-in animate-in duration-5000'>
-          <LightRays className='bg-transparent' />
+        <div className="absolute opacity-30 pointer-events-none top-0 left-0 w-full h-full z-10 fade-in animate-in duration-5000">
+          <LightRays className="bg-transparent" />
         </div>
-        <div className='absolute pointer-events-none top-0 left-0 w-full h-full z-10 fade-in animate-in duration-5000'>
-          <Particles className='bg-transparent' particleCount={400} particleBaseSize={10} />
+        <div className="absolute pointer-events-none top-0 left-0 w-full h-full z-10 fade-in animate-in duration-5000">
+          <Particles
+            className="bg-transparent"
+            particleCount={400}
+            particleBaseSize={10}
+          />
         </div>
-        <div className='absolute pointer-events-none top-0 left-0 w-full h-full z-10 fade-in animate-in duration-5000'>
-          <div className='w-full h-full bg-gradient-to-t from-background to-50% to-transparent z-20' />
+        <div className="absolute pointer-events-none top-0 left-0 w-full h-full z-10 fade-in animate-in duration-5000">
+          <div className="w-full h-full bg-gradient-to-t from-background to-50% to-transparent z-20" />
         </div>
-        <div className='absolute pointer-events-none top-0 left-0 w-full h-full z-10 fade-in animate-in duration-5000'>
-          <div className='w-full h-full bg-gradient-to-l from-background to-20% to-transparent z-20' />
+        <div className="absolute pointer-events-none top-0 left-0 w-full h-full z-10 fade-in animate-in duration-5000">
+          <div className="w-full h-full bg-gradient-to-l from-background to-20% to-transparent z-20" />
         </div>
-        <div className='absolute pointer-events-none top-0 left-0 w-full h-full z-10 fade-in animate-in duration-5000'>
-          <div className='w-full h-full bg-gradient-to-r from-background to-20% to-transparent z-20' />
+        <div className="absolute pointer-events-none top-0 left-0 w-full h-full z-10 fade-in animate-in duration-5000">
+          <div className="w-full h-full bg-gradient-to-r from-background to-20% to-transparent z-20" />
         </div>
       </>
-      <div className='container mx-auto p-6 max-w-4xl z-40'>
+      <div className="container mx-auto p-6 max-w-4xl z-40">
         {/* Archive Header */}
-        <div className='mb-8 z-50'>
-          <div className='flex items-center gap-3 mb-2'>
-            <h1 className='text-2xl font-bold'>{archive.name}</h1>
-            <div className='flex-1' />
-            <p className='text-xs text-muted-foreground mr-2'>
+        <div className="mb-8 z-50">
+          <div className="flex items-center gap-3 mb-2">
+            <h1 className="text-2xl font-bold">{archive.name}</h1>
+            <div className="flex-1" />
+            <p className="text-xs text-muted-foreground mr-2">
               Created {formatTimeAgo(archive.createdAt)}
             </p>
-            <div className='h-4'>
-              <Separator orientation='vertical' />
+            <div className="h-4">
+              <Separator orientation="vertical" />
             </div>
             <ArchiveActionsClient
               archive={{
@@ -120,19 +130,23 @@ export default async function ArchivePage({ params }: { params: Promise<{ id: st
             />
           </div>
           {archive.description && (
-            <p className='text-muted-foreground text-sm mt-4'>{archive.description}</p>
+            <p className="text-muted-foreground text-sm mt-4">
+              {archive.description}
+            </p>
           )}
         </div>
 
         {/* Threads List */}
-        <div className='space-y-3'>
+        <div className="space-y-3">
           {archive.threads.length === 0 ? (
-            <Card className='bg-transparent  border-none'>
-              <CardContent className='flex items-center justify-center py-12'>
-                <div className='text-center'>
-                  <MessageCircleXIcon className='h-12 w-12 text-muted-foreground mx-auto mb-4' />
-                  <h3 className='text-lg font-medium mb-2'>No threads in this archive</h3>
-                  <p className='text-muted-foreground'>
+            <Card className="bg-transparent  border-none">
+              <CardContent className="flex items-center justify-center py-12">
+                <div className="text-center">
+                  <MessageCircleXIcon className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
+                  <h3 className="text-lg font-medium mb-2">
+                    No threads in this archive
+                  </h3>
+                  <p className="text-muted-foreground">
                     Add some chat threads to this archive to see them here.
                   </p>
                 </div>
@@ -141,16 +155,18 @@ export default async function ArchivePage({ params }: { params: Promise<{ id: st
           ) : (
             archive.threads.map((thread) => (
               <Link key={thread.id} href={`/chat/${thread.id}`}>
-                <Card className='hover:bg-accent/30 transition-all duration-200 cursor-pointer'>
-                  <CardHeader className='py-4'>
-                    <div className='flex items-center justify-between gap-4'>
-                      <div className='min-w-0 flex-1'>
-                        <h3 className='font-medium text-base truncate mb-1'>
+                <Card className="hover:bg-accent/30 transition-all duration-200 cursor-pointer">
+                  <CardHeader className="py-4">
+                    <div className="flex items-center justify-between gap-4">
+                      <div className="min-w-0 flex-1">
+                        <h3 className="font-medium text-base truncate mb-1">
                           {thread.title || 'Untitled Chat'}
                         </h3>
                       </div>
-                      <span className='text-xs text-muted-foreground'>
-                        {formatTimeAgo(new Date(thread.lastMessageAt || thread.createdAt))}
+                      <span className="text-xs text-muted-foreground">
+                        {formatTimeAgo(
+                          new Date(thread.lastMessageAt || thread.createdAt)
+                        )}
                       </span>
                     </div>
                   </CardHeader>

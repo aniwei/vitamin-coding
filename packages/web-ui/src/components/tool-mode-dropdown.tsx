@@ -1,11 +1,22 @@
 'use client'
 
 import { appStore } from '@/app/store'
-import { getShortcutKeyList, isShortcutEvent, Shortcuts } from 'lib/keyboard-shortcuts'
-import { Check, CheckIcon, ClipboardCheck, Infinity, PenOff, Settings2 } from 'lucide-react'
+import {
+  getShortcutKeyList,
+  isShortcutEvent,
+  Shortcuts,
+} from 'lib/keyboard-shortcuts'
+import {
+  Check,
+  CheckIcon,
+  ClipboardCheck,
+  Infinity,
+  PenOff,
+  Settings2,
+} from 'lucide-react'
 import { useEffect, useState } from 'react'
 import { Button } from 'ui/button'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 
 import {
   DropdownMenu,
@@ -28,7 +39,7 @@ const debounce = createDebounce()
 export const ToolModeDropdown = ({ disabled }: { disabled?: boolean }) => {
   const t = useTranslations('Chat.Tool')
   const [toolChoice, appStoreMutate] = appStore(
-    useShallow((state) => [state.toolChoice, state.mutate]),
+    useShallow((state) => [state.toolChoice, state.mutate])
   )
   const [open, setOpen] = useState(false)
 
@@ -41,7 +52,12 @@ export const ToolModeDropdown = ({ disabled }: { disabled?: boolean }) => {
         e.stopPropagation()
         appStoreMutate(({ toolChoice }) => {
           return {
-            toolChoice: toolChoice == 'auto' ? 'manual' : toolChoice == 'manual' ? 'none' : 'auto',
+            toolChoice:
+              toolChoice == 'auto'
+                ? 'manual'
+                : toolChoice == 'manual'
+                  ? 'none'
+                  : 'auto',
           }
         })
         setToolChoiceChangeInfo(true)
@@ -57,14 +73,14 @@ export const ToolModeDropdown = ({ disabled }: { disabled?: boolean }) => {
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild disabled={disabled}>
-        <div className='relative'>
+        <div className="relative">
           <Tooltip open={toolChoiceChangeInfo}>
             <TooltipTrigger asChild>
-              <span className='absolute inset-0 -z-10' />
+              <span className="absolute inset-0 -z-10" />
             </TooltipTrigger>
-            <TooltipContent className='flex items-center gap-2'>
+            <TooltipContent className="flex items-center gap-2">
               {capitalizeFirstLetter(toolChoice)}
-              <CheckIcon className='size-2.5' />
+              <CheckIcon className="size-2.5" />
             </TooltipContent>
           </Tooltip>
 
@@ -76,69 +92,83 @@ export const ToolModeDropdown = ({ disabled }: { disabled?: boolean }) => {
                 className={cn(
                   'rounded-full p-2! data-[state=open]:bg-input! hover:bg-input!',
                   toolChoice == 'none' && 'text-muted-foreground',
-                  open && 'bg-input!',
+                  open && 'bg-input!'
                 )}
                 onClick={() => setOpen(true)}
               >
                 <Settings2 />
               </Button>
             </TooltipTrigger>
-            <TooltipContent className='flex items-center gap-2' side='top'>
+            <TooltipContent className="flex items-center gap-2" side="top">
               {t('selectToolMode')}
-              <span className='text-muted-foreground ml-2'>
+              <span className="text-muted-foreground ml-2">
                 {getShortcutKeyList(Shortcuts.toolMode).join('')}
               </span>
             </TooltipContent>
           </Tooltip>
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent align='start' side='top'>
-        <DropdownMenuLabel className='text-muted-foreground flex items-center gap-2'>
+      <DropdownMenuContent align="start" side="top">
+        <DropdownMenuLabel className="text-muted-foreground flex items-center gap-2">
           {t('selectToolMode')}
           <DropdownMenuShortcut>
-            <span className='text-xs text-muted-foreground bg-muted rounded-md px-2 py-0.5'>
+            <span className="text-xs text-muted-foreground bg-muted rounded-md px-2 py-0.5">
               {getShortcutKeyList(Shortcuts.toolMode).join('')}
             </span>
           </DropdownMenuShortcut>
         </DropdownMenuLabel>
         <DropdownMenuSeparator />
         <DropdownMenuGroup>
-          <DropdownMenuItem onClick={() => appStoreMutate({ toolChoice: 'auto' })}>
-            <div className='flex flex-col gap-2 w-full'>
-              <div className='flex items-center gap-2'>
+          <DropdownMenuItem
+            onClick={() => appStoreMutate({ toolChoice: 'auto' })}
+          >
+            <div className="flex flex-col gap-2 w-full">
+              <div className="flex items-center gap-2">
                 <Infinity />
-                <span className='font-bold'>{t('auto')}</span>
-                {toolChoice == 'auto' && <Check className='ml-auto' />}
+                <span className="font-bold">{t('auto')}</span>
+                {toolChoice == 'auto' && <Check className="ml-auto" />}
               </div>
-              <p className='text-xs text-muted-foreground'>{t('autoToolModeDescription')}</p>
+              <p className="text-xs text-muted-foreground">
+                {t('autoToolModeDescription')}
+              </p>
             </div>
           </DropdownMenuItem>
-          <div className='px-2 py-1'>
+          <div className="px-2 py-1">
             <DropdownMenuSeparator />
           </div>
-          <DropdownMenuItem onClick={() => appStoreMutate({ toolChoice: 'manual' })}>
-            <div className='flex flex-col gap-2 w-full'>
-              <div className='flex items-center gap-2'>
+          <DropdownMenuItem
+            onClick={() => appStoreMutate({ toolChoice: 'manual' })}
+          >
+            <div className="flex flex-col gap-2 w-full">
+              <div className="flex items-center gap-2">
                 <ClipboardCheck />
-                <span className='font-bold'>{t('manual')}</span>
-                {toolChoice == 'manual' && <Check className='ml-auto' />}
+                <span className="font-bold">{t('manual')}</span>
+                {toolChoice == 'manual' && <Check className="ml-auto" />}
               </div>
-              <p className='text-xs text-muted-foreground'>{t('manualToolModeDescription')}</p>
+              <p className="text-xs text-muted-foreground">
+                {t('manualToolModeDescription')}
+              </p>
             </div>
           </DropdownMenuItem>
-          <div className='px-2 py-1'>
+          <div className="px-2 py-1">
             <DropdownMenuSeparator />
           </div>
-          <DropdownMenuItem onClick={() => appStoreMutate({ toolChoice: 'none' })}>
-            <div className='flex flex-col gap-2 w-full'>
-              <div className='flex items-center gap-2'>
+          <DropdownMenuItem
+            onClick={() => appStoreMutate({ toolChoice: 'none' })}
+          >
+            <div className="flex flex-col gap-2 w-full">
+              <div className="flex items-center gap-2">
                 <PenOff />
-                <span className='font-bold'>{t('none')}</span>
-                <span className='text-xs text-muted-foreground ml-4'>{t('mentionOnly')}</span>
-                {toolChoice == 'none' && <Check className='ml-auto' />}
+                <span className="font-bold">{t('none')}</span>
+                <span className="text-xs text-muted-foreground ml-4">
+                  {t('mentionOnly')}
+                </span>
+                {toolChoice == 'none' && <Check className="ml-auto" />}
               </div>
 
-              <p className='text-xs text-muted-foreground'>{t('noneToolModeDescription')}</p>
+              <p className="text-xs text-muted-foreground">
+                {t('noneToolModeDescription')}
+              </p>
             </div>
           </DropdownMenuItem>
         </DropdownMenuGroup>

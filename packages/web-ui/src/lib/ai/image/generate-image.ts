@@ -1,12 +1,22 @@
 'use server'
-import { GoogleGenAI, Part as GeminiPart, Content as GeminiMessage } from '@google/genai'
+import {
+  GoogleGenAI,
+  Part as GeminiPart,
+  Content as GeminiMessage,
+} from '@google/genai'
 import { safe, watchError } from 'ts-safe'
 import { getBase64Data } from 'lib/file-storage/storage-utils'
 import { serverFileStorage } from 'lib/file-storage'
 import { openai } from '@ai-sdk/openai'
 import { xai } from '@ai-sdk/xai'
 
-import { FilePart, ImagePart, ModelMessage, TextPart, experimental_generateImage } from 'ai'
+import {
+  FilePart,
+  ImagePart,
+  ModelMessage,
+  TextPart,
+  experimental_generateImage,
+} from 'ai'
 import { isString } from 'lib/utils'
 import logger from 'logger'
 
@@ -26,7 +36,7 @@ export type GeneratedImageResult = {
 }
 
 export async function generateImageWithOpenAI(
-  options: GenerateImageOptions,
+  options: GenerateImageOptions
 ): Promise<GeneratedImageResult> {
   return experimental_generateImage({
     model: openai.image('gpt-image-1-mini'),
@@ -46,7 +56,7 @@ export async function generateImageWithOpenAI(
 }
 
 export async function generateImageWithXAI(
-  options: GenerateImageOptions,
+  options: GenerateImageOptions
 ): Promise<GeneratedImageResult> {
   return experimental_generateImage({
     model: xai.image('grok-2-image'),
@@ -63,7 +73,7 @@ export async function generateImageWithXAI(
 }
 
 export const generateImageWithNanoBanana = async (
-  options: GenerateImageOptions,
+  options: GenerateImageOptions
 ): Promise<GeneratedImageResult> => {
   const apiKey = process.env.GOOGLE_GENERATIVE_AI_API_KEY
   if (!apiKey) {
@@ -110,12 +120,14 @@ export const generateImageWithNanoBanana = async (
         acc.images.push(...images)
         return acc
       },
-      { images: [] as GeneratedImage[] },
+      { images: [] as GeneratedImage[] }
     ) || { images: [] as GeneratedImage[] }
   )
 }
 
-async function convertToGeminiMessage(message: ModelMessage): Promise<GeminiMessage> {
+async function convertToGeminiMessage(
+  message: ModelMessage
+): Promise<GeminiMessage> {
   const getBase64DataSmart = async (input: {
     data: string | Uint8Array | ArrayBuffer | Buffer | URL
     mimeType: string
@@ -180,7 +192,7 @@ async function convertToGeminiMessage(message: ModelMessage): Promise<GeminiMess
             }
           }
           return null
-        }),
+        })
       )
         .then((parts) => parts.filter(Boolean) as GeminiPart[])
         .catch((err) => {

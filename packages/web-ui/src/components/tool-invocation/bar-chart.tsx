@@ -10,7 +10,13 @@ import {
   ResponsiveContainer,
 } from 'recharts'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import {
   ChartConfig,
   ChartContainer,
@@ -73,17 +79,18 @@ export function BarChart(props: BarChartProps) {
                   },
                 ]
               },
-              [] as BarChartProps['data'][number]['series'],
+              [] as BarChartProps['data'][number]['series']
             ),
           },
         ]
       },
-      [] as BarChartProps['data'],
+      [] as BarChartProps['data']
     )
   }, [data])
 
   // Get series names from the first data item (assuming all items have the same series)
-  const seriesNames = deduplicateData[0]?.series.map((item) => item.seriesName) || []
+  const seriesNames =
+    deduplicateData[0]?.series.map((item) => item.seriesName) || []
 
   // Generate chart configuration dynamically
   const chartConfig = React.useMemo(() => {
@@ -120,11 +127,11 @@ export function BarChart(props: BarChartProps) {
   }, [deduplicateData])
 
   return (
-    <Card className='bg-card'>
-      <CardHeader className='flex flex-col gap-2 relative'>
-        <CardTitle className='flex items-center'>
+    <Card className="bg-card">
+      <CardHeader className="flex flex-col gap-2 relative">
+        <CardTitle className="flex items-center">
           Bar Chart - {title}
-          <div className='absolute right-4 top-0'>
+          <div className="absolute right-4 top-0">
             <JsonViewPopup
               data={{
                 ...props,
@@ -138,10 +145,15 @@ export function BarChart(props: BarChartProps) {
       <CardContent>
         <div>
           <ChartContainer config={chartConfig}>
-            <ResponsiveContainer width='100%' height='400px'>
+            <ResponsiveContainer width="100%" height="400px">
               <RechartsBarChart data={chartData}>
                 <CartesianGrid vertical={false} />
-                <XAxis dataKey='name' tickLine={false} tickMargin={10} axisLine={false} />
+                <XAxis
+                  dataKey="name"
+                  tickLine={false}
+                  tickMargin={10}
+                  axisLine={false}
+                />
                 <YAxis
                   tickLine={false}
                   axisLine={false}
@@ -156,7 +168,10 @@ export function BarChart(props: BarChartProps) {
                       : undefined
                   }
                 />
-                <ChartTooltip cursor={false} content={<ChartTooltipContent indicator='dashed' />} />
+                <ChartTooltip
+                  cursor={false}
+                  content={<ChartTooltipContent indicator="dashed" />}
+                />
                 {seriesNames.map((seriesName, index) => {
                   return (
                     <Bar

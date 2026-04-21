@@ -1,10 +1,17 @@
-import { convertDBEdgeToUIEdge, convertDBNodeToUINode } from 'lib/ai/workflow/shared.workflow'
+import {
+  convertDBEdgeToUIEdge,
+  convertDBNodeToUINode,
+} from 'lib/ai/workflow/shared.workflow'
 import Workflow from '@/components/workflow/workflow'
 import { getSession } from 'auth/server'
 import { workflowRepository } from 'lib/db/repository'
 import { notFound, redirect } from 'next/navigation'
 
-export default async function WorkflowPage({ params }: { params: Promise<{ id: string }> }) {
+export default async function WorkflowPage({
+  params,
+}: {
+  params: Promise<{ id: string }>
+}) {
   const { id } = await params
   const session = await getSession()
 
@@ -21,7 +28,11 @@ export default async function WorkflowPage({ params }: { params: Promise<{ id: s
   if (!workflow) {
     notFound()
   }
-  const hasEditAccess = await workflowRepository.checkAccess(id, session.user.id, false)
+  const hasEditAccess = await workflowRepository.checkAccess(
+    id,
+    session.user.id,
+    false
+  )
   const initialNodes = workflow.nodes.map(convertDBNodeToUINode)
   const initialEdges = workflow.edges.map(convertDBEdgeToUIEdge)
   return (

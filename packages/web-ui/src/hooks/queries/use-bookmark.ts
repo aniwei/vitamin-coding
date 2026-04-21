@@ -47,7 +47,8 @@ export function useBookmark(options: UseBookmarkOptions = {}) {
           if (typeof key !== 'string') return false
           // Update list endpoints but not individual item details
           return (
-            key.startsWith(`/api/${itemType}`) && !key.match(new RegExp(`/api/${itemType}/[^/?]+$`))
+            key.startsWith(`/api/${itemType}`) &&
+            !key.match(new RegExp(`/api/${itemType}/[^/?]+$`))
           )
         },
         (cachedData: any) => {
@@ -56,7 +57,7 @@ export function useBookmark(options: UseBookmarkOptions = {}) {
           // Handle arrays of items (like /api/agent?filters=...)
           if (Array.isArray(cachedData)) {
             return cachedData.map((item: any) =>
-              item.id === id ? { ...item, isBookmarked: !isBookmarked } : item,
+              item.id === id ? { ...item, isBookmarked: !isBookmarked } : item
             )
           }
 
@@ -67,7 +68,7 @@ export function useBookmark(options: UseBookmarkOptions = {}) {
 
           return cachedData
         },
-        { revalidate: true },
+        { revalidate: true }
       )
 
       // Also update individual item cache
@@ -77,7 +78,7 @@ export function useBookmark(options: UseBookmarkOptions = {}) {
           if (!cachedData) return cachedData
           return { ...cachedData, isBookmarked: !isBookmarked }
         },
-        { revalidate: true },
+        { revalidate: true }
       )
 
       return !isBookmarked // Return new bookmark state

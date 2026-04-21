@@ -3,7 +3,10 @@
 /**
  * Build user detail URL with current page state preserved
  */
-export function buildUserDetailUrl(userId: string, currentSearchParams: string = ''): string {
+export function buildUserDetailUrl(
+  userId: string,
+  currentSearchParams: string = ''
+): string {
   if (!currentSearchParams) {
     return `/admin/users/${userId}`
   }
@@ -16,7 +19,10 @@ export function buildUserDetailUrl(userId: string, currentSearchParams: string =
 /**
  * Build return URL from encoded search params
  */
-export function buildReturnUrl(baseUrl: string, encodedSearchParams: string = ''): string {
+export function buildReturnUrl(
+  baseUrl: string,
+  encodedSearchParams: string = ''
+): string {
   if (!encodedSearchParams) {
     return baseUrl
   }

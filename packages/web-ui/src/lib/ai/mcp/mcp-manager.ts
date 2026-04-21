@@ -1,6 +1,9 @@
 import { createDbBasedMCPConfigsStorage } from './db-mcp-config-storage'
 import { createFileBasedMCPConfigsStorage } from './fb-mcp-config-storage'
-import { createMCPClientsManager, type MCPClientsManager } from './create-mcp-clients-manager'
+import {
+  createMCPClientsManager,
+  type MCPClientsManager,
+} from './create-mcp-clients-manager'
 import { FILE_BASED_MCP_CONFIG } from 'lib/const'
 declare global {
   // eslint-disable-next-line no-var

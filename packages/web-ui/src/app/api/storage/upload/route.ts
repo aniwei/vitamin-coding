@@ -19,7 +19,7 @@ export async function POST(request: Request) {
         solution: storageCheck.solution,
         storageDriver,
       },
-      { status: 500 },
+      { status: 500 }
     )
   }
 
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     if (!file) {
       return NextResponse.json(
         { error: "No file provided. Use 'file' field in FormData." },
-        { status: 400 },
+        { status: 400 }
       )
     }
 
@@ -52,6 +52,9 @@ export async function POST(request: Request) {
     })
   } catch (error) {
     console.error('Failed to upload file', error)
-    return NextResponse.json({ error: 'Failed to upload file' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to upload file' },
+      { status: 500 }
+    )
   }
 }

@@ -52,7 +52,9 @@ export async function selectMcpClientAction(id: string) {
   }
 }
 
-export async function saveMcpClientAction(server: typeof McpServerTable.$inferInsert) {
+export async function saveMcpClientAction(
+  server: typeof McpServerTable.$inferInsert
+) {
   if (process.env.NOT_ALLOW_ADD_MCP_SERVERS) {
     throw new Error('Not allowed to add MCP servers')
   }
@@ -70,13 +72,14 @@ export async function saveMcpClientAction(server: typeof McpServerTable.$inferIn
   }
   // Validate name to ensure it only contains alphanumeric characters and hyphens
   const nameSchema = z.string().regex(/^[a-zA-Z0-9\-]+$/, {
-    message: 'Name must contain only alphanumeric characters (A-Z, a-z, 0-9) and hyphens (-)',
+    message:
+      'Name must contain only alphanumeric characters (A-Z, a-z, 0-9) and hyphens (-)',
   })
 
   const result = nameSchema.safeParse(server.name)
   if (!result.success) {
     throw new Error(
-      'Name must contain only alphanumeric characters (A-Z, a-z, 0-9) and hyphens (-)',
+      'Name must contain only alphanumeric characters (A-Z, a-z, 0-9) and hyphens (-)'
     )
   }
 
@@ -117,7 +120,10 @@ export async function removeMcpClientAction(id: string) {
   }
 
   // Check if user has permission to delete this specific MCP server
-  const canManage = await canManageMCPServer(mcpServer.userId, mcpServer.visibility)
+  const canManage = await canManageMCPServer(
+    mcpServer.userId,
+    mcpServer.visibility
+  )
   if (!canManage) {
     throw new Error("You don't have permission to delete this MCP connection")
   }
@@ -147,19 +153,26 @@ export async function checkTokenMcpClientAction(id: string) {
   return !!session?.tokens
 }
 
-export async function callMcpToolAction(id: string, toolName: string, input: unknown) {
+export async function callMcpToolAction(
+  id: string,
+  toolName: string,
+  input: unknown
+) {
   return mcpClientsManager.toolCall(id, toolName, input)
 }
 
 export async function callMcpToolByServerNameAction(
   serverName: string,
   toolName: string,
-  input: unknown,
+  input: unknown
 ) {
   return mcpClientsManager.toolCallByServerName(serverName, toolName, input)
 }
 
-export async function shareMcpServerAction(id: string, visibility: 'public' | 'private') {
+export async function shareMcpServerAction(
+  id: string,
+  visibility: 'public' | 'private'
+) {
   // Only admins can feature MCP servers
   const canShare = await canShareMCPServer()
   if (!canShare) {

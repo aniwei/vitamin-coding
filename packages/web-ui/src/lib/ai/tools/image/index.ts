@@ -34,7 +34,7 @@ export const nanoBananaTool = createTool({
       .optional()
       .default('create')
       .describe(
-        "Image generation mode: 'create' for new images, 'edit' for modifying existing images, 'composite' for combining multiple images",
+        "Image generation mode: 'create' for new images, 'edit' for modifying existing images, 'composite' for combining multiple images"
       ),
   }),
   execute: async ({ mode }, { messages, abortSignal }) => {
@@ -75,24 +75,24 @@ export const nanoBananaTool = createTool({
                 Buffer.from(image.base64, 'base64'),
                 {
                   contentType: image.mimeType,
-                },
+                }
               )
               return {
                 url: uploadedImage.sourceUrl,
                 mimeType: image.mimeType,
               }
-            }),
+            })
           )
         })
         .watch(
           watchError((e) => {
             logger.error(e)
             logger.info(`upload image failed. using base64`)
-          }),
+          })
         )
         .ifFail(() => {
           throw new Error(
-            'Image generation was successful, but file upload failed. Please check your file upload configuration and try again.',
+            'Image generation was successful, but file upload failed. Please check your file upload configuration and try again.'
           )
         })
         .unwrap()
@@ -122,7 +122,7 @@ export const openaiImageTool = createTool({
       .optional()
       .default('create')
       .describe(
-        "Image generation mode: 'create' for new images, 'edit' for modifying existing images, 'composite' for combining multiple images",
+        "Image generation mode: 'create' for new images, 'edit' for modifying existing images, 'composite' for combining multiple images"
       ),
   }),
   execute: async ({ mode }, { messages, abortSignal }) => {
@@ -173,7 +173,7 @@ export const openaiImageTool = createTool({
           })
           .catch(() => {
             throw new Error(
-              'Image generation was successful, but file upload failed. Please check your file upload configuration and try again.',
+              'Image generation was successful, but file upload failed. Please check your file upload configuration and try again.'
             )
           })
         return {

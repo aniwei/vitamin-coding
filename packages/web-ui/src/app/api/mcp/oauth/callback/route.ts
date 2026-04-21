@@ -16,7 +16,15 @@ interface OAuthResponseOptions {
 }
 
 function createOAuthResponsePage(options: OAuthResponseOptions): Response {
-  const { type, title, heading, message, postMessageType, postMessageData, statusCode } = options
+  const {
+    type,
+    title,
+    heading,
+    message,
+    postMessageType,
+    postMessageData,
+    statusCode,
+  } = options
   if (type === 'success') {
     logger.info('OAuth callback successful', message)
   } else {

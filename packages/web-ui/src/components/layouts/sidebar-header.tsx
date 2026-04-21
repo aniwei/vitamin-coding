@@ -1,7 +1,7 @@
 'use client'
 
-import { Link } from 'react-router-dom'
-import { useLocation } from 'react-router-dom'
+import Link from 'next/link'
+import { usePathname } from 'next/navigation'
 import { useEffect, useRef } from 'react'
 import {
   SidebarHeader,
@@ -31,7 +31,7 @@ export function SidebarHeaderShared({
 }: SidebarHeaderSharedProps) {
   const { toggleSidebar, setOpenMobile, open } = useSidebar()
   const isMobile = useIsMobile()
-  const { pathname } = useLocation()
+  const pathname = usePathname()
   const currentPath = useRef<string | null>(null)
 
   // Handle shortcuts (only for main app sidebar)
@@ -66,22 +66,22 @@ export function SidebarHeaderShared({
   return (
     <SidebarHeader>
       <SidebarMenu>
-        <SidebarMenuItem className='flex items-center gap-0.5 mb-1'>
-          <SidebarMenuButton asChild className='hover:bg-transparent'>
-            <Link to={href} onClick={handleLinkClick}>
-              <h4 className='font-bold'>{title}</h4>
+        <SidebarMenuItem className="flex items-center gap-0.5 mb-1">
+          <SidebarMenuButton asChild className="hover:bg-transparent">
+            <Link href={href} onClick={handleLinkClick}>
+              <h4 className="font-bold">{title}</h4>
               {showMobileToggle && (
                 <div
-                  className='ml-auto block sm:hidden'
+                  className="ml-auto block sm:hidden"
                   onClick={(e) => {
                     e.preventDefault()
                     e.stopPropagation()
                     setOpenMobile(false)
                   }}
                   data-state={open ? 'open' : 'closed'}
-                  data-testid='sidebar-header-toggle-mobile'
+                  data-testid="sidebar-header-toggle-mobile"
                 >
-                  <PanelLeft className='size-4' />
+                  <PanelLeft className="size-4" />
                 </div>
               )}
             </Link>

@@ -23,26 +23,34 @@ export function UserDetailCard({
 }) {
   const { tCommon } = useProfileTranslations(view)
   return (
-    <Card data-testid='user-detail-card'>
+    <Card data-testid="user-detail-card">
       <CardHeader>
-        <div className='flex items-start justify-between'>
-          <div className='flex items-center gap-4'>
-            <Avatar className='h-16 w-16 rounded-full'>
+        <div className="flex items-start justify-between">
+          <div className="flex items-center gap-4">
+            <Avatar className="h-16 w-16 rounded-full">
               <AvatarImage src={getUserAvatar(user)} />
-              <AvatarFallback>{user.name.slice(0, 2).toUpperCase()}</AvatarFallback>
+              <AvatarFallback>
+                {user.name.slice(0, 2).toUpperCase()}
+              </AvatarFallback>
             </Avatar>
             <div>
-              <div className='flex items-center gap-2'>
-                <CardTitle className='text-2xl' data-testid='user-name'>
+              <div className="flex items-center gap-2">
+                <CardTitle className="text-2xl" data-testid="user-name">
                   {user.name}
                 </CardTitle>
                 {user.id === currentUserId && (
-                  <Badge variant='outline' className='text-xs' data-testid='current-user-badge'>
+                  <Badge
+                    variant="outline"
+                    className="text-xs"
+                    data-testid="current-user-badge"
+                  >
                     {tCommon('you')}
                   </Badge>
                 )}
               </div>
-              <CardDescription data-testid='user-email'>{user.email}</CardDescription>
+              <CardDescription data-testid="user-email">
+                {user.email}
+              </CardDescription>
               <UserRoleBadges user={user} showBanned={true} />
             </div>
           </div>

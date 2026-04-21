@@ -4,19 +4,31 @@ import { ChatExportCommentCreateSchema } from 'app-types/chat-export'
 import { NextRequest, NextResponse } from 'next/server'
 import { getUserId } from '@/app/api/chat/actions'
 
-export async function GET(_request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const { id } = await params
     const userId = await getUserId().catch(() => undefined)
 
-    const comments = await chatExportRepository.selectCommentsByExportId(id, userId)
+    const comments = await chatExportRepository.selectCommentsByExportId(
+      id,
+      userId
+    )
     return NextResponse.json(comments)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to get comments' }, { status: 500 })
+    return NextResponse.json(
+      { error: error.message || 'Failed to get comments' },
+      { status: 500 }
+    )
   }
 }
 
-export async function POST(request: NextRequest, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: NextRequest,
+  { params }: { params: Promise<{ id: string }> }
+) {
   try {
     const session = await getSession()
 
@@ -40,7 +52,7 @@ export async function POST(request: NextRequest, { params }: { params: Promise<{
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to create comment' },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }

@@ -6,7 +6,10 @@ const AddItemSchema = z.object({
   itemId: z.string(),
 })
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const session = await getSession()
 
   if (!session?.user.id) {
@@ -35,7 +38,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 }
 
-export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const session = await getSession()
 
   if (!session?.user.id) {
@@ -59,12 +65,19 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     const body = await request.json()
     const data = AddItemSchema.parse(body)
 
-    const item = await archiveRepository.addItemToArchive(id, data.itemId, session.user.id)
+    const item = await archiveRepository.addItemToArchive(
+      id,
+      data.itemId,
+      session.user.id
+    )
 
     return Response.json(item)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return Response.json({ error: 'Invalid input', details: error.message }, { status: 400 })
+      return Response.json(
+        { error: 'Invalid input', details: error.message },
+        { status: 400 }
+      )
     }
 
     console.error('Failed to add item to archive:', error)

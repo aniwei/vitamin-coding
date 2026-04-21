@@ -1,56 +1,23 @@
 {
-  "$schema": "../../node_modules/oxlint/configuration_schema.json",
-  "plugins": ["typescript", "react", "unicorn"],
-  "rules": {
-    "no-unused-vars": [
-      "error",
-      {
-        "caughtErrorsIgnorePattern": "^_",
-        "argsIgnorePattern": "^_",
-        "varsIgnorePattern": "^_",
-        "ignoreRestSiblings": true
-      }
-    ],
-    "no-empty": "error",
-    "curly": "off",
-    "prefer-const": "error",
-    "prefer-template": "warn",
-    "no-useless-escape": "warn",
-    "no-constant-condition": "warn",
-    "no-unused-expressions": "warn",
-    "no-extra-boolean-cast": "warn",
-    "no-async-promise-executor": "warn",
-    "no-empty-pattern": "warn",
-    "no-shadow-restricted-names": "warn",
-    "typescript/no-unused-vars": [
-      "error",
-      {
-        "caughtErrorsIgnorePattern": "^_",
-        "argsIgnorePattern": "^_",
-        "varsIgnorePattern": "^_",
-        "ignoreRestSiblings": true
-      }
-    ],
-    "typescript/no-explicit-any": "off",
-    "typescript/no-non-null-assertion": "warn",
-    "react/exhaustive-deps": "off",
-    "unicorn/no-array-for-each": "warn",
-    "unicorn/no-useless-spread": "warn",
-    "unicorn/no-useless-fallback-in-spread": "warn",
-    "unicorn/no-empty-file": "warn",
-    "unicorn/prefer-set-size": "warn",
-    "unicorn/no-invalid-fetch-options": "warn"
+  "$schema": "https://raw.githubusercontent.com/oxc-project/oxc/main/npm/oxlint/configuration_schema.json",
+  "env": {
+    "browser": true,
+    "es2022": true,
+    "node": true
   },
-  "ignorePatterns": [
-    "dist",
-    "node_modules",
-    ".next",
-    "public",
-    "docker",
-    "*.json",
-    "*.md",
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "**/*.d.ts"
+  "globals": {},
+  "rules": {
+    "no-unused-vars": "error",
+    "no-var": "error",
+    "prefer-const": "error",
+    "no-extra-boolean-cast": "warn"
+  },
+  "overrides": [
+    {
+      "files": ["*.ts", "*.tsx", "*.mts", "*.cts"],
+      "rules": {
+        "no-unused-vars": "error"
+      }
+    }
   ]
 }

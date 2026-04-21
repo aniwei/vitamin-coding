@@ -4,7 +4,7 @@ import { NextRequest, NextResponse } from 'next/server'
 
 export async function DELETE(
   _request: NextRequest,
-  { params }: { params: Promise<{ id: string; commentId: string }> },
+  { params }: { params: Promise<{ id: string; commentId: string }> }
 ) {
   try {
     const session = await getSession()
@@ -16,7 +16,10 @@ export async function DELETE(
     const { commentId } = await params
 
     // Check if user has permission to delete this comment
-    const hasAccess = await chatExportRepository.checkCommentAccess(commentId, session.user.id)
+    const hasAccess = await chatExportRepository.checkCommentAccess(
+      commentId,
+      session.user.id
+    )
 
     if (!hasAccess) {
       return NextResponse.json({ error: 'Forbidden' }, { status: 403 })
@@ -28,7 +31,7 @@ export async function DELETE(
   } catch (error: any) {
     return NextResponse.json(
       { error: error.message || 'Failed to delete comment' },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }

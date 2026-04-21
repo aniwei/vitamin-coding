@@ -33,7 +33,7 @@ export const ChatExportCreateSchema = z.object({
       role: z.string(),
       parts: z.any(),
       metadata: z.any().optional(),
-    }),
+    })
   ),
   expiresAt: z.date().nullish(),
 })
@@ -82,7 +82,11 @@ export type ChatExportSummary = {
 }
 
 export type ChatExportRepository = {
-  exportChat(data: { threadId: string; exporterId?: string; expiresAt?: Date }): Promise<string>
+  exportChat(data: {
+    threadId: string
+    exporterId?: string
+    expiresAt?: Date
+  }): Promise<string>
   insert(data: z.infer<typeof ChatExportCreateSchema>): Promise<string>
   selectById(id: string): Promise<ChatExport | null>
   selectByIdWithUser(id: string): Promise<ChatExportWithUser | null>
@@ -91,8 +95,13 @@ export type ChatExportRepository = {
   checkAccess(id: string, userId: string): Promise<boolean>
   deleteById(id: string): Promise<void>
   isExpired(id: string): Promise<boolean>
-  insertComment(data: z.infer<typeof ChatExportCommentCreateSchema>): Promise<void>
-  selectCommentsByExportId(exportId: string, userId?: string): Promise<ChatExportCommentWithUser[]>
+  insertComment(
+    data: z.infer<typeof ChatExportCommentCreateSchema>
+  ): Promise<void>
+  selectCommentsByExportId(
+    exportId: string,
+    userId?: string
+  ): Promise<ChatExportCommentWithUser[]>
   checkCommentAccess(id: string, authorId: string): Promise<boolean>
   deleteComment(id: string, authorId: string): Promise<void>
 }

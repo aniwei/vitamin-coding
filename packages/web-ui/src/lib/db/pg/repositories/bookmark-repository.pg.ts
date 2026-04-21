@@ -1,20 +1,32 @@
 import { and, eq } from 'drizzle-orm'
 import { pgDb as db } from '../db.pg'
-import { BookmarkTable, AgentTable } from '../schema.pg'
+import { BookmarkTable } from '../schema.pg'
 
 export interface BookmarkRepository {
-  createBookmark(userId: string, itemId: string, itemType: 'agent' | 'workflow'): Promise<void>
+  createBookmark(
+    userId: string,
+    itemId: string,
+    itemType: 'workflow'
+  ): Promise<void>
 
-  removeBookmark(userId: string, itemId: string, itemType: 'agent' | 'workflow'): Promise<void>
+  removeBookmark(
+    userId: string,
+    itemId: string,
+    itemType: 'workflow'
+  ): Promise<void>
 
   toggleBookmark(
     userId: string,
     itemId: string,
-    itemType: 'agent' | 'workflow',
-    isCurrentlyBookmarked: boolean,
+    itemType: 'workflow',
+    isCurrentlyBookmarked: boolean
   ): Promise<boolean>
 
-  checkItemAccess(itemId: string, itemType: 'agent' | 'workflow', userId: string): Promise<boolean>
+  checkItemAccess(
+    itemId: string,
+    itemType: 'workflow',
+    userId: string
+  ): Promise<boolean>
 }
 
 export const pgBookmarkRepository: BookmarkRepository = {
@@ -36,8 +48,8 @@ export const pgBookmarkRepository: BookmarkRepository = {
         and(
           eq(BookmarkTable.userId, userId),
           eq(BookmarkTable.itemId, itemId),
-          eq(BookmarkTable.itemType, itemType),
-        ),
+          eq(BookmarkTable.itemType, itemType)
+        )
       )
   },
 
@@ -51,20 +63,7 @@ export const pgBookmarkRepository: BookmarkRepository = {
     }
   },
 
-  async checkItemAccess(itemId, itemType, userId) {
-    if (itemType === 'agent') {
-      const agent = await db.select().from(AgentTable).where(eq(AgentTable.id, itemId)).limit(1)
-
-      if (!agent[0]) return false
-
-      // Can bookmark if it's public/readonly or if it's their own agent
-      return (
-        agent[0].visibility === 'public' ||
-        agent[0].visibility === 'readonly' ||
-        agent[0].userId === userId
-      )
-    }
-
+  async checkItemAccess(_itemId, _itemType, _userId) {
     // TODO: Add workflow access check when workflows support bookmarking
     return false
   },

@@ -1,5 +1,12 @@
 'use client'
-import React, { RefObject, useCallback, useMemo, useRef, useState, useEffect } from 'react'
+import React, {
+  RefObject,
+  useCallback,
+  useMemo,
+  useRef,
+  useState,
+  useEffect,
+} from 'react'
 
 import { CheckIcon, HammerIcon, SearchIcon } from 'lucide-react'
 import { MCPIcon } from 'ui/mcp-icon'
@@ -7,7 +14,7 @@ import { MCPIcon } from 'ui/mcp-icon'
 import { ChatMention } from 'app-types/chat'
 
 import MentionInput from './mention-input'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { Popover, PopoverContent, PopoverTrigger } from 'ui/popover'
 
 import { appStore } from '@/app/store'
@@ -19,7 +26,6 @@ import { DefaultToolName } from 'lib/ai/tools'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 import { DefaultToolIcon } from './default-tool-icon'
 import equal from 'lib/equal'
-import { EMOJI_DATA } from 'lib/const'
 import { useIsMobile } from '@/hooks/use-mobile'
 
 type MentionItemType = {
@@ -57,15 +63,23 @@ export default function ChatMentionInput({
   const latestMentions = useRef<string[]>([])
 
   const handleChange = useCallback(
-    ({ text, mentions }: { text: string; mentions: { label: string; id: string }[] }) => {
+    ({
+      text,
+      mentions,
+    }: {
+      text: string
+      mentions: { label: string; id: string }[]
+    }) => {
       onChange(text)
       const mentionsIds = mentions.map((mention) => mention.id)
-      const parsedMentions = mentionsIds.map((id) => JSON.parse(id) as ChatMention)
+      const parsedMentions = mentionsIds.map(
+        (id) => JSON.parse(id) as ChatMention
+      )
       if (equal(latestMentions.current, mentionsIds)) return
       latestMentions.current = mentionsIds
       onChangeMention(parsedMentions)
     },
-    [onChange, onChangeMention],
+    [onChange, onChangeMention]
   )
 
   return (
@@ -73,7 +87,7 @@ export default function ChatMentionInput({
       content={input}
       onEnter={onEnter}
       placeholder={placeholder}
-      suggestionChar='@'
+      suggestionChar="@"
       disabledMention={disabledMention}
       onChange={handleChange}
       MentionItem={ChatMentionInputMentionItem}
@@ -86,7 +100,13 @@ export default function ChatMentionInput({
   )
 }
 
-export function ChatMentionInputMentionItem({ id, className }: { id: string; className?: string }) {
+export function ChatMentionInputMentionItem({
+  id,
+  className,
+}: {
+  id: string
+  className?: string
+}) {
   const item = useMemo(() => JSON.parse(id) as ChatMention, [id])
   const label = useMemo(() => {
     return (
@@ -94,7 +114,7 @@ export function ChatMentionInputMentionItem({ id, className }: { id: string; cla
         className={cn(
           'flex items-center text-sm px-2 py-0.5 rounded-sm font-semibold transition-colors',
           'text-primary font-bold bg-primary/5',
-          className,
+          className
         )}
       >
         {toAny(item).label || item.name}
@@ -105,7 +125,7 @@ export function ChatMentionInputMentionItem({ id, className }: { id: string; cla
   return (
     <Tooltip>
       <TooltipTrigger asChild>{label}</TooltipTrigger>
-      <TooltipContent className='p-4 whitespace-pre-wrap max-w-xs'>
+      <TooltipContent className="p-4 whitespace-pre-wrap max-w-xs">
         {item.description || 'mention'}
       </TooltipContent>
     </Tooltip>
@@ -135,11 +155,11 @@ export function ChatMentionInputSuggestion({
   onOpenChange?: (open: boolean) => void
   children?: React.ReactNode
   style?: React.CSSProperties
-  disabledType?: ('mcp' | 'workflow' | 'defaultTool' | 'agent')[]
+  disabledType?: ('mcp' | 'workflow' | 'defaultTool')[]
 }) {
   const t = useTranslations('Common')
-  const [mcpList, workflowList, agentList] = appStore(
-    useShallow((state) => [state.mcpList, state.workflowToolList, state.agentList]),
+  const [mcpList, workflowList] = appStore(
+    useShallow((state) => [state.mcpList, state.workflowToolList])
   )
   const [searchValue, setSearchValue] = useState('')
   const [selectedIndex, setSelectedIndex] = useState(0)
@@ -172,7 +192,10 @@ export function ChatMentionInputSuggestion({
         const items: MentionItemType[] = []
 
         // Add MCP server item
-        if (!searchValue || mcp.name.toLowerCase().includes(searchValue.toLowerCase())) {
+        if (
+          !searchValue ||
+          mcp.name.toLowerCase().includes(searchValue.toLowerCase())
+        ) {
           items.push({
             id: `${mcp.id}-mcp`,
             type: 'mcp',
@@ -182,11 +205,11 @@ export function ChatMentionInputSuggestion({
                 label: `mcp("${mcp.name}")`,
                 id: mcpId,
               }),
-            icon: <MCPIcon className='size-3.5 text-foreground' />,
+            icon: <MCPIcon className="size-3.5 text-foreground" />,
             suffix: selectedIds?.includes(mcpId) ? (
-              <CheckIcon className='size-3 ml-auto' />
+              <CheckIcon className="size-3 ml-auto" />
             ) : (
-              <span className='ml-auto text-xs text-muted-foreground'>
+              <span className="ml-auto text-xs text-muted-foreground">
                 {mcp.toolInfo?.length} tools
               </span>
             ),
@@ -197,7 +220,9 @@ export function ChatMentionInputSuggestion({
         const toolItems =
           mcp.toolInfo
             ?.filter(
-              (tool) => !searchValue || tool.name.toLowerCase().includes(searchValue.toLowerCase()),
+              (tool) =>
+                !searchValue ||
+                tool.name.toLowerCase().includes(searchValue.toLowerCase())
             )
             .map((tool) => {
               const toolId = JSON.stringify({
@@ -216,8 +241,10 @@ export function ChatMentionInputSuggestion({
                     label: `tool("${tool.name}") `,
                     id: toolId,
                   }),
-                icon: <HammerIcon className='size-3.5' />,
-                suffix: selectedIds?.includes(toolId) && <CheckIcon className='size-3 ml-auto' />,
+                icon: <HammerIcon className="size-3.5" />,
+                suffix: selectedIds?.includes(toolId) && (
+                  <CheckIcon className="size-3 ml-auto" />
+                ),
               }
             }) || []
 
@@ -226,45 +253,6 @@ export function ChatMentionInputSuggestion({
     )
   }, [mcpList, selectedIds, disabledType, searchValue])
 
-  const agentMentions = useMemo(() => {
-    if (disabledType?.includes('agent')) return []
-    if (!agentList.length) return []
-
-    return agentList
-      .filter(
-        (agent) => !searchValue || agent.name.toLowerCase().includes(searchValue.toLowerCase()),
-      )
-      .map((agent, i) => {
-        const id = JSON.stringify({
-          type: 'agent',
-          name: agent.name,
-          agentId: agent.id,
-          description: agent.description,
-          icon: agent.icon,
-        })
-        return {
-          id: agent.id,
-          type: 'agent',
-          label: agent.name,
-          onSelect: () =>
-            onSelectMention({
-              label: `agent("${agent.name}")`,
-              id,
-            }),
-          icon: (
-            <Avatar
-              style={agent.icon?.style}
-              className='size-3.5 ring-[1px] ring-input rounded-full'
-            >
-              <AvatarImage src={agent.icon?.value || EMOJI_DATA[i % EMOJI_DATA.length]} />
-              <AvatarFallback>{agent.name.slice(0, 1)}</AvatarFallback>
-            </Avatar>
-          ),
-          suffix: selectedIds?.includes(id) && <CheckIcon className='size-3 ml-auto' />,
-        }
-      })
-  }, [agentList, selectedIds, disabledType, searchValue])
-
   const workflowMentions = useMemo(() => {
     if (disabledType?.includes('workflow')) return []
     if (!workflowList.length) return []
@@ -272,7 +260,8 @@ export function ChatMentionInputSuggestion({
     return workflowList
       .filter(
         (workflow) =>
-          !searchValue || workflow.name.toLowerCase().includes(searchValue.toLowerCase()),
+          !searchValue ||
+          workflow.name.toLowerCase().includes(searchValue.toLowerCase())
       )
       .map((workflow) => {
         const id = JSON.stringify({
@@ -294,13 +283,15 @@ export function ChatMentionInputSuggestion({
           icon: (
             <Avatar
               style={workflow.icon?.style}
-              className='size-3.5 ring-[1px] ring-input rounded-full'
+              className="size-3.5 ring-[1px] ring-input rounded-full"
             >
               <AvatarImage src={workflow.icon?.value} />
               <AvatarFallback>{workflow.name.slice(0, 1)}</AvatarFallback>
             </Avatar>
           ),
-          suffix: selectedIds?.includes(id) && <CheckIcon className='size-3 ml-auto' />,
+          suffix: selectedIds?.includes(id) && (
+            <CheckIcon className="size-3 ml-auto" />
+          ),
         }
       })
   }, [workflowList, selectedIds, disabledType, searchValue])
@@ -359,7 +350,9 @@ export function ChatMentionInputSuggestion({
 
     return items
       .filter(
-        (item) => !searchValue || item.label.toLowerCase().includes(searchValue.toLowerCase()),
+        (item) =>
+          !searchValue ||
+          item.label.toLowerCase().includes(searchValue.toLowerCase())
       )
       .map((item) => {
         const id = JSON.stringify({
@@ -378,7 +371,9 @@ export function ChatMentionInputSuggestion({
               id,
             }),
           icon: item.icon,
-          suffix: selectedIds?.includes(id) && <CheckIcon className='size-3 ml-auto' />,
+          suffix: selectedIds?.includes(id) && (
+            <CheckIcon className="size-3 ml-auto" />
+          ),
         }
       })
   }, [selectedIds, disabledType, searchValue])
@@ -387,7 +382,7 @@ export function ChatMentionInputSuggestion({
     if (children) return children
     return (
       <span
-        className='fixed z-50'
+        className="fixed z-50"
         style={{
           top,
           left,
@@ -398,8 +393,8 @@ export function ChatMentionInputSuggestion({
 
   // Combine all mentions
   const allMentions = useMemo(() => {
-    return [...agentMentions, ...workflowMentions, ...defaultToolMentions, ...mcpMentions]
-  }, [agentMentions, workflowMentions, defaultToolMentions, mcpMentions])
+    return [...workflowMentions, ...defaultToolMentions, ...mcpMentions]
+  }, [workflowMentions, defaultToolMentions, mcpMentions])
 
   // Reset selected index when mentions change
   useEffect(() => {
@@ -420,7 +415,6 @@ export function ChatMentionInputSuggestion({
   // Group mentions by type
   const groupedMentions = useMemo(() => {
     const groups = {
-      agent: { title: 'Agents', items: [] as MentionItemType[] },
       workflow: { title: 'Workflows', items: [] as MentionItemType[] },
       defaultTool: { title: 'App Tools', items: [] as MentionItemType[] },
       mcp: { title: 'MCP Tools', items: [] as MentionItemType[] },
@@ -449,8 +443,8 @@ export function ChatMentionInputSuggestion({
       <PopoverTrigger asChild>{trigger}</PopoverTrigger>
       <PopoverContent
         className={cn('p-0', className)}
-        align='start'
-        side='top'
+        align="start"
+        side="top"
         style={{
           ...style,
           width: style?.width || (isMobile ? '100%' : 'auto'),
@@ -458,11 +452,11 @@ export function ChatMentionInputSuggestion({
           maxWidth: isMobile ? undefined : '800px',
         }}
       >
-        <div className='flex flex-col'>
-          <div className='flex items-center gap-2 px-3 py-2 border-b'>
-            <SearchIcon className='size-4 shrink-0 opacity-50' />
+        <div className="flex flex-col">
+          <div className="flex items-center gap-2 px-3 py-2 border-b">
+            <SearchIcon className="size-4 shrink-0 opacity-50" />
             <input
-              className='flex h-8 w-full rounded-md bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50'
+              className="flex h-8 w-full rounded-md bg-transparent text-sm outline-none placeholder:text-muted-foreground disabled:cursor-not-allowed disabled:opacity-50"
               placeholder={t('search')}
               value={searchValue}
               onChange={(e) => setSearchValue(e.target.value)}
@@ -476,34 +470,47 @@ export function ChatMentionInputSuggestion({
                 }
                 if (e.key === 'ArrowDown') {
                   e.preventDefault()
-                  setSelectedIndex((prev) => (prev < allMentions.length - 1 ? prev + 1 : 0))
+                  setSelectedIndex((prev) =>
+                    prev < allMentions.length - 1 ? prev + 1 : 0
+                  )
                 }
                 if (e.key === 'ArrowUp') {
                   e.preventDefault()
-                  setSelectedIndex((prev) => (prev > 0 ? prev - 1 : allMentions.length - 1))
+                  setSelectedIndex((prev) =>
+                    prev > 0 ? prev - 1 : allMentions.length - 1
+                  )
                 }
-                if (!isMobile && (e.key === 'ArrowLeft' || e.key === 'ArrowRight')) {
+                if (
+                  !isMobile &&
+                  (e.key === 'ArrowLeft' || e.key === 'ArrowRight')
+                ) {
                   e.preventDefault()
                   // Calculate column navigation
                   const currentItem = allMentions[selectedIndex]
-                  const currentType = currentItem.type === 'mcpTool' ? 'mcp' : currentItem.type
-                  const typeOrder = ['agent', 'workflow', 'mcp', 'defaultTool']
+                  const currentType =
+                    currentItem.type === 'mcpTool' ? 'mcp' : currentItem.type
+                  const typeOrder = ['workflow', 'mcp', 'defaultTool']
                   const currentTypeIndex = typeOrder.indexOf(currentType)
 
                   if (e.key === 'ArrowLeft' && currentTypeIndex > 0) {
                     const prevType = typeOrder[currentTypeIndex - 1]
                     const prevTypeItems = allMentions.filter(
                       (item) =>
-                        item.type === prevType || (prevType === 'mcp' && item.type === 'mcpTool'),
+                        item.type === prevType ||
+                        (prevType === 'mcp' && item.type === 'mcpTool')
                     )
                     if (prevTypeItems.length > 0) {
                       setSelectedIndex(allMentions.indexOf(prevTypeItems[0]))
                     }
-                  } else if (e.key === 'ArrowRight' && currentTypeIndex < typeOrder.length - 1) {
+                  } else if (
+                    e.key === 'ArrowRight' &&
+                    currentTypeIndex < typeOrder.length - 1
+                  ) {
                     const nextType = typeOrder[currentTypeIndex + 1]
                     const nextTypeItems = allMentions.filter(
                       (item) =>
-                        item.type === nextType || (nextType === 'mcp' && item.type === 'mcpTool'),
+                        item.type === nextType ||
+                        (nextType === 'mcp' && item.type === 'mcpTool')
                     )
                     if (nextTypeItems.length > 0) {
                       setSelectedIndex(allMentions.indexOf(nextTypeItems[0]))
@@ -515,15 +522,22 @@ export function ChatMentionInputSuggestion({
             />
           </div>
 
-          <div className={cn('overflow-hidden', isMobile ? 'max-h-[50vh]' : 'h-[300px]')}>
+          <div
+            className={cn(
+              'overflow-hidden',
+              isMobile ? 'max-h-[50vh]' : 'h-[300px]'
+            )}
+          >
             {allMentions.length === 0 ? (
-              <div className='flex-1 flex items-center justify-center text-sm text-muted-foreground p-8'>
-                <div className='text-center'>
-                  <div className='mb-2'>
-                    {searchValue ? t('noResults') : 'Type @ to see available mentions'}
+              <div className="flex-1 flex items-center justify-center text-sm text-muted-foreground p-8">
+                <div className="text-center">
+                  <div className="mb-2">
+                    {searchValue
+                      ? t('noResults')
+                      : 'Type @ to see available mentions'}
                   </div>
                   {searchValue && (
-                    <div className='text-xs opacity-60'>
+                    <div className="text-xs opacity-60">
                       No results found for &quot;{searchValue}&quot;
                     </div>
                   )}
@@ -531,37 +545,20 @@ export function ChatMentionInputSuggestion({
               </div>
             ) : isMobile ? (
               // Mobile vertical layout
-              <div className='overflow-y-auto max-h-[50vh]'>
-                {groupedMentions.agent.items.length > 0 && (
-                  <div className='p-2'>
-                    <div className='text-xs font-medium text-muted-foreground px-2 py-1.5'>
-                      {groupedMentions.agent.title}
-                    </div>
-                    <div className='space-y-1'>
-                      {groupedMentions.agent.items.map((item) => (
-                        <MentionItem
-                          key={item.id}
-                          item={item}
-                          isSelected={allMentions[selectedIndex]?.id === item.id}
-                          ref={(el) => {
-                            itemRefs.current[item.id] = el
-                          }}
-                        />
-                      ))}
-                    </div>
-                  </div>
-                )}
+              <div className="overflow-y-auto max-h-[50vh]">
                 {groupedMentions.workflow.items.length > 0 && (
-                  <div className='p-2 border-t'>
-                    <div className='text-xs font-medium text-muted-foreground px-2 py-1.5'>
+                  <div className="p-2 border-t">
+                    <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
                       {groupedMentions.workflow.title}
                     </div>
-                    <div className='space-y-1'>
+                    <div className="space-y-1">
                       {groupedMentions.workflow.items.map((item) => (
                         <MentionItem
                           key={item.id}
                           item={item}
-                          isSelected={allMentions[selectedIndex]?.id === item.id}
+                          isSelected={
+                            allMentions[selectedIndex]?.id === item.id
+                          }
                           ref={(el) => {
                             itemRefs.current[item.id] = el
                           }}
@@ -571,16 +568,18 @@ export function ChatMentionInputSuggestion({
                   </div>
                 )}
                 {groupedMentions.defaultTool.items.length > 0 && (
-                  <div className='p-2 border-t'>
-                    <div className='text-xs font-medium text-muted-foreground px-2 py-1.5'>
+                  <div className="p-2 border-t">
+                    <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
                       {groupedMentions.defaultTool.title}
                     </div>
-                    <div className='space-y-1'>
+                    <div className="space-y-1">
                       {groupedMentions.defaultTool.items.map((item) => (
                         <MentionItem
                           key={item.id}
                           item={item}
-                          isSelected={allMentions[selectedIndex]?.id === item.id}
+                          isSelected={
+                            allMentions[selectedIndex]?.id === item.id
+                          }
                           ref={(el) => {
                             itemRefs.current[item.id] = el
                           }}
@@ -590,16 +589,18 @@ export function ChatMentionInputSuggestion({
                   </div>
                 )}
                 {groupedMentions.mcp.items.length > 0 && (
-                  <div className='p-2 border-t'>
-                    <div className='text-xs font-medium text-muted-foreground px-2 py-1.5'>
+                  <div className="p-2 border-t">
+                    <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
                       {groupedMentions.mcp.title}
                     </div>
-                    <div className='space-y-1'>
+                    <div className="space-y-1">
                       {groupedMentions.mcp.items.map((item) => (
                         <MentionItem
                           key={item.id}
                           item={item}
-                          isSelected={allMentions[selectedIndex]?.id === item.id}
+                          isSelected={
+                            allMentions[selectedIndex]?.id === item.id
+                          }
                           ref={(el) => {
                             itemRefs.current[item.id] = el
                           }}
@@ -611,50 +612,29 @@ export function ChatMentionInputSuggestion({
               </div>
             ) : (
               // Desktop horizontal layout
-              <div className='flex flex-1 h-[300px]'>
-                {/* Agents & Workflows Column */}
-                <div className='flex-1 border-r overflow-y-auto'>
-                  <div className='p-2'>
-                    <div className='text-xs font-medium text-muted-foreground px-2 py-1.5'>
-                      {groupedMentions.agent.title}
-                    </div>
-                    <div className='space-y-1'>
-                      {groupedMentions.agent.items.length > 0 ? (
-                        groupedMentions.agent.items.map((item) => (
-                          <MentionItem
-                            key={item.id}
-                            item={item}
-                            isSelected={allMentions[selectedIndex]?.id === item.id}
-                            ref={(el) => {
-                              itemRefs.current[item.id] = el
-                            }}
-                          />
-                        ))
-                      ) : (
-                        <div className='px-2 py-3 text-xs text-muted-foreground text-center'>
-                          No agents found
-                        </div>
-                      )}
-                    </div>
-                  </div>
-                  <div className='p-2 border-t'>
-                    <div className='text-xs font-medium text-muted-foreground px-2 py-1.5'>
+              <div className="flex flex-1 h-[300px]">
+                {/* Workflows Column */}
+                <div className="flex-1 border-r overflow-y-auto">
+                  <div className="p-2">
+                    <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
                       {groupedMentions.workflow.title}
                     </div>
-                    <div className='space-y-1'>
+                    <div className="space-y-1">
                       {groupedMentions.workflow.items.length > 0 ? (
                         groupedMentions.workflow.items.map((item) => (
                           <MentionItem
                             key={item.id}
                             item={item}
-                            isSelected={allMentions[selectedIndex]?.id === item.id}
+                            isSelected={
+                              allMentions[selectedIndex]?.id === item.id
+                            }
                             ref={(el) => {
                               itemRefs.current[item.id] = el
                             }}
                           />
                         ))
                       ) : (
-                        <div className='px-2 py-3 text-xs text-muted-foreground text-center'>
+                        <div className="px-2 py-3 text-xs text-muted-foreground text-center">
                           No workflows found
                         </div>
                       )}
@@ -663,25 +643,27 @@ export function ChatMentionInputSuggestion({
                 </div>
 
                 {/* MCP Tools Column */}
-                <div className='flex-1 border-r overflow-y-auto'>
-                  <div className='p-2'>
-                    <div className='text-xs font-medium text-muted-foreground px-2 py-1.5'>
+                <div className="flex-1 border-r overflow-y-auto">
+                  <div className="p-2">
+                    <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
                       {groupedMentions.mcp.title}
                     </div>
-                    <div className='space-y-1'>
+                    <div className="space-y-1">
                       {groupedMentions.mcp.items.length > 0 ? (
                         groupedMentions.mcp.items.map((item) => (
                           <MentionItem
                             key={item.id}
                             item={item}
-                            isSelected={allMentions[selectedIndex]?.id === item.id}
+                            isSelected={
+                              allMentions[selectedIndex]?.id === item.id
+                            }
                             ref={(el) => {
                               itemRefs.current[item.id] = el
                             }}
                           />
                         ))
                       ) : (
-                        <div className='px-2 py-3 text-xs text-muted-foreground text-center'>
+                        <div className="px-2 py-3 text-xs text-muted-foreground text-center">
                           No MCP tools found
                         </div>
                       )}
@@ -690,25 +672,27 @@ export function ChatMentionInputSuggestion({
                 </div>
 
                 {/* Default Tools Column */}
-                <div className='flex-1 overflow-y-auto'>
-                  <div className='p-2'>
-                    <div className='text-xs font-medium text-muted-foreground px-2 py-1.5'>
+                <div className="flex-1 overflow-y-auto">
+                  <div className="p-2">
+                    <div className="text-xs font-medium text-muted-foreground px-2 py-1.5">
                       {groupedMentions.defaultTool.title}
                     </div>
-                    <div className='space-y-1'>
+                    <div className="space-y-1">
                       {groupedMentions.defaultTool.items.length > 0 ? (
                         groupedMentions.defaultTool.items.map((item) => (
                           <MentionItem
                             key={item.id}
                             item={item}
-                            isSelected={allMentions[selectedIndex]?.id === item.id}
+                            isSelected={
+                              allMentions[selectedIndex]?.id === item.id
+                            }
                             ref={(el) => {
                               itemRefs.current[item.id] = el
                             }}
                           />
                         ))
                       ) : (
-                        <div className='px-2 py-3 text-xs text-muted-foreground text-center'>
+                        <div className="px-2 py-3 text-xs text-muted-foreground text-center">
                           No app tools found
                         </div>
                       )}
@@ -733,12 +717,12 @@ const MentionItem = React.forwardRef<
       ref={ref}
       className={cn(
         'flex items-center gap-2 w-full rounded-sm px-2 py-1.5 text-sm outline-none hover:bg-accent hover:text-accent-foreground cursor-pointer',
-        isSelected && 'bg-accent text-accent-foreground',
+        isSelected && 'bg-accent text-accent-foreground'
       )}
       onClick={() => item.onSelect()}
     >
       {item.icon}
-      <span className='truncate min-w-0'>{item.label}</span>
+      <span className="truncate min-w-0">{item.label}</span>
       {item.suffix}
     </button>
   )

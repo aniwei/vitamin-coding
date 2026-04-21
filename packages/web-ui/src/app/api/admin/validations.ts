@@ -6,7 +6,9 @@ import { BasicUserWithLastLogin } from 'app-types/user'
 
 export const UpdateUserRoleSchema = z.object({
   userId: z.uuid('Invalid user ID'),
-  role: z.enum(Object.values(USER_ROLES) as [UserRoleNames, ...UserRoleNames[]]).optional(),
+  role: z
+    .enum(Object.values(USER_ROLES) as [UserRoleNames, ...UserRoleNames[]])
+    .optional(),
 })
 
 export const UpdateUserBanStatusSchema = z.object({

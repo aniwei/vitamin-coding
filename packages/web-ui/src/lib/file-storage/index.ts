@@ -40,7 +40,8 @@ const createFileStorage = (): FileStorage => {
   }
 }
 
-const serverFileStorage = globalThis.__server__file_storage__ || createFileStorage()
+const serverFileStorage =
+  globalThis.__server__file_storage__ || createFileStorage()
 
 if (IS_DEV) {
   globalThis.__server__file_storage__ = serverFileStorage

@@ -28,24 +28,25 @@ export function UserRoleBadges({
   return (
     <div
       className={cn('mt-3 flex flex-wrap items-center gap-2', className)}
-      data-testid='user-role-badges'
+      data-testid="user-role-badges"
     >
       {user.role?.split(',').map((role) => {
         const isClickable = onRoleClick && !disabled
         const badgeContent = (
           <Badge
             key={role}
-            variant='secondary'
+            variant="secondary"
             className={cn(
               'text-xs',
-              isClickable && 'cursor-pointer hover:bg-secondary/80 transition-colors',
-              isClickable && 'flex items-center gap-1',
+              isClickable &&
+                'cursor-pointer hover:bg-secondary/80 transition-colors',
+              isClickable && 'flex items-center gap-1'
             )}
             data-testid={`role-badge-${role.toLowerCase()}`}
             onClick={isClickable ? onRoleClick : undefined}
           >
             {userRolesInfo[role as UserRoleNames]?.label || role}
-            {isClickable && <Edit2 className='size-2.5!' />}
+            {isClickable && <Edit2 className="size-2.5!" />}
           </Badge>
         )
 
@@ -62,10 +63,12 @@ export function UserRoleBadges({
       })}
       {showBanned && user.banned && (
         <Badge
-          variant='destructive'
-          data-testid='user-banned-badge'
+          variant="destructive"
+          data-testid="user-banned-badge"
           className={cn(
-            onBanClick && !disabled && 'cursor-pointer hover:bg-destructive/80 transition-colors',
+            onBanClick &&
+              !disabled &&
+              'cursor-pointer hover:bg-destructive/80 transition-colors'
           )}
           onClick={onBanClick && !disabled ? onBanClick : undefined}
         >

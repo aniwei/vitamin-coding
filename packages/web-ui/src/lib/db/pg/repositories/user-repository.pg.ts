@@ -1,4 +1,9 @@
-import { BasicUserWithLastLogin, User, UserPreferences, UserRepository } from 'app-types/user'
+import {
+  BasicUserWithLastLogin,
+  User,
+  UserPreferences,
+  UserRepository,
+} from 'app-types/user'
 import { pgDb as db, pgDb } from '../db.pg'
 import {
   AccountTable,
@@ -17,7 +22,10 @@ const getUserColumnsWithoutPassword = () => {
 
 export const pgUserRepository: UserRepository = {
   existsByEmail: async (email: string): Promise<boolean> => {
-    const result = await db.select().from(UserTable).where(eq(UserTable.email, email))
+    const result = await db
+      .select()
+      .from(UserTable)
+      .where(eq(UserTable.email, email))
     return result.length > 0
   },
   updateUserDetails: async ({
@@ -47,7 +55,10 @@ export const pgUserRepository: UserRepository = {
     }
   },
 
-  updatePreferences: async (userId: string, preferences: UserPreferences): Promise<User> => {
+  updatePreferences: async (
+    userId: string,
+    preferences: UserPreferences
+  ): Promise<User> => {
     const [result] = await db
       .update(UserTable)
       .set({
@@ -68,7 +79,9 @@ export const pgUserRepository: UserRepository = {
       .where(eq(UserTable.id, userId))
     return result?.preferences ?? null
   },
-  getUserById: async (userId: string): Promise<BasicUserWithLastLogin | null> => {
+  getUserById: async (
+    userId: string
+  ): Promise<BasicUserWithLastLogin | null> => {
     const [result] = await pgDb
       .select({
         ...getUserColumnsWithoutPassword(),
@@ -101,9 +114,12 @@ export const pgUserRepository: UserRepository = {
         messageCount: sql<number>`COALESCE(COUNT(${ChatMessageTable.id}), 0)`,
       })
       .from(ChatThreadTable)
-      .leftJoin(ChatMessageTable, eq(ChatThreadTable.id, ChatMessageTable.threadId))
+      .leftJoin(
+        ChatMessageTable,
+        eq(ChatThreadTable.id, ChatMessageTable.threadId)
+      )
       .where(
-        sql`${ChatThreadTable.userId} = ${userId} AND ${ChatThreadTable.createdAt} >= ${thirtyDaysAgo}`,
+        sql`${ChatThreadTable.userId} = ${userId} AND ${ChatThreadTable.createdAt} >= ${thirtyDaysAgo}`
       )
 
     const modelStats = await db
@@ -114,18 +130,26 @@ export const pgUserRepository: UserRepository = {
         totalTokens: sql<number>`COALESCE(SUM((${ChatMessageTable.metadata}->'usage'->>'totalTokens')::numeric), 0)`,
       })
       .from(ChatMessageTable)
-      .leftJoin(ChatThreadTable, eq(ChatMessageTable.threadId, ChatThreadTable.id))
+      .leftJoin(
+        ChatThreadTable,
+        eq(ChatMessageTable.threadId, ChatThreadTable.id)
+      )
       .where(
         sql`${ChatThreadTable.userId} = ${userId} 
             AND ${ChatMessageTable.createdAt} >= ${thirtyDaysAgo}
             AND ${ChatMessageTable.metadata} IS NOT NULL
-            AND ${ChatMessageTable.metadata}->'chatModel'->>'model' IS NOT NULL`,
+            AND ${ChatMessageTable.metadata}->'chatModel'->>'model' IS NOT NULL`
       )
       .groupBy(sql`${ChatMessageTable.metadata}->'chatModel'->>'model'`)
-      .orderBy(sql`SUM((${ChatMessageTable.metadata}->'usage'->>'totalTokens')::numeric) DESC`)
+      .orderBy(
+        sql`SUM((${ChatMessageTable.metadata}->'usage'->>'totalTokens')::numeric) DESC`
+      )
       .limit(10) // Get top 10 models by token usage
 
-    const totalTokens = modelStats.reduce((acc, curr) => acc + Number(curr.totalTokens || 0), 0)
+    const totalTokens = modelStats.reduce(
+      (acc, curr) => acc + Number(curr.totalTokens || 0),
+      0
+    )
 
     return {
       threadCount: result?.threadCount || 0,

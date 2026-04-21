@@ -1,7 +1,14 @@
-import { getUser, getUserAccounts, getUserIdAndCheckAccess } from 'lib/user/server'
-
+import {
+  getUser,
+  getUserAccounts,
+  getUserIdAndCheckAccess,
+} from 'lib/user/server'
+import { notFound } from 'next/navigation'
 import { UserDetail } from './user-detail'
-import { UserStatsCardLoader, UserStatsCardLoaderSkeleton } from './user-stats-card-loader'
+import {
+  UserStatsCardLoader,
+  UserStatsCardLoaderSkeleton,
+} from './user-stats-card-loader'
 import { Suspense } from 'react'
 
 export async function UserDetailContent({
@@ -13,7 +20,10 @@ export async function UserDetailContent({
 }) {
   const currentUserId = await getUserIdAndCheckAccess(userId)
 
-  const [user, userAccounts] = await Promise.all([getUser(userId), getUserAccounts(userId)])
+  const [user, userAccounts] = await Promise.all([
+    getUser(userId),
+    getUserAccounts(userId),
+  ])
 
   if (!user) {
     notFound()

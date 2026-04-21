@@ -51,12 +51,16 @@ export const updateUserRolesAction = validatedActionWithAdminPermission(
       }),
       user,
     }
-  },
+  }
 )
 
 export const updateUserBanStatusAction = validatedActionWithAdminPermission(
   UpdateUserBanStatusSchema,
-  async (data, _formData, userSession): Promise<UpdateUserBanStatusActionState> => {
+  async (
+    data,
+    _formData,
+    userSession
+  ): Promise<UpdateUserBanStatusActionState> => {
     const tCommon = await getTranslations('User.Profile.common')
     const { userId, banned, banReason } = data
 
@@ -71,7 +75,9 @@ export const updateUserBanStatusAction = validatedActionWithAdminPermission(
         await auth.api.banUser({
           body: {
             userId,
-            banReason: banReason || (await getTranslations('User.Profile.common'))('bannedByAdmin'),
+            banReason:
+              banReason ||
+              (await getTranslations('User.Profile.common'))('bannedByAdmin'),
           },
           headers: await headers(),
         })
@@ -107,5 +113,5 @@ export const updateUserBanStatusAction = validatedActionWithAdminPermission(
         error: error instanceof Error ? error.message : tCommon('unknownError'),
       }
     }
-  },
+  }
 )

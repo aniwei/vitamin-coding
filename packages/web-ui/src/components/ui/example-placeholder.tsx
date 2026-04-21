@@ -14,10 +14,10 @@ export function ExamplePlaceholder({ placeholder }: { placeholder: string[] }) {
 
   return (
     <div
-      className='text-sm text-muted-foreground w-full'
+      className="text-sm text-muted-foreground w-full"
       style={{ position: 'relative', minHeight: 20, display: 'inline-block' }}
     >
-      <AnimatePresence mode='wait'>
+      <AnimatePresence mode="wait">
         <motion.span
           key={index}
           initial={{

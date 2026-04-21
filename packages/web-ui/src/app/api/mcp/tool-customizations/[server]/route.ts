@@ -3,7 +3,10 @@ import { mcpMcpToolCustomizationRepository } from 'lib/db/repository'
 
 import { NextResponse } from 'next/server'
 
-export async function GET(_: Request, { params }: { params: Promise<{ server: string }> }) {
+export async function GET(
+  _: Request,
+  { params }: { params: Promise<{ server: string }> }
+) {
   const { server } = await params
   const session = await getSession()
   if (!session) {

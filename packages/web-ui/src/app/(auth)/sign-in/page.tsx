@@ -4,9 +4,15 @@ import { getIsFirstUser } from 'lib/auth/server'
 
 export default async function SignInPage() {
   const isFirstUser = await getIsFirstUser()
-  const { emailAndPasswordEnabled, signUpEnabled, socialAuthenticationProviders } = getAuthConfig()
+  const {
+    emailAndPasswordEnabled,
+    signUpEnabled,
+    socialAuthenticationProviders,
+  } = getAuthConfig()
   const enabledProviders = (
-    Object.keys(socialAuthenticationProviders) as (keyof typeof socialAuthenticationProviders)[]
+    Object.keys(
+      socialAuthenticationProviders
+    ) as (keyof typeof socialAuthenticationProviders)[]
   ).filter((key) => socialAuthenticationProviders[key])
   return (
     <SignIn

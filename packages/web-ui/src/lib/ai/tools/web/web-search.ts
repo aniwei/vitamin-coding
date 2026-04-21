@@ -102,7 +102,8 @@ export const exaSearchSchema: JSONSchema7 = {
     excludeDomains: {
       type: 'array',
       items: { type: 'string' },
-      description: 'List of domains to specifically exclude from search results',
+      description:
+        'List of domains to specifically exclude from search results',
       default: [],
     },
     startPublishedDate: {
@@ -200,10 +201,14 @@ export const exaSearchToolForWorkflow = createTool({
 
     // Add optional parameters if provided
     if (params.category) searchRequest.category = params.category
-    if (params.includeDomains?.length) searchRequest.includeDomains = params.includeDomains
-    if (params.excludeDomains?.length) searchRequest.excludeDomains = params.excludeDomains
-    if (params.startPublishedDate) searchRequest.startPublishedDate = params.startPublishedDate
-    if (params.endPublishedDate) searchRequest.endPublishedDate = params.endPublishedDate
+    if (params.includeDomains?.length)
+      searchRequest.includeDomains = params.includeDomains
+    if (params.excludeDomains?.length)
+      searchRequest.excludeDomains = params.excludeDomains
+    if (params.startPublishedDate)
+      searchRequest.startPublishedDate = params.startPublishedDate
+    if (params.endPublishedDate)
+      searchRequest.endPublishedDate = params.endPublishedDate
 
     return fetchExa('/search', searchRequest)
   },
@@ -248,10 +253,14 @@ export const exaSearchTool = createTool({
 
       // Add optional parameters if provided
       if (params.category) searchRequest.category = params.category
-      if (params.includeDomains?.length) searchRequest.includeDomains = params.includeDomains
-      if (params.excludeDomains?.length) searchRequest.excludeDomains = params.excludeDomains
-      if (params.startPublishedDate) searchRequest.startPublishedDate = params.startPublishedDate
-      if (params.endPublishedDate) searchRequest.endPublishedDate = params.endPublishedDate
+      if (params.includeDomains?.length)
+        searchRequest.includeDomains = params.includeDomains
+      if (params.excludeDomains?.length)
+        searchRequest.excludeDomains = params.excludeDomains
+      if (params.startPublishedDate)
+        searchRequest.startPublishedDate = params.startPublishedDate
+      if (params.endPublishedDate)
+        searchRequest.endPublishedDate = params.endPublishedDate
 
       const result = await fetchExa('/search', searchRequest)
 

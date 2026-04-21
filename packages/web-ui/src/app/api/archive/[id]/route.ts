@@ -3,7 +3,10 @@ import { getSession } from 'auth/server'
 import { z } from 'zod'
 import { ArchiveUpdateSchema } from 'app-types/archive'
 
-export async function GET(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const session = await getSession()
 
   if (!session?.user.id) {
@@ -37,7 +40,10 @@ export async function GET(_request: Request, { params }: { params: Promise<{ id:
   }
 }
 
-export async function PUT(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function PUT(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const session = await getSession()
 
   if (!session?.user.id) {
@@ -69,7 +75,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
     return Response.json(archive)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return Response.json({ error: 'Invalid input', details: error.message }, { status: 400 })
+      return Response.json(
+        { error: 'Invalid input', details: error.message },
+        { status: 400 }
+      )
     }
 
     console.error('Failed to update archive:', error)
@@ -77,7 +86,10 @@ export async function PUT(request: Request, { params }: { params: Promise<{ id: 
   }
 }
 
-export async function DELETE(_request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const session = await getSession()
 
   if (!session?.user.id) {

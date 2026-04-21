@@ -6,7 +6,7 @@ import { mcpMcpToolCustomizationRepository } from 'lib/db/repository'
 
 export async function GET(
   _: Request,
-  { params }: { params: Promise<{ server: string; tool: string }> },
+  { params }: { params: Promise<{ server: string; tool: string }> }
 ) {
   const { server, tool } = await params
   const session = await getSession()
@@ -24,7 +24,7 @@ export async function GET(
 
 export async function POST(
   request: Request,
-  { params }: { params: Promise<{ server: string; tool: string }> },
+  { params }: { params: Promise<{ server: string; tool: string }> }
 ) {
   const { server, tool } = await params
   const session = await getSession()
@@ -34,18 +34,21 @@ export async function POST(
 
   const body = await request.json()
 
-  const { mcpServerId, toolName, prompt } = McpToolCustomizationZodSchema.parse({
-    ...body,
-    mcpServerId: server,
-    toolName: tool,
-  })
+  const { mcpServerId, toolName, prompt } = McpToolCustomizationZodSchema.parse(
+    {
+      ...body,
+      mcpServerId: server,
+      toolName: tool,
+    }
+  )
 
-  const result = await mcpMcpToolCustomizationRepository.upsertToolCustomization({
-    userId: session.user.id,
-    mcpServerId,
-    toolName,
-    prompt,
-  })
+  const result =
+    await mcpMcpToolCustomizationRepository.upsertToolCustomization({
+      userId: session.user.id,
+      mcpServerId,
+      toolName,
+      prompt,
+    })
   const key = CacheKeys.mcpServerCustomizations(session.user.id)
   void serverCache.delete(key)
 
@@ -54,7 +57,7 @@ export async function POST(
 
 export async function DELETE(
   _: Request,
-  { params }: { params: Promise<{ server: string; tool: string }> },
+  { params }: { params: Promise<{ server: string; tool: string }> }
 ) {
   const { server, tool } = await params
   const session = await getSession()

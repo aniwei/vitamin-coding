@@ -21,7 +21,9 @@ export const fetcher = async (url: string, options?: RequestInit) => {
     } catch {
       errorPayload = { message: `Request failed with status ${res.status}` }
     }
-    const error = new Error(errorPayload.message || 'An error occurred while fetching the data.')
+    const error = new Error(
+      errorPayload.message || 'An error occurred while fetching the data.'
+    )
     Object.assign(error, { info: errorPayload, status: res.status })
     throw error
   }
@@ -36,22 +38,28 @@ export const createIncrement =
 
 export const noop = () => {}
 
-export const wait = (delay = 0) => new Promise<void>((resolve) => setTimeout(resolve, delay))
+export const wait = (delay = 0) =>
+  new Promise<void>((resolve) => setTimeout(resolve, delay))
 
 export const randomRange = (min: number, max: number) =>
   Math.floor(Math.random() * (max - min + 1) + min)
 
-export const isString = (value: any): value is string => typeof value === 'string'
+export const isString = (value: any): value is string =>
+  typeof value === 'string'
 
-export const isFunction = <T extends (...args: any[]) => any = (...args: any[]) => any>(
-  v: unknown,
+export const isFunction = <
+  T extends (...args: any[]) => any = (...args: any[]) => any,
+>(
+  v: unknown
 ): v is T => typeof v === 'function'
 
-export const isObject = (value: any): value is Record<string, any> => Object(value) === value
+export const isObject = (value: any): value is Record<string, any> =>
+  Object(value) === value
 
 export const isNull = (value: any): value is null | undefined => value == null
 
-export const isPromiseLike = (x: unknown): x is PromiseLike<unknown> => isFunction((x as any)?.then)
+export const isPromiseLike = (x: unknown): x is PromiseLike<unknown> =>
+  isFunction((x as any)?.then)
 
 export const isJson = (value: any): value is Record<string, any> => {
   try {
@@ -121,13 +129,14 @@ export const createThrottle = () => {
 export const groupBy = <T>(arr: T[], getter: keyof T | ((item: T) => string)) =>
   arr.reduce(
     (prev, item) => {
-      const key: string = getter instanceof Function ? getter(item) : (item[getter] as string)
+      const key: string =
+        getter instanceof Function ? getter(item) : (item[getter] as string)
 
       if (!prev[key]) prev[key] = []
       prev[key].push(item)
       return prev
     },
-    {} as Record<string, T[]>,
+    {} as Record<string, T[]>
   )
 
 export const PromiseChain = () => {
@@ -177,7 +186,7 @@ export class Locker {
 }
 
 export function safeJSONParse<T = unknown>(
-  json: string,
+  json: string
 ):
   | {
       success: true
@@ -233,14 +242,18 @@ export function errorToString(error: unknown) {
 
 export function objectFlow<T extends Record<string, any>>(obj: T) {
   return {
-    map: <R>(fn: (value: T[keyof T], key: keyof T) => R): Record<keyof T, R> => {
+    map: <R>(
+      fn: (value: T[keyof T], key: keyof T) => R
+    ): Record<keyof T, R> => {
       return Object.fromEntries(
-        Object.entries(obj).map(([key, value]) => [key, fn(value, key)]),
+        Object.entries(obj).map(([key, value]) => [key, fn(value, key)])
       ) as Record<keyof T, R>
     },
-    filter: (fn: (value: T[keyof T], key: keyof T) => boolean): Record<keyof T, T[keyof T]> => {
+    filter: (
+      fn: (value: T[keyof T], key: keyof T) => boolean
+    ): Record<keyof T, T[keyof T]> => {
       return Object.fromEntries(
-        Object.entries(obj).filter(([key, value]) => fn(value, key)),
+        Object.entries(obj).filter(([key, value]) => fn(value, key))
       ) as Record<keyof T, T[keyof T]>
     },
 
@@ -319,9 +332,12 @@ export function generateUniqueKey(key: string, existingKeys: string[]) {
   return newKey
 }
 
-export function exclude<T extends object, K extends keyof T>(obj: T, keys: K[]): Omit<T, K> {
+export function exclude<T extends object, K extends keyof T>(
+  obj: T,
+  keys: K[]
+): Omit<T, K> {
   return Object.fromEntries(
-    Object.entries(obj).filter(([key]) => !keys.includes(key as K)),
+    Object.entries(obj).filter(([key]) => !keys.includes(key as K))
   ) as Omit<T, K>
 }
 

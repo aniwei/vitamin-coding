@@ -10,7 +10,8 @@ import { IS_VERCEL_ENV } from 'lib/const'
 export async function getStorageInfoAction() {
   return {
     type: storageDriver,
-    supportsDirectUpload: storageDriver === 'vercel-blob' || storageDriver === 's3',
+    supportsDirectUpload:
+      storageDriver === 'vercel-blob' || storageDriver === 's3',
   }
 }
 
@@ -47,7 +48,8 @@ export async function checkStorageAction(): Promise<StorageCheckResult> {
   // 2. Check S3 configuration
   if (storageDriver === 's3') {
     const missing: string[] = []
-    if (!process.env.FILE_STORAGE_S3_BUCKET) missing.push('FILE_STORAGE_S3_BUCKET')
+    if (!process.env.FILE_STORAGE_S3_BUCKET)
+      missing.push('FILE_STORAGE_S3_BUCKET')
     if (!process.env.FILE_STORAGE_S3_REGION && !process.env.AWS_REGION) {
       missing.push('FILE_STORAGE_S3_REGION or AWS_REGION')
     }

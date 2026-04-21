@@ -83,11 +83,14 @@ export const createWorkflowExecutor = (workflow: {
 
   // Create mapping for node ID to name for logging
   const nodeNameByNodeId = new Map<string, string>(
-    workflow.nodes.map((node) => [node.id, node.name]),
+    workflow.nodes.map((node) => [node.id, node.name])
   )
 
   // Create the execution graph using ts-edge library
-  const graph = createStateGraph(store) as StateGraphRegistry<WorkflowRuntimeState, string>
+  const graph = createStateGraph(store) as StateGraphRegistry<
+    WorkflowRuntimeState,
+    string
+  >
 
   // Add branch labels for condition node edges
   addEdgeBranchLabel(workflow.nodes, workflow.edges)
@@ -134,7 +137,7 @@ export const createWorkflowExecutor = (workflow: {
               nodeId: node.id,
               path: [],
             },
-            result.output,
+            result.output
           )
         }
         if (result?.input) {
@@ -190,24 +193,26 @@ export const createWorkflowExecutor = (workflow: {
     if (event.eventType == 'WORKFLOW_START') {
       needTable = buildNeedTable(workflow.edges)
       logger.debug(
-        `[${event.eventType}] ${workflow.nodes.length} nodes, ${workflow.edges.length} edges`,
+        `[${event.eventType}] ${workflow.nodes.length} nodes, ${workflow.edges.length} edges`
       )
     } else if (event.eventType == 'WORKFLOW_END') {
       const duration = ((event.endedAt - event.startedAt) / 1000).toFixed(2)
       const color = event.isOk ? 'green' : 'red'
       logger.debug(
-        `[${event.eventType}] ${colorize(color, event.isOk ? 'SUCCESS' : 'FAILED')} ${duration}s`,
+        `[${event.eventType}] ${colorize(color, event.isOk ? 'SUCCESS' : 'FAILED')} ${duration}s`
       )
       if (!event.isOk) {
         logger.error(event.error)
       }
     } else if (event.eventType == 'NODE_START') {
-      logger.debug(`[${event.eventType}] ${nodeNameByNodeId.get(event.node.name)}`)
+      logger.debug(
+        `[${event.eventType}] ${nodeNameByNodeId.get(event.node.name)}`
+      )
     } else if (event.eventType == 'NODE_END') {
       const duration = ((event.endedAt - event.startedAt) / 1000).toFixed(2)
       const color = event.isOk ? 'green' : 'red'
       logger.debug(
-        `[${event.eventType}] ${nodeNameByNodeId.get(event.node.name)} ${colorize(color, event.isOk ? 'SUCCESS' : 'FAILED')} ${duration}s`,
+        `[${event.eventType}] ${nodeNameByNodeId.get(event.node.name)} ${colorize(color, event.isOk ? 'SUCCESS' : 'FAILED')} ${duration}s`
       )
     }
   })

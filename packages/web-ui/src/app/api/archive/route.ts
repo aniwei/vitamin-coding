@@ -11,7 +11,9 @@ export async function GET() {
   }
 
   try {
-    const archives = await archiveRepository.getArchivesByUserId(session.user.id)
+    const archives = await archiveRepository.getArchivesByUserId(
+      session.user.id
+    )
     return Response.json(archives)
   } catch (error) {
     console.error('Failed to fetch archives:', error)
@@ -39,7 +41,10 @@ export async function POST(request: Request) {
     return Response.json(archive)
   } catch (error) {
     if (error instanceof z.ZodError) {
-      return Response.json({ error: 'Invalid input', details: error.message }, { status: 400 })
+      return Response.json(
+        { error: 'Invalid input', details: error.message },
+        { status: 400 }
+      )
     }
 
     console.error('Failed to create archive:', error)

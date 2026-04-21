@@ -13,7 +13,10 @@ async function getUserId() {
   return userId
 }
 
-export async function createArchiveAction(data: { name: string; description?: string }) {
+export async function createArchiveAction(data: {
+  name: string
+  description?: string
+}) {
   const userId = await getUserId()
   const validatedData = ArchiveCreateSchema.parse(data)
 
@@ -26,7 +29,7 @@ export async function createArchiveAction(data: { name: string; description?: st
 
 export async function updateArchiveAction(
   id: string,
-  data: { name?: string; description?: string },
+  data: { name?: string; description?: string }
 ) {
   const userId = await getUserId()
 
@@ -56,7 +59,10 @@ export async function deleteArchiveAction(id: string) {
   await archiveRepository.deleteArchive(id)
 }
 
-export async function addItemToArchiveAction(archiveId: string, itemId: string) {
+export async function addItemToArchiveAction(
+  archiveId: string,
+  itemId: string
+) {
   const userId = await getUserId()
 
   // Check if user owns the archive
@@ -68,7 +74,10 @@ export async function addItemToArchiveAction(archiveId: string, itemId: string) 
   return await archiveRepository.addItemToArchive(archiveId, itemId, userId)
 }
 
-export async function removeItemFromArchiveAction(archiveId: string, itemId: string) {
+export async function removeItemFromArchiveAction(
+  archiveId: string,
+  itemId: string
+) {
   const userId = await getUserId()
 
   // Check if user owns the archive

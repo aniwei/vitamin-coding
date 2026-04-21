@@ -32,16 +32,22 @@ export type ArchiveWithItemCount = Archive & {
 }
 
 export type ArchiveRepository = {
-  createArchive(archive: Omit<Archive, 'id' | 'createdAt' | 'updatedAt'>): Promise<Archive>
+  createArchive(
+    archive: Omit<Archive, 'id' | 'createdAt' | 'updatedAt'>
+  ): Promise<Archive>
   getArchivesByUserId(userId: string): Promise<ArchiveWithItemCount[]>
   getArchiveById(id: string): Promise<Archive | null>
   updateArchive(
     id: string,
-    archive: Partial<Omit<Archive, 'id' | 'createdAt' | 'updatedAt'>>,
+    archive: Partial<Omit<Archive, 'id' | 'createdAt' | 'updatedAt'>>
   ): Promise<Archive>
   deleteArchive(id: string): Promise<void>
 
-  addItemToArchive(archiveId: string, itemId: string, userId: string): Promise<ArchiveItem>
+  addItemToArchive(
+    archiveId: string,
+    itemId: string,
+    userId: string
+  ): Promise<ArchiveItem>
   removeItemFromArchive(archiveId: string, itemId: string): Promise<void>
   getArchiveItems(archiveId: string): Promise<ArchiveItem[]>
   getItemArchives(itemId: string, userId: string): Promise<Archive[]>

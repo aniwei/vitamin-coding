@@ -14,7 +14,8 @@ export default function equal(a: any, b: any): boolean {
     }
 
     // Handle Date
-    if (a instanceof Date) return b instanceof Date && a.getTime() === b.getTime()
+    if (a instanceof Date)
+      return b instanceof Date && a.getTime() === b.getTime()
 
     // Handle RegExp
     if (a instanceof RegExp)

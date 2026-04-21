@@ -14,7 +14,11 @@ import type {
   UploadUrl,
   UploadUrlOptions,
 } from './file-storage.interface'
-import { resolveStoragePrefix, sanitizeFilename, toBuffer } from './storage-utils'
+import {
+  resolveStoragePrefix,
+  sanitizeFilename,
+  toBuffer,
+} from './storage-utils'
 import { FileNotFoundError } from 'lib/errors'
 import { generateUUID } from 'lib/utils'
 
@@ -38,7 +42,7 @@ const buildPublicUrl = (
   key: string,
   publicBaseUrl?: string,
   endpoint?: string,
-  forcePathStyle?: boolean,
+  forcePathStyle?: boolean
 ) => {
   if (publicBaseUrl) {
     return `${publicBaseUrl.replace(/\/$/, '')}/${encodeURI(key)}`
@@ -61,11 +65,19 @@ const buildPublicUrl = (
 }
 
 export const createS3FileStorage = (): FileStorage => {
-  const bucket = required('FILE_STORAGE_S3_BUCKET', process.env.FILE_STORAGE_S3_BUCKET)
+  const bucket = required(
+    'FILE_STORAGE_S3_BUCKET',
+    process.env.FILE_STORAGE_S3_BUCKET
+  )
   const region = process.env.FILE_STORAGE_S3_REGION || process.env.AWS_REGION
-  if (!region) throw new Error('Missing required env: FILE_STORAGE_S3_REGION or AWS_REGION')
+  if (!region)
+    throw new Error(
+      'Missing required env: FILE_STORAGE_S3_REGION or AWS_REGION'
+    )
   const endpoint = process.env.FILE_STORAGE_S3_ENDPOINT
-  const forcePathStyle = /^1|true$/i.test(process.env.FILE_STORAGE_S3_FORCE_PATH_STYLE || '')
+  const forcePathStyle = /^1|true$/i.test(
+    process.env.FILE_STORAGE_S3_FORCE_PATH_STYLE || ''
+  )
   const publicBaseUrl = process.env.FILE_STORAGE_S3_PUBLIC_BASE_URL
 
   const s3 = new S3Client({
@@ -87,7 +99,7 @@ export const createS3FileStorage = (): FileStorage => {
           Body: buffer,
           ContentType: options.contentType,
           ACL: undefined, // rely on bucket policy for public/private
-        }),
+        })
       )
 
       const metadata: FileMetadata = {
@@ -98,19 +110,31 @@ export const createS3FileStorage = (): FileStorage => {
         uploadedAt: new Date(),
       }
 
-      const sourceUrl = buildPublicUrl(bucket, region, key, publicBaseUrl, endpoint, forcePathStyle)
+      const sourceUrl = buildPublicUrl(
+        bucket,
+        region,
+        key,
+        publicBaseUrl,
+        endpoint,
+        forcePathStyle
+      )
 
       return { key, sourceUrl, metadata }
     },
 
-    async createUploadUrl(options: UploadUrlOptions): Promise<UploadUrl | null> {
+    async createUploadUrl(
+      options: UploadUrlOptions
+    ): Promise<UploadUrl | null> {
       const key = buildKey(options.filename)
       const command = new PutObjectCommand({
         Bucket: bucket,
         Key: key,
         ContentType: options.contentType,
       })
-      const expires = Math.max(60, Math.min(60 * 60 * 12, options.expiresInSeconds ?? 900))
+      const expires = Math.max(
+        60,
+        Math.min(60 * 60 * 12, options.expiresInSeconds ?? 900)
+      )
       const url = await getSignedUrl(s3, command, { expiresIn: expires })
       return {
         key,
@@ -123,13 +147,17 @@ export const createS3FileStorage = (): FileStorage => {
 
     async download(key) {
       try {
-        const res = await s3.send(new GetObjectCommand({ Bucket: bucket, Key: key }))
+        const res = await s3.send(
+          new GetObjectCommand({ Bucket: bucket, Key: key })
+        )
         const body = res.Body
         if (!body) throw new FileNotFoundError(key)
         const stream = body as unknown as NodeJS.ReadableStream
         const chunks: Buffer[] = []
         await new Promise<void>((resolve, reject) => {
-          stream.on('data', (c) => chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c)))
+          stream.on('data', (c) =>
+            chunks.push(Buffer.isBuffer(c) ? c : Buffer.from(c))
+          )
           stream.once('end', () => resolve())
           stream.once('error', (e) => reject(e))
         })
@@ -158,7 +186,9 @@ export const createS3FileStorage = (): FileStorage => {
 
     async getMetadata(key) {
       try {
-        const res = await s3.send(new HeadObjectCommand({ Bucket: bucket, Key: key }))
+        const res = await s3.send(
+          new HeadObjectCommand({ Bucket: bucket, Key: key })
+        )
         return {
           key,
           filename: path.posix.basename(key),
@@ -173,7 +203,14 @@ export const createS3FileStorage = (): FileStorage => {
     },
 
     async getSourceUrl(key) {
-      return buildPublicUrl(bucket, region, key, publicBaseUrl, endpoint, forcePathStyle)
+      return buildPublicUrl(
+        bucket,
+        region,
+        key,
+        publicBaseUrl,
+        endpoint,
+        forcePathStyle
+      )
     },
 
     async getDownloadUrl(key) {

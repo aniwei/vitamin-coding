@@ -11,14 +11,25 @@ import {
   OutputSchemaSourceKey,
 } from '../workflow.interface'
 import { WorkflowRuntimeState } from './graph-store'
-import { convertToModelMessages, generateObject, generateText, UIMessage } from 'ai'
+import {
+  convertToModelMessages,
+  generateObject,
+  generateText,
+  UIMessage,
+} from 'ai'
 import { checkConditionBranch } from '../condition'
-import { convertTiptapJsonToAiMessage, convertTiptapJsonToText } from '../shared.workflow'
+import {
+  convertTiptapJsonToAiMessage,
+  convertTiptapJsonToText,
+} from '../shared.workflow'
 import { jsonSchemaToZod } from 'lib/json-schema-to-zod'
 import { toAny } from 'lib/utils'
 import { AppError } from 'lib/errors'
 import { DefaultToolName } from 'lib/ai/tools'
-import { exaSearchToolForWorkflow, exaContentsToolForWorkflow } from 'lib/ai/tools/web/web-search'
+import {
+  exaSearchToolForWorkflow,
+  exaContentsToolForWorkflow,
+} from 'lib/ai/tools/web/web-search'
 import { mcpClientsManager } from 'lib/ai/mcp/mcp-manager'
 
 /**
@@ -56,7 +67,10 @@ export const inputNodeExecutor: NodeExecutor<InputNodeData> = ({ state }) => {
  * Exit point of the workflow - collects data from specified source nodes
  * and combines them into the final workflow result
  */
-export const outputNodeExecutor: NodeExecutor<OutputNodeData> = ({ node, state }) => {
+export const outputNodeExecutor: NodeExecutor<OutputNodeData> = ({
+  node,
+  state,
+}) => {
   return {
     output: node.outputData.reduce((acc, cur) => {
       // Collect data from each configured source node
@@ -73,7 +87,10 @@ export const outputNodeExecutor: NodeExecutor<OutputNodeData> = ({ node, state }
  * - References to previous node outputs via mentions
  * - Configurable model selection
  */
-export const llmNodeExecutor: NodeExecutor<LLMNodeData> = async ({ node, state }) => {
+export const llmNodeExecutor: NodeExecutor<LLMNodeData> = async ({
+  node,
+  state,
+}) => {
   const model = customModelProvider.getModel(node.model)
 
   // Convert TipTap JSON messages to AI SDK format, resolving mentions to actual data
@@ -82,7 +99,7 @@ export const llmNodeExecutor: NodeExecutor<LLMNodeData> = async ({ node, state }
       role: message.role,
       getOutput: state.getOutput, // Provides access to previous node outputs
       json: message.content,
-    }),
+    })
   )
 
   const isTextResponse = node.outputSchema.properties?.answer?.type === 'string'
@@ -126,7 +143,10 @@ export const llmNodeExecutor: NodeExecutor<LLMNodeData> = async ({ node, state }
  * Evaluates conditional logic and determines which branch(es) to execute next.
  * Supports if-elseIf-else structure with AND/OR logical operators.
  */
-export const conditionNodeExecutor: NodeExecutor<ConditionNodeData> = async ({ node, state }) => {
+export const conditionNodeExecutor: NodeExecutor<ConditionNodeData> = async ({
+  node,
+  state,
+}) => {
   // Evaluate conditions in order: if, then elseIf branches, finally else
   const okBranch =
     [node.branches.if, ...(node.branches.elseIf || [])].find((branch) => {
@@ -135,7 +155,10 @@ export const conditionNodeExecutor: NodeExecutor<ConditionNodeData> = async ({ n
 
   // Find the target nodes for the selected branch
   const nextNodes = state.edges
-    .filter((edge) => edge.uiConfig.sourceHandle === okBranch.id && edge.source == node.id)
+    .filter(
+      (edge) =>
+        edge.uiConfig.sourceHandle === okBranch.id && edge.source == node.id
+    )
     .map((edge) => state.nodes.find((node) => node.id === edge.target)!)
     .filter(Boolean)
 
@@ -157,7 +180,10 @@ export const conditionNodeExecutor: NodeExecutor<ConditionNodeData> = async ({ n
  * 2. Execute the tool with generated or empty parameters
  * 3. Return the tool execution result
  */
-export const toolNodeExecutor: NodeExecutor<ToolNodeData> = async ({ node, state }) => {
+export const toolNodeExecutor: NodeExecutor<ToolNodeData> = async ({
+  node,
+  state,
+}) => {
   const result: {
     input: any
     output: any
@@ -182,7 +208,7 @@ export const toolNodeExecutor: NodeExecutor<ToolNodeData> = async ({ node, state
             role: 'user',
             getOutput: state.getOutput, // Access to previous node outputs
             json: node.message,
-          }),
+          })
         ).parts[0]?.text
       : undefined
 
@@ -209,11 +235,13 @@ export const toolNodeExecutor: NodeExecutor<ToolNodeData> = async ({ node, state
     const toolResult = (await mcpClientsManager.toolCall(
       node.tool.serverId,
       node.tool.id,
-      result.input.parameter,
+      result.input.parameter
     )) as any
     if (toolResult.isError) {
       throw new Error(
-        toolResult.error?.message || toolResult.error?.name || JSON.stringify(toolResult),
+        toolResult.error?.message ||
+          toolResult.error?.name ||
+          JSON.stringify(toolResult)
       )
     }
     result.output = {
@@ -252,7 +280,7 @@ export const toolNodeExecutor: NodeExecutor<ToolNodeData> = async ({ node, state
  */
 function resolveHttpValue(
   value: string | OutputSchemaSourceKey | undefined,
-  getOutput: WorkflowRuntimeState['getOutput'],
+  getOutput: WorkflowRuntimeState['getOutput']
 ): string {
   if (value === undefined) return ''
 
@@ -280,7 +308,10 @@ function resolveHttpValue(
  * - Configurable timeout
  * - Comprehensive response data including status, headers, and body
  */
-export const httpNodeExecutor: NodeExecutor<HttpNodeData> = async ({ node, state }) => {
+export const httpNodeExecutor: NodeExecutor<HttpNodeData> = async ({
+  node,
+  state,
+}) => {
   // Default timeout of 30 seconds
   const timeout = node.timeout || 30000
 
@@ -450,7 +481,10 @@ export const httpNodeExecutor: NodeExecutor<HttpNodeData> = async ({ node, state
  * - Support for mentions in template content
  * - Simple text output for easy consumption by other nodes
  */
-export const templateNodeExecutor: NodeExecutor<TemplateNodeData> = ({ node, state }) => {
+export const templateNodeExecutor: NodeExecutor<TemplateNodeData> = ({
+  node,
+  state,
+}) => {
   let text: string = ''
   // Convert TipTap template content to text with variable substitution
   if (node.template.type == 'tiptap') {

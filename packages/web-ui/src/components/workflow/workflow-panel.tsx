@@ -25,7 +25,7 @@ import { handleErrorWithToast } from 'ui/shared-toast'
 import { mutate } from 'swr'
 import { allNodeValidate } from 'lib/ai/workflow/node-validate'
 import { toast } from 'sonner'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { arrangeNodes } from 'lib/ai/workflow/arrange-nodes'
 import { EditWorkflowPopup } from './edit-workflow-popup'
 
@@ -73,7 +73,7 @@ export const WorkflowPanel = memo(
             }),
           }).then((res) => {
             if (res.status != 200) throw new Error(res.statusText)
-          }),
+          })
         )
           .ifOk(() => mutate(`/api/workflow/${workflow.id}`))
           .ifFail((e) => handleErrorWithToast(e))
@@ -82,7 +82,7 @@ export const WorkflowPanel = memo(
             close()
           })
       },
-      [workflow],
+      [workflow]
     )
 
     const updatePublished = useCallback(
@@ -122,13 +122,13 @@ export const WorkflowPanel = memo(
               }),
             }).then((res) => {
               if (res.status != 200) throw new Error(res.statusText)
-            }),
+            })
           )
           .ifOk(() => mutate(`/api/workflow/${workflow.id}`))
           .ifFail((e) => handleErrorWithToast(e))
           .watch(close)
       },
-      [workflow],
+      [workflow]
     )
 
     const handleWorkflowMasterSave = useCallback((workflow: DBWorkflow) => {
@@ -137,8 +137,8 @@ export const WorkflowPanel = memo(
     }, [])
 
     return (
-      <div className='min-h-0 flex flex-col items-end'>
-        <div className='flex items-center gap-2 mb-2'>
+      <div className="min-h-0 flex flex-col items-end">
+        <div className="flex items-center gap-2 mb-2">
           <Tooltip>
             <TooltipTrigger asChild>
               <div
@@ -146,41 +146,41 @@ export const WorkflowPanel = memo(
                   backgroundColor: workflow.icon?.style?.backgroundColor,
                 }}
                 onClick={() => setIsEditing(true)}
-                className='border transition-colors hover:bg-secondary! group items-center justify-center flex w-8 h-8 rounded-md ring ring-background hover:ring-ring'
+                className="border transition-colors hover:bg-secondary! group items-center justify-center flex w-8 h-8 rounded-md ring ring-background hover:ring-ring"
               >
-                <Avatar className='size-6'>
+                <Avatar className="size-6">
                   <AvatarImage
                     src={workflow.icon?.value}
-                    className='group-hover:scale-110  transition-transform'
+                    className="group-hover:scale-110  transition-transform"
                   />
                   <AvatarFallback></AvatarFallback>
                 </Avatar>
               </div>
             </TooltipTrigger>
-            <TooltipContent side='bottom'>
+            <TooltipContent side="bottom">
               <p>{workflow?.name}</p>
             </TooltipContent>
           </Tooltip>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant='secondary'
-                size='icon'
+                variant="secondary"
+                size="icon"
                 disabled={isProcessing || !hasEditAccess}
                 onClick={handleArrangeNodes}
               >
-                <AlignHorizontalSpaceAround className='size-4' />
+                <AlignHorizontalSpaceAround className="size-4" />
               </Button>
             </TooltipTrigger>
-            <TooltipContent side='bottom'>
+            <TooltipContent side="bottom">
               <p>{t('Workflow.arrangeNodes')}</p>
             </TooltipContent>
           </Tooltip>
-          <div className='h-6'>
-            <Separator orientation='vertical' />
+          <div className="h-6">
+            <Separator orientation="vertical" />
           </div>
           <Button
-            variant='secondary'
+            variant="secondary"
             disabled={isProcessing}
             onClick={() => {
               setNodes((nds) => {
@@ -204,16 +204,22 @@ export const WorkflowPanel = memo(
                 <Button
                   disabled={isProcessing || !hasEditAccess}
                   onClick={onSave}
-                  variant='default'
+                  variant="default"
                 >
-                  {isProcessing ? <Loader className='size-3.5 animate-spin' /> : t('Common.save')}
+                  {isProcessing ? (
+                    <Loader className="size-3.5 animate-spin" />
+                  ) : (
+                    t('Common.save')
+                  )}
                 </Button>
               </TooltipTrigger>
-              <TooltipContent side='bottom'>{t('Workflow.autoSaveDescription')}</TooltipContent>
+              <TooltipContent side="bottom">
+                {t('Workflow.autoSaveDescription')}
+              </TooltipContent>
             </Tooltip>
           )}
-          <div className='h-6'>
-            <Separator orientation='vertical' />
+          <div className="h-6">
+            <Separator orientation="vertical" />
           </div>
           <Tooltip>
             <TooltipTrigger asChild>
@@ -221,13 +227,15 @@ export const WorkflowPanel = memo(
                 variant={'secondary'}
                 disabled={isProcessing || !hasEditAccess}
                 onClick={() => updatePublished(!workflow.isPublished)}
-                className='w-20'
+                className="w-20"
               >
-                {workflow.isPublished ? t('Common.edit') : t('Workflow.publish')}
+                {workflow.isPublished
+                  ? t('Common.edit')
+                  : t('Workflow.publish')}
               </Button>
             </TooltipTrigger>
-            <TooltipContent side='bottom' align='end' className='w-60 text-sm'>
-              <p className='whitespace-pre-wrap break-words p-4'>
+            <TooltipContent side="bottom" align="end" className="w-60 text-sm">
+              <p className="whitespace-pre-wrap break-words p-4">
                 {workflow.isPublished
                   ? t('Workflow.publishedDescription')
                   : t('Workflow.draftDescription')}
@@ -235,14 +243,14 @@ export const WorkflowPanel = memo(
             </TooltipContent>
           </Tooltip>
           <ShareableActions
-            type='workflow'
+            type="workflow"
             visibility={workflow.visibility}
             isOwner={hasEditAccess || false}
             onVisibilityChange={hasEditAccess ? updateVisibility : undefined}
             isVisibilityChangeLoading={isSaving}
           />
         </div>
-        <div className='flex gap-2'>
+        <div className="flex gap-2">
           {selectedNode && <SelectedNodeConfigTab node={selectedNode} />}
           {showExecutePanel && (
             <ExecuteTab
@@ -279,5 +287,5 @@ export const WorkflowPanel = memo(
 
     if (!equal(prev.workflow, next.workflow)) return false
     return true
-  },
+  }
 )

@@ -7,6 +7,8 @@ export async function selectExecuteAbilityWorkflowsAction() {
   if (!session) {
     return []
   }
-  const workflows = await workflowRepository.selectExecuteAbility(session.user.id)
+  const workflows = await workflowRepository.selectExecuteAbility(
+    session.user.id
+  )
   return workflows
 }

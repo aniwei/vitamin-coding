@@ -69,7 +69,8 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
         console.error('Mermaid rendering error:', err)
         setState({
           svg: '',
-          error: err instanceof Error ? err.message : 'Failed to render diagram',
+          error:
+            err instanceof Error ? err.message : 'Failed to render diagram',
           loading: false,
         })
       }
@@ -82,10 +83,10 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
 
   if (state.loading) {
     return (
-      <div className='px-6 overflow-auto'>
-        <div className='flex items-center justify-center h-20 w-full'>
-          <div className='text-muted-foreground flex items-center gap-2'>
-            Rendering diagram <Loader className='size-4 animate-spin' />
+      <div className="px-6 overflow-auto">
+        <div className="flex items-center justify-center h-20 w-full">
+          <div className="text-muted-foreground flex items-center gap-2">
+            Rendering diagram <Loader className="size-4 animate-spin" />
           </div>
         </div>
       </div>
@@ -94,13 +95,13 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
 
   if (state.error) {
     return (
-      <div className='px-6 pb-6 overflow-auto'>
-        <div className='text-destructive p-4'>
+      <div className="px-6 pb-6 overflow-auto">
+        <div className="text-destructive p-4">
           <p>Error rendering Mermaid diagram:</p>
-          <pre className='mt-2 p-2 bg-destructive/10 dark:bg-destructive/20 rounded text-xs overflow-auto'>
+          <pre className="mt-2 p-2 bg-destructive/10 dark:bg-destructive/20 rounded text-xs overflow-auto">
             {state.error}
           </pre>
-          <pre className='mt-2 p-2 bg-accent/10 dark:bg-accent/20 rounded text-xs overflow-auto'>
+          <pre className="mt-2 p-2 bg-accent/10 dark:bg-accent/20 rounded text-xs overflow-auto">
             {chart}
           </pre>
         </div>
@@ -109,10 +110,10 @@ export function MermaidDiagram({ chart }: MermaidDiagramProps) {
   }
 
   return (
-    <div className='px-6 pb-6 overflow-auto'>
+    <div className="px-6 pb-6 overflow-auto">
       <div
         ref={containerRef}
-        className='flex justify-center transition-opacity duration-200 overflow-auto'
+        className="flex justify-center transition-opacity duration-200 overflow-auto"
         dangerouslySetInnerHTML={{ __html: state.svg }}
       />
     </div>

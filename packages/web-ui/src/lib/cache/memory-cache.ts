@@ -61,6 +61,7 @@ export class MemoryCache implements Cache {
 
   private sweep() {
     const now = Date.now()
-    for (const [k, { expiresAt }] of this.store) if (now > expiresAt) this.store.delete(k)
+    for (const [k, { expiresAt }] of this.store)
+      if (now > expiresAt) this.store.delete(k)
   }
 }

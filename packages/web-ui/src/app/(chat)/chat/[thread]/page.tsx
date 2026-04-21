@@ -5,12 +5,16 @@ import { ChatMessage, ChatThread } from 'app-types/chat'
 import { redirect, RedirectType } from 'next/navigation'
 
 const fetchThread = async (
-  threadId: string,
+  threadId: string
 ): Promise<(ChatThread & { messages: ChatMessage[] }) | null> => {
   return await selectThreadWithMessagesAction(threadId)
 }
 
-export default async function Page({ params }: { params: Promise<{ thread: string }> }) {
+export default async function Page({
+  params,
+}: {
+  params: Promise<{ thread: string }>
+}) {
   const { thread: threadId } = await params
 
   const thread = await fetchThread(threadId)

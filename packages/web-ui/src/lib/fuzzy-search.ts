@@ -16,7 +16,10 @@ export interface ScoredItem<T extends SearchItem> {
  * Performs a fuzzy search on items based on a query string
  * Normalizes text, removes special characters, and calculates similarity scores
  */
-export function fuzzySearch<T extends SearchItem>(items: T[], query: string): T[] {
+export function fuzzySearch<T extends SearchItem>(
+  items: T[],
+  query: string
+): T[] {
   if (!query.trim()) return items
 
   const normalizedQuery = query.toLowerCase().replace(/[^\w]/g, '') // Remove special characters and spaces

@@ -1,5 +1,11 @@
 import Link from 'next/link'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from 'ui/card'
 import LightRays from 'ui/light-rays'
 
 const convertErrorToMessage = (error: string) => {
@@ -21,17 +27,22 @@ export default async function ErrorPage({
   const { error } = await searchParams
 
   return (
-    <div className='w-full h-screen flex items-center justify-center relative'>
-      <div className='absolute inset-0 w-full h-full'>
+    <div className="w-full h-screen flex items-center justify-center relative">
+      <div className="absolute inset-0 w-full h-full">
         <LightRays />
       </div>
-      <Card className='w-sm z-10'>
+      <Card className="w-sm z-10">
         <CardHeader>
-          <CardTitle className='flex items-center gap-2'>Auth Error</CardTitle>
-          <CardDescription>{convertErrorToMessage(error ?? 'Unknown error')}</CardDescription>
+          <CardTitle className="flex items-center gap-2">Auth Error</CardTitle>
+          <CardDescription>
+            {convertErrorToMessage(error ?? 'Unknown error')}
+          </CardDescription>
         </CardHeader>
-        <CardContent className='flex justify-center'>
-          <Link className='text-sm text-muted-foreground text-center underline' href='/'>
+        <CardContent className="flex justify-center">
+          <Link
+            className="text-sm text-muted-foreground text-center underline"
+            href="/"
+          >
             Go to home
           </Link>
         </CardContent>

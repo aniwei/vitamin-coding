@@ -10,14 +10,16 @@ export const createTableTool = createTool({
     columns: z
       .array(
         z.object({
-          key: z.string().describe('Column key that matches the data object keys'),
+          key: z
+            .string()
+            .describe('Column key that matches the data object keys'),
           label: z.string().describe('Display label for the column header'),
           type: z
             .enum(['string', 'number', 'date', 'boolean'])
             .nullable()
             .default('string')
             .describe('Data type for proper sorting and formatting'),
-        }),
+        })
       )
       .describe('Column configuration array'),
     data: z
@@ -26,10 +28,12 @@ export const createTableTool = createTool({
           .object({})
           .catchall(z.any())
           .describe(
-            'Array of row objects. Each object should have keys matching the column names.',
-          ),
+            'Array of row objects. Each object should have keys matching the column names.'
+          )
       )
-      .describe('Array of row objects. Each object should have keys matching the column names.'),
+      .describe(
+        'Array of row objects. Each object should have keys matching the column names.'
+      ),
   }),
   execute: async () => {
     return 'Success'

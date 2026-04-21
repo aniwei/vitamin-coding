@@ -5,7 +5,10 @@ import { getSession } from 'auth/server'
 import { canManageMCPServer } from 'lib/auth/permissions'
 import logger from 'lib/logger'
 
-export async function DELETE(_request: NextRequest, props: { params: Promise<{ id: string }> }) {
+export async function DELETE(
+  _request: NextRequest,
+  props: { params: Promise<{ id: string }> }
+) {
   const params = await props.params
 
   try {
@@ -15,9 +18,15 @@ export async function DELETE(_request: NextRequest, props: { params: Promise<{ i
     }
     const mcpServer = await pgMcpRepository.selectById(params.id)
     if (!mcpServer) {
-      return NextResponse.json({ error: 'MCP server not found' }, { status: 404 })
+      return NextResponse.json(
+        { error: 'MCP server not found' },
+        { status: 404 }
+      )
     }
-    const canManage = await canManageMCPServer(mcpServer.userId, mcpServer.visibility)
+    const canManage = await canManageMCPServer(
+      mcpServer.userId,
+      mcpServer.visibility
+    )
     if (!canManage) {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 403 })
     }
@@ -29,11 +38,17 @@ export async function DELETE(_request: NextRequest, props: { params: Promise<{ i
     logger.error('Failed to delete MCP server:', error)
     return NextResponse.json(
       {
-        error: error instanceof Error ? error.message : 'Failed to delete MCP server',
+        error:
+          error instanceof Error
+            ? error.message
+            : 'Failed to delete MCP server',
       },
       {
-        status: error instanceof Error && error.message.includes('permission') ? 403 : 500,
-      },
+        status:
+          error instanceof Error && error.message.includes('permission')
+            ? 403
+            : 500,
+      }
     )
   }
 }

@@ -1,10 +1,18 @@
 'use client'
 
 import { useState, useCallback, useRef, useEffect } from 'react'
-import { DEFAULT_VOICE_TOOLS, UIMessageWithCompleted, VoiceChatOptions, VoiceChatSession } from '..'
+import {
+  DEFAULT_VOICE_TOOLS,
+  UIMessageWithCompleted,
+  VoiceChatOptions,
+  VoiceChatSession,
+} from '..'
 import { generateUUID } from 'lib/utils'
 import { TextPart, ToolUIPart } from 'ai'
-import { OpenAIRealtimeServerEvent, OpenAIRealtimeSession } from './openai-realtime-event'
+import {
+  OpenAIRealtimeServerEvent,
+  OpenAIRealtimeSession,
+} from './openai-realtime-event'
 
 import { useTheme } from 'next-themes'
 import { extractMCPToolId } from 'lib/ai/mcp/mcp-tool-id'
@@ -69,7 +77,8 @@ const createUIMessage = (m: {
 }
 
 export function useOpenAIVoiceChat(props?: VoiceChatOptions): VoiceChatSession {
-  const { model = 'gpt-4o-realtime-preview', voice = OPENAI_VOICE.Ash } = props || {}
+  const { model = 'gpt-4o-realtime-preview', voice = OPENAI_VOICE.Ash } =
+    props || {}
 
   const [isUserSpeaking, setIsUserSpeaking] = useState(false)
   const [isAssistantSpeaking, setIsAssistantSpeaking] = useState(false)
@@ -123,49 +132,53 @@ export function useOpenAIVoiceChat(props?: VoiceChatOptions): VoiceChatSession {
     }
   }, [])
 
-  const createSession = useCallback(async (): Promise<OpenAIRealtimeSession> => {
-    const response = await fetch(`/api/chat/openai-realtime?model=${model}&voice=${voice}`, {
-      method: 'POST',
-      headers: {
-        'Content-Type': 'application/json',
-      },
-      body: JSON.stringify({
-        model,
-        voice,
-        agentId: props?.agentId,
-        mentions: props?.toolMentions,
-      }),
-    })
-    if (response.status !== 200) {
-      throw new Error(await response.text())
-    }
-    const session = await response.json()
-    if (session.error) {
-      throw new Error(session.error.message)
-    }
+  const createSession =
+    useCallback(async (): Promise<OpenAIRealtimeSession> => {
+      const response = await fetch(
+        `/api/chat/openai-realtime?model=${model}&voice=${voice}`,
+        {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/json',
+          },
+          body: JSON.stringify({
+            model,
+            voice,
+            mentions: props?.toolMentions,
+          }),
+        }
+      )
+      if (response.status !== 200) {
+        throw new Error(await response.text())
+      }
+      const session = await response.json()
+      if (session.error) {
+        throw new Error(session.error.message)
+      }
 
-    return session
-  }, [model, voice, props?.toolMentions, props?.agentId])
+      return session
+    }, [model, voice, props?.toolMentions])
 
   const updateUIMessage = useCallback(
     (
       id: string,
       action:
         | Partial<UIMessageWithCompleted>
-        | ((message: UIMessageWithCompleted) => Partial<UIMessageWithCompleted>),
+        | ((message: UIMessageWithCompleted) => Partial<UIMessageWithCompleted>)
     ) => {
       setMessages((prev) => {
         if (prev.length) {
           const lastMessage = prev.find((m) => m.id == id)
           if (!lastMessage) return prev
-          const nextMessage = typeof action === 'function' ? action(lastMessage) : action
+          const nextMessage =
+            typeof action === 'function' ? action(lastMessage) : action
           if (lastMessage == nextMessage) return prev
           return prev.map((m) => (m.id == id ? { ...m, ...nextMessage } : m))
         }
         return prev
       })
     },
-    [],
+    []
   )
 
   const clientFunctionCall = useCallback(
@@ -195,7 +208,6 @@ export function useOpenAIVoiceChat(props?: VoiceChatOptions): VoiceChatSession {
             appStore.setState((prev) => ({
               voiceChat: {
                 ...prev.voiceChat,
-                agentId: undefined,
                 isOpen: false,
               },
             }))
@@ -207,7 +219,7 @@ export function useOpenAIVoiceChat(props?: VoiceChatOptions): VoiceChatSession {
         toolResult = await callMcpToolByServerNameAction(
           toolId.serverName,
           toolId.toolName,
-          toolArgs,
+          toolArgs
         )
       }
       startListening()
@@ -241,7 +253,7 @@ export function useOpenAIVoiceChat(props?: VoiceChatOptions): VoiceChatSession {
       dataChannel.current?.send(JSON.stringify({ type: 'response.create' }))
       dataChannel.current?.send(JSON.stringify({ type: 'response.create' }))
     },
-    [updateUIMessage],
+    [updateUIMessage]
   )
 
   const handleServerEvent = useCallback(
@@ -296,11 +308,12 @@ export function useOpenAIVoiceChat(props?: VoiceChatOptions): VoiceChatSession {
                       parts: [
                         {
                           type: 'text',
-                          text: (message.parts[0] as TextPart).text! + event.delta,
+                          text:
+                            (message.parts[0] as TextPart).text! + event.delta,
                         },
                       ],
                     }
-                  : m,
+                  : m
               )
             }
             return [
@@ -362,7 +375,7 @@ export function useOpenAIVoiceChat(props?: VoiceChatOptions): VoiceChatSession {
         }
       }
     },
-    [clientFunctionCall, updateUIMessage],
+    [clientFunctionCall, updateUIMessage]
   )
 
   const start = useCallback(async () => {
@@ -420,7 +433,11 @@ export function useOpenAIVoiceChat(props?: VoiceChatOptions): VoiceChatSession {
       })
       dc.addEventListener('error', (errorEvent) => {
         console.error(errorEvent)
-        setError(errorEvent instanceof Error ? errorEvent : new Error(String(errorEvent)))
+        setError(
+          errorEvent instanceof Error
+            ? errorEvent
+            : new Error(String(errorEvent))
+        )
         setIsActive(false)
         setIsListening(false)
       })

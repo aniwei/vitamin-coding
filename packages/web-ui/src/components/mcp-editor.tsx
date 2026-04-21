@@ -1,6 +1,10 @@
 'use client'
 import { useState, useMemo } from 'react'
-import { MCPServerConfig, MCPRemoteConfigZodSchema, MCPStdioConfigZodSchema } from 'app-types/mcp'
+import {
+  MCPServerConfig,
+  MCPRemoteConfigZodSchema,
+  MCPStdioConfigZodSchema,
+} from 'app-types/mcp'
 import { Input } from './ui/input'
 import { Button } from './ui/button'
 import { Label } from './ui/label'
@@ -8,17 +12,20 @@ import { Textarea } from './ui/textarea'
 import JsonView from './ui/json-view'
 import { toast } from 'sonner'
 import { safe } from 'ts-safe'
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 import { createDebounce, fetcher, isNull, safeJSONParse } from 'lib/utils'
 import { handleErrorWithToast } from 'ui/shared-toast'
 import { mutate } from 'swr'
 import { Loader } from 'lucide-react'
-import { isMaybeMCPServerConfig, isMaybeRemoteConfig } from 'lib/ai/mcp/is-mcp-config'
+import {
+  isMaybeMCPServerConfig,
+  isMaybeRemoteConfig,
+} from 'lib/ai/mcp/is-mcp-config'
 
 import { Alert, AlertDescription, AlertTitle } from 'ui/alert'
 import { z } from 'zod'
-import { useTranslations } from '@/hooks/use-translations'
-import { existMcpClientByServerNameAction } from '@/lib/compat/server-actions/mcp'
+import { useTranslations } from 'next-intl'
+import { existMcpClientByServerNameAction } from '@/app/api/mcp/actions'
 
 interface MCPEditorProps {
   initialConfig?: MCPServerConfig
@@ -43,7 +50,11 @@ const STDIO_ARGS_ENV_PLACEHOLDER = `/** STDIO Example */
   }
 }`
 
-export default function MCPEditor({ initialConfig, name: initialName, id }: MCPEditorProps) {
+export default function MCPEditor({
+  initialConfig,
+  name: initialName,
+  id,
+}: MCPEditorProps) {
   const t = useTranslations()
   const shouldInsert = useMemo(() => isNull(id), [id])
 
@@ -55,10 +66,12 @@ export default function MCPEditor({ initialConfig, name: initialName, id }: MCPE
 
   // State for form fields
   const [name, setName] = useState<string>(initialName ?? '')
-  const navigate = useNavigate()
-  const [config, setConfig] = useState<MCPServerConfig>(initialConfig as MCPServerConfig)
+  const router = useRouter()
+  const [config, setConfig] = useState<MCPServerConfig>(
+    initialConfig as MCPServerConfig
+  )
   const [jsonString, setJsonString] = useState<string>(
-    initialConfig ? JSON.stringify(initialConfig, null, 2) : '',
+    initialConfig ? JSON.stringify(initialConfig, null, 2) : ''
   )
 
   // Name validation schema
@@ -102,13 +115,16 @@ export default function MCPEditor({ initialConfig, name: initialName, id }: MCPE
     // Perform validation
     if (!validateConfig(config)) return
     if (!name) {
-      return handleErrorWithToast(new Error(t('MCP.nameIsRequired')), 'mcp-editor-error')
+      return handleErrorWithToast(
+        new Error(t('MCP.nameIsRequired')),
+        'mcp-editor-error'
+      )
     }
 
     if (!validateName(name)) {
       return handleErrorWithToast(
         new Error(t('MCP.nameMustContainOnlyAlphanumericCharactersAndHyphens')),
-        'mcp-editor-error',
+        'mcp-editor-error'
       )
     }
 
@@ -129,12 +145,12 @@ export default function MCPEditor({ initialConfig, name: initialName, id }: MCPE
             config,
             id,
           }),
-        }),
+        })
       )
       .ifOk(() => {
         toast.success(t('MCP.configurationSavedSuccessfully'))
         mutate('/api/mcp/list')
-        navigate('/mcp')
+        router.push('/mcp')
       })
       .ifFail(handleErrorWithToast)
       .watch(() => setIsLoading(false))
@@ -149,20 +165,23 @@ export default function MCPEditor({ initialConfig, name: initialName, id }: MCPE
       setJsonError(null)
     } else if (data.trim() !== '') {
       errorDebounce(() => {
-        setJsonError((result.error as Error)?.message ?? JSON.stringify(result.error, null, 2))
+        setJsonError(
+          (result.error as Error)?.message ??
+            JSON.stringify(result.error, null, 2)
+        )
       }, 1000)
     }
   }
 
   return (
     <>
-      <div className='flex flex-col space-y-6'>
+      <div className="flex flex-col space-y-6">
         {/* Name field */}
-        <div className='space-y-2'>
-          <Label htmlFor='name'>Name</Label>
+        <div className="space-y-2">
+          <Label htmlFor="name">Name</Label>
 
           <Input
-            id='name'
+            id="name"
             value={name}
             disabled={!shouldInsert}
             onChange={(e) => {
@@ -172,39 +191,50 @@ export default function MCPEditor({ initialConfig, name: initialName, id }: MCPE
             placeholder={t('MCP.enterMcpServerName')}
             className={nameError ? 'border-destructive' : ''}
           />
-          {nameError && <p className='text-xs text-destructive'>{nameError}</p>}
+          {nameError && <p className="text-xs text-destructive">{nameError}</p>}
         </div>
-        <div className='space-y-4'>
-          <div className='space-y-2'>
-            <Label htmlFor='config'>Config</Label>
+        <div className="space-y-4">
+          <div className="space-y-2">
+            <Label htmlFor="config">Config</Label>
           </div>
 
           {/* Split view for config editor */}
-          <div className='grid grid-cols-1 sm:grid-cols-2 gap-4'>
+          <div className="grid grid-cols-1 sm:grid-cols-2 gap-4">
             {/* Left side: Textarea for editing */}
-            <div className='space-y-2'>
+            <div className="space-y-2">
               <Textarea
-                id='config-editor'
+                id="config-editor"
                 value={jsonString}
                 onChange={(e) => handleConfigChange(e.target.value)}
-                data-testid='mcp-config-editor'
-                className='font-mono h-[40vh] resize-none overflow-y-auto'
+                data-testid="mcp-config-editor"
+                className="font-mono h-[40vh] resize-none overflow-y-auto"
                 placeholder={STDIO_ARGS_ENV_PLACEHOLDER}
               />
             </div>
 
             {/* Right side: JSON view */}
-            <div className='space-y-2 hidden sm:block'>
-              <div className='border border-input rounded-md p-4 h-[40vh] overflow-auto relative bg-secondary'>
-                <Label htmlFor='config-view' className='text-xs text-muted-foreground mb-2'>
+            <div className="space-y-2 hidden sm:block">
+              <div className="border border-input rounded-md p-4 h-[40vh] overflow-auto relative bg-secondary">
+                <Label
+                  htmlFor="config-view"
+                  className="text-xs text-muted-foreground mb-2"
+                >
                   preview
                 </Label>
-                <JsonView data={config} initialExpandDepth={3} data-testid='mcp-config-view' />
+                <JsonView
+                  data={config}
+                  initialExpandDepth={3}
+                  data-testid="mcp-config-view"
+                />
                 {jsonError && jsonString && (
-                  <div className='absolute w-full bottom-0 right-0 px-2 pb-2 animate-in fade-in-0 duration-300'>
-                    <Alert variant='destructive' className='border-destructive'>
-                      <AlertTitle className='text-xs font-semibold'>Parsing Error</AlertTitle>
-                      <AlertDescription className='text-xs'>{jsonError}</AlertDescription>
+                  <div className="absolute w-full bottom-0 right-0 px-2 pb-2 animate-in fade-in-0 duration-300">
+                    <Alert variant="destructive" className="border-destructive">
+                      <AlertTitle className="text-xs font-semibold">
+                        Parsing Error
+                      </AlertTitle>
+                      <AlertDescription className="text-xs">
+                        {jsonError}
+                      </AlertDescription>
                     </Alert>
                   </div>
                 )}
@@ -214,11 +244,11 @@ export default function MCPEditor({ initialConfig, name: initialName, id }: MCPE
         </div>
 
         {/* Save button */}
-        <Button onClick={handleSave} className='w-full' disabled={saveDisabled}>
+        <Button onClick={handleSave} className="w-full" disabled={saveDisabled}>
           {isLoading ? (
-            <Loader className='size-4 animate-spin' />
+            <Loader className="size-4 animate-spin" />
           ) : (
-            <span className='font-bold'>{t('MCP.saveConfiguration')}</span>
+            <span className="font-bold">{t('MCP.saveConfiguration')}</span>
           )}
         </Button>
       </div>

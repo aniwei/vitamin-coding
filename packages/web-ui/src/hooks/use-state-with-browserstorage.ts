@@ -4,7 +4,10 @@ import { getStorageManager } from 'lib/browser-stroage'
 import { isFunction } from 'lib/utils'
 import { Dispatch, SetStateAction, useCallback, useMemo, useState } from 'react'
 
-export const useStateWithBrowserStorage = <T>(key: string, fallbackValue?: T) => {
+export const useStateWithBrowserStorage = <T>(
+  key: string,
+  fallbackValue?: T
+) => {
   const storage = useMemo(() => getStorageManager<T>(key), [key])
   const [state, _setState] = useState<T>(storage.get(fallbackValue!))
 
@@ -14,7 +17,7 @@ export const useStateWithBrowserStorage = <T>(key: string, fallbackValue?: T) =>
       storage.set(nextValue)
       _setState(nextValue)
     },
-    [state],
+    [state]
   )
 
   return [state, setState] as const

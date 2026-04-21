@@ -31,25 +31,27 @@ export default function Page() {
   }, [searchParams])
 
   return (
-    <div className='container max-w-3xl mx-0 px-4 sm:mx-4 md:mx-auto py-8'>
-      <div className='flex flex-col gap-2'>
+    <div className="container max-w-3xl mx-0 px-4 sm:mx-4 md:mx-auto py-8">
+      <div className="flex flex-col gap-2">
         <Link
-          href='/mcp'
-          className='flex items-center gap-2 text-muted-foreground text-sm hover:text-foreground transition-colors mb-8'
+          href="/mcp"
+          className="flex items-center gap-2 text-muted-foreground text-sm hover:text-foreground transition-colors mb-8"
         >
-          <ArrowLeft className='size-3' />
+          <ArrowLeft className="size-3" />
           {t('Common.back')}
         </Link>
-        <header className='flex items-start justify-between gap-4'>
-          <div className='flex-1'>
-            <h2 className='text-3xl font-semibold my-2'>{t('MCP.mcpConfiguration')}</h2>
-            <p className='text text-muted-foreground'>
+        <header className="flex items-start justify-between gap-4">
+          <div className="flex-1">
+            <h2 className="text-3xl font-semibold my-2">
+              {t('MCP.mcpConfiguration')}
+            </h2>
+            <p className="text text-muted-foreground">
               {t('MCP.configureYourMcpServerConnectionSettings')}
             </p>
           </div>
         </header>
 
-        <main className='my-8'>
+        <main className="my-8">
           <MCPEditor
             key={`${initialName}-${JSON.stringify(initialConfig)}`}
             initialConfig={initialConfig}

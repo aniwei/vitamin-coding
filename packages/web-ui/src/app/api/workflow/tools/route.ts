@@ -6,6 +6,8 @@ export async function GET() {
   if (!session) {
     return Response.json([])
   }
-  const workflows = await workflowRepository.selectExecuteAbility(session.user.id)
+  const workflows = await workflowRepository.selectExecuteAbility(
+    session.user.id
+  )
   return Response.json(workflows)
 }

@@ -16,7 +16,9 @@ export default function CommentForm({
   parentId?: string
   onSubmit?: () => void
 }) {
-  const [content, setContent] = useState<TipTapMentionJsonContent | undefined | string>()
+  const [content, setContent] = useState<
+    TipTapMentionJsonContent | undefined | string
+  >()
   const [isSubmitting, setIsSubmitting] = useState(false)
   const { mutate } = useSWRConfig()
 
@@ -26,10 +28,12 @@ export default function CommentForm({
     try {
       setIsSubmitting(true)
 
-      const trimContent = (content as TipTapMentionJsonContent).content?.filter((item) => {
-        if (item.type == 'paragraph' && !item.content) return false
-        return true
-      })
+      const trimContent = (content as TipTapMentionJsonContent).content?.filter(
+        (item) => {
+          if (item.type == 'paragraph' && !item.content) return false
+          return true
+        }
+      )
 
       if ((content as TipTapMentionJsonContent).content) {
         ;(content as TipTapMentionJsonContent).content = trimContent
@@ -73,11 +77,11 @@ export default function CommentForm({
   }
 
   return (
-    <div className='flex gap-2 items-end w-full' data-testid='comment-form'>
-      <div className='flex-1 bg-secondary rounded-lg p-0.5'>
+    <div className="flex gap-2 items-end w-full" data-testid="comment-form">
+      <div className="flex-1 bg-secondary rounded-lg p-0.5">
         <MentionInput
-          className='text-sm'
-          placeholder='Write a comment...'
+          className="text-sm"
+          placeholder="Write a comment..."
           content={content}
           onChange={handleContentChange}
           onEnter={handleSubmit}
@@ -86,16 +90,16 @@ export default function CommentForm({
       </div>
 
       <Button
-        size='icon'
-        variant='ghost'
+        size="icon"
+        variant="ghost"
         onClick={handleSubmit}
         disabled={!content || isSubmitting}
-        data-testid='comment-submit'
+        data-testid="comment-submit"
       >
         {isSubmitting ? (
-          <LoaderIcon className='mr-1 animate-spin' />
+          <LoaderIcon className="mr-1 animate-spin" />
         ) : (
-          <SendIcon className='mr-1' />
+          <SendIcon className="mr-1" />
         )}
       </Button>
     </div>

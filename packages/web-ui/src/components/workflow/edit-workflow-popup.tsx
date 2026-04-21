@@ -18,7 +18,11 @@ import { useTheme } from 'next-themes'
 import { useObjectState } from '@/hooks/use-object-state'
 import { useState } from 'react'
 
-import { DropdownMenu, DropdownMenuContent, DropdownMenuTrigger } from 'ui/dropdown-menu'
+import {
+  DropdownMenu,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from 'ui/dropdown-menu'
 
 import { Avatar, AvatarFallback, AvatarImage } from 'ui/avatar'
 import { Loader } from 'lucide-react'
@@ -28,10 +32,10 @@ import { z } from 'zod'
 import { DBWorkflow, WorkflowIcon } from 'app-types/workflow'
 import { handleErrorWithToast } from 'ui/shared-toast'
 import { toast } from 'sonner'
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 import { cn, createDebounce } from 'lib/utils'
 import { mutate } from 'swr'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { BACKGROUND_COLORS } from 'lib/const'
 
 const colorUpdateDebounce = createDebounce()
@@ -40,7 +44,8 @@ const defaultConfig = {
   id: undefined as string | undefined,
   icon: {
     type: 'emoji',
-    value: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f916.png',
+    value:
+      'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/1f916.png',
     style: {
       backgroundColor: BACKGROUND_COLORS[0],
     },
@@ -96,9 +101,10 @@ export function EditWorkflowPopup({
       : { ...defaultConfig }
   }
 
-  const [config, setConfig] = useObjectState<typeof defaultConfig>(getInitialConfig())
+  const [config, setConfig] =
+    useObjectState<typeof defaultConfig>(getInitialConfig())
 
-  const navigate = useNavigate()
+  const router = useRouter()
 
   const [loading, setLoading] = useState(false)
 
@@ -118,7 +124,7 @@ export function EditWorkflowPopup({
           onOpenChange?.(false)
           mutate('/api/workflow')
           if (submitAfterRoute) {
-            navigate(`/workflow/${workflow.id}`)
+            router.push(`/workflow/${workflow.id}`)
           }
           onSave?.(workflow)
         })
@@ -128,7 +134,7 @@ export function EditWorkflowPopup({
       {
         success: t('Common.success'),
         loading: t('Common.saving'),
-      },
+      }
     )
   }
 
@@ -141,29 +147,31 @@ export function EditWorkflowPopup({
       }}
     >
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className='p-2 md:p-10 pb-0'>
+      <DialogContent className="p-2 md:p-10 pb-0">
         <DialogHeader className={cn('mb-4', config.id && 'sr-only')}>
           <DialogTitle>{t('Workflow.createWorkflow')}</DialogTitle>
           <DialogDescription asChild>
-            <div className='mt-2'>
+            <div className="mt-2">
               <p>{t('Workflow.createWorkflowDescription')}</p>
-              <p className='mt-1'>{t('Workflow.workflowDescription')}</p>
+              <p className="mt-1">{t('Workflow.workflowDescription')}</p>
             </div>
           </DialogDescription>
         </DialogHeader>
 
-        <div className='flex w-full h-full gap-10'>
+        <div className="flex w-full h-full gap-10">
           {/* Left: Form */}
-          <div className='gap-6 flex flex-col justify-center w-full'>
-            <div className='flex gap-2'>
-              <div className='flex flex-col gap-2 flex-1'>
-                <Label htmlFor='workflow-name'>{t('Workflow.nameAndIcon')}</Label>
+          <div className="gap-6 flex flex-col justify-center w-full">
+            <div className="flex gap-2">
+              <div className="flex flex-col gap-2 flex-1">
+                <Label htmlFor="workflow-name">
+                  {t('Workflow.nameAndIcon')}
+                </Label>
                 <Input
                   value={config.name}
                   onChange={(e) => setConfig({ name: e.target.value })}
                   autoFocus
-                  className='bg-input border-transparent'
-                  id='workflow-name'
+                  className="bg-input border-transparent"
+                  id="workflow-name"
                   placeholder={t('Workflow.workflowNamePlaceholder')}
                 />
               </div>
@@ -174,23 +182,23 @@ export function EditWorkflowPopup({
                     style={{
                       backgroundColor: config.icon.style?.backgroundColor,
                     }}
-                    className='transition-colors hover:bg-secondary! group items-center justify-center flex w-14 h-14 rounded-lg cursor-pointer ring ring-background hover:ring-ring'
+                    className="transition-colors hover:bg-secondary! group items-center justify-center flex w-14 h-14 rounded-lg cursor-pointer ring ring-background hover:ring-ring"
                   >
-                    <Avatar className='size-10'>
+                    <Avatar className="size-10">
                       <AvatarImage
                         src={config.icon.value}
-                        className='group-hover:scale-110  transition-transform'
+                        className="group-hover:scale-110  transition-transform"
                       />
                       <AvatarFallback></AvatarFallback>
                     </Avatar>
                   </div>
                 </DropdownMenuTrigger>
-                <DropdownMenuContent className='p-0 bg-transparent flex flex-col gap-2 border-none'>
-                  <div className='flex gap-2 border rounded-xl p-4  bg-secondary'>
+                <DropdownMenuContent className="p-0 bg-transparent flex flex-col gap-2 border-none">
+                  <div className="flex gap-2 border rounded-xl p-4  bg-secondary">
                     {BACKGROUND_COLORS.map((color, index) => (
                       <div
                         key={index}
-                        className='w-6 h-6 rounded cursor-pointer'
+                        className="w-6 h-6 rounded cursor-pointer"
                         onClick={() => {
                           setConfig({
                             icon: {
@@ -202,10 +210,10 @@ export function EditWorkflowPopup({
                         style={{ backgroundColor: color }}
                       ></div>
                     ))}
-                    <div className='relative'>
+                    <div className="relative">
                       <input
-                        type='color'
-                        className='absolute inset-0 w-full h-full opacity-0 cursor-pointer'
+                        type="color"
+                        className="absolute inset-0 w-full h-full opacity-0 cursor-pointer"
                         onChange={(e) => {
                           colorUpdateDebounce(() => {
                             setConfig({
@@ -217,11 +225,12 @@ export function EditWorkflowPopup({
                           }, 100)
                         }}
                       />
-                      <div className='w-6 h-6 rounded cursor-pointer  border-muted-foreground/50 flex items-center justify-center hover:border-muted-foreground transition-colors'>
+                      <div className="w-6 h-6 rounded cursor-pointer  border-muted-foreground/50 flex items-center justify-center hover:border-muted-foreground transition-colors">
                         <div
-                          className='w-3 h-3 rounded-full'
+                          className="w-3 h-3 rounded-full"
                           style={{
-                            backgroundColor: config.icon?.style?.backgroundColor,
+                            backgroundColor:
+                              config.icon?.style?.backgroundColor,
                           }}
                         ></div>
                       </div>
@@ -230,7 +239,7 @@ export function EditWorkflowPopup({
                   <EmojiPicker
                     lazyLoadEmojis
                     open
-                    className='fade-300'
+                    className="fade-300"
                     theme={theme == 'dark' ? Theme.DARK : Theme.LIGHT}
                     onEmojiClick={(emoji) => {
                       setConfig({
@@ -244,15 +253,20 @@ export function EditWorkflowPopup({
                 </DropdownMenuContent>
               </DropdownMenu>
             </div>
-            <div className='flex flex-col gap-2'>
-              <Label className='flex items-center gap-1' htmlFor='workflow-description'>
+            <div className="flex flex-col gap-2">
+              <Label
+                className="flex items-center gap-1"
+                htmlFor="workflow-description"
+              >
                 {t('Workflow.description')}
-                <span className='text-xs text-muted-foreground'>{t('Common.optional')}</span>
+                <span className="text-xs text-muted-foreground">
+                  {t('Common.optional')}
+                </span>
               </Label>
               <Textarea
-                id='workflow-description'
+                id="workflow-description"
                 placeholder={t('Workflow.descriptionPlaceholder')}
-                className='resize-none min-h-[100px] bg-input border-transparent'
+                className="resize-none min-h-[100px] bg-input border-transparent"
                 value={config.description}
                 onChange={(e) => setConfig({ description: e.target.value })}
               />
@@ -261,11 +275,11 @@ export function EditWorkflowPopup({
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant='ghost'>{t('Common.cancel')}</Button>
+            <Button variant="ghost">{t('Common.cancel')}</Button>
           </DialogClose>
           <Button onClick={handleSubmit} disabled={loading}>
             {t('Common.save')}
-            {loading && <Loader className='size-3.5 animate-spin' />}
+            {loading && <Loader className="size-3.5 animate-spin" />}
           </Button>
         </DialogFooter>
       </DialogContent>

@@ -1,7 +1,11 @@
 'use client'
 
 import { safe } from 'ts-safe'
-import { CodeRunnerOptions, CodeRunnerResult, LogEntry } from './code-runner.interface'
+import {
+  CodeRunnerOptions,
+  CodeRunnerResult,
+  LogEntry,
+} from './code-runner.interface'
 
 // Add security validations similar to JS
 
@@ -51,14 +55,16 @@ async function ensurePyodideLoaded(): Promise<any> {
 
   if (isWorker) {
     try {
-      ;(globalThis as any).importScripts('https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js')
+      ;(globalThis as any).importScripts(
+        'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js'
+      )
       return (globalThis as any).loadPyodide
     } catch {
       throw new Error('Failed to load Pyodide script in worker')
     }
   } else {
     const existingScript = document.querySelector<HTMLScriptElement>(
-      'script[src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"]',
+      'script[src="https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js"]'
     )
 
     if (existingScript) {
@@ -72,7 +78,7 @@ async function ensurePyodideLoaded(): Promise<any> {
         existingScript.addEventListener(
           'error',
           () => reject(new Error('Failed to load Pyodide script')),
-          { once: true },
+          { once: true }
         )
       })
     } else {
@@ -81,7 +87,8 @@ async function ensurePyodideLoaded(): Promise<any> {
         script.src = 'https://cdn.jsdelivr.net/pyodide/v0.23.4/full/pyodide.js'
         script.async = true
         script.onload = () => resolve()
-        script.onerror = () => reject(new Error('Failed to load Pyodide script'))
+        script.onerror = () =>
+          reject(new Error('Failed to load Pyodide script'))
         document.head.appendChild(script)
       })
     }
@@ -121,7 +128,9 @@ export async function safePythonRun({
     // Set up stdout capture
     pyodide.setStdout({
       batched: (output: string) => {
-        const type = output.startsWith('data:image/png;base64') ? 'image' : 'data'
+        const type = output.startsWith('data:image/png;base64')
+          ? 'image'
+          : 'data'
         logs.push({ type: 'log', args: [{ type, value: output }] })
         onLog?.({ type: 'log', args: [{ type, value: output }] })
       },
@@ -137,7 +146,9 @@ export async function safePythonRun({
     await pyodide.loadPackagesFromImports(code)
     const requiredHandlers = detectRequiredHandlers(code)
     for (const handler of requiredHandlers) {
-      await pyodide.runPythonAsync(OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS])
+      await pyodide.runPythonAsync(
+        OUTPUT_HANDLERS[handler as keyof typeof OUTPUT_HANDLERS]
+      )
       if (handler === 'matplotlib') {
         await pyodide.runPythonAsync('setup_matplotlib_output()')
       }
@@ -146,7 +157,7 @@ export async function safePythonRun({
     // Execute code with timeout
     const execution = pyodide.runPythonAsync(code)
     const timer = new Promise((_, reject) =>
-      setTimeout(() => reject(new Error('Timeout')), timeout),
+      setTimeout(() => reject(new Error('Timeout')), timeout)
     )
     const returnValue = await Promise.race([execution, timer])
 

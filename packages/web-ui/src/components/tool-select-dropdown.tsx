@@ -4,7 +4,6 @@ import { appStore } from '@/app/store'
 import { AllowedMCPServer, MCPServerInfo } from 'app-types/mcp'
 import { cn, objectFlow } from 'lib/utils'
 import {
-  ArrowUpRightIcon,
   AtSign,
   ChartColumn,
   ChevronRight,
@@ -14,7 +13,6 @@ import {
   ImagesIcon,
   InfoIcon,
   Loader,
-  MessageCircle,
   MousePointer2,
   Package,
   Plus,
@@ -24,7 +22,7 @@ import {
   WrenchIcon,
   X,
 } from 'lucide-react'
-import { Link } from 'react-router-dom'
+import Link from 'next/link'
 import { useCallback, useEffect, useMemo, useState } from 'react'
 import { toast } from 'sonner'
 import { Badge } from 'ui/badge'
@@ -54,7 +52,7 @@ import {
 import { Input } from 'ui/input'
 import { MCPIcon } from 'ui/mcp-icon'
 
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 
 import { Switch } from 'ui/switch'
 import { useShallow } from 'zustand/shallow'
@@ -69,14 +67,12 @@ import { CountAnimation } from 'ui/count-animation'
 
 import { Separator } from 'ui/separator'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
-import { AgentSummary } from 'app-types/agent'
 import { authClient } from 'auth/client'
 
 import { Alert, AlertDescription, AlertTitle } from 'ui/alert'
 import { safe } from 'ts-safe'
 import { mutate } from 'swr'
 import { handleErrorWithToast } from 'ui/shared-toast'
-import { useAgents } from '@/hooks/queries/use-agents'
 import { redriectMcpOauth } from 'lib/ai/mcp/oauth-redirect'
 import { GeminiIcon } from 'ui/gemini-icon'
 import { useChatModels } from '@/hooks/queries/use-chat-models'
@@ -88,14 +84,13 @@ interface ToolSelectDropdownProps {
   disabled?: boolean
   mentions?: ChatMention[]
   onSelectWorkflow?: (workflow: WorkflowSummary) => void
-  onSelectAgent?: (agent: AgentSummary) => void
   onGenerateImage?: (provider?: 'google' | 'openai') => void
   className?: string
 }
 
 const calculateToolCount = (
   allowedMcpServers: Record<string, AllowedMCPServer>,
-  mcpList: (MCPServerInfo & { id: string })[],
+  mcpList: (MCPServerInfo & { id: string })[]
 ) => {
   return mcpList.reduce((acc, server) => {
     const count = allowedMcpServers[server.id]?.tools?.length
@@ -107,20 +102,20 @@ export function ToolSelectDropdown({
   align,
   side,
   onSelectWorkflow,
-  onSelectAgent,
   onGenerateImage,
   mentions,
   className,
 }: ToolSelectDropdownProps) {
   const [open, setOpen] = useState(false)
-  const [toolChoice, allowedAppDefaultToolkit, allowedMcpServers, mcpList] = appStore(
-    useShallow((state) => [
-      state.toolChoice,
-      state.allowedAppDefaultToolkit,
-      state.allowedMcpServers,
-      state.mcpList,
-    ]),
-  )
+  const [toolChoice, allowedAppDefaultToolkit, allowedMcpServers, mcpList] =
+    appStore(
+      useShallow((state) => [
+        state.toolChoice,
+        state.allowedAppDefaultToolkit,
+        state.allowedMcpServers,
+        state.mcpList,
+      ])
+    )
 
   const t = useTranslations('Chat.Tool')
   const { isLoading } = useMcpList()
@@ -128,8 +123,12 @@ export function ToolSelectDropdown({
   const [globalModel] = appStore(useShallow((state) => [state.chatModel]))
 
   const modelInfo = useMemo(() => {
-    const provider = providers?.find((provider) => provider.provider === globalModel?.provider)
-    const model = provider?.models.find((model) => model.name === globalModel?.model)
+    const provider = providers?.find(
+      (provider) => provider.provider === globalModel?.provider
+    )
+    const model = provider?.models.find(
+      (model) => model.name === globalModel?.model
+    )
     return model
   }, [providers, globalModel])
 
@@ -137,33 +136,35 @@ export function ToolSelectDropdown({
     refreshInterval: 1000 * 60 * 5,
   })
 
-  const agentMention = useMemo(() => {
-    return mentions?.find((m) => m.type === 'agent')
-  }, [mentions])
-
   const bindingTools = useMemo<string[]>(() => {
     if (mentions?.length) {
       return mentions.map((m) => m.name)
     }
     if (toolChoice == 'none') return []
-    const translate = t.raw('defaultToolKit') as Record<string, string>
+    const translate = t.raw('defaultToolKit')
     const defaultTools = Object.values(AppDefaultToolkit)
       .filter((t) => allowedAppDefaultToolkit?.includes(t))
       .map((t) => translate[t])
     const mcpIds = mcpList.map((v) => v.id)
     const mcpTools = Object.values(
-      objectFlow(allowedMcpServers ?? {}).filter((_, id) => mcpIds.includes(id)),
+      objectFlow(allowedMcpServers ?? {}).filter((_, id) => mcpIds.includes(id))
     )
       .map((v) => v.tools)
       .flat()
 
     return [...defaultTools, ...mcpTools]
-  }, [mentions, allowedAppDefaultToolkit, allowedMcpServers, toolChoice, mcpList])
+  }, [
+    mentions,
+    allowedAppDefaultToolkit,
+    allowedMcpServers,
+    toolChoice,
+    mcpList,
+  ])
 
   const triggerButton = useMemo(() => {
     return (
       <Button
-        variant='ghost'
+        variant="ghost"
         size={'sm'}
         className={cn(
           'gap-0.5 bg-input/60 border rounded-full data-[state=open]:bg-input! hover:bg-input!',
@@ -172,26 +173,29 @@ export function ToolSelectDropdown({
             'text-muted-foreground bg-transparent border-transparent',
           isLoading && 'bg-input/60',
           open && 'bg-input!',
-          className,
+          className
         )}
       >
         <span className={!bindingTools ? 'text-muted-foreground' : ''}>
-          {agentMention ? t('agent') : (mentions?.length ?? 0 > 0) ? t('mention') : t('tools')}
+          {(mentions?.length ?? 0 > 0) ? t('mention') : t('tools')}
         </span>
 
-        {((!agentMention && bindingTools.length > 0) || isLoading) && (
+        {(bindingTools.length > 0 || isLoading) && (
           <>
-            <div className='h-4 hidden sm:block mx-1'>
-              <Separator orientation='vertical' />
+            <div className="h-4 hidden sm:block mx-1">
+              <Separator orientation="vertical" />
             </div>
 
-            <div className='min-w-5 flex justify-center'>
+            <div className="min-w-5 flex justify-center">
               {isLoading ? (
-                <Loader className='animate-spin size-3.5' />
+                <Loader className="animate-spin size-3.5" />
               ) : (mentions?.length ?? 0) > 0 ? (
-                <AtSign className='size-3.5' />
+                <AtSign className="size-3.5" />
               ) : (
-                <CountAnimation number={bindingTools.length} className='text-xs' />
+                <CountAnimation
+                  number={bindingTools.length}
+                  className="text-xs"
+                />
               )}
             </div>
           </>
@@ -212,39 +216,38 @@ export function ToolSelectDropdown({
         <div>
           <Tooltip>
             <TooltipTrigger asChild>{triggerButton}</TooltipTrigger>
-            <TooltipContent align={align} side={side} className='p-4 text-xs  '>
-              <div className='flex items-center gap-2'>
-                <WrenchIcon className='size-3.5' />
-                <span className='text-sm'>{t('toolsSetup')}</span>
+            <TooltipContent align={align} side={side} className="p-4 text-xs  ">
+              <div className="flex items-center gap-2">
+                <WrenchIcon className="size-3.5" />
+                <span className="text-sm">{t('toolsSetup')}</span>
               </div>
 
-              <p className='text-muted-foreground mt-4 whitespace-pre-wrap'>
+              <p className="text-muted-foreground mt-4 whitespace-pre-wrap">
                 {t('toolsSetupDescription')}
               </p>
             </TooltipContent>
           </Tooltip>
         </div>
       </DropdownMenuTrigger>
-      <DropdownMenuContent className='md:w-72' align={align} side={side}>
+      <DropdownMenuContent className="md:w-72" align={align} side={side}>
         <WorkflowToolSelector onSelectWorkflow={onSelectWorkflow} />
-        <div className='py-1'>
+        <div className="py-1">
           <DropdownMenuSeparator />
         </div>
-        <AgentSelector onSelectAgent={onSelectAgent} />
-        <div className='py-1'>
+        <ImageGeneratorSelector
+          onGenerateImage={onGenerateImage}
+          modelInfo={modelInfo}
+        />
+        <div className="py-1">
           <DropdownMenuSeparator />
         </div>
-        <ImageGeneratorSelector onGenerateImage={onGenerateImage} modelInfo={modelInfo} />
-        <div className='py-1'>
-          <DropdownMenuSeparator />
-        </div>
-        <div className='py-2'>
+        <div className="py-2">
           <ToolPresets />
-          <div className='py-1'>
+          <div className="py-1">
             <DropdownMenuSeparator />
           </div>
           <AppDefaultToolKitSelector />
-          <div className='py-1'>
+          <div className="py-1">
             <DropdownMenuSeparator />
           </div>
           <McpServerSelector />
@@ -255,14 +258,20 @@ export function ToolSelectDropdown({
 }
 
 function ToolPresets() {
-  const [appStoreMutate, presets, allowedMcpServers, allowedAppDefaultToolkit, mcpList] = appStore(
+  const [
+    appStoreMutate,
+    presets,
+    allowedMcpServers,
+    allowedAppDefaultToolkit,
+    mcpList,
+  ] = appStore(
     useShallow((state) => [
       state.mutate,
       state.toolPresets,
       state.allowedMcpServers,
       state.allowedAppDefaultToolkit,
       state.mcpList,
-    ]),
+    ])
   )
   const [open, setOpen] = useState(false)
   const [presetName, setPresetName] = useState('')
@@ -287,14 +296,17 @@ function ToolPresets() {
       }
       appStoreMutate((prev) => {
         return {
-          toolPresets: [...prev.toolPresets, { name, allowedMcpServers, allowedAppDefaultToolkit }],
+          toolPresets: [
+            ...prev.toolPresets,
+            { name, allowedMcpServers, allowedAppDefaultToolkit },
+          ],
         }
       })
       setPresetName('')
       setOpen(false)
       toast.success(t('Chat.Tool.presetSaved'))
     },
-    [allowedMcpServers, allowedAppDefaultToolkit, presets],
+    [allowedMcpServers, allowedAppDefaultToolkit, presets]
   )
 
   const deletePreset = useCallback((index: number) => {
@@ -313,29 +325,31 @@ function ToolPresets() {
   }, [])
 
   return (
-    <DropdownMenuGroup className='cursor-pointer'>
+    <DropdownMenuGroup className="cursor-pointer">
       <DropdownMenuSub>
-        <DropdownMenuSubTrigger className='text-xs flex items-center gap-2 font-semibold cursor-pointer'>
-          <Package className='size-3.5' />
+        <DropdownMenuSubTrigger className="text-xs flex items-center gap-2 font-semibold cursor-pointer">
+          <Package className="size-3.5" />
           {t('Chat.Tool.preset')}
         </DropdownMenuSubTrigger>
         <DropdownMenuPortal>
-          <DropdownMenuSubContent className='md:w-80 md:max-h-96 overflow-y-auto'>
-            <DropdownMenuLabel className='flex items-center text-muted-foreground gap-2 text-xs'>
+          <DropdownMenuSubContent className="md:w-80 md:max-h-96 overflow-y-auto">
+            <DropdownMenuLabel className="flex items-center text-muted-foreground gap-2 text-xs">
               {t('Chat.Tool.toolPresets')}
-              <div className='flex-1' />
+              <div className="flex-1" />
               <Dialog open={open} onOpenChange={setOpen}>
                 <DialogTrigger asChild>
-                  <Button variant={'secondary'} size={'sm'} className='text-xs'>
+                  <Button variant={'secondary'} size={'sm'} className="text-xs">
                     {t('Chat.Tool.saveAsPreset')}
-                    <Plus className='size-3.5' />
+                    <Plus className="size-3.5" />
                   </Button>
                 </DialogTrigger>
                 <DialogContent>
                   <DialogHeader>
                     <DialogTitle>{t('Chat.Tool.saveAsPreset')}</DialogTitle>
                   </DialogHeader>
-                  <DialogDescription>{t('Chat.Tool.saveAsPresetDescription')}</DialogDescription>
+                  <DialogDescription>
+                    {t('Chat.Tool.saveAsPresetDescription')}
+                  </DialogDescription>
                   <Input
                     placeholder={t('Chat.Tool.presetNamePlaceholder')}
                     value={presetName}
@@ -349,7 +363,7 @@ function ToolPresets() {
                   <Button
                     variant={'secondary'}
                     size={'sm'}
-                    className='border'
+                    className="border"
                     onClick={() => {
                       addPreset(presetName)
                     }}
@@ -361,9 +375,11 @@ function ToolPresets() {
             </DropdownMenuLabel>
             <DropdownMenuSeparator />
             {presets.length === 0 ? (
-              <div className='text-sm text-muted-foreground w-full h-full flex flex-col items-center justify-center gap-2 py-6'>
+              <div className="text-sm text-muted-foreground w-full h-full flex flex-col items-center justify-center gap-2 py-6">
                 <p>{t('Chat.Tool.noPresetsAvailableYet')}</p>
-                <p className='text-xs px-4'>{t('Chat.Tool.clickSaveAsPresetToGetStarted')}</p>
+                <p className="text-xs px-4">
+                  {t('Chat.Tool.clickSaveAsPresetToGetStarted')}
+                </p>
               </div>
             ) : (
               presetWithToolCount.map((preset, index) => {
@@ -373,23 +389,30 @@ function ToolPresets() {
                       applyPreset(preset)
                     }}
                     key={preset.name}
-                    className='flex items-center gap-2 cursor-pointer'
+                    className="flex items-center gap-2 cursor-pointer"
                   >
-                    <Badge variant={'secondary'} className='rounded-full border-input'>
-                      <Wrench className='size-3.5' />
-                      <span className='min-w-6 text-center'>{preset.toolCount}</span>
+                    <Badge
+                      variant={'secondary'}
+                      className="rounded-full border-input"
+                    >
+                      <Wrench className="size-3.5" />
+                      <span className="min-w-6 text-center">
+                        {preset.toolCount}
+                      </span>
                     </Badge>
-                    <span className='font-semibold truncate'>{preset.name}</span>
+                    <span className="font-semibold truncate">
+                      {preset.name}
+                    </span>
 
-                    <div className='flex-1' />
+                    <div className="flex-1" />
                     <div
-                      className='p-1 hover:bg-input rounded-full cursor-pointer'
+                      className="p-1 hover:bg-input rounded-full cursor-pointer"
                       onClick={(e) => {
                         e.preventDefault()
                         deletePreset(index)
                       }}
                     >
-                      <X className='size-3.5' />
+                      <X className="size-3.5" />
                     </div>
                   </DropdownMenuItem>
                 )
@@ -414,32 +437,36 @@ function WorkflowToolSelector({
 
   // Separate user's workflows from shared workflows
   const myWorkflows = workflowToolList.filter((w) => w.userId === currentUserId)
-  const sharedWorkflows = workflowToolList.filter((w) => w.userId !== currentUserId)
+  const sharedWorkflows = workflowToolList.filter(
+    (w) => w.userId !== currentUserId
+  )
   return (
     <DropdownMenuGroup>
       <DropdownMenuSub>
-        <DropdownMenuSubTrigger className='text-xs flex items-center gap-2 font-semibold cursor-pointer'>
-          <Waypoints className='size-3.5' />
+        <DropdownMenuSubTrigger className="text-xs flex items-center gap-2 font-semibold cursor-pointer">
+          <Waypoints className="size-3.5" />
           {t('Workflow.title')}
         </DropdownMenuSubTrigger>
         <DropdownMenuPortal>
-          <DropdownMenuSubContent className='w-80 relative'>
+          <DropdownMenuSubContent className="w-80 relative">
             {myWorkflows.length === 0 && sharedWorkflows.length === 0 ? (
-              <div className='text-sm text-muted-foreground flex flex-col py-6 px-6 gap-4 items-center'>
-                <InfoIcon className='size-4' />
-                <p className='whitespace-pre-wrap'>{t('Workflow.noTools')}</p>
+              <div className="text-sm text-muted-foreground flex flex-col py-6 px-6 gap-4 items-center">
+                <InfoIcon className="size-4" />
+                <p className="whitespace-pre-wrap">{t('Workflow.noTools')}</p>
 
                 <Dialog>
                   <DialogTrigger asChild>
-                    <Button variant={'ghost'} className='relative group'>
+                    <Button variant={'ghost'} className="relative group">
                       {t('Workflow.whatIsWorkflow')}
-                      <div className='absolute left-0 -top-1.5 opacity-100 group-hover:opacity-0 transition-opacity duration-300'>
-                        <MousePointer2 className='rotate-180 text-blue-500 fill-blue-500 size-3 wiggle' />
+                      <div className="absolute left-0 -top-1.5 opacity-100 group-hover:opacity-0 transition-opacity duration-300">
+                        <MousePointer2 className="rotate-180 text-blue-500 fill-blue-500 size-3 wiggle" />
                       </div>
                     </Button>
                   </DialogTrigger>
-                  <DialogContent className='md:max-w-3xl!'>
-                    <DialogTitle className='sr-only'>workflow greeting</DialogTitle>
+                  <DialogContent className="md:max-w-3xl!">
+                    <DialogTitle className="sr-only">
+                      workflow greeting
+                    </DialogTitle>
                     <WorkflowGreeting />
                   </DialogContent>
                 </Dialog>
@@ -450,56 +477,64 @@ function WorkflowToolSelector({
                 {myWorkflows.map((workflow) => (
                   <DropdownMenuItem
                     key={workflow.id}
-                    className='cursor-pointer'
+                    className="cursor-pointer"
                     onClick={() => onSelectWorkflow?.(workflow)}
                   >
                     {workflow.icon && workflow.icon.type === 'emoji' ? (
                       <div
                         style={{
-                          backgroundColor: workflow.icon?.style?.backgroundColor,
+                          backgroundColor:
+                            workflow.icon?.style?.backgroundColor,
                         }}
-                        className='p-1 rounded flex items-center justify-center ring ring-background border'
+                        className="p-1 rounded flex items-center justify-center ring ring-background border"
                       >
-                        <Avatar className='size-3'>
+                        <Avatar className="size-3">
                           <AvatarImage src={workflow.icon?.value} />
-                          <AvatarFallback>{workflow.name.slice(0, 1)}</AvatarFallback>
+                          <AvatarFallback>
+                            {workflow.name.slice(0, 1)}
+                          </AvatarFallback>
                         </Avatar>
                       </div>
                     ) : null}
-                    <span className='truncate min-w-0'>{workflow.name}</span>
+                    <span className="truncate min-w-0">{workflow.name}</span>
                   </DropdownMenuItem>
                 ))}
 
-                {myWorkflows.length > 0 && sharedWorkflows.length > 0 && <DropdownMenuSeparator />}
+                {myWorkflows.length > 0 && sharedWorkflows.length > 0 && (
+                  <DropdownMenuSeparator />
+                )}
 
                 {/* Shared Workflows */}
                 {sharedWorkflows.map((workflow) => (
                   <DropdownMenuItem
                     key={workflow.id}
-                    className='cursor-pointer'
+                    className="cursor-pointer"
                     onClick={() => onSelectWorkflow?.(workflow)}
                   >
                     {workflow.icon && workflow.icon.type === 'emoji' ? (
                       <div
                         style={{
-                          backgroundColor: workflow.icon?.style?.backgroundColor,
+                          backgroundColor:
+                            workflow.icon?.style?.backgroundColor,
                         }}
-                        className='p-1 rounded flex items-center justify-center ring ring-background border'
+                        className="p-1 rounded flex items-center justify-center ring ring-background border"
                       >
-                        <Avatar className='size-3'>
+                        <Avatar className="size-3">
                           <AvatarImage src={workflow.icon?.value} />
-                          <AvatarFallback>{workflow.name.slice(0, 1)}</AvatarFallback>
+                          <AvatarFallback>
+                            {workflow.name.slice(0, 1)}
+                          </AvatarFallback>
                         </Avatar>
                       </div>
                     ) : null}
-                    <div className='flex items-center justify-between flex-1 min-w-0'>
-                      <span className='truncate min-w-0'>{workflow.name}</span>
+                    <div className="flex items-center justify-between flex-1 min-w-0">
+                      <span className="truncate min-w-0">{workflow.name}</span>
                       {workflow.userName && (
                         <Tooltip>
                           <TooltipTrigger asChild>
-                            <Avatar className='size-4 ml-2 shrink-0'>
+                            <Avatar className="size-4 ml-2 shrink-0">
                               <AvatarImage src={workflow.userAvatar} />
-                              <AvatarFallback className='text-xs text-muted-foreground font-medium'>
+                              <AvatarFallback className="text-xs text-muted-foreground font-medium">
                                 {workflow.userName[0]?.toUpperCase()}
                               </AvatarFallback>
                             </Avatar>
@@ -526,15 +561,24 @@ function WorkflowToolSelector({
 function McpServerSelector() {
   const t = useTranslations('Chat.Tool')
   const [appStoreMutate, allowedMcpServers, mcpServerList] = appStore(
-    useShallow((state) => [state.mutate, state.allowedMcpServers, state.mcpList]),
+    useShallow((state) => [
+      state.mutate,
+      state.allowedMcpServers,
+      state.mcpList,
+    ])
   )
 
   const selectedMcpServerList = useMemo(() => {
     if (mcpServerList.length === 0) return []
     return [...mcpServerList]
-      .sort((a, b) => (a.status === 'connected' ? -1 : 1) - (b.status === 'connected' ? -1 : 1))
+      .sort(
+        (a, b) =>
+          (a.status === 'connected' ? -1 : 1) -
+          (b.status === 'connected' ? -1 : 1)
+      )
       .map((server) => {
-        const allowedTools: string[] = allowedMcpServers?.[server.id]?.tools ?? []
+        const allowedTools: string[] =
+          allowedMcpServers?.[server.id]?.tools ?? []
 
         return {
           id: server.id,
@@ -551,27 +595,33 @@ function McpServerSelector() {
       })
   }, [mcpServerList, allowedMcpServers])
 
-  const setMcpServerTool = useCallback((serverId: string, toolNames: string[]) => {
-    appStoreMutate((prev) => {
-      return {
-        allowedMcpServers: {
-          ...prev.allowedMcpServers,
-          [serverId]: {
-            ...(prev.allowedMcpServers?.[serverId] ?? {}),
-            tools: toolNames,
+  const setMcpServerTool = useCallback(
+    (serverId: string, toolNames: string[]) => {
+      appStoreMutate((prev) => {
+        return {
+          allowedMcpServers: {
+            ...prev.allowedMcpServers,
+            [serverId]: {
+              ...(prev.allowedMcpServers?.[serverId] ?? {}),
+              tools: toolNames,
+            },
           },
-        },
-      }
-    })
-  }, [])
+        }
+      })
+    },
+    []
+  )
   return (
     <DropdownMenuGroup>
       {!selectedMcpServerList.length ? (
-        <div className='text-sm text-muted-foreground w-full h-full flex flex-col items-center justify-center py-6'>
+        <div className="text-sm text-muted-foreground w-full h-full flex flex-col items-center justify-center py-6">
           <div>{t('noMcpServersDetected')}</div>
-          <Link to='/mcp'>
-            <Button variant={'ghost'} className='mt-2 text-primary flex items-center gap-1'>
-              {t('addServer')} <ChevronRight className='size-4' />
+          <Link href="/mcp">
+            <Button
+              variant={'ghost'}
+              className="mt-2 text-primary flex items-center gap-1"
+            >
+              {t('addServer')} <ChevronRight className="size-4" />
             </Button>
           </Link>
         </div>
@@ -579,61 +629,71 @@ function McpServerSelector() {
         selectedMcpServerList.map((server) => (
           <DropdownMenuSub key={server.id}>
             <DropdownMenuSubTrigger
-              className='flex items-center gap-2 font-semibold cursor-pointer'
+              className="flex items-center gap-2 font-semibold cursor-pointer"
               icon={
-                <div className='flex items-center gap-2 ml-auto'>
+                <div className="flex items-center gap-2 ml-auto">
                   {server.status === 'authorizing' ? (
-                    <div className='flex items-center gap-1'>
-                      <ShieldAlertIcon className='size-3 text-muted-foreground' />
+                    <div className="flex items-center gap-1">
+                      <ShieldAlertIcon className="size-3 text-muted-foreground" />
                     </div>
                   ) : (
                     <>
                       {server.tools.filter((t) => t.checked).length > 0 ? (
-                        <span className='w-5 h-5 items-center justify-center flex text-[8px] text-muted-foreground font-semibold '>
+                        <span className="w-5 h-5 items-center justify-center flex text-[8px] text-muted-foreground font-semibold ">
                           {server.tools.filter((t) => t.checked).length}
                         </span>
                       ) : null}
-                      <ChevronRight className='size-4 text-muted-foreground' />
+                      <ChevronRight className="size-4 text-muted-foreground" />
                     </>
                   )}
                 </div>
               }
               onClick={(e) => {
                 e.preventDefault()
-                setMcpServerTool(server.id, server.checked ? [] : server.tools.map((t) => t.name))
+                setMcpServerTool(
+                  server.id,
+                  server.checked ? [] : server.tools.map((t) => t.name)
+                )
               }}
             >
-              <div className='flex items-center justify-center p-1 rounded bg-input/40 border'>
-                <MCPIcon className='fill-foreground size-2.5' />
+              <div className="flex items-center justify-center p-1 rounded bg-input/40 border">
+                <MCPIcon className="fill-foreground size-2.5" />
               </div>
 
               <span className={cn('truncate', !server.checked && 'opacity-30')}>
                 {server.serverName}
               </span>
               {Boolean(server.error) ? (
-                <span className={cn('text-xs text-destructive ml-1 p-1 rounded')}>
+                <span
+                  className={cn('text-xs text-destructive ml-1 p-1 rounded')}
+                >
                   {t('error')}
                 </span>
               ) : null}
             </DropdownMenuSubTrigger>
             <DropdownMenuPortal>
-              <DropdownMenuSubContent className='w-80 relative'>
+              <DropdownMenuSubContent className="w-80 relative">
                 <McpServerToolSelector
                   tools={server.tools}
                   isAuthorizing={server.status === 'authorizing'}
                   checked={server.checked}
                   serverId={server.id}
                   onClickAllChecked={(checked) => {
-                    setMcpServerTool(server.id, checked ? server.tools.map((t) => t.name) : [])
+                    setMcpServerTool(
+                      server.id,
+                      checked ? server.tools.map((t) => t.name) : []
+                    )
                   }}
                   onToolClick={(toolName, checked) => {
-                    const currentTools = server.tools.filter((v) => v.checked).map((v) => v.name)
+                    const currentTools = server.tools
+                      .filter((v) => v.checked)
+                      .map((v) => v.name)
 
                     setMcpServerTool(
                       server.id,
                       checked
                         ? currentTools.concat(toolName)
-                        : currentTools.filter((v) => v !== toolName),
+                        : currentTools.filter((v) => v !== toolName)
                     )
                   }}
                 />
@@ -671,7 +731,9 @@ function McpServerToolSelector({
   const [loading, setLoading] = useState(false)
   const [search, setSearch] = useState('')
   const filteredTools = useMemo(() => {
-    return tools.filter((tool) => tool.name.toLowerCase().includes(search.toLowerCase()))
+    return tools.filter((tool) =>
+      tool.name.toLowerCase().includes(search.toLowerCase())
+    )
   }, [tools, search])
 
   const handleAuthorize = useCallback(
@@ -682,15 +744,15 @@ function McpServerToolSelector({
         .ifFail(handleErrorWithToast)
         .watch(() => setLoading(false)),
 
-    [serverId],
+    [serverId]
   )
 
   if (isAuthorizing) {
     return (
       <Alert
-        className='cursor-pointer hover:bg-accent/10 transition-colors border-none'
+        className="cursor-pointer hover:bg-accent/10 transition-colors border-none"
         onClick={handleAuthorize}
-        role='button'
+        role="button"
         tabIndex={0}
         onKeyDown={(e) => {
           if (e.key === 'Enter' || e.key === ' ') {
@@ -699,7 +761,7 @@ function McpServerToolSelector({
           }
         }}
       >
-        {loading ? <Loader className='animate-spin' /> : <ShieldAlertIcon />}
+        {loading ? <Loader className="animate-spin" /> : <ShieldAlertIcon />}
 
         <AlertTitle>{tTool('authorizationRequired')}</AlertTitle>
         <AlertDescription>{tTool('clickToAuthorize')}</AlertDescription>
@@ -709,7 +771,7 @@ function McpServerToolSelector({
   return (
     <div>
       <DropdownMenuLabel
-        className='text-muted-foreground flex items-center gap-2'
+        className="text-muted-foreground flex items-center gap-2"
         onClick={(e) => {
           e.preventDefault()
           onClickAllChecked(!checked)
@@ -726,32 +788,34 @@ function McpServerToolSelector({
           onClick={(e) => {
             e.stopPropagation()
           }}
-          className='placeholder:text-muted-foreground flex w-full text-xs   outline-hidden disabled:cursor-not-allowed disabled:opacity-50'
+          className="placeholder:text-muted-foreground flex w-full text-xs   outline-hidden disabled:cursor-not-allowed disabled:opacity-50"
         />
-        <div className='flex-1' />
+        <div className="flex-1" />
         <Switch checked={checked} />
       </DropdownMenuLabel>
       <DropdownMenuSeparator />
-      <div className='max-h-96 overflow-y-auto'>
+      <div className="max-h-96 overflow-y-auto">
         {filteredTools.length === 0 ? (
-          <div className='text-sm text-muted-foreground w-full h-full flex items-center justify-center py-6'>
+          <div className="text-sm text-muted-foreground w-full h-full flex items-center justify-center py-6">
             {t('noResults')}
           </div>
         ) : (
           filteredTools.map((tool) => (
             <DropdownMenuItem
               key={tool.name}
-              className='flex items-center gap-2 cursor-pointer mb-1'
+              className="flex items-center gap-2 cursor-pointer mb-1"
               onClick={(e) => {
                 e.preventDefault()
                 onToolClick(tool.name, !tool.checked)
               }}
             >
-              <div className='mx-1 flex-1 min-w-0'>
-                <p className='font-medium text-xs mb-1 truncate'>{tool.name}</p>
-                <p className='text-xs text-muted-foreground truncate'>{tool.description}</p>
+              <div className="mx-1 flex-1 min-w-0">
+                <p className="font-medium text-xs mb-1 truncate">{tool.name}</p>
+                <p className="text-xs text-muted-foreground truncate">
+                  {tool.description}
+                </p>
               </div>
-              <Checkbox checked={tool.checked} className='ml-auto' />
+              <Checkbox checked={tool.checked} className="ml-auto" />
             </DropdownMenuItem>
           ))
         )}
@@ -762,14 +826,19 @@ function McpServerToolSelector({
 
 function AppDefaultToolKitSelector() {
   const [appStoreMutate, allowedAppDefaultToolkit] = appStore(
-    useShallow((state) => [state.mutate, state.allowedAppDefaultToolkit]),
+    useShallow((state) => [state.mutate, state.allowedAppDefaultToolkit])
   )
   const t = useTranslations()
   const toggleAppDefaultToolkit = useCallback((toolkit: AppDefaultToolkit) => {
     appStoreMutate((prev) => {
-      const newAllowedAppDefaultToolkit = [...(prev.allowedAppDefaultToolkit ?? [])]
+      const newAllowedAppDefaultToolkit = [
+        ...(prev.allowedAppDefaultToolkit ?? []),
+      ]
       if (newAllowedAppDefaultToolkit.includes(toolkit)) {
-        newAllowedAppDefaultToolkit.splice(newAllowedAppDefaultToolkit.indexOf(toolkit), 1)
+        newAllowedAppDefaultToolkit.splice(
+          newAllowedAppDefaultToolkit.indexOf(toolkit),
+          1
+        )
       } else {
         newAllowedAppDefaultToolkit.push(toolkit)
       }
@@ -778,7 +847,7 @@ function AppDefaultToolKitSelector() {
   }, [])
 
   const defaultToolInfo = useMemo(() => {
-    const raw = t.raw('Chat.Tool.defaultToolKit') as Record<string, string>
+    const raw = t.raw('Chat.Tool.defaultToolKit')
     return Object.values(AppDefaultToolkit).map((toolkit) => {
       const label = raw[toolkit] || toolkit
       const id = toolkit
@@ -813,7 +882,7 @@ function AppDefaultToolKitSelector() {
             key={tool.id}
             className={cn(
               'cursor-pointer font-semibold text-xs text-muted-foreground',
-              allowedAppDefaultToolkit?.includes(tool.id) && 'text-foreground',
+              allowedAppDefaultToolkit?.includes(tool.id) && 'text-foreground'
             )}
             onClick={(e) => {
               e.preventDefault()
@@ -823,125 +892,17 @@ function AppDefaultToolKitSelector() {
             <tool.icon
               className={cn(
                 'size-3.5',
-                allowedAppDefaultToolkit?.includes(tool.id) && 'text-foreground',
+                allowedAppDefaultToolkit?.includes(tool.id) && 'text-foreground'
               )}
             />
             {tool.label}
-            <Switch className='ml-auto' checked={allowedAppDefaultToolkit?.includes(tool.id)} />
+            <Switch
+              className="ml-auto"
+              checked={allowedAppDefaultToolkit?.includes(tool.id)}
+            />
           </DropdownMenuItem>
         )
       })}
-    </DropdownMenuGroup>
-  )
-}
-
-function AgentSelector({ onSelectAgent }: { onSelectAgent?: (agent: AgentSummary) => void }) {
-  const t = useTranslations()
-  const { myAgents, bookmarkedAgents } = useAgents({
-    filters: ['mine', 'bookmarked'],
-  })
-
-  const emptyAgent = useMemo(() => {
-    if (myAgents.length + bookmarkedAgents.length > 0) return null
-    return (
-      <Link
-        to={'/agent/new'}
-        className='py-8 px-4 hover:bg-input/100 rounded-lg cursor-pointer flex justify-between items-center text-xs overflow-hidden'
-      >
-        <div className='gap-1 z-10'>
-          <div className='flex items-center mb-4 gap-1'>
-            <p className='font-semibold'>{t('Layout.createAgent')}</p>
-            <ArrowUpRightIcon className='size-3' />
-          </div>
-          <p className='text-muted-foreground'>
-            {bookmarkedAgents.length > 0
-              ? t('Layout.createYourOwnAgentOrSelectShared')
-              : t('Layout.createYourOwnAgent')}
-          </p>
-        </div>
-      </Link>
-    )
-  }, [myAgents.length, bookmarkedAgents.length, t])
-
-  return (
-    <DropdownMenuGroup>
-      <DropdownMenuSub>
-        <DropdownMenuSubTrigger className='text-xs flex items-center gap-2 font-semibold cursor-pointer'>
-          <MessageCircle className='size-3.5' />
-          {t('Agent.title')}
-        </DropdownMenuSubTrigger>
-        <DropdownMenuPortal>
-          <DropdownMenuSubContent className='w-80 relative'>
-            {emptyAgent}
-
-            {/* My Agents */}
-            {myAgents.map((agent) => (
-              <DropdownMenuItem
-                key={agent.id}
-                className='cursor-pointer'
-                onClick={() => onSelectAgent?.(agent)}
-              >
-                {agent.icon && agent.icon.type === 'emoji' ? (
-                  <div
-                    style={{
-                      backgroundColor: agent.icon?.style?.backgroundColor,
-                    }}
-                    className='p-1 rounded flex items-center justify-center ring ring-background border'
-                  >
-                    <Avatar className='size-3'>
-                      <AvatarImage src={agent.icon?.value} />
-                      <AvatarFallback>{agent.name.slice(0, 1)}</AvatarFallback>
-                    </Avatar>
-                  </div>
-                ) : null}
-                <span className='truncate min-w-0'>{agent.name}</span>
-              </DropdownMenuItem>
-            ))}
-
-            {myAgents.length > 0 && bookmarkedAgents.length > 0 && <DropdownMenuSeparator />}
-
-            {bookmarkedAgents.map((agent) => (
-              <DropdownMenuItem
-                key={agent.id}
-                className='cursor-pointer'
-                onClick={() => onSelectAgent?.(agent)}
-              >
-                {agent.icon && agent.icon.type === 'emoji' ? (
-                  <div
-                    style={{
-                      backgroundColor: agent.icon?.style?.backgroundColor,
-                    }}
-                    className='p-1 rounded flex items-center justify-center ring ring-background border'
-                  >
-                    <Avatar className='size-3'>
-                      <AvatarImage src={agent.icon?.value} />
-                      <AvatarFallback>{agent.name.slice(0, 1)}</AvatarFallback>
-                    </Avatar>
-                  </div>
-                ) : null}
-                <div className='flex items-center justify-between flex-1 min-w-0'>
-                  <span className='truncate min-w-0'>{agent.name}</span>
-                  {agent.userName && (
-                    <Tooltip>
-                      <TooltipTrigger asChild>
-                        <Avatar className='size-4 ml-2 shrink-0'>
-                          <AvatarImage src={agent.userAvatar} />
-                          <AvatarFallback className='text-xs text-muted-foreground font-medium'>
-                            {agent.userName[0]?.toUpperCase()}
-                          </AvatarFallback>
-                        </Avatar>
-                      </TooltipTrigger>
-                      <TooltipContent>
-                        {t('Common.sharedBy', { userName: agent.userName })}
-                      </TooltipContent>
-                    </Tooltip>
-                  )}
-                </div>
-              </DropdownMenuItem>
-            ))}
-          </DropdownMenuSubContent>
-        </DropdownMenuPortal>
-      </DropdownMenuSub>
     </DropdownMenuGroup>
   )
 }
@@ -958,8 +919,8 @@ function ImageGeneratorSelector({
   return (
     <DropdownMenuGroup>
       <DropdownMenuSub>
-        <DropdownMenuSubTrigger className='text-xs flex items-center gap-2 font-semibold cursor-pointer'>
-          <ImagesIcon className='size-3.5' />
+        <DropdownMenuSubTrigger className="text-xs flex items-center gap-2 font-semibold cursor-pointer">
+          <ImagesIcon className="size-3.5" />
           {t('generateImage')}
         </DropdownMenuSubTrigger>
         <DropdownMenuPortal>
@@ -967,17 +928,17 @@ function ImageGeneratorSelector({
             <DropdownMenuItem
               disabled={modelInfo?.isToolCallUnsupported}
               onClick={() => onGenerateImage?.('google')}
-              className='cursor-pointer'
+              className="cursor-pointer"
             >
-              <GeminiIcon className='mr-2 size-4' />
+              <GeminiIcon className="mr-2 size-4" />
               Gemini (Nano Banana)
             </DropdownMenuItem>
             <DropdownMenuItem
               disabled={modelInfo?.isToolCallUnsupported}
               onClick={() => onGenerateImage?.('openai')}
-              className='cursor-pointer'
+              className="cursor-pointer"
             >
-              <OpenAIIcon className='mr-2 size-4' />
+              <OpenAIIcon className="mr-2 size-4" />
               OpenAI
             </DropdownMenuItem>
           </DropdownMenuSubContent>

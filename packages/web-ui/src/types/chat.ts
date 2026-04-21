@@ -9,7 +9,6 @@ export type ChatMetadata = {
   chatModel?: ChatModel
   toolChoice?: 'auto' | 'none' | 'manual'
   toolCount?: number
-  agentId?: string
 }
 
 export type ChatModel = {
@@ -76,19 +75,6 @@ export const ChatMentionSchema = z.discriminatedUnion('type', [
       })
       .nullish(),
   }),
-  z.object({
-    type: z.literal('agent'),
-    name: z.string(),
-    description: z.string().nullish(),
-    agentId: z.string(),
-    icon: z
-      .object({
-        type: z.literal('emoji'),
-        value: z.string(),
-        style: z.record(z.string(), z.string()).optional(),
-      })
-      .nullish(),
-  }),
 ])
 
 export type ChatMention = z.infer<typeof ChatMentionSchema>
@@ -110,7 +96,9 @@ export const chatApiSchemaRequestBodySchema = z.object({
   attachments: z.array(ChatAttachmentSchema).optional(),
 })
 
-export type ChatApiSchemaRequestBody = z.infer<typeof chatApiSchemaRequestBodySchema>
+export type ChatApiSchemaRequestBody = z.infer<
+  typeof chatApiSchemaRequestBodySchema
+>
 
 export type ChatRepository = {
   insertThread(thread: Omit<ChatThread, 'createdAt'>): Promise<ChatThread>
@@ -137,12 +125,14 @@ export type ChatRepository = {
 
   updateThread(
     id: string,
-    thread: Partial<Omit<ChatThread, 'id' | 'createdAt'>>,
+    thread: Partial<Omit<ChatThread, 'id' | 'createdAt'>>
   ): Promise<ChatThread>
 
   deleteThread(id: string): Promise<void>
 
-  upsertThread(thread: PartialBy<Omit<ChatThread, 'createdAt'>, 'userId'>): Promise<ChatThread>
+  upsertThread(
+    thread: PartialBy<Omit<ChatThread, 'createdAt'>, 'userId'>
+  ): Promise<ChatThread>
 
   insertMessage(message: Omit<ChatMessage, 'createdAt'>): Promise<ChatMessage>
   upsertMessage(message: Omit<ChatMessage, 'createdAt'>): Promise<ChatMessage>
@@ -155,7 +145,9 @@ export type ChatRepository = {
 
   checkAccess(id: string, userId: string): Promise<boolean>
 
-  insertMessages(messages: PartialBy<ChatMessage, 'createdAt'>[]): Promise<ChatMessage[]>
+  insertMessages(
+    messages: PartialBy<ChatMessage, 'createdAt'>[]
+  ): Promise<ChatMessage[]>
 }
 
 export const ManualToolConfirmTag = tag<{

@@ -2,11 +2,16 @@ import { test as setup, expect } from '@playwright/test'
 import * as fs from 'node:fs'
 import { TEST_USERS } from '../constants/test-users'
 import type { Page } from '@playwright/test'
-export async function selectModel(page: Page, providerModel: string): Promise<void> {
+export async function selectModel(
+  page: Page,
+  providerModel: string
+): Promise<void> {
   const [provider, modelName] = providerModel.split('/')
 
   if (!provider || !modelName) {
-    throw new Error(`Invalid model format: ${providerModel}. Expected format: provider/modelName`)
+    throw new Error(
+      `Invalid model format: ${providerModel}. Expected format: provider/modelName`
+    )
   }
 
   // Open model selector
@@ -28,7 +33,9 @@ export async function selectModel(page: Page, providerModel: string): Promise<vo
   await expect(page.getByTestId('model-selector-popover')).not.toBeVisible()
 
   // Verify the model was selected
-  const selectedModel = await page.getByTestId('selected-model-name').textContent()
+  const selectedModel = await page
+    .getByTestId('selected-model-name')
+    .textContent()
   expect(selectedModel).toBe(modelName)
 }
 
@@ -39,7 +46,10 @@ export async function selectDefaultModel(page: Page) {
   }
 }
 
-async function signInViaUi(page: Page, { email, password }: { email: string; password: string }) {
+async function signInViaUi(
+  page: Page,
+  { email, password }: { email: string; password: string }
+) {
   await page.goto('/sign-in')
 
   // Sign in with the seeded editor user
@@ -53,7 +63,7 @@ async function signInViaUi(page: Page, { email, password }: { email: string; pas
       const urlStr = url.toString()
       return !urlStr.includes('/sign-in') && !urlStr.includes('/sign-up')
     },
-    { timeout: 10000 },
+    { timeout: 10000 }
   )
 }
 

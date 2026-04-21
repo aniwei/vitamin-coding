@@ -2,7 +2,11 @@
 import { appStore } from '@/app/store'
 import { Edge } from '@xyflow/react'
 import { createUINode } from 'lib/ai/workflow/create-ui-node'
-import { LLMNodeData, NodeKind, UINode } from 'lib/ai/workflow/workflow.interface'
+import {
+  LLMNodeData,
+  NodeKind,
+  UINode,
+} from 'lib/ai/workflow/workflow.interface'
 import { generateUniqueKey, generateUUID } from 'lib/utils'
 
 /**
@@ -29,12 +33,16 @@ export function createAppendNode({
   allNodes: UINode[]
   allEdges: Edge[]
 }): { node: UINode; edge?: Edge } {
-  const connectors = allEdges.filter((edge) => edge.source === sourceNode.id).map((v) => v.target)
+  const connectors = allEdges
+    .filter((edge) => edge.source === sourceNode.id)
+    .map((v) => v.target)
 
   const connectedNodes = allNodes.filter((node) => connectors.includes(node.id))
 
   const maxY = Math.max(
-    ...connectedNodes.map((node) => node.position.y + (node.measured?.height ?? 0)),
+    ...connectedNodes.map(
+      (node) => node.position.y + (node.measured?.height ?? 0)
+    )
   )
 
   const names = allNodes.map((node) => node.data.name as string)

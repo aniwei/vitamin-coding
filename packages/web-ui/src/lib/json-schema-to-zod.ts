@@ -147,7 +147,9 @@ export function jsonSchemaToZod(jsonSchema: JSONSchema7): z.ZodType<any> {
         return arraySchema
       }
 
-      let arraySchema = z.array(jsonSchemaToZod(jsonSchema.items as JSONSchema7))
+      let arraySchema = z.array(
+        jsonSchemaToZod(jsonSchema.items as JSONSchema7)
+      )
 
       // Apply array constraints
       if (typeof jsonSchema.minItems === 'number') {
@@ -166,7 +168,10 @@ export function jsonSchemaToZod(jsonSchema: JSONSchema7): z.ZodType<any> {
     }
 
     case 'object': {
-      if (!jsonSchema.properties || Object.keys(jsonSchema.properties ?? {}).length === 0) {
+      if (
+        !jsonSchema.properties ||
+        Object.keys(jsonSchema.properties ?? {}).length === 0
+      ) {
         const recordSchema = z.object({}).catchall(z.any())
 
         // Apply default value if present
@@ -237,7 +242,9 @@ export function jsonSchemaToZod(jsonSchema: JSONSchema7): z.ZodType<any> {
  * @param jsonSchemaString - The JSON Schema as a string
  * @returns A Zod schema
  */
-export function jsonSchemaStringToZod(jsonSchemaString: string): z.ZodType<any> {
+export function jsonSchemaStringToZod(
+  jsonSchemaString: string
+): z.ZodType<any> {
   try {
     const jsonSchema = JSON.parse(jsonSchemaString) as JSONSchema7
     return jsonSchemaToZod(jsonSchema)

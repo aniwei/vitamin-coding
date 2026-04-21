@@ -42,13 +42,15 @@ function parseSocialAuthConfigs() {
       experimental_taintUniqueValue(
         'Do not pass GITHUB_CLIENT_SECRET to the client',
         configs,
-        configs.github.clientSecret,
+        configs.github.clientSecret
       )
     }
   }
 
   if (process.env.GOOGLE_CLIENT_ID && process.env.GOOGLE_CLIENT_SECRET) {
-    const forceAccountSelection = parseEnvBoolean(process.env.GOOGLE_FORCE_ACCOUNT_SELECTION)
+    const forceAccountSelection = parseEnvBoolean(
+      process.env.GOOGLE_FORCE_ACCOUNT_SELECTION
+    )
 
     const googleConfig: GoogleConfig = {
       clientId: process.env.GOOGLE_CLIENT_ID,
@@ -63,13 +65,15 @@ function parseSocialAuthConfigs() {
       experimental_taintUniqueValue(
         'Do not pass GOOGLE_CLIENT_SECRET to the client',
         configs,
-        configs.google.clientSecret,
+        configs.google.clientSecret
       )
     }
   }
 
   if (process.env.MICROSOFT_CLIENT_ID && process.env.MICROSOFT_CLIENT_SECRET) {
-    const forceAccountSelection = parseEnvBoolean(process.env.MICROSOFT_FORCE_ACCOUNT_SELECTION)
+    const forceAccountSelection = parseEnvBoolean(
+      process.env.MICROSOFT_FORCE_ACCOUNT_SELECTION
+    )
     const tenantId = process.env.MICROSOFT_TENANT_ID || 'common'
 
     const microsoftConfig: MicrosoftConfig = {
@@ -86,7 +90,7 @@ function parseSocialAuthConfigs() {
       experimental_taintUniqueValue(
         'Do not pass MICROSOFT_CLIENT_SECRET to the client',
         configs,
-        configs.microsoft.clientSecret,
+        configs.microsoft.clientSecret
       )
     }
   }

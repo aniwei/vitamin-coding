@@ -18,18 +18,21 @@ const initialState: WorkflowState = {
   processIds: [],
 }
 
-export const useWorkflowStore = create<WorkflowState & WorkflowDispatch>((set) => ({
-  ...initialState,
-  init: (workflow, hasEditAccess) => set({ ...initialState, workflow, hasEditAccess }),
-  addProcess: () => {
-    const processId = generateUUID()
-    set((state) => ({
-      processIds: [...state.processIds, processId],
-    }))
-    return () => {
+export const useWorkflowStore = create<WorkflowState & WorkflowDispatch>(
+  (set) => ({
+    ...initialState,
+    init: (workflow, hasEditAccess) =>
+      set({ ...initialState, workflow, hasEditAccess }),
+    addProcess: () => {
+      const processId = generateUUID()
       set((state) => ({
-        processIds: state.processIds.filter((id) => id !== processId),
+        processIds: [...state.processIds, processId],
       }))
-    }
-  },
-}))
+      return () => {
+        set((state) => ({
+          processIds: state.processIds.filter((id) => id !== processId),
+        }))
+      }
+    },
+  })
+)

@@ -1,7 +1,10 @@
 import { getSession } from 'auth/server'
 import { workflowRepository } from 'lib/db/repository'
 
-export async function GET(_: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function GET(
+  _: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params
   const session = await getSession()
   if (!session) {
@@ -15,7 +18,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ id: string
   return Response.json(workflow)
 }
 
-export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { nodes, edges, deleteNodes, deleteEdges } = await request.json()
   const { id } = await params
   const session = await getSession()
@@ -23,7 +29,11 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
     return new Response('Unauthorized', { status: 401 })
   }
 
-  const hasAccess = await workflowRepository.checkAccess(id, session.user.id, false)
+  const hasAccess = await workflowRepository.checkAccess(
+    id,
+    session.user.id,
+    false
+  )
   if (!hasAccess) {
     return new Response('Unauthorized', { status: 401 })
   }

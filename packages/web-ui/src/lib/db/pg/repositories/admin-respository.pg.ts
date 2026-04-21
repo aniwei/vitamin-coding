@@ -1,7 +1,21 @@
-import { AdminRepository, AdminUsersQuery, AdminUsersPaginated } from 'app-types/admin'
+import {
+  AdminRepository,
+  AdminUsersQuery,
+  AdminUsersPaginated,
+} from 'app-types/admin'
 import { pgDb as db } from '../db.pg'
 import { UserTable, SessionTable } from '../schema.pg'
-import { and, asc, count, desc, eq, getTableColumns, ilike, or, sql } from 'drizzle-orm'
+import {
+  and,
+  asc,
+  count,
+  desc,
+  eq,
+  getTableColumns,
+  ilike,
+  or,
+  sql,
+} from 'drizzle-orm'
 
 // Helper function to get user columns without password
 const getUserColumnsWithoutPassword = () => {
@@ -41,13 +55,20 @@ const pgAdminRepository: AdminRepository = {
     if (searchValue && searchValue.trim()) {
       const searchTerm = `%${searchValue.trim()}%`
       whereConditions.push(
-        or(ilike(UserTable.name, searchTerm), ilike(UserTable.email, searchTerm)),
+        or(
+          ilike(UserTable.name, searchTerm),
+          ilike(UserTable.email, searchTerm)
+        )
       )
     }
 
     // Apply filters
     if (filterField && filterValue !== undefined) {
-      const filterCondition = buildFilterCondition(filterField, filterValue, filterOperator)
+      const filterCondition = buildFilterCondition(
+        filterField,
+        filterValue,
+        filterOperator
+      )
       if (filterCondition) {
         whereConditions.push(filterCondition)
       }
@@ -65,8 +86,13 @@ const pgAdminRepository: AdminRepository = {
     const orderByClause = buildOrderBy(sortBy, sortDirection)
 
     // Execute main query
-    const usersQueryBuilder = baseQuery.orderBy(orderByClause).limit(limit).offset(offset)
-    const users = whereClause ? await usersQueryBuilder.where(whereClause) : await usersQueryBuilder
+    const usersQueryBuilder = baseQuery
+      .orderBy(orderByClause)
+      .limit(limit)
+      .offset(offset)
+    const users = whereClause
+      ? await usersQueryBuilder.where(whereClause)
+      : await usersQueryBuilder
 
     // Get total count with same WHERE conditions
     const countQueryBuilder = db.select({ count: count() }).from(UserTable)
@@ -87,7 +113,11 @@ const pgAdminRepository: AdminRepository = {
 }
 
 // Helper function to build filter conditions
-function buildFilterCondition(field: string, value: string | number | boolean, operator: string) {
+function buildFilterCondition(
+  field: string,
+  value: string | number | boolean,
+  operator: string
+) {
   // Map common field names to actual columns
   let column
   switch (field) {

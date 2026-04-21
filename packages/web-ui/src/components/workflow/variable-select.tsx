@@ -22,13 +22,18 @@ import { Input } from 'ui/input'
 import { JSONSchema7 } from 'json-schema'
 import { findAccessibleNodeIds } from 'lib/ai/workflow/shared.workflow'
 import { cn } from 'lib/utils'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 
 interface VariableSelectProps {
   currentNodeId: string
   allowedTypes?: string[]
   children: React.ReactNode
-  onChange: (item: { nodeId: string; path: string[]; nodeName: string; type: string }) => void
+  onChange: (item: {
+    nodeId: string
+    path: string[]
+    nodeName: string
+    type: string
+  }) => void
 }
 
 export function VariableSelect({
@@ -41,7 +46,7 @@ export function VariableSelect({
   return (
     <DropdownMenu open={open} onOpenChange={setOpen}>
       <DropdownMenuTrigger asChild>{children}</DropdownMenuTrigger>
-      <DropdownMenuContent className='w-72'>
+      <DropdownMenuContent className="w-72">
         <VariableSelectContent
           currentNodeId={currentNodeId}
           allowedTypes={allowedTypes}
@@ -126,7 +131,7 @@ export function VariableSelectContent({
 
         return (
           <DropdownMenuGroup key={id}>
-            <DropdownMenuLabel className='text-xs text-muted-foreground flex items-center gap-1'>
+            <DropdownMenuLabel className="text-xs text-muted-foreground flex items-center gap-1">
               {name}
             </DropdownMenuLabel>
             {items}
@@ -136,17 +141,17 @@ export function VariableSelectContent({
       .filter(Boolean)
   }, [accessibleSchemas, query])
   return (
-    <div className='flex flex-col w-full'>
+    <div className="flex flex-col w-full">
       <div
-        className='flex items-center gap-1 px-2'
+        className="flex items-center gap-1 px-2"
         onKeyDown={(e) => {
           e.stopPropagation()
         }}
       >
-        <SearchIcon className='size-4 text-muted-foreground' />
+        <SearchIcon className="size-4 text-muted-foreground" />
         <Input
           autoFocus
-          className='border-none bg-transparent w-full'
+          className="border-none bg-transparent w-full"
           placeholder={t('Common.search')}
           value={query}
           onKeyDown={(e) => {
@@ -167,10 +172,12 @@ export function VariableSelectContent({
         />
       </div>
       <DropdownMenuSeparator />
-      <div className='max-h-[50vh] overflow-y-auto flex flex-col'>
+      <div className="max-h-[50vh] overflow-y-auto flex flex-col">
         {nodes.length === 0 || filteredNodes.length === 0 ? (
-          <div className='flex items-center justify-center h-full'>
-            <p className='text-muted-foreground py-4 text-xs'>{t('Workflow.noVariablesFound')}</p>
+          <div className="flex items-center justify-center h-full">
+            <p className="text-muted-foreground py-4 text-xs">
+              {t('Workflow.noVariablesFound')}
+            </p>
           </div>
         ) : (
           filteredNodes
@@ -199,7 +206,11 @@ function SchemaItem({
     return allowedTypes?.length && !allowedTypes.includes(schema.type as string)
   }, [allowedTypes, schema.type])
 
-  if (schema.type === 'object' && schema.properties && Object.keys(schema.properties).length > 0) {
+  if (
+    schema.type === 'object' &&
+    schema.properties &&
+    Object.keys(schema.properties).length > 0
+  ) {
     return (
       <DropdownMenuSub>
         <DropdownMenuSubTrigger
@@ -210,21 +221,26 @@ function SchemaItem({
           }}
           icon={
             <>
-              <span className='text-xs text-muted-foreground ml-auto'>{schema.type}</span>
-              <ChevronRightIcon className='size-4 text-muted-foreground' />
+              <span className="text-xs text-muted-foreground ml-auto">
+                {schema.type}
+              </span>
+              <ChevronRightIcon className="size-4 text-muted-foreground" />
             </>
           }
-          className='text-xs text-muted-foreground flex items-center gap-1'
+          className="text-xs text-muted-foreground flex items-center gap-1"
         >
-          <VariableIcon className='size-4 text-blue-500' />
+          <VariableIcon className="size-4 text-blue-500" />
           <span
-            className={cn('text-foreground ml-1 truncate', disabled && 'text-muted-foreground')}
+            className={cn(
+              'text-foreground ml-1 truncate',
+              disabled && 'text-muted-foreground'
+            )}
           >
             {name}
           </span>
         </DropdownMenuSubTrigger>
         <DropdownMenuPortal>
-          <DropdownMenuSubContent className='md:max-h-96 overflow-y-auto'>
+          <DropdownMenuSubContent className="md:max-h-96 overflow-y-auto">
             {Object.entries(schema.properties ?? {}).map(([key, schema]) => {
               return (
                 <SchemaItem
@@ -252,10 +268,12 @@ function SchemaItem({
         onChange([...path, name])
       }}
     >
-      <VariableIcon className='size-4 text-blue-500' />
-      <span className='truncate'>{name}</span>
-      <span className='text-xs text-muted-foreground ml-auto'>{schema.type}</span>
-      <div className='w-4' />
+      <VariableIcon className="size-4 text-blue-500" />
+      <span className="truncate">{name}</span>
+      <span className="text-xs text-muted-foreground ml-auto">
+        {schema.type}
+      </span>
+      <div className="w-4" />
     </DropdownMenuItem>
   )
 }

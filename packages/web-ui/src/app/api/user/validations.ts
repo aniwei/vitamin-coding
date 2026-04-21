@@ -7,7 +7,9 @@ import { passwordSchema } from 'lib/validations/password'
 
 export const UpdateUserRoleSchema = z.object({
   userId: z.string().uuid('Invalid user ID'),
-  role: z.enum(Object.values(USER_ROLES) as [UserRoleNames, ...UserRoleNames[]]).optional(),
+  role: z
+    .enum(Object.values(USER_ROLES) as [UserRoleNames, ...UserRoleNames[]])
+    .optional(),
 })
 
 export const UpdateUserPasswordError = {

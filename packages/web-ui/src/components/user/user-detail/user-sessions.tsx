@@ -1,15 +1,34 @@
 import { getUserSessions } from 'lib/user/server'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'ui/card'
-import { Table, TableBody, TableCell, TableHead, TableHeader, TableRow } from 'ui/table'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from 'ui/card'
+import {
+  Table,
+  TableBody,
+  TableCell,
+  TableHead,
+  TableHeader,
+  TableRow,
+} from 'ui/table'
 import { format } from 'date-fns'
+import { getTranslations } from 'next-intl/server'
 
 interface UserSessionsProps {
   userId: string
   view?: 'admin' | 'user'
 }
 
-export async function UserSessions({ userId, view = 'admin' }: UserSessionsProps) {
-  const t = await getTranslations(view === 'admin' ? 'User.Profile.admin' : 'User.Profile.user')
+export async function UserSessions({
+  userId,
+  view = 'admin',
+}: UserSessionsProps) {
+  const t = await getTranslations(
+    view === 'admin' ? 'User.Profile.admin' : 'User.Profile.user'
+  )
   const tCommon = await getTranslations('User.Profile.common')
   const sessions = await getUserSessions(userId)
 
@@ -21,7 +40,9 @@ export async function UserSessions({ userId, view = 'admin' }: UserSessionsProps
       </CardHeader>
       <CardContent>
         {sessions.length === 0 ? (
-          <p className='text-sm text-muted-foreground'>{tCommon('noActiveSessions')}</p>
+          <p className="text-sm text-muted-foreground">
+            {tCommon('noActiveSessions')}
+          </p>
         ) : (
           <Table>
             <TableHeader>
@@ -35,12 +56,16 @@ export async function UserSessions({ userId, view = 'admin' }: UserSessionsProps
             <TableBody>
               {sessions.map((session) => (
                 <TableRow key={session.id}>
-                  <TableCell>{format(new Date(session.createdAt), 'PPp')}</TableCell>
-                  <TableCell>{format(new Date(session.expiresAt), 'PPp')}</TableCell>
-                  <TableCell className='font-mono text-xs'>
+                  <TableCell>
+                    {format(new Date(session.createdAt), 'PPp')}
+                  </TableCell>
+                  <TableCell>
+                    {format(new Date(session.expiresAt), 'PPp')}
+                  </TableCell>
+                  <TableCell className="font-mono text-xs">
                     {session.ipAddress || tCommon('unknown')}
                   </TableCell>
-                  <TableCell className='max-w-[200px] truncate text-xs'>
+                  <TableCell className="max-w-[200px] truncate text-xs">
                     {session.userAgent || tCommon('unknown')}
                   </TableCell>
                 </TableRow>

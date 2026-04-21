@@ -1,19 +1,31 @@
 'use client'
 
 import { useState } from 'react'
-import { Dialog, DialogContent, DialogDescription, DialogHeader, DialogTitle } from 'ui/dialog'
+import {
+  Dialog,
+  DialogContent,
+  DialogDescription,
+  DialogHeader,
+  DialogTitle,
+} from 'ui/dialog'
 import { Button } from 'ui/button'
 import { Input } from 'ui/input'
 import { Label } from 'ui/label'
 import { Loader2, Sparkles, RefreshCw } from 'lucide-react'
 import { toast } from 'sonner'
 import { useFileUpload } from '@/hooks/use-presigned-upload'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'ui/select'
-import { generateAvatarImageAction } from '@/lib/compat/server-actions/user'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from 'ui/select'
+import { generateAvatarImageAction } from '@/app/api/user/actions'
 import { OpenAIIcon } from 'ui/openai-icon'
 import { GrokIcon } from 'ui/grok-icon'
 import { GeminiIcon } from 'ui/gemini-icon'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { Avatar, AvatarImage, AvatarFallback } from 'ui/avatar'
 
 interface GenerateAvatarDialogProps {
@@ -64,7 +76,9 @@ export function GenerateAvatarDialog({
       toast.success(t('imageGeneratedSuccessfully'))
     } catch (error) {
       console.error('Failed to generate image:', error)
-      toast.error(error instanceof Error ? error.message : t('failedToGenerateImage'))
+      toast.error(
+        error instanceof Error ? error.message : t('failedToGenerateImage')
+      )
     } finally {
       setIsGenerating(false)
     }
@@ -109,33 +123,38 @@ export function GenerateAvatarDialog({
 
   return (
     <Dialog open={open} onOpenChange={handleClose}>
-      <DialogContent className='sm:max-w-lg max-h-[90vh] overflow-y-auto'>
+      <DialogContent className="sm:max-w-lg max-h-[90vh] overflow-y-auto">
         <DialogHeader>
-          <DialogTitle className='flex items-center gap-2'>
-            <Sparkles className='size-5 text-primary' />
+          <DialogTitle className="flex items-center gap-2">
+            <Sparkles className="size-5 text-primary" />
             {t('generateAvatarWithAI')}
           </DialogTitle>
-          <DialogDescription>{t('generateAvatarWithAIDescription')}</DialogDescription>
+          <DialogDescription>
+            {t('generateAvatarWithAIDescription')}
+          </DialogDescription>
         </DialogHeader>
 
-        <div className='space-y-4 py-4'>
+        <div className="space-y-4 py-4">
           {/* Provider Selection */}
-          <div className='space-y-2'>
-            <Label htmlFor='provider'>{t('aiProvider')}</Label>
-            <Select value={provider} onValueChange={(value) => setProvider(value as ImageProvider)}>
-              <SelectTrigger id='provider'>
+          <div className="space-y-2">
+            <Label htmlFor="provider">{t('aiProvider')}</Label>
+            <Select
+              value={provider}
+              onValueChange={(value) => setProvider(value as ImageProvider)}
+            >
+              <SelectTrigger id="provider">
                 <SelectValue />
               </SelectTrigger>
               <SelectContent>
-                <SelectItem value='openai'>
+                <SelectItem value="openai">
                   <OpenAIIcon />
                   OpenAI
                 </SelectItem>
-                <SelectItem value='xai'>
+                <SelectItem value="xai">
                   <GrokIcon />
                   xAI
                 </SelectItem>
-                <SelectItem value='google'>
+                <SelectItem value="google">
                   <GeminiIcon />
                   Google
                 </SelectItem>
@@ -144,10 +163,10 @@ export function GenerateAvatarDialog({
           </div>
 
           {/* Prompt Input */}
-          <div className='space-y-2'>
-            <Label htmlFor='prompt'>{t('describeYourAvatar')}</Label>
+          <div className="space-y-2">
+            <Label htmlFor="prompt">{t('describeYourAvatar')}</Label>
             <Input
-              id='prompt'
+              id="prompt"
               placeholder={t('avatarPromptPlaceholder')}
               value={prompt}
               onChange={(e) => setPrompt(e.target.value)}
@@ -165,16 +184,16 @@ export function GenerateAvatarDialog({
             <Button
               onClick={handleGenerate}
               disabled={isGenerating || !prompt.trim()}
-              className='w-full'
+              className="w-full"
             >
               {isGenerating ? (
                 <>
-                  <Loader2 className='mr-2 size-4 animate-spin' />
+                  <Loader2 className="mr-2 size-4 animate-spin" />
                   {t('generating')}
                 </>
               ) : (
                 <>
-                  <Sparkles className='mr-2 size-4' />
+                  <Sparkles className="mr-2 size-4" />
                   {tCommon('generate')}
                 </>
               )}
@@ -183,28 +202,34 @@ export function GenerateAvatarDialog({
 
           {/* Generated Image Preview */}
           {generatedImage && (
-            <div className='space-y-3'>
-              <div className='relative aspect-square rounded-lg overflow-hidden border-2 border-border'>
-                <Avatar className='ring ring-border w-full h-full object-cover'>
+            <div className="space-y-3">
+              <div className="relative aspect-square rounded-lg overflow-hidden border-2 border-border">
+                <Avatar className="ring ring-border w-full h-full object-cover">
                   <AvatarImage src={generatedImage || undefined} />
-                  <AvatarFallback>{generatedImage.slice(0, 2).toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>
+                    {generatedImage.slice(0, 2).toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
               </div>
 
-              <div className='flex gap-2'>
+              <div className="flex gap-2">
                 <Button
                   onClick={handleGenerate}
                   disabled={isGenerating}
-                  variant='outline'
-                  className='flex-1'
+                  variant="outline"
+                  className="flex-1"
                 >
-                  <RefreshCw className='mr-2 size-4' />
+                  <RefreshCw className="mr-2 size-4" />
                   {t('regenerate')}
                 </Button>
-                <Button onClick={handleSave} disabled={isSaving} className='flex-1'>
+                <Button
+                  onClick={handleSave}
+                  disabled={isSaving}
+                  className="flex-1"
+                >
                   {isSaving ? (
                     <>
-                      <Loader2 className='mr-2 size-4 animate-spin' />
+                      <Loader2 className="mr-2 size-4 animate-spin" />
                       {tCommon('saving')}
                     </>
                   ) : (
@@ -216,8 +241,8 @@ export function GenerateAvatarDialog({
           )}
         </div>
 
-        <div className='flex justify-end'>
-          <Button variant='outline' onClick={handleClose}>
+        <div className="flex justify-end">
+          <Button variant="outline" onClick={handleClose}>
             {tCommon('cancel')}
           </Button>
         </div>

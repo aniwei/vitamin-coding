@@ -13,7 +13,7 @@ import { Avatar, AvatarFallback, AvatarImage } from 'ui/avatar'
 import { Skeleton } from 'ui/skeleton'
 import { authClient } from 'auth/client'
 import { notify } from 'lib/notify'
-import { useNavigate } from 'react-router-dom'
+import { useRouter } from 'next/navigation'
 
 function deepReplyCount(comment: ChatExportCommentWithUser): number {
   if (comment.replies?.length) {
@@ -41,7 +41,7 @@ export default function Comments({
   const scrollRef = useRef<HTMLDivElement>(null)
   const [replyTo, setReplyTo] = useState<ChatExportCommentWithUser | null>(null)
 
-  const navigate = useNavigate()
+  const router = useRouter()
 
   const { data, isLoading } = useSWR<ChatExportCommentWithUser[]>(
     isLoggedIn ? `/api/export/${id}/comments` : null,
@@ -49,7 +49,7 @@ export default function Comments({
     {
       fallbackData: defaultComments,
       revalidateOnMount: false,
-    },
+    }
   )
 
   const trigger = useMemo(() => {
@@ -60,15 +60,15 @@ export default function Comments({
       : 0
     return (
       <Button
-        variant='ghost'
-        size='icon'
-        className='relative'
+        variant="ghost"
+        size="icon"
+        className="relative"
         disabled={isPending}
-        data-testid='comments-trigger'
+        data-testid="comments-trigger"
       >
         <MessagesSquareIcon />
         {commentCount > 0 && (
-          <span className='absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center'>
+          <span className="absolute -top-1 -right-1 bg-primary text-primary-foreground text-xs rounded-full h-5 w-5 flex items-center justify-center">
             {commentCount}
           </span>
         )}
@@ -86,7 +86,7 @@ export default function Comments({
         })
         .then((answer) => {
           if (answer) {
-            navigate('/sign-in')
+            router.push('/sign-in')
           }
         })
     } else {
@@ -106,36 +106,47 @@ export default function Comments({
   }
 
   return (
-    <Drawer handleOnly direction='right' modal open={open} onOpenChange={handleOpenChange}>
+    <Drawer
+      handleOnly
+      direction="right"
+      modal
+      open={open}
+      onOpenChange={handleOpenChange}
+    >
       <DrawerTrigger asChild>{trigger}</DrawerTrigger>
 
       <DrawerContent
-        className='select-text! w-full lg:w-md border-none! bg-transparent! p-4'
+        className="select-text! w-full lg:w-md border-none! bg-transparent! p-4"
         disableOverlay
       >
-        <DrawerTitle className='sr-only'>Comments</DrawerTitle>
+        <DrawerTitle className="sr-only">Comments</DrawerTitle>
 
-        <div className='overflow-hidden w-full h-full flex flex-col bg-secondary/40 backdrop-blur-sm rounded-lg border'>
-          <div className='flex items-center justify-end p-2'>
-            <Button variant='ghost' size='icon' onClick={() => setOpen(false)}>
+        <div className="overflow-hidden w-full h-full flex flex-col bg-secondary/40 backdrop-blur-sm rounded-lg border">
+          <div className="flex items-center justify-end p-2">
+            <Button variant="ghost" size="icon" onClick={() => setOpen(false)}>
               <XIcon />
             </Button>
           </div>
 
-          <div className='flex-1 overflow-y-auto p-4 pt-0 space-y-4' ref={scrollRef}>
+          <div
+            className="flex-1 overflow-y-auto p-4 pt-0 space-y-4"
+            ref={scrollRef}
+          >
             {isLoading ? (
               <>
-                <Skeleton className='h-24 w-full' />
-                <Skeleton className='h-24 w-full' />
-                <Skeleton className='h-24 w-full' />
-                <Skeleton className='h-24 w-full' />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
+                <Skeleton className="h-24 w-full" />
               </>
             ) : data?.length === 0 ? (
               <div
-                className='text-center py-8 h-full flex justify-center items-center'
-                data-testid='comments-empty'
+                className="text-center py-8 h-full flex justify-center items-center"
+                data-testid="comments-empty"
               >
-                <p className='text-muted-foreground'>Be the first to comment!</p>
+                <p className="text-muted-foreground">
+                  Be the first to comment!
+                </p>
               </div>
             ) : (
               data?.map((comment) => (
@@ -150,23 +161,31 @@ export default function Comments({
             )}
           </div>
 
-          <div className='border-t border-border  p-4 bg-background flex flex-col gap-2'>
+          <div className="border-t border-border  p-4 bg-background flex flex-col gap-2">
             {replyTo && (
-              <div className='flex items-center text-xs text-muted-foreground gap-1'>
-                <CornerDownRightIcon className='size-3' />
-                <Avatar className='size-3 rounded-full'>
+              <div className="flex items-center text-xs text-muted-foreground gap-1">
+                <CornerDownRightIcon className="size-3" />
+                <Avatar className="size-3 rounded-full">
                   <AvatarImage src={replyTo.authorImage} />
-                  <AvatarFallback>{replyTo.authorName?.[0]?.toUpperCase()}</AvatarFallback>
+                  <AvatarFallback>
+                    {replyTo.authorName?.[0]?.toUpperCase()}
+                  </AvatarFallback>
                 </Avatar>
                 Replying to
-                <span className='text-primary'>{truncateString(replyTo.authorName, 8)}</span>{' '}
+                <span className="text-primary">
+                  {truncateString(replyTo.authorName, 8)}
+                </span>{' '}
                 <XIcon
-                  className='ml-auto size-2.5 cursor-pointer hover:text-primary'
+                  className="ml-auto size-2.5 cursor-pointer hover:text-primary"
                   onClick={() => setReplyTo(null)}
                 />
               </div>
             )}
-            <CommentForm exportId={id} parentId={replyTo?.id} onSubmit={handleReplySubmit} />
+            <CommentForm
+              exportId={id}
+              parentId={replyTo?.id}
+              onSubmit={handleReplySubmit}
+            />
           </div>
         </div>
       </DrawerContent>

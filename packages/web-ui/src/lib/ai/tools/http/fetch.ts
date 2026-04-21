@@ -49,7 +49,8 @@ export const httpFetchTool = createTool({
         const response = await fetch(url, {
           method,
           headers: headers ? { ...headers } : undefined,
-          body: body && method !== 'GET' && method !== 'HEAD' ? body : undefined,
+          body:
+            body && method !== 'GET' && method !== 'HEAD' ? body : undefined,
           signal: controller.signal,
         })
 

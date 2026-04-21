@@ -15,7 +15,13 @@ import { Label } from 'ui/label'
 import { Textarea } from 'ui/textarea'
 
 import { Tabs, TabsContent, TabsList, TabsTrigger } from 'ui/tabs'
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from 'ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from 'ui/card'
 import {
   PlusIcon,
   TrashIcon,
@@ -25,14 +31,17 @@ import {
   PencilIcon,
   VariableIcon,
 } from 'lucide-react'
-import { EditJsonSchemaFieldPopup, Feild } from '../edit-json-schema-field-popup'
+import {
+  EditJsonSchemaFieldPopup,
+  Feild,
+} from '../edit-json-schema-field-popup'
 import { useState, useCallback, useMemo, useEffect } from 'react'
 import { toast } from 'sonner'
-import { generateObjectAction } from '@/lib/compat/server-actions/chat'
+import { generateObjectAction } from '@/app/api/chat/actions'
 import { appStore } from '@/app/store'
 import { SelectModel } from '../select-model'
 import { notify } from 'lib/notify'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { JSONSchema7 } from 'json-schema'
 import { defaultObjectJsonSchema } from 'lib/ai/workflow/shared.workflow'
 import { errorToString, validateSchema } from 'lib/utils'
@@ -89,7 +98,7 @@ export function OutputSchemaEditor({
   const t = useTranslations()
   const [mode, setMode] = useState<SchemaEditMode>('simple')
   const [localSchema, setLocalSchema] = useState<ObjectJsonSchema7>(
-    structuredClone(defaultObjectJsonSchema),
+    structuredClone(defaultObjectJsonSchema)
   )
   const [advancedJson, setAdvancedJson] = useState('')
 
@@ -118,7 +127,8 @@ export function OutputSchemaEditor({
   const validate = useCallback((json: string): boolean => {
     return safe(() => JSON.parse(json) as ObjectJsonSchema7)
       .map((s) => {
-        if (!isObjectJsonSchema7(s)) throw new Error('Root schema must be an object')
+        if (!isObjectJsonSchema7(s))
+          throw new Error('Root schema must be an object')
         validateSchema('answer', s)
         jsonSchemaToZod(s) // for checking if the schema is valid
         return true
@@ -135,8 +145,8 @@ export function OutputSchemaEditor({
     const result = await notify.prompt({
       title: t('Workflow.generateSchemaWithAI'),
       description: (
-        <div className='flex items-center gap-2'>
-          <p className='mr-auto whitespace-pre-wrap'>
+        <div className="flex items-center gap-2">
+          <p className="mr-auto whitespace-pre-wrap">
             {t('Workflow.describeOutputDataRequest', {
               eg: '{"name": "John", "age": 30}',
             })}
@@ -215,7 +225,7 @@ Return ONLY the JSON Schema object - no explanations or markdown formatting.`,
         loading: t('Workflow.generatingJsonSchemaWithAI'),
         success: t('Workflow.jsonSchemaGeneratedSuccessfully'),
         error: t('Workflow.failedToGenerateSchema'),
-      },
+      }
     )
   }, [t])
 
@@ -237,7 +247,8 @@ Return ONLY the JSON Schema object - no explanations or markdown formatting.`,
         }),
       }
 
-      const newRequired = localSchema.required?.filter((key) => key !== oldKey) || []
+      const newRequired =
+        localSchema.required?.filter((key) => key !== oldKey) || []
       if (field.required && !newRequired.includes(field.key)) {
         newRequired.push(field.key)
       }
@@ -248,7 +259,7 @@ Return ONLY the JSON Schema object - no explanations or markdown formatting.`,
         required: newRequired.length > 0 ? newRequired : undefined,
       })
     },
-    [fields, localSchema],
+    [fields, localSchema]
   )
 
   const removeField = useCallback(
@@ -264,7 +275,7 @@ Return ONLY the JSON Schema object - no explanations or markdown formatting.`,
         required: newRequired?.length ? newRequired : undefined,
       })
     },
-    [localSchema],
+    [localSchema]
   )
 
   useEffect(() => {
@@ -279,64 +290,74 @@ Return ONLY the JSON Schema object - no explanations or markdown formatting.`,
   return (
     <Dialog open={open} onOpenChange={onOpenChange}>
       <DialogTrigger asChild>{children}</DialogTrigger>
-      <DialogContent className='max-w-4xl max-h-[90vh] overflow-hidden flex flex-col'>
+      <DialogContent className="max-w-4xl max-h-[90vh] overflow-hidden flex flex-col">
         <DialogHeader>
           <DialogTitle>{t('Workflow.outputSchemaEditor')}</DialogTitle>
         </DialogHeader>
 
-        <div className='flex-1 overflow-hidden'>
+        <div className="flex-1 overflow-hidden">
           <Tabs
             value={mode}
             onValueChange={(v) => setMode(v as SchemaEditMode)}
-            className='h-full flex flex-col'
+            className="h-full flex flex-col"
           >
-            <TabsList className='grid w-full grid-cols-2'>
-              <TabsTrigger value='simple' className='flex items-center gap-2'>
-                <FileTextIcon className='h-4 w-4' />
+            <TabsList className="grid w-full grid-cols-2">
+              <TabsTrigger value="simple" className="flex items-center gap-2">
+                <FileTextIcon className="h-4 w-4" />
                 Simple
               </TabsTrigger>
-              <TabsTrigger value='advanced' className='flex items-center gap-2'>
-                <CodeIcon className='h-4 w-4' />
+              <TabsTrigger value="advanced" className="flex items-center gap-2">
+                <CodeIcon className="h-4 w-4" />
                 JSON Schema
               </TabsTrigger>
             </TabsList>
 
-            <div className='flex-1 overflow-hidden mt-4 min-h-80'>
-              <TabsContent value='simple' className='h-full overflow-y-auto'>
-                <Card className='border-none bg-transparent'>
-                  <CardHeader className='sr-only'>
+            <div className="flex-1 overflow-hidden mt-4 min-h-80">
+              <TabsContent value="simple" className="h-full overflow-y-auto">
+                <Card className="border-none bg-transparent">
+                  <CardHeader className="sr-only">
                     <CardTitle>Schema Fields</CardTitle>
                   </CardHeader>
-                  <CardContent className='space-y-2 px-0!'>
+                  <CardContent className="space-y-2 px-0!">
                     {fields.map((field, index) => (
                       <div
                         key={field.key || index}
-                        className='flex items-center border rounded-lg px-4 py-2'
+                        className="flex items-center border rounded-lg px-4 py-2"
                       >
-                        <VariableIcon className='size-4 text-blue-500' />
-                        <div className='flex-1 flex items-center gap-2 text-sm'>
-                          <div className='text-muted-foreground w-12'>{field.type}</div>
+                        <VariableIcon className="size-4 text-blue-500" />
+                        <div className="flex-1 flex items-center gap-2 text-sm">
+                          <div className="text-muted-foreground w-12">
+                            {field.type}
+                          </div>
                           <div>
-                            <span className='font-medium truncate'>{field.key || 'unnamed'}</span>
-                            {field.required && <span className='text-destructive ml-1'>*</span>}
+                            <span className="font-medium truncate">
+                              {field.key || 'unnamed'}
+                            </span>
+                            {field.required && (
+                              <span className="text-destructive ml-1">*</span>
+                            )}
                           </div>
                         </div>
-                        {['string', 'number', 'boolean'].includes(field.type) && (
+                        {['string', 'number', 'boolean'].includes(
+                          field.type
+                        ) && (
                           <EditJsonSchemaFieldPopup
                             field={field}
-                            onChange={(updatedField) => updateField(index, updatedField)}
+                            onChange={(updatedField) =>
+                              updateField(index, updatedField)
+                            }
                           >
-                            <Button variant='ghost' size='icon'>
+                            <Button variant="ghost" size="icon">
                               <PencilIcon />
                             </Button>
                           </EditJsonSchemaFieldPopup>
                         )}
 
                         <Button
-                          variant='ghost'
-                          size='icon'
+                          variant="ghost"
+                          size="icon"
                           onClick={() => removeField(field.key)}
-                          className='hover:text-destructive'
+                          className="hover:text-destructive"
                         >
                           <TrashIcon />
                         </Button>
@@ -358,19 +379,26 @@ Return ONLY the JSON Schema object - no explanations or markdown formatting.`,
                         }
 
                         const newRequired = localSchema.required || []
-                        if (field.required && !newRequired.includes(field.key)) {
+                        if (
+                          field.required &&
+                          !newRequired.includes(field.key)
+                        ) {
                           newRequired.push(field.key)
                         }
 
                         setLocalSchema({
                           ...localSchema,
                           properties: newProperties,
-                          required: newRequired.length > 0 ? newRequired : undefined,
+                          required:
+                            newRequired.length > 0 ? newRequired : undefined,
                         })
                       }}
                     >
-                      <Button variant='outline' className='w-full border-dashed'>
-                        <PlusIcon className='mr-2' />
+                      <Button
+                        variant="outline"
+                        className="w-full border-dashed"
+                      >
+                        <PlusIcon className="mr-2" />
                         {t('Workflow.addField')}
                       </Button>
                     </EditJsonSchemaFieldPopup>
@@ -378,27 +406,33 @@ Return ONLY the JSON Schema object - no explanations or markdown formatting.`,
                 </Card>
               </TabsContent>
 
-              <TabsContent value='advanced' className='h-full overflow-y-auto'>
-                <Card className='border-none bg-transparent'>
+              <TabsContent value="advanced" className="h-full overflow-y-auto">
+                <Card className="border-none bg-transparent">
                   <CardHeader>
                     <CardTitle>JSON Schema Editor</CardTitle>
-                    <CardDescription className='text-sm text-muted-foreground'>
+                    <CardDescription className="text-sm text-muted-foreground">
                       {t('Workflow.jsonSchemaEditorDescription')}
                     </CardDescription>
                   </CardHeader>
 
-                  <CardContent className='px-0'>
+                  <CardContent className="px-0">
                     <div>
-                      <div className='flex items-center justify-between mb-2'>
-                        <Label htmlFor='advanced-json'>JSON Schema (Draft 7)</Label>
-                        <Button onClick={handleGenerateWithAI} variant='outline' size='sm'>
-                          <WandSparklesIcon className='size-3.5 mr-2' />
+                      <div className="flex items-center justify-between mb-2">
+                        <Label htmlFor="advanced-json">
+                          JSON Schema (Draft 7)
+                        </Label>
+                        <Button
+                          onClick={handleGenerateWithAI}
+                          variant="outline"
+                          size="sm"
+                        >
+                          <WandSparklesIcon className="size-3.5 mr-2" />
                           {t('Common.generateWithAI')}
                         </Button>
                       </div>
                       <Textarea
-                        id='advanced-json'
-                        className='min-h-[300px] font-mono text-sm resize-none max-h-[400px] overflow-y-auto'
+                        id="advanced-json"
+                        className="min-h-[300px] font-mono text-sm resize-none max-h-[400px] overflow-y-auto"
                         placeholder={placeholderJsonSchema}
                         value={advancedJson}
                         onChange={(e) => setAdvancedJson(e.target.value)}
@@ -413,7 +447,7 @@ Return ONLY the JSON Schema object - no explanations or markdown formatting.`,
 
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant='ghost'>{t('Common.cancel')}</Button>
+            <Button variant="ghost">{t('Common.cancel')}</Button>
           </DialogClose>
           <Button onClick={handleSave}>{t('Workflow.saveSchema')}</Button>
         </DialogFooter>

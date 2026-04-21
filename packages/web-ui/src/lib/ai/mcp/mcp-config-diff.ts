@@ -30,7 +30,7 @@ const validate = (config: unknown) => {
  */
 export function detectConfigChanges(
   prev: Record<string, unknown>,
-  next: Record<string, unknown>,
+  next: Record<string, unknown>
 ): ConfigChange[] {
   const changes: ConfigChange[] = []
   const allKeys = new Set([...Object.keys(prev), ...Object.keys(next)])

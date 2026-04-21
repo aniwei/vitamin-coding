@@ -8,7 +8,13 @@ import {
   type VercelAIMcpTool,
 } from 'app-types/mcp'
 import { createMCPClient, type MCPClient } from './create-mcp-client'
-import { errorToString, generateUUID, Locker, safeJSONParse, toAny } from 'lib/utils'
+import {
+  errorToString,
+  generateUUID,
+  Locker,
+  safeJSONParse,
+  toAny,
+} from 'lib/utils'
 import { safe } from 'ts-safe'
 import { McpServerTable } from 'lib/db/pg/schema.pg'
 import { createMCPToolId } from './mcp-tool-id'
@@ -34,7 +40,10 @@ export interface MCPConfigStorage {
   has(id: string): Promise<boolean>
   get(id: string): Promise<McpServerSelect | null>
   updateToolInfo?(id: string, toolInfo: MCPToolInfo[]): Promise<void>
-  updateConnectionStatus?(id: string, status: MCPConnectionStatus): Promise<void>
+  updateConnectionStatus?(
+    id: string,
+    status: MCPConnectionStatus
+  ): Promise<void>
 }
 
 export class MCPClientsManager {
@@ -54,7 +63,7 @@ export class MCPClientsManager {
   // Optional storage for persistent configurations
   constructor(
     private storage: MCPConfigStorage = createMemoryMCPConfigStorage(),
-    private autoDisconnectSeconds: number = 60 * 30, // 30 minutes
+    private autoDisconnectSeconds: number = 60 * 30 // 30 minutes
   ) {
     process.on('SIGINT', this.cleanup.bind(this))
     process.on('SIGTERM', this.cleanup.bind(this))
@@ -74,7 +83,9 @@ export class MCPClientsManager {
   async init() {
     this.logger.info('Initializing MCP clients manager')
     if (this.initializedLock.isLocked) {
-      this.logger.info('MCP clients manager already initialized, waiting for lock')
+      this.logger.info(
+        'MCP clients manager already initialized, waiting for lock'
+      )
       return this.initializedLock.wait()
     }
     if (this.initialized) {
@@ -87,24 +98,30 @@ export class MCPClientsManager {
           await this.storage.init(this)
           const configs = await this.storage.loadAll()
           await Promise.all(
-            configs.map(({ id, name, config, toolInfo, lastConnectionStatus }) => {
-              if (toolInfo?.length) {
-                this.logger.info(`Loading cached tool info for ${name} (${toolInfo.length} tools)`)
-                this.addClientWithCachedToolInfo(id, name, config, toolInfo)
-                return Promise.resolve()
+            configs.map(
+              ({ id, name, config, toolInfo, lastConnectionStatus }) => {
+                if (toolInfo?.length) {
+                  this.logger.info(
+                    `Loading cached tool info for ${name} (${toolInfo.length} tools)`
+                  )
+                  this.addClientWithCachedToolInfo(id, name, config, toolInfo)
+                  return Promise.resolve()
+                }
+                // Register errored servers without connecting
+                // — user can manually refresh these from the UI
+                if (lastConnectionStatus === 'error') {
+                  this.logger.info(
+                    `Registering ${name} without connect (last status: error)`
+                  )
+                  this.addClientWithCachedToolInfo(id, name, config, [])
+                  return Promise.resolve()
+                }
+                // New servers or servers without cache — connect in background
+                return this.addClient(id, name, config).catch(() => {
+                  ;`ignore error`
+                })
               }
-              // Register errored servers without connecting
-              // — user can manually refresh these from the UI
-              if (lastConnectionStatus === 'error') {
-                this.logger.info(`Registering ${name} without connect (last status: error)`)
-                this.addClientWithCachedToolInfo(id, name, config, [])
-                return Promise.resolve()
-              }
-              // New servers or servers without cache — connect in background
-              return this.addClient(id, name, config).catch(() => {
-                ;`ignore error`
-              })
-            }),
+            )
           )
         }
       })
@@ -130,30 +147,31 @@ export class MCPClientsManager {
             (bcc, tool) => {
               return {
                 ...bcc,
-                [createMCPToolId(clientName, tool.name)]: VercelAIMcpToolTag.create({
-                  description: tool.description,
-                  inputSchema: jsonSchema(
-                    toAny({
-                      ...tool.inputSchema,
-                      properties: tool.inputSchema?.properties ?? {},
-                      additionalProperties: false,
-                    }),
-                  ),
-                  _originToolName: tool.name,
-                  _mcpServerName: clientName,
-                  _mcpServerId: id,
-                  execute: (params, options: ToolCallOptions) => {
-                    options?.abortSignal?.throwIfAborted()
-                    return this.toolCall(id, tool.name, params)
-                  },
-                }),
+                [createMCPToolId(clientName, tool.name)]:
+                  VercelAIMcpToolTag.create({
+                    description: tool.description,
+                    inputSchema: jsonSchema(
+                      toAny({
+                        ...tool.inputSchema,
+                        properties: tool.inputSchema?.properties ?? {},
+                        additionalProperties: false,
+                      })
+                    ),
+                    _originToolName: tool.name,
+                    _mcpServerName: clientName,
+                    _mcpServerId: id,
+                    execute: (params, options: ToolCallOptions) => {
+                      options?.abortSignal?.throwIfAborted()
+                      return this.toolCall(id, tool.name, params)
+                    },
+                  }),
               }
             },
-            {} as Record<string, VercelAIMcpTool>,
+            {} as Record<string, VercelAIMcpTool>
           ),
         }
       },
-      {} as Record<string, VercelAIMcpTool>,
+      {} as Record<string, VercelAIMcpTool>
     )
   }
   /**
@@ -164,7 +182,7 @@ export class MCPClientsManager {
     id: string,
     name: string,
     serverConfig: MCPServerConfig,
-    cachedToolInfo: MCPToolInfo[],
+    cachedToolInfo: MCPToolInfo[]
   ) {
     if (this.clients.has(id)) {
       const prevClient = this.clients.get(id)!
@@ -279,7 +297,11 @@ export class MCPClientsManager {
 
     return this.clients.get(id)
   }
-  async toolCallByServerName(serverName: string, toolName: string, input: unknown) {
+  async toolCallByServerName(
+    serverName: string,
+    toolName: string,
+    input: unknown
+  ) {
     const clients = await this.getClients()
     const client = clients.find((c) => c.client.getInfo().name === serverName)
     if (!client) {
@@ -336,7 +358,7 @@ export class MCPClientsManager {
 
 export function createMCPClientsManager(
   storage?: MCPConfigStorage,
-  autoDisconnectSeconds: number = 60 * 30, // 30 minutes
+  autoDisconnectSeconds: number = 60 * 30 // 30 minutes
 ): MCPClientsManager {
   return new MCPClientsManager(storage, autoDisconnectSeconds)
 }

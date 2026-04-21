@@ -19,7 +19,13 @@ export interface User extends Omit<UserEntity, 'password'> {
 
 export type BasicUser = Omit<
   User,
-  'password' | 'preferences' | 'image' | 'role' | 'banned' | 'banReason' | 'banExpires'
+  | 'password'
+  | 'preferences'
+  | 'image'
+  | 'role'
+  | 'banned'
+  | 'banReason'
+  | 'banExpires'
 > & {
   image?: string | null
   role?: string | null
@@ -45,7 +51,10 @@ export type UserRepository = {
     image?: string
   }) => Promise<User>
 
-  updatePreferences: (userId: string, preferences: UserPreferences) => Promise<User>
+  updatePreferences: (
+    userId: string,
+    preferences: UserPreferences
+  ) => Promise<User>
   getPreferences: (userId: string) => Promise<UserPreferences | null>
   getUserById: (userId: string) => Promise<BasicUserWithLastLogin | null>
   getUserCount: () => Promise<number>

@@ -6,7 +6,13 @@ import { AutoHeight } from 'ui/auto-height'
 import { appStore } from '@/app/store'
 import { useShallow } from 'zustand/shallow'
 import { isShortcutEvent, Shortcuts } from 'lib/keyboard-shortcuts'
-import { Drawer, DrawerContent, DrawerDescription, DrawerPortal, DrawerTitle } from 'ui/drawer'
+import {
+  Drawer,
+  DrawerContent,
+  DrawerDescription,
+  DrawerPortal,
+  DrawerTitle,
+} from 'ui/drawer'
 import {
   MCPInstructionsContent,
   UserInstructionsContent,
@@ -14,12 +20,12 @@ import {
 } from './chat-preferences-content'
 import { UserIcon, X, Share2 } from 'lucide-react'
 import { Button } from 'ui/button'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { MCPIcon } from 'ui/mcp-icon'
 
 export function ChatPreferencesPopup() {
   const [openChatPreferences, appStoreMutate] = appStore(
-    useShallow((state) => [state.openChatPreferences, state.mutate]),
+    useShallow((state) => [state.openChatPreferences, state.mutate])
   )
 
   const t = useTranslations()
@@ -28,15 +34,15 @@ export function ChatPreferencesPopup() {
     return [
       {
         label: t('Chat.ChatPreferences.userInstructions'),
-        icon: <UserIcon className='w-4 h-4' />,
+        icon: <UserIcon className="w-4 h-4" />,
       },
       {
         label: t('Chat.ChatPreferences.mcpInstructions'),
-        icon: <MCPIcon className='w-4 h-4 fill-muted-foreground' />,
+        icon: <MCPIcon className="w-4 h-4 fill-muted-foreground" />,
       },
       {
         label: t('Chat.ChatPreferences.myExports'),
-        icon: <Share2 className='w-4 h-4' />,
+        icon: <Share2 className="w-4 h-4" />,
       },
     ]
   }, [t])
@@ -49,7 +55,10 @@ export function ChatPreferencesPopup() {
 
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      const isChatPreferencesEvent = isShortcutEvent(e, Shortcuts.openChatPreferences)
+      const isChatPreferencesEvent = isShortcutEvent(
+        e,
+        Shortcuts.openChatPreferences
+      )
       if (isChatPreferencesEvent) {
         e.preventDefault()
         e.stopPropagation()
@@ -76,7 +85,7 @@ export function ChatPreferencesPopup() {
     <Drawer
       handleOnly
       open={openChatPreferences}
-      direction='top'
+      direction="top"
       onOpenChange={(open) => appStoreMutate({ openChatPreferences: open })}
     >
       <DrawerPortal>
@@ -84,21 +93,21 @@ export function ChatPreferencesPopup() {
           style={{
             userSelect: 'text',
           }}
-          className='max-h-[100vh]! w-full h-full border-none rounded-none flex flex-col bg-card overflow-hidden p-4 md:p-6'
+          className="max-h-[100vh]! w-full h-full border-none rounded-none flex flex-col bg-card overflow-hidden p-4 md:p-6"
         >
-          <div className='flex items-center justify-end'>
-            <Button variant='ghost' size='icon' onClick={handleClose}>
+          <div className="flex items-center justify-end">
+            <Button variant="ghost" size="icon" onClick={handleClose}>
               <X />
             </Button>
           </div>
-          <DrawerTitle className='sr-only'>Chat Preferences</DrawerTitle>
-          <DrawerDescription className='sr-only' />
+          <DrawerTitle className="sr-only">Chat Preferences</DrawerTitle>
+          <DrawerDescription className="sr-only" />
 
-          <div className='flex justify-center'>
-            <div className='w-full mt-4 lg:w-5xl lg:mt-14'>
+          <div className="flex justify-center">
+            <div className="w-full mt-4 lg:w-5xl lg:mt-14">
               {/* Mobile: Tabs as horizontal scroll */}
-              <div className='md:hidden'>
-                <div className='flex gap-2 overflow-x-auto pb-2'>
+              <div className="md:hidden">
+                <div className="flex gap-2 overflow-x-auto pb-2">
                   {tabs.map((tabItem, index) => (
                     <button
                       key={index}
@@ -116,10 +125,10 @@ export function ChatPreferencesPopup() {
                 </div>
               </div>
 
-              <div className='flex flex-1 overflow-hidden'>
+              <div className="flex flex-1 overflow-hidden">
                 {/* Desktop: Sidebar */}
-                <div className='hidden md:block w-64'>
-                  <nav className='px-4 flex flex-col gap-2'>
+                <div className="hidden md:block w-64">
+                  <nav className="px-4 flex flex-col gap-2">
                     {tabs.map((tabItem, index) => (
                       <button
                         key={index}
@@ -131,15 +140,15 @@ export function ChatPreferencesPopup() {
                         }`}
                       >
                         {tabItem.icon}
-                        <span className='font-medium'>{tabItem.label}</span>
+                        <span className="font-medium">{tabItem.label}</span>
                       </button>
                     ))}
                   </nav>
                 </div>
 
                 {/* Content */}
-                <AutoHeight className='flex-1 rounded-lg border max-h-[80vh] overflow-y-auto'>
-                  <div className='p-4 md:p-8'>
+                <AutoHeight className="flex-1 rounded-lg border max-h-[80vh] overflow-y-auto">
+                  <div className="p-4 md:p-8">
                     {openChatPreferences && (
                       <>
                         {tab == 0 ? (

@@ -2,7 +2,10 @@ import 'server-only'
 
 import { getSession } from 'lib/auth/server'
 import { AdminUsersQuery, AdminUsersPaginated } from 'app-types/admin'
-import { requireAdminPermission, requireUserListPermission } from 'lib/auth/permissions'
+import {
+  requireAdminPermission,
+  requireUserListPermission,
+} from 'lib/auth/permissions'
 import pgAdminRepository from 'lib/db/pg/repositories/admin-respository.pg'
 
 export const ADMIN_USER_LIST_LIMIT = 10
@@ -35,7 +38,9 @@ export async function requireAdminSession(): Promise<
  * Get paginated users using our custom repository with improved search capabilities
  * Only admins can list and search users
  */
-export async function getAdminUsers(query?: AdminUsersQuery): Promise<AdminUsersPaginated> {
+export async function getAdminUsers(
+  query?: AdminUsersQuery
+): Promise<AdminUsersPaginated> {
   // Use our new permission system
   await requireUserListPermission('list users in admin panel')
   await getSession()

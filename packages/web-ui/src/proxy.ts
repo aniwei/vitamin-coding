@@ -1,5 +1,4 @@
 import { NextResponse, type NextRequest } from 'next/server'
-import { getSessionCookie } from 'better-auth/cookies'
 
 export async function proxy(request: NextRequest) {
   const { pathname } = request.nextUrl
@@ -16,11 +15,6 @@ export async function proxy(request: NextRequest) {
     return NextResponse.redirect(new URL('/admin/users', request.url))
   }
 
-  const sessionCookie = getSessionCookie(request)
-
-  if (!sessionCookie) {
-    return NextResponse.redirect(new URL('/sign-in', request.url))
-  }
   return NextResponse.next()
 }
 

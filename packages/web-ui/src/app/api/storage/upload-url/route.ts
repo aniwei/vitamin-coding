@@ -47,7 +47,11 @@ function isVercelBlobRequest(body: unknown): body is HandleUploadBody {
  * Handles Vercel Blob client upload flow.
  * Generates client token and handles upload completion webhook.
  */
-async function handleVercelBlobUpload(body: HandleUploadBody, request: Request, userId: string) {
+async function handleVercelBlobUpload(
+  body: HandleUploadBody,
+  request: Request,
+  userId: string
+) {
   const jsonResponse = await handleUpload({
     body,
     request,
@@ -142,7 +146,7 @@ export async function POST(request: Request) {
         solution: storageCheck.solution,
         storageDriver,
       },
-      { status: 500 },
+      { status: 500 }
     )
   }
 
@@ -163,6 +167,9 @@ export async function POST(request: Request) {
     return await handleGenericUpload(body as GenericUploadRequest)
   } catch (error) {
     logger.error('Upload URL generation failed', error)
-    return NextResponse.json({ error: 'Failed to create upload URL' }, { status: 500 })
+    return NextResponse.json(
+      { error: 'Failed to create upload URL' },
+      { status: 500 }
+    )
   }
 }

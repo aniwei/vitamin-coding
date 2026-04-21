@@ -1,6 +1,9 @@
 'use client'
 
-import { authorizeMcpClientAction, checkTokenMcpClientAction } from '@/app/api/mcp/actions'
+import {
+  authorizeMcpClientAction,
+  checkTokenMcpClientAction,
+} from '@/app/api/mcp/actions'
 import { wait } from 'lib/utils'
 
 export function redriectMcpOauth(id: string) {
@@ -12,7 +15,7 @@ export function redriectMcpOauth(id: string) {
       const authWindow = window.open(
         authUrl,
         'oauth',
-        'width=600,height=800,scrollbars=yes,resizable=yes',
+        'width=600,height=800,scrollbars=yes,resizable=yes'
       )
       if (!authWindow) {
         return reject(new Error('Please allow popups for OAuth authentication'))
@@ -59,7 +62,9 @@ export function redriectMcpOauth(id: string) {
             authWindow.close()
           }
           const errorMessage =
-            event.data.error_description || event.data.error || 'Authentication failed'
+            event.data.error_description ||
+            event.data.error ||
+            'Authentication failed'
           reject(new Error(errorMessage))
         }
       }

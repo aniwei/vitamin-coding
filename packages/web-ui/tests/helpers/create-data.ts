@@ -15,7 +15,7 @@ export const createMcpServer = async (
       [key: string]: any
     }
     visibility?: 'public' | 'private'
-  },
+  }
 ) => {
   try {
     let page: Page
@@ -48,7 +48,9 @@ export const createMcpServer = async (
     })
     if (!response.ok()) {
       const errorBody = await response.text()
-      throw new Error(`Failed to create MCP server: Status ${response.status()} - ${errorBody}`)
+      throw new Error(
+        `Failed to create MCP server: Status ${response.status()} - ${errorBody}`
+      )
     }
     const serverInfo = (await response.json()) as { id: string }
     if (!serverInfo.id) {

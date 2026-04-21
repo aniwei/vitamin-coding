@@ -7,7 +7,11 @@ import {
   ChatExportWithUser,
 } from 'app-types/chat-export'
 import { pgDb } from '../db.pg'
-import { ChatExportCommentTable, ChatExportTable, UserTable } from '../schema.pg'
+import {
+  ChatExportCommentTable,
+  ChatExportTable,
+  UserTable,
+} from '../schema.pg'
 import { and, count, eq, sql } from 'drizzle-orm'
 import z from 'zod'
 import { pgChatRepository } from './chat-repository.pg'
@@ -25,7 +29,7 @@ function toChatExport(data: typeof ChatExportTable.$inferSelect): ChatExport {
 }
 
 function toChatExportInsert(
-  data: z.infer<typeof ChatExportCreateSchema>,
+  data: z.infer<typeof ChatExportCreateSchema>
 ): typeof ChatExportTable.$inferInsert {
   return ChatExportCreateSchema.parse(data) as ChatExport
 }
@@ -56,11 +60,17 @@ export const pgChatExportRepository: ChatExportRepository = {
   },
 
   insert: async (data) => {
-    const result = await pgDb.insert(ChatExportTable).values(toChatExportInsert(data)).returning()
+    const result = await pgDb
+      .insert(ChatExportTable)
+      .values(toChatExportInsert(data))
+      .returning()
     return result[0].id
   },
   selectById: async (id) => {
-    const [result] = await pgDb.select().from(ChatExportTable).where(eq(ChatExportTable.id, id))
+    const [result] = await pgDb
+      .select()
+      .from(ChatExportTable)
+      .where(eq(ChatExportTable.id, id))
     return toChatExport(result)
   },
   selectByIdWithUser: async (id) => {
@@ -100,7 +110,10 @@ export const pgChatExportRepository: ChatExportRepository = {
         commentCount: count(ChatExportCommentTable.id),
       })
       .from(ChatExportTable)
-      .leftJoin(ChatExportCommentTable, eq(ChatExportCommentTable.exportId, ChatExportTable.id))
+      .leftJoin(
+        ChatExportCommentTable,
+        eq(ChatExportCommentTable.exportId, ChatExportTable.id)
+      )
       .where(eq(ChatExportTable.exporterId, exporterId))
       .groupBy(ChatExportTable.id)
       .orderBy(sql`${ChatExportTable.exportedAt} DESC`)
@@ -118,7 +131,9 @@ export const pgChatExportRepository: ChatExportRepository = {
         exporterId: ChatExportTable.exporterId,
       })
       .from(ChatExportTable)
-      .where(and(eq(ChatExportTable.id, id), eq(ChatExportTable.exporterId, userId)))
+      .where(
+        and(eq(ChatExportTable.id, id), eq(ChatExportTable.exporterId, userId))
+      )
     return result.length > 0
   },
   deleteById: async (id) => {
@@ -162,18 +177,26 @@ export const pgChatExportRepository: ChatExportRepository = {
       })
 
     const commentsById = new Map<string, ChatExportCommentWithUser>(
-      result.map((comment) => [comment.id, comment as ChatExportCommentWithUser]),
+      result.map((comment) => [
+        comment.id,
+        comment as ChatExportCommentWithUser,
+      ])
     )
     result.forEach((comment) => {
       if (comment.parentId) {
         const parent = commentsById.get(comment.parentId)
         if (parent) {
-          parent.replies = [...(parent.replies || []), comment as ChatExportCommentWithUser]
+          parent.replies = [
+            ...(parent.replies || []),
+            comment as ChatExportCommentWithUser,
+          ]
         }
       }
     })
 
-    return result.filter((comment) => !comment.parentId) as ChatExportCommentWithUser[]
+    return result.filter(
+      (comment) => !comment.parentId
+    ) as ChatExportCommentWithUser[]
   },
   checkCommentAccess: async (id, authorId) => {
     const result = await pgDb
@@ -181,12 +204,22 @@ export const pgChatExportRepository: ChatExportRepository = {
         authorId: ChatExportCommentTable.authorId,
       })
       .from(ChatExportCommentTable)
-      .where(and(eq(ChatExportCommentTable.id, id), eq(ChatExportCommentTable.authorId, authorId)))
+      .where(
+        and(
+          eq(ChatExportCommentTable.id, id),
+          eq(ChatExportCommentTable.authorId, authorId)
+        )
+      )
     return result.length > 0
   },
   deleteComment: async (id, authorId) => {
     await pgDb
       .delete(ChatExportCommentTable)
-      .where(and(eq(ChatExportCommentTable.id, id), eq(ChatExportCommentTable.authorId, authorId)))
+      .where(
+        and(
+          eq(ChatExportCommentTable.id, id),
+          eq(ChatExportCommentTable.authorId, authorId)
+        )
+      )
   },
 }

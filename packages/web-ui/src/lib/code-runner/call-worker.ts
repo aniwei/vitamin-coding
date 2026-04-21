@@ -9,7 +9,7 @@ import {
 
 export function callCodeRunWorker(
   type: 'javascript' | 'python',
-  option: CodeRunnerOptions,
+  option: CodeRunnerOptions
 ): Promise<CodeRunnerResult> {
   let tk: NodeJS.Timeout
   const terminateDebounce = createDebounce()

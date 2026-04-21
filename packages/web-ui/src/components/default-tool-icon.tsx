@@ -22,16 +22,24 @@ export function DefaultToolIcon({
 }) {
   return useMemo(() => {
     if (name === DefaultToolName.CreatePieChart) {
-      return <ChartPieIcon className={cn('size-3.5 text-blue-500', className)} />
+      return (
+        <ChartPieIcon className={cn('size-3.5 text-blue-500', className)} />
+      )
     }
     if (name === DefaultToolName.CreateBarChart) {
-      return <ChartColumnIcon className={cn('size-3.5 text-blue-500', className)} />
+      return (
+        <ChartColumnIcon className={cn('size-3.5 text-blue-500', className)} />
+      )
     }
     if (name === DefaultToolName.CreateLineChart) {
-      return <TrendingUpIcon className={cn('size-3.5 text-blue-500', className)} />
+      return (
+        <TrendingUpIcon className={cn('size-3.5 text-blue-500', className)} />
+      )
     }
     if (name === DefaultToolName.CreateTable) {
-      return <TableOfContents className={cn('size-3.5 text-blue-500', className)} />
+      return (
+        <TableOfContents className={cn('size-3.5 text-blue-500', className)} />
+      )
     }
     if (name === DefaultToolName.WebSearch) {
       return <GlobeIcon className={cn('size-3.5 text-blue-400', className)} />
@@ -40,7 +48,11 @@ export function DefaultToolIcon({
       return <GlobeIcon className={cn('size-3.5 text-blue-400', className)} />
     }
     if (name === DefaultToolName.Http) {
-      return <HardDriveUploadIcon className={cn('size-3.5 text-blue-300', className)} />
+      return (
+        <HardDriveUploadIcon
+          className={cn('size-3.5 text-blue-300', className)}
+        />
+      )
     }
     if (name === DefaultToolName.JavascriptExecution) {
       return <CodeIcon className={cn('size-3.5 text-yellow-400', className)} />

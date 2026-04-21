@@ -32,7 +32,9 @@ export async function POST(request: Request) {
       return new Response('Unauthorized', { status: 401 })
     }
 
-    logger.info(`chatModel: ${chatModel?.provider}/${chatModel?.model}, threadId: ${threadId}`)
+    logger.info(
+      `chatModel: ${chatModel?.provider}/${chatModel?.model}, threadId: ${threadId}`
+    )
 
     const result = streamText({
       model: customModelProvider.getModel(chatModel),

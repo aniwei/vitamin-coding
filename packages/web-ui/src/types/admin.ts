@@ -16,7 +16,13 @@ export interface AdminUsersQuery {
 // Better Auth's UserWithRole type - minimal definition for list view
 export type AdminUserListItem = Omit<
   User,
-  'password' | 'preferences' | 'image' | 'role' | 'banned' | 'banReason' | 'banExpires'
+  | 'password'
+  | 'preferences'
+  | 'image'
+  | 'role'
+  | 'banned'
+  | 'banReason'
+  | 'banExpires'
 > & {
   image?: string | null
   role?: string | null

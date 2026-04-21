@@ -22,7 +22,10 @@ import {
 import '@xyflow/react/dist/style.css'
 import { DBWorkflow } from 'app-types/workflow'
 import { extractWorkflowDiff } from 'lib/ai/workflow/extract-workflow-diff'
-import { convertUIEdgeToDBEdge, convertUINodeToDBNode } from 'lib/ai/workflow/shared.workflow'
+import {
+  convertUIEdgeToDBEdge,
+  convertUINodeToDBNode,
+} from 'lib/ai/workflow/shared.workflow'
 import { NodeKind, UINode } from 'lib/ai/workflow/workflow.interface'
 import { wouldCreateCycle } from 'lib/ai/workflow/would-create-cycle'
 import { createDebounce, fetcher, generateUUID } from 'lib/utils'
@@ -57,11 +60,15 @@ export default function Workflow({
   const [edges, setEdges] = useState<Edge[]>(initialEdges)
 
   const isProcessing = useMemo(() => processIds.length > 0, [processIds.length])
-  const { data: workflow } = useSWR<DBWorkflow>(`/api/workflow/${workflowId}`, fetcher, {
-    onSuccess: (workflow) => {
-      init(workflow, hasEditAccess)
-    },
-  })
+  const { data: workflow } = useSWR<DBWorkflow>(
+    `/api/workflow/${workflowId}`,
+    fetcher,
+    {
+      onSuccess: (workflow) => {
+        init(workflow, hasEditAccess)
+      },
+    }
+  )
   const [activeNodeIds, setActiveNodeIds] = useState<string[]>([])
 
   const snapshot = useRef({ nodes: initialNodes, edges: initialEdges })
@@ -109,7 +116,10 @@ export default function Workflow({
           let updatedNodes = nds
           changes.forEach((change) => {
             if (change.type === 'select') {
-              updatedNodes = applyNodeChanges([change], updatedNodes) as UINode[]
+              updatedNodes = applyNodeChanges(
+                [change],
+                updatedNodes
+              ) as UINode[]
             } else if (change.type === 'replace' && 'item' in change) {
               const newNode = change.item as UINode
               updatedNodes = updatedNodes.map((node) => {
@@ -132,14 +142,14 @@ export default function Workflow({
       }
       setNodes((nds) => applyNodeChanges(changes, nds) as UINode[])
     },
-    [editable],
+    [editable]
   )
   const onEdgesChange: OnEdgesChange = useCallback(
     (changes) => {
       if (!editable) return
       setEdges((eds) => applyEdgeChanges(changes, eds))
     },
-    [editable],
+    [editable]
   )
   const onConnect: OnConnect = useCallback(
     (connection) => {
@@ -150,16 +160,19 @@ export default function Workflow({
             ...connection,
             id: generateUUID(),
           },
-          eds,
-        ),
+          eds
+        )
       )
     },
-    [editable],
+    [editable]
   )
 
-  const onSelectionChange: OnSelectionChangeFunc = useCallback(({ nodes: selectedNodes }) => {
-    setActiveNodeIds(selectedNodes.map((node) => node.id))
-  }, [])
+  const onSelectionChange: OnSelectionChangeFunc = useCallback(
+    ({ nodes: selectedNodes }) => {
+      setActiveNodeIds(selectedNodes.map((node) => node.id))
+    },
+    []
+  )
   const onNodeMouseEnter: NodeMouseHandler = useCallback((_, node) => {
     setActiveNodeIds((prev) => {
       return prev.includes(node.id) ? prev : [...prev, node.id]
@@ -176,7 +189,7 @@ export default function Workflow({
       if (connection.source === connection.target) return false
       return !wouldCreateCycle(connection as Connection, edges as Connection[])
     },
-    [editable, edges],
+    [editable, edges]
   )
 
   const { errorIds, runningIds, successIds } = useMemo(() => {
@@ -197,18 +210,21 @@ export default function Workflow({
         errorIds: [] as string[],
         runningIds: [] as string[],
         successIds: [] as string[],
-      },
+      }
     )
   }, [nodes])
 
   const styledEdges = useMemo(() => {
     return edges.map((edge) => {
-      const isConnected = activeNodeIds.includes(edge.source) || activeNodeIds.includes(edge.target)
+      const isConnected =
+        activeNodeIds.includes(edge.source) ||
+        activeNodeIds.includes(edge.target)
 
       const isErrorEdge =
         errorIds.includes(edge.target) &&
         (successIds.includes(edge.source) || errorIds.includes(edge.source))
-      const isRunningEdge = runningIds.includes(edge.target) && successIds.includes(edge.source)
+      const isRunningEdge =
+        runningIds.includes(edge.target) && successIds.includes(edge.source)
       const isSuccessEdge =
         successIds.includes(edge.target) &&
         (successIds.includes(edge.source) || runningIds.includes(edge.source))
@@ -256,7 +272,7 @@ export default function Workflow({
   }, [workflow, hasEditAccess])
 
   return (
-    <div className='w-full h-full relative text-de text-gree-4'>
+    <div className="w-full h-full relative text-de text-gree-4">
       <ReactFlow
         fitView
         deleteKeyCode={null}
@@ -277,7 +293,7 @@ export default function Workflow({
         fitViewOptions={fitViewOptions}
       >
         <Background gap={12} size={0.6} />
-        <Panel position='top-right' className='z-20!'>
+        <Panel position="top-right" className="z-20!">
           {workflow && (
             <WorkflowPanel
               hasEditAccess={hasEditAccess}
@@ -289,23 +305,33 @@ export default function Workflow({
             />
           )}
         </Panel>
-        <Panel position='top-left' className='h-full w-full m-0! pointer-events-none!'>
-          <div className='z-10 absolute inset-0 w-full h-1/12 bg-gradient-to-b to-90% from-background to-transparent  pointer-events-none' />
-          <div className='z-10 absolute inset-0 w-1/12 h-full bg-gradient-to-r from-background to-transparent  pointer-events-none' />
-          <div className='z-10 absolute left-0 bottom-0 w-full h-1/12 bg-gradient-to-t from-background to-transparent  pointer-events-none' />
-          <div className='z-10 absolute right-0 bottom-0 w-1/12 h-full bg-gradient-to-l from-background to-transparent  pointer-events-none' />
+        <Panel
+          position="top-left"
+          className="h-full w-full m-0! pointer-events-none!"
+        >
+          <div className="z-10 absolute inset-0 w-full h-1/12 bg-gradient-to-b to-90% from-background to-transparent  pointer-events-none" />
+          <div className="z-10 absolute inset-0 w-1/12 h-full bg-gradient-to-r from-background to-transparent  pointer-events-none" />
+          <div className="z-10 absolute left-0 bottom-0 w-full h-1/12 bg-gradient-to-t from-background to-transparent  pointer-events-none" />
+          <div className="z-10 absolute right-0 bottom-0 w-1/12 h-full bg-gradient-to-l from-background to-transparent  pointer-events-none" />
         </Panel>
       </ReactFlow>
     </div>
   )
 }
 
-function saveWorkflow(workflowId: string, diff: ReturnType<typeof extractWorkflowDiff>) {
+function saveWorkflow(
+  workflowId: string,
+  diff: ReturnType<typeof extractWorkflowDiff>
+) {
   return fetch(`/api/workflow/${workflowId}/structure`, {
     method: 'POST',
     body: JSON.stringify({
-      nodes: diff.updateNodes.map((node) => convertUINodeToDBNode(workflowId, node)),
-      edges: diff.updateEdges.map((edge) => convertUIEdgeToDBEdge(workflowId, edge)),
+      nodes: diff.updateNodes.map((node) =>
+        convertUINodeToDBNode(workflowId, node)
+      ),
+      edges: diff.updateEdges.map((edge) =>
+        convertUIEdgeToDBEdge(workflowId, edge)
+      ),
       deleteNodes: diff.deleteNodes.map((node) => node.id),
       deleteEdges: diff.deleteEdges.map((edge) => edge.id),
     }),

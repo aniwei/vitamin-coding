@@ -71,7 +71,7 @@ export async function canManageUser(targetUserId: string): Promise<boolean> {
  * Require admin permissions or throw error
  */
 export async function requireAdminPermission(
-  action: string = 'perform this action',
+  action: string = 'perform this action'
 ): Promise<void> {
   const hasPermission = await hasAdminPermission()
   if (!hasPermission) {
@@ -82,7 +82,9 @@ export async function requireAdminPermission(
 /**
  * Require user list permissions or throw error
  */
-export async function requireUserListPermission(action: string = 'list users'): Promise<void> {
+export async function requireUserListPermission(
+  action: string = 'list users'
+): Promise<void> {
   const hasPermission = await canListUsers()
   if (!hasPermission) {
     throw new Error(`Unauthorized: Permission required to ${action}`)
@@ -92,7 +94,9 @@ export async function requireUserListPermission(action: string = 'list users'): 
 /**
  * Require user management permissions or throw error
  */
-export async function requireUserManagePermission(action: string = 'manage users'): Promise<void> {
+export async function requireUserManagePermission(
+  action: string = 'manage users'
+): Promise<void> {
   const hasPermission = await canManageUsers()
   if (!hasPermission) {
     throw new Error(`Unauthorized: Permission required to ${action}`)
@@ -104,7 +108,7 @@ export async function requireUserManagePermission(action: string = 'manage users
  */
 export async function requireUserManagePermissionFor(
   targetUserId: string,
-  action: string = 'manage this user',
+  action: string = 'manage this user'
 ): Promise<void> {
   const hasPermission = await canManageUser(targetUserId)
   if (!hasPermission) {
@@ -162,8 +166,15 @@ function getRolePermissions(role: string | undefined | null): BetterAuthRole {
  */
 function hasPermission(
   userRoleString: string | undefined | null,
-  permission: 'use' | 'create' | 'list' | 'delete' | 'update' | 'view' | 'share',
-  resource: 'agent' | 'workflow' | 'mcp',
+  permission:
+    | 'use'
+    | 'create'
+    | 'list'
+    | 'delete'
+    | 'update'
+    | 'view'
+    | 'share',
+  resource: 'agent' | 'workflow' | 'mcp'
 ): boolean {
   const roleObject = getRolePermissions(userRoleString)
 
@@ -175,7 +186,10 @@ function hasPermission(
 
   const statements = roleObject.statements
   const resourcePermissions = statements[resource] || []
-  return Array.isArray(resourcePermissions) && resourcePermissions.includes(permission)
+  return (
+    Array.isArray(resourcePermissions) &&
+    resourcePermissions.includes(permission)
+  )
 }
 
 /**
@@ -332,11 +346,13 @@ export async function canDeleteMCP(): Promise<boolean> {
  * Require editor permissions or throw error
  */
 export async function requireEditorPermission(
-  action: string = 'perform this action',
+  action: string = 'perform this action'
 ): Promise<void> {
   const hasPermission = await hasEditorPermission()
   if (!hasPermission) {
-    throw new Error(`Unauthorized: Editor or Admin access required to ${action}`)
+    throw new Error(
+      `Unauthorized: Editor or Admin access required to ${action}`
+    )
   }
 }
 
@@ -346,7 +362,7 @@ export async function requireEditorPermission(
  */
 export async function canManageMCPServer(
   mcpOwnerId: string,
-  visibility: string = 'private',
+  visibility: string = 'private'
 ): Promise<boolean> {
   try {
     const session = await getSession()

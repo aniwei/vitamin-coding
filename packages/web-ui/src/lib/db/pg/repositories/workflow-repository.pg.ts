@@ -1,10 +1,24 @@
 import { and, desc, eq, inArray, not, or, sql } from 'drizzle-orm'
 import { pgDb } from '../db.pg'
-import { UserTable, WorkflowEdgeTable, WorkflowNodeDataTable, WorkflowTable } from '../schema.pg'
-import { DBWorkflow, DBEdge, DBNode, WorkflowRepository, WorkflowSummary } from 'app-types/workflow'
+import {
+  UserTable,
+  WorkflowEdgeTable,
+  WorkflowNodeDataTable,
+  WorkflowTable,
+} from '../schema.pg'
+import {
+  DBWorkflow,
+  DBEdge,
+  DBNode,
+  WorkflowRepository,
+  WorkflowSummary,
+} from 'app-types/workflow'
 import { NodeKind } from 'lib/ai/workflow/workflow.interface'
 import { createUINode } from 'lib/ai/workflow/create-ui-node'
-import { convertUINodeToDBNode, defaultObjectJsonSchema } from 'lib/ai/workflow/shared.workflow'
+import {
+  convertUINodeToDBNode,
+  defaultObjectJsonSchema,
+} from 'lib/ai/workflow/shared.workflow'
 import { ObjectJsonSchema7 } from 'app-types/util'
 
 export const pgWorkflowRepository: WorkflowRepository = {
@@ -22,21 +36,25 @@ export const pgWorkflowRepository: WorkflowRepository = {
         WorkflowNodeDataTable,
         and(
           eq(WorkflowNodeDataTable.workflowId, WorkflowTable.id),
-          eq(WorkflowNodeDataTable.kind, NodeKind.Input),
-        ),
+          eq(WorkflowNodeDataTable.kind, NodeKind.Input)
+        )
       )
-      .where(and(inArray(WorkflowTable.id, ids), eq(WorkflowTable.isPublished, true)))
+      .where(
+        and(inArray(WorkflowTable.id, ids), eq(WorkflowTable.isPublished, true))
+      )
     return rows.map(
       (data) =>
         ({
           ...data,
-          schema: data.schema?.outputSchema || structuredClone(defaultObjectJsonSchema),
+          schema:
+            data.schema?.outputSchema ||
+            structuredClone(defaultObjectJsonSchema),
         }) as {
           id: string
           name: string
           description?: string
           schema: ObjectJsonSchema7
-        },
+        }
     )
   },
 
@@ -59,8 +77,11 @@ export const pgWorkflowRepository: WorkflowRepository = {
       .where(
         and(
           eq(WorkflowTable.isPublished, true),
-          or(eq(WorkflowTable.userId, userId), not(eq(WorkflowTable.visibility, 'private'))),
-        ),
+          or(
+            eq(WorkflowTable.userId, userId),
+            not(eq(WorkflowTable.visibility, 'private'))
+          )
+        )
       )
     return rows as WorkflowSummary[]
   },
@@ -83,14 +104,17 @@ export const pgWorkflowRepository: WorkflowRepository = {
       .where(
         or(
           inArray(WorkflowTable.visibility, ['public', 'readonly']),
-          eq(WorkflowTable.userId, userId),
-        ),
+          eq(WorkflowTable.userId, userId)
+        )
       )
       .orderBy(desc(WorkflowTable.createdAt))
     return rows as WorkflowSummary[]
   },
   async selectById(id) {
-    const [workflow] = await pgDb.select().from(WorkflowTable).where(eq(WorkflowTable.id, id))
+    const [workflow] = await pgDb
+      .select()
+      .from(WorkflowTable)
+      .where(eq(WorkflowTable.id, id))
     return workflow as DBWorkflow
   },
 
@@ -113,7 +137,9 @@ export const pgWorkflowRepository: WorkflowRepository = {
     return true
   },
   async delete(id) {
-    const result = await pgDb.delete(WorkflowTable).where(eq(WorkflowTable.id, id))
+    const result = await pgDb
+      .delete(WorkflowTable)
+      .where(eq(WorkflowTable.id, id))
     if (result.rowCount === 0) {
       throw new Error('Workflow not found')
     }
@@ -165,8 +191,8 @@ export const pgWorkflowRepository: WorkflowRepository = {
           .where(
             and(
               eq(WorkflowNodeDataTable.workflowId, workflowId),
-              inArray(WorkflowNodeDataTable.id, deleteNodes),
-            ),
+              inArray(WorkflowNodeDataTable.id, deleteNodes)
+            )
           )
         deletePromises.push(deleteNodePromises)
       }
@@ -176,8 +202,8 @@ export const pgWorkflowRepository: WorkflowRepository = {
           .where(
             and(
               eq(WorkflowEdgeTable.workflowId, workflowId),
-              inArray(WorkflowEdgeTable.id, deleteEdges),
-            ),
+              inArray(WorkflowEdgeTable.id, deleteEdges)
+            )
           )
         deletePromises.push(deleteEdgePromises)
       }
@@ -189,10 +215,16 @@ export const pgWorkflowRepository: WorkflowRepository = {
           .onConflictDoUpdate({
             target: [WorkflowNodeDataTable.id],
             set: {
-              nodeConfig: sql.raw(`excluded.${WorkflowNodeDataTable.nodeConfig.name}`),
-              uiConfig: sql.raw(`excluded.${WorkflowNodeDataTable.uiConfig.name}`),
+              nodeConfig: sql.raw(
+                `excluded.${WorkflowNodeDataTable.nodeConfig.name}`
+              ),
+              uiConfig: sql.raw(
+                `excluded.${WorkflowNodeDataTable.uiConfig.name}`
+              ),
               name: sql.raw(`excluded.${WorkflowNodeDataTable.name.name}`),
-              description: sql.raw(`excluded.${WorkflowNodeDataTable.description.name}`),
+              description: sql.raw(
+                `excluded.${WorkflowNodeDataTable.description.name}`
+              ),
               kind: sql.raw(`excluded.${WorkflowNodeDataTable.kind.name}`),
               updatedAt: new Date(),
             },
@@ -204,18 +236,24 @@ export const pgWorkflowRepository: WorkflowRepository = {
     })
   },
   async selectStructureById(id, opt) {
-    const [workflow] = await pgDb.select().from(WorkflowTable).where(eq(WorkflowTable.id, id))
+    const [workflow] = await pgDb
+      .select()
+      .from(WorkflowTable)
+      .where(eq(WorkflowTable.id, id))
 
     if (!workflow) return null
 
     const nodeWhere = opt?.ignoreNote
       ? and(
           eq(WorkflowNodeDataTable.workflowId, id),
-          not(eq(WorkflowNodeDataTable.kind, NodeKind.Note)),
+          not(eq(WorkflowNodeDataTable.kind, NodeKind.Note))
         )
       : eq(WorkflowNodeDataTable.workflowId, id)
 
-    const nodePromises = pgDb.select().from(WorkflowNodeDataTable).where(nodeWhere)
+    const nodePromises = pgDb
+      .select()
+      .from(WorkflowNodeDataTable)
+      .where(nodeWhere)
     const edgePromises = pgDb
       .select()
       .from(WorkflowEdgeTable)

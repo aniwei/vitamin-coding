@@ -6,7 +6,10 @@ import { mcpServerCustomizationRepository } from 'lib/db/repository'
 
 import { NextResponse } from 'next/server'
 
-export async function GET(_: Request, { params }: { params: Promise<{ server: string }> }) {
+export async function GET(
+  _: Request,
+  { params }: { params: Promise<{ server: string }> }
+) {
   const { server } = await params
   const session = await getSession()
   if (!session) {
@@ -21,7 +24,10 @@ export async function GET(_: Request, { params }: { params: Promise<{ server: st
   return NextResponse.json(mcpServerCustomization ?? {})
 }
 
-export async function POST(request: Request, { params }: { params: Promise<{ server: string }> }) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ server: string }> }
+) {
   const { server } = await params
   const session = await getSession()
   if (!session) {
@@ -34,28 +40,34 @@ export async function POST(request: Request, { params }: { params: Promise<{ ser
     mcpServerId: server,
   })
 
-  const result = await mcpServerCustomizationRepository.upsertMcpServerCustomization({
-    userId: session.user.id,
-    mcpServerId,
-    prompt,
-  })
+  const result =
+    await mcpServerCustomizationRepository.upsertMcpServerCustomization({
+      userId: session.user.id,
+      mcpServerId,
+      prompt,
+    })
   const key = CacheKeys.mcpServerCustomizations(session.user.id)
   void serverCache.delete(key)
 
   return NextResponse.json(result)
 }
 
-export async function DELETE(_: Request, { params }: { params: Promise<{ server: string }> }) {
+export async function DELETE(
+  _: Request,
+  { params }: { params: Promise<{ server: string }> }
+) {
   const { server } = await params
   const session = await getSession()
   if (!session) {
     return new Response('Unauthorized', { status: 401 })
   }
 
-  await mcpServerCustomizationRepository.deleteMcpServerCustomizationByMcpServerIdAndUserId({
-    mcpServerId: server,
-    userId: session.user.id,
-  })
+  await mcpServerCustomizationRepository.deleteMcpServerCustomizationByMcpServerIdAndUserId(
+    {
+      mcpServerId: server,
+      userId: session.user.id,
+    }
+  )
   const key = CacheKeys.mcpServerCustomizations(session.user.id)
   void serverCache.delete(key)
 

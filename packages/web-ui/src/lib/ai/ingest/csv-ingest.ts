@@ -28,7 +28,7 @@ const isCsvLikeAttachment = (attachment: ChatAttachment, key: string) => {
 
 export const buildCsvIngestionPreviewParts = async (
   attachments: ChatAttachment[],
-  download: DownloadFile,
+  download: DownloadFile
 ): Promise<CsvPreviewPart[]> => {
   if (!attachments?.length) return []
   const results = await Promise.all(
@@ -53,7 +53,7 @@ export const buildCsvIngestionPreviewParts = async (
       } catch (_error) {
         return null
       }
-    }),
+    })
   )
 
   return results.filter(Boolean) as CsvPreviewPart[]

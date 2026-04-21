@@ -16,8 +16,8 @@ export function useMcpList(options?: SWRConfiguration) {
       const ids = data.map((v) => v.id)
       appStore.setState((prev) => ({
         mcpList: data,
-        allowedMcpServers: objectFlow(prev.allowedMcpServers || {}).filter((_, key) =>
-          ids.includes(key),
+        allowedMcpServers: objectFlow(prev.allowedMcpServers || {}).filter(
+          (_, key) => ids.includes(key)
         ),
       }))
     },

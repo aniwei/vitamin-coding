@@ -25,7 +25,9 @@ const getModelProvider = (modelName: string): string => {
  * We can only get the user by id for the current user as a non-admin user
  * We can get the user by id for any user as an admin user
  */
-export async function getUser(userId?: string): Promise<BasicUserWithLastLogin | null> {
+export async function getUser(
+  userId?: string
+): Promise<BasicUserWithLastLogin | null> {
   const resolvedUserId = await getUserIdAndCheckAccess(userId)
   return await userRepository.getUserById(resolvedUserId)
 }
@@ -41,7 +43,9 @@ export async function getUserAccounts(userId?: string) {
     params: { userId: resolvedUserId },
     headers: await headers(),
   })
-  const hasPassword = accounts.some((account) => account.providerId === 'credential')
+  const hasPassword = accounts.some(
+    (account) => account.providerId === 'credential'
+  )
   const oauthProviders = accounts
     .filter((account) => account.providerId !== 'credential')
     .map((account) => account.providerId)
@@ -70,7 +74,9 @@ export async function getUserSessions(userId?: string): Promise<Session[]> {
  * if the current user does not have access to the requested user, we throw a 404 error
  * if the requested user id is not found, we throw a 404 error
  */
-export async function getUserIdAndCheckAccess(requestedUserId?: string): Promise<string> {
+export async function getUserIdAndCheckAccess(
+  requestedUserId?: string
+): Promise<string> {
   const session = await getSession()
   if (!session) {
     notFound()
@@ -118,7 +124,9 @@ export async function getUserStats(userId?: string): Promise<{
  * We can only get preferences for the current user as a non-admin user
  * We can get preferences for any user as an admin user
  */
-export async function getUserPreferences(userId?: string): Promise<UserPreferences | null> {
+export async function getUserPreferences(
+  userId?: string
+): Promise<UserPreferences | null> {
   const resolvedUserId = await getUserIdAndCheckAccess(userId)
   return await userRepository.getPreferences(resolvedUserId)
 }
@@ -127,7 +135,7 @@ export async function updateUserDetails(
   userId: string,
   name?: string,
   email?: string,
-  image?: string,
+  image?: string
 ) {
   const resolvedUserId = await getUserIdAndCheckAccess(userId)
   if (!name && !email && !image) {

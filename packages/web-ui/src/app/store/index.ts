@@ -5,7 +5,6 @@ import { AllowedMCPServer, MCPServerInfo } from 'app-types/mcp'
 import { OPENAI_VOICE } from 'lib/ai/speech/open-ai/use-voice-chat.openai'
 import { WorkflowSummary } from 'app-types/workflow'
 import { AppDefaultToolkit } from 'lib/ai/tools'
-import { AgentSummary } from 'app-types/agent'
 import { ArchiveWithItemCount } from 'app-types/archive'
 
 export interface UploadedFile {
@@ -24,7 +23,6 @@ export interface UploadedFile {
 export interface AppState {
   threadList: ChatThread[]
   mcpList: (MCPServerInfo & { id: string })[]
-  agentList: AgentSummary[]
   workflowToolList: WorkflowSummary[]
   currentThreadId: ChatThread['id'] | null
   toolChoice: 'auto' | 'none' | 'manual'
@@ -58,7 +56,6 @@ export interface AppState {
   }
   voiceChat: {
     isOpen: boolean
-    agentId?: string
     options: {
       provider: string
       providerOptions?: Record<string, any>
@@ -79,13 +76,15 @@ const initialState: AppState = {
   threadFiles: {},
   threadImageToolModel: {},
   mcpList: [],
-  agentList: [],
   workflowToolList: [],
   currentThreadId: null,
   toolChoice: 'auto',
   allowedMcpServers: undefined,
   openUserSettings: false,
-  allowedAppDefaultToolkit: [AppDefaultToolkit.Code, AppDefaultToolkit.Visualization],
+  allowedAppDefaultToolkit: [
+    AppDefaultToolkit.Code,
+    AppDefaultToolkit.Visualization,
+  ],
   toolPresets: [],
   chatModel: undefined,
   openShortcutsPopup: false,
@@ -118,9 +117,11 @@ export const appStore = create<AppState & AppDispatch>()(
       partialize: (state) => ({
         chatModel: state.chatModel || initialState.chatModel,
         toolChoice: state.toolChoice || initialState.toolChoice,
-        allowedMcpServers: state.allowedMcpServers || initialState.allowedMcpServers,
+        allowedMcpServers:
+          state.allowedMcpServers || initialState.allowedMcpServers,
         allowedAppDefaultToolkit: (
-          state.allowedAppDefaultToolkit ?? initialState.allowedAppDefaultToolkit
+          state.allowedAppDefaultToolkit ??
+          initialState.allowedAppDefaultToolkit
         )?.filter((v) => Object.values(AppDefaultToolkit).includes(v)),
         temporaryChat: {
           ...initialState.temporaryChat,
@@ -134,6 +135,6 @@ export const appStore = create<AppState & AppDispatch>()(
           isOpen: false,
         },
       }),
-    },
-  ),
+    }
+  )
 )

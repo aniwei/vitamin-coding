@@ -12,13 +12,20 @@ import { AlertDialogHeader } from 'ui/alert-dialog'
 import { useActionState, useState } from 'react'
 import { toast } from 'sonner'
 import { SubmitButton } from './user-submit-button'
-import { updateUserPasswordAction } from '@/lib/compat/server-actions/user'
-import { UpdateUserPasswordActionState, UpdateUserPasswordError } from '@/app/api/user/validations'
-import { passwordRegexPattern, passwordRequirementsText } from 'lib/validations/password'
+import Form from 'next/form'
+import { updateUserPasswordAction } from '@/app/api/user/actions'
+import {
+  UpdateUserPasswordActionState,
+  UpdateUserPasswordError,
+} from '@/app/api/user/validations'
+import {
+  passwordRegexPattern,
+  passwordRequirementsText,
+} from 'lib/validations/password'
 
 import { Input } from 'ui/input'
 import { useProfileTranslations } from '@/hooks/use-profile-translations'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 
 export function UpdateUserPasswordDialog({
   children,
@@ -75,24 +82,26 @@ export function UpdateUserPasswordDialog({
       <AlertDialogContent>
         <AlertDialogHeader>
           <AlertDialogTitle>{t('updatePasswordTitle')}</AlertDialogTitle>
-          <AlertDialogDescription>{t('changeUserPassword')}</AlertDialogDescription>
+          <AlertDialogDescription>
+            {t('changeUserPassword')}
+          </AlertDialogDescription>
         </AlertDialogHeader>
-        <form action={resetPasswordFormAction}>
-          <input type='hidden' name='userId' value={userId} />
-          <div className='space-y-4 my-4'>
+        <Form action={resetPasswordFormAction}>
+          <input type="hidden" name="userId" value={userId} />
+          <div className="space-y-4 my-4">
             {isCurrentUser && (
               <Input
-                type='password'
-                name='currentPassword'
-                data-testid='current-password-input'
+                type="password"
+                name="currentPassword"
+                data-testid="current-password-input"
                 placeholder={t('currentPassword')}
                 required
               />
             )}
             <Input
-              type='password'
-              name='newPassword'
-              data-testid='new-password-input'
+              type="password"
+              name="newPassword"
+              data-testid="new-password-input"
               placeholder={t('newPasswordPlaceholder')}
               pattern={passwordRegexPattern}
               minLength={8}
@@ -103,9 +112,9 @@ export function UpdateUserPasswordDialog({
               title={passwordRequirementsText}
             />
             <Input
-              type='password'
-              name='confirmPassword'
-              data-testid='confirm-password-input'
+              type="password"
+              name="confirmPassword"
+              data-testid="confirm-password-input"
               placeholder={t('confirmPassword')}
               pattern={passwordRegexPattern}
               minLength={8}
@@ -113,28 +122,35 @@ export function UpdateUserPasswordDialog({
               required
               onFocus={() => setErrorMessage(null)}
               className={
-                errorMessage === UpdateUserPasswordError.PASSWORD_MISMATCH ? 'border-red-500' : ''
+                errorMessage === UpdateUserPasswordError.PASSWORD_MISMATCH
+                  ? 'border-red-500'
+                  : ''
               }
               title={passwordRequirementsText}
             />
-            {errorMessage && <p className='text-red-500 text-sm'>{errorMessage}</p>}
+            {errorMessage && (
+              <p className="text-red-500 text-sm">{errorMessage}</p>
+            )}
           </div>
 
           <AlertDialogFooter>
             <AlertDialogCancel
               onClick={() => setShowResetPasswordDialog(false)}
               disabled={isPending}
-              type='button'
+              type="button"
             >
               {tCommon('cancel')}
             </AlertDialogCancel>
             <AlertDialogAction asChild>
-              <SubmitButton variant='default' data-testid='update-password-submit-button'>
+              <SubmitButton
+                variant="default"
+                data-testid="update-password-submit-button"
+              >
                 {t('updatePasswordButton')}
               </SubmitButton>
             </AlertDialogAction>
           </AlertDialogFooter>
-        </form>
+        </Form>
       </AlertDialogContent>
     </AlertDialog>
   )

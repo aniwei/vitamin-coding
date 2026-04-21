@@ -16,7 +16,8 @@ export const GetWeather = (): {
       visibility: 'private',
       icon: {
         type: 'emoji',
-        value: 'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/26c8-fe0f.png',
+        value:
+          'https://cdn.jsdelivr.net/npm/emoji-datasource-apple/img/apple/64/26c8-fe0f.png',
         style: {
           backgroundColor: 'oklch(20.5% 0 0)',
         },

@@ -25,7 +25,7 @@ export function TablePagination({
   if (totalPages <= 1) return null
 
   return (
-    <Pagination className={className} data-testid='table-pagination'>
+    <Pagination className={className} data-testid="table-pagination">
       <PaginationContent>
         <PaginationItem>
           <PaginationPrevious
@@ -48,7 +48,10 @@ export function TablePagination({
 
           return (
             <PaginationItem key={pageNum}>
-              <PaginationLink href={buildUrl({ page: pageNum })} isActive={pageNum === currentPage}>
+              <PaginationLink
+                href={buildUrl({ page: pageNum })}
+                isActive={pageNum === currentPage}
+              >
                 {pageNum}
               </PaginationLink>
             </PaginationItem>
@@ -63,8 +66,14 @@ export function TablePagination({
 
         <PaginationItem>
           <PaginationNext
-            href={currentPage < totalPages ? buildUrl({ page: currentPage + 1 }) : '#'}
-            className={cn(currentPage >= totalPages && 'pointer-events-none opacity-50')}
+            href={
+              currentPage < totalPages
+                ? buildUrl({ page: currentPage + 1 })
+                : '#'
+            }
+            className={cn(
+              currentPage >= totalPages && 'pointer-events-none opacity-50'
+            )}
           />
         </PaginationItem>
       </PaginationContent>

@@ -2,7 +2,10 @@ import type { Metadata } from 'next'
 import { Geist, Geist_Mono } from 'next/font/google'
 import './globals.css'
 import 'katex/dist/katex.min.css'
-import { ThemeProvider, ThemeStyleProvider } from '@/components/layouts/theme-provider'
+import {
+  ThemeProvider,
+  ThemeStyleProvider,
+} from '@/components/layouts/theme-provider'
 import { Toaster } from 'ui/sonner'
 import { NextIntlClientProvider } from 'next-intl'
 import { getLocale } from 'next-intl/server'
@@ -17,7 +20,8 @@ const geistMono = Geist_Mono({
 
 export const metadata: Metadata = {
   title: 'better-chatbot',
-  description: 'Better Chatbot is a chatbot that uses the Tools to answer questions.',
+  description:
+    'Better Chatbot is a chatbot that uses the Tools to answer questions.',
 }
 
 export default async function RootLayout({
@@ -29,17 +33,19 @@ export default async function RootLayout({
 
   return (
     <html lang={locale} suppressHydrationWarning>
-      <body className={`${geistSans.variable} ${geistMono.variable} antialiased`}>
+      <body
+        className={`${geistSans.variable} ${geistMono.variable} antialiased`}
+      >
         <ThemeProvider
-          attribute='class'
-          defaultTheme='system'
+          attribute="class"
+          defaultTheme="system"
           themes={['light', 'dark']}
-          storageKey='app-theme-v2'
+          storageKey="app-theme-v2"
           disableTransitionOnChange
         >
           <ThemeStyleProvider>
             <NextIntlClientProvider>
-              <div id='root'>
+              <div id="root">
                 {children}
                 <Toaster richColors />
               </div>

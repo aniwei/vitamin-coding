@@ -1,4 +1,3 @@
-import { Agent } from 'app-types/agent'
 import { UserPreferences } from 'app-types/user'
 import { MCPServerConfig, MCPToolInfo } from 'app-types/mcp'
 import { sql } from 'drizzle-orm'
@@ -43,28 +42,6 @@ export const ChatMessageTable = pgTable('chat_message', {
     .default(sql`CURRENT_TIMESTAMP`),
 })
 
-export const AgentTable = pgTable('agent', {
-  id: uuid('id').primaryKey().notNull().defaultRandom(),
-  name: text('name').notNull(),
-  description: text('description'),
-  icon: json('icon').$type<Agent['icon']>(),
-  userId: uuid('user_id')
-    .notNull()
-    .references(() => UserTable.id, { onDelete: 'cascade' }),
-  instructions: json('instructions').$type<Agent['instructions']>(),
-  visibility: varchar('visibility', {
-    enum: ['public', 'private', 'readonly'],
-  })
-    .notNull()
-    .default('private'),
-  createdAt: timestamp('created_at')
-    .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
-  updatedAt: timestamp('updated_at')
-    .notNull()
-    .default(sql`CURRENT_TIMESTAMP`),
-})
-
 export const BookmarkTable = pgTable(
   'bookmark',
   {
@@ -74,7 +51,7 @@ export const BookmarkTable = pgTable(
       .references(() => UserTable.id, { onDelete: 'cascade' }),
     itemId: uuid('item_id').notNull(),
     itemType: varchar('item_type', {
-      enum: ['agent', 'workflow', 'mcp'],
+      enum: ['workflow', 'mcp'],
     }).notNull(),
     createdAt: timestamp('created_at')
       .notNull()
@@ -84,7 +61,7 @@ export const BookmarkTable = pgTable(
     unique().on(table.userId, table.itemId, table.itemType),
     index('bookmark_user_id_idx').on(table.userId),
     index('bookmark_item_idx').on(table.itemId, table.itemType),
-  ],
+  ]
 )
 
 export const McpServerTable = pgTable('mcp_server', {
@@ -182,8 +159,12 @@ export const VerificationTable = pgTable('verification', {
   identifier: text('identifier').notNull(),
   value: text('value').notNull(),
   expiresAt: timestamp('expires_at').notNull(),
-  createdAt: timestamp('created_at').$defaultFn(() => /* @__PURE__ */ new Date()),
-  updatedAt: timestamp('updated_at').$defaultFn(() => /* @__PURE__ */ new Date()),
+  createdAt: timestamp('created_at').$defaultFn(
+    () => /* @__PURE__ */ new Date()
+  ),
+  updatedAt: timestamp('updated_at').$defaultFn(
+    () => /* @__PURE__ */ new Date()
+  ),
 })
 
 // Tool customization table for per-user additional instructions
@@ -206,7 +187,7 @@ export const McpToolCustomizationTable = pgTable(
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
   },
-  (table) => [unique().on(table.userId, table.toolName, table.mcpServerId)],
+  (table) => [unique().on(table.userId, table.toolName, table.mcpServerId)]
 )
 
 export const McpServerCustomizationTable = pgTable(
@@ -227,7 +208,7 @@ export const McpServerCustomizationTable = pgTable(
       .default(sql`CURRENT_TIMESTAMP`)
       .notNull(),
   },
-  (table) => [unique().on(table.userId, table.mcpServerId)],
+  (table) => [unique().on(table.userId, table.mcpServerId)]
 )
 
 export const WorkflowTable = pgTable('workflow', {
@@ -265,7 +246,9 @@ export const WorkflowNodeDataTable = pgTable(
     name: text('name').notNull(),
     description: text('description'),
     uiConfig: json('ui_config').$type<DBNode['uiConfig']>().default({}),
-    nodeConfig: json('node_config').$type<Partial<DBNode['nodeConfig']>>().default({}),
+    nodeConfig: json('node_config')
+      .$type<Partial<DBNode['nodeConfig']>>()
+      .default({}),
     createdAt: timestamp('created_at')
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
@@ -273,7 +256,7 @@ export const WorkflowNodeDataTable = pgTable(
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
   },
-  (t) => [index('workflow_node_kind_idx').on(t.kind)],
+  (t) => [index('workflow_node_kind_idx').on(t.kind)]
 )
 
 export const WorkflowEdgeTable = pgTable('workflow_edge', {
@@ -324,7 +307,7 @@ export const ArchiveItemTable = pgTable(
       .notNull()
       .default(sql`CURRENT_TIMESTAMP`),
   },
-  (t) => [index('archive_item_item_id_idx').on(t.itemId)],
+  (t) => [index('archive_item_item_id_idx').on(t.itemId)]
 )
 
 export const McpOAuthSessionTable = pgTable(
@@ -350,20 +333,23 @@ export const McpOAuthSessionTable = pgTable(
     index('mcp_oauth_session_server_id_idx').on(t.mcpServerId),
     index('mcp_oauth_session_state_idx').on(t.state),
     // Partial index for sessions with tokens for better performance
-    index('mcp_oauth_session_tokens_idx').on(t.mcpServerId).where(isNotNull(t.tokens)),
-  ],
+    index('mcp_oauth_session_tokens_idx')
+      .on(t.mcpServerId)
+      .where(isNotNull(t.tokens)),
+  ]
 )
 
 export type McpServerEntity = typeof McpServerTable.$inferSelect
 export type ChatThreadEntity = typeof ChatThreadTable.$inferSelect
 export type ChatMessageEntity = typeof ChatMessageTable.$inferSelect
 
-export type AgentEntity = typeof AgentTable.$inferSelect
 export type UserEntity = typeof UserTable.$inferSelect
 export type SessionEntity = typeof SessionTable.$inferSelect
 
-export type ToolCustomizationEntity = typeof McpToolCustomizationTable.$inferSelect
-export type McpServerCustomizationEntity = typeof McpServerCustomizationTable.$inferSelect
+export type ToolCustomizationEntity =
+  typeof McpToolCustomizationTable.$inferSelect
+export type McpServerCustomizationEntity =
+  typeof McpServerCustomizationTable.$inferSelect
 
 export const ChatExportTable = pgTable('chat_export', {
   id: uuid('id').primaryKey().notNull().defaultRandom(),

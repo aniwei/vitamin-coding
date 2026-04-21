@@ -19,7 +19,8 @@ export const babyResearchNodes: Partial<DBNode>[] = [
 
     kind: 'tool',
     name: 'INITIAL_SEARCH',
-    description: 'Perform initial web search based on user query and parameters',
+    description:
+      'Perform initial web search based on user query and parameters',
     uiConfig: { position: { x: 360, y: 0 }, type: 'default' },
     nodeConfig: {
       kind: 'tool',
@@ -170,7 +171,9 @@ export const babyResearchNodes: Partial<DBNode>[] = [
           },
           {
             type: 'paragraph',
-            content: [{ type: 'text', text: '  - Alternative names and concepts' }],
+            content: [
+              { type: 'text', text: '  - Alternative names and concepts' },
+            ],
           },
           {
             type: 'paragraph',
@@ -183,11 +186,15 @@ export const babyResearchNodes: Partial<DBNode>[] = [
           },
           {
             type: 'paragraph',
-            content: [{ type: 'text', text: '  - Recent trends and developments' }],
+            content: [
+              { type: 'text', text: '  - Recent trends and developments' },
+            ],
           },
           {
             type: 'paragraph',
-            content: [{ type: 'text', text: '  - Expert opinions and case studies' }],
+            content: [
+              { type: 'text', text: '  - Expert opinions and case studies' },
+            ],
           },
           {
             type: 'paragraph',
@@ -245,18 +252,21 @@ export const babyResearchNodes: Partial<DBNode>[] = [
             includeDomains: {
               type: 'array',
               items: { type: 'string' },
-              description: 'List of domains to specifically include in search results',
+              description:
+                'List of domains to specifically include in search results',
               default: [],
             },
             excludeDomains: {
               type: 'array',
               items: { type: 'string' },
-              description: 'List of domains to specifically exclude from search results',
+              description:
+                'List of domains to specifically exclude from search results',
               default: [],
             },
             startPublishedDate: {
               type: 'string',
-              description: 'Start date for published content (YYYY-MM-DD format)',
+              description:
+                'Start date for published content (YYYY-MM-DD format)',
             },
             endPublishedDate: {
               type: 'string',
@@ -387,7 +397,8 @@ export const babyResearchNodes: Partial<DBNode>[] = [
 
     kind: 'llm',
     name: 'SUMMARY',
-    description: 'Synthesize all information into comprehensive research report',
+    description:
+      'Synthesize all information into comprehensive research report',
     uiConfig: {
       position: { x: 1912.4044439691656, y: 29.67494745840466 },
       type: 'default',
@@ -410,11 +421,13 @@ export const babyResearchNodes: Partial<DBNode>[] = [
               },
               content: {
                 type: 'string',
-                description: 'Comprehensive analysis in markdown format with source citations',
+                description:
+                  'Comprehensive analysis in markdown format with source citations',
               },
               diagram: {
                 type: 'string',
-                description: 'Mermaid diagram code if beneficial (empty string if not needed)',
+                description:
+                  'Mermaid diagram code if beneficial (empty string if not needed)',
               },
               key_insights: {
                 type: 'array',
@@ -423,7 +436,8 @@ export const babyResearchNodes: Partial<DBNode>[] = [
               },
               confidence_level: {
                 type: 'number',
-                description: 'Confidence score 1-10 based on source quality and coverage',
+                description:
+                  'Confidence score 1-10 based on source quality and coverage',
               },
               sources_used: {
                 type: 'array',
@@ -447,7 +461,8 @@ export const babyResearchNodes: Partial<DBNode>[] = [
                     context: { type: 'string' },
                   },
                 },
-                description: 'List of relevant images extracted from search results',
+                description:
+                  'List of relevant images extracted from search results',
               },
             },
           },
@@ -788,7 +803,9 @@ export const babyResearchNodes: Partial<DBNode>[] = [
               },
               {
                 type: 'paragraph',
-                content: [{ type: 'text', text: '     Brief overview with context' }],
+                content: [
+                  { type: 'text', text: '     Brief overview with context' },
+                ],
               },
               { type: 'paragraph', content: [{ type: 'text', text: '     ' }] },
               {
@@ -1015,11 +1032,15 @@ export const babyResearchNodes: Partial<DBNode>[] = [
               },
               {
                 type: 'paragraph',
-                content: [{ type: 'text', text: '  - Properly cites all sources' }],
+                content: [
+                  { type: 'text', text: '  - Properly cites all sources' },
+                ],
               },
               {
                 type: 'paragraph',
-                content: [{ type: 'text', text: '  - Provides actionable insights' }],
+                content: [
+                  { type: 'text', text: '  - Provides actionable insights' },
+                ],
               },
               {
                 type: 'paragraph',
@@ -1295,18 +1316,21 @@ export const babyResearchNodes: Partial<DBNode>[] = [
             includeDomains: {
               type: 'array',
               items: { type: 'string' },
-              description: 'List of domains to specifically include in search results',
+              description:
+                'List of domains to specifically include in search results',
               default: [],
             },
             excludeDomains: {
               type: 'array',
               items: { type: 'string' },
-              description: 'List of domains to specifically exclude from search results',
+              description:
+                'List of domains to specifically exclude from search results',
               default: [],
             },
             startPublishedDate: {
               type: 'string',
-              description: 'Start date for published content (YYYY-MM-DD format)',
+              description:
+                'Start date for published content (YYYY-MM-DD format)',
             },
             endPublishedDate: {
               type: 'string',
@@ -1375,7 +1399,8 @@ export const babyResearchNodes: Partial<DBNode>[] = [
 
     kind: 'llm',
     name: 'ORGANIZATION',
-    description: 'Organize and summarize all collected information for report generation',
+    description:
+      'Organize and summarize all collected information for report generation',
     uiConfig: {
       position: { x: 2272.4044439691656, y: 91.44758151102624 },
       type: 'default',
@@ -1406,7 +1431,9 @@ export const babyResearchNodes: Partial<DBNode>[] = [
               },
               {
                 type: 'paragraph',
-                content: [{ type: 'text', text: 'Your response should include:' }],
+                content: [
+                  { type: 'text', text: 'Your response should include:' },
+                ],
               },
               {
                 type: 'paragraph',
@@ -1516,19 +1543,27 @@ export const babyResearchNodes: Partial<DBNode>[] = [
               },
               {
                 type: 'paragraph',
-                content: [{ type: 'text', text: '- Finding 1 (Source: [Title](URL))' }],
+                content: [
+                  { type: 'text', text: '- Finding 1 (Source: [Title](URL))' },
+                ],
               },
               {
                 type: 'paragraph',
-                content: [{ type: 'text', text: '- Finding 2 (Source: [Title](URL))' }],
+                content: [
+                  { type: 'text', text: '- Finding 2 (Source: [Title](URL))' },
+                ],
               },
               {
                 type: 'paragraph',
-                content: [{ type: 'text', text: '- Finding 3 (Source: [Title](URL))' }],
+                content: [
+                  { type: 'text', text: '- Finding 3 (Source: [Title](URL))' },
+                ],
               },
               {
                 type: 'paragraph',
-                content: [{ type: 'text', text: '## DETAILED CONTENT SUMMARY' }],
+                content: [
+                  { type: 'text', text: '## DETAILED CONTENT SUMMARY' },
+                ],
               },
               {
                 type: 'paragraph',
@@ -2015,15 +2050,18 @@ export const babyResearchNodes: Partial<DBNode>[] = [
                     url: { type: 'string', description: 'Source URL' },
                     summary: {
                       type: 'string',
-                      description: 'Brief summary of the source content and relevance',
+                      description:
+                        'Brief summary of the source content and relevance',
                     },
                   },
                 },
-                description: 'List of key reference sources from search results',
+                description:
+                  'List of key reference sources from search results',
               },
               important_url: {
                 type: 'string',
-                description: 'Single most important URL for detailed content extraction',
+                description:
+                  'Single most important URL for detailed content extraction',
               },
               additional_search_instruction: {
                 type: 'string',
@@ -2032,7 +2070,8 @@ export const babyResearchNodes: Partial<DBNode>[] = [
               },
               analysis_summary: {
                 type: 'string',
-                description: 'Assessment of current research state and strategy',
+                description:
+                  'Assessment of current research state and strategy',
               },
               research_completeness: {
                 type: 'number',
@@ -2398,7 +2437,8 @@ export const babyResearchNodes: Partial<DBNode>[] = [
           },
           language: {
             type: 'string',
-            description: 'Preferred language for sources. eg. en (English), ko (Korean)',
+            description:
+              'Preferred language for sources. eg. en (English), ko (Korean)',
           },
           research_instruction: {
             type: 'string',

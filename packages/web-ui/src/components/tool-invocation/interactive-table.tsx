@@ -10,7 +10,13 @@ import {
   FileSpreadsheet,
 } from 'lucide-react'
 
-import { Card, CardContent, CardDescription, CardHeader, CardTitle } from '@/components/ui/card'
+import {
+  Card,
+  CardContent,
+  CardDescription,
+  CardHeader,
+  CardTitle,
+} from '@/components/ui/card'
 import { Input } from '@/components/ui/input'
 import { Button } from '@/components/ui/button'
 import {
@@ -63,7 +69,8 @@ const loadXLSX = async () => {
   // Load XLSX from CDN
   return new Promise((resolve, reject) => {
     const script = document.createElement('script')
-    script.src = 'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'
+    script.src =
+      'https://cdn.sheetjs.com/xlsx-0.20.3/package/dist/xlsx.full.min.js'
     script.onload = () => {
       if ((window as any).XLSX) {
         resolve((window as any).XLSX)
@@ -91,7 +98,7 @@ export function InteractiveTable(props: InteractiveTableProps) {
 
   const [currentPage, setCurrentPage] = useState(1)
   const [visibleColumns, setVisibleColumns] = useState<Set<string>>(
-    new Set(columns.map((col) => col.key)),
+    new Set(columns.map((col) => col.key))
   )
 
   // Helper function to format cell values based on column type
@@ -123,12 +130,12 @@ export function InteractiveTable(props: InteractiveTableProps) {
 
     return parts.map((part, index) =>
       regex.test(part) ? (
-        <mark key={index} className='bg-yellow-200 dark:bg-yellow-800'>
+        <mark key={index} className="bg-yellow-200 dark:bg-yellow-800">
           {part}
         </mark>
       ) : (
         part
-      ),
+      )
     )
   }
 
@@ -140,8 +147,8 @@ export function InteractiveTable(props: InteractiveTableProps) {
     if (searchTerm && searchable) {
       filtered = filtered.filter((row) =>
         Object.values(row).some((value) =>
-          String(value).toLowerCase().includes(searchTerm.toLowerCase()),
-        ),
+          String(value).toLowerCase().includes(searchTerm.toLowerCase())
+        )
       )
     }
 
@@ -160,13 +167,16 @@ export function InteractiveTable(props: InteractiveTableProps) {
             comparison = Number(aValue || 0) - Number(bValue || 0)
             break
           case 'date':
-            comparison = new Date(aValue || 0).getTime() - new Date(bValue || 0).getTime()
+            comparison =
+              new Date(aValue || 0).getTime() - new Date(bValue || 0).getTime()
             break
           case 'boolean':
             comparison = (aValue ? 1 : 0) - (bValue ? 1 : 0)
             break
           default:
-            comparison = String(aValue || '').localeCompare(String(bValue || ''))
+            comparison = String(aValue || '').localeCompare(
+              String(bValue || '')
+            )
         }
 
         return sortDirection === 'asc' ? comparison : -comparison
@@ -177,16 +187,26 @@ export function InteractiveTable(props: InteractiveTableProps) {
   }, [data, searchTerm, sortColumn, sortDirection])
 
   // Pagination
-  const totalPages = pageSize > 0 ? Math.ceil(processedData.length / pageSize) : 1
+  const totalPages =
+    pageSize > 0 ? Math.ceil(processedData.length / pageSize) : 1
   const paginatedData =
     pageSize > 0
-      ? processedData.slice((currentPage - 1) * pageSize, currentPage * pageSize)
+      ? processedData.slice(
+          (currentPage - 1) * pageSize,
+          currentPage * pageSize
+        )
       : processedData
 
   // Handle sorting (all columns are sortable by default)
   const handleSort = (columnKey: string) => {
     if (sortColumn === columnKey) {
-      setSortDirection(sortDirection === 'asc' ? 'desc' : sortDirection === 'desc' ? null : 'asc')
+      setSortDirection(
+        sortDirection === 'asc'
+          ? 'desc'
+          : sortDirection === 'desc'
+            ? null
+            : 'asc'
+      )
       if (sortDirection === 'desc') {
         setSortColumn(null)
       }
@@ -204,7 +224,9 @@ export function InteractiveTable(props: InteractiveTableProps) {
       visibleCols.map((col) => col.label).join(','),
       // Data rows
       ...processedData.map((row) =>
-        visibleCols.map((col) => `"${formatCellValue(row[col.key], col.type)}"`).join(','),
+        visibleCols
+          .map((col) => `"${formatCellValue(row[col.key], col.type)}"`)
+          .join(',')
       ),
     ].join('\n')
 
@@ -236,7 +258,9 @@ export function InteractiveTable(props: InteractiveTableProps) {
             // Convert formatted values back to raw values for Excel
             switch (col.type) {
               case 'number':
-                return typeof value === 'number' ? value : Number(value) || value
+                return typeof value === 'number'
+                  ? value
+                  : Number(value) || value
               case 'date':
                 return value instanceof Date ? value : new Date(value)
               case 'boolean':
@@ -244,7 +268,7 @@ export function InteractiveTable(props: InteractiveTableProps) {
               default:
                 return value
             }
-          }),
+          })
         ),
       ]
 
@@ -257,8 +281,9 @@ export function InteractiveTable(props: InteractiveTableProps) {
         const maxLength = Math.max(
           col.label.length,
           ...processedData.map(
-            (row) => String(formatCellValue(row[col.key], col.type) || '').length,
-          ),
+            (row) =>
+              String(formatCellValue(row[col.key], col.type) || '').length
+          )
         )
         return { wch: Math.min(Math.max(maxLength + 2, 10), 50) }
       })
@@ -276,39 +301,43 @@ export function InteractiveTable(props: InteractiveTableProps) {
     }
   }
 
-  const visibleColumnsArray = columns.filter((col) => visibleColumns.has(col.key))
+  const visibleColumnsArray = columns.filter((col) =>
+    visibleColumns.has(col.key)
+  )
 
   return (
-    <div className='px-6'>
-      <Card className='w-full px-0'>
+    <div className="px-6">
+      <Card className="w-full px-0">
         <CardHeader>
-          <div className='flex flex-col'>
-            <CardTitle className='w-full flex items-center gap-2 justify-between'>
+          <div className="flex flex-col">
+            <CardTitle className="w-full flex items-center gap-2 justify-between">
               Interactive Table - {title}
               <JsonViewPopup data={props} />
             </CardTitle>
-            {description && <CardDescription className='mt-2 '>{description}</CardDescription>}
+            {description && (
+              <CardDescription className="mt-2 ">{description}</CardDescription>
+            )}
           </div>
 
           {/* Search and Export */}
-          <div className='flex items-center gap-2 mt-4'>
+          <div className="flex items-center gap-2 mt-4">
             {searchable && (
-              <div className='flex-1'>
+              <div className="flex-1">
                 <Input
-                  placeholder='Search across all columns...'
+                  placeholder="Search across all columns..."
                   value={searchTerm}
                   onChange={(e) => {
                     setSearchTerm(e.target.value)
                     setCurrentPage(1)
                   }}
-                  className='hover:bg-input bg-secondary/40 transition-colors border-transparent border-none! focus-visible:bg-input! ring-0!'
+                  className="hover:bg-input bg-secondary/40 transition-colors border-transparent border-none! focus-visible:bg-input! ring-0!"
                 />
               </div>
             )}
             <DropdownMenu>
               <DropdownMenuTrigger asChild>
-                <Button variant='ghost' className='data-[state=open]:bg-accent'>
-                  <Eye className='size-3.5' />
+                <Button variant="ghost" className="data-[state=open]:bg-accent">
+                  <Eye className="size-3.5" />
                   Columns
                 </Button>
               </DropdownMenuTrigger>
@@ -339,18 +368,21 @@ export function InteractiveTable(props: InteractiveTableProps) {
             {exportable && (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
-                  <Button variant='ghost' className='data-[state=open]:bg-accent'>
-                    <Download className='size-3.5' />
+                  <Button
+                    variant="ghost"
+                    className="data-[state=open]:bg-accent"
+                  >
+                    <Download className="size-3.5" />
                     Export
                   </Button>
                 </DropdownMenuTrigger>
                 <DropdownMenuContent>
                   <DropdownMenuItem onClick={exportToCSV}>
-                    <Download className='h-4 w-4 mr-2' />
+                    <Download className="h-4 w-4 mr-2" />
                     CSV
                   </DropdownMenuItem>
                   <DropdownMenuItem onClick={exportToExcel}>
-                    <FileSpreadsheet className='h-4 w-4 mr-2' />
+                    <FileSpreadsheet className="h-4 w-4 mr-2" />
                     Excel
                   </DropdownMenuItem>
                 </DropdownMenuContent>
@@ -359,9 +391,9 @@ export function InteractiveTable(props: InteractiveTableProps) {
           </div>
         </CardHeader>
 
-        <CardContent className='px-0 relative'>
+        <CardContent className="px-0 relative">
           <Table>
-            <TableHeader className='bg-secondary border-t'>
+            <TableHeader className="bg-secondary border-t">
               <TableRow>
                 {visibleColumnsArray.map((column, index) => {
                   return (
@@ -378,15 +410,21 @@ export function InteractiveTable(props: InteractiveTableProps) {
                       {/* Column header with sorting */}
                       <div
                         className={`flex items-center gap-2 cursor-pointer ${
-                          column.type === 'number' || column.type === 'date' ? 'justify-center' : ''
+                          column.type === 'number' || column.type === 'date'
+                            ? 'justify-center'
+                            : ''
                         }`}
                         onClick={() => handleSort(column.key)}
                       >
-                        <span className='hover:text-primary'>{column.label}</span>
+                        <span className="hover:text-primary">
+                          {column.label}
+                        </span>
 
                         <ArrowDownUp
                           className={`h-3 w-3 ${
-                            sortColumn === column.key ? '' : 'text-muted-foreground/30'
+                            sortColumn === column.key
+                              ? ''
+                              : 'text-muted-foreground/30'
                           }`}
                         />
                       </div>
@@ -396,10 +434,13 @@ export function InteractiveTable(props: InteractiveTableProps) {
               </TableRow>
             </TableHeader>
 
-            <TableBody className='min-h-[24rem]'>
+            <TableBody className="min-h-[24rem]">
               {paginatedData.length === 0 ? (
                 <TableRow>
-                  <TableCell colSpan={visibleColumnsArray.length} className='text-center h-48'>
+                  <TableCell
+                    colSpan={visibleColumnsArray.length}
+                    className="text-center h-48"
+                  >
                     No data found
                   </TableCell>
                 </TableRow>
@@ -423,7 +464,10 @@ export function InteractiveTable(props: InteractiveTableProps) {
                               <Checkbox checked={row[column.key]} />
                             </>
                           ) : searchTerm && searchable ? (
-                            highlightText(formatCellValue(row[column.key], column.type), searchTerm)
+                            highlightText(
+                              formatCellValue(row[column.key], column.type),
+                              searchTerm
+                            )
                           ) : (
                             formatCellValue(row[column.key], column.type)
                           )}
@@ -437,32 +481,38 @@ export function InteractiveTable(props: InteractiveTableProps) {
           </Table>
 
           {/* Pagination */}
-          <div className='flex items-center justify-between pt-4 px-6'>
-            <div className='text-xs text-muted-foreground'>Total rows: {data.length}</div>
+          <div className="flex items-center justify-between pt-4 px-6">
+            <div className="text-xs text-muted-foreground">
+              Total rows: {data.length}
+            </div>
             {pageSize > 0 && totalPages > 1 && (
-              <div className='flex items-center gap-2'>
+              <div className="flex items-center gap-2">
                 <Button
-                  variant='ghost'
-                  size='sm'
-                  onClick={() => setCurrentPage((prev) => Math.max(1, prev - 1))}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.max(1, prev - 1))
+                  }
                   disabled={currentPage === 1}
                 >
-                  <ChevronLeft className='h-4 w-4' />
+                  <ChevronLeft className="h-4 w-4" />
                   Previous
                 </Button>
 
-                <span className='text-sm px-2'>
+                <span className="text-sm px-2">
                   Page {currentPage} of {totalPages}
                 </span>
 
                 <Button
-                  variant='ghost'
-                  size='sm'
-                  onClick={() => setCurrentPage((prev) => Math.min(totalPages, prev + 1))}
+                  variant="ghost"
+                  size="sm"
+                  onClick={() =>
+                    setCurrentPage((prev) => Math.min(totalPages, prev + 1))
+                  }
                   disabled={currentPage === totalPages}
                 >
                   Next
-                  <ChevronRight className='h-4 w-4' />
+                  <ChevronRight className="h-4 w-4" />
                 </Button>
               </div>
             )}

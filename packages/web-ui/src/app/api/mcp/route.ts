@@ -16,7 +16,7 @@ export async function POST(request: Request) {
   if (!hasPermission) {
     return NextResponse.json(
       { error: "You don't have permission to create MCP connections" },
-      { status: 403 },
+      { status: 403 }
     )
   }
 
@@ -30,7 +30,7 @@ export async function POST(request: Request) {
     logger.error('Failed to save MCP client', { error })
     return NextResponse.json(
       { message: error.message || 'Failed to save MCP client' },
-      { status: 500 },
+      { status: 500 }
     )
   }
 }

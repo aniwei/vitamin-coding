@@ -3,7 +3,7 @@ import { getSession } from 'auth/server'
 
 export async function DELETE(
   _request: Request,
-  { params }: { params: Promise<{ id: string; itemId: string }> },
+  { params }: { params: Promise<{ id: string; itemId: string }> }
 ) {
   const session = await getSession()
 
@@ -30,7 +30,10 @@ export async function DELETE(
     const itemExists = items.some((item) => item.itemId === itemId)
 
     if (!itemExists) {
-      return Response.json({ error: 'Item not found in archive' }, { status: 404 })
+      return Response.json(
+        { error: 'Item not found in archive' },
+        { status: 404 }
+      )
     }
 
     await archiveRepository.removeItemFromArchive(id, itemId)

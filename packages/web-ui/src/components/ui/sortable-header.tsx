@@ -9,15 +9,19 @@ interface SortIconProps {
   currentSortDirection: 'asc' | 'desc'
 }
 
-function SortIcon({ field, currentSortBy, currentSortDirection }: SortIconProps) {
+function SortIcon({
+  field,
+  currentSortBy,
+  currentSortDirection,
+}: SortIconProps) {
   if (currentSortBy !== field) {
-    return <ArrowUpDown className='h-4 w-4 text-muted-foreground' />
+    return <ArrowUpDown className="h-4 w-4 text-muted-foreground" />
   }
 
   return currentSortDirection === 'asc' ? (
-    <ArrowUp className='h-4 w-4 text-foreground' />
+    <ArrowUp className="h-4 w-4 text-foreground" />
   ) : (
-    <ArrowDown className='h-4 w-4 text-foreground' />
+    <ArrowDown className="h-4 w-4 text-foreground" />
   )
 }
 
@@ -43,8 +47,11 @@ export function SortableHeader({
 }: SortableHeaderProps) {
   return (
     <TableHead
-      className={cn('font-semibold cursor-pointer hover:bg-muted/50 transition-colors', className)}
-      role='columnheader'
+      className={cn(
+        'font-semibold cursor-pointer hover:bg-muted/50 transition-colors',
+        className
+      )}
+      role="columnheader"
       tabIndex={0}
       aria-sort={
         currentSortBy === field
@@ -62,7 +69,7 @@ export function SortableHeader({
       }}
       data-testid={testId}
     >
-      <div className='flex items-center gap-2'>
+      <div className="flex items-center gap-2">
         {children}
         <SortIcon
           field={field}

@@ -2,11 +2,17 @@
 
 import type { UIMessage } from 'ai'
 import { Button } from './ui/button'
-import { type Dispatch, type SetStateAction, useState, useMemo, useEffect } from 'react'
+import {
+  type Dispatch,
+  type SetStateAction,
+  useState,
+  useMemo,
+  useEffect,
+} from 'react'
 import { Textarea } from './ui/textarea'
-import { deleteMessagesByChatIdAfterTimestampAction } from '@/lib/compat/server-actions/chat'
+import { deleteMessagesByChatIdAfterTimestampAction } from '@/app/api/chat/actions'
 import type { UseChatHelpers } from '@ai-sdk/react'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { Loader } from 'lucide-react'
 
 export type MessageEditorProps = {
@@ -16,7 +22,12 @@ export type MessageEditorProps = {
   sendMessage: UseChatHelpers<UIMessage>['sendMessage']
 }
 
-export function MessageEditor({ message, setMode, setMessages, sendMessage }: MessageEditorProps) {
+export function MessageEditor({
+  message,
+  setMode,
+  setMessages,
+  sendMessage,
+}: MessageEditorProps) {
   const t = useTranslations()
   const [isSubmitting, setIsSubmitting] = useState<boolean>(false)
 
@@ -25,7 +36,7 @@ export function MessageEditor({ message, setMode, setMessages, sendMessage }: Me
       message.parts &&
       message.parts.length > 0 &&
       message.parts[message.parts.length - 1]?.type === 'text',
-    [message.parts],
+    [message.parts]
   )
 
   const [draftText, setDraftText] = useState<string>(() => {
@@ -81,21 +92,21 @@ export function MessageEditor({ message, setMode, setMessages, sendMessage }: Me
   }, [canEdit])
 
   return (
-    <div className='flex flex-col gap-4 w-full mb-4'>
-      <div className='flex flex-col gap-2'>
+    <div className="flex flex-col gap-4 w-full mb-4">
+      <div className="flex flex-col gap-2">
         <Textarea
-          data-testid='message-editor-text'
-          className='overflow-y-auto bg-transparent outline-none overflow-hidden resize-none !text-base rounded-xl w-full min-h-[100px]'
+          data-testid="message-editor-text"
+          className="overflow-y-auto bg-transparent outline-none overflow-hidden resize-none !text-base rounded-xl w-full min-h-[100px]"
           value={draftText}
           onChange={(e) => handleTextChange(e.target.value)}
-          placeholder='Edit your message...'
+          placeholder="Edit your message..."
         />
       </div>
-      <div className='flex flex-row gap-2 justify-end'>
+      <div className="flex flex-row gap-2 justify-end">
         <Button
-          variant='outline'
-          size='sm'
-          className='h-fit py-2 px-3'
+          variant="outline"
+          size="sm"
+          className="h-fit py-2 px-3"
           onClick={() => {
             setMode('view')
           }}
@@ -103,15 +114,15 @@ export function MessageEditor({ message, setMode, setMessages, sendMessage }: Me
           {t('Common.cancel')}
         </Button>
         <Button
-          data-testid='message-editor-send-button'
-          variant='default'
-          size='sm'
-          className='h-fit py-2 px-3'
+          data-testid="message-editor-send-button"
+          variant="default"
+          size="sm"
+          className="h-fit py-2 px-3"
           disabled={isSubmitting}
           onClick={handleSubmit}
         >
           {isSubmitting ? t('Common.saving') : t('Common.save')}
-          {isSubmitting && <Loader className='size-4 animate-spin' />}
+          {isSubmitting && <Loader className="size-4 animate-spin" />}
         </Button>
       </div>
     </div>

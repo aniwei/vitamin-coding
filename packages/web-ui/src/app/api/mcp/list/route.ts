@@ -15,14 +15,18 @@ export async function GET() {
     mcpClientsManager.getClients(),
   ])
 
-  const memoryMap = new Map(memoryClients.map(({ id, client }) => [id, client] as const))
+  const memoryMap = new Map(
+    memoryClients.map(({ id, client }) => [id, client] as const)
+  )
 
   // Add servers that exist in DB but not yet in memory
   const addTargets = servers.filter((server) => !memoryMap.has(server.id))
 
   if (addTargets.length > 0) {
     // no need to wait for this
-    Promise.allSettled(addTargets.map((server) => mcpClientsManager.refreshClient(server.id)))
+    Promise.allSettled(
+      addTargets.map((server) => mcpClientsManager.refreshClient(server.id))
+    )
   }
 
   const result = servers.map((server) => {

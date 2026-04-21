@@ -18,7 +18,8 @@ export default getRequestConfig(async () => {
 
   return {
     locale,
-    messages: locale === 'en' ? defaultMessages : deepmerge(defaultMessages, messages),
+    messages:
+      locale === 'en' ? defaultMessages : deepmerge(defaultMessages, messages),
     getMessageFallback({ key, namespace }) {
       return `${namespace}.${key}`
     },

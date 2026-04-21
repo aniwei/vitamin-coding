@@ -71,7 +71,7 @@ export function NodeIcon({
                         ? 'bg-amber-500'
                         : 'bg-card',
         'p-1 rounded',
-        className,
+        className
       )}
     >
       <Icon className={cn('size-4 text-white', iconClassName)} />

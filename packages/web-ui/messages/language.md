@@ -11,18 +11,18 @@ To add a new language to the application, follow these simple steps:
 ```typescript
 export const SUPPORTED_LOCALES = [
   {
-    code: 'en',
-    name: 'English 🇺🇸',
+    code: "en",
+    name: "English 🇺🇸",
   },
   {
-    code: 'ko',
-    name: 'Korean 🇰🇷',
+    code: "ko",
+    name: "Korean 🇰🇷",
   },
   {
-    code: 'your-language-code',
-    name: 'Your Language Name 🏴',
+    code: "your-language-code",
+    name: "Your Language Name 🏴",
   },
-]
+];
 ```
 
 The language will then be available in the language selector of the application.

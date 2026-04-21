@@ -9,7 +9,7 @@ export function createUINode(
     position: { x: number; y: number }
     name?: string
     id?: string
-  }>,
+  }>
 ): UINode {
   const id = option?.id ?? generateUUID()
 

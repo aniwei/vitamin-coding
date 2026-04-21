@@ -7,7 +7,7 @@ export const deleteMcpServer = async (
     context?: BrowserContext
     page?: Page
   },
-  serverId: string,
+  serverId: string
 ) => {
   try {
     let page: Page
@@ -37,7 +37,11 @@ export const deleteMcpServer = async (
         console.log(`MCP server ${serverId} already deleted or not found`)
         return
       }
-      console.error('Failed to delete MCP server', response.status(), responseText)
+      console.error(
+        'Failed to delete MCP server',
+        response.status(),
+        responseText
+      )
       await access.browser?.close()
       await access.page?.close()
       await access.context?.close()

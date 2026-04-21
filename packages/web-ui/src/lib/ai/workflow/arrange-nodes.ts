@@ -29,7 +29,10 @@ interface NodeToPlace {
  * Starting from Input node as root, arranges nodes in a DAG structure
  * Considers existing positions and actual node heights to prevent overlaps
  */
-export function arrangeNodes(nodes: UINode[], edges: Edge[]): ArrangeNodesResult {
+export function arrangeNodes(
+  nodes: UINode[],
+  edges: Edge[]
+): ArrangeNodesResult {
   // Create a copy of nodes
   const arrangedNodes = nodes.map((node) => ({ ...node }))
 
@@ -39,10 +42,14 @@ export function arrangeNodes(nodes: UINode[], edges: Edge[]): ArrangeNodesResult
     ...edges.map((edge) => edge.target),
   ])
 
-  const nodesWithEdges = arrangedNodes.filter((node) => connectedNodeIds.has(node.id))
+  const nodesWithEdges = arrangedNodes.filter((node) =>
+    connectedNodeIds.has(node.id)
+  )
 
   // Find Input node
-  const inputNode = nodesWithEdges.find((node) => node.data.kind === NodeKind.Input)
+  const inputNode = nodesWithEdges.find(
+    (node) => node.data.kind === NodeKind.Input
+  )
 
   if (!inputNode) {
     return { nodes: arrangedNodes }
@@ -55,7 +62,10 @@ export function arrangeNodes(nodes: UINode[], edges: Edge[]): ArrangeNodesResult
   // Sort edges for condition nodes by sourceHandle priority
   const sortedEdges = [...edges].sort((a, b) => {
     if (a.source === b.source) {
-      return getSourceHandlePriority(a.sourceHandle) - getSourceHandlePriority(b.sourceHandle)
+      return (
+        getSourceHandlePriority(a.sourceHandle) -
+        getSourceHandlePriority(b.sourceHandle)
+      )
     }
     return 0
   })
@@ -114,8 +124,11 @@ export function arrangeNodes(nodes: UINode[], edges: Edge[]): ArrangeNodesResult
     levelNodes.forEach((nodeId) => {
       const parents = parentsMap.get(nodeId) || []
       const parentKey = parents.sort().join(',')
-      const nodeHeight = getNodeHeight(arrangedNodes.find((n) => n.id === nodeId))
-      const originalY = arrangedNodes.find((n) => n.id === nodeId)?.position.y || 0
+      const nodeHeight = getNodeHeight(
+        arrangedNodes.find((n) => n.id === nodeId)
+      )
+      const originalY =
+        arrangedNodes.find((n) => n.id === nodeId)?.position.y || 0
 
       if (!parentGroups.has(parentKey)) {
         parentGroups.set(parentKey, [])
@@ -135,26 +148,30 @@ export function arrangeNodes(nodes: UINode[], edges: Edge[]): ArrangeNodesResult
     })
 
     // Sort parent groups by their parents' Y positions
-    const sortedParentGroups = Array.from(parentGroups.entries()).sort(([keyA], [keyB]) => {
-      const parentsA = keyA ? keyA.split(',') : []
-      const parentsB = keyB ? keyB.split(',') : []
+    const sortedParentGroups = Array.from(parentGroups.entries()).sort(
+      ([keyA], [keyB]) => {
+        const parentsA = keyA ? keyA.split(',') : []
+        const parentsB = keyB ? keyB.split(',') : []
 
-      // Get average parent Y position for each group
-      const getGroupParentAvgY = (parents: string[]) => {
-        if (parents.length === 0) return 0
+        // Get average parent Y position for each group
+        const getGroupParentAvgY = (parents: string[]) => {
+          if (parents.length === 0) return 0
 
-        const parentYs = parents
-          .map((parentId) => nodePositions.get(parentId)?.y)
-          .filter((y) => y !== undefined) as number[]
+          const parentYs = parents
+            .map((parentId) => nodePositions.get(parentId)?.y)
+            .filter((y) => y !== undefined) as number[]
 
-        return parentYs.length > 0 ? parentYs.reduce((sum, y) => sum + y, 0) / parentYs.length : 0
+          return parentYs.length > 0
+            ? parentYs.reduce((sum, y) => sum + y, 0) / parentYs.length
+            : 0
+        }
+
+        const avgYA = getGroupParentAvgY(parentsA)
+        const avgYB = getGroupParentAvgY(parentsB)
+
+        return avgYA - avgYB
       }
-
-      const avgYA = getGroupParentAvgY(parentsA)
-      const avgYB = getGroupParentAvgY(parentsB)
-
-      return avgYA - avgYB
-    })
+    )
 
     // Track placed nodes in this level to avoid overlaps
     const placedNodesInLevel: PlacedNode[] = []
@@ -175,7 +192,11 @@ export function arrangeNodes(nodes: UINode[], edges: Edge[]): ArrangeNodesResult
           let targetY = parentPos.y
 
           // Check for overlaps and adjust if necessary
-          targetY = findNonOverlappingY(targetY, nodeToPlace.height, placedNodesInLevel)
+          targetY = findNonOverlappingY(
+            targetY,
+            nodeToPlace.height,
+            placedNodesInLevel
+          )
 
           nodePositions.set(nodeToPlace.nodeId, { x, y: targetY })
           placedNodesInLevel.push({
@@ -198,7 +219,7 @@ export function arrangeNodes(nodes: UINode[], edges: Edge[]): ArrangeNodesResult
           const adjustedStartY = findNonOverlappingY(
             startY + firstNodeHeight / 2,
             firstNodeHeight,
-            placedNodesInLevel,
+            placedNodesInLevel
           )
           const adjustment = adjustedStartY - (startY + firstNodeHeight / 2)
           startY += adjustment
@@ -231,7 +252,11 @@ export function arrangeNodes(nodes: UINode[], edges: Edge[]): ArrangeNodesResult
 
           groupNodes.forEach((nodeToPlace) => {
             if (!nodePositions.has(nodeToPlace.nodeId)) {
-              const targetY = findNonOverlappingY(baseY, nodeToPlace.height, placedNodesInLevel)
+              const targetY = findNonOverlappingY(
+                baseY,
+                nodeToPlace.height,
+                placedNodesInLevel
+              )
 
               nodePositions.set(nodeToPlace.nodeId, { x, y: targetY })
               placedNodesInLevel.push({
@@ -239,7 +264,8 @@ export function arrangeNodes(nodes: UINode[], edges: Edge[]): ArrangeNodesResult
                 y: targetY,
                 height: nodeToPlace.height,
                 topBound: targetY - nodeToPlace.height / 2 - NODE_PADDING / 2,
-                bottomBound: targetY + nodeToPlace.height / 2 + NODE_PADDING / 2,
+                bottomBound:
+                  targetY + nodeToPlace.height / 2 + NODE_PADDING / 2,
               })
             }
           })
@@ -263,7 +289,9 @@ export function arrangeNodes(nodes: UINode[], edges: Edge[]): ArrangeNodesResult
  * Get priority for sourceHandle sorting
  * Lower numbers have higher priority
  */
-function getSourceHandlePriority(sourceHandle: string | undefined | null): number {
+function getSourceHandlePriority(
+  sourceHandle: string | undefined | null
+): number {
   if (!sourceHandle) return 0
 
   switch (sourceHandle) {
@@ -299,7 +327,7 @@ function getNodeHeight(node: UINode | undefined): number {
 function findNonOverlappingY(
   preferredY: number,
   nodeHeight: number,
-  placedNodes: PlacedNode[],
+  placedNodes: PlacedNode[]
 ): number {
   const halfHeight = nodeHeight / 2
   const paddingHalf = NODE_PADDING / 2
@@ -314,7 +342,8 @@ function findNonOverlappingY(
 
     // Check if this position overlaps with any placed node
     const hasOverlap = placedNodes.some(
-      (placed) => !(bottomBound <= placed.topBound || topBound >= placed.bottomBound),
+      (placed) =>
+        !(bottomBound <= placed.topBound || topBound >= placed.bottomBound)
     )
 
     if (!hasOverlap) {
@@ -323,11 +352,14 @@ function findNonOverlappingY(
 
     // Find the closest conflicting node and position after it
     const conflictingNodes = placedNodes.filter(
-      (placed) => !(bottomBound <= placed.topBound || topBound >= placed.bottomBound),
+      (placed) =>
+        !(bottomBound <= placed.topBound || topBound >= placed.bottomBound)
     )
 
     if (conflictingNodes.length > 0) {
-      const lowestConflictBottom = Math.max(...conflictingNodes.map((n) => n.bottomBound))
+      const lowestConflictBottom = Math.max(
+        ...conflictingNodes.map((n) => n.bottomBound)
+      )
       candidateY = lowestConflictBottom + halfHeight + paddingHalf
     } else {
       candidateY += nodeHeight + NODE_PADDING

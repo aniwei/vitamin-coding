@@ -1,5 +1,8 @@
 import { useWorkflowStore } from '@/app/store/workflow.store'
-import { NodeKind, NodeRuntimeHistory } from 'lib/ai/workflow/workflow.interface'
+import {
+  NodeKind,
+  NodeRuntimeHistory,
+} from 'lib/ai/workflow/workflow.interface'
 import { useReactFlow } from '@xyflow/react'
 import { useObjectState } from '@/hooks/use-object-state'
 import { UINode } from 'lib/ai/workflow/workflow.interface'
@@ -27,22 +30,34 @@ import { FlipWords } from 'ui/flip-words'
 import { Label } from 'ui/label'
 import { Input } from 'ui/input'
 import { Switch } from 'ui/switch'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from 'ui/select'
 import { Textarea } from 'ui/textarea'
 import { NodeIcon } from '../node-icon'
 import { TextShimmer } from 'ui/text-shimmer'
-import { generateObjectAction } from '@/lib/compat/server-actions/chat'
+import { generateObjectAction } from '@/app/api/chat/actions'
 import { appStore } from '@/app/store'
 import { notify } from 'lib/notify'
 import { SelectModel } from '@/components/select-model'
 
 import { useCopy } from '@/hooks/use-copy'
 import { NodeResultPopup } from '../node-result-popup'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 
 const debounce = createDebounce()
 
-export function ExecuteTab({ close, onSave }: { close: () => void; onSave: () => Promise<void> }) {
+export function ExecuteTab({
+  close,
+  onSave,
+}: {
+  close: () => void
+  onSave: () => Promise<void>
+}) {
   const { addProcess, processIds, workflow } = useWorkflowStore()
 
   const tabs = useMemo(
@@ -56,7 +71,7 @@ export function ExecuteTab({ close, onSave }: { close: () => void; onSave: () =>
         value: 'result',
       },
     ],
-    [],
+    []
   )
 
   const [tab, setTab] = useState<(typeof tabs)[number]['value']>(tabs[0].value)
@@ -66,9 +81,13 @@ export function ExecuteTab({ close, onSave }: { close: () => void; onSave: () =>
   const [result, setResult] = useState<GraphEndEvent | undefined>()
   const { copied, copy } = useCopy()
 
-  const isProcessing = useMemo(() => Boolean(processIds.length), [processIds.length])
+  const isProcessing = useMemo(
+    () => Boolean(processIds.length),
+    [processIds.length]
+  )
 
-  const { getEdges, getNodes, fitView, getNode, updateNodeData, setNodes } = useReactFlow<UINode>()
+  const { getEdges, getNodes, fitView, getNode, updateNodeData, setNodes } =
+    useReactFlow<UINode>()
   const nodes = getNodes()
   const historyRef = useRef<HTMLDivElement>(null)
 
@@ -91,8 +110,10 @@ export function ExecuteTab({ close, onSave }: { close: () => void; onSave: () =>
     const result = await notify.prompt({
       title: t('Common.generateInputWithAI'),
       description: (
-        <div className='flex items-center gap-2'>
-          <p className='mr-auto'>{t('Workflow.generateInputWithAIDescription')}</p>
+        <div className="flex items-center gap-2">
+          <p className="mr-auto">
+            {t('Workflow.generateInputWithAIDescription')}
+          </p>
           <SelectModel
             onSelect={(m) => {
               model = m
@@ -123,14 +144,15 @@ ${workflow!.description ? `tool-description: ${workflow!.description}` : ''}`,
         loading: t('Common.generatingInputWithAI'),
         success: t('Common.inputGeneratedSuccessfully'),
         error: t('Common.failedToGenerateInput'),
-      },
+      }
     )
   }, [inputSchema])
 
   const handleClick = async () => {
     await onSave()
     const failSchema = inputSchemaIterator.find(([key]) => {
-      if (inputSchema.required?.includes(key) && query[key] === undefined) return true
+      if (inputSchema.required?.includes(key) && query[key] === undefined)
+        return true
     })
     if (failSchema) {
       return toast.warning(`${failSchema[0]} is Empty`)
@@ -268,11 +290,15 @@ ${workflow!.description ? `tool-description: ${workflow!.description}` : ''}`,
                     runtime: { status: event.isOk ? 'success' : 'fail' },
                   })
                   setHistories((prev) => {
-                    const prevHistory = prev.find((h) => h.id === event.nodeExecutionId)
+                    const prevHistory = prev.find(
+                      (h) => h.id === event.nodeExecutionId
+                    )
                     if (!prevHistory) return prev
                     return prev.map((n) => {
                       if (n != prevHistory) return n
-                      const source = event.isOk ? event.node.output : event.node.input
+                      const source = event.isOk
+                        ? event.node.output
+                        : event.node.input
                       return {
                         ...prevHistory,
                         endedAt: Date.now(),
@@ -304,7 +330,7 @@ ${workflow!.description ? `tool-description: ${workflow!.description}` : ''}`,
         setIsRunning(false)
       }
     },
-    [workflow!.id],
+    [workflow!.id]
   )
 
   const lastOutput = useMemo(() => {
@@ -322,7 +348,7 @@ ${workflow!.description ? `tool-description: ${workflow!.description}` : ''}`,
     if (isRunning) return
     if (result?.isOk === false)
       return (
-        <Alert variant={'destructive'} className='border-destructive'>
+        <Alert variant={'destructive'} className="border-destructive">
           <AlertTriangleIcon />
           <AlertTitle>Error</AlertTitle>
           <AlertDescription>
@@ -331,47 +357,50 @@ ${workflow!.description ? `tool-description: ${workflow!.description}` : ''}`,
         </Alert>
       )
     return (
-      <div className='p-2'>
+      <div className="p-2">
         <JsonView data={lastOutput} />
       </div>
     )
   }, [isRunning, result])
   return (
-    <div className='fade-300 w-sm h-[85vh] bg-card border rounded-lg shadow-lg overflow-y-auto py-4'>
-      <div className='flex flex-col px-4'>
-        <div className='flex items-center gap-2 w-full h-9'>
-          <span className='font-semibold'>Test Run</span>
+    <div className="fade-300 w-sm h-[85vh] bg-card border rounded-lg shadow-lg overflow-y-auto py-4">
+      <div className="flex flex-col px-4">
+        <div className="flex items-center gap-2 w-full h-9">
+          <span className="font-semibold">Test Run</span>
           <div
             className={cn(
               'p-1 rounded hover:bg-secondary cursor-pointer ml-auto',
-              isProcessing && 'sr-only',
+              isProcessing && 'sr-only'
             )}
             onClick={close}
           >
-            <XIcon className='size-3.5' />
+            <XIcon className="size-3.5" />
           </div>
         </div>
       </div>
-      <div className='flex'>
+      <div className="flex">
         {tabs.map((t) => (
           <Button
             key={t.value}
-            variant='ghost'
-            className={cn('rounded-none', tab == t.value && 'border-b border-primary')}
+            variant="ghost"
+            className={cn(
+              'rounded-none',
+              tab == t.value && 'border-b border-primary'
+            )}
             onClick={() => setTab(t.value)}
           >
             {t.label}
           </Button>
         ))}
       </div>
-      <Separator className='mb-4' />
+      <Separator className="mb-4" />
 
       {tab == tabs[0].value ? (
-        <div className='px-4 flex flex-col gap-4'>
+        <div className="px-4 flex flex-col gap-4">
           {inputSchemaIterator.length == 0 ? (
-            <div className='flex items-center justify-center h-40'>
+            <div className="flex items-center justify-center h-40">
               <FlipWords
-                className='text-sm text-muted-foreground'
+                className="text-sm text-muted-foreground"
                 words={['No input required for this workflow']}
               />
             </div>
@@ -380,47 +409,58 @@ ${workflow!.description ? `tool-description: ${workflow!.description}` : ''}`,
               <div
                 tabIndex={1}
                 onClick={handleGenerateInputWithAI}
-                className='hover:bg-secondary rounded-sm px-2 py-1 flex items-center gap-2 ml-auto text-xs font-semibold cursor-pointer hover:text-primary transition-colors'
+                className="hover:bg-secondary rounded-sm px-2 py-1 flex items-center gap-2 ml-auto text-xs font-semibold cursor-pointer hover:text-primary transition-colors"
               >
                 {t('Common.generateInputWithAI')}
-                <WandSparklesIcon className='size-3' />
+                <WandSparklesIcon className="size-3" />
               </div>
               {inputSchemaIterator.map(([key, schema], i) => {
                 return (
                   <div key={key ?? i}>
                     <Label
-                      className='mb-2 text-sm font-semibold ml-0.5 gap-0.5'
+                      className="mb-2 text-sm font-semibold ml-0.5 gap-0.5"
                       htmlFor={key || String(i)}
                     >
                       {key || 'undefined'}
                       {inputSchema.required?.includes(key) && (
-                        <span className='text-xs text-destructive'>*</span>
+                        <span className="text-xs text-destructive">*</span>
                       )}
                     </Label>
                     {schema.type == 'number' ? (
                       <Input
                         disabled={isProcessing}
                         id={key || String(i)}
-                        type='number'
+                        type="number"
                         placeholder={schema.description || 'number'}
                         defaultValue={query[key] || undefined}
-                        onChange={(e) => setQuery({ ...query, [key]: Number(e.target.value) })}
+                        onChange={(e) =>
+                          setQuery({ ...query, [key]: Number(e.target.value) })
+                        }
                       />
                     ) : schema.type == 'boolean' ? (
                       <Switch
                         disabled={isProcessing}
                         id={key || String(i)}
                         checked={query[key]}
-                        onCheckedChange={(checked) => setQuery({ ...query, [key]: checked })}
+                        onCheckedChange={(checked) =>
+                          setQuery({ ...query, [key]: checked })
+                        }
                       />
                     ) : schema.type == 'string' && schema.enum ? (
                       <Select
                         disabled={isProcessing}
                         value={query[key]}
-                        onValueChange={(value) => setQuery({ ...query, [key]: value })}
+                        onValueChange={(value) =>
+                          setQuery({ ...query, [key]: value })
+                        }
                       >
-                        <SelectTrigger id={key || String(i)} className='min-w-46'>
-                          <SelectValue placeholder={schema.description || 'option'} />
+                        <SelectTrigger
+                          id={key || String(i)}
+                          className="min-w-46"
+                        >
+                          <SelectValue
+                            placeholder={schema.description || 'option'}
+                          />
                         </SelectTrigger>
                         <SelectContent>
                           {(schema.enum as string[]).map((item, i) => (
@@ -435,9 +475,11 @@ ${workflow!.description ? `tool-description: ${workflow!.description}` : ''}`,
                         disabled={isProcessing}
                         id={key || String(i)}
                         value={query[key]}
-                        className='resize-none max-h-28 overflow-y-auto'
+                        className="resize-none max-h-28 overflow-y-auto"
                         placeholder={schema.description || 'string'}
-                        onChange={(e) => setQuery({ ...query, [key]: e.target.value })}
+                        onChange={(e) =>
+                          setQuery({ ...query, [key]: e.target.value })
+                        }
                       />
                     ) : null}
                   </div>
@@ -445,56 +487,70 @@ ${workflow!.description ? `tool-description: ${workflow!.description}` : ''}`,
               })}
             </>
           )}
-          <Button disabled={isProcessing} className='font-bold w-full' onClick={handleClick}>
-            {isProcessing ? <Loader className='size-3.5 animate-spin' /> : t('Common.run')}
+          <Button
+            disabled={isProcessing}
+            className="font-bold w-full"
+            onClick={handleClick}
+          >
+            {isProcessing ? (
+              <Loader className="size-3.5 animate-spin" />
+            ) : (
+              t('Common.run')
+            )}
           </Button>
         </div>
       ) : tab == tabs[1].value ? (
         <div>
-          <div className='flex flex-col px-4 h-[30vh] overflow-y-auto' ref={historyRef}>
+          <div
+            className="flex flex-col px-4 h-[30vh] overflow-y-auto"
+            ref={historyRef}
+          >
             {histories.map((history, i) => {
               return (
                 <NodeResultPopup history={history} key={i}>
                   <div
                     className={cn(
                       'cursor-pointer hover:bg-secondary flex items-center gap-2 text-sm rounded-sm px-2 py-1.5 relative',
-                      history.status == 'fail' && 'text-destructive',
+                      history.status == 'fail' && 'text-destructive'
                     )}
                   >
                     {i != 0 && (
-                      <div className='absolute left-4.5 -top-1.5 w-px h-3'>
-                        <Separator orientation='vertical' />
+                      <div className="absolute left-4.5 -top-1.5 w-px h-3">
+                        <Separator orientation="vertical" />
                       </div>
                     )}
-                    <div className='border rounded overflow-hidden'>
+                    <div className="border rounded overflow-hidden">
                       <NodeIcon
                         type={history.kind}
-                        iconClassName='size-3'
-                        className='rounded-none'
+                        iconClassName="size-3"
+                        className="rounded-none"
                       />
                     </div>
                     {history.status == 'running' ? (
-                      <TextShimmer className='font-semibold'>
+                      <TextShimmer className="font-semibold">
                         {`${history.name} Running...`}
                       </TextShimmer>
                     ) : (
-                      <span className='font-semibold'>{history.name}</span>
+                      <span className="font-semibold">{history.name}</span>
                     )}
                     <span
                       className={cn(
                         'ml-auto text-xs',
-                        history.status != 'fail' && 'text-muted-foreground',
+                        history.status != 'fail' && 'text-muted-foreground'
                       )}
                     >
                       {history.status != 'running' &&
-                        ((history.endedAt! - history.startedAt!) / 1000).toFixed(2)}
+                        (
+                          (history.endedAt! - history.startedAt!) /
+                          1000
+                        ).toFixed(2)}
                     </span>
                     {history.status == 'success' ? (
-                      <Check className='size-3' />
+                      <Check className="size-3" />
                     ) : history.status == 'fail' ? (
-                      <XIcon className='size-3' />
+                      <XIcon className="size-3" />
                     ) : (
-                      <Loader2 className='size-3 animate-spin' />
+                      <Loader2 className="size-3 animate-spin" />
                     )}
                   </div>
                 </NodeResultPopup>
@@ -502,10 +558,10 @@ ${workflow!.description ? `tool-description: ${workflow!.description}` : ''}`,
             })}
           </div>
           <Separator />
-          <div className='px-4 py-4'>
-            <div className='flex items-center mb-4'>
-              <p className='font-semibold text-sm'>Result</p>
-              <div className='flex-1' />
+          <div className="px-4 py-4">
+            <div className="flex items-center mb-4">
+              <p className="font-semibold text-sm">Result</p>
+              <div className="flex-1" />
               {result && (
                 <NodeResultPopup
                   history={{
@@ -521,17 +577,21 @@ ${workflow!.description ? `tool-description: ${workflow!.description}` : ''}`,
                   }}
                 >
                   <Button variant={'ghost'} size={'icon'}>
-                    <Maximize2 className='size-3' />
+                    <Maximize2 className="size-3" />
                   </Button>
                 </NodeResultPopup>
               )}
               <Button
                 variant={'ghost'}
                 size={'icon'}
-                className='ml-auto'
+                className="ml-auto"
                 onClick={() => copy(JSON.stringify(lastOutput))}
               >
-                {copied ? <Check className='size-3' /> : <Copy className='size-3' />}
+                {copied ? (
+                  <Check className="size-3" />
+                ) : (
+                  <Copy className="size-3" />
+                )}
               </Button>
             </div>
             {resultView}

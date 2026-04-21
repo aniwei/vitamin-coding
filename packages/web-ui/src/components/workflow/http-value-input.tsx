@@ -3,14 +3,17 @@
 import { Button } from '@/components/ui/button'
 import { Input } from '@/components/ui/input'
 import { TrashIcon, VariableIcon } from 'lucide-react'
-import { HttpValue, OutputSchemaSourceKey } from 'lib/ai/workflow/workflow.interface'
+import {
+  HttpValue,
+  OutputSchemaSourceKey,
+} from 'lib/ai/workflow/workflow.interface'
 import { VariableSelect } from './variable-select'
 import { useReactFlow } from '@xyflow/react'
 import { UINode } from 'lib/ai/workflow/workflow.interface'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 import { VariableMentionItem } from './variable-mention-item'
 import { findAvailableSchemaBySource } from 'lib/ai/workflow/shared.workflow'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { cn, exclude } from 'lib/utils'
 
 interface HttpValueInputProps {
@@ -72,16 +75,16 @@ export function HttpValueInput({
   return (
     <div className={cn('flex items-center gap-1 min-w-0', className)}>
       {isVariable ? (
-        <div className='flex-1 min-w-0'>
+        <div className="flex-1 min-w-0">
           <VariableMentionItem
-            className='py-[7px] text-sm truncate'
+            className="py-[7px] text-sm truncate"
             {...getVariable(value as OutputSchemaSourceKey)}
             onRemove={() => onChange(undefined)}
           />
         </div>
       ) : (
         <Input
-          className='flex-1 placeholder:text-xs'
+          className="flex-1 placeholder:text-xs"
           value={value?.toString() || ''}
           onChange={(e) => handleLiteralChange(e.target.value)}
           placeholder={placeholder}
@@ -104,8 +107,8 @@ export function HttpValueInput({
                     onChange(undefined)
                   }
                 }}
-                size='icon'
-                className='data-[state=open]:bg-secondary'
+                size="icon"
+                className="data-[state=open]:bg-secondary"
               >
                 <VariableIcon className={isVariable ? 'text-blue-500' : ''} />
               </Button>
@@ -117,7 +120,7 @@ export function HttpValueInput({
         </TooltipContent>
       </Tooltip>
       {onDelete && (
-        <Button variant='ghost' size='icon' onClick={onDelete}>
+        <Button variant="ghost" size="icon" onClick={onDelete}>
           <TrashIcon />
         </Button>
       )}

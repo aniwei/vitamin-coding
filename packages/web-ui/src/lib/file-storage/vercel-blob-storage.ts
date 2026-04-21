@@ -1,8 +1,16 @@
 import path from 'node:path'
 import { del, head, put } from '@vercel/blob'
 import { FileNotFoundError } from 'lib/errors'
-import type { FileMetadata, FileStorage, UploadOptions } from './file-storage.interface'
-import { resolveStoragePrefix, sanitizeFilename, toBuffer } from './storage-utils'
+import type {
+  FileMetadata,
+  FileStorage,
+  UploadOptions,
+} from './file-storage.interface'
+import {
+  resolveStoragePrefix,
+  sanitizeFilename,
+  toBuffer,
+} from './storage-utils'
 import { generateUUID } from 'lib/utils'
 
 const STORAGE_PREFIX = resolveStoragePrefix()
@@ -14,7 +22,10 @@ const buildPathname = (filename: string) => {
   return path.posix.join(prefix, `${id}-${safeName}`)
 }
 
-const mapMetadata = (key: string, info: { contentType: string; size: number; uploadedAt?: Date }) =>
+const mapMetadata = (
+  key: string,
+  info: { contentType: string; size: number; uploadedAt?: Date }
+) =>
   ({
     key,
     filename: path.posix.basename(key),

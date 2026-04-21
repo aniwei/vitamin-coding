@@ -21,7 +21,9 @@ interface ImageGenerationResult {
   model: string
 }
 
-function PureImageGeneratorToolInvocation({ part }: ImageGeneratorToolInvocationProps) {
+function PureImageGeneratorToolInvocation({
+  part,
+}: ImageGeneratorToolInvocationProps) {
   const isGenerating = useMemo(() => {
     return !part.state.startsWith('output')
   }, [part.state])
@@ -72,12 +74,12 @@ function PureImageGeneratorToolInvocation({ part }: ImageGeneratorToolInvocation
   // Simple loading state like web-search
   if (isGenerating) {
     return (
-      <div className='flex flex-col gap-4'>
+      <div className="flex flex-col gap-4">
         <TextShimmer>{getModeText(mode)}</TextShimmer>
-        <div className='w-full h-96 overflow-hidden rounded-lg'>
+        <div className="w-full h-96 overflow-hidden rounded-lg">
           <LetterGlitch />
         </div>
-        <p className='text-xs text-muted-foreground text-center'>
+        <p className="text-xs text-muted-foreground text-center">
           Image generation may take up to 1 minute.
         </p>
       </div>
@@ -85,18 +87,18 @@ function PureImageGeneratorToolInvocation({ part }: ImageGeneratorToolInvocation
   }
 
   return (
-    <div className='flex flex-col gap-4'>
-      <div className='flex items-center gap-2'>
-        {!hasError && <ImagesIcon className='size-4' />}
-        <span className='text-sm font-semibold'>
+    <div className="flex flex-col gap-4">
+      <div className="flex items-center gap-2">
+        {!hasError && <ImagesIcon className="size-4" />}
+        <span className="text-sm font-semibold">
           {hasError ? 'Image generation failed' : getModeHeader(mode)}
         </span>
-        <span className='text-xs text-muted-foreground'>{result?.model}</span>
+        <span className="text-xs text-muted-foreground">{result?.model}</span>
       </div>
 
-      <div className='w-full flex flex-col gap-3 pb-2'>
+      <div className="w-full flex flex-col gap-3 pb-2">
         {hasError ? (
-          <div className='bg-card text-muted-foreground p-6 rounded-lg text-xs border border-border/20'>
+          <div className="bg-card text-muted-foreground p-6 rounded-lg text-xs border border-border/20">
             {part.errorText ??
               (result?.images.length === 0
                 ? 'No images generated'
@@ -109,28 +111,28 @@ function PureImageGeneratorToolInvocation({ part }: ImageGeneratorToolInvocation
                 'grid gap-3',
                 images.length === 1
                   ? 'grid-cols-1 max-w-2xl'
-                  : 'grid-cols-1 md:grid-cols-2 max-w-3xl',
+                  : 'grid-cols-1 md:grid-cols-2 max-w-3xl'
               )}
             >
               {images.map((image, index) => (
                 <div
                   key={index}
-                  className='relative group rounded-lg overflow-hidden border border-border hover:border-primary transition-all shadow-sm hover:shadow-md'
+                  className="relative group rounded-lg overflow-hidden border border-border hover:border-primary transition-all shadow-sm hover:shadow-md"
                 >
                   {/* eslint-disable-next-line @next/next/no-img-element */}
                   <img
                     src={image.url}
-                    loading='lazy'
+                    loading="lazy"
                     alt={`Generated image ${index + 1}`}
-                    className='w-full h-auto object-cover'
+                    className="w-full h-auto object-cover"
                   />
                   {/* Hover overlay */}
-                  <div className='absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100'>
+                  <div className="absolute inset-0 bg-black/0 group-hover:bg-black/20 transition-colors flex items-center justify-center opacity-0 group-hover:opacity-100">
                     <a
                       href={image.url}
-                      target='_blank'
-                      rel='noopener noreferrer'
-                      className='bg-primary text-primary-foreground px-4 py-2 rounded-full text-sm font-medium hover:scale-105 transition-transform'
+                      target="_blank"
+                      rel="noopener noreferrer"
+                      className="bg-primary text-primary-foreground px-4 py-2 rounded-full text-sm font-medium hover:scale-105 transition-transform"
                     >
                       Open
                     </a>
@@ -145,6 +147,9 @@ function PureImageGeneratorToolInvocation({ part }: ImageGeneratorToolInvocation
   )
 }
 
-export const ImageGeneratorToolInvocation = memo(PureImageGeneratorToolInvocation, (prev, next) => {
-  return equal(prev.part, next.part)
-})
+export const ImageGeneratorToolInvocation = memo(
+  PureImageGeneratorToolInvocation,
+  (prev, next) => {
+    return equal(prev.part, next.part)
+  }
+)

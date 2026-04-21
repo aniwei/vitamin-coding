@@ -37,12 +37,9 @@ export class HandoffNotAllowedError extends AgentError {
   readonly allowed: string[]
 
   constructor(from: string, to: string, allowed: string[]) {
-    super(
-      `Agent "${from}" is not allowed to handoff to "${to}". Allowed: [${allowed.join(', ')}]`,
-      {
-        code: 'SWARM_HANDOFF_NOT_ALLOWED',
-      },
-    )
+    super(`Agent "${from}" is not allowed to handoff to "${to}". Allowed: [${allowed.join(', ')}]`, {
+      code: 'SWARM_HANDOFF_NOT_ALLOWED',
+    })
     this.name = 'HandoffNotAllowedError'
     this.from = from
     this.to = to

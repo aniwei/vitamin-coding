@@ -1,5 +1,9 @@
 import { UsersTable } from '@/components/admin/users-table'
-import { ADMIN_USER_LIST_LIMIT, DEFAULT_SORT_BY, DEFAULT_SORT_DIRECTION } from 'lib/admin/server'
+import {
+  ADMIN_USER_LIST_LIMIT,
+  DEFAULT_SORT_BY,
+  DEFAULT_SORT_DIRECTION,
+} from 'lib/admin/server'
 import { getAdminUsers } from 'lib/admin/server'
 import { requireAdminPermission } from 'auth/permissions'
 import { getSession } from 'lib/auth/server'
@@ -56,7 +60,7 @@ export default async function UserListPage({ searchParams }: PageProps) {
       page={page}
       limit={limit}
       query={params.query}
-      baseUrl='/admin/users'
+      baseUrl="/admin/users"
       sortBy={sortBy}
       sortDirection={sortDirection}
     />

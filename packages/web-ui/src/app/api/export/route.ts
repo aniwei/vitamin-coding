@@ -10,9 +10,14 @@ export async function GET() {
       return NextResponse.json({ error: 'Unauthorized' }, { status: 401 })
     }
 
-    const exports = await chatExportRepository.selectSummaryByExporterId(session.user.id)
+    const exports = await chatExportRepository.selectSummaryByExporterId(
+      session.user.id
+    )
     return NextResponse.json(exports)
   } catch (error: any) {
-    return NextResponse.json({ error: error.message || 'Failed to get exports' }, { status: 500 })
+    return NextResponse.json(
+      { error: error.message || 'Failed to get exports' },
+      { status: 500 }
+    )
   }
 }

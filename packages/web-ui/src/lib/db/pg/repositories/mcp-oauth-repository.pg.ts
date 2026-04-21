@@ -15,8 +15,8 @@ export const pgMcpOAuthRepository: McpOAuthRepository = {
       .where(
         and(
           eq(McpOAuthSessionTable.mcpServerId, mcpServerId),
-          isNotNull(McpOAuthSessionTable.tokens),
-        ),
+          isNotNull(McpOAuthSessionTable.tokens)
+        )
       )
       .orderBy(desc(McpOAuthSessionTable.updatedAt))
       .limit(1)
@@ -91,8 +91,8 @@ export const pgMcpOAuthRepository: McpOAuthRepository = {
         and(
           eq(McpOAuthSessionTable.mcpServerId, mcpServerId),
           isNull(McpOAuthSessionTable.tokens),
-          ne(McpOAuthSessionTable.state, state),
-        ),
+          ne(McpOAuthSessionTable.state, state)
+        )
       )
 
     return session as McpOAuthSession
@@ -100,6 +100,8 @@ export const pgMcpOAuthRepository: McpOAuthRepository = {
 
   // Delete a session by its OAuth state
   deleteByState: async (state) => {
-    await db.delete(McpOAuthSessionTable).where(eq(McpOAuthSessionTable.state, state))
+    await db
+      .delete(McpOAuthSessionTable)
+      .where(eq(McpOAuthSessionTable.state, state))
   },
 }

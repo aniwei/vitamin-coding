@@ -3,7 +3,14 @@ import { appStore } from '@/app/store'
 import { useChat, UseChatHelpers } from '@ai-sdk/react'
 import { cn } from 'lib/utils'
 
-import { ReactNode, useCallback, useEffect, useMemo, useRef, useState } from 'react'
+import {
+  ReactNode,
+  useCallback,
+  useEffect,
+  useMemo,
+  useRef,
+  useState,
+} from 'react'
 import { Button } from 'ui/button'
 import {
   Drawer,
@@ -21,7 +28,7 @@ import { Separator } from 'ui/separator'
 import { DefaultChatTransport, UIMessage } from 'ai'
 import { useShallow } from 'zustand/shallow'
 import { isShortcutEvent, Shortcuts } from 'lib/keyboard-shortcuts'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import {
   Dialog,
   DialogContent,
@@ -38,7 +45,7 @@ export function ChatBotTemporary() {
   const t = useTranslations('Chat.TemporaryChat')
 
   const [temporaryChat, appStoreMutate] = appStore(
-    useShallow((state) => [state.temporaryChat, state.mutate]),
+    useShallow((state) => [state.temporaryChat, state.mutate])
   )
   const [isInstructionsOpen, setIsInstructionsOpen] = useState(false)
 
@@ -53,7 +60,15 @@ export function ChatBotTemporary() {
 
   const [input, setInput] = useState('')
 
-  const { messages, sendMessage, clearError, status, setMessages, error, stop } = useChat({
+  const {
+    messages,
+    sendMessage,
+    clearError,
+    status,
+    setMessages,
+    error,
+    stop,
+  } = useChat({
     transport: new DefaultChatTransport({
       api: '/api/chat/temporary',
       prepareSendMessagesRequest: ({ messages }) => {
@@ -73,7 +88,10 @@ export function ChatBotTemporary() {
     },
   })
 
-  const isLoading = useMemo(() => status === 'streaming' || status === 'submitted', [status])
+  const isLoading = useMemo(
+    () => status === 'streaming' || status === 'submitted',
+    [status]
+  )
 
   const reset = useCallback(() => {
     setMessages([])
@@ -126,28 +144,33 @@ export function ChatBotTemporary() {
   }, [temporaryChat.isOpen])
 
   return (
-    <Drawer handleOnly direction='right' open={temporaryChat.isOpen} onOpenChange={setOpen}>
+    <Drawer
+      handleOnly
+      direction="right"
+      open={temporaryChat.isOpen}
+      onOpenChange={setOpen}
+    >
       <DrawerContent
         style={{
           userSelect: 'text',
         }}
-        className='w-full md:w-2xl px-2 flex flex-col'
+        className="w-full md:w-2xl px-2 flex flex-col"
       >
         <DrawerHeader>
-          <DrawerTitle className='flex items-center gap-2'>
-            <p className='hidden sm:flex'>{t('temporaryChat')}</p>
+          <DrawerTitle className="flex items-center gap-2">
+            <p className="hidden sm:flex">{t('temporaryChat')}</p>
 
-            <div className='flex-1' />
+            <div className="flex-1" />
 
             <Button
               variant={'secondary'}
-              className='rounded-full'
+              className="rounded-full"
               onClick={reset}
               disabled={isLoading}
             >
               {t('resetChat')}
-              <Separator orientation='vertical' />
-              <span className='text-xs text-muted-foreground ml-1'>⌘E</span>
+              <Separator orientation="vertical" />
+              <span className="text-xs text-muted-foreground ml-1">⌘E</span>
             </Button>
             <TemporaryChatInstructions
               isOpen={isInstructionsOpen}
@@ -159,21 +182,24 @@ export function ChatBotTemporary() {
                 })
               }}
             >
-              <Button variant={'secondary'} className='rounded-full'>
+              <Button variant={'secondary'} className="rounded-full">
                 <Settings2 />
-                <Separator orientation='vertical' />
-                <span className='text-xs text-muted-foreground ml-1'>⌘I</span>
+                <Separator orientation="vertical" />
+                <span className="text-xs text-muted-foreground ml-1">⌘I</span>
               </Button>
             </TemporaryChatInstructions>
             <DrawerClose asChild>
-              <Button variant={'secondary'} className='flex items-center gap-1 rounded-full'>
+              <Button
+                variant={'secondary'}
+                className="flex items-center gap-1 rounded-full"
+              >
                 <X />
-                <Separator orientation='vertical' />
-                <span className='text-xs text-muted-foreground ml-1'>ESC</span>
+                <Separator orientation="vertical" />
+                <span className="text-xs text-muted-foreground ml-1">ESC</span>
               </Button>
             </DrawerClose>
           </DrawerTitle>
-          <DrawerDescription className='sr-only'></DrawerDescription>
+          <DrawerDescription className="sr-only"></DrawerDescription>
         </DrawerHeader>
         <DrawerTemporaryContent
           isLoading={isLoading}
@@ -217,7 +243,7 @@ function DrawerTemporaryContent({
   const autoScrollRef = useRef(false)
 
   const [temporaryChat, appStoreMutate] = appStore(
-    useShallow((state) => [state.temporaryChat, state.mutate]),
+    useShallow((state) => [state.temporaryChat, state.mutate])
   )
 
   useEffect(() => {
@@ -275,18 +301,25 @@ function DrawerTemporaryContent({
   }, [Boolean(temporaryChat.chatModel)])
 
   return (
-    <div className={cn('flex flex-col min-w-0 h-full flex-1 overflow-y-hidden')}>
+    <div
+      className={cn('flex flex-col min-w-0 h-full flex-1 overflow-y-hidden')}
+    >
       {!messages.length && !error && (
-        <div className='flex-1 items-center flex'>
-          <div className='max-w-3xl mx-auto my-4'>
+        <div className="flex-1 items-center flex">
+          <div className="max-w-3xl mx-auto my-4">
             {' '}
-            <div className='rounded-xl p-6 flex flex-col gap-2 leading-relaxed text-center'>
-              <h1 className='text-4xl font-semibold '>{t('TemporaryChat.thisChatWontBeSaved')}</h1>
+            <div className="rounded-xl p-6 flex flex-col gap-2 leading-relaxed text-center">
+              <h1 className="text-4xl font-semibold ">
+                {t('TemporaryChat.thisChatWontBeSaved')}
+              </h1>
             </div>
           </div>
         </div>
       )}
-      <div className={'flex flex-col gap-2 overflow-y-auto py-6'} ref={containerRef}>
+      <div
+        className={'flex flex-col gap-2 overflow-y-auto py-6'}
+        ref={containerRef}
+      >
         {messages.map((message, index) => {
           const isLastMessage = messages.length - 1 === index
           return (
@@ -304,7 +337,7 @@ function DrawerTemporaryContent({
           )
         })}
         {isLoading && (
-          <div className='w-full mx-auto max-w-3xl px-6'>
+          <div className="w-full mx-auto max-w-3xl px-6">
             <Think />
           </div>
         )}
@@ -355,7 +388,9 @@ function TemporaryChatInstructions({
       <DialogTrigger asChild>{children}</DialogTrigger>
       <DialogContent>
         <DialogHeader>
-          <DialogTitle>{t('Chat.TemporaryChat.temporaryChatInstructions')}</DialogTitle>
+          <DialogTitle>
+            {t('Chat.TemporaryChat.temporaryChatInstructions')}
+          </DialogTitle>
           <DialogDescription>
             {t('Chat.TemporaryChat.temporaryChatInstructionsDescription')}
           </DialogDescription>
@@ -365,8 +400,10 @@ function TemporaryChatInstructions({
             autoFocus
             value={input}
             onChange={(e) => setInput(e.target.value)}
-            className='resize-none h-40'
-            placeholder={t('Chat.TemporaryChat.temporaryChatInstructionsPlaceholder')}
+            className="resize-none h-40"
+            placeholder={t(
+              'Chat.TemporaryChat.temporaryChatInstructionsPlaceholder'
+            )}
           />
         </DialogDescription>
         <DialogFooter>

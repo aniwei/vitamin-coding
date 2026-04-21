@@ -25,7 +25,7 @@ export async function ensureSidebarOpen(page: Page) {
         return element?.getAttribute('data-state') === 'open'
       },
       '[data-testid="sidebar-toggle"]',
-      { timeout: 5000 },
+      { timeout: 5000 }
     )
 
     // Give sidebar animation time to complete

@@ -6,7 +6,10 @@ import logger from 'logger'
 import { colorize } from 'consola/utils'
 import { safeJSONParse, toAny } from 'lib/utils'
 
-export async function POST(request: Request, { params }: { params: Promise<{ id: string }> }) {
+export async function POST(
+  request: Request,
+  { params }: { params: Promise<{ id: string }> }
+) {
   const { id } = await params
   const { query } = await request.json()
   const session = await getSession()
@@ -80,7 +83,7 @@ export async function POST(request: Request, { params }: { params: Promise<{ id:
           {
             disableHistory: true,
             timeout: 1000 * 60 * 5,
-          },
+          }
         )
         .then((result) => {
           if (!result.isOk) {

@@ -4,15 +4,82 @@ import { drizzleAdapter } from 'better-auth/adapters/drizzle'
 import { nextCookies } from 'better-auth/next-js'
 import { admin as adminPlugin } from 'better-auth/plugins'
 import { pgDb } from 'lib/db/pg/db.pg'
-import { headers } from 'next/headers'
-import { AccountTable, SessionTable, UserTable, VerificationTable } from 'lib/db/pg/schema.pg'
+import {
+  AccountTable,
+  SessionTable,
+  UserTable,
+  VerificationTable,
+} from 'lib/db/pg/schema.pg'
 import { getAuthConfig } from './config'
 import logger from 'logger'
-import { userRepository } from 'lib/db/repository'
 import { DEFAULT_USER_ROLE, USER_ROLES } from 'app-types/roles'
 import { admin, editor, user, ac } from './roles'
+import { eq } from 'drizzle-orm'
 
-const { emailAndPasswordEnabled, signUpEnabled, socialAuthenticationProviders } = getAuthConfig()
+// ─── No-Auth Default User ───────────────────────────────────────────────────
+const DEFAULT_USER_ID = '00000000-0000-0000-0000-000000000001'
+const DEFAULT_USER_EMAIL = 'admin@local.dev'
+const DEFAULT_USER_NAME = 'Admin'
+
+const DEFAULT_SESSION = {
+  user: {
+    id: DEFAULT_USER_ID,
+    name: DEFAULT_USER_NAME,
+    email: DEFAULT_USER_EMAIL,
+    emailVerified: true,
+    image: null as string | null,
+    role: 'admin' as string,
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+    banned: null as boolean | null,
+    banReason: null as string | null,
+    banExpires: null as Date | null,
+  },
+  session: {
+    id: 'no-auth-session',
+    token: 'no-auth-token',
+    userId: DEFAULT_USER_ID,
+    expiresAt: new Date('2099-01-01'),
+    createdAt: new Date('2024-01-01'),
+    updatedAt: new Date('2024-01-01'),
+    ipAddress: null as string | null,
+    userAgent: null as string | null,
+    impersonatedBy: null as string | null,
+  },
+}
+
+async function ensureDefaultUser() {
+  try {
+    const [existing] = await pgDb
+      .select()
+      .from(UserTable)
+      .where(eq(UserTable.id, DEFAULT_USER_ID))
+      .limit(1)
+    if (existing) return existing
+    const [created] = await pgDb
+      .insert(UserTable)
+      .values({
+        id: DEFAULT_USER_ID,
+        name: DEFAULT_USER_NAME,
+        email: DEFAULT_USER_EMAIL,
+        emailVerified: true,
+        role: 'admin',
+        createdAt: new Date(),
+        updatedAt: new Date(),
+      })
+      .onConflictDoNothing()
+      .returning()
+    return created ?? null
+  } catch {
+    return null
+  }
+}
+
+const {
+  emailAndPasswordEnabled,
+  signUpEnabled,
+  socialAuthenticationProviders,
+} = getAuthConfig()
 
 const options = {
   secret: process.env.BETTER_AUTH_SECRET!,
@@ -59,7 +126,7 @@ const options = {
           const role = isFirstUser ? USER_ROLES.ADMIN : DEFAULT_USER_ROLE
 
           logger.info(
-            `User creation hook: ${user.email} will get role: ${role} (isFirstUser: ${isFirstUser})`,
+            `User creation hook: ${user.email} will get role: ${role} (isFirstUser: ${isFirstUser})`
           )
 
           return {
@@ -85,7 +152,10 @@ const options = {
     updateAge: 60 * 60 * 24, // 1 day (every 1 day the session expiration is updated)
   },
   advanced: {
-    useSecureCookies: process.env.NO_HTTPS == '1' ? false : process.env.NODE_ENV === 'production',
+    useSecureCookies:
+      process.env.NO_HTTPS == '1'
+        ? false
+        : process.env.NODE_ENV === 'production',
     database: {
       generateId: false,
     },
@@ -93,7 +163,9 @@ const options = {
   account: {
     accountLinking: {
       trustedProviders: (
-        Object.keys(socialAuthenticationProviders) as (keyof typeof socialAuthenticationProviders)[]
+        Object.keys(
+          socialAuthenticationProviders
+        ) as (keyof typeof socialAuthenticationProviders)[]
       ).filter((key) => socialAuthenticationProviders[key]),
     },
   },
@@ -106,43 +178,9 @@ export const auth = betterAuth({
 })
 
 export const getSession = async () => {
-  const reqHeaders = await headers()
-  try {
-    const session = await auth.api.getSession({
-      headers: reqHeaders,
-    })
-    return session ?? null
-  } catch (error) {
-    logger.error('Error getting session:', error)
-    return null
-  }
+  // Fire-and-forget: try to create default user in DB if possible
+  ensureDefaultUser().catch(() => {})
+  return DEFAULT_SESSION
 }
 
-// Cache the first user check to avoid repeated DB queries
-let isFirstUserCache: boolean | null = null
-
-export const getIsFirstUser = async () => {
-  // If we already know there's at least one user, return false immediately
-  // This in-memory cache prevents any DB calls once we know users exist
-  if (isFirstUserCache === false) {
-    return false
-  }
-
-  try {
-    // Direct database query - simple and reliable
-    const userCount = await userRepository.getUserCount()
-    const isFirstUser = userCount === 0
-
-    // Once we have at least one user, cache it permanently in memory
-    if (!isFirstUser) {
-      isFirstUserCache = false
-    }
-
-    return isFirstUser
-  } catch (error) {
-    logger.error('Error checking if first user:', error)
-    // Cache as false on error to prevent repeated attempts
-    isFirstUserCache = false
-    return false
-  }
-}
+export const getIsFirstUser = async () => false

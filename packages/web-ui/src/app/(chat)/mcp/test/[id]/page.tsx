@@ -13,10 +13,20 @@ import {
 import Link from 'next/link'
 import { useParams } from 'next/navigation'
 import useSWR from 'swr'
-import { PropsWithChildren, useEffect, useMemo, useState, useCallback } from 'react'
+import {
+  PropsWithChildren,
+  useEffect,
+  useMemo,
+  useState,
+  useCallback,
+} from 'react'
 import { Input } from 'ui/input'
 import { Separator } from 'ui/separator'
-import { ResizableHandle, ResizablePanel, ResizablePanelGroup } from 'ui/resizable'
+import {
+  ResizableHandle,
+  ResizablePanel,
+  ResizablePanelGroup,
+} from 'ui/resizable'
 import { Skeleton } from 'ui/skeleton'
 import { Button } from 'ui/button'
 import { Textarea } from 'ui/textarea'
@@ -126,37 +136,37 @@ const SchemaProperty = ({
         level > 0 ? 'ml-3 pl-2 border-l' : ''
       }`}
     >
-      <div className='flex items-center gap-2'>
+      <div className="flex items-center gap-2">
         {isObject && (
           <Button
-            variant='ghost'
-            size='sm'
-            className='p-0 h-5 w-5'
+            variant="ghost"
+            size="sm"
+            className="p-0 h-5 w-5"
             onClick={() => setIsExpanded(!isExpanded)}
           >
             {isExpanded ? (
-              <ChevronDown className='h-3 w-3' />
+              <ChevronDown className="h-3 w-3" />
             ) : (
-              <ChevronRight className='h-3 w-3' />
+              <ChevronRight className="h-3 w-3" />
             )}
           </Button>
         )}
-        <span className='text-sm font-medium'>{name}</span>
+        <span className="text-sm font-medium">{name}</span>
         {schema.required && (
-          <Badge variant='outline' className='text-[10px] px-1 py-0 h-4'>
+          <Badge variant="outline" className="text-[10px] px-1 py-0 h-4">
             required
           </Badge>
         )}
       </div>
 
-      <div className='text-xs text-muted-foreground mt-1'>
+      <div className="text-xs text-muted-foreground mt-1">
         <span>type: {schema.type}</span>
         {schema.enum && (
-          <div className='mt-1'>
+          <div className="mt-1">
             <span>enum: </span>
-            <div className='flex flex-wrap gap-1 mt-1'>
+            <div className="flex flex-wrap gap-1 mt-1">
               {schema.enum.map((item) => (
-                <Badge key={item} variant='secondary' className='text-[10px]'>
+                <Badge key={item} variant="secondary" className="text-[10px]">
                   {item}
                 </Badge>
               ))}
@@ -166,9 +176,14 @@ const SchemaProperty = ({
       </div>
 
       {isObject && isExpanded && schema.properties && (
-        <div className='mt-2 space-y-2'>
+        <div className="mt-2 space-y-2">
           {Object.entries(schema.properties).map(([key, value]) => (
-            <SchemaProperty key={key} name={key} schema={value} level={level + 1} />
+            <SchemaProperty
+              key={key}
+              name={key}
+              schema={value}
+              level={level + 1}
+            />
           ))}
         </div>
       )}
@@ -192,9 +207,11 @@ const ToolListItem = ({
     }`}
     onClick={onClick}
   >
-    <div className='flex-1 w-full'>
-      <p className='font-medium text-sm mb-1 truncate'>{tool.name}</p>
-      <p className='text-xs text-muted-foreground line-clamp-2'>{tool.description}</p>
+    <div className="flex-1 w-full">
+      <p className="font-medium text-sm mb-1 truncate">{tool.name}</p>
+      <p className="text-xs text-muted-foreground line-clamp-2">
+        {tool.description}
+      </p>
     </div>
   </div>
 )
@@ -209,27 +226,27 @@ const ToolDescription = ({
   showFullDescription: boolean
   toggleDescription: () => void
 }) => (
-  <div className='mb-6'>
-    <p className='text-sm text-muted-foreground'>
+  <div className="mb-6">
+    <p className="text-sm text-muted-foreground">
       {showFullDescription
         ? description
         : `${description.slice(0, 300)}${description.length > 300 ? '...' : ''}`}
     </p>
     {description.length > 300 && (
       <Button
-        variant='ghost'
-        className='ml-auto p-0 h-6 mt-1 text-xs text-muted-foreground hover:text-foreground flex items-center'
+        variant="ghost"
+        className="ml-auto p-0 h-6 mt-1 text-xs text-muted-foreground hover:text-foreground flex items-center"
         onClick={toggleDescription}
       >
         {showFullDescription ? (
           <>
             Show less
-            <ChevronUp className='ml-1 h-3 w-3' />
+            <ChevronUp className="ml-1 h-3 w-3" />
           </>
         ) : (
           <>
             Show more
-            <ChevronDown className='ml-1 h-3 w-3' />
+            <ChevronDown className="ml-1 h-3 w-3" />
           </>
         )}
       </Button>
@@ -266,7 +283,7 @@ const GenerateExampleInputJsonDialog = ({
           model: option.model,
           toolInfo: toolInfo,
           prompt: option.prompt,
-        }),
+        })
       )
       .ifOk((result) => {
         onGenerated(JSON.stringify(result, null, 2))
@@ -290,11 +307,11 @@ const GenerateExampleInputJsonDialog = ({
           <DialogTitle>
             <p>{t('MCP.generateExampleInputJSON')}</p>
           </DialogTitle>
-          <DialogDescription className='text-xs'>
+          <DialogDescription className="text-xs">
             {t('MCP.enterPromptToGenerateExampleInputJSON')}
           </DialogDescription>
         </DialogHeader>
-        <div className='flex flex-col gap-2 py-4 text-foreground'>
+        <div className="flex flex-col gap-2 py-4 text-foreground">
           <Label>Model</Label>
           <Select
             value={JSON.stringify(option.model ?? '{}')}
@@ -303,8 +320,8 @@ const GenerateExampleInputJsonDialog = ({
               setOption({ model })
             }}
           >
-            <SelectTrigger className='min-w-48'>
-              <SelectValue placeholder='Select a model' />
+            <SelectTrigger className="min-w-48">
+              <SelectValue placeholder="Select a model" />
             </SelectTrigger>
             <SelectContent>
               {providers?.map((provider) => (
@@ -325,17 +342,17 @@ const GenerateExampleInputJsonDialog = ({
               ))}
             </SelectContent>
           </Select>
-          <div className='my-2' />
+          <div className="my-2" />
           <Label>
             Prompt{' '}
-            <span className='text-muted-foreground text-xs'>
+            <span className="text-muted-foreground text-xs">
               {'('}optional{')'}
             </span>
           </Label>
 
           <Textarea
             disabled={option.loading}
-            className='resize-none h-28 placeholder:text-xs'
+            className="resize-none h-28 placeholder:text-xs"
             value={option.prompt}
             onChange={(e) => setOption({ prompt: e.target.value })}
             placeholder={t('MCP.enterPromptToGenerateExampleInputJSON')}
@@ -343,11 +360,15 @@ const GenerateExampleInputJsonDialog = ({
         </div>
         <DialogFooter>
           <DialogClose asChild>
-            <Button variant='ghost'>{t('Common.cancel')}</Button>
+            <Button variant="ghost">{t('Common.cancel')}</Button>
           </DialogClose>
 
-          <Button variant='default' onClick={generateExampleSchema}>
-            {option.loading ? <Loader className='size-4 animate-spin' /> : t('Common.generate')}
+          <Button variant="default" onClick={generateExampleSchema}>
+            {option.loading ? (
+              <Loader className="size-4 animate-spin" />
+            ) : (
+              t('Common.generate')
+            )}
           </Button>
         </DialogFooter>
       </DialogContent>
@@ -372,7 +393,7 @@ export default function Page() {
   const [showInputSchema, setShowInputSchema] = useState(false)
 
   const { data: client, isLoading } = useSWR(`/mcp/${id}`, () =>
-    selectMcpClientAction(id as string),
+    selectMcpClientAction(id as string)
   )
 
   const filteredTools = useMemo(() => {
@@ -381,7 +402,7 @@ export default function Page() {
       client?.toolInfo?.filter(
         (tool) =>
           tool.name.toLowerCase().includes(trimmedQuery) ||
-          tool.description.toLowerCase().includes(trimmedQuery),
+          tool.description.toLowerCase().includes(trimmedQuery)
       ) || []
     )
   }, [client?.toolInfo, searchQuery])
@@ -407,7 +428,10 @@ export default function Page() {
 
     const result = safeJSONParse(data)
     if (!result.success) {
-      setJsonError((result.error as Error)?.message ?? JSON.stringify(result.error, null, 2))
+      setJsonError(
+        (result.error as Error)?.message ??
+          JSON.stringify(result.error, null, 2)
+      )
     } else {
       setJsonError(null)
     }
@@ -417,11 +441,16 @@ export default function Page() {
     if (!selectedTool) return
 
     const parsedInput = safeJSONParse(jsonInput || '{}')
-    if (!parsedInput.success) return handleErrorWithToast(parsedInput.error as Error)
+    if (!parsedInput.success)
+      return handleErrorWithToast(parsedInput.error as Error)
 
     setIsCallLoading(true)
     try {
-      const result = await callMcpToolAction(id, selectedTool.name, parsedInput.value)
+      const result = await callMcpToolAction(
+        id,
+        selectedTool.name,
+        parsedInput.value
+      )
 
       setCallResult({
         success: true,
@@ -441,14 +470,14 @@ export default function Page() {
   const renderSkeletons = () => (
     <>
       {Array.from({ length: 6 }).map((_, index) => (
-        <Skeleton key={index} className='w-full h-14' />
+        <Skeleton key={index} className="w-full h-14" />
       ))}
     </>
   )
 
   // Empty state message
   const renderEmptyState = () => (
-    <p className='text-sm text-muted-foreground text-center py-4'>
+    <p className="text-sm text-muted-foreground text-center py-4">
       {client?.toolInfo?.length ? 'No search results' : 'No tools available'}
     </p>
   )
@@ -467,40 +496,42 @@ export default function Page() {
   }, [searchQuery])
 
   return (
-    <div className='relative flex flex-col max-w-5xl px-4 mx-4 md:mx-auto w-full h-full py-4'>
-      <div className='absolute bottom-0 left-0 w-full h-[10%] z-10 bg-gradient-to-b from-transparent to-background pointer-events-none' />
+    <div className="relative flex flex-col max-w-5xl px-4 mx-4 md:mx-auto w-full h-full py-4">
+      <div className="absolute bottom-0 left-0 w-full h-[10%] z-10 bg-gradient-to-b from-transparent to-background pointer-events-none" />
 
-      <div className='bg-background pb-2'>
+      <div className="bg-background pb-2">
         <Link
-          href='/mcp'
-          className='flex items-center gap-2 text-muted-foreground text-sm hover:text-foreground transition-colors pb-4'
+          href="/mcp"
+          className="flex items-center gap-2 text-muted-foreground text-sm hover:text-foreground transition-colors pb-4"
         >
-          <ArrowLeft className='size-3' />
+          <ArrowLeft className="size-3" />
           {t('Common.back')}
         </Link>
         <header>
-          <h2 className='text-3xl font-semibold my-2'>{decodeURIComponent(client?.name ?? '')}</h2>
+          <h2 className="text-3xl font-semibold my-2">
+            {decodeURIComponent(client?.name ?? '')}
+          </h2>
         </header>
       </div>
 
-      <ResizablePanelGroup direction='horizontal' className='mt-4'>
+      <ResizablePanelGroup direction="horizontal" className="mt-4">
         {/* Tool List Panel */}
         <ResizablePanel defaultSize={30}>
-          <div className='w-full flex flex-col h-full relative pr-8'>
-            <div className='top-0 pb-2 z-1'>
-              <div className='w-full relative'>
-                <Search className='absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground' />
+          <div className="w-full flex flex-col h-full relative pr-8">
+            <div className="top-0 pb-2 z-1">
+              <div className="w-full relative">
+                <Search className="absolute left-2.5 top-2.5 h-4 w-4 text-muted-foreground" />
                 <Input
-                  type='search'
+                  type="search"
                   placeholder={t('MCP.searchTools')}
-                  className='pl-8 bg-background'
+                  className="pl-8 bg-background"
                   value={searchQuery}
                   onChange={(e) => setSearchQuery(e.target.value)}
                 />
               </div>
             </div>
 
-            <div className='flex flex-col gap-2 h-full overflow-y-auto no-scrollbar'>
+            <div className="flex flex-col gap-2 h-full overflow-y-auto no-scrollbar">
               {isLoading
                 ? renderSkeletons()
                 : filteredTools.length > 0
@@ -521,11 +552,11 @@ export default function Page() {
 
         {/* Tool Detail Panel */}
         <ResizablePanel defaultSize={70}>
-          <div className='w-full h-full'>
+          <div className="w-full h-full">
             {selectedTool ? (
-              <div className='h-full overflow-y-auto pl-6 pr-12'>
-                <div className='sticky top-0 bg-background'>
-                  <h3 className='text-xl font-medium mb-4 flex items-center gap-2'>
+              <div className="h-full overflow-y-auto pl-6 pr-12">
+                <div className="sticky top-0 bg-background">
+                  <h3 className="text-xl font-medium mb-4 flex items-center gap-2">
                     {selectedTool.name}
                   </h3>
 
@@ -537,53 +568,68 @@ export default function Page() {
                     />
                   )}
 
-                  <Separator className='my-4' />
+                  <Separator className="my-4" />
                 </div>
 
-                <div className='space-y-4 h-full '>
+                <div className="space-y-4 h-full ">
                   {selectedTool.inputSchema ? (
-                    <div className='space-y-4'>
-                      <div className='grid grid-cols-2 gap-4'>
+                    <div className="space-y-4">
+                      <div className="grid grid-cols-2 gap-4">
                         {/* Schema View */}
                         <div>
-                          <div className='flex justify-between items-center mb-2'>
-                            <h5 className='text-xs font-medium'>Input Schema</h5>
+                          <div className="flex justify-between items-center mb-2">
+                            <h5 className="text-xs font-medium">
+                              Input Schema
+                            </h5>
                             <Dialog>
                               <DialogTrigger asChild>
-                                <Button variant='ghost' size='sm' className='h-6 px-2 text-xs'>
+                                <Button
+                                  variant="ghost"
+                                  size="sm"
+                                  className="h-6 px-2 text-xs"
+                                >
                                   {t('MCP.detail')}
-                                  <ChevronDown className='ml-1 size-3' />
+                                  <ChevronDown className="ml-1 size-3" />
                                 </Button>
                               </DialogTrigger>
                               <DialogPortal>
-                                <DialogContent className='sm:max-w-[800px] fixed p-10 overflow-hidden'>
+                                <DialogContent className="sm:max-w-[800px] fixed p-10 overflow-hidden">
                                   <DialogHeader>
-                                    <DialogTitle>Input Schema: {selectedTool.name}</DialogTitle>
+                                    <DialogTitle>
+                                      Input Schema: {selectedTool.name}
+                                    </DialogTitle>
                                   </DialogHeader>
-                                  <div className='overflow-y-auto max-h-[70vh]'>
+                                  <div className="overflow-y-auto max-h-[70vh]">
                                     <JsonView
                                       data={selectedTool.inputSchema}
                                       initialExpandDepth={3}
                                     />
                                   </div>
-                                  <div className='absolute left-0 right-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-10' />
+                                  <div className="absolute left-0 right-0 bottom-0 h-12 bg-gradient-to-t from-background to-transparent pointer-events-none z-10" />
                                 </DialogContent>
                               </DialogPortal>
                             </Dialog>
                           </div>
 
                           <div
-                            className='border border-input rounded-md p-4 h-[200px] overflow-y-auto'
+                            className="border border-input rounded-md p-4 h-[200px] overflow-y-auto"
                             onClick={toggleInputSchema}
                           >
-                            {simplifiedSchema && Object.keys(simplifiedSchema).length > 0 ? (
-                              <div className='space-y-2'>
-                                {Object.entries(simplifiedSchema).map(([key, value]) => (
-                                  <SchemaProperty key={key} name={key} schema={value} />
-                                ))}
+                            {simplifiedSchema &&
+                            Object.keys(simplifiedSchema).length > 0 ? (
+                              <div className="space-y-2">
+                                {Object.entries(simplifiedSchema).map(
+                                  ([key, value]) => (
+                                    <SchemaProperty
+                                      key={key}
+                                      name={key}
+                                      schema={value}
+                                    />
+                                  )
+                                )}
                               </div>
                             ) : (
-                              <p className='text-xs text-muted-foreground italic'>
+                              <p className="text-xs text-muted-foreground italic">
                                 {t('MCP.noSchemaPropertiesAvailable')}
                               </p>
                             )}
@@ -591,16 +637,22 @@ export default function Page() {
                         </div>
 
                         {/* JSON Input */}
-                        <div className='space-y-2'>
-                          <div className='flex justify-between items-center mb-2'>
-                            <h5 className='text-xs font-medium flex items-center'>Input JSON</h5>
+                        <div className="space-y-2">
+                          <div className="flex justify-between items-center mb-2">
+                            <h5 className="text-xs font-medium flex items-center">
+                              Input JSON
+                            </h5>
                             <GenerateExampleInputJsonDialog
                               toolInfo={selectedTool}
                               onGenerated={(json) => setJsonInput(json)}
                             >
-                              <Button variant='ghost' size='sm' className='h-6 px-2 text-xs'>
+                              <Button
+                                variant="ghost"
+                                size="sm"
+                                className="h-6 px-2 text-xs"
+                              >
                                 {t('MCP.createInputWithAI')}
-                                <WandSparkles className='ml-1 size-3' />
+                                <WandSparkles className="ml-1 size-3" />
                               </Button>
                             </GenerateExampleInputJsonDialog>
                           </div>
@@ -608,13 +660,17 @@ export default function Page() {
                             autoFocus
                             value={jsonInput}
                             onChange={(e) => handleInputChange(e.target.value)}
-                            className='font-mono h-[200px] resize-none overflow-y-auto'
-                            placeholder='{}'
+                            className="font-mono h-[200px] resize-none overflow-y-auto"
+                            placeholder="{}"
                           />
                           {jsonError && jsonInput && (
-                            <Alert variant='destructive' className='mt-2'>
-                              <AlertTitle className='text-xs font-semibold'>JSON Error</AlertTitle>
-                              <AlertDescription className='text-xs'>{jsonError}</AlertDescription>
+                            <Alert variant="destructive" className="mt-2">
+                              <AlertTitle className="text-xs font-semibold">
+                                JSON Error
+                              </AlertTitle>
+                              <AlertDescription className="text-xs">
+                                {jsonError}
+                              </AlertDescription>
                             </Alert>
                           )}
                         </div>
@@ -625,26 +681,36 @@ export default function Page() {
                         <Button
                           onClick={handleToolCall}
                           disabled={!!jsonError || isCallLoading}
-                          className='w-full'
+                          className="w-full"
                         >
-                          {isCallLoading && <Loader className='size-4 animate-spin mr-2' />}
+                          {isCallLoading && (
+                            <Loader className="size-4 animate-spin mr-2" />
+                          )}
                           {t('MCP.callTool')}
                         </Button>
                       </div>
 
                       {/* Results Display */}
                       {!isNull(callResult) && (
-                        <div className='space-y-2'>
-                          <h5 className='text-xs font-medium'>Result</h5>
+                        <div className="space-y-2">
+                          <h5 className="text-xs font-medium">Result</h5>
                           {callResult.success ? (
-                            <div className='border border-input rounded-md p-4 max-h-[300px] overflow-auto'>
-                              <JsonView data={callResult.data} initialExpandDepth={2} />
+                            <div className="border border-input rounded-md p-4 max-h-[300px] overflow-auto">
+                              <JsonView
+                                data={callResult.data}
+                                initialExpandDepth={2}
+                              />
                             </div>
                           ) : (
-                            <Alert variant='destructive' className='mt-2 border-destructive'>
-                              <AlertTitle className='text-xs font-semibold'>Error</AlertTitle>
-                              <AlertDescription className='text-xs mt-2 text-destructive'>
-                                <pre className='whitespace-pre-wrap'>
+                            <Alert
+                              variant="destructive"
+                              className="mt-2 border-destructive"
+                            >
+                              <AlertTitle className="text-xs font-semibold">
+                                Error
+                              </AlertTitle>
+                              <AlertDescription className="text-xs mt-2 text-destructive">
+                                <pre className="whitespace-pre-wrap">
                                   {isString(callResult.error)
                                     ? callResult.error
                                     : JSON.stringify(callResult.error, null, 2)}
@@ -656,8 +722,8 @@ export default function Page() {
                       )}
                     </div>
                   ) : (
-                    <div className='bg-secondary/30 p-4 rounded-md'>
-                      <p className='text-sm text-center text-muted-foreground'>
+                    <div className="bg-secondary/30 p-4 rounded-md">
+                      <p className="text-sm text-center text-muted-foreground">
                         This tool doesn{"'"}t have an input schema defined
                       </p>
                     </div>
@@ -665,8 +731,10 @@ export default function Page() {
                 </div>
               </div>
             ) : (
-              <div className='flex items-center justify-center h-[300px]'>
-                <p className='text-muted-foreground'>Select a tool from the left to test</p>
+              <div className="flex items-center justify-center h-[300px]">
+                <p className="text-muted-foreground">
+                  Select a tool from the left to test
+                </p>
               </div>
             )}
           </div>

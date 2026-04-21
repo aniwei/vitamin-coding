@@ -26,11 +26,15 @@ interface UploadResult {
 
 // Helpers
 function useStorageInfo() {
-  const { data, isLoading } = useSWR<StorageInfo>('storage-info', getStorageInfoAction, {
-    revalidateOnFocus: false,
-    revalidateOnReconnect: false,
-    dedupingInterval: 60000, // Cache for 1 minute
-  })
+  const { data, isLoading } = useSWR<StorageInfo>(
+    'storage-info',
+    getStorageInfoAction,
+    {
+      revalidateOnFocus: false,
+      revalidateOnReconnect: false,
+      dedupingInterval: 60000, // Cache for 1 minute
+    }
+  )
 
   return {
     storageType: data?.type,
@@ -62,18 +66,26 @@ function useStorageInfo() {
  * ```
  */
 export function useFileUpload() {
-  const { storageType, supportsDirectUpload, isLoading: isLoadingStorageInfo } = useStorageInfo()
+  const {
+    storageType,
+    supportsDirectUpload,
+    isLoading: isLoadingStorageInfo,
+  } = useStorageInfo()
   const [isUploading, setIsUploading] = useState(false)
 
   const upload = useCallback(
-    async (file: File, uploadOptions: UploadOptions = {}): Promise<UploadResult | undefined> => {
+    async (
+      file: File,
+      uploadOptions: UploadOptions = {}
+    ): Promise<UploadResult | undefined> => {
       if (!(file instanceof File)) {
         toast.error('Upload expects a File instance')
         return
       }
 
       const filename = uploadOptions.filename ?? file.name
-      const contentType = uploadOptions.contentType || file.type || 'application/octet-stream'
+      const contentType =
+        uploadOptions.contentType || file.type || 'application/octet-stream'
 
       // Wait for storage info to load
       if (isLoadingStorageInfo || !storageType) {
@@ -186,7 +198,7 @@ export function useFileUpload() {
         setIsUploading(false)
       }
     },
-    [storageType, supportsDirectUpload, isLoadingStorageInfo],
+    [storageType, supportsDirectUpload, isLoadingStorageInfo]
   )
 
   return {

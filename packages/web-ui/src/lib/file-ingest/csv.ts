@@ -10,7 +10,7 @@ export type CsvPreview = {
 
 export function parseCsvPreview(
   content: Buffer,
-  opts: { maxRows?: number; maxCols?: number } = {},
+  opts: { maxRows?: number; maxCols?: number } = {}
 ): CsvPreview {
   const maxRows = Math.max(1, opts.maxRows ?? 50)
   const maxCols = Math.max(1, opts.maxCols ?? 12)
@@ -73,7 +73,9 @@ export function parseCsvPreview(
   const mdHeader = `| ${limitedHeader.join(' | ')} |`
   const mdSep = `| ${limitedHeader.map(() => '---').join(' | ')} |`
   const mdBody = limitedRows
-    .map((r) => `| ${r.map((c) => (c ?? '').replace(/\|/g, '\\|')).join(' | ')} |`)
+    .map(
+      (r) => `| ${r.map((c) => (c ?? '').replace(/\|/g, '\\|')).join(' | ')} |`
+    )
     .join('\n')
   const markdownTable = [mdHeader, mdSep, mdBody].join('\n')
 
@@ -86,6 +88,9 @@ export function parseCsvPreview(
   }
 }
 
-export const formatCsvPreviewText = (name: string, preview: CsvPreview): string => {
+export const formatCsvPreviewText = (
+  name: string,
+  preview: CsvPreview
+): string => {
   return `Here is a preview of ${name} (rows: ${preview.totalRows}, cols: ${preview.columns}). Summarize or analyze as needed.\n\n${preview.markdownTable}`
 }

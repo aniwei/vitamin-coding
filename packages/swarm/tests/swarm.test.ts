@@ -17,12 +17,14 @@ const testModel: Model = {
   name: 'Test Model',
   api: 'anthropic' as const,
   provider: 'anthropic',
-  baseUrl: 'https://api.anthropic.com',
   contextWindow: 100_000,
   maxOutputTokens: 4096,
-  cost: { input: 0.003, output: 0.015, cacheRead: 0, cacheWrite: 0 },
-  reasoning: false,
-  input: ['text'],
+  cost: { inputPer1k: 0.003, outputPer1k: 0.015 },
+  capabilities: {
+    reasoning: false,
+    vision: false,
+    inputTypes: ['text'],
+  },
 }
 
 function makeAgentDef(overrides: Partial<SwarmAgentDef> & { id: string }): SwarmAgentDef {

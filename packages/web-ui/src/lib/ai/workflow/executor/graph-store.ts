@@ -21,7 +21,10 @@ export interface WorkflowRuntimeState {
   getOutput<T>(key: OutputSchemaSourceKey): undefined | T
 }
 
-export const createGraphStore = (params: { nodes: DBNode[]; edges: DBEdge[] }) => {
+export const createGraphStore = (params: {
+  nodes: DBNode[]
+  edges: DBEdge[]
+}) => {
   return graphStore<WorkflowRuntimeState>((set, get) => {
     return {
       query: {},
@@ -40,7 +43,10 @@ export const createGraphStore = (params: { nodes: DBNode[]; edges: DBEdge[] }) =
       },
       setOutput(key, value) {
         set((prev) => {
-          const next = objectFlow(prev.outputs).setByPath([key.nodeId, ...key.path], value)
+          const next = objectFlow(prev.outputs).setByPath(
+            [key.nodeId, ...key.path],
+            value
+          )
           return {
             outputs: next,
           }
@@ -50,7 +56,8 @@ export const createGraphStore = (params: { nodes: DBNode[]; edges: DBEdge[] }) =
         const { outputs, nodes } = get()
         const targetNode = nodes.find((n) => n.id == key.nodeId)
         const schema =
-          (targetNode?.nodeConfig?.outputSchema as ObjectJsonSchema7) ?? defaultObjectJsonSchema
+          (targetNode?.nodeConfig?.outputSchema as ObjectJsonSchema7) ??
+          defaultObjectJsonSchema
         const defaultValue = key.path.length
           ? key.path.reduce(
               (acc, cur, index) => {
@@ -58,11 +65,13 @@ export const createGraphStore = (params: { nodes: DBNode[]; edges: DBEdge[] }) =
                 if (isLast) return acc?.[cur]?.default
                 return acc?.[cur]?.properties?.[cur]
               },
-              (schema.properties ?? {}) as any,
+              (schema.properties ?? {}) as any
             )
           : toAny(schema)?.default
 
-        return objectFlow(outputs[key.nodeId]).getByPath(key.path) ?? defaultValue
+        return (
+          objectFlow(outputs[key.nodeId]).getByPath(key.path) ?? defaultValue
+        )
       },
     }
   })

@@ -28,12 +28,20 @@ export function UserDetail({
 }: UserDetailProps) {
   const { open: sidebarOpen } = useSidebar()
   const userDetailRoute =
-    currentUserId === initialUser.id ? `/api/user/details` : `/api/user/details/${initialUser.id}`
-  const { data: user } = useSWR<BasicUserWithLastLogin>(userDetailRoute, fetcher, {
-    fallbackData: initialUser,
-    revalidateOnMount: false,
-  })
-  const handleUserUpdate = async (updatedUser: Partial<BasicUserWithLastLogin>) => {
+    currentUserId === initialUser.id
+      ? `/api/user/details`
+      : `/api/user/details/${initialUser.id}`
+  const { data: user } = useSWR<BasicUserWithLastLogin>(
+    userDetailRoute,
+    fetcher,
+    {
+      fallbackData: initialUser,
+      revalidateOnMount: false,
+    }
+  )
+  const handleUserUpdate = async (
+    updatedUser: Partial<BasicUserWithLastLogin>
+  ) => {
     if (user) {
       mutate<BasicUserWithLastLogin>(userDetailRoute, {
         ...user,
@@ -44,11 +52,14 @@ export function UserDetail({
   const { t } = useProfileTranslations(view)
 
   return (
-    <div className='min-h-full p-4 md:p-6 space-y-6' data-testid='user-detail-content'>
+    <div
+      className="min-h-full p-4 md:p-6 space-y-6"
+      data-testid="user-detail-content"
+    >
       {/* Hero Section */}
-      <div className='space-y-2'>
-        <h1 className='text-2xl font-bold tracking-tight'>{user?.name}</h1>
-        <p className='text-muted-foreground'>{t('userDetailDescription')}</p>
+      <div className="space-y-2">
+        <h1 className="text-2xl font-bold tracking-tight">{user?.name}</h1>
+        <p className="text-muted-foreground">{t('userDetailDescription')}</p>
       </div>
 
       {/* Cards Layout */}

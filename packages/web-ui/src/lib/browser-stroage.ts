@@ -4,7 +4,11 @@ import { IS_BROWSER } from './const'
 
 const PRE_FIX = 'ChATBOT-STOREAGE'
 
-const get = <T>(storage: Storage, key: string, defaultValue?: T): T | undefined => {
+const get = <T>(
+  storage: Storage,
+  key: string,
+  defaultValue?: T
+): T | undefined => {
   const value = storage.getItem(`${PRE_FIX}-${key}`)
   if (value) return JSON.parse(value).value
   return defaultValue
@@ -14,7 +18,8 @@ const set = (storage: Storage, key: string, value: any) => {
   storage.setItem(`${PRE_FIX}-${key}`, JSON.stringify({ value }))
 }
 
-const remove = (storage: Storage, key: string) => storage.removeItem(`${PRE_FIX}-${key}`)
+const remove = (storage: Storage, key: string) =>
+  storage.removeItem(`${PRE_FIX}-${key}`)
 
 export interface StorageManager<T = any> {
   get(): T | undefined
@@ -25,7 +30,7 @@ export interface StorageManager<T = any> {
 }
 export const getStorageManager = <T>(
   key: string,
-  storageType: 'local' | 'session' = 'local',
+  storageType: 'local' | 'session' = 'local'
 ): StorageManager<T> => {
   if (!IS_BROWSER)
     return {
@@ -42,7 +47,11 @@ export const getStorageManager = <T>(
       get(storage, key, defaultValue)) as StorageManager<T>['get'],
     set: (value: T | ((prev?: T) => T)) => {
       const prev = get(storage, key)
-      set(storage, key, typeof value === 'function' ? (value as any)(prev) : value)
+      set(
+        storage,
+        key,
+        typeof value === 'function' ? (value as any)(prev) : value
+      )
     },
     remove: () => remove(storage, key),
     size: () => (storage.getItem(`${PRE_FIX}-${key}`) || '').length,

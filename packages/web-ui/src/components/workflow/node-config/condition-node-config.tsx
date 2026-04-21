@@ -11,7 +11,13 @@ import { PlusIcon, TrashIcon } from 'lucide-react'
 import { Button } from 'ui/button'
 import { Separator } from 'ui/separator'
 import { VariableSelect } from '../variable-select'
-import { Select, SelectContent, SelectItem, SelectTrigger, SelectValue } from 'ui/select'
+import {
+  Select,
+  SelectContent,
+  SelectItem,
+  SelectTrigger,
+  SelectValue,
+} from 'ui/select'
 
 import { VariableMentionItem } from '../variable-mention-item'
 import {
@@ -30,7 +36,7 @@ import { cn, generateUUID } from 'lib/utils'
 import { NodeSelect } from '../node-select'
 import { useUpdate } from '@/hooks/use-update'
 import { createAppendNode } from '../create-append-node'
-import { useTranslations } from '@/hooks/use-translations'
+import { useTranslations } from 'next-intl'
 import { Input } from 'ui/input'
 
 export function ConditionNodeDataConfig({ data }: { data: ConditionNodeData }) {
@@ -46,7 +52,7 @@ export function ConditionNodeDataConfig({ data }: { data: ConditionNodeData }) {
         }
       })
     },
-    [data.id],
+    [data.id]
   )
 
   const updateElseIfBranch = useCallback(
@@ -56,14 +62,14 @@ export function ConditionNodeDataConfig({ data }: { data: ConditionNodeData }) {
         return {
           branches: {
             ...prev.branches,
-            elseIf: prev.branches.elseIf?.map((item, i) => (i == index ? branch : item)) ?? [
-              branch,
-            ],
+            elseIf: prev.branches.elseIf?.map((item, i) =>
+              i == index ? branch : item
+            ) ?? [branch],
           },
         }
       })
     },
-    [data.id],
+    [data.id]
   )
 
   const addElseIfBranch = useCallback(() => {
@@ -105,12 +111,12 @@ export function ConditionNodeDataConfig({ data }: { data: ConditionNodeData }) {
         }
       })
     },
-    [data.id, data.branches.elseIf?.length],
+    [data.id, data.branches.elseIf?.length]
   )
 
   return (
-    <div className='flex flex-col gap-2 text-sm h-full'>
-      <div className='flex flex-col gap-2 px-4'>
+    <div className="flex flex-col gap-2 text-sm h-full">
+      <div className="flex flex-col gap-2 px-4">
         <ConditionBranchItem
           currentNodeId={data.id}
           caseNumber={1}
@@ -119,18 +125,20 @@ export function ConditionNodeDataConfig({ data }: { data: ConditionNodeData }) {
           type={'if'}
         />
       </div>
-      <Separator className='my-2' />
-      <div className='flex flex-col gap-2 px-4'>
+      <Separator className="my-2" />
+      <div className="flex flex-col gap-2 px-4">
         {!data.branches.elseIf?.length && (
           <>
-            <p className='font-bold text-xs mb-2 text-blue-500'>ELSE IF</p>
-            <p className='text-xs ml-12 text-muted-foreground'>{t('Workflow.elseIfDescription')}</p>
+            <p className="font-bold text-xs mb-2 text-blue-500">ELSE IF</p>
+            <p className="text-xs ml-12 text-muted-foreground">
+              {t('Workflow.elseIfDescription')}
+            </p>
           </>
         )}
-        <div className='flex flex-col'>
+        <div className="flex flex-col">
           {data.branches.elseIf?.map((branch, i) => (
             <div key={i}>
-              {i > 0 && <Separator className='my-2' />}
+              {i > 0 && <Separator className="my-2" />}
               <ConditionBranchItem
                 currentNodeId={data.id}
                 caseNumber={i + 2}
@@ -142,20 +150,26 @@ export function ConditionNodeDataConfig({ data }: { data: ConditionNodeData }) {
             </div>
           ))}
         </div>
-        <Button variant={'secondary'} className={cn('w-full')} onClick={addElseIfBranch}>
-          <PlusIcon className='size-4' />
+        <Button
+          variant={'secondary'}
+          className={cn('w-full')}
+          onClick={addElseIfBranch}
+        >
+          <PlusIcon className="size-4" />
           ELSE IF
         </Button>
       </div>
-      <Separator className='my-2' />
-      <div className='px-4'>
-        <div className='font-bold text-xs flex mb-2'>
-          <p className='w-12 text-blue-500'>ELSE</p>
-          <span className='ml-1 text-muted-foreground'>
+      <Separator className="my-2" />
+      <div className="px-4">
+        <div className="font-bold text-xs flex mb-2">
+          <p className="w-12 text-blue-500">ELSE</p>
+          <span className="ml-1 text-muted-foreground">
             CASE {(data.branches.elseIf?.length ?? 0) + 2}
           </span>
         </div>
-        <p className='text-xs ml-12 text-muted-foreground '>{t('Workflow.elseDescription')}</p>
+        <p className="text-xs ml-12 text-muted-foreground ">
+          {t('Workflow.elseDescription')}
+        </p>
       </div>
     </div>
   )
@@ -186,7 +200,10 @@ function ConditionBranchItem({
     (source: OutputSchemaSourceKey) => {
       const node = getNode(source.nodeId)!
 
-      const sourceSchema = findJsonSchemaByPath(node.data.outputSchema, source.path)
+      const sourceSchema = findJsonSchemaByPath(
+        node.data.outputSchema,
+        source.path
+      )
       onChange({
         ...branch,
         conditions: [
@@ -194,24 +211,26 @@ function ConditionBranchItem({
           {
             source,
             operator: getFirstConditionOperator(
-              sourceSchema?.type as 'string' | 'number' | 'boolean',
+              sourceSchema?.type as 'string' | 'number' | 'boolean'
             ),
             value: '',
           },
         ],
       })
     },
-    [branch, onChange],
+    [branch, onChange]
   )
 
   const updateCondition = useCallback(
     (index: number, condition: ConditionRule) => {
       onChange({
         ...branch,
-        conditions: branch.conditions.map((item, i) => (i == index ? condition : item)),
+        conditions: branch.conditions.map((item, i) =>
+          i == index ? condition : item
+        ),
       })
     },
-    [branch, onChange],
+    [branch, onChange]
   )
 
   const removeCondition = useCallback(
@@ -221,47 +240,48 @@ function ConditionBranchItem({
         conditions: branch.conditions.filter((_, i) => i !== index),
       })
     },
-    [branch, onChange],
+    [branch, onChange]
   )
 
   return (
-    <div className='flex flex-col gap-1 relative'>
-      <div className='font-bold text-xs flex mb-2'>
-        <p className='w-12 text-blue-500'>{type?.toUpperCase()}</p>
-        <span className='ml-1 text-muted-foreground'>CASE {caseNumber}</span>
+    <div className="flex flex-col gap-1 relative">
+      <div className="font-bold text-xs flex mb-2">
+        <p className="w-12 text-blue-500">{type?.toUpperCase()}</p>
+        <span className="ml-1 text-muted-foreground">CASE {caseNumber}</span>
       </div>
       {branch.conditions.length > 0 && (
-        <div className='flex'>
-          <div className='flex flex-col min-w-12'>
+        <div className="flex">
+          <div className="flex flex-col min-w-12">
             {branch.conditions.length > 1 && (
               <>
-                <div className='flex-1 w-full flex justify-end items-end'>
-                  <div className='h-[calc(100%-1rem)] w-1/2 border-l border-dashed border-t rounded-tl-full'></div>
+                <div className="flex-1 w-full flex justify-end items-end">
+                  <div className="h-[calc(100%-1rem)] w-1/2 border-l border-dashed border-t rounded-tl-full"></div>
                 </div>
-                <div className='text-xs text-center my-1 pr-1'>
+                <div className="text-xs text-center my-1 pr-1">
                   <button
                     onClick={() =>
                       onChange({
                         ...branch,
-                        logicalOperator: branch.logicalOperator == 'AND' ? 'OR' : 'AND',
+                        logicalOperator:
+                          branch.logicalOperator == 'AND' ? 'OR' : 'AND',
                       })
                     }
-                    className='w-11 hover:bg-secondary hover:text-foreground bg-primary text-primary-foreground rounded-md px-2 py-1'
+                    className="w-11 hover:bg-secondary hover:text-foreground bg-primary text-primary-foreground rounded-md px-2 py-1"
                   >
                     {branch.logicalOperator}
                   </button>
                 </div>
-                <div className='flex-1 w-full flex justify-end items-start'>
-                  <div className='h-[calc(100%-1rem)] w-1/2 border-l border-dashed border-b rounded-bl-full'></div>
+                <div className="flex-1 w-full flex justify-end items-start">
+                  <div className="h-[calc(100%-1rem)] w-1/2 border-l border-dashed border-b rounded-bl-full"></div>
                 </div>
               </>
             )}
           </div>
 
-          <div className='flex flex-col gap-1'>
+          <div className="flex flex-col gap-1">
             {branch.conditions.map((condition, i) => (
-              <div className='flex' key={i}>
-                <div className='flex-1'>
+              <div className="flex" key={i}>
+                <div className="flex-1">
                   <ConditionRuleItem
                     currentNodeId={currentNodeId}
                     nodes={nodes}
@@ -269,9 +289,13 @@ function ConditionBranchItem({
                     onChange={(condition) => updateCondition(i, condition)}
                   />
                 </div>
-                <div className='px-1 '>
-                  <Button variant={'ghost'} size={'icon'} onClick={() => removeCondition(i)}>
-                    <TrashIcon className='size-4' />
+                <div className="px-1 ">
+                  <Button
+                    variant={'ghost'}
+                    size={'icon'}
+                    onClick={() => removeCondition(i)}
+                  >
+                    <TrashIcon className="size-4" />
                   </Button>
                 </div>
               </div>
@@ -280,7 +304,7 @@ function ConditionBranchItem({
         </div>
       )}
 
-      <div className='flex items-center'>
+      <div className="flex items-center">
         <VariableSelect
           currentNodeId={currentNodeId}
           onChange={(source) => {
@@ -288,14 +312,21 @@ function ConditionBranchItem({
           }}
           allowedTypes={['number', 'boolean', 'string']}
         >
-          <Badge variant={'secondary'} className='ml-12 cursor-pointer hover:bg-input py-2 px-4'>
-            <PlusIcon className='size-4' /> {t('Workflow.addCondition')}
+          <Badge
+            variant={'secondary'}
+            className="ml-12 cursor-pointer hover:bg-input py-2 px-4"
+          >
+            <PlusIcon className="size-4" /> {t('Workflow.addCondition')}
           </Badge>
         </VariableSelect>
 
         {onDelete && (
-          <Button variant={'ghost'} className='ml-auto text-xs mr-7' onClick={onDelete}>
-            <TrashIcon className='size-3.5' />
+          <Button
+            variant={'ghost'}
+            className="ml-auto text-xs mr-7"
+            onClick={onDelete}
+          >
+            <TrashIcon className="size-3.5" />
             {t('Common.delete')}
           </Button>
         )}
@@ -311,7 +342,12 @@ interface ConditionRuleProps {
   onChange: (item: ConditionRule) => void
 }
 
-function ConditionRuleItem({ currentNodeId, nodes, item, onChange }: ConditionRuleProps) {
+function ConditionRuleItem({
+  currentNodeId,
+  nodes,
+  item,
+  onChange,
+}: ConditionRuleProps) {
   const target = useMemo(() => {
     const node = nodes.find((node) => node.data.id === item.source.nodeId)
     if (!node) {
@@ -346,8 +382,8 @@ function ConditionRuleItem({ currentNodeId, nodes, item, onChange }: ConditionRu
   }, [itemType])
 
   return (
-    <div className='flex flex-col bg-secondary rounded-lg p-1'>
-      <div className='flex items-center'>
+    <div className="flex flex-col bg-secondary rounded-lg p-1">
+      <div className="flex items-center">
         <VariableSelect
           currentNodeId={currentNodeId}
           onChange={(source) => {
@@ -359,15 +395,15 @@ function ConditionRuleItem({ currentNodeId, nodes, item, onChange }: ConditionRu
         >
           <div>
             <VariableMentionItem
-              className='py-2 max-w-38 w-38'
+              className="py-2 max-w-38 w-38"
               nodeName={target.nodeName}
               path={target.path}
               type={itemType as string}
             />
           </div>
         </VariableSelect>
-        <div className='h-4 px-2 ml-auto'>
-          <Separator orientation='vertical' />
+        <div className="h-4 px-2 ml-auto">
+          <Separator orientation="vertical" />
         </div>
         <Select
           defaultValue={item.operator}
@@ -379,8 +415,8 @@ function ConditionRuleItem({ currentNodeId, nodes, item, onChange }: ConditionRu
             })
           }
         >
-          <SelectTrigger className='text-xs border-none w-24'>
-            <SelectValue placeholder='Operator' />
+          <SelectTrigger className="text-xs border-none w-24">
+            <SelectValue placeholder="Operator" />
           </SelectTrigger>
           <SelectContent>
             {operatorItems.map((item) => (
@@ -394,12 +430,12 @@ function ConditionRuleItem({ currentNodeId, nodes, item, onChange }: ConditionRu
 
       {itemType == 'string' || itemType == 'number' ? (
         <>
-          <Separator className='my-1' />
+          <Separator className="my-1" />
           <Input
             value={String(item.value || '')}
             autoFocus
-            className='text-xs py-1 px-2 focus:outline-none bg-transparent border-none'
-            type='text'
+            className="text-xs py-1 px-2 focus:outline-none bg-transparent border-none"
+            type="text"
             onChange={(e) => onChange({ ...item, value: e.target.value })}
           />
         </>
@@ -408,7 +444,11 @@ function ConditionRuleItem({ currentNodeId, nodes, item, onChange }: ConditionRu
   )
 }
 
-export function ConditionNodeDataOutputStack({ data }: { data: ConditionNodeData }) {
+export function ConditionNodeDataOutputStack({
+  data,
+}: {
+  data: ConditionNodeData
+}) {
   const [sourceHandle, setSourceHandle] = useState('')
 
   const update = useUpdate()
@@ -441,10 +481,10 @@ export function ConditionNodeDataOutputStack({ data }: { data: ConditionNodeData
   }
 
   return (
-    <div className='mt-2'>
-      <div className='flex flex-col gap-2'>
+    <div className="mt-2">
+      <div className="flex flex-col gap-2">
         <ConditionHandle
-          type='if'
+          type="if"
           id={data.branches.if.id}
           caseNumber={1}
           onMouseUp={() => {
@@ -465,7 +505,7 @@ export function ConditionNodeDataOutputStack({ data }: { data: ConditionNodeData
 
         {data.branches.elseIf?.map((branch, i) => (
           <ConditionHandle
-            type='elseIf'
+            type="elseIf"
             key={branch.id}
             id={branch.id}
             caseNumber={i + 2}
@@ -475,7 +515,7 @@ export function ConditionNodeDataOutputStack({ data }: { data: ConditionNodeData
           />
         ))}
         <ConditionHandle
-          type='else'
+          type="else"
           id={data.branches.else.id}
           caseNumber={(data.branches.elseIf?.length ?? 0) + 2}
           onMouseUp={() => {
@@ -499,25 +539,29 @@ function ConditionHandle({
   onMouseUp?: () => void
 }) {
   return (
-    <div className='relative'>
+    <div className="relative">
       <Handle
-        type='source'
+        type="source"
         position={Position.Right}
         className={cn(
-          'z-10 border-none! bg-blue-500! h-5! w-5! rounded-full! -right-0! flex items-center justify-center',
+          'z-10 border-none! bg-blue-500! h-5! w-5! rounded-full! -right-0! flex items-center justify-center'
         )}
         id={id}
         isConnectable={true}
         onMouseUp={onMouseUp}
       >
-        <div className='pointer-events-none'>
+        <div className="pointer-events-none">
           <PlusIcon className={cn('size-4 text-white stroke-4')} />
         </div>
       </Handle>
-      <div className='px-4'>
-        <div className='px-2 w-full text-xs py-1 font-bold bg-input border rounded-xs flex'>
-          <span className='text-blue-500'>{type.toUpperCase()}</span>
-          {caseNumber && <span className='text-muted-foreground ml-auto'>CASE {caseNumber}</span>}
+      <div className="px-4">
+        <div className="px-2 w-full text-xs py-1 font-bold bg-input border rounded-xs flex">
+          <span className="text-blue-500">{type.toUpperCase()}</span>
+          {caseNumber && (
+            <span className="text-muted-foreground ml-auto">
+              CASE {caseNumber}
+            </span>
+          )}
         </div>
       </div>
     </div>

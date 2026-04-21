@@ -1,6 +1,9 @@
 import { ObjectJsonSchema7 } from 'app-types/util'
 import { NodeKind, WorkflowNodeData } from '../workflow.interface'
-import { defaultObjectJsonSchema, findJsonSchemaByPath } from '../shared.workflow'
+import {
+  defaultObjectJsonSchema,
+  findJsonSchemaByPath,
+} from '../shared.workflow'
 import { JSONSchema7 } from 'json-schema'
 
 export function extractNodeDependencySchema({
@@ -30,11 +33,14 @@ export function extractNodeDependencySchema({
         if (!source) return acc
         const sourceNode = nodes.find((node) => node.id === source.nodeId)
         if (!sourceNode) return acc
-        const sourceSchema = findJsonSchemaByPath(sourceNode.outputSchema, source.path)
+        const sourceSchema = findJsonSchemaByPath(
+          sourceNode.outputSchema,
+          source.path
+        )
         acc[cur.key] = sourceSchema || { type: 'string' }
         return acc
       },
-      {} as Record<string, JSONSchema7>,
+      {} as Record<string, JSONSchema7>
     )
     schema.properties = properties
     return schema
