@@ -31,7 +31,7 @@ import { isShortcutEvent, Shortcuts } from 'lib/keyboard-shortcuts'
 import { Button } from 'ui/button'
 import { deleteThreadAction } from '@/app/api/chat/actions'
 import { useRouter } from 'next/navigation'
-import { ArrowDown, Loader, FilePlus } from 'lucide-react'
+import { ArrowDown, AudioWaveformIcon, FilePlus, Loader } from 'lucide-react'
 import {
   Dialog,
   DialogContent,
@@ -46,6 +46,8 @@ import { useGenerateThreadTitle } from '@/hooks/queries/use-generate-thread-titl
 import { AnimatePresence, motion } from 'framer-motion'
 import { useThreadFileUploader } from '@/hooks/use-thread-file-uploader'
 import { useFileDragOverlay } from '@/hooks/use-file-drag-overlay'
+import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
+import { ChatDevtools } from './chat-devtools'
 
 type Props = {
   threadId: string
@@ -203,6 +205,7 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
     onFinish,
   })
   const [isDeleteThreadPopupOpen, setIsDeleteThreadPopupOpen] = useState(false)
+  const [isDebugOpen, setIsDebugOpen] = useState(false)
 
   const addToolResult = useCallback(
     async (result: Parameters<typeof _addToolResult>[0]) => {
@@ -338,14 +341,53 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
   }, [])
 
   return (
-    <>
+    <div className="flex flex-row min-w-0 h-full z-40">
+      <div className="w-[520px] shrink-0 flex flex-col min-h-0 relative">
       <div
         className={cn(
           emptyMessage && 'justify-center pb-24',
-          'flex flex-col min-w-0 relative h-full z-40'
+          'flex flex-col flex-1 min-h-0'
         )}
       >
-        {isDragging && (
+        {/* Chat top action bar */}
+          <div className="flex items-center justify-end gap-1 px-3 py-1 border-b border-border/40">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-7"
+                  onClick={() =>
+                    appStoreMutate((state) => ({
+                      voiceChat: { ...state.voiceChat, isOpen: true },
+                    }))
+                  }
+                >
+                  <AudioWaveformIcon className="size-3.5" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <span className="text-xs">语音对话</span>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant={isDebugOpen ? 'secondary' : 'ghost'}
+                  className="size-7"
+                  onClick={() => setIsDebugOpen((v) => !v)}
+                >
+                  <span className="size-3.5 flex items-center justify-center font-mono text-[10px] font-bold">{'{}'}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="bottom">
+                <span className="text-xs">调试面板</span>
+              </TooltipContent>
+            </Tooltip>
+          </div>
+
+          {isDragging && (
           <div className="absolute inset-0 z-40 bg-background/70 backdrop-blur-sm flex items-center justify-center pointer-events-none">
             <div className="rounded-2xl px-6 py-5 bg-background/80 shadow-xl border border-border flex items-center gap-3">
               <div className="rounded-full bg-primary/10 p-2 text-primary">
@@ -440,7 +482,10 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
           open={isDeleteThreadPopupOpen}
         />
       </div>
-    </>
+      </div>
+      
+      <ChatDevtools  />
+    </div>
   )
 }
 
