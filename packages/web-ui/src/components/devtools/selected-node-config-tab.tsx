@@ -23,14 +23,15 @@ import { HttpNodeConfig } from './node-config/http-node-config'
 import { TemplateNodeConfig } from './node-config/template-node-config'
 import { useTranslations } from 'next-intl'
 
-export function SelectedNodeConfigTab({ node }: { node: UINode }) {
+export function SelectedNodeConfigTab({ node, consoleOpen }: { node: UINode; consoleOpen?: boolean }) {
   const t = useTranslations()
   const { updateNodeData, updateNode, setNodes } = useReactFlow()
 
   return (
     <div
       key={node.id}
-      className="w-sm h-[85vh] space-y-4 bg-card border rounded-lg shadow-lg overflow-y-auto py-4"
+      className="w-sm space-y-4 bg-card border rounded-lg shadow-lg overflow-y-auto py-4 transition-[max-height] duration-200"
+      style={{ maxHeight: consoleOpen ? 'calc(85vh - 312px)' : '85vh' }}
     >
       {/* Header */}
       <div className="px-4">

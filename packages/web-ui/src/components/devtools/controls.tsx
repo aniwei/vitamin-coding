@@ -6,8 +6,10 @@ import { Separator } from '@/components/ui/separator'
 
 import { UINode } from 'lib/ai/workflow/workflow.interface'
 
-import { Loader, PlayIcon, AlignHorizontalSpaceAround, TerminalIcon } from 'lucide-react'
+import { Loader, PlayIcon, AlignHorizontalSpaceAround, TerminalIcon, CircleDot } from 'lucide-react'
 import { Button } from 'ui/button'
+import { BreakpointDialog } from './breakpoint-dialog'
+import { useBreakpointStore } from '@/app/store/breakpoint.store'
 
 import equal from 'lib/equal'
 
@@ -53,6 +55,8 @@ export const Controls = memo(
     const [showExecutePanel, setShowExecutePanel] = useState(false)
     const [isEditing, setIsEditing] = useState(false)
     const [isSaving, setIsSaving] = useState(false)
+    const [showBreakpoints, setShowBreakpoints] = useState(false)
+    const breakpointEnabledCount = useBreakpointStore((s) => s.breakpoints.filter((b) => b.enabled).length)
     const t = useTranslations()
 
     const handleArrangeNodes = useCallback(() => {
@@ -213,6 +217,24 @@ export const Controls = memo(
             </TooltipTrigger>
             <TooltipContent side="bottom">Console</TooltipContent>
           </Tooltip>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={breakpointEnabledCount > 0 ? 'secondary' : 'ghost'}
+                size="icon"
+                className="relative"
+                onClick={() => setShowBreakpoints(true)}
+              >
+                <CircleDot className="size-4" />
+                {breakpointEnabledCount > 0 && (
+                  <span className="absolute -top-1 -right-1 size-3.5 rounded-full bg-amber-500 text-[9px] text-white flex items-center justify-center font-bold tabular-nums leading-none">
+                    {breakpointEnabledCount > 9 ? '9+' : breakpointEnabledCount}
+                  </span>
+                )}
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">断点</TooltipContent>
+          </Tooltip>
 
           {!workflow.isPublished && (
             <Tooltip>
@@ -267,7 +289,7 @@ export const Controls = memo(
           />
         </div>
         <div className="flex gap-2">
-          {selectedNode && <SelectedNodeConfigTab node={selectedNode} />}
+          {selectedNode && <SelectedNodeConfigTab node={selectedNode} consoleOpen={showConsole} />}
           {showExecutePanel && (
             <ExecuteTab
               close={() => {
@@ -275,6 +297,7 @@ export const Controls = memo(
                 setShowExecutePanel(false)
               }}
               onSave={onSave}
+              consoleOpen={showConsole}
             />
           )}
         </div>
@@ -283,6 +306,10 @@ export const Controls = memo(
           onOpenChange={setIsEditing}
           defaultValue={workflow}
           onSave={handleWorkflowMasterSave}
+        />
+        <BreakpointDialog
+          open={showBreakpoints}
+          onOpenChange={setShowBreakpoints}
         />
       </div>
     )

@@ -54,9 +54,11 @@ const debounce = createDebounce()
 export function ExecuteTab({
   close,
   onSave,
+  consoleOpen,
 }: {
   close: () => void
   onSave: () => Promise<void>
+  consoleOpen?: boolean
 }) {
   const { addProcess, processIds, workflow } = useWorkflowStore()
 
@@ -363,7 +365,10 @@ ${workflow!.description ? `tool-description: ${workflow!.description}` : ''}`,
     )
   }, [isRunning, result])
   return (
-    <div className="fade-300 w-sm h-[85vh] bg-card border rounded-lg shadow-lg overflow-y-auto py-4">
+    <div
+      className="fade-300 w-sm bg-card border rounded-lg shadow-lg overflow-y-auto py-4 transition-[max-height] duration-200"
+      style={{ maxHeight: consoleOpen ? 'calc(85vh - 312px)' : '85vh' }}
+    >
       <div className="flex flex-col px-4">
         <div className="flex items-center gap-2 w-full h-9">
           <span className="font-semibold">Test Run</span>

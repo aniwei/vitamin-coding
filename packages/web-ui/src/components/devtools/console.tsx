@@ -170,10 +170,10 @@ export function Console({ onClose }: ConsoleProps) {
   return (
     <div
       className={cn(
-        // Positioning — matches ReactFlow Panel right/bottom offset
-        'absolute bottom-3 right-3 z-50',
+        // Positioning — full width minus 12px each side, same as Panel spacing
+        'absolute bottom-3 left-3 right-3 z-50',
         // Size
-        'w-96 h-72',
+        'h-72',
         // Dialog-style appearance
         'flex flex-col',
         'bg-background border border-border rounded-lg shadow-lg',
