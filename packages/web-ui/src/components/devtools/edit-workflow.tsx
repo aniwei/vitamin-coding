@@ -72,7 +72,7 @@ const zodSchema = z.object({
   }),
 })
 
-export function EditWorkflowPopup({
+export function EditWorkflow({
   children,
   defaultValue,
   submitAfterRoute = true,

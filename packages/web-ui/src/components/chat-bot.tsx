@@ -349,44 +349,6 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
           'flex flex-col flex-1 min-h-0'
         )}
       >
-        {/* Chat top action bar */}
-          <div className="flex items-center justify-end gap-1 px-3 py-1 border-b border-border/40">
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant="ghost"
-                  className="size-7"
-                  onClick={() =>
-                    appStoreMutate((state) => ({
-                      voiceChat: { ...state.voiceChat, isOpen: true },
-                    }))
-                  }
-                >
-                  <AudioWaveformIcon className="size-3.5" />
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <span className="text-xs">语音对话</span>
-              </TooltipContent>
-            </Tooltip>
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  size="icon"
-                  variant={isDebugOpen ? 'secondary' : 'ghost'}
-                  className="size-7"
-                  onClick={() => setIsDebugOpen((v) => !v)}
-                >
-                  <span className="size-3.5 flex items-center justify-center font-mono text-[10px] font-bold">{'{}'}</span>
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                <span className="text-xs">调试面板</span>
-              </TooltipContent>
-            </Tooltip>
-          </div>
-
           {isDragging && (
           <div className="absolute inset-0 z-40 bg-background/70 backdrop-blur-sm flex items-center justify-center pointer-events-none">
             <div className="rounded-2xl px-6 py-5 bg-background/80 shadow-xl border border-border flex items-center gap-3">
@@ -459,6 +421,43 @@ export default function ChatBot({ threadId, initialMessages }: Props) {
             'w-full z-10'
           )}
         >
+          {/* Dify-style action toolbar */}
+          <div className="max-w-3xl mx-auto flex items-center justify-end gap-0.5 px-4 pb-1">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-6"
+                  onClick={() =>
+                    appStoreMutate((state) => ({
+                      voiceChat: { ...state.voiceChat, isOpen: true },
+                    }))
+                  }
+                >
+                  <AudioWaveformIcon className="size-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <span className="text-xs">语音对话</span>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant={isDebugOpen ? 'secondary' : 'ghost'}
+                  className="size-6"
+                  onClick={() => setIsDebugOpen((v) => !v)}
+                >
+                  <span className="size-3 flex items-center justify-center font-mono text-[9px] font-bold">{'{}'}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <span className="text-xs">调试面板</span>
+              </TooltipContent>
+            </Tooltip>
+          </div>
           <div className="max-w-3xl mx-auto relative flex justify-center items-center -top-2">
             <ScrollToBottomButton
               show={!isAtBottom && messages.length > 0}

@@ -6,7 +6,7 @@ import { Separator } from '@/components/ui/separator'
 
 import { UINode } from 'lib/ai/workflow/workflow.interface'
 
-import { Loader, PlayIcon, AlignHorizontalSpaceAround } from 'lucide-react'
+import { Loader, PlayIcon, AlignHorizontalSpaceAround, TerminalIcon } from 'lucide-react'
 import { Button } from 'ui/button'
 
 import equal from 'lib/equal'
@@ -27,16 +27,18 @@ import { allNodeValidate } from 'lib/ai/workflow/node-validate'
 import { toast } from 'sonner'
 import { useTranslations } from 'next-intl'
 import { arrangeNodes } from 'lib/ai/workflow/arrange-nodes'
-import { EditWorkflowPopup } from './edit-workflow-popup'
+import { EditWorkflow } from './edit-workflow'
 
-export const WorkflowPanel = memo(
-  function WorkflowPanel({
+export const Controls = memo(
+  function Controls({
     selectedNode,
     isProcessing,
     onSave,
     workflow,
     addProcess,
     hasEditAccess,
+    onToggleConsole,
+    showConsole,
   }: {
     selectedNode?: UINode
     onSave: () => Promise<void>
@@ -44,6 +46,8 @@ export const WorkflowPanel = memo(
     workflow: DBWorkflow
     addProcess: () => () => void
     hasEditAccess?: boolean
+    onToggleConsole?: () => void
+    showConsole?: boolean
   }) {
     const { setNodes, getNodes, getEdges } = useReactFlow()
     const [showExecutePanel, setShowExecutePanel] = useState(false)
@@ -197,6 +201,18 @@ export const WorkflowPanel = memo(
             <PlayIcon />
             {t('Common.run')}
           </Button>
+          <Tooltip>
+            <TooltipTrigger asChild>
+              <Button
+                variant={showConsole ? 'secondary' : 'ghost'}
+                size="icon"
+                onClick={() => onToggleConsole?.()}
+              >
+                <TerminalIcon className="size-4" />
+              </Button>
+            </TooltipTrigger>
+            <TooltipContent side="bottom">Console</TooltipContent>
+          </Tooltip>
 
           {!workflow.isPublished && (
             <Tooltip>
@@ -262,7 +278,7 @@ export const WorkflowPanel = memo(
             />
           )}
         </div>
-        <EditWorkflowPopup
+        <EditWorkflow
           open={isEditing}
           onOpenChange={setIsEditing}
           defaultValue={workflow}

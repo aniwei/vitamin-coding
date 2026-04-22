@@ -6,7 +6,7 @@ import {
   DropdownMenuItem,
   DropdownMenuTrigger,
 } from 'ui/dropdown-menu'
-import { EditWorkflowPopup } from './edit-workflow-popup'
+import { EditWorkflow } from './edit-workflow'
 import { useState } from 'react'
 import { safe } from 'ts-safe'
 
@@ -71,7 +71,7 @@ export function WorkflowContextMenu(props: WorkflowContextMenuProps) {
           </DropdownMenuItem>
         </DropdownMenuContent>
       </DropdownMenu>
-      <EditWorkflowPopup
+      <EditWorkflow
         defaultValue={props.workflow}
         submitAfterRoute={false}
         open={editOpen}

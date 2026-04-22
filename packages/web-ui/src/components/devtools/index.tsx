@@ -1,8 +1,9 @@
 'use client'
 
 import { useWorkflowStore } from '@/app/store/workflow.store'
-import { DefaultNode } from '@/components/workflow/default-node'
-import { WorkflowPanel } from '@/components/workflow/workflow-panel'
+import { DefaultNode } from '@/components/devtools/default-node'
+import { Controls } from '@/components/devtools/controls'
+import { Console } from '@/components/devtools/console'
 import {
   ReactFlow,
   Background,
@@ -58,6 +59,7 @@ export default function Devtools({
   const { init, addProcess, processIds } = useWorkflowStore()
   const [nodes, setNodes] = useState<UINode[]>(initialNodes)
   const [edges, setEdges] = useState<Edge[]>(initialEdges)
+  const [showConsole, setShowConsole] = useState(false)
 
   const isProcessing = useMemo(() => processIds.length > 0, [processIds.length])
   const { data: workflow } = useSWR<DBWorkflow>(
@@ -272,7 +274,7 @@ export default function Devtools({
   }, [workflow, hasEditAccess])
 
   return (
-    <div className="w-full h-full relative text-de text-gree-4">
+    <div className="w-full h-full relative">
       <ReactFlow
         fitView
         deleteKeyCode={null}
@@ -295,13 +297,15 @@ export default function Devtools({
         <Background gap={12} size={0.6} />
         <Panel position="top-right" className="z-20!">
           {workflow && (
-            <WorkflowPanel
+            <Controls
               hasEditAccess={hasEditAccess}
               addProcess={addProcess}
               onSave={save}
               selectedNode={selectedNode}
               workflow={workflow}
               isProcessing={isProcessing}
+              onToggleConsole={() => setShowConsole((v) => !v)}
+              showConsole={showConsole}
             />
           )}
         </Panel>
@@ -315,6 +319,7 @@ export default function Devtools({
           <div className="z-10 absolute right-0 bottom-0 w-1/12 h-full bg-gradient-to-l from-background to-transparent  pointer-events-none" />
         </Panel>
       </ReactFlow>
+      {showConsole && <Console onClose={() => setShowConsole(false)} />}
     </div>
   )
 }
