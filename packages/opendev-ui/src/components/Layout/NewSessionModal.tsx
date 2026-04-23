@@ -82,7 +82,7 @@ export function NewSessionModal({ isOpen, onClose }: NewSessionModalProps) {
   }
 
   const handleSelect = async () => {
-    if (!currentPath) return
+    if (!currentPath) {return}
     setIsCreating(true)
     setCreateError(null)
     try {
@@ -103,7 +103,7 @@ export function NewSessionModal({ isOpen, onClose }: NewSessionModalProps) {
     }
   }
 
-  if (!isOpen) return null
+  if (!isOpen) {return null}
 
   const breadcrumbs = currentPath ? getBreadcrumbs(currentPath) : []
 
@@ -135,7 +135,7 @@ export function NewSessionModal({ isOpen, onClose }: NewSessionModalProps) {
               value={manualPath}
               onChange={(e) => setManualPath(e.target.value)}
               onKeyDown={(e) => {
-                if (e.key === 'Enter') handleManualGo()
+                if (e.key === 'Enter') {handleManualGo()}
               }}
               placeholder="/path/to/directory"
               className="flex-1 px-3 py-2 text-sm font-mono border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-amber-400 focus:border-transparent"

@@ -42,7 +42,7 @@ export function PlanApprovalDialog() {
 
   // Keyboard shortcuts
   useEffect(() => {
-    if (!pendingPlanApproval) return
+    if (!pendingPlanApproval) {return}
 
     const handleKeyDown = (e: KeyboardEvent) => {
       // Number keys to select options
@@ -85,7 +85,7 @@ export function PlanApprovalDialog() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [pendingPlanApproval, selectedIndex, showFeedback, feedback])
 
-  if (!pendingPlanApproval) return null
+  if (!pendingPlanApproval) {return null}
 
   const handleConfirm = () => {
     const action = options[selectedIndex].action

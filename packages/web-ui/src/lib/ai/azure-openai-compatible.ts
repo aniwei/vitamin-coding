@@ -36,7 +36,7 @@ export function createAzureOpenAICompatible({
 
       // Set the correct authentication header
       const headers = {
-        ...(init?.headers || {}),
+        ...init?.headers,
         'api-key': apiKey,
       }
 

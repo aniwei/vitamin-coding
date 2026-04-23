@@ -6,12 +6,12 @@ function toYaml(val: unknown, depth = 0): string {
   const ind = '  '.repeat(depth)
   const ind1 = '  '.repeat(depth + 1)
 
-  if (val === null || val === undefined) return 'null'
-  if (typeof val === 'boolean') return val ? 'true' : 'false'
-  if (typeof val === 'number') return Number.isFinite(val) ? String(val) : 'null'
+  if (val === null || val === undefined) {return 'null'}
+  if (typeof val === 'boolean') {return val ? 'true' : 'false'}
+  if (typeof val === 'number') {return Number.isFinite(val) ? String(val) : 'null'}
 
   if (typeof val === 'string') {
-    if (val === '') return '""'
+    if (val === '') {return '""'}
     if (val.includes('\n')) {
       return `|\n${val
         .split('\n')
@@ -26,7 +26,7 @@ function toYaml(val: unknown, depth = 0): string {
   }
 
   if (Array.isArray(val)) {
-    if (val.length === 0) return '[]'
+    if (val.length === 0) {return '[]'}
     return val
       .map((item) => {
         if (item !== null && typeof item === 'object') {
@@ -44,7 +44,7 @@ function toYaml(val: unknown, depth = 0): string {
     const entries = Object.entries(val as Record<string, unknown>).filter(
       ([, v]) => v !== undefined,
     )
-    if (entries.length === 0) return '{}'
+    if (entries.length === 0) {return '{}'}
     return entries
       .map(([k, v]) => {
         if (typeof v === 'string' && v.includes('\n')) {
@@ -72,7 +72,7 @@ interface Props {
 
 function renderThinking(content: string | ContentBlock[] | undefined): React.ReactNode {
   const blocks = Array.isArray(content) ? content.filter((b) => b.type === 'thinking') : []
-  if (blocks.length === 0) return <em className="text-text-400">No thinking</em>
+  if (blocks.length === 0) {return <em className="text-text-400">No thinking</em>}
   return blocks.map((block, i) => (
     <pre
       key={i}
@@ -84,7 +84,7 @@ function renderThinking(content: string | ContentBlock[] | undefined): React.Rea
 }
 
 function renderContent(content: string | ContentBlock[] | undefined): React.ReactNode {
-  if (!content) return <em className="text-text-400">No content</em>
+  if (!content) {return <em className="text-text-400">No content</em>}
   if (typeof content === 'string') {
     return (
       <pre className="m-0 p-2 bg-bg-300 border border-border-300/20 rounded text-[11px] leading-relaxed text-text-200 font-mono whitespace-pre-wrap break-words overflow-wrap-anywhere">
@@ -94,7 +94,7 @@ function renderContent(content: string | ContentBlock[] | undefined): React.Reac
   }
 
   const nonThinking = content.filter((b) => b.type !== 'thinking')
-  if (nonThinking.length === 0) return <em className="text-text-400">No content</em>
+  if (nonThinking.length === 0) {return <em className="text-text-400">No content</em>}
 
   return nonThinking.map((block, i) => {
     if (block.type === 'text') {
@@ -163,7 +163,7 @@ function renderContent(content: string | ContentBlock[] | undefined): React.Reac
 export function NodeDetail({ data, onClose }: Props) {
   const [tab, setTab] = useState<'content' | 'raw'>('content')
 
-  if (!data) return null
+  if (!data) {return null}
 
   const { title, rawObject, bodyContent } = (() => {
     if (data.eventType === 'task-call') {

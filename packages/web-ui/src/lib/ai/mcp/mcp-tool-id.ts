@@ -6,7 +6,7 @@
  */
 export const sanitizeFunctionName = (name: string): string => {
   // Replace any characters that aren't alphanumeric, underscore, dot, or dash with underscore
-  let sanitized = name.replace(/[^a-zA-Z0-9_\.\-]/g, '_')
+  let sanitized = name.replace(/[^a-zA-Z0-9_.-]/g, '_')
 
   // Ensure it starts with a letter or underscore
   if (!/^[a-zA-Z_]/.test(sanitized)) {

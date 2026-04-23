@@ -51,7 +51,7 @@ export function AddMCPServerModal({ isOpen, onClose, onSubmit }: AddMCPServerMod
   const [envKey, setEnvKey] = useState('')
   const [envValue, setEnvValue] = useState('')
 
-  if (!isOpen) return null
+  if (!isOpen) {return null}
 
   const parseJSON = () => {
     try {

@@ -24,14 +24,14 @@ export function ChatInterface() {
     api
       .getBridgeInfo()
       .then((info) => {
-        if (cancelled) return
+        if (cancelled) {return}
         if (info.bridgeMode && info.sessionId) {
           loadSession(info.sessionId)
         }
         setBridgeChecked(true)
       })
       .catch(() => {
-        if (!cancelled) setBridgeChecked(true)
+        if (!cancelled) {setBridgeChecked(true)}
       })
     return () => {
       cancelled = true

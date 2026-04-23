@@ -1,1 +1,0 @@
-export { CubeOutline } from './CubeOutline'

@@ -12,7 +12,7 @@ export function ToastContainer() {
   const toasts = useToastStore((state) => state.toasts)
   const removeToast = useToastStore((state) => state.removeToast)
 
-  if (toasts.length === 0) return null
+  if (toasts.length === 0) {return null}
 
   return (
     <div className="fixed top-14 right-4 z-[10000] flex flex-col gap-2 max-w-sm">

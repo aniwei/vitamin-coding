@@ -10,7 +10,7 @@ function SnapshotHistory() {
   const history = useDevtoolsStore((s) => s.snapshotHistory)
   const [open, setOpen] = useState(false)
 
-  if (history.length === 0) return null
+  if (history.length === 0) {return null}
 
   return (
     <div className="border-b border-gray-200">

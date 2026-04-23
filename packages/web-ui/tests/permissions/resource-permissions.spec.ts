@@ -50,7 +50,7 @@ test.describe('Resource Permissions - Regular User', () => {
       .locator(`main a:has-text("${testAgentName}")`)
       .first()
       .click()
-    await editorPage.waitForURL(/\/agent\/[^\/]+$/)
+    await editorPage.waitForURL(/\/agent\/[^/]+$/)
 
     // Set visibility to public so regular user can see it
     await editorPage.getByTestId('visibility-button').click()
@@ -213,7 +213,7 @@ test.describe('Resource Permissions - Editor User', () => {
     await page.locator(`main a:has-text("${agentName}")`).first().click()
 
     // Wait for navigation
-    await page.waitForURL(/\/agent\/[^\/]+$/)
+    await page.waitForURL(/\/agent\/[^/]+$/)
 
     // Should see edit button on own agent
     await expect(page.getByTestId('agent-save-button')).toBeVisible()

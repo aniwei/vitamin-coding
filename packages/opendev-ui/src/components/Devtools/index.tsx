@@ -25,13 +25,13 @@ const FLOW_DEFAULT_W = 380
 const FLOW_STORAGE_W = 'vitamin.webui.devtools.flow.width'
 
 function readStoredNumber(key: string, fallback: number): number {
-  if (typeof window === 'undefined') return fallback
+  if (typeof window === 'undefined') {return fallback}
 
   const raw = window.localStorage.getItem(key)
-  if (!raw) return fallback
+  if (!raw) {return fallback}
 
   const parsed = Number(raw)
-  if (!Number.isFinite(parsed) || parsed <= 0) return fallback
+  if (!Number.isFinite(parsed) || parsed <= 0) {return fallback}
 
   return parsed
 }
@@ -146,7 +146,7 @@ export function Devtools() {
     [flowWidth, panelWidth],
   )
 
-  if (!panelOpen) return null
+  if (!panelOpen) {return null}
 
   return (
     <aside

@@ -71,7 +71,7 @@ export async function saveMcpClientAction(
     throw new Error("You don't have permission to create MCP connections")
   }
   // Validate name to ensure it only contains alphanumeric characters and hyphens
-  const nameSchema = z.string().regex(/^[a-zA-Z0-9\-]+$/, {
+  const nameSchema = z.string().regex(/^[a-zA-Z0-9-]+$/, {
     message:
       'Name must contain only alphanumeric characters (A-Z, a-z, 0-9) and hyphens (-)',
   })

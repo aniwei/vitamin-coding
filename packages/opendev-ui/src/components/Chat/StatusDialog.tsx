@@ -27,7 +27,7 @@ export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!isOpen) return
+    if (!isOpen) {return}
     setLoading(true)
     listMCPServers()
       .then((data) => setMcpServers(data?.servers || []))
@@ -35,7 +35,7 @@ export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
       .finally(() => setLoading(false))
   }, [isOpen])
 
-  if (!isOpen) return null
+  if (!isOpen) {return null}
 
   return (
     <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>

@@ -80,7 +80,7 @@ function MessagesEditor() {
   const hasChanges = removed.length > 0 || injected.length > 0
 
   const handleInject = () => {
-    if (!injectContent.trim()) return
+    if (!injectContent.trim()) {return}
     addDraftInjectMessage(injectRole, injectContent.trim())
     setInjectContent('')
   }
@@ -238,7 +238,7 @@ export function ContextEditor() {
   const paused = useDevtoolsStore((s) => s.paused)
   const resetDraft = useDevtoolsStore((s) => s.resetDraft)
 
-  if (!paused) return null
+  if (!paused) {return null}
 
   return (
     <div className="border-b border-gray-200">

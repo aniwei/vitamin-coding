@@ -74,18 +74,18 @@ function getToolDisplayParts(toolName: string): { verb: string; label: string } 
     return { verb: 'MCP', label: 'tool' }
   }
 
-  if (toolMap[toolName]) return toolMap[toolName]
+  if (toolMap[toolName]) {return toolMap[toolName]}
 
   // Smart fallback: parse tool name tokens into verb + label
   const tokens = toolName.replace(/-/g, '_').split('_').filter(Boolean)
-  if (tokens.length === 0) return { verb: 'Call', label: 'tool' }
+  if (tokens.length === 0) {return { verb: 'Call', label: 'tool' }}
   const verb = tokens[0].charAt(0).toUpperCase() + tokens[0].slice(1)
-  if (tokens.length === 1) return { verb, label: '' }
+  if (tokens.length === 1) {return { verb, label: '' }}
   return { verb, label: tokens.slice(1).join(' ') }
 }
 
 function summarizeToolArgs(toolName: string, toolArgs: any): string {
-  if (!toolArgs || typeof toolArgs !== 'object') return ''
+  if (!toolArgs || typeof toolArgs !== 'object') {return ''}
 
   const primaryKeys: Record<string, string[]> = {
     read_file: ['file_path', 'path'],
@@ -271,9 +271,9 @@ function formatShellResult(toolArgs: any, result: any): string[] {
 
   // Special git command handling
   if (normalizedCmd.includes('git ')) {
-    if (normalizedCmd.includes('push')) return ['Changes pushed to remote']
-    if (normalizedCmd.includes('commit')) return ['Changes committed']
-    if (normalizedCmd.includes('pull')) return ['Changes pulled from remote']
+    if (normalizedCmd.includes('push')) {return ['Changes pushed to remote']}
+    if (normalizedCmd.includes('commit')) {return ['Changes committed']}
+    if (normalizedCmd.includes('pull')) {return ['Changes pulled from remote']}
     return ['Git command completed']
   }
 
@@ -393,8 +393,8 @@ function formatSearchToolsResult(_toolArgs: any, result: any): string[] {
   const output = result?.output || ''
   const lines = output.split('\n').filter((l: string) => l.trim())
   const toolCount = lines.filter((l: string) => l.startsWith('  - ') || l.startsWith('• ')).length
-  if (toolCount > 0) return [`Found ${toolCount} tool(s)`]
-  if (output.includes('Found')) return [lines[0]]
+  if (toolCount > 0) {return [`Found ${toolCount} tool(s)`]}
+  if (output.includes('Found')) {return [lines[0]]}
   return ['Search complete']
 }
 
@@ -403,7 +403,7 @@ function formatGenericResult(_toolArgs: any, result: any): string[] {
 
   if (typeof output === 'string') {
     const lines = output.split('\n').filter((line: string) => line.trim())
-    if (lines.length === 0) return []
+    if (lines.length === 0) {return []}
     return lines.slice(0, 3).concat(lines.length > 3 ? ['…'] : [])
   }
 

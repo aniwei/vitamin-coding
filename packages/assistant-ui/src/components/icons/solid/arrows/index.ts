@@ -1,5 +1,0 @@
-export { ArrowDownDoubleLine } from './ArrowDownDoubleLine'
-export { ArrowDownRoundFill } from './ArrowDownRoundFill'
-export { ArrowUpDoubleLine } from './ArrowUpDoubleLine'
-export { ChevronDown } from './ChevronDown'
-export { HighPriority } from './HighPriority'

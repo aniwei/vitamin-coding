@@ -46,7 +46,7 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
   }, [sessionId])
 
   const loadData = async () => {
-    if (!sessionId) return
+    if (!sessionId) {return}
     try {
       setLoading(true)
       const [providersData, configData, overlayData] = await Promise.all([
@@ -86,7 +86,7 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
     setStatus: (status: VerifyStatus) => void,
     setError: (error: string | undefined) => void,
   ): Promise<boolean> => {
-    if (!provider || !model) return true // Nothing to verify
+    if (!provider || !model) {return true} // Nothing to verify
 
     setStatus('verifying')
     setError(undefined)
@@ -160,11 +160,11 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
   }
 
   const handleSave = async () => {
-    if (!sessionId) return
+    if (!sessionId) {return}
 
     // Verify before saving
     const isValid = await verifyAllModels()
-    if (!isValid) return
+    if (!isValid) {return}
 
     try {
       setSaving(true)
@@ -192,7 +192,7 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
   }
 
   const handleClear = async () => {
-    if (!sessionId) return
+    if (!sessionId) {return}
     try {
       setSaving(true)
       await api.clearSessionModel(sessionId)
@@ -219,7 +219,7 @@ export function SessionModelModal({ sessionId, sessionLabel, onClose }: SessionM
     }
   }
 
-  if (!sessionId) return null
+  if (!sessionId) {return null}
 
   const modalContent = (
     <div

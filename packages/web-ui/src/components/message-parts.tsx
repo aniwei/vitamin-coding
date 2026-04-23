@@ -335,7 +335,7 @@ export const AssistMessagePart = memo(function AssistMessagePart({
         setMessages((messages) => {
           const index = messages.findIndex((m) => m.id === prevMessage.id)
           if (index !== -1) {
-            return [...messages.slice(0, index)]
+            return messages.slice(0, index)
           }
           return messages
         })

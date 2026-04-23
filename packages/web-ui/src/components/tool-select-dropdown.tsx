@@ -602,7 +602,7 @@ function McpServerSelector() {
           allowedMcpServers: {
             ...prev.allowedMcpServers,
             [serverId]: {
-              ...(prev.allowedMcpServers?.[serverId] ?? {}),
+              ...prev.allowedMcpServers?.[serverId],
               tools: toolNames,
             },
           },
@@ -663,7 +663,7 @@ function McpServerSelector() {
               <span className={cn('truncate', !server.checked && 'opacity-30')}>
                 {server.serverName}
               </span>
-              {Boolean(server.error) ? (
+              {server.error ? (
                 <span
                   className={cn('text-xs text-destructive ml-1 p-1 rounded')}
                 >

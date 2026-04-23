@@ -16,7 +16,7 @@ export function DeleteConfirmModal({
 }: DeleteConfirmModalProps) {
   const [isDeleting, setIsDeleting] = useState(false)
 
-  if (!isOpen) return null
+  if (!isOpen) {return null}
 
   const handleConfirm = async () => {
     setIsDeleting(true)

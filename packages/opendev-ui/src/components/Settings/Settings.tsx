@@ -61,7 +61,7 @@ export function Settings({ isOpen, onClose }: SettingsModalProps) {
     return () => document.removeEventListener('keydown', handleEscape)
   }, [isOpen, onClose])
 
-  if (!isOpen) return null
+  if (!isOpen) {return null}
 
   const activeTabConfig = tabs.find((t) => t.id === activeTab)
 

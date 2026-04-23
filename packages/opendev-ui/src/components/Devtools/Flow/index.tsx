@@ -204,7 +204,7 @@ export function BreakpointFlow({ className }: { className?: string }) {
 
     const currentPoint = currentSnapshot.point
     const currentNode = FLOW_NODES.find(n => n.point === currentPoint)
-    if (!currentNode) return
+    if (!currentNode) {return}
 
     setEdges((eds) => eds.map(e => {
       // Find all edges that target this node

@@ -89,10 +89,10 @@ function readObject<T>(data: EventData, ...keys: string[]): T | undefined {
 // Subscribe to WebSocket status events
 ws.on('Session.statusUpdate', (message) => {
   const d = asEventData(message.data)
-  if (!d) return
+  if (!d) {return}
 
   const updates: Partial<StatusBarData> = {}
-  if (typeof d.model === 'string') updates.model = d.model
+  if (typeof d.model === 'string') {updates.model = d.model}
   updates.provider = readString(d, 'provider', 'modelProvider') ?? updates.provider
   updates.inputTokens = readNumber(d, 'inputTokens') ?? updates.inputTokens
   updates.outputTokens = readNumber(d, 'outputTokens') ?? updates.outputTokens

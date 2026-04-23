@@ -211,7 +211,7 @@ export class Swarm extends TypedEventEmitter<SwarmEvents> {
     const chain: SwarmAgentId[] = [currentAgentId]
 
     for (let depth = 0; depth < maxDepth; depth++) {
-      if (signal.aborted) break
+      if (signal.aborted) {break}
 
       const agentDef = this.agents.get(currentAgentId)
       if (!agentDef) {

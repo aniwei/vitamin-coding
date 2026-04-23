@@ -48,7 +48,7 @@ export function LandingPage() {
 
         for (const s of sessions) {
           const wd = s.workingDirectory
-          if (!wd || !wd.trim()) continue
+          if (!wd || !wd.trim()) {continue}
           const t = new Date(s.updatedAt || s.createdAt).getTime()
           if (!recency[wd] || t > recency[wd]) {
             recency[wd] = t
@@ -99,7 +99,7 @@ export function LandingPage() {
   }, [input])
 
   const handleSend = async () => {
-    if (!input.trim() || isCreating || !isConnected) return
+    if (!input.trim() || isCreating || !isConnected) {return}
     if (!selectedWorkspace) {
       setError('Select a workspace first')
       return

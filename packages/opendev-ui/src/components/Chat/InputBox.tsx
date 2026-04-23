@@ -46,7 +46,7 @@ export function InputBox() {
   }, [mentionQuery, showFileMention])
 
   const handleSend = () => {
-    if (!input.trim() || !isConnected || !hasActiveSession) return
+    if (!input.trim() || !isConnected || !hasActiveSession) {return}
 
     sendMessage(input.trim())
     setInput('')
@@ -62,7 +62,7 @@ export function InputBox() {
   }
 
   const handleFileSelect = (file: FileItem) => {
-    if (!textareaRef.current) return
+    if (!textareaRef.current) {return}
 
     // Replace @query with @file.path
     const before = input.substring(0, mentionStartPos)

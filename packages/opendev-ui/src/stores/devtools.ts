@@ -117,7 +117,9 @@ export const useDevtoolsStore = create<DevtoolsState>((set, get) => ({
 
   toggleBreakpoint: async (point) => {
     const bp = get().breakpoints.find((b) => b.point === point)
-    if (!bp) return
+    if (!bp) {
+      return
+    }
     const updated = await debugApi.setBreakpoint(point, !bp.enabled)
     set((s) => ({
       breakpoints: s.breakpoints.map((b) => (b.point === point ? updated : b)),
@@ -159,8 +161,17 @@ export const useDevtoolsStore = create<DevtoolsState>((set, get) => ({
   handleResumed: (data) => {
     const state = get()
     // Only clear if pauseId matches or no pauseId provided
-    if (data?.pauseId && state.pauseId && data.pauseId !== state.pauseId) return
-    set({ paused: false, pauseId: null, pauseReason: null, currentSnapshot: null, pendingCommand: null, editDraft: { ...EMPTY_DRAFT } })
+    if (data?.pauseId && state.pauseId && data.pauseId !== state.pauseId) {
+      return
+    }
+    set({
+      paused: false,
+      pauseId: null,
+      pauseReason: null,
+      currentSnapshot: null,
+      pendingCommand: null,
+      editDraft: { ...EMPTY_DRAFT },
+    })
   },
 
   // ─── CDP event: Debugger.commandRejected ───
@@ -250,10 +261,18 @@ export const useDevtoolsStore = create<DevtoolsState>((set, get) => ({
   },
 }))
 
-function sendDebuggerCommand(method: DebuggerCommandMethod, pauseId: string | null, payload?: PauseResumePayload): void {
+function sendDebuggerCommand(
+  method: DebuggerCommandMethod,
+  pauseId: string | null,
+  payload?: PauseResumePayload,
+): void {
   const params: Record<string, unknown> = {}
-  if (pauseId) params.pauseId = pauseId
-  if (payload) params.payload = payload
+  if (pauseId) {
+    params.pauseId = pauseId
+  }
+  if (payload) {
+    params.payload = payload
+  }
 
   if (Object.keys(params).length > 0) {
     ws.sendCommand(method, params)

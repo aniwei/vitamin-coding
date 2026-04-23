@@ -9,15 +9,15 @@ import {
 
 function formatElapsed(ms: number): string {
   const secs = Math.floor(ms / 1000)
-  if (secs < 60) return `${secs}s`
+  if (secs < 60) {return `${secs}s`}
   const mins = Math.floor(secs / 60)
   const remSecs = secs % 60
   return `${mins}m${remSecs}s`
 }
 
 function formatTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
+  if (n >= 1_000_000) {return `${(n / 1_000_000).toFixed(1)}M`}
+  if (n >= 1_000) {return `${(n / 1_000).toFixed(1)}k`}
   return String(n)
 }
 
@@ -83,7 +83,7 @@ function SubagentNode({ sa }: { sa: SubagentState }) {
   const [elapsed, setElapsed] = useState(0)
 
   useEffect(() => {
-    if (sa.finished) return
+    if (sa.finished) {return}
     const interval = setInterval(() => {
       setElapsed(Date.now() - sa.startedAt)
     }, 1000)
@@ -180,11 +180,11 @@ export function SubagentTree() {
   const subagents = useSubagentStore((s) => s.subagents)
   const order = useSubagentStore((s) => s.order)
 
-  if (order.length === 0) return null
+  if (order.length === 0) {return null}
 
   // Only show if at least one subagent is not finished, or recently finished
   const activeSubagents = order.map((id) => subagents.get(id)).filter(Boolean) as SubagentState[]
-  if (activeSubagents.length === 0) return null
+  if (activeSubagents.length === 0) {return null}
 
   return (
     <div className="border-t border-border-300/30 bg-bg-100/30 py-2 px-2 shrink-0">

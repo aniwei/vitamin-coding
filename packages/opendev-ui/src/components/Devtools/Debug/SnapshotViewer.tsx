@@ -29,7 +29,7 @@ export function SnapshotViewer() {
   const snapshot = useDevtoolsStore((s) => s.currentSnapshot)
   const paused = useDevtoolsStore((s) => s.paused)
 
-  if (!paused || !snapshot) return null
+  if (!paused || !snapshot) {return null}
 
   return (
     <div className="px-3 py-2 border-b border-gray-200">
