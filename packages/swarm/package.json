@@ -1,9 +1,6 @@
 {
   "name": "@vitamin/swarm",
   "version": "0.0.1",
-  "files": [
-    "dist"
-  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -13,21 +10,24 @@
       "import": "./dist/index.js"
     }
   },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
-  },
+  "files": [
+    "dist"
+  ],
   "scripts": {
-    "build": "tsdown",
+    "build": "tsup",
     "typecheck:project": "tsc -p tsconfig.json --noEmit",
     "typecheck:file": "tsc src/index.ts --noEmit --target ES2024 --module ESNext --moduleResolution bundler --esModuleInterop --skipLibCheck",
     "typecheck": "tsc --noEmit",
     "clean": "rm -rf dist"
   },
   "dependencies": {
+    "@vitamin/shared": "workspace:*",
     "@vitamin/agent": "workspace:*",
     "@vitamin/ai": "workspace:*",
-    "@vitamin/shared": "workspace:*",
-    "zod": "4.3.6"
+    "zod": "^3.24.4"
+  },
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   }
 }

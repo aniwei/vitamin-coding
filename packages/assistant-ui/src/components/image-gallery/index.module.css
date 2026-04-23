@@ -1,0 +1,22 @@
+.item {
+  max-height: 200px;
+  margin-right: 8px;
+  margin-bottom: 8px;
+  object-fit: contain;
+  object-position: center;
+  border-radius: 8px;
+  cursor: pointer;
+}
+
+.item:nth-child(3n) {
+  margin-right: 0;
+}
+
+.img2 .item:nth-child(2n),
+.img4 .item:nth-child(2n) {
+  margin-right: 0;
+}
+
+.img4 .item:nth-child(3n) {
+  margin-right: 8px;
+}

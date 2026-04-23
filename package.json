@@ -16,10 +16,12 @@
     "prepublish:check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "publish:packages": "nx run-many -t build && pnpm -r publish --access public --no-git-checks",
     "dev:service": "tsx packages/service/example/devtools-service.ts",
+    "dev:opendev-ui": "pnpm --filter @vitamin/opendev-ui dev",
     "dev:web-ui": "pnpm --filter @vitamin/web-ui dev",
     "dev": "pnpm dev:service & pnpm dev:web-ui"
   },
   "devDependencies": {
+    "@types/better-sqlite3": "^7.6.13",
     "@types/node": "25.5.2",
     "@vitest/coverage-v8": "4.1.3",
     "nx": "22.6.4",

@@ -1,0 +1,227 @@
+
+import copy from 'copy-to-clipboard'
+import Textarea from 'react-textarea-autosize'
+import Button from '@/components/button'
+import ActionButton from '@/components/action-button'
+import ContentSwitch from './content-switch'
+import { clsx } from 'clsx'
+import {
+  memo,
+  useCallback,
+  useEffect,
+  useRef,
+  useState,
+} from 'react'
+import { User } from '@/components/icons/avatar'
+import { Markdown } from '@/components/markdown'
+import { toast } from '@/components/ui/toast'
+import { cssTransform } from '@/shared/css'
+import { useChatContext } from './context'
+
+import type { FC, ReactNode } from 'react'
+import type { ChatTheme } from './theme-context'
+import type { ChatItem } from './types'
+
+
+type QuestionProps = {
+  item: ChatItem
+  questionIcon?: ReactNode
+  theme: ChatTheme | null | undefined
+  editable?: boolean
+  hideAvatar?: boolean
+}
+
+export const Question: FC<QuestionProps> = memo(({
+  item,
+  questionIcon,
+  theme,
+  editable = true,
+  hideAvatar,
+}) => {
+  const { content } = item
+
+  const { onRegenerate } = useChatContext()
+
+  const [editing, setEditing] = useState(false)
+  const [editedContent, setEditedContent] = useState(content)
+  const [contentWidth, setContentWidth] = useState(0)
+  const contentRef = useRef<HTMLDivElement>(null)
+  const isComposingRef = useRef(false)
+  const compositionEndTimerRef = useRef<ReturnType<typeof setTimeout> | null>(null)
+
+  const handleEdit = useCallback(() => {
+    setEditing(true)
+    setEditedContent(content)
+  }, [content])
+
+  const handleResend = useCallback(() => {
+    if (compositionEndTimerRef.current) {
+      clearTimeout(compositionEndTimerRef.current)
+      compositionEndTimerRef.current = null
+    }
+    isComposingRef.current = false
+    setEditing(false)
+    onRegenerate?.(item, { message: editedContent })
+  }, [editedContent, item, onRegenerate])
+
+  const handleCancelEditing = useCallback(() => {
+    if (compositionEndTimerRef.current) {
+      clearTimeout(compositionEndTimerRef.current)
+      compositionEndTimerRef.current = null
+    }
+    isComposingRef.current = false
+    setEditing(false)
+    setEditedContent(content)
+  }, [content])
+
+  const handleEditInputKeyDown = useCallback((e: React.KeyboardEvent<HTMLTextAreaElement>) => {
+    if (e.key !== 'Enter' || e.shiftKey) {
+      return
+    }
+
+    if (e.nativeEvent.isComposing) {
+      return
+    }
+
+    if (isComposingRef.current) {
+      e.preventDefault()
+      return
+    }
+
+    e.preventDefault()
+    handleResend()
+  }, [handleResend])
+
+  const clearCompositionEndTimer = useCallback(() => {
+    if (!compositionEndTimerRef.current)
+      return
+
+    clearTimeout(compositionEndTimerRef.current)
+    compositionEndTimerRef.current = null
+  }, [])
+
+  const handleCompositionStart = useCallback(() => {
+    clearCompositionEndTimer()
+    isComposingRef.current = true
+  }, [clearCompositionEndTimer])
+
+  const handleCompositionEnd = useCallback(() => {
+    clearCompositionEndTimer()
+    compositionEndTimerRef.current = setTimeout(() => {
+      isComposingRef.current = false
+      compositionEndTimerRef.current = null
+    }, 50)
+  }, [clearCompositionEndTimer])
+
+  const getContentWidth = () => {
+    if (contentRef.current) {
+      setContentWidth(contentRef.current?.clientWidth)
+    }
+  }
+
+  useEffect(() => {
+    if (!contentRef.current) {
+      return
+    }
+
+    const resizeObserver = new ResizeObserver(() => {
+      getContentWidth()
+    })
+
+    resizeObserver.observe(contentRef.current)
+    return () => {
+      resizeObserver.disconnect()
+    }
+  }, [])
+
+  useEffect(() => {
+    return () => {
+      clearCompositionEndTimer()
+    }
+  }, [clearCompositionEndTimer])
+
+  return (
+    <div className="mb-2 flex justify-end last:mb-0">
+      <div 
+        className={clsx(
+          'group relative mr-4 flex max-w-full items-start overflow-x-hidden pl-14', 
+          editing && 'flex-1'
+        )}
+      >
+        <div 
+          className={clsx(
+            'mr-2 gap-1', 
+            editing ? 'hidden' : 'flex'
+          )}
+        >
+          <div
+            className="absolute hidden gap-0.5 radius-lg border-[0.5px] border-components-actionbar-border bg-components-actionbar-bg p-0.5 shadow-md backdrop-blur-xs group-hover:flex"
+            style={{ right: contentWidth + 8 }}
+          >
+            <ActionButton
+              onClick={() => {
+                copy(content)
+                toast.success('Copy successfully')
+              }}
+            >
+              <div className="i-ri-clipboard-line h-4 w-4" />
+            </ActionButton>
+            {
+              editable && <ActionButton onClick={handleEdit}>
+                <div className="i-ri-edit-line h-4 w-4" />
+              </ActionButton>
+            }
+          </div>
+        </div>
+        <div
+          ref={contentRef}
+          className={clsx(
+            'w-full px-4 py-3 text-sm',
+            !editing && 'rounded-2xl bg-background-gradient-bg-fill-chat-bubble-bg-3 text-text-primary',
+            editing && 'rounded-[24px] border-[3px] border-components-option-card-option-selected-border bg-components-panel-bg-blur shadow-lg',
+          )}
+          style={(!editing && theme?.chatBubbleColorStyle) ? cssTransform(theme.chatBubbleColorStyle) : {}}
+        >
+          
+          {
+            !editing
+              ? <Markdown content={content} />
+              : <div className="flex flex-col gap-4">
+                  <div className="max-h-[158px] overflow-y-auto overflow-x-hidden pr-1">
+                    <Textarea
+                      className={clsx(
+                        'w-full resize-none bg-transparent p-0 leading-7 text-text-primary outline-hidden body-lg-regular',
+                      )}
+                      autoFocus
+                      minRows={1}
+                      value={editedContent}
+                      onChange={e => setEditedContent(e.target.value)}
+                      onKeyDown={handleEditInputKeyDown}
+                      onCompositionStart={handleCompositionStart}
+                      onCompositionEnd={handleCompositionEnd}
+                    />
+                  </div>
+                  <div className="flex items-center justify-end gap-2">
+                    <Button className="min-w-24" onClick={handleCancelEditing} >Cancel</Button>
+                    <Button className="min-w-24" variant="primary" onClick={handleResend} >Save</Button>
+                  </div>
+                </div>
+          }
+        </div>
+        <div className="mt-1 h-[18px]" />
+      </div>
+      {
+        !hideAvatar && <div className="h-10 w-10 shrink-0">
+          {
+            questionIcon || <div className="h-full w-full rounded-full border-[0.5px] border-black/5">
+              <User className="question-default-user-icon h-full w-full" />
+            </div>
+          }
+        </div>
+      }
+    </div>
+  )
+})
+
+Question.displayName = 'Question'
+export default Question

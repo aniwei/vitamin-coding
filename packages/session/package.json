@@ -26,6 +26,7 @@
   },
   "dependencies": {
     "@vitamin/env": "workspace:*",
-    "@vitamin/persistence": "workspace:*"
+    "@vitamin/persistence": "workspace:*",
+    "better-sqlite3": "^12.9.0"
   }
 }

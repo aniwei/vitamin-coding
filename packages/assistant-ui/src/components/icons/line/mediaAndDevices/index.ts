@@ -1,0 +1,6 @@
+export { Microphone01 } from './Microphone01'
+export { PlayCircle } from './PlayCircle'
+export { SlidersH } from './SlidersH'
+export { Speaker } from './Speaker'
+export { StopCircle } from './StopCircle'
+export { Stop } from './Stop'

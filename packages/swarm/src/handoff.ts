@@ -1,12 +1,16 @@
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 import type { ZodType } from '@vitamin/ai'
 import { z } from 'zod'
-import type { HandoffRequest, SwarmAgentDef, SwarmAgentId } from './types'
+import type {
+  HandoffRequest,
+  SwarmAgentDef,
+  SwarmAgentId,
+} from './types'
 
-/**
+/** 
  * 创建 handoff 工具 — 注入到每个 SwarmAgent 的工具列表中，
  * 允许 Agent 通过工具调用发起 handoff。
- *
+ * 
  * 灵感来自 OpenAI Swarm 的 handoff 模式：
  * Agent 在对话过程中自行决定何时、向谁交接控制权。
  */
@@ -46,12 +50,10 @@ export function createHandoffTool(
 
       if (!targetIds.includes(target_agent_id)) {
         return {
-          content: [
-            {
-              type: 'text',
-              text: `Invalid target agent "${target_agent_id}". Available targets: ${targetIds.join(', ')}`,
-            },
-          ],
+          content: [{
+            type: 'text',
+            text: `Invalid target agent "${target_agent_id}". Available targets: ${targetIds.join(', ')}`,
+          }],
           isError: true,
         }
       }
@@ -66,12 +68,10 @@ export function createHandoffTool(
       onHandoff(request)
 
       return {
-        content: [
-          {
-            type: 'text',
-            text: `Handoff initiated to "${target_agent_id}". Reason: ${reason}`,
-          },
-        ],
+        content: [{
+          type: 'text',
+          text: `Handoff initiated to "${target_agent_id}". Reason: ${reason}`,
+        }],
       }
     },
   }
