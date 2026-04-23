@@ -1,4 +1,6 @@
 'use client'
+import equal from 'lib/equal'
+import MentionInput from './mention-input'
 import React, {
   RefObject,
   useCallback,
@@ -12,8 +14,6 @@ import { CheckIcon, HammerIcon, SearchIcon } from 'lucide-react'
 import { MCPIcon } from 'ui/mcp-icon'
 
 import { ChatMention } from 'app-types/chat'
-
-import MentionInput from './mention-input'
 import { useTranslations } from 'next-intl'
 import { Popover, PopoverContent, PopoverTrigger } from 'ui/popover'
 
@@ -25,7 +25,6 @@ import { Editor } from '@tiptap/react'
 import { DefaultToolName } from 'lib/ai/tools'
 import { Tooltip, TooltipContent, TooltipTrigger } from 'ui/tooltip'
 import { DefaultToolIcon } from './default-tool-icon'
-import equal from 'lib/equal'
 import { useIsMobile } from '@/hooks/use-mobile'
 
 type MentionItemType = {

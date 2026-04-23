@@ -598,7 +598,7 @@ export default function PromptInput({
                       }
                     }}
                     className="fade-in animate-in cursor-pointer text-muted-foreground rounded-full p-2 bg-secondary hover:bg-accent-foreground hover:text-accent transition-all duration-200"
-                  >
+                  > 
                     {isLoading ? (
                       <Square
                         size={16}
@@ -752,6 +752,42 @@ export default function PromptInput({
                 </div>
               )}
             </div>
+          </div>
+          <div className="max-w-3xl mx-auto flex items-center justify-end gap-0.5 px-4 pb-1 w-full">
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant="ghost"
+                  className="size-6"
+                  onClick={() =>
+                    appStoreMutate((state) => ({
+                      voiceChat: { ...state.voiceChat, isOpen: true },
+                    }))
+                  }
+                >
+                  <AudioWaveformIcon className="size-3" />
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <span className="text-xs">语音对话</span>
+              </TooltipContent>
+            </Tooltip>
+            <Tooltip>
+              <TooltipTrigger asChild>
+                <Button
+                  size="icon"
+                  variant={false ? 'secondary' : 'ghost'}
+                  className="size-6"
+                  onClick={() => {}}
+                >
+                  <span className="size-3 flex items-center justify-center font-mono text-[9px] font-bold">{'{}'}</span>
+                </Button>
+              </TooltipTrigger>
+              <TooltipContent side="top">
+                <span className="text-xs">调试面板</span>
+              </TooltipContent>
+            </Tooltip>
           </div>
         </fieldset>
       </div>

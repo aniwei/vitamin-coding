@@ -1,4 +1,5 @@
 'use client'
+import useSWR from 'swr'
 import { useObjectState } from '@/hooks/use-object-state'
 import { UserPreferences } from 'app-types/user'
 import { authClient } from 'auth/client'
@@ -14,7 +15,6 @@ import {
 import { useTranslations } from 'next-intl'
 import { useMemo, useState } from 'react'
 import { toast } from 'sonner'
-import useSWR from 'swr'
 import { safe } from 'ts-safe'
 
 import { Button } from 'ui/button'

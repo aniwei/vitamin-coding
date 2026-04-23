@@ -32,6 +32,7 @@ import { useRouter } from 'next/navigation'
 import useSWR, { mutate } from 'swr'
 import { handleErrorWithToast } from 'ui/shared-toast'
 import { useMemo, useState } from 'react'
+import { useServiceSessions } from '@/hooks/use-service-sessions'
 
 import { useTranslations } from 'next-intl'
 import { TextShimmer } from 'ui/text-shimmer'
@@ -57,37 +58,48 @@ export function AppSidebarThreads() {
       state.generatingTitleThreadIds,
     ])
   )
-  // State to track if expanded view is active
   const [isExpanded, setIsExpanded] = useState(false)
 
-  const { data: threadList, isLoading } = useSWR('/api/thread', fetcher, {
-    onError: handleErrorWithToast,
-    fallbackData: [],
-    onSuccess: (data) => {
-      storeMutate((prev) => {
-        const groupById = groupBy(prev.threadList, 'id')
+  const IS_SERVICE_MODE = process.env['NEXT_PUBLIC_CHAT_BACKEND'] === 'service'
 
-        const generatingTitleThreads = prev.generatingTitleThreadIds
-          .map((id) => {
-            return groupById[id]?.[0]
-          })
-          .filter(Boolean) as ChatThread[]
-        const list = deduplicateByKey(generatingTitleThreads.concat(data), 'id')
-        return {
-          threadList: list.map((v) => {
-            const target = groupById[v.id]?.[0]
-            if (!target) return v
-            if (target.title && !v.title)
-              return {
-                ...v,
-                title: target.title,
-              }
-            return v
-          }),
-        }
-      })
-    },
-  })
+  // Service mode: fetch session list directly from @vitamin/service
+  const { data: serviceSessions, isLoading: serviceLoading } = useServiceSessions()
+
+  const { data: pgThreadList, isLoading: pgLoading } = useSWR(
+    IS_SERVICE_MODE ? null : '/api/thread',
+    IS_SERVICE_MODE ? null : fetcher,
+    {
+      onError: handleErrorWithToast,
+      fallbackData: [],
+      onSuccess: (data) => {
+        storeMutate((prev) => {
+          const groupById = groupBy(prev.threadList, 'id')
+
+          const generatingTitleThreads = prev.generatingTitleThreadIds
+            .map((id) => {
+              return groupById[id]?.[0]
+            })
+            .filter(Boolean) as ChatThread[]
+          const list = deduplicateByKey(generatingTitleThreads.concat(data), 'id')
+          return {
+            threadList: list.map((v) => {
+              const target = groupById[v.id]?.[0]
+              if (!target) return v
+              if (target.title && !v.title)
+                return {
+                  ...v,
+                  title: target.title,
+                }
+              return v
+            }),
+          }
+        })
+      },
+    }
+  )
+
+  const threadList = IS_SERVICE_MODE ? serviceSessions : pgThreadList
+  const isLoading = IS_SERVICE_MODE ? serviceLoading : pgLoading
 
   // Check if we have 40 or more threads to display "View All" button
   const hasExcessThreads = threadList && threadList.length >= MAX_THREADS_COUNT

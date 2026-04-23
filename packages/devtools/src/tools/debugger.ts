@@ -55,6 +55,8 @@ export class Debugger {
   }
 
   private shouldPause(point: BreakpointPoint): boolean {
+    // TODO
+    return false
     return this.breakpoints.shouldPause(point)
   }
 }

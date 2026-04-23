@@ -149,28 +149,6 @@ export const Controls = memo(
         <div className="flex items-center gap-2 mb-2">
           <Tooltip>
             <TooltipTrigger asChild>
-              <div
-                style={{
-                  backgroundColor: workflow.icon?.style?.backgroundColor,
-                }}
-                onClick={() => setIsEditing(true)}
-                className="border transition-colors hover:bg-secondary! group items-center justify-center flex w-8 h-8 rounded-md ring ring-background hover:ring-ring"
-              >
-                <Avatar className="size-6">
-                  <AvatarImage
-                    src={workflow.icon?.value}
-                    className="group-hover:scale-110  transition-transform"
-                  />
-                  <AvatarFallback></AvatarFallback>
-                </Avatar>
-              </div>
-            </TooltipTrigger>
-            <TooltipContent side="bottom">
-              <p>{workflow?.name}</p>
-            </TooltipContent>
-          </Tooltip>
-          <Tooltip>
-            <TooltipTrigger asChild>
               <Button
                 variant="secondary"
                 size="icon"
@@ -205,10 +183,13 @@ export const Controls = memo(
             <PlayIcon />
             {t('Common.run')}
           </Button>
+          <div className="h-6">
+            <Separator orientation="vertical" />
+          </div>
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={showConsole ? 'secondary' : 'ghost'}
+                variant="secondary"
                 size="icon"
                 onClick={() => onToggleConsole?.()}
               >
@@ -220,7 +201,7 @@ export const Controls = memo(
           <Tooltip>
             <TooltipTrigger asChild>
               <Button
-                variant={breakpointEnabledCount > 0 ? 'secondary' : 'ghost'}
+                variant="secondary"
                 size="icon"
                 className="relative"
                 onClick={() => setShowBreakpoints(true)}
@@ -236,57 +217,11 @@ export const Controls = memo(
             <TooltipContent side="bottom">断点</TooltipContent>
           </Tooltip>
 
-          {!workflow.isPublished && (
-            <Tooltip>
-              <TooltipTrigger asChild>
-                <Button
-                  disabled={isProcessing || !hasEditAccess}
-                  onClick={onSave}
-                  variant="default"
-                >
-                  {isProcessing ? (
-                    <Loader className="size-3.5 animate-spin" />
-                  ) : (
-                    t('Common.save')
-                  )}
-                </Button>
-              </TooltipTrigger>
-              <TooltipContent side="bottom">
-                {t('Workflow.autoSaveDescription')}
-              </TooltipContent>
-            </Tooltip>
-          )}
+          
           <div className="h-6">
             <Separator orientation="vertical" />
           </div>
-          <Tooltip>
-            <TooltipTrigger asChild>
-              <Button
-                variant={'secondary'}
-                disabled={isProcessing || !hasEditAccess}
-                onClick={() => updatePublished(!workflow.isPublished)}
-                className="w-20"
-              >
-                {workflow.isPublished
-                  ? t('Common.edit')
-                  : t('Workflow.publish')}
-              </Button>
-            </TooltipTrigger>
-            <TooltipContent side="bottom" align="end" className="w-60 text-sm">
-              <p className="whitespace-pre-wrap break-words p-4">
-                {workflow.isPublished
-                  ? t('Workflow.publishedDescription')
-                  : t('Workflow.draftDescription')}
-              </p>
-            </TooltipContent>
-          </Tooltip>
-          <ShareableActions
-            type="workflow"
-            visibility={workflow.visibility}
-            isOwner={hasEditAccess || false}
-            onVisibilityChange={hasEditAccess ? updateVisibility : undefined}
-            isVisibilityChangeLoading={isSaving}
-          />
+        
         </div>
         <div className="flex gap-2">
           {selectedNode && <SelectedNodeConfigTab node={selectedNode} consoleOpen={showConsole} />}

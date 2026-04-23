@@ -47,7 +47,11 @@ export interface CodingSessionStatus {
 export interface UseCodingChatOptions {
   /** Session ID to join / create on the coding service */
   sessionId: string
-  /** Base URL of the CodingService HTTP server, e.g. 'http://localhost:8080' */
+  /**
+   * Base URL of the CodingService HTTP server.
+   * Defaults to the Next.js proxy path (/api/coding-service) which avoids CORS.
+   * Pass the full URL (e.g. 'http://localhost:8080') only when running outside Next.js.
+   */
   serviceUrl?: string
   /** Callback when a new message arrives */
   onMessage?: (messages: UIMessage[]) => void
@@ -78,9 +82,18 @@ function asNumber(v: unknown, fallback = 0): number {
 
 // ── Main hook ──────────────────────────────────────────────────────
 
+// HTTP API calls go through the Next.js proxy to avoid CORS.
+// WebSocket must still connect directly; the WS URL is derived from serviceUrl only.
+const DEFAULT_SERVICE_PROXY = '/api/coding-service'
+// WS needs the real service URL (for ws:// scheme). Falls back to localhost.
+const DEFAULT_WS_ORIGIN =
+  typeof process !== 'undefined'
+    ? (process.env['NEXT_PUBLIC_CODING_SERVICE_URL'] ?? 'http://localhost:8080')
+    : 'http://localhost:8080'
+
 export function useCodingChat({
   sessionId,
-  serviceUrl = process.env['NEXT_PUBLIC_CODING_SERVICE_URL'] ?? 'http://localhost:8080',
+  serviceUrl = DEFAULT_SERVICE_PROXY,
   onMessage,
 }: UseCodingChatOptions): UseCodingChatReturn {
   const [messages, setMessages] = useState<UIMessage[]>([])
@@ -98,7 +111,9 @@ export function useCodingChat({
   const intentionalClose = useRef(false)
 
   // Build WS URL from HTTP URL
-  const wsUrl = serviceUrl.replace(/^https/, 'wss').replace(/^http/, 'ws') + '/ws'
+  // WS cannot go through the Next.js HTTP rewrite, so it always connects directly
+  // to the real service origin. HTTP API calls use serviceUrl (proxy path).
+  const wsUrl = DEFAULT_WS_ORIGIN.replace(/^https/, 'wss').replace(/^http/, 'ws') + '/ws'
 
   // ── Message mutation helpers ────────────────────────────────────
 
@@ -135,14 +150,13 @@ export function useCodingChat({
       setMessages((prev) => {
         const last = prev[prev.length - 1]
         if (!last || last.role !== 'assistant') return prev
+        // AI SDK v5 DynamicToolUIPart format
         const toolPart = {
-          type: 'tool-invocation' as const,
-          toolInvocation: {
-            toolCallId,
-            toolName,
-            args,
-            state: 'call' as const,
-          },
+          type: 'dynamic-tool' as const,
+          toolCallId,
+          toolName,
+          state: 'input-available' as const,
+          input: args,
         }
         return [
           ...prev.slice(0, -1),
@@ -163,27 +177,30 @@ export function useCodingChat({
             m.role === 'assistant' &&
             m.parts.some(
               (p) =>
-                p.type === 'tool-invocation' &&
-                (p as unknown as { toolInvocation: { toolCallId: string } })
-                  .toolInvocation.toolCallId === toolCallId
+                p.type === 'dynamic-tool' &&
+                (p as unknown as { toolCallId: string }).toolCallId === toolCallId
             )
         )
         if (idx === -1) return prev
         const realIdx = prev.length - 1 - idx
         const msg = prev[realIdx]!
         const updatedParts = msg.parts.map((p) => {
-          if (p.type !== 'tool-invocation') return p
-          const tp = p as unknown as {
-            toolInvocation: { toolCallId: string; state: string }
+          if (p.type !== 'dynamic-tool') return p
+          const tp = p as unknown as { toolCallId: string; input: unknown }
+          if (tp.toolCallId !== toolCallId) return p
+          if (isError) {
+            return {
+              ...tp,
+              type: 'dynamic-tool' as const,
+              state: 'output-error' as const,
+              errorText: String(result ?? 'error'),
+            } as unknown as UIMessage['parts'][number]
           }
-          if (tp.toolInvocation.toolCallId !== toolCallId) return p
           return {
-            type: 'tool-invocation' as const,
-            toolInvocation: {
-              ...tp.toolInvocation,
-              state: isError ? ('error' as const) : ('result' as const),
-              result,
-            },
+            ...tp,
+            type: 'dynamic-tool' as const,
+            state: 'output-available' as const,
+            output: result,
           } as unknown as UIMessage['parts'][number]
         })
         return [
@@ -328,22 +345,37 @@ export function useCodingChat({
 
   useEffect(() => {
     if (!sessionId) return
-    fetch(`${serviceUrl}/api/chat/messages?sessionId=${encodeURIComponent(sessionId)}`)
+    // Correct endpoint: GET /api/sessions/:id/messages  (SerializedMessage[])
+    fetch(`${serviceUrl}/api/sessions/${encodeURIComponent(sessionId)}/messages`)
       .then((r) => (r.ok ? r.json() : []))
       .then((raw: unknown[]) => {
         if (!Array.isArray(raw) || raw.length === 0) return
-        // Convert raw API messages to UIMessage format
+        // SerializedMessage: { role, content, timestamp, toolCalls: { id, name, parameters }[] }
+        type RawMsg = { role?: string; content?: string; toolCalls?: { id: string; name: string; parameters: Record<string, unknown> }[] }
         const converted: UIMessage[] = raw.flatMap((m) => {
-          const rm = m as Record<string, unknown>
-          const role = asString(rm['role'])
-          if (!role || role === 'system') return []
-          const content = asString(rm['content'])
-          const base: UIMessage = {
-            id: asString(rm['id'], generateUUID()),
-            role: role as UIMessage['role'],
-            parts: content ? [{ type: 'text', text: content }] : [],
+          const rm = m as RawMsg
+          const role = asString(rm.role)
+          // Skip system / tool-result messages; they're embedded in agent context
+          if (!role || role === 'system' || role === 'tool') return []
+          const parts: UIMessage['parts'] = []
+          const text = asString(rm.content)
+          if (text) parts.push({ type: 'text', text })
+          // Restore tool calls as dynamic-tool parts (AI SDK v5 DynamicToolUIPart format)
+          for (const tc of rm.toolCalls ?? []) {
+            parts.push({
+              type: 'dynamic-tool',
+              toolCallId: tc.id,
+              toolName: tc.name,
+              state: 'output-available',
+              input: tc.parameters,
+              output: null,
+            } as unknown as UIMessage['parts'][number])
           }
-          return [base]
+          return [{
+            id: generateUUID(),
+            role: role as UIMessage['role'],
+            parts: parts.length > 0 ? parts : [{ type: 'text', text: '' }],
+          }]
         })
         if (converted.length > 0) setMessages(converted)
       })
@@ -386,6 +418,7 @@ export function useCodingChat({
   }, [wsUrl, sessionId, handleWsMessage])
 
   useEffect(() => {
+    if (!sessionId) return
     connect()
     return () => {
       intentionalClose.current = true
