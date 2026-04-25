@@ -1,3 +1,43 @@
+## Web UI Migration Status
+
+This package now defaults to the new architecture:
+
+- client: Vite + React Router (`client/`)
+- server: Hono + file-based persistence (`server/`)
+
+Technical design document:
+
+- [Next.js -> Vite CSR Migration Design](docs/nextjs-to-vite-csr-design.md)
+- [Next.js -> Vite Detailed Migration Playbook](docs/nextjs-to-vite-migration-playbook.md)
+- [Next.js -> Vite Implementation Plan](docs/nextjs-to-vite-implementation-plan.md)
+
+### Quick Start (New Architecture)
+
+1. Install dependencies at workspace root:
+
+```bash
+pnpm i
+```
+
+2. Configure environment variables in `packages/web-ui/.env` from `packages/web-ui/.env.example`.
+
+3. Start development:
+
+```bash
+pnpm --filter @vitamin/web-ui dev
+```
+
+4. Build and run production:
+
+```bash
+pnpm --filter @vitamin/web-ui build
+pnpm --filter @vitamin/web-ui start
+```
+
+Legacy Next.js scripts are still available as `dev:legacy`, `build:legacy`, and `start:legacy` for transition only.
+
+---
+
 > [!WARNING] 
 > The author of this project has paused development until February, however, I (@brrock) will try and address vulnerabilities and issues. If you are contributing, you might have to wait until development continues.
 <img width="1184" height="576" alt="thumbnail" loading="lazy" src="https://github.com/user-attachments/assets/d6ba80ff-a62a-4920-b266-85c4a89d6076" />
