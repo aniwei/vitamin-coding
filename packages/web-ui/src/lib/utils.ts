@@ -71,7 +71,7 @@ export const isJson = (value: any): value is Record<string, any> => {
       return true
     }
     return false
-  } catch (_e) {
+  } catch {
     return false
   }
 }

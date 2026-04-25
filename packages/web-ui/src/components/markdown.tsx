@@ -33,30 +33,30 @@ export const WordByWordFadeIn = memo(({ children }: PropsWithChildren) => {
 })
 WordByWordFadeIn.displayName = 'WordByWordFadeIn'
 const components: Partial<Components> = {
-  table: ({ node, children, ...props }) => {
+  table: ({ children, ...props }) => {
     return (
       <div className="my-4">
         <Table {...props}>{children}</Table>
       </div>
     )
   },
-  thead: ({ node, children, ...props }) => {
+  thead: ({ children, ...props }) => {
     return <TableHeader {...props}>{children}</TableHeader>
   },
-  tbody: ({ node, children, ...props }) => {
+  tbody: ({ children, ...props }) => {
     return <TableBody {...props}>{children}</TableBody>
   },
-  tr: ({ node, children, ...props }) => {
+  tr: ({ children, ...props }) => {
     return <TableRow {...props}>{children}</TableRow>
   },
-  th: ({ node, children, ...props }) => {
+  th: ({ children, ...props }) => {
     return (
       <TableHead {...props}>
         <WordByWordFadeIn>{children}</WordByWordFadeIn>
       </TableHead>
     )
   },
-  td: ({ node, children, ...props }) => {
+  td: ({ children, ...props }) => {
     return (
       <TableCell {...props}>
         <WordByWordFadeIn>{children}</WordByWordFadeIn>
@@ -93,35 +93,35 @@ const components: Partial<Components> = {
       </div>
     )
   },
-  ol: ({ node, children, ...props }) => {
+  ol: ({ children, ...props }) => {
     return (
       <ol className="px-8 list-decimal list-outside" {...props}>
         {children}
       </ol>
     )
   },
-  li: ({ node, children, ...props }) => {
+  li: ({ children, ...props }) => {
     return (
       <li className="py-2 break-words" {...props}>
         <WordByWordFadeIn>{children}</WordByWordFadeIn>
       </li>
     )
   },
-  ul: ({ node, children, ...props }) => {
+  ul: ({ children, ...props }) => {
     return (
       <ul className="px-8 list-outside list-disc" {...props}>
         {children}
       </ul>
     )
   },
-  strong: ({ node, children, ...props }) => {
+  strong: ({ children, ...props }) => {
     return (
       <span className="font-semibold" {...props}>
         <WordByWordFadeIn>{children}</WordByWordFadeIn>
       </span>
     )
   },
-  a: ({ node, children, ...props }) => {
+  a: ({ children, ...props }) => {
     return (
       <a
         className="text-primary hover:underline flex gap-1.5 items-center"
@@ -134,49 +134,49 @@ const components: Partial<Components> = {
       </a>
     )
   },
-  h1: ({ node, children, ...props }) => {
+  h1: ({ children, ...props }) => {
     return (
       <h1 className="text-3xl font-semibold mt-6 mb-2" {...props}>
         <WordByWordFadeIn>{children}</WordByWordFadeIn>
       </h1>
     )
   },
-  h2: ({ node, children, ...props }) => {
+  h2: ({ children, ...props }) => {
     return (
       <h2 className="text-2xl font-semibold mt-6 mb-2" {...props}>
         <WordByWordFadeIn>{children}</WordByWordFadeIn>
       </h2>
     )
   },
-  h3: ({ node, children, ...props }) => {
+  h3: ({ children, ...props }) => {
     return (
       <h3 className="text-xl font-semibold mt-6 mb-2" {...props}>
         <WordByWordFadeIn>{children}</WordByWordFadeIn>
       </h3>
     )
   },
-  h4: ({ node, children, ...props }) => {
+  h4: ({ children, ...props }) => {
     return (
       <h4 className="text-lg font-semibold mt-6 mb-2" {...props}>
         <WordByWordFadeIn>{children}</WordByWordFadeIn>
       </h4>
     )
   },
-  h5: ({ node, children, ...props }) => {
+  h5: ({ children, ...props }) => {
     return (
       <h5 className="text-base font-semibold mt-6 mb-2" {...props}>
         <WordByWordFadeIn>{children}</WordByWordFadeIn>
       </h5>
     )
   },
-  h6: ({ node, children, ...props }) => {
+  h6: ({ children, ...props }) => {
     return (
       <h6 className="text-sm font-semibold mt-6 mb-2" {...props}>
         <WordByWordFadeIn>{children}</WordByWordFadeIn>
       </h6>
     )
   },
-  img: ({ node, children, ...props }) => {
+  img: (props) => {
     const { src, alt, ...rest } = props
 
     return src ? (

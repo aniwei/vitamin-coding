@@ -6,13 +6,24 @@
   "license": "MIT",
   "type": "module",
   "scripts": {
-    "dev": "next dev",
-    "dev:turbopack": "next dev --turbopack",
-    "dev:https": "next dev --experimental-https",
-    "build": "next build",
-    "start": "next start",
-    "build:local": "cross-env NO_HTTPS='1' next build",
+    "dev": "pnpm run dev:new",
+    "dev:new": "concurrently -k -n server,client -c cyan,magenta \"pnpm run dev:new:server\" \"pnpm run dev:new:client\"",
+    "dev:new:server": "tsx server/src/index.ts",
+    "dev:new:client": "vite --config client/vite.config.ts",
+    "dev:legacy": "next dev",
+    "dev:legacy:turbopack": "next dev --turbopack",
+    "dev:legacy:https": "next dev --experimental-https",
+    "build": "pnpm run build:new",
+    "build:new": "pnpm run build:new:client && pnpm run build:new:server",
+    "build:new:client": "vite build --config client/vite.config.ts",
+    "build:new:server": "tsc --project server/tsconfig.json",
+    "build:legacy": "next build",
+    "start": "pnpm run start:new",
+    "start:new": "node server/dist/index.js",
+    "start:legacy": "next start",
+    "build:local": "cross-env NO_HTTPS='1' pnpm run build:legacy",
     "test": "vitest run",
+    "test:smoke": "tsx scripts/smoke.ts",
     "test:watch": "vitest",
     "test:e2e": "playwright test",
     "test:e2e:ui": "playwright test --ui",
@@ -45,7 +56,9 @@
     "docker:app": "docker build -f docker/Dockerfile -t better-chatbot . && docker run -p 3000:3000 -e NO_HTTPS=1 better-chatbot",
     "prepare": "husky",
     "playwright:install": "playwright install",
-    "check": "pnpm lint:fix && pnpm check-types && pnpm test"
+    "check": "pnpm lint:fix && pnpm check-types && pnpm test",
+    "gate:release": "pnpm build && pnpm test:smoke",
+    "gate:release:full": "pnpm lint && pnpm check-types && pnpm test && pnpm run gate:release"
   },
   "dependencies": {
     "@ai-sdk/anthropic": "^2.0.56",
@@ -133,6 +146,8 @@
     "zustand": "^5.0.9"
   },
   "devDependencies": {
+    "@vitejs/plugin-react": "^5.1.0",
+    "concurrently": "^9.2.1",
     "@better-auth-kit/seed": "^1.0.12",
     "@playwright/test": "^1.57.0",
     "@tailwindcss/postcss": "^4.1.18",
@@ -154,6 +169,7 @@
     "tailwindcss": "^4.1.18",
     "tsx": "^4.21.0",
     "typescript": "^5.9.3",
+    "vite": "^7.1.12",
     "vite-tsconfig-paths": "^5.1.4",
     "vitest": "^3.2.4"
   },

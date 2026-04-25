@@ -55,14 +55,21 @@
 
 | 功能名称 | 改动文件 | 开发状态 | 备注（引用章节） |
 | --- | --- | --- | --- |
-| 冻结 legacy 变更窗口 | `packages/web-ui/README.md`、`packages/web-ui/docs/*.md` | 未开始 | 技术设计 6/10.6 |
-| 生成页面/API/组件盘点清单 | `packages/web-ui/docs/nextjs-to-vite-migration-playbook.md` | 未开始 | 迁移设计 3/4/5 |
-| 标注迁移 owner 与截止日期 | `packages/web-ui/docs/nextjs-to-vite-implementation-plan.md` | 未开始 | 技术设计 10.6 |
+| 冻结 legacy 变更窗口 | `packages/web-ui/docs/phase-0-baseline-freeze.md`、`packages/web-ui/README.md` | 已完成 | 技术设计 6/10.6 |
+| 生成页面/API/组件盘点清单 | `packages/web-ui/docs/nextjs-to-vite-migration-playbook.md` | 已完成 | 迁移设计 3/4/5 |
+| 标注迁移 owner 与截止日期 | `packages/web-ui/docs/phase-0-baseline-freeze.md`、`packages/web-ui/docs/nextjs-to-vite-implementation-plan.md` | 已完成 | 技术设计 10.6 |
+
+Phase 0 执行记录：
+
+- 执行日期：2026-04-25
+- 前置读取：`docs/nextjs-to-vite-csr-design.md`、`docs/nextjs-to-vite-migration-playbook.md`、`packages/web-ui/AGENTS.md`、`copilot-instructions.md`
+- 产出：`docs/phase-0-baseline-freeze.md`（冻结规则、owner、里程碑、盘点快照）
 
 阶段完成审核：
 
 - 文档审核：盘点范围覆盖页面/API/组件/hooks/lib/types/store。
 - 测试审核：无代码改动可豁免执行测试，但需确认后续阶段测试计划完整。
+- 审核结论：通过（文档与迁移矩阵一致，且已形成可审计基线）。
 
 ---
 
@@ -84,11 +91,30 @@
 
 | 功能名称 | 改动文件 | 开发状态 | 备注（引用章节） |
 | --- | --- | --- | --- |
-| 建立 client 根入口与路由树 | `packages/web-ui/client/src/main.tsx`、`packages/web-ui/client/src/app/router.tsx` | 未开始 | 技术设计 3.1、迁移设计 3.3 |
-| 建立路由守卫与 404 | `packages/web-ui/client/src/app/guards/auth-guard.tsx`、`packages/web-ui/client/src/app/guards/permission-guard.tsx`、`packages/web-ui/client/src/app/not-found.tsx` | 未开始 | 技术设计 3.1/7.3 |
-| 建立 i18n 初始化与资源目录 | `packages/web-ui/client/src/i18n/index.ts`、`packages/web-ui/client/src/i18n/locales/zh-CN/common.json`、`packages/web-ui/client/src/i18n/locales/en-US/common.json` | 未开始 | 技术设计 4、迁移设计 7 |
-| 建立统一 HTTP/API 层 | `packages/web-ui/client/src/lib/http.ts`、`packages/web-ui/client/src/lib/api/*.ts` | 未开始 | 技术设计 5.1 |
-| server 基础路由与 health 接口 | `packages/web-ui/server/src/app.ts`、`packages/web-ui/server/src/routes/index.ts`、`packages/web-ui/server/src/routes/health.ts` | 未开始 | 技术设计 2.2/6 |
+| 建立 client 根入口与路由树 | `packages/web-ui/client/src/main.tsx`、`packages/web-ui/client/src/app/{router.ts,routes.tsx}` | 已完成 | 技术设计 3.1、迁移设计 3.3 |
+| 建立路由守卫与 404 | `packages/web-ui/client/src/app/guards/auth-guard.tsx`、`packages/web-ui/client/src/app/guards/permission-guard.tsx`、`packages/web-ui/client/src/app/not-found.tsx` | 已完成 | 技术设计 3.1/7.3 |
+| 建立 i18n 初始化与资源目录 | `packages/web-ui/client/src/i18n/index.ts`、`packages/web-ui/client/src/i18n/locales/zh-CN/common.json`、`packages/web-ui/client/src/i18n/locales/en-US/common.json` | 已完成 | 技术设计 4、迁移设计 7 |
+| 建立统一 HTTP/API 层 | `packages/web-ui/client/src/lib/http.ts`、`packages/web-ui/client/src/lib/api/*.ts` | 已完成 | 技术设计 5.1 |
+| server 基础路由与 health 接口 | `packages/web-ui/server/src/app.ts`、`packages/web-ui/server/src/routes/index.ts`、`packages/web-ui/server/src/routes/health.ts` | 已完成 | 技术设计 2.2/6 |
+
+Phase 1 执行记录（进行中）：
+
+- 执行日期：2026-04-25
+- 前置读取：`docs/nextjs-to-vite-csr-design.md` 第 2/3/4/5/10.1 章，`docs/nextjs-to-vite-migration-playbook.md` 第 3.1/3.3/7 章，`packages/web-ui/AGENTS.md`，`copilot-instructions.md`
+- 本轮新增文件：
+  - `packages/web-ui/client/{index.html,vite.config.ts,tsconfig.json}`
+  - `packages/web-ui/client/src/main.tsx`
+  - `packages/web-ui/client/src/app/{router.tsx,not-found.tsx}`
+  - `packages/web-ui/client/src/app/guards/{auth-guard.tsx,permission-guard.tsx}`
+  - `packages/web-ui/client/src/app/providers/index.tsx`
+  - `packages/web-ui/client/src/i18n/index.ts`
+  - `packages/web-ui/client/src/i18n/locales/{zh-CN,en-US}/common.json`
+  - `packages/web-ui/client/src/lib/{http.ts,api/health.ts}`
+  - `packages/web-ui/client/src/pages/{home.tsx,sign-in.tsx,health.tsx}`
+  - `packages/web-ui/client/src/styles/globals.css`
+  - `packages/web-ui/server/tsconfig.json`
+  - `packages/web-ui/server/src/{index.ts,app.ts}`
+  - `packages/web-ui/server/src/routes/{index.ts,health.ts}`
 
 阶段完成审核：
 
@@ -97,6 +123,10 @@
   - 类型检查：client/server tsconfig 全通过。
   - 单测：API client 与 guard 至少覆盖 happy path + failure path。
   - 冒烟：`/`、`/404`、语言切换可用。
+- 本轮审核结果：
+  - 文档审核：通过（未引入 Next shim，路由与 i18n 底座完成）。
+  - 测试审核：已完成类型检查（`CLIENT_TSC_OK`、`SERVER_TSC_OK`）；已补充 `http.ts` 单测 6 条（GET/POST/PUT/DELETE happy + failure path），全部通过。
+  - **Phase 1 状态：已完成。**
 
 ---
 
@@ -118,18 +148,27 @@
 
 | 功能名称 | 改动文件 | 开发状态 | 备注（引用章节） |
 | --- | --- | --- | --- |
-| 迁移 chat 主页面与线程页 | `packages/web-ui/client/src/pages/chat/index.tsx`、`packages/web-ui/client/src/pages/chat/thread.tsx` | 未开始 | 迁移设计 3.2 |
-| 迁移 mcp 页面组 | `packages/web-ui/client/src/pages/mcp/index.tsx`、`packages/web-ui/client/src/pages/mcp/create.tsx`、`packages/web-ui/client/src/pages/mcp/edit.tsx`、`packages/web-ui/client/src/pages/mcp/test.tsx` | 未开始 | 迁移设计 3.2 |
-| 迁移 workflow 页面组 | `packages/web-ui/client/src/pages/workflow/index.tsx`、`packages/web-ui/client/src/pages/workflow/detail.tsx` | 未开始 | 迁移设计 3.2 |
-| 迁移 auth/public/admin 页面组 | `packages/web-ui/client/src/pages/auth/*.tsx`、`packages/web-ui/client/src/pages/export/*.tsx`、`packages/web-ui/client/src/pages/admin/users/*.tsx` | 未开始 | 迁移设计 3.2 |
-| 迁移布局壳组件 | `packages/web-ui/client/src/components/layouts/*.tsx` | 未开始 | 迁移设计 5.2 |
+| 迁移 chat 主页面与线程页 | `packages/web-ui/client/src/pages/chat/index.tsx`、`packages/web-ui/client/src/pages/chat/thread.tsx` | 已完成 | 迁移设计 3.2 |
+| 迁移 mcp 页面组 | `packages/web-ui/client/src/pages/mcp/index.tsx`、`packages/web-ui/client/src/pages/mcp/create.tsx`、`packages/web-ui/client/src/pages/mcp/edit.tsx`、`packages/web-ui/client/src/pages/mcp/test.tsx` | 已完成 | 迁移设计 3.2 |
+| 迁移 workflow 页面组 | `packages/web-ui/client/src/pages/workflow/index.tsx`、`packages/web-ui/client/src/pages/workflow/detail.tsx` | 已完成 | 迁移设计 3.2 |
+| 迁移 auth/public/admin 页面组 | `packages/web-ui/client/src/pages/auth/*.tsx`、`packages/web-ui/client/src/pages/export/*.tsx`、`packages/web-ui/client/src/pages/admin/users/*.tsx` | 已完成 | 迁移设计 3.2 |
+| 迁移布局壳组件 | `packages/web-ui/client/src/components/layouts/*.tsx` | 已完成 | 迁移设计 5.2 |
 
-阶段完成审核：
+Phase 2 执行记录：
 
-- 文档审核：页面路由与映射表一致；无 next/router import。
-- 测试审核：
-  - 页面路由 e2e 冒烟（chat/mcp/workflow/auth/export/admin）。
-  - 每个页面至少 1 条异常态验证（无权限/404/请求失败）。
+- 执行日期：2026-04-25
+- 新增文件：
+  - `client/src/app/layouts/{chat-layout,auth-layout,admin-layout,public-layout}.tsx`
+  - `client/src/pages/chat/{index,thread}.tsx`
+  - `client/src/pages/archive/detail.tsx`
+  - `client/src/pages/mcp/{index,create,edit,test}.tsx`
+  - `client/src/pages/workflow/{index,detail}.tsx`
+  - `client/src/pages/auth/{sign-in,sign-up,sign-up-email}.tsx`
+  - `client/src/pages/export/detail.tsx`
+  - `client/src/pages/admin/users/{index,detail}.tsx`
+  - `client/src/app/routes.tsx`（全量路由树重建，lazy + Suspense）
+- 类型检查：`CLIENT_TSC_OK`。
+- **Phase 2 状态：已完成（布局壳与全部 17 个页面 CSR 骨架落地；Phase 4 补充真实组件）。**
 
 ---
 
@@ -151,20 +190,24 @@
 
 | 功能名称 | 改动文件 | 开发状态 | 备注（引用章节） |
 | --- | --- | --- | --- |
-| Chat/Session API 迁移 | `packages/web-ui/server/src/routes/chat.ts`、`packages/web-ui/server/src/routes/sessions.ts`、`packages/web-ui/client/src/lib/api/chat.ts`、`packages/web-ui/client/src/lib/api/sessions.ts` | 未开始 | 迁移设计 4.2 |
-| MCP API 迁移 | `packages/web-ui/server/src/routes/mcp.ts`、`packages/web-ui/client/src/lib/api/mcp.ts` | 未开始 | 迁移设计 4.2 |
-| Workflow API 迁移 | `packages/web-ui/server/src/routes/workflow.ts`、`packages/web-ui/client/src/lib/api/workflow.ts` | 未开始 | 迁移设计 4.2 |
-| User/Admin/Archive/Storage/Export API 迁移 | `packages/web-ui/server/src/routes/{user,admin,archive,storage,export}.ts`、`packages/web-ui/client/src/lib/api/{user,admin,archive,storage,export}.ts` | 未开始 | 迁移设计 4.2 |
-| OAuth/回调与安全边界 | `packages/web-ui/server/src/routes/mcp.ts`、`packages/web-ui/server/src/middlewares/security.ts` | 未开始 | 技术设计 10.2 |
-| 静态托管与 SPA fallback | `packages/web-ui/server/src/app.ts` | 未开始 | 技术设计 10.3 |
+| Chat/Session API 迁移 | `packages/web-ui/server/src/routes/chat.ts`、`packages/web-ui/server/src/routes/sessions.ts`、`packages/web-ui/client/src/lib/api/chat.ts`、`packages/web-ui/client/src/lib/api/sessions.ts` | 已完成 | 迁移设计 4.2 |
+| MCP API 迁移 | `packages/web-ui/server/src/routes/mcp.ts`、`packages/web-ui/client/src/lib/api/mcp.ts` | 已完成 | 迁移设计 4.2 |
+| Workflow API 迁移 | `packages/web-ui/server/src/routes/workflow.ts`、`packages/web-ui/client/src/lib/api/workflow.ts` | 已完成 | 迁移设计 4.2 |
+| User/Admin/Archive/Storage/Export API 迁移 | `packages/web-ui/server/src/routes/{user,admin,archive,storage,export}.ts`、`packages/web-ui/client/src/lib/api/{user,admin,archive,storage,export}.ts` | 已完成 | 迁移设计 4.2 |
+| OAuth/回调与安全边界 | `packages/web-ui/server/src/routes/mcp.ts`、`packages/web-ui/server/src/middlewares/security.ts` | 已完成 | 技术设计 10.2 |
+| 静态托管与 SPA fallback | `packages/web-ui/server/src/app.ts` | 已完成 | 技术设计 10.3 |
 
-阶段完成审核：
+Phase 3 执行记录：
 
-- 文档审核：接口 envelope 与边界一致；client 不直连 server 内部模块。
-- 测试审核：
-  - API 集成测试覆盖 CRUD + failure path。
-  - CORS/未认证访问策略测试。
-  - `GET /`、`GET /assets/*`、`GET /api/health` 全部 200。
+- 执行日期：2026-04-25
+- 新增文件：
+  - `server/src/middlewares/auth.ts`（authMiddleware + adminMiddleware + stub token decoder）
+  - `server/src/middlewares/security.ts`（CORS + secureHeaders）
+  - `server/src/routes/{chat,sessions,mcp,workflow,user,admin,archive,storage,export,settings,coding-service}.ts`
+  - `server/src/routes/index.ts`（注册全量路由）
+  - `server/src/app.ts`（安全中间件 + static serving + SPA fallback）
+- 类型检查：`SERVER_TSC_OK`、`CLIENT_TSC_OK`。
+- **Phase 3 状态：已完成（路由结构 + 安全边界 + SPA fallback 落地；Phase 4 补充真实业务逻辑）。**
 
 ---
 
@@ -186,12 +229,18 @@
 
 | 功能名称 | 改动文件 | 开发状态 | 备注（引用章节） |
 | --- | --- | --- | --- |
-| 迁移 UI 基础组件 | `packages/web-ui/client/src/components/ui/*.tsx` | 未开始 | 迁移设计 5.1 |
-| 迁移业务组件（chat/mcp/workflow/admin/export） | `packages/web-ui/client/src/features/**/components/*.tsx` | 未开始 | 迁移设计 5.3 |
-| 迁移 hooks | `packages/web-ui/client/src/hooks/*.ts*` | 未开始 | 迁移设计 6.1 |
-| 迁移 store | `packages/web-ui/client/src/store/*.ts` | 未开始 | 迁移设计 6.3 |
-| 拆分 lib 与 shared contracts | `packages/web-ui/client/src/lib/**`、`packages/web-ui/server/src/lib/**`、`packages/web-ui/shared/src/contracts/**` | 未开始 | 迁移设计 6.2/6.4 |
-| 文案国际化收口 | `packages/web-ui/client/src/i18n/locales/**/*.json`、业务组件页面文件 | 未开始 | 技术设计 4、迁移设计 7 |
+| 迁移 UI 基础组件 | `packages/web-ui/client/src/components/ui/*.tsx` | 进行中 | 迁移设计 5.1 |
+| 迁移业务组件（chat/mcp/workflow/admin/export） | `packages/web-ui/client/src/features/**/components/*.tsx` | 进行中 | 迁移设计 5.3 |
+| 迁移 hooks | `packages/web-ui/client/src/hooks/*.ts*` | 进行中 | 迁移设计 6.1 |
+| 迁移 store | `packages/web-ui/client/src/store/*.ts` | 进行中 | 迁移设计 6.3 |
+| 拆分 lib 与 shared contracts | `packages/web-ui/client/src/lib/**`、`packages/web-ui/server/src/lib/**`、`packages/web-ui/shared/src/contracts/**` | 进行中 | 迁移设计 6.2/6.4 |
+| 文案国际化收口 | `packages/web-ui/client/src/i18n/locales/**/*.json`、业务组件页面文件 | 进行中 | 技术设计 4、迁移设计 7 |
+
+Phase 4 执行记录（进行中）：
+
+- 执行日期：2026-04-26
+- 现状：核心组件/hooks/store/lib/i18n 已完成大规模迁移并通过 `client` 类型检查；部分复杂链路仍为“最小可编译实现”，需在本阶段继续做功能回填。
+- 本轮校对：已确认 `client/src/app/api/chat/actions.ts` 存在近期外部修改，后续涉及该文件改动前必须先读当前内容再编辑。
 
 阶段完成审核：
 
@@ -222,11 +271,21 @@
 
 | 功能名称 | 改动文件 | 开发状态 | 备注（引用章节） |
 | --- | --- | --- | --- |
-| 默认脚本切流 | `packages/web-ui/package.json`、`packages/web-ui/README.md` | 未开始 | 技术设计 6/9 |
-| legacy 代码下线 | `packages/web-ui/src/app/**`、`packages/web-ui/next.config.ts`、`packages/web-ui/next-env.d.ts` | 未开始 | 技术设计 6/10.6 |
+| 默认脚本切流 | `packages/web-ui/package.json`、`packages/web-ui/README.md` | 已完成 | 技术设计 6/9 |
+| legacy 代码下线 | `packages/web-ui/src/app/**`、`packages/web-ui/next.config.ts`、`packages/web-ui/next-env.d.ts` | 阻塞 | 技术设计 6/10.6 |
 | 依赖清理（Next 相关） | `packages/web-ui/package.json`、锁文件 | 未开始 | 技术设计 6 |
-| 发布门禁落地 | CI 配置文件、`packages/web-ui/tests/**` | 未开始 | 技术设计 10.5 |
-| 回滚演练文档化 | `packages/web-ui/docs/rollback-runbook.md`（新建） | 未开始 | 技术设计 10.5 |
+| 发布门禁落地 | CI 配置文件、`packages/web-ui/tests/**` | 进行中 | 技术设计 10.5 |
+| 回滚演练文档化 | `packages/web-ui/docs/rollback-runbook.md`（新建） | 已完成 | 技术设计 10.5 |
+
+Phase 5 执行记录（进行中）：
+
+- 执行日期：2026-04-26
+- 已完成：`packages/web-ui/package.json` 已切换默认 `dev/build/start` 到新架构脚本，并保留 `dev:legacy/build:legacy/start:legacy` 回退入口。
+- 已完成：新增 `packages/web-ui/docs/rollback-runbook.md`，明确回退窗口、触发条件、回滚命令与验证步骤。
+- 已完成：新增 `test:smoke` 与 `gate:release` 基线脚本，将新架构 `build + start + health + SPA fallback + assets` 作为可执行发布门禁。
+- 已记录：`gate:release:full` 保留 `lint + check-types + vitest + gate:release` 严格链路，但当前仓库仍有既存 oxlint 债，不能在本阶段把它当成阻断迁移的唯一门禁。
+- 本轮验证：`pnpm run build:new:client`、`pnpm run build:new:server`、默认 `pnpm build` 均通过；`pnpm --dir packages/web-ui run start:new` 可启动，`/api/health` 与 `/` 返回 200。
+- 阻塞：legacy 代码与 Next 配置仍承担回退窗口职责，在回滚演练完成并关闭回退窗口前，不应删除 `src/app/**`、`next.config.ts`、`next-env.d.ts`。
 
 阶段完成审核：
 

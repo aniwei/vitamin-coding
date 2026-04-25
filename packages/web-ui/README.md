@@ -10,6 +10,8 @@ Technical design document:
 - [Next.js -> Vite CSR Migration Design](docs/nextjs-to-vite-csr-design.md)
 - [Next.js -> Vite Detailed Migration Playbook](docs/nextjs-to-vite-migration-playbook.md)
 - [Next.js -> Vite Implementation Plan](docs/nextjs-to-vite-implementation-plan.md)
+- [Rollback Runbook](docs/rollback-runbook.md)
+- [Phase 0 Baseline Freeze](docs/phase-0-baseline-freeze.md)
 
 ### Quick Start (New Architecture)
 

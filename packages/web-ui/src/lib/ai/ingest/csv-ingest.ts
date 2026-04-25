@@ -50,7 +50,7 @@ export const buildCsvIngestionPreviewParts = async (
           text,
           ingestionPreview: true as const,
         }
-      } catch (_error) {
+      } catch {
         return null
       }
     })

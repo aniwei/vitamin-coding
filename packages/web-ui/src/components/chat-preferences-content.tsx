@@ -335,7 +335,7 @@ export function ExportsManagementContent() {
 
       toast.success(t('Chat.ChatPreferences.exportDeleted'))
       refetchExports()
-    } catch (_error) {
+    } catch {
       toast.error(t('Chat.ChatPreferences.failedToDeleteExport'))
     } finally {
       setDeletingId(null)
