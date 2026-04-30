@@ -175,7 +175,7 @@ This node returns the full HTTP response. The actual weather data is located ins
 "response": {
   "status": 200,
   "ok": true,
-  "body": "{\"latitude\":37.56,\"longitude\":126.97,\"current\":{\"time\":\"2023-10-27T12:00\",\"temperature_2m\":15.4},\"daily\":{\"sunrise\":[\"2023-10-27T06:45\"],\"sunset\":[\"2023-10-27T17:40\"]}}",
+  "body": "{"latitude":37.56,"longitude":126.97,"current":{"time":"2023-10-27T12:00","temperature_2m":15.4},"daily":{"sunrise":["2023-10-27T06:45"],"sunset":["2023-10-27T17:40"]}}",
   "duration": 150
 }
 }

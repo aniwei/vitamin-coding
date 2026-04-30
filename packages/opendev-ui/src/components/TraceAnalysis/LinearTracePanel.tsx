@@ -24,7 +24,7 @@ export function LinearTracePanel({ events, selectedIndex, onSelectEvent, onClose
   const rowRefs = useRef<Map<number, HTMLDivElement>>(new Map())
 
   useEffect(() => {
-    if (selectedIndex === null) return
+    if (selectedIndex === null) {return}
     const el = rowRefs.current.get(selectedIndex)
     if (el) {
       el.scrollIntoView({ block: 'nearest', behavior: 'smooth' })
@@ -56,8 +56,8 @@ export function LinearTracePanel({ events, selectedIndex, onSelectEvent, onClose
             <div
               key={i}
               ref={(el) => {
-                if (el) rowRefs.current.set(i, el)
-                else rowRefs.current.delete(i)
+                if (el) {rowRefs.current.set(i, el)}
+                else {rowRefs.current.delete(i)}
               }}
               onClick={() => onSelectEvent(i)}
               className={`flex gap-2 py-1.5 px-2.5 border-b border-border-300/10 cursor-pointer items-start ${

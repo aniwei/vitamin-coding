@@ -141,7 +141,7 @@ export { formatToolVerb, formatToolArg }
 
 ws.on('Chat.subagentStart', (message) => {
   const d = asEventData(message.data)
-  if (!d) return
+  if (!d) {return}
 
   const id = readString(d, 'subagentId', 'toolCallId') || `sa-${Date.now()}`
   const name = readString(d, 'agentType', 'subagentName') || 'Agent'
@@ -185,7 +185,7 @@ ws.on('Chat.subagentStart', (message) => {
 
 ws.on('Chat.nestedToolCall', (message) => {
   const d = asEventData(message.data)
-  if (!d) return
+  if (!d) {return}
 
   // Try to find the subagent this tool belongs to
   const state = useSubagentStore.getState()
@@ -198,7 +198,7 @@ ws.on('Chat.nestedToolCall', (message) => {
     useSubagentStore.setState((prev) => {
       const subagents = new Map(prev.subagents)
       const sa = subagents.get(subagentId)
-      if (!sa || sa.finished) return {}
+      if (!sa || sa.finished) {return {}}
 
       const activeTools = new Map(sa.activeTools)
       activeTools.set(toolId, {
@@ -220,7 +220,7 @@ ws.on('Chat.nestedToolCall', (message) => {
 
 ws.on('Chat.nestedToolResult', (message) => {
   const d = asEventData(message.data)
-  if (!d) return
+  if (!d) {return}
 
   const subagentId = readString(d, 'subagentId', 'parentSubagentId')
 
@@ -228,7 +228,7 @@ ws.on('Chat.nestedToolResult', (message) => {
     useSubagentStore.setState((prev) => {
       const subagents = new Map(prev.subagents)
       const sa = subagents.get(subagentId)
-      if (!sa) return {}
+      if (!sa) {return {}}
 
       const activeTools = new Map(sa.activeTools)
       const toolId = readString(d, 'toolCallId', 'toolId')
@@ -246,7 +246,7 @@ ws.on('Chat.nestedToolResult', (message) => {
 
       if (matchedId) {
         const tc = activeTools.get(matchedId)
-        if (!tc) return { subagents }
+        if (!tc) {return { subagents }}
         activeTools.delete(matchedId)
         const completedTools = [
           ...sa.completedTools,
@@ -272,10 +272,10 @@ ws.on('Chat.nestedToolResult', (message) => {
 
 ws.on('Chat.subagentComplete', (message) => {
   const d = asEventData(message.data)
-  if (!d) return
+  if (!d) {return}
 
   const id = readString(d, 'subagentId', 'toolCallId')
-  if (!id) return
+  if (!id) {return}
 
   useSubagentStore.setState((prev) => {
     const subagents = new Map(prev.subagents)
@@ -292,7 +292,7 @@ ws.on('Chat.subagentComplete', (message) => {
         }
       }
     }
-    if (!sa) return {}
+    if (!sa) {return {}}
 
     subagents.set(matchedId, {
       ...sa,
@@ -316,12 +316,12 @@ ws.on('Session.statusUpdate', (message) => {
   const d = asEventData(message.data)
   const subagentId = d ? readString(d, 'subagentId') : undefined
   const tokenCount = d ? readNumber(d, 'tokenCount') : undefined
-  if (!subagentId || tokenCount == null) return
+  if (!subagentId || tokenCount == null) {return}
 
   useSubagentStore.setState((prev) => {
     const subagents = new Map(prev.subagents)
     const sa = subagents.get(subagentId)
-    if (!sa) return {}
+    if (!sa) {return {}}
 
     subagents.set(subagentId, {
       ...sa,

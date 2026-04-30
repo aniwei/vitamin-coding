@@ -61,7 +61,7 @@ export function TodoPanel() {
   const visible = useTodoStore((s) => s.visible)
   const toggleVisible = useTodoStore((s) => s.toggleVisible)
 
-  if (items.length === 0) return null
+  if (items.length === 0) {return null}
 
   const completed = items.filter((i) => i.status === 'completed').length
   const total = items.length

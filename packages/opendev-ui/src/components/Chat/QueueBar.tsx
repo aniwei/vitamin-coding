@@ -9,7 +9,7 @@ export function QueueBar() {
     return sid ? (state.sessionStates[sid]?.queuedMessages ?? []) : []
   })
 
-  if (queuedMessages.length === 0) return null
+  if (queuedMessages.length === 0) {return null}
 
   return (
     <div className="px-4">

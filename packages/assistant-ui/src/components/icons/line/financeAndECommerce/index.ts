@@ -1,7 +1,0 @@
-export { Balance } from './Balance'
-export { CoinsStacked01 } from './CoinsStacked01'
-export { CreditsCoin } from './CreditsCoin'
-export { GoldCoin } from './GoldCoin'
-export { ReceiptList } from './ReceiptList'
-export { Tag01 } from './Tag01'
-export { Tag03 } from './Tag03'

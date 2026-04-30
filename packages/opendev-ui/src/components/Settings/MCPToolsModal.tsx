@@ -38,7 +38,7 @@ export function MCPToolsModal({ isOpen, serverName, tools, onClose }: MCPToolsMo
 
   // Filter tools based on search query
   const filteredTools = useMemo(() => {
-    if (!searchQuery.trim()) return tools
+    if (!searchQuery.trim()) {return tools}
 
     const query = searchQuery.toLowerCase()
     return tools.filter(
@@ -56,7 +56,7 @@ export function MCPToolsModal({ isOpen, serverName, tools, onClose }: MCPToolsMo
     }
   }, [filteredTools, selectedTool])
 
-  if (!isOpen) return null
+  if (!isOpen) {return null}
 
   const copyToClipboard = (text: string) => {
     navigator.clipboard.writeText(text)

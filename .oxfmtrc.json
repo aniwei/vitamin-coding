@@ -1,6 +1,12 @@
 {
   "$schema": "./node_modules/oxfmt/configuration_schema.json",
-  "ignorePatterns": ["packages/cli", "**/*.test.ts", "**/*.spec.ts"],
+  "ignorePatterns": [
+    "**/*.test.ts",
+    "**/*.spec.ts",
+    "packages/cli/**",
+    "packages/web-ui/**",
+    "packages/opendev-ui/**"
+  ],
   "useTabs": false,
   "tabWidth": 2,
   "printWidth": 100,

@@ -154,7 +154,7 @@ export function DAGView({ sessionData, loading }: Props) {
   const handleSearchSelect = useCallback(
     (nodeId: string, eventIndex?: number) => {
       const node = nodes.find((n) => n.id === nodeId)
-      if (!node) return
+      if (!node) {return}
 
       if (node.type === 'collapsedNode') {
         setSelectedChain(node.data as CollapsedNodeData)
@@ -248,7 +248,7 @@ export function DAGView({ sessionData, loading }: Props) {
             <Controls />
             <MiniMap
               nodeColor={(n) => {
-                if (n.type === 'collapsedNode') return 'hsl(var(--border-300))'
+                if (n.type === 'collapsedNode') {return 'hsl(var(--border-300))'}
                 const data = n.data as TraceNodeData | ToolNodeData | TaskNodeData
                 return NODE_TYPE_COLORS[data?.eventType] || '#9ca3af'
               }}

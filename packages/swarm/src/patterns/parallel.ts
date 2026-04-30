@@ -93,7 +93,7 @@ export async function executeParallel(options: {
 
   // 并发控制
   while (pending.length > 0 || running.size > 0) {
-    if (signal.aborted) break
+    if (signal.aborted) {break}
 
     while (running.size < limit && pending.length > 0) {
       const task = pending.shift()!

@@ -30,7 +30,7 @@ function parseDiff(raw: string): DiffLine[] {
  * Renders a unified diff with colored add/remove lines.
  */
 export function DiffViewer({ diff }: DiffViewerProps) {
-  if (!diff) return null
+  if (!diff) {return null}
 
   const lines = parseDiff(diff)
 

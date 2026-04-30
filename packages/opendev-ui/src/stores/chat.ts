@@ -237,7 +237,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   sendMessage: async (content: string) => {
     const sessionId = get().currentSessionId
-    if (!sessionId) return
+    if (!sessionId) {return}
 
     const sessionState = getSessionState(get().sessionStates, sessionId)
     const isQueuing = sessionState.isLoading
@@ -313,7 +313,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   toggleMode: () => {
     const { status } = get()
-    if (!status) return
+    if (!status) {return}
     const newMode = status.mode === 'normal' ? 'plan' : 'normal'
     api.setMode(newMode).catch(console.error)
     set({ status: { ...status, mode: newMode } })
@@ -321,7 +321,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   cycleAutonomy: () => {
     const { status } = get()
-    if (!status) return
+    if (!status) {return}
     const currentIdx = AUTONOMY_CYCLE.indexOf(status.autonomyLevel)
     const nextLevel = AUTONOMY_CYCLE[(currentIdx + 1) % AUTONOMY_CYCLE.length]
     api.setAutonomy(nextLevel).catch(console.error)
@@ -375,7 +375,7 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
   sendInterrupt: () => {
     const sessionId = get().currentSessionId
-    if (!sessionId) return
+    if (!sessionId) {return}
 
     api.interruptTask().catch(console.error)
 
@@ -441,13 +441,13 @@ ws.on('Runtime.disconnected', () => {
 
 ws.on('Chat.userMessage', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   const content = message.data.content
   const sessionState = getSessionState(useChatStore.getState().sessionStates, sid)
   const msgs = sessionState.messages
   // Dedup: skip if last user message already has this content (optimistic add from sendMessage)
   const lastUserMsg = [...msgs].reverse().find((m) => m.role === 'user')
-  if (lastUserMsg && lastUserMsg.content === content) return
+  if (lastUserMsg && lastUserMsg.content === content) {return}
   useChatStore.setState((state) => ({
     ...patchSession(state, sid, (prev) => ({
       messages: [
@@ -464,7 +464,7 @@ ws.on('Chat.userMessage', (message) => {
 
 ws.on('Chat.messageStart', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   useChatStore.setState((state) => ({
     ...patchSession(state, sid, { isLoading: true }),
   }))
@@ -486,7 +486,7 @@ function finalizeThinking(msgs: Message[]): Message[] {
 
 ws.on('Chat.messageChunk', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   console.log('[Frontend] Received message_chunk:', message.data.content.substring(0, 100))
 
   useChatStore.setState((state) => {
@@ -510,7 +510,7 @@ ws.on('Chat.messageChunk', (message) => {
 
 ws.on('Chat.messageComplete', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   console.log('[Frontend] Received message_complete')
   useChatStore.setState((state) => ({
     ...patchSession(state, sid, { isLoading: false, queuedMessages: [], progressMessage: null }),
@@ -519,7 +519,7 @@ ws.on('Chat.messageComplete', (message) => {
 
 ws.on('Runtime.error', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   useChatStore.setState((state) => ({
     ...patchSession(state, sid, {
       error: message.data.message,
@@ -532,7 +532,7 @@ ws.on('Runtime.error', (message) => {
 
 ws.on('Chat.approvalRequired', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   console.log('[Frontend] Received approval_required:', message.data)
   useChatStore.setState((state) => ({
     ...patchSession(state, sid, { pendingApproval: message.data as ApprovalRequest }),
@@ -541,7 +541,7 @@ ws.on('Chat.approvalRequired', (message) => {
 
 ws.on('Chat.approvalResolved', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   useChatStore.setState((state) => ({
     ...patchSession(state, sid, { pendingApproval: null }),
   }))
@@ -549,7 +549,7 @@ ws.on('Chat.approvalResolved', (message) => {
 
 ws.on('Chat.toolCall', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
 
   const toolCallId = message.data.toolCallId || message.data.id
   const toolName = message.data.toolName || message.data.name
@@ -573,7 +573,7 @@ ws.on('Chat.toolCall', (message) => {
 
 ws.on('Chat.toolResult', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
 
   useChatStore.setState((state) => {
     const sessionState = getSessionState(state.sessionStates, sid)
@@ -611,7 +611,7 @@ ws.on('Chat.toolResult', (message) => {
 
 ws.on('Chat.thinkingBlock', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   const action = message.data.action
   const isBlockStart = action === 'start' || message.data.blockStart === true
   const isBlockEnd = action === 'end'
@@ -678,7 +678,7 @@ ws.on('Session.statusUpdate', (message) => {
 
 ws.on('Chat.askUserRequired', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   console.log('[Frontend] Received ask_user_required:', message.data)
   useChatStore.setState((state) => ({
     ...patchSession(state, sid, { pendingAskUser: message.data as AskUserRequest }),
@@ -687,7 +687,7 @@ ws.on('Chat.askUserRequired', (message) => {
 
 ws.on('Chat.askUserResolved', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   useChatStore.setState((state) => ({
     ...patchSession(state, sid, { pendingAskUser: null }),
   }))
@@ -699,8 +699,8 @@ ws.on('Session.activity', (message) => {
   const isRunning = running === true || status === 'running'
   useChatStore.setState((state) => {
     const next = new Set(state.runningSessions)
-    if (isRunning) next.add(sessionId)
-    else next.delete(sessionId)
+    if (isRunning) {next.add(sessionId)}
+    else {next.delete(sessionId)}
     return { runningSessions: next }
   })
   useChatStore.getState().bumpSessionList()
@@ -715,7 +715,7 @@ ws.on('Session.activity', (message) => {
 
 ws.on('Chat.planApprovalRequired', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   console.log('[Frontend] Received plan_approval_required:', message.data)
   useChatStore.setState((state) => ({
     ...patchSession(state, sid, { pendingPlanApproval: message.data as PlanApprovalRequest }),
@@ -724,7 +724,7 @@ ws.on('Chat.planApprovalRequired', (message) => {
 
 ws.on('Chat.planApprovalResolved', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   useChatStore.setState((state) => ({
     ...patchSession(state, sid, { pendingPlanApproval: null }),
   }))
@@ -734,7 +734,7 @@ ws.on('Chat.planApprovalResolved', (message) => {
 
 ws.on('Chat.subagentStart', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   const { agentType, description, toolCallId } = message.data
   console.log('[Frontend] Subagent start:', agentType, description)
 
@@ -755,7 +755,7 @@ ws.on('Chat.subagentStart', (message) => {
 
 ws.on('Chat.subagentComplete', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   const { toolCallId, success } = message.data
 
   useChatStore.setState((state) => {
@@ -784,7 +784,7 @@ ws.on('Chat.subagentComplete', (message) => {
 
 ws.on('Chat.taskCompleted', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   console.log('[Frontend] Task completed:', message.data.summary)
 })
 
@@ -792,7 +792,7 @@ ws.on('Chat.taskCompleted', (message) => {
 
 ws.on('Chat.progress', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   const { status, message: progressMsg } = message.data
 
   if (status === 'complete') {
@@ -810,7 +810,7 @@ ws.on('Chat.progress', (message) => {
 
 ws.on('Chat.nestedToolCall', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   const { toolName, arguments: args, depth, parentToolCallId } = message.data
 
   const nestedMsg: Message = {
@@ -832,7 +832,7 @@ ws.on('Chat.nestedToolCall', (message) => {
 
 ws.on('Chat.nestedToolResult', (message) => {
   const sid = resolveSessionId(message.data)
-  if (!sid) return
+  if (!sid) {return}
   const { toolName, success, summary, depth } = message.data
 
   useChatStore.setState((state) => {

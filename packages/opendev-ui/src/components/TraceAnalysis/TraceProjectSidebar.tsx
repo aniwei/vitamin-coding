@@ -8,9 +8,9 @@ function formatProjectName(name: string): string {
 }
 
 function formatTimestamp(ts?: string): string {
-  if (!ts) return ''
+  if (!ts) {return ''}
   const d = new Date(ts)
-  if (isNaN(d.getTime())) return ''
+  if (isNaN(d.getTime())) {return ''}
   return (
     d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   )

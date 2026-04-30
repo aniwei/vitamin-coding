@@ -13,13 +13,13 @@ class APIClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ message, sessionId }),
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
   async getMessages(): Promise<Message[]> {
     const response = await fetch(`${API_BASE}/chat/messages`)
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
@@ -27,14 +27,14 @@ class APIClient {
     const response = await fetch(`${API_BASE}/chat/clear`, {
       method: 'DELETE',
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
   // 通用 GET 请求
   async get<T>(endpoint: string): Promise<T> {
     const response = await fetch(`${API_BASE}${endpoint}`)
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
@@ -42,20 +42,20 @@ class APIClient {
     const response = await fetch(`${API_BASE}/chat/interrupt`, {
       method: 'POST',
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
   // Session endpoints
   async listSessions(): Promise<Session[]> {
     const response = await fetch(`${API_BASE}/sessions`)
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
   async getCurrentSession(): Promise<Session> {
     const response = await fetch(`${API_BASE}/sessions/current`)
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
@@ -63,13 +63,13 @@ class APIClient {
     const response = await fetch(`${API_BASE}/sessions/${sessionId}/resume`, {
       method: 'POST',
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
   async exportSession(sessionId: string): Promise<unknown> {
     const response = await fetch(`${API_BASE}/sessions/${sessionId}/export`)
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
@@ -81,7 +81,7 @@ class APIClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ path }),
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
@@ -99,14 +99,14 @@ class APIClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ path, showHidden }),
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
   async getSessionMessages(sessionId: string): Promise<Message[]> {
     const response = await fetch(`${API_BASE}/sessions/${sessionId}/messages`)
     if (!response.ok) {
-      if (response.status === 404) return []
+      if (response.status === 404) {return []}
       throw new Error(`API error: ${response.statusText}`)
     }
     return response.json()
@@ -120,13 +120,13 @@ class APIClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ workingDirectory: workspace }),
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
   async getSessionModel(sessionId: string): Promise<Record<string, string>> {
     const response = await fetch(`${API_BASE}/sessions/${sessionId}/model`)
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
@@ -139,7 +139,7 @@ class APIClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(overlay),
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
@@ -147,7 +147,7 @@ class APIClient {
     const response = await fetch(`${API_BASE}/sessions/${sessionId}/model`, {
       method: 'DELETE',
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
@@ -157,13 +157,13 @@ class APIClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ provider, model }),
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
   async getSetting(): Promise<Config> {
     const response = await fetch(`${API_BASE}/setting`)
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
@@ -173,13 +173,13 @@ class APIClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify(config),
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
   async listProviders(): Promise<Provider[]> {
     const response = await fetch(`${API_BASE}/setting/providers`)
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
@@ -189,7 +189,7 @@ class APIClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ mode }),
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
@@ -199,7 +199,7 @@ class APIClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ level }),
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
@@ -209,7 +209,7 @@ class APIClient {
       headers: { 'Content-Type': 'application/json' },
       body: JSON.stringify({ level }),
     })
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
@@ -220,19 +220,19 @@ class APIClient {
       ? `${API_BASE}/sessions/files?query=${encodeURIComponent(query)}`
       : `${API_BASE}/sessions/files`
     const response = await fetch(url)
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 
   async getBridgeInfo(): Promise<{ bridgeMode: boolean; sessionId: string | null }> {
     const response = await fetch(`${API_BASE}/sessions/bridge-info`)
-    if (!response.ok) return { bridgeMode: false, sessionId: null }
+    if (!response.ok) {return { bridgeMode: false, sessionId: null }}
     return response.json()
   }
 
   async health(): Promise<{ status: string; service: string }> {
     const response = await fetch(`${API_BASE}/health`)
-    if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+    if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
     return response.json()
   }
 }

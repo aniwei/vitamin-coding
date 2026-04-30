@@ -9,7 +9,7 @@ interface BashPreviewProps {
  * Strips ANSI escape sequences.
  */
 export function BashPreview({ output, maxLines = 4 }: BashPreviewProps) {
-  if (!output) return null
+  if (!output) {return null}
 
   // Strip ANSI escape sequences
   const cleaned = output.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')

@@ -38,7 +38,7 @@ export function Approval() {
 
   // Keyboard shortcuts - MUST be before early return
   useEffect(() => {
-    if (!pendingApproval) return
+    if (!pendingApproval) {return}
 
     const handleKeyPress = (e: KeyboardEvent) => {
       if (e.key === '1') {

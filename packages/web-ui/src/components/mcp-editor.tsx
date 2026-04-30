@@ -75,7 +75,7 @@ export default function MCPEditor({
   )
 
   // Name validation schema
-  const nameSchema = z.string().regex(/^[a-zA-Z0-9\-]+$/, {
+  const nameSchema = z.string().regex(/^[a-zA-Z0-9-]+$/, {
     message: t('MCP.nameMustContainOnlyAlphanumericCharactersAndHyphens'),
   })
 

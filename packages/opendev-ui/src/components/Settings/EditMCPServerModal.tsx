@@ -49,7 +49,7 @@ export function EditMCPServerModal({ isOpen, server, onClose, onSubmit }: EditMC
     }
   }, [server])
 
-  if (!isOpen || !server || !formData) return null
+  if (!isOpen || !server || !formData) {return null}
 
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault()
@@ -130,7 +130,7 @@ export function EditMCPServerModal({ isOpen, server, onClose, onSubmit }: EditMC
 
   const removeEnvVar = (key: string) => {
     setFormData((prev) => {
-      if (!prev) return null
+      if (!prev) {return null}
       const newEnv = { ...prev.env }
       delete newEnv[key]
       return { ...prev, env: newEnv }

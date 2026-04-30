@@ -66,7 +66,7 @@ function readString(data: EventData, ...keys: string[]): string | undefined {
 // Listen for todo-related tool results that carry todo state
 ws.on('Chat.toolResult', (message) => {
   const d = asEventData(message.data)
-  if (!d) return
+  if (!d) {return}
 
   const toolName = readString(d, 'toolName')
   if (
@@ -86,7 +86,7 @@ ws.on('Chat.toolResult', (message) => {
 // Listen for status updates that may carry todo data
 ws.on('Session.statusUpdate', (message) => {
   const d = asEventData(message.data)
-  if (!d || !Array.isArray(d.todos)) return
+  if (!d || !Array.isArray(d.todos)) {return}
 
   const items: TodoItem[] = (d.todos as RawTodoItem[]).map(mapTodoItem)
   useTodoStore.getState().setItems(items, readString(d, 'planName'))

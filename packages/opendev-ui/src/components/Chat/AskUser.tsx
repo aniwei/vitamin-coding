@@ -28,11 +28,11 @@ export function AskUser() {
 
   // Keyboard shortcuts
   useEffect(() => {
-    if (!pendingAskUser) return
+    if (!pendingAskUser) {return}
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const questions = pendingAskUser.questions
-      if (!questions || currentIdx >= questions.length) return
+      if (!questions || currentIdx >= questions.length) {return}
       const q = questions[currentIdx]
 
       // Number keys to select options
@@ -43,8 +43,8 @@ export function AskUser() {
         if (q.multiSelect) {
           setSelectedOptions((prev) => {
             const next = new Set(prev)
-            if (next.has(optIdx)) next.delete(optIdx)
-            else next.add(optIdx)
+            if (next.has(optIdx)) {next.delete(optIdx)}
+            else {next.add(optIdx)}
             return next
           })
         } else {
@@ -86,10 +86,10 @@ export function AskUser() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [pendingAskUser, currentIdx, selectedOptions, showOther, otherText])
 
-  if (!pendingAskUser) return null
+  if (!pendingAskUser) {return null}
 
   const questions = pendingAskUser.questions
-  if (!questions || questions.length === 0) return null
+  if (!questions || questions.length === 0) {return null}
 
   const currentQuestion: AskUserQuestion = questions[currentIdx]
   const isLastQuestion = currentIdx === questions.length - 1
@@ -98,8 +98,8 @@ export function AskUser() {
     if (currentQuestion.multiSelect) {
       setSelectedOptions((prev) => {
         const next = new Set(prev)
-        if (next.has(optIdx)) next.delete(optIdx)
-        else next.add(optIdx)
+        if (next.has(optIdx)) {next.delete(optIdx)}
+        else {next.add(optIdx)}
         return next
       })
       setShowOther(false)

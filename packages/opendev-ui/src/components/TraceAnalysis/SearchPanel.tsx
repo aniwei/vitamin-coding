@@ -42,9 +42,9 @@ function matchesQuery(text: string, query: string): boolean {
 }
 
 function highlightMatch(text: string, query: string): React.ReactNode {
-  if (!query) return text
+  if (!query) {return text}
   const idx = text.toLowerCase().indexOf(query.toLowerCase())
-  if (idx === -1) return text
+  if (idx === -1) {return text}
   const before = text.slice(0, idx)
   const match = text.slice(idx, idx + query.length)
   const after = text.slice(idx + query.length)
@@ -58,18 +58,18 @@ function highlightMatch(text: string, query: string): React.ReactNode {
 }
 
 function contentBlocksToText(content: string | ContentBlock[] | undefined): string {
-  if (!content) return ''
-  if (typeof content === 'string') return content
+  if (!content) {return ''}
+  if (typeof content === 'string') {return content}
   return content
     .map((block) => {
-      if (block.type === 'text') return block.text || ''
-      if (block.type === 'thinking') return block.thinking || ''
+      if (block.type === 'text') {return block.text || ''}
+      if (block.type === 'thinking') {return block.thinking || ''}
       if (block.type === 'tool_use')
-        return `${block.name || ''} ${JSON.stringify(block.input || {})}`
+        {return `${block.name || ''} ${JSON.stringify(block.input || {})}`}
       if (block.type === 'tool_result') {
         const c = block.content
-        if (typeof c === 'string') return c
-        if (Array.isArray(c)) return c.map((b) => b.text || '').join(' ')
+        if (typeof c === 'string') {return c}
+        if (Array.isArray(c)) {return c.map((b) => b.text || '').join(' ')}
       }
       return ''
     })
@@ -93,30 +93,30 @@ function getFullContent(data: AnyNodeData): string {
 }
 
 function searchNodeData(data: AnyNodeData, query: string): string | null {
-  if (matchesQuery(data.preview, query)) return data.preview
+  if (matchesQuery(data.preview, query)) {return data.preview}
   const toolNames = getToolNames(data)
   for (const name of toolNames) {
-    if (matchesQuery(name, query)) return name
+    if (matchesQuery(name, query)) {return name}
   }
-  if (matchesQuery(data.eventType, query)) return data.eventType
+  if (matchesQuery(data.eventType, query)) {return data.eventType}
   if (data.eventType === 'tool-call' || data.eventType === 'task-call') {
     const tools = (data as ToolNodeData | TaskNodeData).tools
     for (const tool of tools) {
       if (tool.result && matchesQuery(tool.result, query))
-        return truncateAround(tool.result, query, 80)
+        {return truncateAround(tool.result, query, 80)}
       const inputStr = JSON.stringify(tool.input)
-      if (matchesQuery(inputStr, query)) return truncateAround(inputStr, query, 80)
+      if (matchesQuery(inputStr, query)) {return truncateAround(inputStr, query, 80)}
     }
   }
   const fullText = getFullContent(data)
-  if (fullText && matchesQuery(fullText, query)) return truncateAround(fullText, query, 80)
+  if (fullText && matchesQuery(fullText, query)) {return truncateAround(fullText, query, 80)}
   return null
 }
 
 function truncateAround(text: string, query: string, maxLen: number): string {
-  if (text.length <= maxLen) return text
+  if (text.length <= maxLen) {return text}
   const idx = text.toLowerCase().indexOf(query.toLowerCase())
-  if (idx === -1) return text.slice(0, maxLen)
+  if (idx === -1) {return text.slice(0, maxLen)}
   const start = Math.max(0, idx - Math.floor((maxLen - query.length) / 2))
   const slice = text.slice(start, start + maxLen)
   return (start > 0 ? '\u2026' : '') + slice + (start + maxLen < text.length ? '\u2026' : '')
@@ -127,7 +127,7 @@ export function SearchPanel({ nodes, onSelectNode }: Props) {
 
   const results = useMemo<SearchResult[]>(() => {
     const q = query.trim()
-    if (!q) return []
+    if (!q) {return []}
     const out: SearchResult[] = []
 
     for (const node of nodes) {

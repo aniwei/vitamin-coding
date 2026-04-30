@@ -22,6 +22,8 @@
     "*.md",
     "**/*.test.ts",
     "**/*.spec.ts",
-    "packages/cli"
+    "packages/cli/**",
+    "packages/web-ui/**",
+    "packages/opendev-ui/**"
   ]
 }

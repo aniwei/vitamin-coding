@@ -55,7 +55,7 @@ export const useTraceStore = create<TraceState>((set, get) => ({
 
   selectSession: async (sessionId: string) => {
     const { selectedProject } = get()
-    if (!selectedProject) return
+    if (!selectedProject) {return}
 
     set({ selectedSessionId: sessionId, loading: true, error: null })
     try {

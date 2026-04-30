@@ -49,7 +49,7 @@ export const MessageItem = React.memo(function MessageItem({
 
   // Render thinking blocks (only when thinking level is not Off)
   if (message.role === 'thinking') {
-    if (thinkingLevel === 'Off') return null
+    if (thinkingLevel === 'Off') {return null}
     const isLastThinking = isLoading && isLastMessage
     return (
       <ThinkingBlock

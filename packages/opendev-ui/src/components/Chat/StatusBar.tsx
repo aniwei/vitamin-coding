@@ -2,14 +2,14 @@ import { useChatStore } from '../../stores/chat'
 import { useStatusStore } from '../../stores/status'
 
 function formatTokens(n: number): string {
-  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(1)}M`
-  if (n >= 1_000) return `${(n / 1_000).toFixed(1)}k`
+  if (n >= 1_000_000) {return `${(n / 1_000_000).toFixed(1)}M`}
+  if (n >= 1_000) {return `${(n / 1_000).toFixed(1)}k`}
   return String(n)
 }
 
 function contextColor(pct: number): string {
-  if (pct >= 90) return 'text-red-400'
-  if (pct >= 70) return 'text-yellow-400'
+  if (pct >= 90) {return 'text-red-400'}
+  if (pct >= 70) {return 'text-yellow-400'}
   return 'text-text-300'
 }
 
@@ -19,7 +19,7 @@ export function StatusBar() {
   const currentSessionId = useChatStore((s) => s.currentSessionId)
   const runningSessions = useChatStore((s) => s.runningSessions)
 
-  if (!currentSessionId) return null
+  if (!currentSessionId) {return null}
 
   const runningCount = runningSessions.size
 

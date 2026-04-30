@@ -29,8 +29,8 @@ function formatCost(cost: number): string {
 
 function getContextColor(pct: number): string {
   const remaining = 100 - pct
-  if (remaining < 25) return 'bg-red-500/10 text-red-600 border-red-500/20'
-  if (remaining < 50) return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
+  if (remaining < 25) {return 'bg-red-500/10 text-red-600 border-red-500/20'}
+  if (remaining < 50) {return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'}
   return 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'
 }
 
@@ -98,7 +98,7 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
   }, [cycleThinkingLevel, cycleAutonomy, toggleSidebar, onOpenCommandPalette])
 
   const getProjectName = (path: string) => {
-    if (!path) return ''
+    if (!path) {return ''}
     const parts = path.replace(/\/$/, '').split('/')
     return parts[parts.length - 1] || path
   }

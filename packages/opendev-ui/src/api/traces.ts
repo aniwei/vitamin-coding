@@ -24,7 +24,7 @@ function normalizeTraceMessage(raw: any): OpenDevChatMessage {
 
 export async function fetchTraceProjects(): Promise<string[]> {
   const response = await fetch(`${API_BASE}/traces/projects`)
-  if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+  if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
   return response.json()
 }
 
@@ -32,7 +32,7 @@ export async function fetchTraceSessions(project: string): Promise<TraceSessionI
   const response = await fetch(
     `${API_BASE}/traces/projects/${encodeURIComponent(project)}/sessions`,
   )
-  if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+  if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
   const raw = await response.json()
   return Array.isArray(raw) ? raw.map(normalizeTraceSession) : []
 }
@@ -44,7 +44,7 @@ export async function fetchTraceSession(
   const response = await fetch(
     `${API_BASE}/traces/projects/${encodeURIComponent(project)}/sessions/${encodeURIComponent(sessionId)}`,
   )
-  if (!response.ok) throw new Error(`API error: ${response.statusText}`)
+  if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
   const raw = await response.json()
   return Array.isArray(raw) ? raw.map(normalizeTraceMessage) : []
 }

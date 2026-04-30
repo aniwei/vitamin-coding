@@ -148,10 +148,10 @@ export function SessionsSidebar() {
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) return 'Just now'
-    if (diffMins < 60) return `${diffMins}m ago`
-    if (diffHours < 24) return `${diffHours}h ago`
-    if (diffDays < 7) return `${diffDays}d ago`
+    if (diffMins < 1) {return 'Just now'}
+    if (diffMins < 60) {return `${diffMins}m ago`}
+    if (diffHours < 24) {return `${diffHours}h ago`}
+    if (diffDays < 7) {return `${diffDays}d ago`}
     return date.toLocaleDateString()
   }
 
@@ -208,7 +208,7 @@ export function SessionsSidebar() {
   }
 
   const confirmDeleteSession = async () => {
-    if (!deleteSessionId) return
+    if (!deleteSessionId) {return}
 
     try {
       const response = await fetch(`/api/sessions/${deleteSessionId}`, { method: 'DELETE' })
@@ -238,7 +238,7 @@ export function SessionsSidebar() {
   }
 
   const confirmDelete = async () => {
-    if (!deleteWorkspace) return
+    if (!deleteWorkspace) {return}
 
     try {
       const currentSid = useChatStore.getState().currentSessionId
@@ -348,7 +348,7 @@ export function SessionsSidebar() {
             {/* New Workspace Button (Collapsed) */}
             <button
               onClick={() => {
-                if (currentSessionIsEmpty) return
+                if (currentSessionIsEmpty) {return}
                 toggleSidebar()
                 setTimeout(() => setIsNewSessionOpen(true), 100)
               }}

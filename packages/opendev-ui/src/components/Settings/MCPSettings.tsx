@@ -145,7 +145,7 @@ export function MCPSettings() {
   }
 
   const handleDelete = async (name: string) => {
-    if (!confirm(`Remove "${name}"? This action cannot be undone.`)) return
+    if (!confirm(`Remove "${name}"? This action cannot be undone.`)) {return}
 
     try {
       await deleteMCPServer(name)
