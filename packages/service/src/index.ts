@@ -5,6 +5,8 @@ export { DebugBridge } from './debug-bridge'
 export { InboundRouter } from './inbound-router'
 export { routeSessionEvent } from './session-event-router'
 export { routeDebugEvent } from './debug-event-router'
+export { validateWebSocketMessage, isValidWebSocketMessage } from './ws-protocol'
+export type { WebSocketMessageValidation } from './ws-protocol'
 export { serializeSessionMessages } from './message-serializer'
 export type { SerializedMessage, SerializedToolCall } from './message-serializer'
 export type {
@@ -20,6 +22,7 @@ export type {
   ChatApprovalData,
   ChatAskUserResponseData,
   ChatPlanApprovalResponseData,
+  ChatReviewResponseData,
   SessionSubscribeData,
   DebuggerCommandData,
   DebuggerSetBreakpointData,

@@ -32,7 +32,7 @@ interface FileChangesState {
   isLoading: boolean
   error: string | null
 
-  // Actions
+  // 操作方法
   loadFileChanges: (sessionId: string) => Promise<void>
   clearChanges: () => void
 }

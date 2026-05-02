@@ -105,51 +105,51 @@ Phase 4 (依赖 Phase 2)
 
 ## 关键设计决策
 
-| # | 决策 | 选择 | 理由 |
-|---|------|------|------|
-| D1 | 代码复用方式 | 参考设计，TypeScript 全新实现 | Vitamin 严格 ESM + TS 规范不允许 Python 混合；模块化远优于 Hermes 单体 |
-| D2 | MemoryProvider 外部数量 | 至多 1 个 | 照搬 Hermes 设计 — 防止工具 schema 膨胀和后端冲突 |
-| D3 | 闭环学习实现方式 | 通过 Hook 系统 | Vitamin 31+ Hook 点远强于 Hermes 插件 hook，不必硬编码到 Agent 核心 |
-| D4 | Gateway 放置 | 新建 `@vitamin/gateway` 包 | 遵循分层原则，不污染 `@vitamin/service` |
-| D5 | Swarm 是否整合 | 保持不变 | Vitamin 5 种协作模式已远超 Hermes `delegate_task` |
-| D6 | Budget 集成位置 | Agent Work-Loop 内部 | 与 steering/followUp 同级，自然位置 |
-| D7 | 编排器是否整合 | 保持不变 | Vitamin 的 LLM 驱动编排器 Hermes 完全没有 |
-| D8 | Skill 存储格式 | Markdown 文件 | 兼容 Hermes agentskills.io 标准，便于人类阅读/编辑 |
-| D9 | FTS5 实现 | better-sqlite3 + FTS5 扩展 | 成熟方案，与 Hermes hermes_state.py 一致 |
-| D10 | RL 训练能力 | 暂不引入 | 非 Vitamin 当前阶段需求，可后续评估 |
+| #   | 决策                    | 选择                          | 理由                                                                   |
+| --- | ----------------------- | ----------------------------- | ---------------------------------------------------------------------- |
+| D1  | 代码复用方式            | 参考设计，TypeScript 全新实现 | Vitamin 严格 ESM + TS 规范不允许 Python 混合；模块化远优于 Hermes 单体 |
+| D2  | MemoryProvider 外部数量 | 至多 1 个                     | 照搬 Hermes 设计 — 防止工具 schema 膨胀和后端冲突                      |
+| D3  | 闭环学习实现方式        | 通过 Hook 系统                | Vitamin 31+ Hook 点远强于 Hermes 插件 hook，不必硬编码到 Agent 核心    |
+| D4  | Gateway 放置            | 新建 `@vitamin/gateway` 包    | 遵循分层原则，不污染 `@vitamin/service`                                |
+| D5  | Swarm 是否整合          | 保持不变                      | Vitamin 5 种协作模式已远超 Hermes `delegate_task`                      |
+| D6  | Budget 集成位置         | Agent Work-Loop 内部          | 与 steering/followUp 同级，自然位置                                    |
+| D7  | 编排器是否整合          | 保持不变                      | Vitamin 的 LLM 驱动编排器 Hermes 完全没有                              |
+| D8  | Skill 存储格式          | Markdown 文件                 | 兼容 Hermes agentskills.io 标准，便于人类阅读/编辑                     |
+| D9  | FTS5 实现               | better-sqlite3 + FTS5 扩展    | 成熟方案，与 Hermes hermes_state.py 一致                               |
+| D10 | RL 训练能力             | 暂不引入                      | 非 Vitamin 当前阶段需求，可后续评估                                    |
 
 ## 风险评估
 
-| 风险 | 影响 | 概率 | 缓解 |
-|------|------|------|------|
-| FTS5 搜索性能 (大量会话) | 搜索延迟 | 中 | 增量索引 + 分区策略 |
-| Skill 自改进死循环 | 无限修订 | 低 | 改进次数上限 + 版本回退 |
-| Gateway 平台 API 变更 | 适配器失效 | 中 | 独立包隔离，最小化核心影响 |
-| 记忆 Nudge 过于频繁 | 干扰 Agent 执行 | 中 | 可配置频率 + 冷却期 |
-| Provider 回退链延迟 | 用户感知变慢 | 低 | 并行探测 + 超时控制 |
+| 风险                     | 影响            | 概率 | 缓解                       |
+| ------------------------ | --------------- | ---- | -------------------------- |
+| FTS5 搜索性能 (大量会话) | 搜索延迟        | 中   | 增量索引 + 分区策略        |
+| Skill 自改进死循环       | 无限修订        | 低   | 改进次数上限 + 版本回退    |
+| Gateway 平台 API 变更    | 适配器失效      | 中   | 独立包隔离，最小化核心影响 |
+| 记忆 Nudge 过于频繁      | 干扰 Agent 执行 | 中   | 可配置频率 + 冷却期        |
+| Provider 回退链延迟      | 用户感知变慢    | 低   | 并行探测 + 超时控制        |
 
 ## 成功度量
 
-| 指标 | Phase 1 目标 | Phase 2 目标 |
-|------|-------------|-------------|
-| Skill 创建率 | 复杂任务后 40%+ 自主创建 Skill | — |
-| Skill 复用率 | 相似任务命中率 60%+ | — |
-| 跨会话召回准确率 | 相关结果 Top-5 准确率 70%+ | — |
-| Budget 警告遵从率 | Agent 在 90% 警告后 2 轮内结束 80%+ | — |
-| Provider 回退成功率 | — | 首 Provider 失败后 90%+ 成功回退 |
-| Gateway 消息延迟 P99 | — | < 3s (不含 LLM 推理) |
+| 指标                 | Phase 1 目标                        | Phase 2 目标                     |
+| -------------------- | ----------------------------------- | -------------------------------- |
+| Skill 创建率         | 复杂任务后 40%+ 自主创建 Skill      | —                                |
+| Skill 复用率         | 相似任务命中率 60%+                 | —                                |
+| 跨会话召回准确率     | 相关结果 Top-5 准确率 70%+          | —                                |
+| Budget 警告遵从率    | Agent 在 90% 警告后 2 轮内结束 80%+ | —                                |
+| Provider 回退成功率  | —                                   | 首 Provider 失败后 90%+ 成功回退 |
+| Gateway 消息延迟 P99 | —                                   | < 3s (不含 LLM 推理)             |
 
 ## 不整合的部分
 
 以下 Hermes 功能不在整合范围内，附理由：
 
-| 功能 | 理由 |
-|------|------|
-| RL 训练 / Atropos | 非 Vitamin 当前阶段需求 |
-| 批量轨迹生成 | 同上 |
-| OpenClaw 迁移 | Hermes 特有的历史包袱 |
-| Singularity 后端 | HPC 场景极少，优先级最低 |
-| 语音模式 (TTS/STT) | 独立能力域，可后续评估 |
-| ACP IDE 集成 | Vitamin 已有 `@vitamin/service` + VS Code 扩展路线 |
-| 主题/皮肤引擎 | UI 层面，与核心能力无关 |
-| Profile 多实例 | Vitamin 架构天然支持多实例 |
+| 功能               | 理由                                               |
+| ------------------ | -------------------------------------------------- |
+| RL 训练 / Atropos  | 非 Vitamin 当前阶段需求                            |
+| 批量轨迹生成       | 同上                                               |
+| OpenClaw 迁移      | Hermes 特有的历史包袱                              |
+| Singularity 后端   | HPC 场景极少，优先级最低                           |
+| 语音模式 (TTS/STT) | 独立能力域，可后续评估                             |
+| ACP IDE 集成       | Vitamin 已有 `@vitamin/service` + VS Code 扩展路线 |
+| 主题/皮肤引擎      | UI 层面，与核心能力无关                            |
+| Profile 多实例     | Vitamin 架构天然支持多实例                         |

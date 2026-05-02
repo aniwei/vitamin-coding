@@ -1,8 +1,13 @@
-import { describe, expect, it } from 'vitest'
+import { afterEach, describe, expect, it, vi } from 'vitest'
+import { ToolError } from '@vitamin/shared'
 import { htmlToText, htmlToMarkdown } from '../src/web/html-to-text'
 import { validateUrl } from '../src/web/url-validator'
 import { createWebFetch } from '../src/web/fetch'
 import { createWebSearch } from '../src/web/search'
+
+afterEach(() => {
+  vi.unstubAllGlobals()
+})
 
 // ─── URL Validator ─────────────────────────────────────────────────────────
 
@@ -20,6 +25,7 @@ describe('url-validator', () => {
 
   it('rejects file: protocol', () => {
     expect(() => validateUrl('file:///etc/passwd')).toThrow('Blocked protocol')
+    expect(() => validateUrl('file:///etc/passwd')).toThrow(ToolError)
   })
 
   it('rejects ftp: protocol', () => {
@@ -68,6 +74,21 @@ describe('url-validator', () => {
 
   it('rejects invalid URL', () => {
     expect(() => validateUrl('not-a-url')).toThrow('Invalid URL')
+  })
+
+  it('returns typed metadata for blocked private URLs', () => {
+    try {
+      validateUrl('http://192.168.1.1')
+    } catch (error) {
+      expect(error).toBeInstanceOf(ToolError)
+      expect(error).toMatchObject({
+        code: 'TOOL_WEB_BLOCKED_PRIVATE_IP',
+        metadata: {
+          url: 'http://192.168.1.1',
+          hostname: '192.168.1.1',
+        },
+      })
+    }
   })
 })
 
@@ -249,6 +270,30 @@ describe('web_search', () => {
   })
 
   it('returns search results for a common query', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        return new Response(
+          `
+          <html>
+            <body>
+              <div class="snippet" data-type="web">
+                <a href="https://www.typescriptlang.org/" class="result svelte-abc">
+                  <div class="title search-snippet-title" title="TypeScript: JavaScript With Syntax For Types."></div>
+                </a>
+                <div class="generic-snippet"><div class="content">TypeScript extends JavaScript by adding types.</div></div>
+              </div>
+            </body>
+          </html>
+          `,
+          {
+            status: 200,
+            headers: { 'Content-Type': 'text/html' },
+          },
+        )
+      }),
+    )
+
     const result = await tool.execute({
       id: 's1',
       params: { query: 'TypeScript programming language', limit: 5 },

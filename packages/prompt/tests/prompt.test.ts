@@ -7,6 +7,8 @@ import {
   HttpPromptProvider,
   PromptManager,
   PromptCache,
+  appendPromptSection,
+  assemblePromptSections,
   createPromptProvider,
   assembleGenericSubAgentPrompt,
   assembleSubAgentPrompt,
@@ -229,6 +231,69 @@ describe('PromptManager', () => {
     expect(result).toContain('Review Guidelines')
   })
 
+  it('assembleSections returns a cacheable static prompt assembly', async () => {
+    const assembly = await manager.assembleSections()
+
+    expect(assembly.systemPrompt).toContain('Identity & Environment')
+    expect(assembly.staticPrefix).toBe(assembly.systemPrompt)
+    expect(assembly.dynamicTail).toBe('')
+    expect(assembly.sections).toHaveLength(1)
+    expect(assembly.sections[0]).toMatchObject({
+      key: 'lead-guidance',
+      layer: 'static',
+      cacheable: true,
+      source: 'builtin',
+      priority: 0,
+    })
+    expect(assembly.diagnostics.sectionCount).toBe(1)
+    expect(assembly.diagnostics.sections[0]?.fingerprint).toBe(assembly.sections[0]?.fingerprint)
+  })
+
+  it('assemblePromptSections separates cacheable prefix from dynamic tail', () => {
+    const assembly = assemblePromptSections([
+      {
+        key: 'runtime',
+        content: 'runtime status',
+        layer: 'dynamic',
+        cacheable: false,
+        source: 'test',
+        priority: 20,
+      },
+      {
+        key: 'base',
+        content: 'base rules',
+        layer: 'static',
+        cacheable: true,
+        source: 'test',
+        priority: 0,
+      },
+      {
+        key: 'session',
+        content: 'session policy',
+        layer: 'session',
+        cacheable: true,
+        source: 'test',
+        priority: 10,
+      },
+    ])
+
+    expect(assembly.systemPrompt).toBe('base rules\n\nsession policy\n\nruntime status')
+    expect(assembly.staticPrefix).toBe('base rules\n\nsession policy')
+    expect(assembly.dynamicTail).toBe('runtime status')
+
+    const appended = appendPromptSection(assembly, {
+      key: 'late-dynamic',
+      content: 'latest context',
+      layer: 'dynamic',
+      cacheable: false,
+      source: 'test',
+      priority: 30,
+    })
+
+    expect(appended.systemPrompt).toContain('latest context')
+    expect(appended.dynamicTail).toBe('runtime status\n\nlatest context')
+  })
+
   it('load returns a specific prompt', async () => {
     const content = await manager.load('lesson/session-end-learning')
     expect(content).toContain('learn')
@@ -266,6 +331,32 @@ describe('PromptManager', () => {
     expect(result).toContain('你是审查子代理')
     expect(result).toContain('检查登录流程')
     expect(result).toContain('src/auth.ts')
+  })
+
+  it('assemblePresetSections returns subagent profile metadata', async () => {
+    const assembly = await manager.assemblePresetSections({
+      preset: 'subagent',
+      agentName: 'reviewer',
+      profile: {
+        name: 'reviewer',
+        taskTypes: ['review'],
+        capabilities: ['review'],
+        systemPromptTemplate: '你是审查子代理。任务：{task_title}。文件：{task_files}',
+      },
+      context: {
+        taskTitle: '检查登录流程',
+        taskFiles: ['src/auth.ts'],
+      },
+    })
+
+    expect(assembly.sections).toHaveLength(1)
+    expect(assembly.sections[0]).toMatchObject({
+      key: 'subagent:reviewer',
+      layer: 'static',
+      cacheable: true,
+      source: 'profile:reviewer',
+    })
+    expect(assembly.systemPrompt).toContain('检查登录流程')
   })
 
   it('assemblePreset supports generic subagent preset fallback', async () => {

@@ -30,42 +30,43 @@ type WebSearchArgs = z.infer<typeof WebSearchArgsSchema>
 function parseSearchResults(html: string, limit: number): SearchResult[] {
   const results: SearchResult[] = []
 
-  // Brave Search results are in <div class="snippet ..." data-type="web">
+  // Brave Search 结果在 <div class="snippet ..." data-type="web"> 中
   const resultBlocks = html.split(/data-type="web"/)
 
-  for (let i = 1; i < resultBlocks.length && results.length < limit; i++) {
-    const block = resultBlocks[i]!
+  for (const block of resultBlocks.slice(1)) {
+    if (results.length >= limit) {
+      break
+    }
 
-    // Extract URL from the first <a href="..."> in the result block
+    // 从第一个 <a href="..."> 提取 URL
     const urlMatch = block.match(/<a\s+href="(https?:\/\/[^"]+)"[^>]*class="[^"]*svelte-/)
-    if (!urlMatch) {
+    const url = urlMatch?.[1]
+    if (!url) {
       continue
     }
 
-    const url = urlMatch[1]!
-
-    // Extract title from the title attribute of search-snippet-title
+    // 从 search-snippet-title 的 title 属性提取标题
     const titleAttrMatch = block.match(
       /class="title\s+search-snippet-title[^"]*"[^>]*title="([^"]*)"/,
     )
     let title = ''
-    if (titleAttrMatch) {
-      title = titleAttrMatch[1]!
+    if (titleAttrMatch?.[1]) {
+      title = titleAttrMatch[1]
     } else {
-      // Fallback: extract inner text of search-snippet-title
+      // 回退策略：提取 search-snippet-title 的内部文本
       const titleInnerMatch = block.match(
         /class="title\s+search-snippet-title[^"]*"[^>]*>([\s\S]*?)<\/div>/,
       )
-      if (titleInnerMatch) {
-        title = htmlToText(titleInnerMatch[1]!).trim()
+      if (titleInnerMatch?.[1]) {
+        title = htmlToText(titleInnerMatch[1]).trim()
       }
     }
 
-    // Extract snippet from generic-snippet content
+    // 从 generic-snippet 内容提取摘要文本
     const snippetMatch = block.match(
       /class="generic-snippet[^"]*"[\s\S]*?class="content[^"]*"[^>]*>([\s\S]*?)<\/div>/,
     )
-    const snippet = snippetMatch ? htmlToText(snippetMatch[1]!).trim() : ''
+    const snippet = snippetMatch?.[1] ? htmlToText(snippetMatch[1]).trim() : ''
 
     if (url && title) {
       results.push({ title, url, snippet })
@@ -82,8 +83,7 @@ function formatResults(query: string, results: SearchResult[]): string {
 
   const lines = [`Search results for: "${query}"\n`]
 
-  for (let i = 0; i < results.length; i++) {
-    const r = results[i]!
+  for (const [i, r] of results.entries()) {
     lines.push(`${i + 1}. ${r.title}`)
     lines.push(`   ${r.url}`)
     if (r.snippet) {

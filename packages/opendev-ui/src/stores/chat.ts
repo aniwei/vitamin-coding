@@ -67,7 +67,7 @@ function expandToolCalls(
       timestamp,
       depth: depth > 0 ? depth : undefined,
     })
-    // Recurse into nested tool calls
+    // 递归展开嵌套工具调用
     if (tc.nestedToolCalls && tc.nestedToolCalls.length > 0) {
       messages.push(...expandToolCalls(tc.nestedToolCalls, timestamp, depth + 1))
     }
@@ -79,7 +79,7 @@ function expandToolCalls(
 function expandMessages(rawMessages: Message[]): Message[] {
   const expanded: Message[] = []
   for (const msg of rawMessages) {
-    // Emit thinking traces before content (matches TUI hydration order)
+    // 在内容之前先输出思考轨迹（与 TUI 水化顺序一致）
     if (msg.thinkingTrace && msg.thinkingTrace.trim()) {
       expanded.push({
         role: 'thinking',
@@ -122,10 +122,10 @@ function expandMessages(rawMessages: Message[]): Message[] {
 // ─── Store Interface ────────────────────────────────────────────────────────
 
 interface ChatState {
-  // Per-session state (the big change)
+  // 每个会话的独立状态
   sessionStates: Record<string, PerSessionState>
 
-  // Global state
+  // 全局状态
   isConnected: boolean
   currentSessionId: string | null
   hasWorkspace: boolean
@@ -135,7 +135,7 @@ interface ChatState {
   sessionListVersion: number
   sidebarCollapsed: boolean
 
-  // Actions
+  // 操作方法
   loadSession: (sessionId: string) => Promise<void>
   sendMessage: (content: string) => Promise<void>
   clearChat: () => Promise<void>
@@ -177,13 +177,13 @@ export const useChatStore = create<ChatState>((set, get) => ({
 
     const existing = get().sessionStates[sessionId]
     if (existing && existing.messages.length > 0) {
-      // Instant switch — already cached
+      // 已缓存，直接切换
       console.log(
         `[Frontend] Session ${sessionId} cached (${existing.messages.length} msgs), instant switch`,
       )
       set({ currentSessionId: sessionId, hasWorkspace: true })
     } else {
-      // Need to fetch messages
+      // 需要请求消息
       set((state) => ({
         currentSessionId: sessionId,
         hasWorkspace: true,
@@ -210,10 +210,10 @@ export const useChatStore = create<ChatState>((set, get) => ({
       }
     }
 
-    // Fire-and-forget: resume on backend for config context
+    // 异步发起：在后端恢复上下文
     api.resumeSession(sessionId).catch(() => {})
 
-    // Refresh status after session change
+    // 会话切换后刷新状态
     try {
       const configData = await api.getSetting()
       set({
@@ -445,7 +445,7 @@ ws.on('Chat.userMessage', (message) => {
   const content = message.data.content
   const sessionState = getSessionState(useChatStore.getState().sessionStates, sid)
   const msgs = sessionState.messages
-  // Dedup: skip if last user message already has this content (optimistic add from sendMessage)
+  // 去重：如果最后一条用户消息已有相同内容（来自 sendMessage 的乐观添加）则跳过
   const lastUserMsg = [...msgs].reverse().find((m) => m.role === 'user')
   if (lastUserMsg && lastUserMsg.content === content) {return}
   useChatStore.setState((state) => ({
@@ -621,7 +621,7 @@ ws.on('Chat.thinkingBlock', (message) => {
     const sessionState = getSessionState(state.sessionStates, sid)
     const msgs = sessionState.messages
 
-    // If the block starts, always create a new thinking message.
+    // 如果块开始，始终创建一个新的思考消息
     if (isBlockStart) {
       return patchSession(state, sid, {
         messages: [
@@ -635,7 +635,7 @@ ws.on('Chat.thinkingBlock', (message) => {
       })
     }
 
-    // Otherwise, append to the last thinking message if it exists and is active
+    // 否则，将内容追加到最后一个活跃的思考消息
     const lastIdx = msgs.length - 1
     if (lastIdx >= 0 && msgs[lastIdx].role === 'thinking' && msgs[lastIdx].metadata?.isActive) {
       const updated = [...msgs]
@@ -650,7 +650,7 @@ ws.on('Chat.thinkingBlock', (message) => {
       return patchSession(state, sid, { messages: updated })
     }
 
-    // No active thinking block — create one
+    // 没有活跃的思考块 — 创建一个新的
     return patchSession(state, sid, {
       messages: [
         ...msgs,
@@ -673,6 +673,34 @@ ws.on('Session.statusUpdate', (message) => {
   useChatStore.setState({
     status: newStatus,
     thinkingLevel: newStatus.thinkingLevel || useChatStore.getState().thinkingLevel,
+  })
+})
+
+ws.on('Chat.toolExecutionEvent', (message) => {
+  const sid = resolveSessionId(message.data)
+  if (!sid) {return}
+
+  const event = message.data.event
+  if (!event || event.type !== 'progress') {return}
+
+  useChatStore.setState((state) => {
+    const sessionState = getSessionState(state.sessionStates, sid)
+    const msgs = sessionState.messages
+
+    for (let i = msgs.length - 1; i >= 0; i--) {
+      if (msgs[i].role === 'tool_call' && msgs[i].toolCallId === event.toolCallId) {
+        const existing = typeof msgs[i].toolResult === 'string' ? msgs[i].toolResult : ''
+        const next = existing ? `${existing}\n${event.update}` : event.update
+        const updatedMessages = [...msgs]
+        updatedMessages[i] = {
+          ...msgs[i],
+          toolResult: next,
+        }
+        return patchSession(state, sid, { messages: updatedMessages })
+      }
+    }
+
+    return {}
   })
 })
 
@@ -705,7 +733,7 @@ ws.on('Session.activity', (message) => {
   })
   useChatStore.getState().bumpSessionList()
 
-  // Toast notification when a non-current session completes
+  // 非当前会话完成时发出 Toast 通知
   if (!isRunning && sessionId !== useChatStore.getState().currentSessionId) {
     useToastStore.getState().addToast(`Session ${sessionId.slice(0, 8)} completed`, 'success')
   }
@@ -839,7 +867,7 @@ ws.on('Chat.nestedToolResult', (message) => {
     const sessionState = getSessionState(state.sessionStates, sid)
     const msgs = sessionState.messages
 
-    // Find the last matching nested tool_call without a result
+    // 找到最后一个匹配的嵌套工具调用（无结果）
     for (let i = msgs.length - 1; i >= 0; i--) {
       if (
         msgs[i].role === 'tool_call' &&

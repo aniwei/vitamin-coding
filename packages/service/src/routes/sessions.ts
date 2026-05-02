@@ -47,6 +47,16 @@ export function createSessionsRoute(context: CodingService): Hono {
     })
   })
 
+  app.get('/current/context', (c) => {
+    const session = context.getActiveSession()
+    if (!session) {
+      return c.json({ status: 'error', message: 'no active session' }, 404)
+    }
+    return c.json(session.getContextDiagnostics({
+      includePrompt: c.req.query('includePrompt') === 'true',
+    }))
+  })
+
   app.get('/bridge-info', (c) => {
     const session = context.getActiveSession()
     return c.json({
@@ -61,6 +71,16 @@ export function createSessionsRoute(context: CodingService): Hono {
       return c.json([], 404)
     }
     return c.json(serializeSessionMessages(session))
+  })
+
+  app.get('/:id/context', (c) => {
+    const session = context.getSession(c.req.param('id'))
+    if (!session) {
+      return c.json({ status: 'error', message: 'session not found' }, 404)
+    }
+    return c.json(session.getContextDiagnostics({
+      includePrompt: c.req.query('includePrompt') === 'true',
+    }))
   })
 
   app.post('/:id/resume', (c) => {

@@ -25,3 +25,7 @@ export function safeCreateHook(
 export function isHookEnabled(hookName: string, disabledHooks: string[]): boolean {
   return !disabledHooks.includes(hookName)
 }
+
+export function safeHookEnabled(hookName: string, disabledHooks: string[]): boolean {
+  return isHookEnabled(hookName, disabledHooks)
+}

@@ -74,7 +74,7 @@ export interface MCPServersResponse {
   servers: MCPServer[]
 }
 
-// WebSocket event types
+// WebSocket 事件类型
 export interface MCPStatusChangedEvent {
   type: 'mcp:status_changed'
   data: {

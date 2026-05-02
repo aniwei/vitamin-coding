@@ -15,19 +15,38 @@
 
 ### 参数解析（parse-cli.ts）
 
-`parseCLI(argv)` 解析命令行参数：
-- `-p` / `--print`：Print 模式（单次执行文本输出）
-- `-i` / `--interactive`：Interactive 模式（REPL）
-- `--json`：JSON 模式
-- `--rpc`：JSON-RPC 模式
-- `-m` / `--model`：指定模型
-- `-c` / `--config`：指定配置文件路径
-- `-d` / `--dir`：指定工作目录
-- `-v` / `--verbose`：详细日志
-- `--max-tokens`：最大 token 数
-- `--continue`：继续上次会话
-- `--inspect`：启用调试（连接 devtools）
-- 子命令：`run`（默认）/ `doctor`（环境诊断）/ `config`（配置管理）/ `auth`（认证管理）
+`parseCLI(argv: string[])` 返回 `{ options, subCommand, subCommandArgs }`：
+
+**输出模式标志**：
+
+| 标志               | 模式        | 说明                                    |
+| ------------------ | ----------- | --------------------------------------- |
+| 无标志             | interactive | 默认交互式 REPL                         |
+| `-p` / `--print`   | print       | 单次执行，文本流式输出到 stdout         |
+| `--json`           | json        | 单次执行，JSON 事件流输出               |
+| `--rpc`            | rpc         | JSON-RPC stdin/stdout（供父进程控制）   |
+
+**其他参数**：
+
+- `-m` / `--model`：覆盖默认模型 ID
+- `-c` / `--config`：指定配置文件路径（否则按标准查找）
+- `-d` / `--dir`：覆盖工作目录（默认 `process.cwd()`）
+- `-v` / `--verbose`：启用 debug 级别日志
+- `--max-tokens`：覆盖 maxTokens
+- `--continue` / `--resume`：继续上次会话（加载最新 session）
+- `--inspect [port]`：启用 devtools（默认端口 9229）
+- `--session`：指定 session ID
+
+**子命令**（`subCommand`）：
+
+```
+vitamin run [message]     → 默认（执行一次或进入交互）
+vitamin doctor            → 环境诊断（Node 版本/依赖/认证/模型可用性）
+vitamin config [get|set]  → 配置查看与编辑
+vitamin auth [login|logout|status] → 认证管理
+```
+
+`subCommandArgs`：子命令后的所有参数（透传给子命令处理器）。
 
 ### 运行入口（run-cli.ts）
 

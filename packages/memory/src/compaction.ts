@@ -25,7 +25,13 @@ import { resolveContextSize, DEFAULT_COMPACTION_CONFIG } from './defaults'
 import { buildSummarizationPrompt, buildTurnPrefixPrompt } from './prompts'
 
 import type { Message } from '@vitamin/ai'
-import type { CompactionConfig, CompactionPreparation, CompactionResult, CutPoint } from './types'
+import type {
+  CompactionConfig,
+  CompactionPreparation,
+  CompactionResult,
+  CutPoint,
+  PartialCompactOptions,
+} from './types'
 
 const logger = createLogger('@vitamin/memory:compaction')
 
@@ -60,7 +66,11 @@ export function findCutPoint(
 
   // 从尾部倒序累积 token，找到保留 keepRecentTokens 的边界
   for (let i = messages.length - 1; i >= 0; i--) {
-    const tokens = estimator(messageToText(messages[i]!))
+    const message = messages[i]
+    if (!message) {
+      continue
+    }
+    const tokens = estimator(messageToText(message))
     accumulatedTokens += tokens
 
     if (accumulatedTokens >= keepRecentTokens) {
@@ -75,7 +85,10 @@ export function findCutPoint(
   // 调整切点到 user / assistant 消息边界（不在 tool_result 处切）
   let adjustedCutIndex = rawCutIndex
   while (adjustedCutIndex < messages.length) {
-    const msg = messages[adjustedCutIndex]!
+    const msg = messages[adjustedCutIndex]
+    if (!msg) {
+      break
+    }
     if (msg.role === 'user' || msg.role === 'assistant') {
       break
     }
@@ -89,16 +102,16 @@ export function findCutPoint(
   let turnStartIndex = adjustedCutIndex
 
   if (adjustedCutIndex > 0 && adjustedCutIndex < messages.length) {
-    const msgAtCut = messages[adjustedCutIndex]!
+    const msgAtCut = messages[adjustedCutIndex]
     // 如果切点处是 assistant，检查前面是否有属于同一 turn 的 tool_result
-    if (msgAtCut.role === 'assistant') {
+    if (msgAtCut?.role === 'assistant') {
       // 向前查找这个 turn 的起始点
       let lookback = adjustedCutIndex - 1
-      while (lookback >= 0 && messages[lookback]!.role === 'tool_result') {
+      while (lookback >= 0 && messages[lookback]?.role === 'tool_result') {
         lookback--
       }
       // 如果前面有 assistant 消息，说明切在了 assistant turn 中间
-      if (lookback >= 0 && messages[lookback]!.role === 'assistant') {
+      if (lookback >= 0 && messages[lookback]?.role === 'assistant') {
         isSplitTurn = true
         turnStartIndex = lookback
       }
@@ -182,6 +195,98 @@ export function prepareCompaction(
     turnPrefixMessages,
     preservedMessages: [...preservedMessages],
     isSplitTurn: cutPoint.isSplitTurn,
+    tokensBefore: currentTokens,
+    previousSummary,
+    fileOps,
+  }
+}
+
+/**
+ * preparePartialCompact — 用户选择消息范围的部分压缩。
+ *
+ * 支持三种范围指定方式（优先级从高到低）：
+ * - fromIndex:  压缩 [0, fromIndex) 的消息，保留 [fromIndex, end)
+ * - upToIndex:  压缩 [0, upToIndex) 的消息（从尾部算起），保留 [upToIndex, end)
+ * - messageCount: 压缩前 messageCount 条消息
+ *
+ * 未指定时回退到标准的 keepRecent token 预算切分。
+ */
+export function preparePartialCompact(
+  messages: readonly Message[],
+  contextWindow: number,
+  options: PartialCompactOptions,
+  config: Partial<CompactionConfig> = {},
+  previousSummary?: string,
+  estimator = defaultEstimateTokens,
+): CompactionPreparation | null {
+  const cfg = { ...DEFAULT_COMPACTION_CONFIG, ...config }
+  const currentTokens = estimateMessagesTokens(messages, estimator)
+
+  if (messages.length <= 2) {
+    logger.debug('Too few messages to partial-compact')
+    return null
+  }
+
+  let cutIndex: number
+
+  if (options.fromIndex !== undefined && options.fromIndex > 0) {
+    cutIndex = Math.min(options.fromIndex, messages.length - 1)
+  } else if (options.upToIndex !== undefined && options.upToIndex > 0) {
+    cutIndex = Math.max(0, messages.length - options.upToIndex)
+  } else if (options.messageCount !== undefined && options.messageCount > 0) {
+    cutIndex = Math.min(options.messageCount, messages.length - 1)
+  } else {
+    // fallback to standard keepRecent token-based cut
+    const keepRecentTokens = resolveContextSize(cfg.keepRecent, contextWindow)
+    const cutPoint = findCutPoint(messages, keepRecentTokens, estimator)
+    cutIndex = cutPoint.firstKeptIndex
+  }
+
+  if (cutIndex <= 0) {
+    logger.debug('Partial-compact cut index at beginning, nothing to compact')
+    return null
+  }
+
+  // Adjust to user/assistant boundary
+  let adjustedCut = cutIndex
+  while (adjustedCut < messages.length) {
+    const msg = messages[adjustedCut]
+    if (!msg) {
+      break
+    }
+    if (msg.role === 'user' || msg.role === 'assistant') {
+      break
+    }
+    adjustedCut++
+  }
+
+  const messagesToSummarize = messages.slice(0, adjustedCut)
+  const preservedMessages = messages.slice(adjustedCut)
+
+  // Split turn check
+  let isSplitTurn = false
+  let turnPrefixMessages: Message[] = []
+  if (adjustedCut > 0 && adjustedCut < messages.length) {
+    const msgAtCut = messages[adjustedCut]
+    if (msgAtCut?.role === 'assistant') {
+      let lookback = adjustedCut - 1
+      while (lookback >= 0 && messages[lookback]?.role === 'tool_result') {
+        lookback--
+      }
+      if (lookback >= 0 && messages[lookback]?.role === 'assistant') {
+        isSplitTurn = true
+        turnPrefixMessages = messages.slice(lookback, adjustedCut)
+      }
+    }
+  }
+
+  const fileOps = extractFileOps(messagesToSummarize)
+
+  return {
+    messagesToSummarize: [...messagesToSummarize],
+    turnPrefixMessages,
+    preservedMessages: [...preservedMessages],
+    isSplitTurn,
     tokensBefore: currentTokens,
     previousSummary,
     fileOps,

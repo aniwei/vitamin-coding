@@ -272,7 +272,7 @@ function buildAssistantMessage(state: CopilotStreamState): AssistantMessage {
     try {
       args = JSON.parse(tc.argumentsJson) as Record<string, unknown>
     } catch {
-      // Tool arguments arrive incrementally during streaming; partial JSON is expected.
+      // 工具参数在流式传输过程中逐步到达，可能收到不完整的 JSON，属于正常情况
     }
 
     content.push({
@@ -380,7 +380,10 @@ class GitHubCopilotStream implements ProviderStream {
           continue
         }
 
-        const choice = choices[0]!
+        const choice = choices[0]
+        if (!choice) {
+          continue
+        }
         const delta = choice.delta as Record<string, unknown> | undefined
         if (!delta) {
           continue
@@ -454,7 +457,10 @@ class GitHubCopilotStream implements ProviderStream {
               }
             }
 
-            const tc = state.toolCalls.get(idx)!
+            const tc = state.toolCalls.get(idx)
+            if (!tc) {
+              continue
+            }
             if (fn?.arguments) {
               const argDelta = fn.arguments as string
               tc.argumentsJson += argDelta

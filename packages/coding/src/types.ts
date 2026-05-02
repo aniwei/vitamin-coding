@@ -3,12 +3,13 @@ import type { AgentTool } from '@vitamin/agent'
 import type { AuthStore, Model, ProviderRegistry } from '@vitamin/ai'
 import type { ModelRegistry } from '@vitamin/ai'
 import type { HookRegistry, PermissionPolicyRegistry, PermissionAuditLog } from '@vitamin/hooks'
-import type { ToolRegistry } from '@vitamin/tools'
+import type { ToolRegistry, PluginManager } from '@vitamin/tools'
+import type { McpManager } from '@vitamin/tools'
 import type { PromptProviderOptions } from '@vitamin/prompt'
 import type { ResourceManager } from '@vitamin/resources'
 import type { SettingsManager } from '@vitamin/resources'
 import type { CodingSessionManager } from './session/coding-session-manager'
-import type { AgentSessionInfo, AgentSessionOptions } from './session/types'
+import type { AgentSessionInfo, AgentSessionOptions, ResolvedSessionConfig } from './session/types'
 import type { AgentSession } from './session/agent-session'
 import type { Logger, LogLevel } from '@vitamin/shared'
 import type { Devtools } from '@vitamin/devtools'
@@ -25,6 +26,8 @@ export interface VitaminContext {
   readonly permissionRegistry: PermissionPolicyRegistry
   readonly auditLog: PermissionAuditLog
   readonly toolRegistry: ToolRegistry
+  readonly pluginManager: PluginManager | undefined
+  readonly mcpManager: McpManager | undefined
   readonly sessionManager: CodingSessionManager
   readonly authStore: AuthStore
   readonly logger: Logger
@@ -37,7 +40,13 @@ export interface VitaminContext {
   getActiveSession(): AgentSession | undefined
   listSessions(): AgentSessionInfo[]
   removeSession(id: string): Promise<boolean>
-  forkSession(sourceId: string, newId?: string): Promise<AgentSession | undefined>
+  forkSession(
+    sourceId: string,
+    newId?: string,
+    overrides?: Partial<
+      Pick<ResolvedSessionConfig, 'agentName' | 'tools' | 'workspaceDir' | 'permissionMetadata'>
+    >,
+  ): Promise<AgentSession | undefined>
 }
 
 export interface VitaminAppOptions {
@@ -70,6 +79,10 @@ export interface VitaminAppOptions {
    * 未来可注入基于 @vitamin/skill 的完整实现。
    */
   skillProvider?: SkillProvider
+  /** 可选 MCP manager。提供后注册 MCP resource/prompt 工具并注入 MCP prompt section。 */
+  mcpManager?: McpManager
+  /** 本地插件根目录。启动时扫描并加载其中的 plugin.json / vitamin-plugin.json。 */
+  pluginRoots?: string[]
   /**
    * 使用远端 session 存储时必填（sessionUrl 指定时生效）。
    */

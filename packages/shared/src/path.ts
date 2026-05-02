@@ -44,7 +44,7 @@ export function createTempLoggerDir(): string {
   return join(tmpdir(), `vitamin-coding-${id}.log`)
 }
 
-// Backward compatibility: historical name used by tools/tests.
+// 向后兼容别名，保留历史命名与工具/测试兼容
 export function createTempLoggerPath(): string {
   return createTempLoggerDir()
 }

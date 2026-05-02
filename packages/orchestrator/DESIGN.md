@@ -51,11 +51,14 @@
 
 顶层协调器，暴露业务友好的 API：
 
-- `dispatchTask(options)` → 创建任务 + dispatch
-- `callAgent(profile, message)` → 委托给指定 Agent
-- `writeTodos(todos)` → 创建/更新任务列表
-- `clarifyRequest(question)` → 向用户提问
-- 所有操作发射 Hook 事件
+- `dispatchTask(options)` → 创建任务 + dispatch（支持 `onCreated` / `onStarted` / `onCompleted` / `onFailed` / `onCancelled` 回调）
+- `callAgent(profile, message)` → 委托给指定 Agent Profile 执行单次任务
+- `createTask(options)` → 仅创建任务（不立即执行，延迟 dispatch）
+- `writeTodos(todos)` → 批量创建/更新任务列表（对应 `write_todos` 工具）
+- `clarifyRequest(question)` → 向用户提问并等待确认
+- 所有操作发射 Hook 事件（`task.created` / `task.started` / `task.completed` 等）
+
+**RetryPolicy.fromWorkflowOptions(options)**：从 `WorkflowOptions` 配置对象创建 `RetryPolicy`，支持从 setting 层面定义全局重试策略。
 
 ### BackgroundManager（background-manager.ts）
 

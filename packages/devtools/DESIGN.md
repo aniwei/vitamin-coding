@@ -17,10 +17,12 @@
 
 顶层组合类，封装所有调试子系统的初始化与协调：
 
-- `Devtools` 组合 Service + Breakpoints + Debugger + Logger
-- `start()` → 启动 Worker 线程 + 初始化断点
-- `stop()` → 清理所有资源
-- `getSnapshot()` → 当前调试状态快照
+- `Devtools` 组合 `InspectorService`（Worker 线程）+ `Breakpoints` + `Debugger` + `SnapshotRecorder`
+- `start()` → 启动 Worker 线程 → 初始化所有断点 → 向 HookRegistry 注册 Hook
+- `stop()` → 清理所有资源（Worker / 监听器 / 断点）
+- `getSnapshot()` → 当前调试状态快照（最新 DebugSnapshot）
+
+`debugger.pause(point, data)` 是核心暂停点：被断点 Hook 调用，内部通过 Promise 挂起执行流，直到 `debugger.resume(command)` 或超时。这使得 Agent 工作循环真正暂停在断点位置，而非仅记录事件。
 
 ### 断点系统（breakpoints.ts）
 

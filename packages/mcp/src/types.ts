@@ -55,6 +55,7 @@ export interface McpInitializeResult {
   protocolVersion: string
   capabilities: McpServerCapabilities
   serverInfo: { name: string; version?: string }
+  instructions?: string
 }
 
 // ─── MCP Tool 定义 ───
@@ -63,6 +64,16 @@ export interface McpToolDefinition {
   name: string
   description?: string
   inputSchema: McpJsonSchema
+  annotations?: McpToolAnnotations
+}
+
+export interface McpToolAnnotations {
+  title?: string
+  readOnlyHint?: boolean
+  destructiveHint?: boolean
+  idempotentHint?: boolean
+  openWorldHint?: boolean
+  [key: string]: unknown
 }
 
 export interface McpJsonSchema {
@@ -193,6 +204,7 @@ export interface McpServerInfo {
   tools: McpToolDefinition[]
   resources?: McpResource[]
   prompts?: McpPrompt[]
+  instructions?: string
   capabilities?: McpServerCapabilities
   error?: string
 }
@@ -206,4 +218,5 @@ export interface McpEvents extends Events {
   'server.reconnecting': (info: { name: string; attempt: number }) => void
   'tools.changed': (info: { serverName: string; tools: McpToolDefinition[] }) => void
   'resources.changed': (info: { serverName: string }) => void
+  'prompts.changed': (info: { serverName: string }) => void
 }

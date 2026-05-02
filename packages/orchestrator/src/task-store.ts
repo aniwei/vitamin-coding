@@ -11,6 +11,7 @@ export class TaskStore {
   async create(input: TaskInput): Promise<Task> {
     const task: Task = {
       id: this.generateId(),
+      parentId: input.parentTaskId,
       status: 'pending',
       sessionPolicy: input.sessionMode ?? 'ephemeral',
       attempts: 0,
@@ -41,7 +42,10 @@ export class TaskStore {
   async update(
     id: string,
     patch: Partial<
-      Pick<Task, 'status' | 'output' | 'error' | 'attempts' | 'completedAt' | 'sessionId'>
+      Pick<
+        Task,
+        'status' | 'output' | 'error' | 'attempts' | 'completedAt' | 'sessionId' | 'sidechain'
+      >
     >,
   ): Promise<void> {
     const task = this.tasks.get(id)

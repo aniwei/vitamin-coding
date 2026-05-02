@@ -6,21 +6,34 @@ import { createHookRegistry } from '@vitamin/hooks'
 import { createLogger, type Logger } from '@vitamin/shared'
 import {
   createAgent,
+  AbortError,
   type Agent,
   type AgentMessage,
   type AgentTool,
+  type PatchReviewEvent,
   type ToolCallEvent,
+  type ToolExecutionEvent,
   type ToolResult,
 } from '@vitamin/agent'
 import type { HookRegistry } from '@vitamin/hooks'
 import type { Session } from '@vitamin/session'
-import type { Message, Model, StreamEvent, ThinkingLevel, Usage } from '@vitamin/ai'
+import type {
+  Message,
+  Model,
+  PromptCacheMetadata,
+  StreamEvent,
+  ThinkingLevel,
+  Usage,
+} from '@vitamin/ai'
 import type { Devtools, PauseResult, DebugSnapshot, MessageSummaryItem } from '@vitamin/devtools'
+import { assemblePromptSections, isPromptAssembly, type PromptAssembly } from '@vitamin/prompt'
 import type {
   AgentSessionOptions,
   AgentSessionEvent,
   AgentSessionSubscriber,
   AskUserQuestion,
+  ContextDiagnostics,
+  ContextDiagnosticsOptions,
   PromptRefresh,
   PromptOptions,
 } from './types'
@@ -57,7 +70,11 @@ export class AgentSession extends Subscription {
   public maxToolTurns: number
   public thinkingLevel: ThinkingLevel
   public promptRefresh?: PromptRefresh
+  public permissionMetadata?: Record<string, unknown>
+  public promptAssembly?: PromptAssembly
 
+  private lastPromptCache?: PromptCacheMetadata
+  private lastEffectiveSystemPrompt?: string
   private logger: Logger
   private hookRegistry: HookRegistry
   private devtools?: Devtools
@@ -71,6 +88,7 @@ export class AgentSession extends Subscription {
     requestId: string
     deferred: Deferred<{ action: string; feedback?: string }>
   } | null = null
+  private readonly pendingPatchReviews = new Map<string, PatchReviewEvent>()
   private readonly agentUnsubs: Array<() => void> = []
 
   get id(): string {
@@ -85,11 +103,20 @@ export class AgentSession extends Subscription {
     return this.agent.status === 'streaming' || this.agent.status === 'tool_executing'
   }
 
-  constructor(session: Session<AgentMessage>, options: AgentSessionOptions) {
+  constructor(
+    session: Session<AgentMessage>,
+    optionsOrAgent: AgentSessionOptions | Agent,
+    maybeOptions?: AgentSessionOptions,
+  ) {
     super()
     this.session = session
 
-    const hookRegistry = options.hookRegistry ?? createHookRegistry({ preset: 'default' })
+    const injectedAgent = maybeOptions ? (optionsOrAgent as Agent) : undefined
+    const options = maybeOptions ?? (optionsOrAgent as AgentSessionOptions)
+    const legacyOptions = options as AgentSessionOptions & { hooks?: HookRegistry }
+
+    const hookRegistry =
+      options.hookRegistry ?? legacyOptions.hooks ?? createHookRegistry({ preset: 'default' })
     const logger =
       options.logger ??
       createLogger(`agent-session:${session.id}`, {
@@ -117,26 +144,32 @@ export class AgentSession extends Subscription {
     this.logger = logger
     this.workspaceDir = workspaceDir
     this.promptRefresh = promptRefresh
+    this.permissionMetadata = options.permissionMetadata
 
-    // Agent 在 AgentSession 内部创建，持有基础设施配置，跨所有 run() 共享
-    this.agent = createAgent({
-      stream: options.stream,
-      logger,
-      maxToolTurns,
-      agentName: this.agentName,
-      sessionId: session.id,
-      toolHookExecutor: createToolHookExecutor({
-        hookRegistry,
+    // Agent 在 AgentSession 内部创建，持有基础设施配置，跨所有 run() 共享。
+    // 兼容旧调用形式 new AgentSession(session, agent, options)。
+    this.agent =
+      injectedAgent ??
+      createAgent({
+        stream: options.stream,
+        logger,
+        maxToolTurns,
         agentName: this.agentName,
         sessionId: session.id,
-      }),
-      devtools,
-      approval: (toolName, args, reason) => this.requestApproval(toolName, args, reason),
-    })
+        toolHookExecutor: createToolHookExecutor({
+          hookRegistry,
+          agentName: this.agentName,
+          sessionId: session.id,
+          metadata: this.permissionMetadata,
+        }),
+        devtools,
+        approval: (toolName, args, reason) => this.requestApproval(toolName, args, reason),
+      })
 
     this.agentUnsubs.push(this.agent.on('stream_event', this.onStreamEvent))
     this.agentUnsubs.push(this.agent.on('turn_start', this.onTurnStart))
     this.agentUnsubs.push(this.agent.on('tool_call_start', this.onToolCallStart))
+    this.agentUnsubs.push(this.agent.on('tool_execution_event', this.onToolExecutionEvent))
     this.agentUnsubs.push(this.agent.on('tool_call_end', this.onToolCallEnd))
 
     this.logger.info({ sessionId: this.id, model: this.model.id }, 'Session initialized')
@@ -214,6 +247,74 @@ export class AgentSession extends Subscription {
     })
   }
 
+  private onToolExecutionEvent = (event: { event: ToolExecutionEvent }): void => {
+    this.devtools?.auditTrace.recordToolExecution(
+      event.event as unknown as Record<string, unknown>,
+      this.id,
+    )
+
+    if (event.event.type === 'result' && event.event.sideEffects) {
+      for (const sideEffect of event.event.sideEffects) {
+        this.session.recordSideEffect({
+          type: sideEffect.type,
+          action: sideEffect.action,
+          targets: sideEffect.targets,
+          toolCallId: event.event.toolCallId,
+          toolName: event.event.toolName,
+          reversible: sideEffect.reversible,
+          metadata: {
+            source: sideEffect.source,
+            ...sideEffect.metadata,
+          },
+        })
+      }
+    }
+
+    if (event.event.type === 'result') {
+      const review = toPatchReviewEvent(event.event.result.details?.patchReview, {
+        toolCallId: event.event.toolCallId,
+        toolName: event.event.toolName,
+      })
+      if (review) {
+        this.pendingPatchReviews.set(review.id, review)
+        this.publish({
+          review_requested: [
+            {
+              type: 'review_requested' as const,
+              sessionId: this.id,
+              review,
+            },
+          ],
+        })
+        if (review.blocked) {
+          this.publish({
+            review_failed: [
+              {
+                type: 'review_failed' as const,
+                sessionId: this.id,
+                review,
+                issues:
+                  review.reasons.length > 0
+                    ? review.reasons
+                    : ['Patch review gate blocked this change'],
+              },
+            ],
+          })
+        }
+      }
+    }
+
+    this.publish({
+      tool_execution_event: [
+        {
+          type: 'tool_execution_event' as const,
+          sessionId: this.id,
+          event: event.event,
+        },
+      ],
+    })
+  }
+
   private onToolCallEnd = (event: { toolCall: ToolCallEvent; result: ToolResult }): void => {
     this.publish({
       tool_call_end: [
@@ -233,6 +334,9 @@ export class AgentSession extends Subscription {
 
   async prompt(text: string, options?: PromptOptions): Promise<void> {
     this.ensureNotDisposed()
+    if (options?.signal?.aborted) {
+      throw new AbortError()
+    }
 
     const overrides: {
       temperature?: number
@@ -325,7 +429,13 @@ export class AgentSession extends Subscription {
       if (this.promptRefresh) {
         const refreshed = await this.promptRefresh()
         if (refreshed !== undefined) {
-          this.systemPrompt = refreshed
+          if (isPromptAssembly(refreshed)) {
+            this.promptAssembly = refreshed
+            this.systemPrompt = refreshed.systemPrompt
+          } else {
+            this.promptAssembly = undefined
+            this.systemPrompt = refreshed
+          }
         }
       }
     }
@@ -415,13 +525,38 @@ export class AgentSession extends Subscription {
     )
 
     try {
-      // system-prompt.transform hook: 允许 hook 链式修改 systemPrompt
-      const promptTransformOutput = { systemPrompt: this.systemPrompt }
+      const basePromptAssembly =
+        this.promptAssembly ??
+        assemblePromptSections([
+          {
+            key: 'system-prompt',
+            content: this.systemPrompt,
+            layer: 'static',
+            cacheable: true,
+            source: 'session',
+            priority: 0,
+          },
+        ])
+
+      const sectionsTransformOutput = { assembly: basePromptAssembly }
+
+      await this.hookRegistry.execute(
+        'system-prompt.sections.transform',
+        {
+          assembly: basePromptAssembly,
+          sessionId: this.id,
+          tools: this.tools,
+        },
+        sectionsTransformOutput,
+      )
+
+      // system-prompt.transform hook: 兼容旧 hook 链式修改渲染后的 systemPrompt
+      const promptTransformOutput = { systemPrompt: sectionsTransformOutput.assembly.systemPrompt }
 
       await this.hookRegistry.execute(
         'system-prompt.transform',
         {
-          systemPrompt: this.systemPrompt,
+          systemPrompt: sectionsTransformOutput.assembly.systemPrompt,
           sessionId: this.id,
           tools: this.tools,
         },
@@ -429,41 +564,82 @@ export class AgentSession extends Subscription {
       )
 
       const effectiveSystemPrompt = promptTransformOutput.systemPrompt
+      const promptCache = createPromptCacheMetadata(
+        sectionsTransformOutput.assembly,
+        effectiveSystemPrompt,
+      )
+      this.promptAssembly = sectionsTransformOutput.assembly
+      this.lastPromptCache = promptCache
+      this.lastEffectiveSystemPrompt = effectiveSystemPrompt
 
-      // 3. agent.run() — workLoop 就地修改 messages
-      await this.agent.run({
-        model: this.model,
-        systemPrompt: effectiveSystemPrompt,
-        tools: this.tools,
-        messages,
-        thinkingLevel: paramsOutput.thinkingLevel as ThinkingLevel,
-        temperature: paramsOutput.temperature,
-        maxTokens: paramsOutput.maxTokens,
-        transformContext: async (contextMessages, signal) => {
-          if (signal?.aborted) {
-            return contextMessages
-          }
+      const abort = (): void => this.abort()
+      options?.signal?.addEventListener('abort', abort, { once: true })
+      try {
+        if (options?.signal?.aborted) {
+          throw new AbortError()
+        }
 
-          const output = { messages: contextMessages }
+        // 3. agent.run() — workLoop 就地修改 messages
+        const runContext = {
+          model: this.model,
+          systemPrompt: effectiveSystemPrompt,
+          tools: this.tools,
+          messages,
+          thinkingLevel: paramsOutput.thinkingLevel as ThinkingLevel,
+          temperature: paramsOutput.temperature,
+          maxTokens: paramsOutput.maxTokens,
+          cacheRetention: this.model.api === 'anthropic-messages' ? 'short' : undefined,
+          promptCache,
+          scopeId: this.id,
+          logger: this.logger,
+          agentName: this.agentName,
+          sessionId: this.id,
+          toolHookExecutor: createToolHookExecutor({
+            hookRegistry: this.hookRegistry,
+            agentName: this.agentName,
+            sessionId: this.id,
+            metadata: this.permissionMetadata,
+          }),
+          transformContext: async (contextMessages: AgentMessage[], signal?: AbortSignal, options?: {
+            reason: 'preflight' | 'prompt-too-long'
+            attempt?: number
+            error?: Error
+            tokenCount?: number
+          }) => {
+            if (signal?.aborted) {
+              return contextMessages
+            }
 
-          await this.hookRegistry.execute(
-            'messages.transform',
-            {
-              messages: contextMessages,
-              tools: this.tools,
-              agentName: this.agentName,
-              sessionId: this.id,
-            },
-            output,
-          )
+            const output = { messages: contextMessages }
 
-          return output.messages
-        },
-      })
+            await this.hookRegistry.execute(
+              'messages.transform',
+              {
+                messages: contextMessages,
+                tools: this.tools,
+                agentName: this.agentName,
+                sessionId: this.id,
+                reason: options?.reason,
+                attempt: options?.attempt,
+                error: options?.error,
+                tokenCount: options?.tokenCount,
+              },
+              output,
+            )
+
+            return output
+          },
+        }
+        await this.agent.run(runContext as Parameters<Agent['run']>[0])
+      } finally {
+        options?.signal?.removeEventListener('abort', abort)
+      }
 
       // 4. 将 workLoop 追加的新消息持久化回 Session
+      const newMessages = messages.slice(messagesBefore)
       this.persistNewMessages(messages, messagesBefore)
-      this.promptUsage(messages.slice(messagesBefore))
+      this.recordModelResponses(newMessages)
+      this.promptUsage(newMessages)
 
       consume(
         await pause('messages_persist', messages, {
@@ -572,6 +748,24 @@ export class AgentSession extends Subscription {
     }
   }
 
+  private recordModelResponses(newMessages: AgentMessage[]): void {
+    for (const message of newMessages) {
+      if (!this.isAssistantMessage(message)) {
+        continue
+      }
+
+      this.devtools?.auditTrace?.recordModelResponse(
+        {
+          model: this.model.id,
+          usage: { ...message.usage },
+          stopReason: message.stopReason,
+          textPreview: getAssistantTextPreview(message),
+        },
+        this.id,
+      )
+    }
+  }
+
   private promptUsage(newMessages: AgentMessage[]): void {
     const usage = this.collectUsage(newMessages)
     if (!usage) {
@@ -589,7 +783,12 @@ export class AgentSession extends Subscription {
         cacheWrite: usage.cacheWriteTokens,
         estimatedCost: cost.total.toFixed(6),
       },
-      'Session usage',
+      'Session usage input=%d output=%d cacheRead=%d cacheWrite=%d cost=%s',
+      usage.inputTokens,
+      usage.outputTokens,
+      usage.cacheReadTokens,
+      usage.cacheWriteTokens,
+      cost.total.toFixed(6),
     )
   }
 
@@ -765,6 +964,106 @@ export class AgentSession extends Subscription {
     }
   }
 
+  resolvePatchReview(reviewId: string, approved: boolean, issues: string[] = []): void {
+    const review = this.pendingPatchReviews.get(reviewId)
+    if (!review) {
+      return
+    }
+
+    if (approved) {
+      this.pendingPatchReviews.delete(reviewId)
+      this.publish({
+        review_passed: [
+          {
+            type: 'review_passed' as const,
+            sessionId: this.id,
+            review: { ...review, blocked: false },
+          },
+        ],
+      })
+      this.logger.info({ sessionId: this.id, reviewId }, 'Patch review passed')
+      return
+    }
+
+    this.publish({
+      review_failed: [
+        {
+          type: 'review_failed' as const,
+          sessionId: this.id,
+          review,
+          issues: issues.length > 0 ? issues : ['Patch review rejected'],
+        },
+      ],
+    })
+    this.logger.info({ sessionId: this.id, reviewId }, 'Patch review rejected')
+  }
+
+  getContextDiagnostics(options: ContextDiagnosticsOptions = {}): ContextDiagnostics {
+    const assembly =
+      this.promptAssembly ??
+      assemblePromptSections([
+        {
+          key: 'system-prompt',
+          content: this.systemPrompt,
+          layer: 'static',
+          cacheable: true,
+          source: 'session',
+          priority: 0,
+        },
+      ])
+    const diagnostics = this.lastPromptCache?.diagnostics ?? assembly.diagnostics
+    const sections = diagnostics.sections.map((section) => ({
+      key: section.key,
+      layer: section.layer,
+      cacheable: section.cacheable,
+      source: section.source,
+      priority: section.priority,
+      chars: section.chars,
+      estimatedTokens: section.estimatedTokens,
+      fingerprint: section.fingerprint,
+    }))
+    const tools = this.tools.map((tool) => ({
+      name: tool.name,
+      visibility: tool.visibility,
+      readonly: typeof tool.readonly === 'function' ? 'dynamic' as const : tool.readonly === true,
+      deferred: tool.shouldDefer === true,
+    }))
+    const promptContent = this.lastEffectiveSystemPrompt ?? assembly.systemPrompt
+
+    return {
+      sessionId: this.id,
+      model: this.model.id,
+      provider: this.model.provider,
+      status: this.status,
+      messageCount: this.session.messages().length,
+      prompt: {
+        sectionCount: diagnostics.sectionCount,
+        totalChars: diagnostics.totalChars,
+        estimatedTokens: diagnostics.estimatedTokens,
+        staticPrefixChars: assembly.staticPrefix.length,
+        dynamicTailChars: assembly.dynamicTail.length,
+        cacheableSectionCount: sections.filter((section) => section.cacheable).length,
+        dynamicSectionCount: sections.filter((section) => !section.cacheable || section.layer === 'dynamic').length,
+        fingerprint: this.lastPromptCache?.fingerprint,
+        toolSchemaFingerprint: this.lastPromptCache?.toolSchemaFingerprint,
+        sections,
+        ...(options.includePrompt ? { content: promptContent } : {}),
+      },
+      tools: {
+        count: tools.length,
+        deferredCount: tools.filter((tool) => tool.deferred).length,
+        visibleCount: tools.filter((tool) => tool.visibility !== 'when-requested').length,
+        items: tools,
+      },
+      runtime: {
+        workspaceDir: this.workspaceDir,
+        agentName: this.agentName,
+        promptCacheAvailable: this.lastPromptCache !== undefined,
+        promptContentIncluded: options.includePrompt === true,
+      },
+    }
+  }
+
   // ─── Cleanup pending gates on abort ────────────────────────────────
 
   private rejectPendingGates(): void {
@@ -780,6 +1079,7 @@ export class AgentSession extends Subscription {
       this.pendingPlanApproval.deferred.reject(new Error('Session aborted'))
       this.pendingPlanApproval = null
     }
+    this.pendingPatchReviews.clear()
   }
 
   private ensureNotDisposed(): void {
@@ -807,6 +1107,115 @@ export class AgentSession extends Subscription {
 
     this.logger.info({ sessionId: this.id }, 'Session disposed')
   }
+}
+
+function toPatchReviewEvent(
+  value: unknown,
+  fallback: { toolCallId: string; toolName: string },
+):
+  | {
+      id: string
+      reviewType: 'patch'
+      toolCallId: string
+      toolName: string
+      risk: 'low' | 'medium' | 'high'
+      targets: string[]
+      blocked: boolean
+      reasons: string[]
+    }
+  | undefined {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return undefined
+  }
+
+  const record = value as Record<string, unknown>
+  const risk =
+    record.risk === 'low' || record.risk === 'medium' || record.risk === 'high'
+      ? record.risk
+      : 'low'
+  const targets = Array.isArray(record.targets)
+    ? record.targets.filter((target): target is string => typeof target === 'string')
+    : []
+  const reasons = Array.isArray(record.reasons)
+    ? record.reasons.filter((reason): reason is string => typeof reason === 'string')
+    : []
+
+  return {
+    id: `${fallback.toolCallId}:patch-review`,
+    reviewType: 'patch',
+    toolCallId: fallback.toolCallId,
+    toolName: typeof record.toolName === 'string' ? record.toolName : fallback.toolName,
+    risk,
+    targets,
+    blocked: record.blocked === true,
+    reasons,
+  }
+}
+
+function getAssistantTextPreview(message: AssistantMessage): string {
+  const content = message.content as unknown
+  const text = Array.isArray(content)
+    ? content
+        .map((part) => {
+          if (!part || typeof part !== 'object') {
+            return ''
+          }
+          const record = part as Record<string, unknown>
+          return typeof record.text === 'string' ? record.text : ''
+        })
+        .filter(Boolean)
+        .join('\n')
+    : typeof content === 'string'
+      ? content
+      : ''
+
+  return text.length > 500 ? `${text.slice(0, 500)}...` : text
+}
+
+function createPromptCacheMetadata(
+  assembly: PromptAssembly,
+  effectiveSystemPrompt: string,
+): PromptCacheMetadata | undefined {
+  if (!assembly.staticPrefix.trim()) {
+    return undefined
+  }
+
+  if (effectiveSystemPrompt === assembly.systemPrompt) {
+    return {
+      staticPrefix: assembly.staticPrefix,
+      dynamicTail: assembly.dynamicTail,
+      fingerprint: fingerprintPromptCache(assembly, effectiveSystemPrompt),
+      diagnostics: assembly.diagnostics,
+    }
+  }
+
+  if (effectiveSystemPrompt.startsWith(assembly.systemPrompt)) {
+    const suffix = effectiveSystemPrompt.slice(assembly.systemPrompt.length).trim()
+    return {
+      staticPrefix: assembly.staticPrefix,
+      dynamicTail: [assembly.dynamicTail, suffix].filter(Boolean).join('\n\n'),
+      fingerprint: fingerprintPromptCache(assembly, effectiveSystemPrompt),
+      diagnostics: assembly.diagnostics,
+    }
+  }
+
+  return undefined
+}
+
+function fingerprintPromptCache(assembly: PromptAssembly, effectiveSystemPrompt: string): string {
+  let hash = 5381
+  const input = [
+    assembly.sections.map((section) => section.fingerprint).join('|'),
+    assembly.staticPrefix.length,
+    assembly.dynamicTail.length,
+    effectiveSystemPrompt.length,
+  ].join('\0')
+
+  for (let i = 0; i < input.length; i++) {
+    hash = ((hash << 5) + hash) ^ input.charCodeAt(i)
+  }
+
+  return (hash >>> 0).toString(16).padStart(8, '0')
 }
 
 function summarizeMessages(messages: readonly AgentMessage[], lastN: number): MessageSummaryItem[] {

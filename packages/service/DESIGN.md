@@ -15,24 +15,40 @@
 
 ### CodingService（coding-service.ts）
 
-核心服务类，基于 Hono HTTP 框架：
+核心服务类，组合 HTTP(Hono) + WebSocket(ws) + EventBridge + DebugBridge + InboundRouter：
 
-#### HTTP 路由
+#### HTTP 路由（create-app.ts）
 
-| 路由                | 方法            | 功能                      |
-| ------------------- | --------------- | ------------------------- |
-| `/api/health`       | GET             | 健康检查                  |
-| `/api/chat`         | POST            | 发送消息（流式 SSE 响应） |
-| `/api/sessions`     | GET/POST/DELETE | 会话 CRUD                 |
-| `/api/sessions/:id` | GET/PATCH       | 单会话操作                |
-| `/api/setting`      | GET/PUT         | 配置读写                  |
-| `/api/debug`        | GET/POST        | 调试相关                  |
-| `/api/logs`         | GET             | 日志查询                  |
+| 路由            | 方法                 | 功能                                |
+| --------------- | -------------------- | ----------------------------------- |
+| `/health`       | GET                  | 健康检查                            |
+| `/chat`         | POST                 | 发送消息（流式 SSE 响应）           |
+| `/sessions`     | GET / POST           | 会话列表 / 创建会话                 |
+| `/sessions/:id` | GET / PATCH / DELETE | 单会话查询 / 更新 / 删除            |
+| `/setting`      | GET / PUT            | 配置读写                            |
+| `/devtools`     | GET / POST           | 调试操作（断点 / 快照 / 步进）      |
+| `/logs`         | GET                  | 日志查询（支持 level / since 过滤） |
+| `/workspace`    | GET                  | 工作区信息（路径 / 文件树预览）     |
 
-#### WebSocket
+所有路由在 `create-app.ts` 的 `createApp(service)` 函数中统一注册，返回 Hono 应用实例。
 
-- 升级路由：`/ws`
-- 客户端连接后可订阅指定 session 的事件流
+`start()` 方法延迟注册所有事件监听器（避免过早订阅）：
+
+```typescript
+service.start()
+  → 注册 WebSocketManager 监听器
+  → 注册 EventBridge 到各 AgentSession
+  → 注册 DebugBridge 到 DevTools
+  → HTTP 服务器开始监听端口
+```
+
+### InboundRouter（inbound-router.ts）
+
+处理来自 WebSocket 客户端的入站消息路由：
+
+- 接收 `{ type, sessionId, payload }` 格式的 JSON 消息
+- 路由到对应 Handler：`chat` / `abort` / `subscribe` / `unsubscribe` / `breakpoint` / `debug_step`
+- 反馈操作结果到发起客户端
 
 ### WebSocketManager（websocket-manager.ts）
 

@@ -24,6 +24,12 @@ export interface TaskInput {
   mode?: 'sync' | 'background'
   /** 模型槽位 — 对齐 task_delegate.slot / agent_call.slot */
   slot?: 'normal' | 'thinking' | 'compact' | 'critique' | 'vision'
+  /** 父任务 ID，用于 sidechain 子任务追踪 */
+  parentTaskId?: string
+  /** 父会话 ID，用于 sidechain 隔离与摘要回传 */
+  parentSessionId?: string
+  /** sidechain 隔离策略覆盖项 */
+  sidechain?: Partial<SidechainPolicy>
 }
 
 export interface TaskOutput {
@@ -39,6 +45,30 @@ export interface TaskError {
   retriable: boolean
 }
 
+export type SidechainReturnMode = 'summary_only' | 'full_text'
+export type SidechainPermissionMode = 'inherit' | 'restricted'
+
+export interface SidechainPolicy {
+  returnMode: SidechainReturnMode
+  permissionMode: SidechainPermissionMode
+  timeoutMs?: number
+  workspaceRoot?: string
+  allowedTools?: string[]
+  deniedTools?: string[]
+}
+
+export interface SidechainContext {
+  isolated: true
+  parentTaskId?: string
+  parentSessionId?: string
+  childSessionId?: string
+  subagent?: string
+  category?: string
+  policy: SidechainPolicy
+  summary?: string
+  transcript?: unknown[]
+}
+
 export interface Task {
   id: string
   parentId?: string
@@ -50,6 +80,7 @@ export interface Task {
   input: TaskInput
   output?: TaskOutput
   error?: TaskError
+  sidechain?: SidechainContext
   createdAt: number
   completedAt?: number
 }

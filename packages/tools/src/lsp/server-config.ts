@@ -39,9 +39,12 @@ export function isServerInstalled(command: string[]): boolean {
     return false
   }
 
-  const cmd = command[0]!
+  const cmd = command[0]
+  if (!cmd) {
+    return false
+  }
 
-  // Absolute paths
+  // 绝对路径
   if (cmd.includes('/') || cmd.includes('\\')) {
     if (existsSync(cmd)) {
       return true
@@ -93,7 +96,7 @@ export function isServerInstalled(command: string[]): boolean {
     }
   }
 
-  // Node runtime always available
+  // Node 运行时始终可用
   if (cmd === 'node') {
     return true
   }
@@ -115,15 +118,15 @@ function loadJsonFile<T>(path: string): T | null {
 }
 
 function detectConfigFilePath(base: string): string {
-  const jsonc = base + '.jsonc'
+  const jsonc = `${base}.jsonc`
   if (existsSync(jsonc)) {
     return jsonc
   }
-  const json = base + '.json'
+  const json = `${base}.json`
   if (existsSync(json)) {
     return json
   }
-  return jsonc // default to .jsonc even if not found
+  return jsonc // 未找到时默认返回 .jsonc 路径
 }
 
 export function getConfigPaths(): { project: string; user: string } {
@@ -190,7 +193,7 @@ function getMergedServers(): ServerWithSource[] {
     }
   }
 
-  // Append builtin servers that aren't overridden/disabled
+  // 追加未被覆盖或禁用的内置服务器
   for (const [id, config] of Object.entries(BUILTIN_SERVERS)) {
     if (disabled.has(id) || seen.has(id)) {
       continue
@@ -218,7 +221,7 @@ function getMergedServers(): ServerWithSource[] {
 export function findServerForExtension(ext: string): ServerLookupResult {
   const servers = getMergedServers()
 
-  // First pass: installed server that handles this extension
+  // 第一轮：查找已安装且支持该扩展名的服务器
   for (const server of servers) {
     if (server.extensions.includes(ext) && isServerInstalled(server.command)) {
       return {
@@ -235,7 +238,7 @@ export function findServerForExtension(ext: string): ServerLookupResult {
     }
   }
 
-  // Second pass: configured but not installed
+  // 第二轮：已配置但未安装的服务器
   for (const server of servers) {
     if (server.extensions.includes(ext)) {
       const installHint =

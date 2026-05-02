@@ -24,6 +24,7 @@ export {
   createCommentCheckerHook,
   createBabysittingHook,
   createRalphLoopHook,
+  createPatchReviewGateHook,
   // Stream 生命周期
   createStreamMetricsHook,
   createStreamEndMetricsHook,
@@ -57,6 +58,8 @@ export type {
   ErrorRecoveryConfig,
   ToolErrorTrackerConfig,
   TokenBudgetConfig,
+  PatchReviewGateConfig,
+  PatchReviewSummary,
 } from './core'
 
 // Permission
@@ -73,6 +76,7 @@ export {
   createDirectoryFreezePolicy,
   createDisabledToolsPolicy,
   createAgentBoundaryPolicy,
+  createSidechainBoundaryPolicy,
   createPermissionModePolicy,
   createPermissionRegistry,
 } from './core'
@@ -113,5 +117,12 @@ export type {
   ChatParamsOutput,
   SystemPromptTransformInput,
   SystemPromptTransformOutput,
+  SystemPromptSectionLayer,
+  SystemPromptSection,
+  SystemPromptSectionDiagnostic,
+  SystemPromptAssembly,
+  SystemPromptAssemblyDiagnostics,
+  SystemPromptSectionsTransformInput,
+  SystemPromptSectionsTransformOutput,
   SessionEventInput,
 } from './types'

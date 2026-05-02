@@ -29,6 +29,7 @@
     "@vitamin/coding": "workspace:*",
     "@vitamin/devtools": "workspace:*",
     "@vitamin/hooks": "workspace:*",
+    "@vitamin/protocol": "workspace:*",
     "@vitamin/shared": "workspace:*",
     "hono": "4.12.12",
     "ws": "8.20.0"

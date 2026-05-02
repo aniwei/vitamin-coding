@@ -5,10 +5,11 @@ interface ToolHookOptions {
   hookRegistry: HookRegistry
   agentName: string
   sessionId: string
+  metadata?: Record<string, unknown>
 }
 
 export function createToolHookExecutor(options: ToolHookOptions): ToolHookExecutor {
-  const { hookRegistry, agentName, sessionId } = options
+  const { hookRegistry, agentName, sessionId, metadata } = options
 
   return {
     async executeBeforeHooks(input) {
@@ -24,6 +25,7 @@ export function createToolHookExecutor(options: ToolHookOptions): ToolHookExecut
           ...input,
           agentName,
           sessionId,
+          metadata: metadata ? { ...metadata } : undefined,
         },
         output,
       )
@@ -43,6 +45,7 @@ export function createToolHookExecutor(options: ToolHookOptions): ToolHookExecut
           ...input,
           agentName,
           sessionId,
+          metadata: metadata ? { ...metadata } : undefined,
         },
         output,
       )

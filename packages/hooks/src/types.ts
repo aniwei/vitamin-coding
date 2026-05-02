@@ -14,6 +14,8 @@ export type HookTiming =
   | 'messages.transform'
   // 参数调整
   | 'chat.params'
+  // System-prompt section 变换
+  | 'system-prompt.sections.transform'
   // 会话事件
   | 'session.created'
   | 'session.deleted'
@@ -67,6 +69,7 @@ export interface ToolExecuteBeforeInput {
   args: Record<string, unknown>
   agentName: string
   sessionId: string
+  metadata?: Record<string, unknown>
 }
 
 export interface ToolExecuteBeforeOutput {
@@ -83,6 +86,7 @@ export interface ToolExecuteAfterInput {
   agentName: string
   sessionId: string
   durationMs: number
+  metadata?: Record<string, unknown>
 }
 
 export interface ToolExecuteAfterOutput {
@@ -95,10 +99,16 @@ export interface MessagesTransformInput {
   tools: AgentTool[]
   agentName: string
   sessionId: string
+  reason?: 'preflight' | 'prompt-too-long'
+  attempt?: number
+  error?: Error
+  tokenCount?: number
+  metadata?: Record<string, unknown>
 }
 
 export interface MessagesTransformOutput {
   messages: AgentMessage[]
+  metadata?: Record<string, unknown>
 }
 
 export interface ChatParamsInput {
@@ -127,6 +137,54 @@ export interface SystemPromptTransformOutput {
   systemPrompt: string
 }
 
+export type SystemPromptSectionLayer = 'static' | 'session' | 'dynamic'
+
+export interface SystemPromptSection {
+  key: string
+  content: string
+  layer: SystemPromptSectionLayer
+  cacheable: boolean
+  source: string
+  priority: number
+  fingerprint: string
+}
+
+export interface SystemPromptSectionDiagnostic {
+  key: string
+  layer: SystemPromptSectionLayer
+  cacheable: boolean
+  source: string
+  priority: number
+  chars: number
+  estimatedTokens: number
+  fingerprint: string
+}
+
+export interface SystemPromptAssemblyDiagnostics {
+  sectionCount: number
+  totalChars: number
+  estimatedTokens: number
+  sections: SystemPromptSectionDiagnostic[]
+}
+
+export interface SystemPromptAssembly {
+  sections: SystemPromptSection[]
+  systemPrompt: string
+  staticPrefix: string
+  dynamicTail: string
+  diagnostics: SystemPromptAssemblyDiagnostics
+}
+
+export interface SystemPromptSectionsTransformInput {
+  assembly: SystemPromptAssembly
+  sessionId: string
+  tools: AgentTool[]
+}
+
+export interface SystemPromptSectionsTransformOutput {
+  assembly: SystemPromptAssembly
+}
+
 export interface SessionEventInput {
   sessionId: string
   metadata: Record<string, unknown>
@@ -140,6 +198,10 @@ export interface HookPayloadMap {
   'tool.execute.after': { input: ToolExecuteAfterInput; output: ToolExecuteAfterOutput }
   'messages.transform': { input: MessagesTransformInput; output: MessagesTransformOutput }
   'chat.params': { input: ChatParamsInput; output: ChatParamsOutput }
+  'system-prompt.sections.transform': {
+    input: SystemPromptSectionsTransformInput
+    output: SystemPromptSectionsTransformOutput
+  }
   'session.created': { input: SessionEventInput; output: void }
   'session.deleted': { input: SessionEventInput; output: void }
   'session.idle': { input: SessionEventInput; output: void }

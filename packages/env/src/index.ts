@@ -40,7 +40,7 @@ export const VITAMIN_ROOT = '.vitamin'
 export const VITAMIN_HOME = normalizePath(
   process.env['VITAMIN_HOME'] || `${homedir()}/${VITAMIN_ROOT}`,
 )
-export const VITAMIN_USER_CONFIG_DIR = normalizePath(homedir() + '/.config/vitamin')
+export const VITAMIN_USER_CONFIG_DIR = normalizePath(`${homedir()}/.config/vitamin`)
 export const VITAMIN_PROJECT_DIR = normalizePath(`${process.cwd()}/${VITAMIN_ROOT}`)
 export const VITAMIN_PROJECT_ROOT = VITAMIN_PROJECT_DIR
 
@@ -76,6 +76,16 @@ export const MEMORY_PRUNE_TRIGGER_FRACTION = 0.7
 export const MEMORY_PRUNE_PROTECT_FRACTION = 0.15
 export const MEMORY_PRUNE_MINIMUM_TOKENS = 20000
 export const MEMORY_PRUNE_TRUNCATE_MAX_LENGTH = 2000
+
+export const MEMORY_SNIP_MAX_OUTPUT_CHARS = 8000
+export const MEMORY_SNIP_KEEP_HEAD_LINES = 50
+export const MEMORY_SNIP_KEEP_TAIL_LINES = 30
+
+export const MEMORY_MICRO_COMPACT_TRIGGER_FRACTION = 0.8
+export const MEMORY_MICRO_COMPACT_WINDOW_FRACTION = 0.3
+export const MEMORY_MICRO_COMPACT_RESERVE_TOKENS = 4096
+export const MEMORY_TIME_MICRO_AGE_THRESHOLD_MS = 300_000
+export const MEMORY_TIME_MICRO_MIN_OUTPUT_TOKENS = 50
 
 export const MEMORY_TOOL_WRITE = 'write'
 export const MEMORY_TOOL_EDIT = 'edit'

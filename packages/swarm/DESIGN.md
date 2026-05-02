@@ -75,18 +75,22 @@ Agent 间直接转交控制权：
 - 内置并发安全机制
 - 支持命名空间隔离
 
-### SwarmConfig（types.ts）
+### SwarmAgentDef（types.ts）
 
-```ts
-interface SwarmConfig {
-  agents: AgentOptions[]
-  mode: 'handoff' | 'sequential' | 'parallel' | 'hierarchical' | 'router'
-  router?: RouterConfig
-  maxConcurrency?: number
-  maxDepth?: number
-  context?: Record<string, unknown>
+`SwarmAgentDef` 是纯声明式的 Agent 定义，不包含任何运行时状态：
+
+```typescript
+interface SwarmAgentDef {
+  id: string
+  profile: string // Agent Profile ID（来自 @vitamin/setting 预设）
+  capabilities?: string[] // 能力标签（路由匹配用）
+  instructions?: string // 附加指令（追加到系统提示）
+  maxRounds?: number // 最大执行轮次
+  handoffTargets?: string[] // 允许 handoff 的目标 ID
 }
 ```
+
+**运行时分离**：`SwarmAgentDef` 仅描述行为规范，实际执行由 `createRunContext(def, context)` 工厂函数创建 `AgentRunContext`，再由 `@vitamin/agent` 的 Agent 实例执行。这种分离使 Swarm 在测试时可注入 mock 执行器。
 
 ## 实现流程
 

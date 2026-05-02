@@ -22,14 +22,17 @@ export class PermissionGuardHook {
   }
 
   handle = (input: ToolExecuteBeforeInput, output: ToolExecuteBeforeOutput): void => {
+    const filePaths = this.extractPaths(input.args)
     const context: PermissionContext = {
       timing: 'tool.execute.before',
       toolName: input.toolName,
       args: input.args,
       agentName: input.agentName,
       sessionId: input.sessionId,
-      filePath: this.extractPath(input.args),
-      metadata: {},
+      filePath: filePaths[0],
+      filePaths,
+      urls: this.extractUrls(input.args),
+      metadata: input.metadata ? { ...input.metadata } : {},
     }
 
     const decision = this.registry.evaluate(context)
@@ -48,17 +51,44 @@ export class PermissionGuardHook {
     }
   }
 
-  private extractPath(args: Record<string, unknown>): string | undefined {
-    if (typeof args.path === 'string') {
-      return args.path
+  private extractPaths(args: Record<string, unknown>): string[] {
+    const pathKeys = [
+      'path',
+      'file_path',
+      'filePath',
+      'oldPath',
+      'old_path',
+      'newPath',
+      'new_path',
+      'outputPath',
+      'output_path',
+      'targetPath',
+      'target_path',
+    ]
+    const paths: string[] = []
+
+    for (const key of pathKeys) {
+      const value = args[key]
+      if (typeof value === 'string' && !paths.includes(value)) {
+        paths.push(value)
+      }
     }
-    if (typeof args.file_path === 'string') {
-      return args.file_path
+
+    return paths
+  }
+
+  private extractUrls(args: Record<string, unknown>): string[] {
+    const urlKeys = ['url', 'uri', 'endpoint', 'baseUrl', 'base_url']
+    const urls: string[] = []
+
+    for (const key of urlKeys) {
+      const value = args[key]
+      if (typeof value === 'string' && !urls.includes(value)) {
+        urls.push(value)
+      }
     }
-    if (typeof args.filePath === 'string') {
-      return args.filePath
-    }
-    return undefined
+
+    return urls
   }
 }
 

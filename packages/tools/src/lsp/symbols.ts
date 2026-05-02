@@ -35,8 +35,9 @@ export function createLspSymbols(_projectRoot: string): AgentTool<SymbolsArgs> {
           }
         }
 
+        const query = params.query
         const result = await withLspClient(params.filePath, async (client) => {
-          return (await client.workspaceSymbols(params.query!)) as SymbolInfo[] | null
+          return (await client.workspaceSymbols(query)) as SymbolInfo[] | null
         })
 
         if (!result || result.length === 0) {
@@ -55,7 +56,7 @@ export function createLspSymbols(_projectRoot: string): AgentTool<SymbolsArgs> {
         return { content: [{ type: 'text', text: lines.join('\n') }] }
       }
 
-      // Document symbols
+      // 文档符号列表
       const result = await withLspClient(params.filePath, async (client) => {
         return (await client.documentSymbols(params.filePath)) as
           | DocumentSymbol[]

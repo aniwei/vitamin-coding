@@ -43,6 +43,43 @@ describe('ToolRegistry', () => {
       expect(registry.get('read')?.name).toBe('read')
       expect(registry.size).toBe(1)
     })
+
+    it('#then shouldDefer metadata is propagated to registered tools', () => {
+      const registry = new ToolRegistry()
+      registry.register(makeTool('web_search'), {
+        preset: 'standard',
+        category: 'web',
+        shouldDefer: true,
+      })
+
+      const tool = registry.get('web_search')
+      expect(tool?.shouldDefer).toBe(true)
+      expect(tool?.metadata.shouldDefer).toBe(true)
+    })
+
+    it('#then explicit registration shouldDefer overrides tool default', () => {
+      const registry = new ToolRegistry()
+      registry.register({ ...makeTool('read'), shouldDefer: true }, { shouldDefer: false })
+
+      expect(registry.get('read')?.shouldDefer).toBe(false)
+      expect(registry.get('read')?.metadata.shouldDefer).toBe(false)
+    })
+
+    it('#then metadata uses tool default when registration omits shouldDefer', () => {
+      const registry = new ToolRegistry()
+      registry.register({ ...makeTool('web_fetch'), shouldDefer: true })
+
+      expect(registry.get('web_fetch')?.shouldDefer).toBe(true)
+      expect(registry.get('web_fetch')?.metadata.shouldDefer).toBe(true)
+    })
+
+    it('#then shouldDefer defaults to false for non-deferred tools', () => {
+      const registry = new ToolRegistry()
+      registry.register(makeTool('read'))
+
+      expect(registry.get('read')?.shouldDefer).toBe(false)
+      expect(registry.get('read')?.metadata.shouldDefer).toBe(false)
+    })
   })
 
   describe('#when unregister() is called', () => {
@@ -275,6 +312,92 @@ describe('ToolRegistry', () => {
     it('#then returns empty string for empty registry', () => {
       const registry = new ToolRegistry()
       expect(registry.buildToolGuidance('minimal')).toBe('')
+    })
+  })
+
+  describe('#buildToolAvailability', () => {
+    it('#then describes active, deferred, and category coverage', () => {
+      const registry = new ToolRegistry()
+      registry.register(makeTool('read'), { preset: 'minimal', category: 'fs' })
+      registry.register(makeTool('web_search'), {
+        preset: 'standard',
+        category: 'web',
+        shouldDefer: true,
+      })
+
+      const availability = registry.buildToolAvailability('standard')
+
+      expect(availability).toContain('### Tool Availability')
+      expect(availability).toContain('Active tool schemas: read')
+      expect(availability).toContain('Deferred tools: web_search')
+      expect(availability).toContain('- fs: read')
+      expect(availability).toContain('- web: web_search')
+    })
+  })
+
+  describe('#buildDeferredToolsGuidance', () => {
+    it('#then documents tool_search flow without full schemas', () => {
+      const registry = new ToolRegistry()
+      registry.register(makeTool('web_search'), {
+        preset: 'standard',
+        category: 'web',
+        shouldDefer: true,
+      })
+
+      const guidance = registry.buildDeferredToolsGuidance('standard')
+
+      expect(guidance).toContain('### Deferred Tools')
+      expect(guidance).toContain('Use `tool_search`')
+      expect(guidance).toContain('select:<tool_name>')
+      expect(guidance).toContain('- web_search [web]: Tool: web_search')
+      expect(guidance).not.toContain('parameters')
+    })
+
+    it('#then returns empty string when no deferred tools are available', () => {
+      const registry = new ToolRegistry()
+      registry.register(makeTool('read'), { preset: 'minimal', category: 'fs' })
+
+      expect(registry.buildDeferredToolsGuidance('minimal')).toBe('')
+    })
+  })
+
+  describe('#getMetadataCoverage', () => {
+    it('#then reports full coverage for complete builtin metadata', () => {
+      const registry = new ToolRegistry()
+      registry.register(makeTool('read'), {
+        preset: 'minimal',
+        category: 'fs',
+        builtin: true,
+        guideline: 'Read files before editing.',
+      })
+
+      expect(registry.getMetadataCoverage('minimal')).toEqual({
+        total: 1,
+        covered: 1,
+        percent: 100,
+        issues: [],
+      })
+    })
+
+    it('#then reports missing builtin category or guidance', () => {
+      const registry = new ToolRegistry()
+      registry.register(
+        {
+          ...makeTool('bare'),
+          description: '',
+        },
+        {
+          preset: 'minimal',
+          builtin: true,
+        },
+      )
+
+      const coverage = registry.getMetadataCoverage('minimal')
+
+      expect(coverage.percent).toBe(0)
+      expect(coverage.issues).toEqual([
+        { toolName: 'bare', missing: ['category', 'guidance'] },
+      ])
     })
   })
 })

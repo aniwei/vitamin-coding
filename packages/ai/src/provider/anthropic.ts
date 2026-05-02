@@ -1,5 +1,6 @@
 import Anthropic from '@anthropic-ai/sdk'
 import { createLogger, ProviderError } from '@vitamin/shared'
+import { PromptTooLongError } from '../errors'
 import type {
   AssistantMessage,
   Message,
@@ -13,8 +14,11 @@ import type {
   ToolCall,
 } from '../types'
 import type { ProviderStream } from '../types'
+import { getCacheScopeRegistry } from '../cache-scope'
+import type { CacheRetention } from '../cache-scope'
 
 const logger = createLogger('@vitamin/ai:anthropic')
+const cacheRegistry = getCacheScopeRegistry()
 
 // 凭据解析器：由上层（ProviderRegistry）注入
 export type AnthropicCredentialResolver = () => Promise<string | undefined>
@@ -52,6 +56,138 @@ function toBudgetTokens(level: string, maxOutputTokens: number): number {
     default:
       return Math.floor(maxOutputTokens * 0.5) // medium
   }
+}
+
+const CACHE_CONTROL: Anthropic.CacheControlEphemeral = { type: 'ephemeral' }
+
+function cacheControlForRetention(
+  retention: CacheRetention = 'short',
+): Anthropic.CacheControlEphemeral {
+  return retention === 'long' ? { type: 'ephemeral', ttl: '1h' } : CACHE_CONTROL
+}
+
+export function buildSystemWithCache(
+  systemPrompt: string,
+  retention: CacheRetention = 'short',
+): Anthropic.TextBlockParam[] {
+  return [{ type: 'text', text: systemPrompt, cache_control: cacheControlForRetention(retention) }]
+}
+
+export function buildSystemWithPromptCache(
+  context: Pick<StreamContext, 'systemPrompt' | 'promptCache' | 'cacheRetention'>,
+): string | Anthropic.TextBlockParam[] {
+  const retention = context.cacheRetention ?? 'short'
+  const cache = context.promptCache
+
+  if (!cache || !cache.staticPrefix.trim()) {
+    return buildSystemWithCache(context.systemPrompt, retention)
+  }
+
+  const blocks: Anthropic.TextBlockParam[] = [
+    {
+      type: 'text',
+      text: cache.staticPrefix,
+      cache_control: cacheControlForRetention(retention),
+    },
+  ]
+
+  const dynamicTail = cache.dynamicTail.trim()
+  if (dynamicTail) {
+    blocks.push({ type: 'text', text: dynamicTail })
+  }
+
+  const rendered = blocks.map((block) => block.text).join('\n\n')
+  if (rendered === context.systemPrompt) {
+    return blocks
+  }
+
+  if (context.systemPrompt.startsWith(rendered)) {
+    const suffix = context.systemPrompt.slice(rendered.length).trim()
+    if (suffix) {
+      blocks.push({ type: 'text', text: suffix })
+    }
+    return blocks
+  }
+
+  return buildSystemWithCache(context.systemPrompt, retention)
+}
+
+export function injectToolsCache(
+  tools: Anthropic.Tool[],
+  retention: CacheRetention = 'short',
+): Anthropic.Tool[] {
+  if (tools.length === 0) {
+    return tools
+  }
+  const last = tools.at(-1)
+  if (!last) {
+    return tools
+  }
+  return [...tools.slice(0, -1), { ...last, cache_control: cacheControlForRetention(retention) }]
+}
+
+export function findMessageCacheIndex(messages: Anthropic.MessageParam[]): number {
+  if (messages.length < 3) {
+    return -1
+  }
+  for (let i = messages.length - 3; i >= 0; i--) {
+    const msg = messages[i]
+    if (!msg) {
+      continue
+    }
+    if (msg.role === 'user') {
+      return i
+    }
+  }
+  return -1
+}
+
+export function injectMessageCache(
+  messages: Anthropic.MessageParam[],
+  retention: CacheRetention = 'short',
+): Anthropic.MessageParam[] {
+  const idx = findMessageCacheIndex(messages)
+  if (idx < 0) {
+    return messages
+  }
+
+  const result = [...messages]
+  const target = result[idx]
+  if (!target) {
+    return messages
+  }
+
+  if (target.role !== 'user' || !Array.isArray(target.content)) {
+    if (typeof target.content !== 'string') {
+      return messages
+    }
+
+    result[idx] = {
+      ...target,
+      content: [
+        {
+          type: 'text',
+          text: target.content,
+          cache_control: cacheControlForRetention(retention),
+        },
+      ],
+    }
+    return result
+  }
+
+  const content = [...target.content]
+  const lastBlock = content[content.length - 1]
+  if (!lastBlock) {
+    return messages
+  }
+
+  content[content.length - 1] = {
+    ...lastBlock,
+    cache_control: cacheControlForRetention(retention),
+  } as typeof lastBlock
+  result[idx] = { ...target, content }
+
+  return result
 }
 
 // 将内部消息格式转换为 Anthropic messages 格式
@@ -279,7 +415,19 @@ class AnthropicStream implements ProviderStream {
     let started = false
     let currentBlockType: 'text' | 'thinking' | 'tool_use' | null = null
 
-    const tools: Anthropic.Tool[] = context.tools
+    const useCache = context.cacheRetention != null && context.cacheRetention !== 'none'
+
+    // Register/refresh cache scope for cross-turn tracking
+    if (useCache && context.scopeId) {
+      const existing = cacheRegistry.get(context.scopeId)
+      if (existing) {
+        cacheRegistry.refresh(context.scopeId, context.cacheRetention ?? 'short')
+      } else {
+        cacheRegistry.register(context.scopeId, context.messages, context.cacheRetention ?? 'short')
+      }
+    }
+
+    let tools: Anthropic.Tool[] = context.tools
       ? context.tools.map((t) => ({
           name: t.name,
           description: t.description,
@@ -287,13 +435,27 @@ class AnthropicStream implements ProviderStream {
         }))
       : []
 
+    let messages = buildAnthropicMessages(context.messages)
+
+    if (useCache) {
+      const retention = context.cacheRetention ?? 'short'
+      tools = injectToolsCache(tools, retention)
+      messages = injectMessageCache(messages, retention)
+    }
+
     const effectiveMaxTokens = context.maxTokens ?? model.maxOutputTokens
 
     const requestParams: Anthropic.MessageStreamParams = {
       model: model.name,
       max_tokens: effectiveMaxTokens,
-      ...(context.systemPrompt ? { system: context.systemPrompt } : {}),
-      messages: buildAnthropicMessages(context.messages),
+      ...(context.systemPrompt
+        ? {
+            system: useCache
+              ? buildSystemWithPromptCache(context)
+              : context.systemPrompt,
+          }
+        : {}),
+      messages,
       ...(tools.length > 0 ? { tools } : {}),
       ...(context.temperature !== undefined && !model.reasoning
         ? { temperature: context.temperature }
@@ -440,15 +602,37 @@ class AnthropicStream implements ProviderStream {
         }
       }
 
+      // Record cache usage for scope tracking
+      if (useCache && context.scopeId) {
+        cacheRegistry.recordUsage(
+          context.scopeId,
+          state.cacheReadTokens,
+          state.cacheWriteTokens,
+          state.inputTokens,
+        )
+      }
+
       yield { type: 'done', reason: state.stopReason, message: buildAssistantMessage(state) }
     } catch (error) {
       if (error instanceof Anthropic.APIError) {
-        yield {
-          type: 'error',
-          error: new ProviderError(`Anthropic API error ${error.status}: ${error.message}`, {
-            code: 'PROVIDER_API_ERROR',
-            cause: error,
-          }),
+        if (
+          error.status === 400 &&
+          /prompt.*(too long|too many tokens)|too many tokens|request too large/i.test(
+            error.message,
+          )
+        ) {
+          yield {
+            type: 'error',
+            error: new PromptTooLongError(`Prompt too long: ${error.message}`, { cause: error }),
+          }
+        } else {
+          yield {
+            type: 'error',
+            error: new ProviderError(`Anthropic API error ${error.status}: ${error.message}`, {
+              code: 'PROVIDER_API_ERROR',
+              cause: error,
+            }),
+          }
         }
       } else if (error instanceof Error) {
         yield { type: 'error', error }

@@ -9,11 +9,19 @@ export {
 
 export { prune } from './prune'
 
+export { snip } from './snip'
+
+export { planContextBudget } from './context-budget'
+export type { ContextBudgetPlannerConfig } from './context-budget'
+
+export { timeMicroCompact, cachedMicroCompact, MicroCompactCache } from './micro-compact'
+
 export {
   findCutPoint,
   needsCompaction,
   isEligibleForManualCompact,
   prepareCompaction,
+  preparePartialCompact,
   compact,
 } from './compaction'
 
@@ -36,6 +44,9 @@ export {
   resolveContextSize,
   DEFAULT_COMPACTION_CONFIG,
   DEFAULT_PRUNE_CONFIG,
+  DEFAULT_SNIP_CONFIG,
+  DEFAULT_TIME_MICRO_CONFIG,
+  DEFAULT_CACHED_MICRO_CONFIG,
 } from './defaults'
 
 export {
@@ -48,12 +59,34 @@ export {
 } from './token-estimator'
 
 export {
+  parseFrontmatter,
+  serializeEntry,
+  buildIndexContent,
+  filterMemoryByScope,
+  detectMemoryConflicts,
+  mergeMemoryEntries,
+  LayeredMemoryStore,
+  InMemoryLayeredStore,
+} from './layered-memory'
+
+export {
+  retrieveRelevantMemories,
+  buildInjectionFromRetrieved,
+  evaluateSemanticRetrieval,
+} from './semantic-retrieval'
+
+export { extractMemories, extractAndSave, parseExtractionResponse } from './memory-extraction'
+
+export {
   SUMMARIZATION_PROMPT,
   UPDATE_SUMMARIZATION_PROMPT,
   TURN_PREFIX_SUMMARIZATION_PROMPT,
   buildSummarizationPrompt,
   buildTurnPrefixPrompt,
   buildMemoryInjection,
+  buildLayeredMemoryInjection,
+  SEMANTIC_RETRIEVAL_PROMPT,
+  MEMORY_EXTRACTION_PROMPT,
   buildArchiveReference,
 } from './prompts'
 
@@ -62,9 +95,30 @@ export type {
   StorageType,
   MemorySource,
   MemoryStore,
+  MemoryType,
+  MemoryEntryMeta,
+  MemoryEntry,
+  LayeredMemoryStoreOptions,
+  SemanticRetrievalConfig,
+  SemanticRetrievalOptions,
+  SemanticRetrievalQuality,
+  MemoryScopeFilter,
+  MemoryConflict,
+  MemoryExtractionConfig,
+  MemoryExtractionResult,
+  MemoryEntryStore,
+  SnipConfig,
+  SnipResult,
+  TimeBasedMicroConfig,
+  TimeBasedMicroResult,
+  CachedMicroConfig,
+  CachedMicroResult,
+  ContextBudgetAction,
+  ContextBudgetPlan,
   PruneConfig,
   PruneResult,
   CompactionConfig,
+  PartialCompactOptions,
   CutPoint,
   CompactionPreparation,
   CompactionResult,
@@ -81,7 +135,24 @@ export type {
 } from './types'
 
 export { FileStateManager } from './file-state-snapshot'
-export type { FileStateSnapshot, FileStateCapture } from './file-state-snapshot'
+export type {
+  FileStateSnapshot,
+  FileStateCapture,
+  FileContentSnapshot,
+} from './file-state-snapshot'
+
+export {
+  collectRestorationState,
+  buildRestorationMessage,
+  mergeRestorationState,
+  createEmptyRestorationState,
+} from './state-restoration'
+export type {
+  RestorationState,
+  RestorationFile,
+  RestorationTodo,
+  McpServerSnapshot,
+} from './state-restoration'
 
 export { OperationalLearningStore } from './operational-learning'
 export type {

@@ -1,3 +1,4 @@
+import { isRecord, readNumber, readObject, readString } from '@vitamin/shared/browser/data'
 import { create } from 'zustand'
 import { ws } from '../api/websocket'
 
@@ -5,7 +6,7 @@ export interface ActiveToolCall {
   toolName: string
   toolId: string
   args: Record<string, unknown>
-  startedAt: number // Date.now()
+  startedAt: number // Date.now() 时间戳
 }
 
 export interface CompletedToolCall {
@@ -34,7 +35,7 @@ export interface SubagentState {
 
 interface SubagentStore {
   subagents: Map<string, SubagentState>
-  // Ordered list of subagent IDs for display
+  // 用于显示的 subagent ID 有序列表
   order: string[]
 }
 
@@ -42,49 +43,6 @@ export const useSubagentStore = create<SubagentStore>(() => ({
   subagents: new Map(),
   order: [],
 }))
-
-type EventData = Record<string, unknown>
-
-function asEventData(value: unknown): EventData | null {
-  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    return value as EventData
-  }
-
-  return null
-}
-
-function readString(data: EventData, ...keys: string[]): string | undefined {
-  for (const key of keys) {
-    const value = data[key]
-    if (typeof value === 'string') {
-      return value
-    }
-  }
-
-  return undefined
-}
-
-function readNumber(data: EventData, ...keys: string[]): number | undefined {
-  for (const key of keys) {
-    const value = data[key]
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return value
-    }
-  }
-
-  return undefined
-}
-
-function readObject(data: EventData, ...keys: string[]): Record<string, unknown> | undefined {
-  for (const key of keys) {
-    const value = data[key]
-    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      return value as Record<string, unknown>
-    }
-  }
-
-  return undefined
-}
 
 function formatToolVerb(toolName: string): string {
   const map: Record<string, string> = {
@@ -140,8 +98,8 @@ export { formatToolVerb, formatToolArg }
 // ─── WebSocket Event Handlers ───────────────────────────────────────────────
 
 ws.on('Chat.subagentStart', (message) => {
-  const d = asEventData(message.data)
-  if (!d) {return}
+  if (!isRecord(message.data)) {return}
+  const d = message.data
 
   const id = readString(d, 'subagentId', 'toolCallId') || `sa-${Date.now()}`
   const name = readString(d, 'agentType', 'subagentName') || 'Agent'
@@ -166,7 +124,7 @@ ws.on('Chat.subagentStart', (message) => {
 
   useSubagentStore.setState((state) => {
     const subagents = new Map(state.subagents)
-    // Clear all finished subagents when a new batch starts
+    // 新批次开始时清除所有已完成的 subagent
     const allFinished =
       state.order.length > 0 &&
       state.order.every((sid) => {
@@ -184,10 +142,10 @@ ws.on('Chat.subagentStart', (message) => {
 })
 
 ws.on('Chat.nestedToolCall', (message) => {
-  const d = asEventData(message.data)
-  if (!d) {return}
+  if (!isRecord(message.data)) {return}
+  const d = message.data
 
-  // Try to find the subagent this tool belongs to
+  // 尝试找到此工具属于哪个 subagent
   const state = useSubagentStore.getState()
   const subagentId = readString(d, 'subagentId', 'parentSubagentId')
 
@@ -219,8 +177,8 @@ ws.on('Chat.nestedToolCall', (message) => {
 })
 
 ws.on('Chat.nestedToolResult', (message) => {
-  const d = asEventData(message.data)
-  if (!d) {return}
+  if (!isRecord(message.data)) {return}
+  const d = message.data
 
   const subagentId = readString(d, 'subagentId', 'parentSubagentId')
 
@@ -233,7 +191,7 @@ ws.on('Chat.nestedToolResult', (message) => {
       const activeTools = new Map(sa.activeTools)
       const toolId = readString(d, 'toolCallId', 'toolId')
 
-      // Find by tool id or by tool name match.
+      // 通过 tool id 或工具名匹配查找
       let matchedId = toolId && activeTools.has(toolId) ? toolId : null
       if (!matchedId) {
         for (const [tid, tc] of activeTools) {
@@ -257,7 +215,7 @@ ws.on('Chat.nestedToolResult', (message) => {
             success: d.success !== false,
           },
         ]
-        // Cap at 50
+        // 最多保留 50 条记录
         if (completedTools.length > 50) {
           completedTools.splice(0, completedTools.length - 50)
         }
@@ -271,8 +229,8 @@ ws.on('Chat.nestedToolResult', (message) => {
 })
 
 ws.on('Chat.subagentComplete', (message) => {
-  const d = asEventData(message.data)
-  if (!d) {return}
+  if (!isRecord(message.data)) {return}
+  const d = message.data
 
   const id = readString(d, 'subagentId', 'toolCallId')
   if (!id) {return}
@@ -280,7 +238,7 @@ ws.on('Chat.subagentComplete', (message) => {
   useSubagentStore.setState((prev) => {
     const subagents = new Map(prev.subagents)
 
-    // Try to find by subagent id first, then by tool call id.
+    // 先按 subagent id 查找，再按 tool call id 查找
     let sa = subagents.get(id)
     let matchedId = id
     if (!sa) {
@@ -311,11 +269,12 @@ ws.on('Chat.subagentComplete', (message) => {
   })
 })
 
-// Token updates (if backend sends them)
+// Token 用量更新（如果后端发送）
 ws.on('Session.statusUpdate', (message) => {
-  const d = asEventData(message.data)
-  const subagentId = d ? readString(d, 'subagentId') : undefined
-  const tokenCount = d ? readNumber(d, 'tokenCount') : undefined
+  if (!isRecord(message.data)) {return}
+  const d = message.data
+  const subagentId = readString(d, 'subagentId')
+  const tokenCount = readNumber(d, 'tokenCount')
   if (!subagentId || tokenCount == null) {return}
 
   useSubagentStore.setState((prev) => {

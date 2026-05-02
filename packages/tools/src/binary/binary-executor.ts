@@ -156,7 +156,7 @@ export abstract class BinaryToolExecutor implements BinaryTool {
   public abstract name: string
   public abstract version: string
 
-  // toolName + version
+  // 缓存目录名：工具名 + 版本号
   protected get cacheDir(): string {
     return `${this.name}-${this.version}`
   }

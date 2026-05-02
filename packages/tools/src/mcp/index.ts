@@ -8,8 +8,15 @@ export {
   createMcpManager,
   createMcpToolAdapter,
   createMcpToolAdapters,
+  createMcpAgentTools,
+  createMcpListResourcesTool,
+  createMcpReadResourceTool,
+  createMcpListPromptsTool,
+  createMcpGetPromptTool,
   StdioTransport,
   SseTransport,
+  createStdioTransport,
+  createSseTransport,
 } from '@vitamin/mcp'
 
 export type {
@@ -28,4 +35,8 @@ export type {
   McpJsonSchemaProperty,
   McpServerCapabilities,
   McpInitializeResult,
+  McpResource,
+  McpResourceContents,
+  McpPrompt,
+  McpPromptMessage,
 } from '@vitamin/mcp'

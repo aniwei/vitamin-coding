@@ -26,38 +26,23 @@
 
 组合多个 Source 提供统一加载接口：
 
-- `loadAll()` → 并行加载所有 Source → 合并为 `LoadedResources`
-- `getMemories()` → 记忆注入内容
-- `getPromptTemplates()` → 提示模板列表
-- `getDiagnostics()` → 加载诊断信息
+- `loadAll()` → **并行加载**所有 Source（Promise.allSettled），合并为 `LoadedResources`
+- `getMemories()` → 返回已加载的记忆注入内容
+- `getPromptTemplates()` → 返回提示模板列表
+- `getDiagnostics()` → 返回碰撞检测诊断信息
 
-### 记忆注入源
+**并行加载**设计：各 Source 之间无依赖，使用 `Promise.allSettled` 确保单个 Source 失败不影响其他 Source 加载，失败的 Source 将错误记录到 diagnostics。
 
-- `PersistentMemorySource`：基于 `@vitamin/memory` PersistentMemory 加载 AGENTS.md
-- `InMemoryMemorySource`：纯内存（测试用）
+**碰撞检测（collision-detection.ts）**：
 
-### 提示模板源
+`detectCollisions(templates)` 检测多个 Source 中同名资源冲突：
 
-- `FilesystemPromptTemplateSource`：从文件系统扫描 `.vitamin/prompts/`
-- `InMemoryPromptTemplateSource`：纯内存（测试用）
+- 按 `name` 分组统计，重复则记录 `Diagnostic { severity: 'warning', message: '...' }`
+- 不阻止加载，仅警告（由上层展示给用户）
 
-### LoadedResources（types.ts）
+**watch 模式**：
 
-```ts
-interface LoadedResources {
-  memories: MemoryContext[]
-  agentInstructions: string[]
-  promptTemplates: PromptTemplate[]
-  diagnostics: Diagnostic[]
-}
-```
-
-### 冲突检测（collision-detection.ts）
-
-检测多个 Source 加载同名资源的情况：
-
-- `detectCollisions(templates)` → 按名称分组，报告重复
-- 记录到 diagnostics 供上层展示
+`DefaultResourceManager.watch()` 启动文件监控（仅文件系统 Source 支持），文件变更时重新加载对应 Source 并发射 `resources:updated` 事件，`VitaminApp` 订阅此事件触发相关子系统刷新。
 
 ## 实现流程
 

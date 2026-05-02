@@ -55,6 +55,29 @@ export class StdioTransport implements McpTransport {
       logger.debug('MCP process exited: code=%s signal=%s', code, signal)
       this.process = null
     })
+
+    await new Promise<void>((resolve, reject) => {
+      const proc = this.process
+      if (!proc) {
+        resolve()
+        return
+      }
+
+      const onError = (err: Error): void => {
+        cleanup()
+        reject(err)
+      }
+      const onReady = (): void => {
+        cleanup()
+        resolve()
+      }
+      const cleanup = (): void => {
+        proc.off('error', onError)
+        clearImmediate(ready)
+      }
+      const ready = setImmediate(onReady)
+      proc.once('error', onError)
+    })
   }
 
   send(message: JsonRpcRequest | JsonRpcNotification): void {

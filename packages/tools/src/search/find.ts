@@ -170,7 +170,7 @@ async function find(
 
   const args = await prepareSearchArgs(pattern, targetDir, limit)
   const result = await fd.execute(args, {
-    // TODO: add max buffer
+    // TODO: 添加最大缓冲区限制
   })
 
   if (result.exitCode !== 0) {

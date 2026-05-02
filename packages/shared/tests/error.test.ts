@@ -10,6 +10,8 @@ import {
   SessionError,
   StreamError,
   ToolError,
+  isVitaminError,
+  serializeError,
 } from '../src/error'
 
 describe('VitaminError', () => {
@@ -39,6 +41,59 @@ describe('VitaminError', () => {
           cause,
         })
         expect(error.cause).toBe(cause)
+      })
+    })
+
+    describe('#when constructed with metadata and retryable', () => {
+      it('#then exposes structured fields and JSON serialization', () => {
+        const cause = new Error('temporary failure')
+        const error = new VitaminError('wrapped', {
+          code: 'WRAP_RETRY',
+          cause,
+          retryable: true,
+          metadata: { provider: 'test', attempt: 2 },
+        })
+
+        expect(error.retryable).toBe(true)
+        expect(error.metadata).toEqual({ provider: 'test', attempt: 2 })
+        expect(error.toJSON()).toEqual({
+          name: 'Error',
+          message: 'wrapped',
+          code: 'WRAP_RETRY',
+          retryable: true,
+          metadata: { provider: 'test', attempt: 2 },
+          cause: { name: 'Error', message: 'temporary failure' },
+        })
+      })
+    })
+  })
+
+  describe('#serializeError', () => {
+    it('#then serializes Vitamin errors with code and metadata', () => {
+      const error = new ToolError('blocked', {
+        code: 'TOOL_BLOCKED',
+        metadata: { tool: 'web_fetch' },
+      })
+
+      expect(isVitaminError(error)).toBe(true)
+      expect(serializeError(error)).toMatchObject({
+        name: 'ToolError',
+        message: 'blocked',
+        code: 'TOOL_BLOCKED',
+        metadata: { tool: 'web_fetch' },
+      })
+    })
+
+    it('#then serializes unknown errors with a fallback code', () => {
+      expect(serializeError(new Error('boom'))).toEqual({
+        name: 'Error',
+        message: 'boom',
+        code: 'UNKNOWN_ERROR',
+      })
+      expect(serializeError('boom')).toEqual({
+        name: 'Error',
+        message: 'boom',
+        code: 'UNKNOWN_ERROR',
       })
     })
   })

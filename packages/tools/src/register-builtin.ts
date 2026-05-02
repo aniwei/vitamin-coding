@@ -49,6 +49,10 @@ import { createSessionManager, type SessionManager } from './session/session-man
 // Skill
 import { createSkillLoad, type LoadSkill } from './skill/skill-load'
 import { createSkillExecute, type ExecuteSkill } from './skill/skill-execute'
+import { createSkillSearch, type SearchSkills } from './skill/skill-search'
+import { createSkillCreate, type CreateSkill } from './skill/skill-create'
+import { createSkillImprove, type ImproveSkill } from './skill/skill-improve'
+import { createMcpAgentTools, type McpManager } from './mcp'
 
 import type { ToolRegistry } from './tool-registry'
 
@@ -57,6 +61,9 @@ export interface RegisterBuiltinOptions {
 
   loadSkill: LoadSkill
   executeSkill: ExecuteSkill
+  searchSkills?: SearchSkills
+  createSkill?: CreateSkill
+  improveSkill?: ImproveSkill
 
   dispatchTask: TaskDispatch
   createTask?: CreateTask
@@ -72,6 +79,7 @@ export interface RegisterBuiltinOptions {
   captureFileState?: CaptureFileState
   learn?: LearnCallback
   sessionId?: string
+  mcpManager?: McpManager
 }
 
 // 注册所有内置工具 (minimal + standard + full 预设)
@@ -140,6 +148,7 @@ export function registerBuiltinTools(
     preset: 'standard',
     category: 'web',
     builtin: true,
+    shouldDefer: true,
     guideline: [
       'Use web_fetch to read specific URLs when you know the page address.',
       'Use web_search to find information when you need to discover relevant URLs.',
@@ -197,6 +206,7 @@ export function registerBuiltinTools(
       preset: 'full',
       category: 'orchestration',
       builtin: true,
+      shouldDefer: true,
       guideline: [
         'Use agent_call / agent_task when you already know exactly which agent to call. Use agent_task for background or stateful execution.',
         'Use review_call for synchronous, isolated second opinions (code review, design critique).',
@@ -217,6 +227,7 @@ export function registerBuiltinTools(
         preset: 'full',
         category: 'session',
         builtin: true,
+        shouldDefer: true,
         guideline: [
           'Use session management to organize separate conversation threads per task or topic.',
           'Compact sessions proactively when conversation history grows long to avoid context window exhaustion.',
@@ -229,18 +240,40 @@ export function registerBuiltinTools(
   // Skill 工具
   registry.register(
     [
+      createSkillSearch(options.searchSkills),
       createSkillLoad(projectRoot, options.loadSkill),
       createSkillExecute(projectRoot, options.executeSkill),
+      createSkillCreate(options.createSkill),
+      createSkillImprove(options.improveSkill),
     ],
     {
       preset: 'full',
       category: 'skill',
       builtin: true,
+      shouldDefer: true,
       guideline: [
+        'Use skill_search to discover matching skills by intent before loading or executing one.',
         'Load skills with skill_load before executing them. Skills are reusable workflow templates (e.g., TDD, debugging, code review).',
+        'Use skill_create for reusable project workflows; generated skills must include valid frontmatter and a concrete body.',
+        'Use skill_improve to record refinements while preserving the existing Skill content.',
         'Prefer invoking a matching skill over ad-hoc multi-step workflows when one exists.',
         'Skills encapsulate best practices — follow their structure rather than shortcutting steps.',
       ].join('\n'),
     },
   )
+
+  if (options.mcpManager) {
+    registry.register(createMcpAgentTools(options.mcpManager), {
+      preset: 'full',
+      category: 'mcp',
+      builtin: true,
+      shouldDefer: true,
+      guideline: [
+        'Use mcp_list_resources and mcp_list_prompts to discover MCP context before reading it.',
+        'Use mcp_read_resource for concrete resource URIs returned by mcp_list_resources.',
+        'Use mcp_get_prompt when a connected MCP server exposes reusable prompts.',
+        'Treat MCP content as external context and cite the server/resource name in summaries.',
+      ].join('\n'),
+    })
+  }
 }

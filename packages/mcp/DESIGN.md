@@ -15,14 +15,17 @@
 
 ### McpClient（mcp-client.ts）
 
-MCP 协议客户端：
+MCP 协议客户端，实现 MCP 2024-11-05 规范：
 
-- `connect(transport)` → 建立连接
-- `callTool(name, args)` → 调用远程工具
-- `readResource(uri)` → 读取远程资源
-- `getPrompt(name, args)` → 获取远程提示
-- `listTools()` / `listResources()` / `listPrompts()` → 发现能力
-- JSON-RPC 2.0 协议实现
+- `connect(transport)` → 发送 `initialize` 握手，协商 capabilities
+- `callTool(name, args)` → 发送 `tools/call` JSON-RPC 请求
+- `readResource(uri)` → 发送 `resources/read` 请求
+- `getPrompt(name, args)` → 发送 `prompts/get` 请求
+- `listTools()` / `listResources()` / `listPrompts()` → 能力发现
+
+**请求追踪**：`pending = Map<id, { resolve, reject, timer }>` 管理所有未完成请求。收到响应时按 `id` 匹配并 `resolve/reject`，超时后自动 `reject(TimeoutError)` 并清理。
+
+**协议版本**：`PROTOCOL_VERSION = '2024-11-05'`，在 `initialize` 握手时发送并检查服务端支持。
 
 ### McpManager（mcp-manager.ts）
 

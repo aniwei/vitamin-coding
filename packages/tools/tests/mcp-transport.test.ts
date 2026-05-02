@@ -3,7 +3,7 @@
 // 以及 SseTransport 的构建
 
 import { describe, expect, it } from 'vitest'
-import { StdioTransport, SseTransport, createStdioTransport, createSseTransport } from '../src/mcp/transport'
+import { StdioTransport, SseTransport, createStdioTransport, createSseTransport } from '@vitamin/mcp'
 
 describe('StdioTransport', () => {
   describe('#constructor', () => {

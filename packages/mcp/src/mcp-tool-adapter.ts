@@ -3,6 +3,10 @@
 // 从 @vitamin/tools 迁移
 
 import { z } from 'zod'
+import {
+  jsonSchemaObjectToZod,
+  jsonSchemaPropertyToZod as baseJsonSchemaPropertyToZod,
+} from '@vitamin/schema'
 import { createLogger } from '@vitamin/shared'
 import type { AgentTool, ToolResult } from '@vitamin/agent'
 import type { McpClient } from './mcp-client'
@@ -14,66 +18,14 @@ const logger = createLogger('@vitamin/mcp:adapter')
  * 将 MCP JSON Schema property → Zod Schema
  */
 export function jsonSchemaPropertyToZod(prop: McpJsonSchemaProperty): z.ZodType {
-  switch (prop.type) {
-    case 'string':
-      if (prop.enum) {
-        const values = prop.enum as [string, ...string[]]
-        return z.enum(values)
-      }
-      return prop.description ? z.string().describe(prop.description) : z.string()
-
-    case 'number':
-    case 'integer':
-      return prop.description ? z.number().describe(prop.description) : z.number()
-
-    case 'boolean':
-      return prop.description ? z.boolean().describe(prop.description) : z.boolean()
-
-    case 'array': {
-      const itemSchema = prop.items ? jsonSchemaPropertyToZod(prop.items) : z.unknown()
-      return prop.description ? z.array(itemSchema).describe(prop.description) : z.array(itemSchema)
-    }
-
-    case 'object': {
-      if (prop.properties) {
-        const shape: Record<string, z.ZodType> = {}
-        const requiredSet = new Set(prop.required ?? [])
-
-        for (const [key, value] of Object.entries(prop.properties)) {
-          const fieldSchema = jsonSchemaPropertyToZod(value)
-          shape[key] = requiredSet.has(key) ? fieldSchema : fieldSchema.optional()
-        }
-
-        return prop.description ? z.object(shape).describe(prop.description) : z.object(shape)
-      }
-      return prop.description
-        ? z.record(z.string(), z.unknown()).describe(prop.description)
-        : z.record(z.string(), z.unknown())
-    }
-
-    default:
-      return z.unknown()
-  }
+  return baseJsonSchemaPropertyToZod(prop)
 }
 
 /**
  * 将 MCP tool inputSchema → Zod schema
  */
 export function mcpSchemaToZod(tool: McpToolDefinition): z.ZodType {
-  const props = tool.inputSchema.properties
-  if (!props || Object.keys(props).length === 0) {
-    return z.object({})
-  }
-
-  const shape: Record<string, z.ZodType> = {}
-  const requiredSet = new Set(tool.inputSchema.required ?? [])
-
-  for (const [key, value] of Object.entries(props)) {
-    const fieldSchema = jsonSchemaPropertyToZod(value)
-    shape[key] = requiredSet.has(key) ? fieldSchema : fieldSchema.optional()
-  }
-
-  return z.object(shape)
+  return jsonSchemaObjectToZod(tool.inputSchema)
 }
 
 /**
@@ -122,6 +74,9 @@ export function createMcpToolAdapter(
     description,
     parameters,
     visibility: 'always',
+    readonly: isMcpReadOnly(toolDef),
+    isReadOnly: () => isMcpReadOnly(toolDef),
+    isConcurrencySafe: () => isMcpReadOnly(toolDef),
 
     async execute({ params }): Promise<ToolResult> {
       logger.debug('Calling MCP tool %s on server %s', toolDef.name, serverName)
@@ -143,6 +98,11 @@ export function createMcpToolAdapter(
       }
     },
   }
+}
+
+function isMcpReadOnly(toolDef: McpToolDefinition): boolean {
+  const annotations = toolDef.annotations
+  return annotations?.readOnlyHint === true && annotations.destructiveHint !== true
 }
 
 /**

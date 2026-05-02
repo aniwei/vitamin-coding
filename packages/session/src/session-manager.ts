@@ -2,6 +2,7 @@ import { InMemorySession } from './in-memory-session'
 import { InMemorySessionStore } from './store'
 import { FileSessionPersistence } from './file-persistence'
 import { SESSION_MAX, SESSION_IDLE_TIMEOUT_MS, SESSION_SNAPSHOT_VERSION } from '@vitamin/env'
+import { SessionError } from '@vitamin/shared'
 import { RemoteSessionPersistence } from './remote-persistence'
 import type {
   PaginatedResult,
@@ -73,7 +74,10 @@ export class SessionManager<T = unknown> {
     const session = this.active
 
     if (!session) {
-      throw new Error('No active session. Call setActive(id) or create() first.')
+      throw new SessionError('No active session. Call setActive(id) or create() first.', {
+        code: 'SESSION_ACTIVE_REQUIRED',
+        metadata: { operation: 'requireActive' },
+      })
     }
 
     return session
@@ -319,7 +323,15 @@ export class SessionManager<T = unknown> {
     this.assertSessionIdAvailable(id)
 
     if (!this.hasCapacity(1)) {
-      throw new Error(`Max sessions (${this.maxSessions}) reached after idle collection.`)
+      throw new SessionError(`Max sessions (${this.maxSessions}) reached after idle collection.`, {
+        code: 'SESSION_CAPACITY_EXCEEDED',
+        retryable: true,
+        metadata: {
+          maxSessions: this.maxSessions,
+          currentSessions: this.sessionCount(),
+          requiredCapacity: 1,
+        },
+      })
     }
   }
 
@@ -327,7 +339,15 @@ export class SessionManager<T = unknown> {
     this.collectIdleIfNeeded(requiredCapacity)
 
     if (!this.hasCapacity(requiredCapacity)) {
-      throw new Error(`Max sessions (${this.maxSessions}) reached after idle collection.`)
+      throw new SessionError(`Max sessions (${this.maxSessions}) reached after idle collection.`, {
+        code: 'SESSION_CAPACITY_EXCEEDED',
+        retryable: true,
+        metadata: {
+          maxSessions: this.maxSessions,
+          currentSessions: this.sessionCount(),
+          requiredCapacity,
+        },
+      })
     }
   }
 
@@ -358,14 +378,23 @@ export class SessionManager<T = unknown> {
 
   private assertSessionIdAvailable(id?: string): void {
     if (id && this.store.getSession(id)) {
-      throw new Error(`Session "${id}" already exists.`)
+      throw new SessionError(`Session "${id}" already exists.`, {
+        code: 'SESSION_ALREADY_EXISTS',
+        metadata: { sessionId: id },
+      })
     }
   }
 
   private async restoreWithSnapshot(snapshot: SessionSnapshot<T>): Promise<Session<T>> {
     const session = (await this.store.createSession(snapshot.id)) as InMemorySession<T>
     if (session instanceof InMemorySession) {
-      session.restoreEntries(snapshot.entries, snapshot.metadata, snapshot.leafId)
+      session.restoreEntries(
+        snapshot.entries,
+        snapshot.metadata,
+        snapshot.leafId,
+        snapshot.checkpoints,
+        snapshot.sideEffects,
+      )
     }
 
     return session
@@ -412,7 +441,10 @@ export function createRemoteSessionManager<T = unknown>(
   const persistence = new RemoteSessionPersistence<T>({
     baseUrl: endpoint,
     fetch() {
-      throw new Error('Fetch implementation is required for RemoteSessionPersistence')
+      throw new SessionError('Fetch implementation is required for RemoteSessionPersistence', {
+        code: 'SESSION_REMOTE_FETCH_REQUIRED',
+        metadata: { endpoint },
+      })
     },
     getAuth: async () => ({ token: '' }),
     timeoutMs: 30_000,

@@ -8,6 +8,7 @@ import { createFirstMessageVariantHook } from './core/session/first-message-vari
 import { createBabysittingHook } from './core/quality/babysitting'
 import { createRalphLoopHook } from './core/quality/ralph-loop'
 import { createCommentCheckerHook } from './core/quality/comment-checker'
+import { createPatchReviewGateHook } from './core/quality/patch-review-gate'
 import { createStreamMetricsHook } from './core/stream/stream-metrics'
 import { createCompactionLoggerHook } from './core/compaction/compaction-logger'
 import { createToolErrorTrackerHook } from './core/tool-guard/tool-error-tracker'
@@ -41,6 +42,7 @@ const HOOK_TIMINGS: HookTiming[] = [
   'tool.execute.after',
   'messages.transform',
   'chat.params',
+  'system-prompt.sections.transform',
   'session.created',
   'session.deleted',
   'session.idle',
@@ -80,6 +82,14 @@ export interface RegisteredHookInfo {
   enabled: boolean
 }
 
+type LegacyHookSpec = {
+  name: string
+  timing: HookTiming
+  priority?: number
+  enabled?: boolean
+  handle: HookHandle<HookTiming>
+}
+
 function createHookBuckets(): Record<HookTiming, HookSpec[]> {
   return {
     'chat.message.before': [],
@@ -88,6 +98,7 @@ function createHookBuckets(): Record<HookTiming, HookSpec[]> {
     'tool.execute.after': [],
     'messages.transform': [],
     'chat.params': [],
+    'system-prompt.sections.transform': [],
     'session.created': [],
     'session.deleted': [],
     'session.idle': [],
@@ -137,16 +148,17 @@ export class HookRegistry {
     }
   }
 
-  register(spec: HookSpec): void {
-    this.hooks[spec.timing].push(spec)
+  register(spec: HookSpec | LegacyHookSpec): void {
+    const normalized = normalizeHookSpec(spec)
+    this.hooks[normalized.timing].push(normalized)
 
     logger.debug(
-      { hookName: spec.name, timing: spec.timing, priority: spec.priority },
+      { hookName: normalized.name, timing: normalized.timing, priority: normalized.priority },
       'Hook registered',
     )
   }
 
-  registerAll(specs: HookSpec[]): void {
+  registerAll(specs: Array<HookSpec | LegacyHookSpec>): void {
     for (const spec of specs) {
       this.register(spec)
     }
@@ -286,6 +298,20 @@ function toHookInfo(hook: HookSpec): RegisteredHookInfo {
   }
 }
 
+function normalizeHookSpec(spec: HookSpec | LegacyHookSpec): HookSpec {
+  if ('kind' in spec) {
+    return spec
+  }
+
+  return defineHook({
+    name: spec.name,
+    timing: spec.timing,
+    handle: spec.handle,
+    priority: spec.priority,
+    enabled: spec.enabled,
+  })
+}
+
 function getPresetHooks(preset: HookPreset): HookSpec[] {
   switch (preset) {
     case 'default':
@@ -309,6 +335,7 @@ function getDefaultPresetHooks(): HookSpec[] {
     createFirstMessageVariantHook(),
     createBabysittingHook(),
     createRalphLoopHook(),
+    createPatchReviewGateHook(),
     createStreamMetricsHook(),
     createCompactionLoggerHook(),
     createToolErrorTrackerHook(),

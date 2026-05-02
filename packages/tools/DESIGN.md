@@ -13,22 +13,50 @@
 
 ## 实现原理
 
+### AgentTool 结构
+
+每个工具实现 `AgentTool` 接口：
+
+```typescript
+interface AgentTool {
+  name: string                             // 唯一工具名（LLM 调用时使用）
+  description: string                      // 工具说明（注入到 tools list）
+  schema: z.ZodObject<...>                 // 参数 Schema（用于 LLM 和校验）
+  preset?: ToolPreset                      // 'minimal' | 'standard' | 'full'
+  tags?: string[]                          // 标签（如 'readonly' / 'fs' / 'search'）
+  isReadOnly?: boolean                     // 只读标志（影响并行执行策略）
+  execute(context: ToolCallContext): Promise<ToolResult>
+}
+```
+
 ### 工具注册表（tool-registry.ts）
 
-`ToolRegistry` 管理 `AgentTool` 实例的注册与查询：
+`ToolRegistry` 内部使用 `Map<string, ToolEntry>` 存储注册工具：
 
-- `register(tool)`：注册具名工具
-- `get(name)` / `has(name)`：按名查询
-- `getAll()` / `getEnabled()` / `getByTag(tag)`：批量查询
-- `enable(name)` / `disable(name)` / `lock(name)`：启用/禁用/锁定工具
-- `setPreset(level)`：按预设批量切换工具状态
+```typescript
+interface ToolEntry {
+  tool: AgentTool
+  enabled: boolean
+  locked: boolean // locked=true 时 disable() 无效（内核工具保护）
+  preset: ToolPreset
+}
+```
 
-预设层级含义：
-| 预设 | 包含工具 |
-|------|----------|
-| `minimal` | 仅只读工具（read/search/ls 等） |
-| `standard` | 标准开发工具集（含 write/edit/bash） |
-| `full` | 全部工具（含编排/LSP/技能） |
+- `register(tool, options?)` → 校验 AgentTool 结构（isAgentTool 类型守卫），写入 Map
+- `get(name)` / `has(name)` → 单工具查询
+- `getEnabled(preset?)` → 返回当前已启用工具（可按 preset 过滤）
+- `getByTag(tag)` → 按标签过滤
+- `enable(name)` / `disable(name)` → 动态开关
+- `lock(name)` / `unlock(name)` → 保护关键工具不被 setting 关闭
+- `setPreset(preset)` → 按预设批量切换：`minimal` 只启用只读工具，`standard` 启用标准集，`full` 全开
+
+**预设层级**：
+
+| 预设       | 典型工具                                                  |
+| ---------- | --------------------------------------------------------- |
+| `minimal`  | read_file / list_dir / grep / find_file / web_fetch       |
+| `standard` | + write_file / edit_file / multi_edit / bash / web_search |
+| `full`     | + lsp\_\* / task_delegate / agent_call / load_skill       |
 
 ### 内置工具分类
 

@@ -29,6 +29,15 @@ export interface CodingSessionManagerOptions {
   threshold?: number
   logger: Logger
   devtools?: Devtools
+  model?: ResolvedSessionConfig['model']
+  agentName?: ResolvedSessionConfig['agentName']
+  systemPrompt?: ResolvedSessionConfig['systemPrompt']
+  tools?: ResolvedSessionConfig['tools']
+  thinkingLevel?: ResolvedSessionConfig['thinkingLevel']
+  maxToolTurns?: ResolvedSessionConfig['maxToolTurns']
+  promptRefresh?: ResolvedSessionConfig['promptRefresh']
+  workspaceDir?: ResolvedSessionConfig['workspaceDir']
+  permissionMetadata?: ResolvedSessionConfig['permissionMetadata']
   /**
    * 仅用于 restore / restoreAll 场景。
    * 正常 createSession 路径必须传入完整 ResolvedSessionConfig，不使用此字段。
@@ -74,6 +83,7 @@ export class CodingSessionManager {
   private readonly hookRegistry: HookRegistry
   private readonly logger: Logger
   private readonly devtools?: Devtools
+  private readonly defaultConfig: Partial<ResolvedSessionConfig>
 
   // 供 restore / restoreAll 路径使用，确保每次拿到最新配置
   private readonly configProvider?: () => ResolvedSessionConfig
@@ -83,6 +93,17 @@ export class CodingSessionManager {
     this.hookRegistry = options.hookRegistry
     this.logger = options.logger
     this.devtools = options.devtools
+    this.defaultConfig = {
+      model: options.model,
+      agentName: options.agentName,
+      systemPrompt: options.systemPrompt,
+      tools: options.tools,
+      thinkingLevel: options.thinkingLevel,
+      maxToolTurns: options.maxToolTurns,
+      promptRefresh: options.promptRefresh,
+      workspaceDir: options.workspaceDir,
+      permissionMetadata: options.permissionMetadata,
+    }
     this.configProvider = options.configProvider
     this.persistence = persistence
 
@@ -117,6 +138,7 @@ export class CodingSessionManager {
       maxToolTurns: config.maxToolTurns,
       promptRefresh: config.promptRefresh,
       workspaceDir: config.workspaceDir,
+      permissionMetadata: config.permissionMetadata,
       hookRegistry: this.hookRegistry,
       stream: this.stream,
       logger: this.logger.child({ sessionId: rawSession.id }),
@@ -126,9 +148,11 @@ export class CodingSessionManager {
 
   /**
    * 使用由 VitaminApp 完整解析好的配置创建 session。
-   * Manager 层不再进行任何业务默认值填充。
+   * 若调用方使用旧接口传入局部配置，则与 manager 默认配置合并。
    */
-  async createSession(config: ResolvedSessionConfig & { id?: string }): Promise<AgentSession> {
+  async createSession(
+    config: Partial<ResolvedSessionConfig> & { id?: string } = {},
+  ): Promise<AgentSession> {
     const id = config.id ?? crypto.randomUUID()
 
     if (this.sessions.has(id)) {
@@ -138,10 +162,11 @@ export class CodingSessionManager {
     this.prepareCapacity(id)
 
     const rawSession = new InMemorySession<AgentMessage>(id)
-    const agentSession = this.buildAgentSession(rawSession, config)
+    const resolvedConfig = this.resolveSessionConfig(config)
+    const agentSession = this.buildAgentSession(rawSession, resolvedConfig)
 
     this.sessions.set(id, agentSession)
-    this.configs.set(id, config)
+    this.configs.set(id, resolvedConfig)
     this.activeSessionId = id
 
     await this.hookRegistry.emit('session.created', {
@@ -156,6 +181,28 @@ export class CodingSessionManager {
     this.logger.info({ sessionId: id }, 'Session created')
 
     return agentSession
+  }
+
+  private resolveSessionConfig(
+    config: Partial<ResolvedSessionConfig> & { id?: string },
+  ): ResolvedSessionConfig {
+    const base = this.configProvider?.() ?? this.defaultConfig
+    const model = config.model ?? base.model
+    if (!model) {
+      throw new Error('No model specified')
+    }
+
+    return {
+      model,
+      agentName: config.agentName ?? base.agentName,
+      systemPrompt: config.systemPrompt ?? base.systemPrompt ?? '',
+      tools: config.tools ?? base.tools ?? [],
+      thinkingLevel: config.thinkingLevel ?? base.thinkingLevel ?? 'medium',
+      maxToolTurns: config.maxToolTurns ?? base.maxToolTurns ?? 25,
+      promptRefresh: config.promptRefresh ?? base.promptRefresh,
+      workspaceDir: config.workspaceDir ?? base.workspaceDir ?? process.cwd(),
+      permissionMetadata: config.permissionMetadata ?? base.permissionMetadata,
+    }
   }
 
   getSession(id: string): AgentSession | undefined {
@@ -200,7 +247,13 @@ export class CodingSessionManager {
    * fork 直接复用 source session 自身的已解析配置，
    * 消息通过复制 snapshot entries 完整迁移。
    */
-  async forkSession(sourceId: string, newId?: string): Promise<AgentSession | undefined> {
+  async forkSession(
+    sourceId: string,
+    newId?: string,
+    overrides: Partial<
+      Pick<ResolvedSessionConfig, 'agentName' | 'tools' | 'workspaceDir' | 'permissionMetadata'>
+    > = {},
+  ): Promise<AgentSession | undefined> {
     const sourceSession = this.sessions.get(sourceId)
     const sourceConfig = this.configs.get(sourceId)
     if (!sourceSession || !sourceConfig) {
@@ -228,17 +281,22 @@ export class CodingSessionManager {
         tags: [...snapshot.metadata.tags, 'fork'],
       },
       snapshot.leafId,
+      snapshot.checkpoints,
+      snapshot.sideEffects,
     )
 
     const forkedConfig: ResolvedSessionConfig = {
       model: sourceSession.model,
-      agentName: sourceSession.agentName !== 'agent' ? sourceSession.agentName : undefined,
+      agentName:
+        overrides.agentName ??
+        (sourceSession.agentName !== 'agent' ? sourceSession.agentName : undefined),
       systemPrompt: sourceSession.systemPrompt,
-      tools: sourceSession.tools,
+      tools: overrides.tools ?? sourceSession.tools,
       thinkingLevel: sourceSession.thinkingLevel,
       maxToolTurns: sourceSession.maxToolTurns,
       promptRefresh: sourceSession.promptRefresh,
-      workspaceDir: sourceSession.workspaceDir,
+      workspaceDir: overrides.workspaceDir ?? sourceSession.workspaceDir,
+      permissionMetadata: overrides.permissionMetadata ?? sourceConfig.permissionMetadata,
     }
 
     const agentSession = this.buildAgentSession(forkedRaw, forkedConfig)
@@ -296,7 +354,13 @@ export class CodingSessionManager {
     }
 
     const rawSession = new InMemorySession<AgentMessage>(snapshot.id)
-    rawSession.restoreEntries(snapshot.entries, snapshot.metadata, snapshot.leafId)
+    rawSession.restoreEntries(
+      snapshot.entries,
+      snapshot.metadata,
+      snapshot.leafId,
+      snapshot.checkpoints,
+      snapshot.sideEffects,
+    )
 
     const config = this.configProvider()
     const agentSession = this.buildAgentSession(rawSession, config)
@@ -334,7 +398,13 @@ export class CodingSessionManager {
       }
 
       const rawSession = new InMemorySession<AgentMessage>(snapshot.id)
-      rawSession.restoreEntries(snapshot.entries, snapshot.metadata, snapshot.leafId)
+      rawSession.restoreEntries(
+        snapshot.entries,
+        snapshot.metadata,
+        snapshot.leafId,
+        snapshot.checkpoints,
+        snapshot.sideEffects,
+      )
 
       const config = this.configProvider()
       const agentSession = this.buildAgentSession(rawSession, config)

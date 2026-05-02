@@ -206,6 +206,48 @@ describe('Orchestrator', () => {
     })
   })
 
+  describe('background cancellation', () => {
+    it('aborts a running background task through cancelBackground', async () => {
+      let seenSignal: AbortSignal | undefined
+      const orch = new Orchestrator({
+        hookRegistry: new HookRegistry(),
+        runSession: makeRunSession((opts) => {
+          seenSignal = opts.signal
+          return new Promise<RunSessionResult>((resolve, reject) => {
+            opts.signal?.addEventListener('abort', () => {
+              reject(new Error('cancelled by orchestrator'))
+            }, { once: true })
+            setTimeout(() => {
+              resolve({ text: 'late output', sessionId: 'late-session', durationMs: 100 })
+            }, 100)
+          })
+        }),
+      })
+
+      const dispatched = await orch.dispatchTask({
+        prompt: 'long background task',
+        mode: 'background',
+      })
+      expect(dispatched.success).toBe(true)
+
+      await new Promise(r => setTimeout(r, 10))
+      expect(seenSignal?.aborted).toBe(false)
+
+      const cancelled = await orch.cancelBackground(dispatched.id!)
+      expect(cancelled.success).toBe(true)
+      expect(seenSignal?.aborted).toBe(true)
+
+      await new Promise(r => setTimeout(r, 20))
+      const task = await orch.taskStore.get(dispatched.id!)
+      expect(task?.status).toBe('cancelled')
+
+      await new Promise(r => setTimeout(r, 120))
+      const latest = await orch.taskStore.get(dispatched.id!)
+      expect(latest?.status).toBe('cancelled')
+      expect(latest?.output).toBeUndefined()
+    })
+  })
+
   describe('clarifyRequest', () => {
     it('routes clarification through lead agent', async () => {
       const orch = new Orchestrator({

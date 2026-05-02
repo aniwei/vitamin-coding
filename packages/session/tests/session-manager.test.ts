@@ -2,8 +2,10 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
+import { SessionError } from '@vitamin/shared'
 import { InMemorySession } from '../src/in-memory-session'
 import { createDiskSessionPersistence } from '../src/file-persistence'
+import { InMemorySessionPersistence } from '../src/memory-persistence'
 import {
   SessionManager,
   createDiskSessionManager,
@@ -48,7 +50,10 @@ describe('SessionManager', () => {
       const manager = createInMemorySessionManager<string>()
 
       await manager.create('s1')
-      await expect(manager.create('s1')).rejects.toThrow('Session "s1" already exists.')
+      await expect(manager.create('s1')).rejects.toMatchObject({
+        code: 'SESSION_ALREADY_EXISTS',
+        metadata: { sessionId: 's1' },
+      })
 
       manager.dispose()
     })
@@ -59,7 +64,15 @@ describe('SessionManager', () => {
       await manager.create('first')
       await manager.create('second')
 
-      await expect(manager.create('third')).rejects.toThrow('Max sessions (2) reached after idle collection.')
+      await expect(manager.create('third')).rejects.toMatchObject({
+        code: 'SESSION_CAPACITY_EXCEEDED',
+        retryable: true,
+        metadata: {
+          maxSessions: 2,
+          currentSessions: 2,
+          requiredCapacity: 1,
+        },
+      })
 
       manager.dispose()
     })
@@ -95,6 +108,7 @@ describe('SessionManager', () => {
     it('#then helper methods throw without an active session', () => {
       const manager = createInMemorySessionManager<string>()
 
+      expect(() => manager.appendMessage('fail')).toThrow(SessionError)
       expect(() => manager.appendMessage('fail')).toThrow('No active session')
       expect(() => manager.buildSessionContext()).toThrow('No active session')
       expect(() => manager.getEntries()).toThrow('No active session')
@@ -220,6 +234,92 @@ describe('SessionManager', () => {
     })
   })
 
+  describe('#when persistence stores checkpoints and side effects', () => {
+    it('#then memory persistence round-trips checkpoint and side-effect state', async () => {
+      const persistence = new InMemorySessionPersistence<string>()
+      const writer = new SessionManager<string>({
+        store: new InMemorySessionStore<string>(),
+        persistence,
+      })
+
+      const session = await writer.create('checkpoint-persist') as InMemorySession<string>
+      session.append('before')
+      session.recordSideEffect({
+        type: 'file',
+        action: 'write',
+        targets: ['src/before.ts'],
+        toolCallId: 'tool-before',
+        toolName: 'write',
+        reversible: true,
+      })
+      const checkpoint = session.createCheckpoint('before edit')
+      session.append('after')
+      session.recordSideEffect({
+        type: 'file',
+        action: 'write',
+        targets: ['src/after.ts'],
+        toolCallId: 'tool-after',
+        toolName: 'write',
+        reversible: true,
+      })
+
+      await writer.save('checkpoint-persist')
+      writer.dispose()
+
+      const reader = new SessionManager<string>({
+        store: new InMemorySessionStore<string>(),
+        persistence,
+      })
+      const restored = await reader.restore('checkpoint-persist')
+
+      expect(restored?.messages()).toEqual(['before', 'after'])
+      expect(restored?.listSideEffects()).toHaveLength(2)
+      expect(restored?.listCheckpoints()).toHaveLength(1)
+      expect(restored?.restoreCheckpoint(checkpoint.id)).toBe(true)
+      expect(restored?.messages()).toEqual(['before'])
+      expect(restored?.listSideEffects().map((effect) => effect.targets[0])).toEqual([
+        'src/before.ts',
+      ])
+
+      reader.dispose()
+    })
+
+    it('#then restore accepts older snapshots without checkpoint fields', async () => {
+      const persistence = new InMemorySessionPersistence<string>()
+      await persistence.save({
+        id: 'old-snapshot',
+        entries: [
+          {
+            type: 'message',
+            id: 'entry-1',
+            message: 'legacy',
+            timestamp: Date.now(),
+          },
+        ],
+        metadata: {
+          createdAt: Date.now(),
+          lastActiveAt: Date.now(),
+          messageCount: 1,
+          compactionCount: 0,
+          tags: [],
+        },
+        leafId: 'entry-1',
+      })
+      const manager = new SessionManager<string>({
+        store: new InMemorySessionStore<string>(),
+        persistence,
+      })
+
+      const restored = await manager.restore('old-snapshot')
+
+      expect(restored?.messages()).toEqual(['legacy'])
+      expect(restored?.listCheckpoints()).toEqual([])
+      expect(restored?.listSideEffects()).toEqual([])
+
+      manager.dispose()
+    })
+  })
+
   describe('#when collecting idle sessions', () => {
     it('#then collectIdle removes stale sessions', async () => {
       const manager = createInMemorySessionManager<string>({ idleTimeoutMs: 50 })
@@ -287,6 +387,43 @@ describe('SessionManager', () => {
       expect(restored?.metadata().title).toBe('Saved Chat')
 
       manager2.dispose()
+    })
+
+    it('#then checkpoint and side-effect state survive disk restore', async () => {
+      const persistence = createDiskSessionPersistence<string>({ baseDir: tempDir })
+      const writer = new SessionManager<string>({
+        store: new InMemorySessionStore<string>(),
+        persistence,
+      })
+
+      const session = await writer.create('disk-checkpoint') as InMemorySession<string>
+      session.append('before')
+      session.recordSideEffect({
+        type: 'file',
+        action: 'edit',
+        targets: ['src/file.ts'],
+        toolCallId: 'tool-1',
+        toolName: 'apply_patch',
+        reversible: true,
+      })
+      const checkpoint = session.createCheckpoint('disk saved')
+      session.append('after')
+      await writer.save('disk-checkpoint')
+      writer.dispose()
+
+      const reader = new SessionManager<string>({
+        store: new InMemorySessionStore<string>(),
+        persistence,
+      })
+      const restored = await reader.restore('disk-checkpoint')
+
+      expect(restored?.listCheckpoints()).toHaveLength(1)
+      expect(restored?.listSideEffects()).toHaveLength(1)
+      expect(restored?.restoreCheckpoint(checkpoint.id)).toBe(true)
+      expect(restored?.messages()).toEqual(['before'])
+      expect(restored?.listSideEffects()[0]?.toolName).toBe('apply_patch')
+
+      reader.dispose()
     })
 
     it('#then restoreAll respects maxSessions', async () => {

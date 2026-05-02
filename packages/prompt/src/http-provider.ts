@@ -53,7 +53,7 @@ export class HttpPromptProvider implements PromptProvider {
         results.set(entry.key, entry)
       }
     } catch {
-      // fallback: load one by one
+      // 回退策略：逐个加载
       const entries = await Promise.all(keys.map((k) => this.load(k)))
       for (const entry of entries) {
         if (entry) {

@@ -131,7 +131,7 @@ function parseRgJsonOutput(stdout: string): RgMatch[] {
         })
       }
     } catch {
-      // Skip malformed JSON lines
+      // 跳过格式错误的 JSON 行
     }
   }
 
@@ -203,15 +203,14 @@ async function executeRg(
     const stdout: Buffer[] = []
 
     ps.stdout.on('data', (data) => stdout.push(data))
-    ps.stderr.on('data', () => {}) // drain stderr
+    ps.stderr.on('data', () => {}) // 消耗 stderr，防止堵塞
 
     ps.on('error', (err) => {
       resolve({ stdout: '', exitCode: -999, error: err.message })
     })
 
     ps.on('close', (code) => {
-      // rg exits 0 for matches, 1 for no matches, 2 for errors
-      // all are valid outcomes
+      // rg 退出码: 0 表示有匹配，1 表示无匹配，2 表示错误，均属正常结果
       resolve({
         stdout: Buffer.concat(stdout).toString('utf-8'),
         exitCode: code,
@@ -240,7 +239,7 @@ async function grep(
     throw new Error('ripgrep (rg) executor is not available')
   }
 
-  // Ensure rg is downloaded and available
+  // 确保 rg 已下载并可用
   let rgPath: string
   if (rgTool instanceof BinaryToolExecutor) {
     rgPath = await rgTool.ensure()
@@ -250,21 +249,20 @@ async function grep(
 
   const args = buildRgArgs(pattern, targetDir, ignoreCase, literal, glob, limit)
 
-  // Execute rg directly — we handle non-zero exit codes ourselves
-  // because rg exit code 1 = no matches (valid)
+  // 直接执行 rg — 自行处理非零退出码（rg 退出码 1 = 无匹配，属于正常）
   const result = await executeRg(rgPath, args)
 
-  // Spawn failure (binary not found, permission denied, etc.)
+  // spawn 失败（二进制未找到、权限错误等）
   if (result.exitCode === -999) {
     throw new Error(`Failed to execute ripgrep: ${result.error ?? 'unknown error'}`)
   }
 
-  // rg exit code 2 means error
+  // rg 退出码 2 表示错误
   if (result.exitCode === 2) {
     throw new Error(`ripgrep error while searching for "${pattern}"`)
   }
 
-  // Parse JSON output
+  // 解析 JSON 输出
   const allMatches = parseRgJsonOutput(result.stdout)
 
   if (allMatches.length === 0) {
@@ -273,15 +271,15 @@ async function grep(
     }
   }
 
-  // Apply limit
+  // 应用数量限制
   const matchLimitReached = allMatches.length > limit
   const matches = allMatches.slice(0, limit)
 
-  // Format output with context lines
+  // 带上下文行格式化输出
   const outputBlocks: string[] = []
   let linesTruncated = 0
 
-  // Group matches by file for efficient context reading
+  // 按文件分组匹配结果，提高上下文行读取效率
   const matchesByFile = new Map<string, RgMatch[]>()
   for (const match of matches) {
     const existing = matchesByFile.get(match.path)
@@ -302,7 +300,7 @@ async function grep(
       const block = formatMatchWithContext(match, relativePath, context)
       outputBlocks.push(block)
 
-      // Track truncated lines
+      // 统计被截断的行
       if (match.text.length > GREP_MAX_LINE_LENGTH) {
         linesTruncated++
       }
@@ -340,7 +338,7 @@ async function grep(
   }
 
   if (notices.length > 0) {
-    output += '\n\n(' + notices.join('. ') + ')'
+    output += `\n\n(${notices.join('. ')})`
   }
 
   return {

@@ -2,7 +2,7 @@ import { Hono } from 'hono'
 import type { Devtools, BreakpointPoint } from '@vitamin/devtools'
 import type { CodingService } from '../coding-service'
 
-export function createDevtoolsRoute(context: CodingService, devtools: Devtools | null): Hono {
+export function createDevtoolsRoute(_context: CodingService, devtools: Devtools | null): Hono {
   const app = new Hono()
 
   app.get('/status', (c) => {

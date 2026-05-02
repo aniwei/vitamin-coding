@@ -1,14 +1,11 @@
 // Skill 解析器 — 解析 SKILL.md 文件为 SkillDefinition
 // 支持 YAML frontmatter + Markdown body
 
-import { parse as parseYaml } from 'yaml'
+import { parseYamlFrontmatter } from '@vitamin/manifest'
 import { createLogger } from '@vitamin/shared'
 import type { SkillMetadata, SkillDefinition } from './types'
 
 const logger = createLogger('@vitamin/skill:parser')
-
-// frontmatter 分隔符正则
-const FRONTMATTER_RE = /^---\s*\n([\s\S]*?)\n---\s*\n?([\s\S]*)$/
 
 /**
  * 从 SKILL.md 原始文本解析出 SkillDefinition
@@ -19,21 +16,18 @@ export function parseSkillContent(
   directory: string,
   supportingFiles: string[] = [],
 ): SkillDefinition {
-  const match = FRONTMATTER_RE.exec(content.trim())
-
-  if (!match) {
-    throw new Error(`SKILL.md at "${filePath}" has no valid YAML frontmatter`)
-  }
-
-  const [, yamlStr, body] = match
-  let raw: Record<string, unknown>
-
+  let parsed: ReturnType<typeof parseYamlFrontmatter>
   try {
-    raw = parseYaml(yamlStr!) as Record<string, unknown>
-  } catch (err) {
-    throw new Error(`Failed to parse YAML frontmatter in "${filePath}": ${(err as Error).message}`)
+    parsed = parseYamlFrontmatter(content, filePath)
+  } catch (error) {
+    const code = error && typeof error === 'object' ? (error as { code?: unknown }).code : undefined
+    if (code === 'missing_frontmatter') {
+      throw new Error(`SKILL.md at "${filePath}" has no valid YAML frontmatter`)
+    }
+    throw error
   }
 
+  const raw = parsed.metadata
   if (!raw || typeof raw !== 'object') {
     throw new Error(`YAML frontmatter in "${filePath}" is not a valid object`)
   }
@@ -42,7 +36,7 @@ export function parseSkillContent(
 
   return {
     metadata,
-    body: (body ?? '').trim(),
+    body: parsed.body.trim(),
     directory,
     filePath,
     supportingFiles,

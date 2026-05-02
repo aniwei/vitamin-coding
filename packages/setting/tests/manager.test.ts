@@ -30,10 +30,11 @@ describe('setting loading and migrations', () => {
       paths: ['shared', 'project'],
     })
 
-    expect(setting.disabled_tools).toContain('read')
-    expect(setting.disabled_tools).toContain('grep')
-    expect(setting.disabled_tools).toContain('write')
-    expect(new Set(setting.disabled_tools).size).toBe(setting.disabled_tools.length)
+    const disabledTools = setting.disabled_tools ?? []
+    expect(disabledTools).toContain('read')
+    expect(disabledTools).toContain('grep')
+    expect(disabledTools).toContain('write')
+    expect(new Set(disabledTools).size).toBe(disabledTools.length)
   })
 
   it('applies registered migrations before final validation', async () => {

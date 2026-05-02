@@ -3,9 +3,8 @@
 
 import { describe, expect, it } from 'vitest'
 
-import { createMcpToolAdapter, createMcpToolAdapters } from '../src/mcp/mcp-tool-adapter'
-import type { McpClient } from '../src/mcp/mcp-client'
-import type { McpToolDefinition, McpToolCallResult } from '../src/mcp/types'
+import { createMcpToolAdapter, createMcpToolAdapters } from '@vitamin/mcp'
+import type { McpClient, McpToolDefinition, McpToolCallResult } from '@vitamin/mcp'
 
 // ─── 辅助函数 ───
 
@@ -66,6 +65,34 @@ describe('MCP Tool Adapter', () => {
       const adapted = createMcpToolAdapter(client, tool, 'util')
 
       expect(adapted.description).toBe('[MCP: util] ping')
+    })
+
+    it('#then readOnlyHint 映射为 readonly 和并发安全', () => {
+      const tool: McpToolDefinition = {
+        name: 'read_file',
+        inputSchema: { type: 'object' },
+        annotations: { readOnlyHint: true },
+      }
+      const client = createClientStub('fs', [tool])
+      const adapted = createMcpToolAdapter(client, tool, 'fs')
+
+      expect(adapted.readonly).toBe(true)
+      expect(adapted.isReadOnly?.({})).toBe(true)
+      expect(adapted.isConcurrencySafe?.({})).toBe(true)
+    })
+
+    it('#then destructiveHint blocks readOnlyHint', () => {
+      const tool: McpToolDefinition = {
+        name: 'delete_file',
+        inputSchema: { type: 'object' },
+        annotations: { readOnlyHint: true, destructiveHint: true },
+      }
+      const client = createClientStub('fs', [tool])
+      const adapted = createMcpToolAdapter(client, tool, 'fs')
+
+      expect(adapted.readonly).toBe(false)
+      expect(adapted.isReadOnly?.({})).toBe(false)
+      expect(adapted.isConcurrencySafe?.({})).toBe(false)
     })
   })
 

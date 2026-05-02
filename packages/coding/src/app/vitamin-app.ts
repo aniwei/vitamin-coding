@@ -12,11 +12,24 @@ import {
   createPermissionRegistry,
 } from '@vitamin/hooks'
 import type { PermissionMode, PermissionPolicySetting } from '@vitamin/hooks'
-import { createToolRegistry, ToolRegistry, type ExecuteSkill, type LoadSkill } from '@vitamin/tools'
+import {
+  createToolRegistry,
+  createPluginManager,
+  ToolRegistry,
+  type ExecuteSkill,
+  type LoadSkill,
+  type SearchSkills,
+  type CreateSkill,
+  type ImproveSkill,
+  type McpManager,
+  type PluginManager,
+} from '@vitamin/tools'
 import { SESSION_MAX } from '@vitamin/env'
 import { createResourceManager, SettingsManager } from '@vitamin/resources'
 import { Orchestrator } from '@vitamin/orchestrator'
+import type { RunSessionOptions, RunSessionResult } from '@vitamin/orchestrator'
 import { FileStateManager, OperationalLearningStore } from '@vitamin/memory'
+import type { SkillProvider } from '@vitamin/skill'
 
 import { attachLogListener, createLogger, type Logger } from '@vitamin/shared'
 import { AgentSession } from '../session/agent-session'
@@ -29,6 +42,8 @@ import {
 } from '../session/coding-session-manager'
 import {
   createToolGuidanceHook,
+  createSkillCatalogHook,
+  createMcpContextHook,
   createEnvironmentInjectionHook,
   createLessonInjectionHook,
   createPhaseTrackingHooks,
@@ -41,7 +56,7 @@ import {
   createPromptProvider,
   BUILTIN_PROMPTS_DIR,
 } from '@vitamin/prompt'
-import type { AgentProfile, SubAgentPromptContext } from '@vitamin/prompt'
+import type { AgentProfile } from '@vitamin/prompt'
 import { BUILTIN_AGENT_PROFILES } from '@vitamin/setting'
 
 import type { AgentTool } from '@vitamin/agent'
@@ -56,6 +71,51 @@ export { type VitaminAppOptions, type VitaminContext } from '../types'
 function filterToolsByNames(tools: AgentTool[], names: string[]): AgentTool[] {
   const nameSet = new Set(names)
   return tools.filter((tool) => nameSet.has(tool.name))
+}
+
+function applyToolBoundary(
+  tools: AgentTool[],
+  policy: NonNullable<RunSessionOptions['sidechain']>['policy'] | undefined,
+): AgentTool[] {
+  if (!policy || policy.permissionMode !== 'restricted') {
+    return tools
+  }
+
+  let scoped = tools
+  if (policy.allowedTools?.length) {
+    const allowed = new Set(policy.allowedTools)
+    scoped = scoped.filter((tool) => allowed.has(tool.name))
+  }
+  if (policy.deniedTools?.length) {
+    const denied = new Set(policy.deniedTools)
+    scoped = scoped.filter((tool) => !denied.has(tool.name))
+  }
+  return scoped
+}
+
+function createSidechainPermissionMetadata(
+  sidechain: RunSessionOptions['sidechain'] | undefined,
+): Record<string, unknown> | undefined {
+  if (!sidechain) {
+    return undefined
+  }
+
+  return {
+    sidechain: {
+      taskId: sidechain.taskId,
+      parentTaskId: sidechain.parentTaskId,
+      parentSessionId: sidechain.parentSessionId,
+      subagent: sidechain.subagent,
+      category: sidechain.category,
+      policy: {
+        ...sidechain.policy,
+        allowedTools: sidechain.policy.allowedTools
+          ? [...sidechain.policy.allowedTools]
+          : undefined,
+        deniedTools: sidechain.policy.deniedTools ? [...sidechain.policy.deniedTools] : undefined,
+      },
+    },
+  }
 }
 
 const TIER_TO_SLOT: Record<string, WorkflowSlot> = {
@@ -90,11 +150,14 @@ export class VitaminApp implements VitaminContext {
   public readonly maxToolTurns: number
 
   public readonly devtools: Devtools | null = null
+  public readonly mcpManager: McpManager | undefined
+  public readonly pluginManager: PluginManager | undefined
 
   private readonly fileStateManager: FileStateManager
   private readonly learningStore: OperationalLearningStore
   private readonly promptManager: PromptManager
   private readonly defaultModel?: Model
+  private readonly skillProvider?: SkillProvider
 
   private readonly orchestrator: Orchestrator
 
@@ -109,8 +172,11 @@ export class VitaminApp implements VitaminContext {
       description: tool.description,
       parameters: tool.parameters,
       readonly: tool.readonly,
+      shouldDefer: tool.shouldDefer ?? tool.metadata.shouldDefer,
       visibility: tool.metadata.builtin ? 'always' : 'when-enabled',
       execute: tool.execute,
+      isReadOnly: tool.isReadOnly,
+      isConcurrencySafe: tool.isConcurrencySafe,
     }))
   }
 
@@ -139,6 +205,8 @@ export class VitaminApp implements VitaminContext {
       workspaceDir,
       resourceManager,
     } = options
+    this.mcpManager = options.mcpManager
+    this.skillProvider = options.skillProvider
 
     this.maxSessions = maxSessions ?? SESSION_MAX
     this.maxToolTurns = maxToolTurns ?? 10
@@ -220,6 +288,9 @@ export class VitaminApp implements VitaminContext {
     this.codingSessionManager = this.initSessionManager(options, defaultModel)
     this.orchestrator = this.initOrchestrator()
     this.toolRegistry = this.initToolRegistry(options)
+    this.pluginManager = options.pluginRoots?.length
+      ? createPluginManager({ roots: options.pluginRoots, toolRegistry: this.toolRegistry })
+      : undefined
     const { permissionRegistry, auditLog } = this.initPermissions()
     this.permissionRegistry = permissionRegistry
     this.auditLog = auditLog
@@ -315,6 +386,18 @@ export class VitaminApp implements VitaminContext {
       await this.devtools.start()
     }
 
+    if (this.pluginManager) {
+      const diagnostics = await this.pluginManager.loadAll()
+      if (diagnostics.errors.length > 0) {
+        this.logger.warn(
+          'Plugin loading completed with %d error(s): %s',
+          diagnostics.errors.length,
+          diagnostics.errors.join('; '),
+        )
+      }
+      this.updatePermissionPolicies(this.settings.snapshot)
+    }
+
     this.logger.info('VitaminApp started')
   }
 
@@ -324,6 +407,9 @@ export class VitaminApp implements VitaminContext {
     }
 
     this.settings.dispose()
+    if (this.pluginManager) {
+      await this.pluginManager.unloadAll()
+    }
     this.resourceManager.dispose()
     this.toolRegistry.dispose()
     this.orchestrator.dispose()
@@ -386,7 +472,7 @@ export class VitaminApp implements VitaminContext {
         }
 
         if (promptPreset === 'subagent' && options.agentName) {
-          return this.promptManager.assemblePreset({
+          return this.promptManager.assemblePresetSections({
             preset: 'subagent',
             agentName: options.agentName,
             profile: agent.profile,
@@ -394,11 +480,14 @@ export class VitaminApp implements VitaminContext {
           })
         }
 
-        return this.promptManager.assemblePreset({ preset: 'main' })
+        return this.promptManager.assemblePresetSections({ preset: 'main' })
       })
 
+    const initialPrompt = options.systemPrompt ?? agent.systemPrompt ?? (await promptRefresh())
     const initialSystemPrompt =
-      options.systemPrompt ?? agent.systemPrompt ?? (await promptRefresh())
+      initialPrompt && typeof initialPrompt === 'object' && 'systemPrompt' in initialPrompt
+        ? initialPrompt.systemPrompt
+        : initialPrompt
 
     return {
       id: options.id,
@@ -410,6 +499,7 @@ export class VitaminApp implements VitaminContext {
       maxToolTurns: options.maxToolTurns ?? agent.maxToolTurns ?? this.maxToolTurns,
       promptRefresh,
       workspaceDir: options.workspaceDir ?? this.workspaceDir,
+      permissionMetadata: options.permissionMetadata,
     }
   }
 
@@ -433,8 +523,14 @@ export class VitaminApp implements VitaminContext {
     return removed
   }
 
-  async forkSession(sourceId: string, newId?: string): Promise<AgentSession | undefined> {
-    return this.codingSessionManager.forkSession(sourceId, newId)
+  async forkSession(
+    sourceId: string,
+    newId?: string,
+    overrides?: Partial<
+      Pick<ResolvedSessionConfig, 'agentName' | 'tools' | 'workspaceDir' | 'permissionMetadata'>
+    >,
+  ): Promise<AgentSession | undefined> {
+    return this.codingSessionManager.forkSession(sourceId, newId, overrides)
   }
 
   // ── Private init methods ─────────────────────────────────────────────────
@@ -455,7 +551,7 @@ export class VitaminApp implements VitaminContext {
           tools: [],
           thinkingLevel: 'medium' as const,
           maxToolTurns: this.maxToolTurns,
-          promptRefresh: () => this.promptManager.assemblePreset({ preset: 'main' }),
+          promptRefresh: () => this.promptManager.assemblePresetSections({ preset: 'main' }),
           workspaceDir: this.workspaceDir,
         })
       : undefined
@@ -496,18 +592,44 @@ export class VitaminApp implements VitaminContext {
   }
 
   private initOrchestrator(): Orchestrator {
-    const run = async (runOptions: {
-      prompt: string
-      sessionId?: string
-      sessionMode: 'ephemeral' | 'sticky'
-      agentName?: string
-      slot?: WorkflowSlot
-      promptContext?: SubAgentPromptContext
-    }) => {
+    const run = async (runOptions: RunSessionOptions): Promise<RunSessionResult> => {
       const startTime = Date.now()
+      const sidechain = runOptions.sidechain
+      const sidechainTools = applyToolBoundary(this.tools, sidechain?.policy)
+      const sidechainWorkspace = sidechain?.policy.workspaceRoot
+      const permissionMetadata = createSidechainPermissionMetadata(sidechain)
+      const childSessionId =
+        runOptions.sessionId ??
+        (sidechain?.parentSessionId && sidechain.taskId
+          ? `${sidechain.parentSessionId}::${sidechain.taskId}`
+          : undefined)
 
       let session: AgentSession
-      if (runOptions.sessionMode === 'sticky' && runOptions.sessionId) {
+      const stickySession =
+        runOptions.sessionMode === 'sticky' && runOptions.sessionId
+          ? this.getSession(runOptions.sessionId)
+          : undefined
+      if (runOptions.sessionMode === 'sticky' && runOptions.sessionId && stickySession) {
+        session = stickySession
+      } else if (sidechain?.parentSessionId) {
+        const forked = await this.forkSession(sidechain.parentSessionId, childSessionId, {
+          agentName: runOptions.agentName,
+          tools: sidechainTools,
+          workspaceDir: sidechainWorkspace,
+          permissionMetadata,
+        })
+        session =
+          forked ??
+          (await this.createSession({
+            id: childSessionId,
+            agentName: runOptions.agentName,
+            slot: runOptions.slot,
+            promptContext: runOptions.promptContext,
+            tools: sidechainTools,
+            workspaceDir: sidechainWorkspace,
+            permissionMetadata,
+          }))
+      } else if (runOptions.sessionMode === 'sticky' && runOptions.sessionId) {
         const existing = this.getSession(runOptions.sessionId)
         if (existing) {
           session = existing
@@ -517,27 +639,49 @@ export class VitaminApp implements VitaminContext {
             agentName: runOptions.agentName,
             slot: runOptions.slot,
             promptContext: runOptions.promptContext,
+            tools: sidechainTools,
+            workspaceDir: sidechainWorkspace,
+            permissionMetadata,
           })
         }
       } else {
         session = await this.createSession({
+          id: childSessionId,
           agentName: runOptions.agentName,
           slot: runOptions.slot,
           promptContext: runOptions.promptContext,
+          tools: sidechainTools,
+          workspaceDir: sidechainWorkspace,
+          permissionMetadata,
         })
       }
 
-      await session.prompt(runOptions.prompt)
-      const text = getLastAssistantText(session.session.messages())
+      const resultSessionId = session.id
+      try {
+        await session.prompt(runOptions.prompt, { signal: runOptions.signal })
+        const text = getLastAssistantText(session.session.messages())
+        const transcript = sidechain ? [...session.session.messages()] : undefined
+        const summary = sidechain ? text : undefined
 
-      if (runOptions.sessionMode === 'ephemeral') {
-        await this.removeSession(session.id)
-      }
-
-      return {
-        text,
-        sessionId: session.id,
-        durationMs: Date.now() - startTime,
+        return {
+          text,
+          sessionId: resultSessionId,
+          durationMs: Date.now() - startTime,
+          summary,
+          transcript,
+        }
+      } catch (error) {
+        if (sidechain && error instanceof Error) {
+          Object.assign(error, {
+            sidechainSessionId: resultSessionId,
+            sidechainTranscript: [...session.session.messages()],
+          })
+        }
+        throw error
+      } finally {
+        if (runOptions.sessionMode === 'ephemeral') {
+          await this.removeSession(resultSessionId)
+        }
       }
     }
 
@@ -563,11 +707,23 @@ export class VitaminApp implements VitaminContext {
           success: false,
           error: 'Skill provider not configured. Pass skillProvider to createVitamin().',
         })
+    const searchSkills: SearchSkills | undefined = skillProvider?.search
+      ? (query, searchOptions) => skillProvider.search?.(query, searchOptions) ?? Promise.resolve([])
+      : undefined
+    const createSkill: CreateSkill | undefined = skillProvider?.create
+      ? (input) => skillProvider.create?.(input) ?? Promise.resolve({ success: false })
+      : undefined
+    const improveSkill: ImproveSkill | undefined = skillProvider?.improve
+      ? (input) => skillProvider.improve?.(input) ?? Promise.resolve({ success: false })
+      : undefined
 
     const registry = createToolRegistry(this.workspaceDir, {
       callAgent: this.orchestrator.callAgent,
       loadSkill,
       executeSkill,
+      searchSkills,
+      createSkill,
+      improveSkill,
       dispatchTask: this.orchestrator.dispatchTask,
       createTask: this.orchestrator.createTask,
       getTask: this.orchestrator.getTask,
@@ -619,13 +775,8 @@ export class VitaminApp implements VitaminContext {
           return true
         },
       },
+      mcpManager: this.mcpManager,
     })
-
-    // 仅移除 skill 类别工具（orchestration 工具现在有真实回调，保留）
-    const skillTools = registry.getByCategory('skill').map((tool) => tool.name)
-    if (skillTools.length > 0) {
-      registry.unregister(skillTools)
-    }
 
     return registry
   }
@@ -636,6 +787,12 @@ export class VitaminApp implements VitaminContext {
   } {
     const permissionToolSets = createPermissionToolSetsFromRegistry(this.toolRegistry.getAll())
     const auditLog = new PermissionAuditLog()
+    auditLog.onRecord((entry) => {
+      this.devtools?.auditTrace.recordPermissionDecision(
+        entry as unknown as Record<string, unknown>,
+        entry.sessionId,
+      )
+    })
     const permissionRegistry = createPermissionRegistry({
       toolSets: permissionToolSets,
     })
@@ -647,6 +804,12 @@ export class VitaminApp implements VitaminContext {
     this.hookRegistry.register(
       createToolGuidanceHook(this.toolRegistry, () => this.defaultToolPreset),
     )
+    if (this.mcpManager) {
+      this.hookRegistry.register(createMcpContextHook(this.mcpManager))
+    }
+    if (this.skillProvider?.catalog) {
+      this.hookRegistry.register(createSkillCatalogHook(this.skillProvider))
+    }
     this.hookRegistry.register(createEnvironmentInjectionHook(this.workspaceDir))
     this.hookRegistry.register(createLessonInjectionHook(this.learningStore, this.promptManager))
     this.hookRegistry.registerAll(createPhaseTrackingHooks())

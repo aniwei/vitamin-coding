@@ -9,11 +9,14 @@ export { PermissionGuardHook, createPermissionGuardHook } from './permission-gua
 export {
   FILE_GUARD_POLICY,
   DESTRUCTIVE_COMMAND_POLICY,
+  createNonBypassableSafetyPolicy,
+  createNetworkSafetyPolicy,
   createFileGuardPolicy,
   createPermissionToolSetsFromRegistry,
   createDirectoryFreezePolicy,
   createDisabledToolsPolicy,
   createAgentBoundaryPolicy,
+  createSidechainBoundaryPolicy,
   createPermissionModePolicy,
 } from './builtin-policies'
 

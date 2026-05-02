@@ -1,5 +1,7 @@
 // URL 验证 + SSRF 防护
 
+import { ToolError } from '@vitamin/shared'
+
 const BLOCKED_PROTOCOLS = new Set(['file:', 'ftp:', 'data:', 'javascript:'])
 
 const BLOCKED_HOSTS = new Set([
@@ -13,7 +15,7 @@ const BLOCKED_HOSTS = new Set([
 ])
 
 function isPrivateIP(hostname: string): boolean {
-  // IPv4 private ranges
+  // IPv4 私有地址段
   if (hostname.startsWith('10.')) {
     return true
   }
@@ -24,17 +26,17 @@ function isPrivateIP(hostname: string): boolean {
     return true
   }
 
-  // Link-local
+  // 链路本地地址
   if (hostname.startsWith('169.254.')) {
     return true
   }
 
-  // Loopback
+  // 回射地址
   if (hostname.startsWith('127.')) {
     return true
   }
 
-  // IPv6 private/loopback
+  // IPv6 私有/回射地址
   if (hostname === '::1' || hostname === '[::1]') {
     return true
   }
@@ -56,25 +58,40 @@ export function validateUrl(raw: string): URL {
   try {
     url = new URL(raw)
   } catch {
-    throw new Error(`Invalid URL: ${raw}`)
+    throw new ToolError(`Invalid URL: ${raw}`, {
+      code: 'TOOL_WEB_INVALID_URL',
+      metadata: { url: raw },
+    })
   }
 
   if (BLOCKED_PROTOCOLS.has(url.protocol)) {
-    throw new Error(`Blocked protocol: ${url.protocol}`)
+    throw new ToolError(`Blocked protocol: ${url.protocol}`, {
+      code: 'TOOL_WEB_BLOCKED_PROTOCOL',
+      metadata: { url: raw, protocol: url.protocol },
+    })
   }
 
   if (url.protocol !== 'http:' && url.protocol !== 'https:') {
-    throw new Error(`Unsupported protocol: ${url.protocol}`)
+    throw new ToolError(`Unsupported protocol: ${url.protocol}`, {
+      code: 'TOOL_WEB_UNSUPPORTED_PROTOCOL',
+      metadata: { url: raw, protocol: url.protocol },
+    })
   }
 
   const hostname = url.hostname.replace(/^\[|\]$/g, '')
 
   if (BLOCKED_HOSTS.has(hostname)) {
-    throw new Error(`Blocked host: ${hostname}`)
+    throw new ToolError(`Blocked host: ${hostname}`, {
+      code: 'TOOL_WEB_BLOCKED_HOST',
+      metadata: { url: raw, hostname },
+    })
   }
 
   if (isPrivateIP(hostname)) {
-    throw new Error(`Blocked private IP: ${hostname}`)
+    throw new ToolError(`Blocked private IP: ${hostname}`, {
+      code: 'TOOL_WEB_BLOCKED_PRIVATE_IP',
+      metadata: { url: raw, hostname },
+    })
   }
 
   return url

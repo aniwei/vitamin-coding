@@ -128,7 +128,7 @@ export function truncateHead(content: string, options: TruncateOptions): Truncat
     outputBytes += lineBytes
   }
 
-  // If we exited due to line limit
+  // 如果是因达到行数限制而退出
   if (outputLines.length >= maxLines && outputBytes <= maxBytes) {
     truncatedBy = 'lines'
   }

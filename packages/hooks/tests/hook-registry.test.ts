@@ -45,6 +45,27 @@ describe('HookRegistry', () => {
         expect(engine.getRegistered().some((item) => item.name === 'system-prompt-hook')).toBe(false)
       })
 
+      it('#then system-prompt sections timing participates in registry enumeration and clear', () => {
+        const engine = createHookRegistry()
+        const hook: HookRegistration<'system-prompt.sections.transform'> = {
+          name: 'system-prompt-sections-hook',
+          timing: 'system-prompt.sections.transform',
+          priority: 10,
+          enabled: true,
+          handle() {},
+        }
+
+        engine.register(hook)
+
+        expect(engine.getRegistered('system-prompt.sections.transform')).toHaveLength(1)
+        expect(engine.getRegistered().some((item) => item.name === 'system-prompt-sections-hook')).toBe(true)
+
+        engine.clear()
+
+        expect(engine.getRegistered('system-prompt.sections.transform')).toHaveLength(0)
+        expect(engine.getRegistered().some((item) => item.name === 'system-prompt-sections-hook')).toBe(false)
+      })
+
       it('#then getRegistered without timing returns all hooks', () => {
         const engine = createHookRegistry()
         engine.register({
@@ -122,6 +143,63 @@ describe('HookRegistry', () => {
         await engine.execute('chat.message.before', input as never, output as never)
 
         expect(order).toEqual(['5', '10', '20'])
+      })
+
+      it('#then system-prompt sections hooks can replace prompt assembly', async () => {
+        const engine = createHookRegistry()
+
+        engine.on('system-prompt.sections.transform', 'append-section', (_input, output) => {
+          output.assembly = {
+            sections: [
+              {
+                key: 'base',
+                content: 'base',
+                layer: 'static',
+                cacheable: true,
+                source: 'test',
+                priority: 0,
+                fingerprint: 'base-fp',
+              },
+              {
+                key: 'runtime',
+                content: 'runtime',
+                layer: 'dynamic',
+                cacheable: false,
+                source: 'test',
+                priority: 10,
+                fingerprint: 'runtime-fp',
+              },
+            ],
+            systemPrompt: 'base\n\nruntime',
+            staticPrefix: 'base',
+            dynamicTail: 'runtime',
+            diagnostics: { sectionCount: 2 },
+          }
+        })
+
+        const output = {
+          assembly: {
+            sections: [],
+            systemPrompt: '',
+            staticPrefix: '',
+            dynamicTail: '',
+            diagnostics: {},
+          },
+        }
+
+        await engine.execute(
+          'system-prompt.sections.transform',
+          {
+            assembly: output.assembly,
+            sessionId: 's1',
+            tools: [],
+          },
+          output,
+        )
+
+        expect(output.assembly.systemPrompt).toBe('base\n\nruntime')
+        expect(output.assembly.staticPrefix).toBe('base')
+        expect(output.assembly.dynamicTail).toBe('runtime')
       })
     })
   })

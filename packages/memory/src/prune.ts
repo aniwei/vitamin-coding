@@ -44,7 +44,10 @@ export function prune(
   let protectBoundary = messages.length // 保护边界索引（之后的消息受保护）
 
   for (let i = messages.length - 1; i >= 0; i--) {
-    const msg = messages[i]!
+    const msg = messages[i]
+    if (!msg) {
+      continue
+    }
     const msgTokens = estimator(messageToText(msg))
     accumulatedTokens += msgTokens
 

@@ -38,7 +38,7 @@
 ```typescript
 /**
  * 记忆提供者抽象接口 — 参考 Hermes agent/memory_provider.py
- * 
+ *
  * 内置 Provider 始终注册。至多允许 1 个外部（插件）Provider，
  * 防止工具 schema 膨胀和后端冲突。
  */
@@ -65,11 +65,7 @@ export interface MemoryProvider {
   /**
    * 每回合结束后同步关键信息到持久化存储。
    */
-  syncTurn(
-    userContent: string,
-    assistantContent: string,
-    sessionId?: string
-  ): Promise<void>
+  syncTurn(userContent: string, assistantContent: string, sessionId?: string): Promise<void>
 
   /**
    * 返回此 Provider 暴露给 Agent 的工具 Schema 列表。
@@ -79,10 +75,7 @@ export interface MemoryProvider {
   /**
    * 处理 Agent 对记忆工具的调用。
    */
-  handleToolCall(
-    toolName: string,
-    args: Record<string, unknown>
-  ): Promise<string>
+  handleToolCall(toolName: string, args: Record<string, unknown>): Promise<string>
 
   // --- 生命周期钩子 ---
 
@@ -135,27 +128,43 @@ export class MemoryManager {
   }
 
   /** 收集所有 Provider 的系统提示块 */
-  buildSystemPrompt(): string { /* ... */ }
+  buildSystemPrompt(): string {
+    /* ... */
+  }
 
   /** 预取所有 Provider 的上下文，合并返回 */
-  async prefetchAll(query: string, sessionId?: string): Promise<string> { /* ... */ }
+  async prefetchAll(query: string, sessionId?: string): Promise<string> {
+    /* ... */
+  }
 
   /** 同步回合到所有 Provider */
-  async syncAll(user: string, assistant: string, sessionId?: string): Promise<void> { /* ... */ }
+  async syncAll(user: string, assistant: string, sessionId?: string): Promise<void> {
+    /* ... */
+  }
 
   /** 路由工具调用到对应 Provider */
-  async routeToolCall(toolName: string, args: Record<string, unknown>): Promise<string> { /* ... */ }
+  async routeToolCall(toolName: string, args: Record<string, unknown>): Promise<string> {
+    /* ... */
+  }
 
   /** 收集所有 Provider 的工具 Schema */
-  getAllToolSchemas(): AgentTool[] { /* ... */ }
+  getAllToolSchemas(): AgentTool[] {
+    /* ... */
+  }
 
   /** 压缩前通知所有 Provider */
-  onPreCompress(messages: AgentMessage[]): string { /* ... */ }
+  onPreCompress(messages: AgentMessage[]): string {
+    /* ... */
+  }
 
   /** 会话结束通知 */
-  async onSessionEnd(messages: AgentMessage[]): Promise<void> { /* ... */ }
+  async onSessionEnd(messages: AgentMessage[]): Promise<void> {
+    /* ... */
+  }
 
-  async shutdown(): Promise<void> { /* ... */ }
+  async shutdown(): Promise<void> {
+    /* ... */
+  }
 }
 ```
 
@@ -190,12 +199,12 @@ hooks.register('turn:after', 'memory-nudge', async (context) => {
 
   // 计算上下文使用率
   const contextUsage = tokenUsage.total / model.contextWindow
-  
+
   // 接近压缩阈值时提醒 Agent 持久化
   if (contextUsage > 0.4 && turnNumber > 3) {
     return appendHintToLastToolResult(
       messages,
-      '[MEMORY: Context is growing. Consider persisting important findings to memory now.]'
+      '[MEMORY: Context is growing. Consider persisting important findings to memory now.]',
     )
   }
 })
@@ -213,7 +222,8 @@ hooks.register('turn:after', 'memory-nudge', async (context) => {
 export const skillManagerTools: AgentTool[] = [
   {
     name: 'skill_create',
-    description: 'Create a reusable skill from the current task experience. Call this after completing a complex multi-step task that might recur.',
+    description:
+      'Create a reusable skill from the current task experience. Call this after completing a complex multi-step task that might recur.',
     parameters: {
       type: 'object',
       properties: {
@@ -239,7 +249,8 @@ export const skillManagerTools: AgentTool[] = [
 
   {
     name: 'skill_improve',
-    description: 'Improve an existing skill based on execution feedback. Call this when a skill partially failed or could be optimized.',
+    description:
+      'Improve an existing skill based on execution feedback. Call this when a skill partially failed or could be optimized.',
     parameters: {
       type: 'object',
       properties: {
@@ -344,7 +355,8 @@ export interface SkillEntry extends SkillSpec {
  */
 export const sessionSearchTool: AgentTool = {
   name: 'session_search',
-  description: 'Search across past conversation sessions for relevant context. Use when you need to recall something from a previous session.',
+  description:
+    'Search across past conversation sessions for relevant context. Use when you need to recall something from a previous session.',
   parameters: {
     type: 'object',
     properties: {
@@ -383,7 +395,7 @@ export interface SessionStore {
 export interface SessionSearchResult {
   sessionId: string
   timestamp: string
-  snippet: string      // FTS5 高亮匹配片段
+  snippet: string // FTS5 高亮匹配片段
   role: 'user' | 'assistant'
   relevanceScore: number
 }
@@ -461,10 +473,7 @@ export class ResilientModel {
     private fallbackConfig: FallbackConfig,
   ) {}
 
-  async *converse(
-    context: ConverseContext,
-    signal?: AbortSignal
-  ): AsyncIterable<StreamEvent> {
+  async *converse(context: ConverseContext, signal?: AbortSignal): AsyncIterable<StreamEvent> {
     // 先尝试主 Provider
     try {
       yield* this.primary.converse(context, signal)
@@ -508,8 +517,7 @@ export class ResilientModel {
 export const SMART_APPROVAL_POLICY: PermissionPolicy = {
   name: 'smart-approval',
 
-  match: (tool, args) =>
-    tool === 'shell' && isDangerousPattern(args.command as string),
+  match: (tool, args) => tool === 'shell' && isDangerousPattern(args.command as string),
 
   evaluate: async (tool, args, context) => {
     const command = args.command as string
@@ -532,7 +540,7 @@ const KNOWN_SAFE_PATTERNS = [
 ]
 
 function isKnownSafePattern(command: string): boolean {
-  return KNOWN_SAFE_PATTERNS.some(p => p.test(command))
+  return KNOWN_SAFE_PATTERNS.some((p) => p.test(command))
 }
 ```
 
@@ -570,7 +578,7 @@ export interface GatewayMessageEvent {
   userId: string
   channelId: string
   content: string
-  replyTo: string        // 回复目标标识
+  replyTo: string // 回复目标标识
   attachments?: Attachment[]
   isVoice?: boolean
 }
@@ -590,10 +598,14 @@ export class GatewayRunner {
   private agentPool: AgentPool
 
   /** 注册平台适配器 */
-  registerAdapter(adapter: PlatformAdapter): void { /* ... */ }
+  registerAdapter(adapter: PlatformAdapter): void {
+    /* ... */
+  }
 
   /** 启动所有已注册适配器 */
-  async start(): Promise<void> { /* ... */ }
+  async start(): Promise<void> {
+    /* ... */
+  }
 
   /** 处理入站消息 */
   private async handleMessage(event: GatewayMessageEvent): Promise<void> {
@@ -618,35 +630,37 @@ export class GatewayRunner {
     })
   }
 
-  async shutdown(): Promise<void> { /* ... */ }
+  async shutdown(): Promise<void> {
+    /* ... */
+  }
 }
 ```
 
 #### 初期适配器计划
 
-| 优先级 | 平台 | 理由 |
-|--------|------|------|
-| P0 | Telegram | 最通用，Hermes 用户最常用 |
-| P0 | Discord | 开发者社区标配 |
-| P1 | Slack | 企业场景 |
-| P2 | WhatsApp / Signal | 移动场景 |
+| 优先级 | 平台              | 理由                      |
+| ------ | ----------------- | ------------------------- |
+| P0     | Telegram          | 最通用，Hermes 用户最常用 |
+| P0     | Discord           | 开发者社区标配            |
+| P1     | Slack             | 企业场景                  |
+| P2     | WhatsApp / Signal | 移动场景                  |
 
 ### 3.2 `@vitamin/cron` — 新包
 
 ```typescript
 export interface CronJob {
   id: string
-  schedule: string           // cron 表达式或自然语言
-  prompt: string             // Agent 执行的提示词
-  skills?: string[]          // 附加 Skill
-  deliverTo: DeliveryTarget  // 投递目标
+  schedule: string // cron 表达式或自然语言
+  prompt: string // Agent 执行的提示词
+  skills?: string[] // 附加 Skill
+  deliverTo: DeliveryTarget // 投递目标
   enabled: boolean
   lastRun?: string
   nextRun?: string
 }
 
 export interface DeliveryTarget {
-  platform: string           // 'telegram' | 'discord' | 'slack' | ...
+  platform: string // 'telegram' | 'discord' | 'slack' | ...
   channelId: string
 }
 
@@ -734,13 +748,13 @@ export interface ProcessHandle {
 
 #### 后端实现计划
 
-| 优先级 | 后端 | 说明 |
-|--------|------|------|
-| P0 | `LocalBackend` | 已有，重构为接口实现 |
-| P1 | `DockerBackend` | 容器隔离执行 |
-| P1 | `SSHBackend` | 远程机器执行 |
-| P2 | `DaytonaBackend` | 无服务器持久化 |
-| P2 | `ModalBackend` | GPU 集群 |
+| 优先级 | 后端             | 说明                 |
+| ------ | ---------------- | -------------------- |
+| P0     | `LocalBackend`   | 已有，重构为接口实现 |
+| P1     | `DockerBackend`  | 容器隔离执行         |
+| P1     | `SSHBackend`     | 远程机器执行         |
+| P2     | `DaytonaBackend` | 无服务器持久化       |
+| P2     | `ModalBackend`   | GPU 集群             |
 
 ---
 
@@ -780,12 +794,12 @@ export interface ProcessHandle {
 
 Vitamin 的 31+ Hook 拦截点使闭环学习的实现**无需修改 Agent 核心代码**：
 
-| Hermes 功能 | Vitamin Hook 点 | 说明 |
-|---|---|---|
-| 记忆 Nudge | `turn:after` | 检查上下文使用率，追加提醒 |
-| Skill 自改进 | `tool:after` | Skill 执行失败时排队改进 |
-| Skill 激活 | `prompt:transform` | 搜索相关 Skill 注入系统提示 |
-| 安全审批 | `tool:guard` | Smart Approval 策略 |
-| 记忆预取 | `turn:before` | prefetchAll 并注入上下文 |
-| 记忆同步 | `turn:after` | syncAll 持久化关键信息 |
-| 压缩保护 | `compaction:before` | 提醒 Provider 刷新记忆 |
+| Hermes 功能  | Vitamin Hook 点     | 说明                        |
+| ------------ | ------------------- | --------------------------- |
+| 记忆 Nudge   | `turn:after`        | 检查上下文使用率，追加提醒  |
+| Skill 自改进 | `tool:after`        | Skill 执行失败时排队改进    |
+| Skill 激活   | `prompt:transform`  | 搜索相关 Skill 注入系统提示 |
+| 安全审批     | `tool:guard`        | Smart Approval 策略         |
+| 记忆预取     | `turn:before`       | prefetchAll 并注入上下文    |
+| 记忆同步     | `turn:after`        | syncAll 持久化关键信息      |
+| 压缩保护     | `compaction:before` | 提醒 Provider 刷新记忆      |

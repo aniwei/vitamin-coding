@@ -2,7 +2,7 @@
 // 测试多服务器管理、禁用列表、工具聚合
 
 import { describe, expect, it } from 'vitest'
-import { McpManager, createMcpManager } from '../src/mcp/mcp-manager'
+import { McpManager, createMcpManager } from '@vitamin/mcp'
 
 describe('McpManager', () => {
   describe('#given empty manager', () => {

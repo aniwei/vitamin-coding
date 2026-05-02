@@ -21,6 +21,12 @@ describe('TaskStore', () => {
     expect(task.sessionPolicy).toBe('sticky')
   })
 
+  it('stores parent task id for sidechain children', async () => {
+    const store = new TaskStore()
+    const child = await store.create({ prompt: 'child', parentTaskId: 'task-parent' })
+    expect(child.parentId).toBe('task-parent')
+  })
+
   it('gets a task by id', async () => {
     const store = new TaskStore()
     const created = await store.create({ prompt: 'hello' })

@@ -1,5 +1,7 @@
 import type { SettingStore } from './store'
-import type { WorkflowSlot } from '@vitamin/ai'
+import { WORKFLOW_SLOTS, type WorkflowSlot } from '@vitamin/ai'
+
+export { WORKFLOW_SLOTS }
 
 export interface AgentOptions {
   model?: string

@@ -2,10 +2,10 @@
  * Terminal-inspired spinner constants for elegant UI animations
  */
 
-// Braille dots spinner frames from terminal implementation
+// 终端实现中的 Braille 点阵旋转帧
 export const SPINNER_FRAMES = ['⠋', '⠙', '⠹', '⠸', '⠼', '⠴', '⠦', '⠧', '⠇', '⠏']
 
-// Thinking verbs list from terminal implementation
+// 思考动词列表
 export const THINKING_VERBS = [
   'Thinking',
   'Processing',
@@ -108,7 +108,7 @@ export const THINKING_VERBS = [
   'Hypothesizing',
 ]
 
-// Color gradient for spinner (CSS classes)
+// 旋转器颜色渐变（CSS 类名）
 export const SPINNER_COLORS = [
   'text-cyan-500',
   'text-sky-500',

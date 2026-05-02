@@ -36,7 +36,7 @@ export const SEVERITY_MAP: Record<number, string> = {
   4: 'hint',
 }
 
-// Synced with OpenCode's language.ts
+// 与 OpenCode 的 language.ts 保持同步
 export const EXT_TO_LANG: Record<string, string> = {
   '.abap': 'abap',
   '.bat': 'bat',
@@ -217,7 +217,7 @@ export const LSP_INSTALL_HINTS: Record<string, string> = {
   'kotlin-ls': 'See https://github.com/Kotlin/kotlin-lsp',
 }
 
-// Synced with OpenCode's server.ts
+// 与 OpenCode 的 server.ts 保持同步
 export const BUILTIN_SERVERS: Record<string, Omit<LSPServerConfig, 'id'>> = {
   typescript: {
     command: ['typescript-language-server', '--stdio'],

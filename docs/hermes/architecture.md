@@ -133,11 +133,11 @@ run_conversation()
 
 ### 3.3 三种 API 模式
 
-| 模式 | 适用 | 客户端 |
-|------|------|--------|
-| `chat_completions` | OpenAI 兼容端点 (OpenRouter/自定义等) | `openai.OpenAI` |
-| `codex_responses` | OpenAI Codex / Responses API | `openai.OpenAI` (Responses 格式) |
-| `anthropic_messages` | 原生 Anthropic Messages API | `anthropic.Anthropic` |
+| 模式                 | 适用                                  | 客户端                           |
+| -------------------- | ------------------------------------- | -------------------------------- |
+| `chat_completions`   | OpenAI 兼容端点 (OpenRouter/自定义等) | `openai.OpenAI`                  |
+| `codex_responses`    | OpenAI Codex / Responses API          | `openai.OpenAI` (Responses 格式) |
+| `anthropic_messages` | 原生 Anthropic Messages API           | `anthropic.Anthropic`            |
 
 **解析优先级**：显式 `api_mode` 参数 > Provider 检测 > Base URL 启发式 > 默认 `chat_completions`
 
@@ -162,6 +162,7 @@ run_conversation()
 - 结果按原始顺序重新插入
 
 **执行流程**:
+
 ```
 model 返回 tool_call
   → 从 tools/registry.py 解析 handler
@@ -174,6 +175,7 @@ model 返回 tool_call
 ```
 
 **Agent 级工具** (拦截处理，不走 Registry):
+
 - `todo` — Agent 本地任务状态
 - `memory` — 持久化记忆写入
 - `session_search` — 会话历史查询
@@ -193,15 +195,15 @@ model 返回 tool_call
 
 ### 3.8 回调表面
 
-| 回调 | 触发时机 | 用途 |
-|------|---------|------|
-| `tool_progress_callback` | 每次工具执行前后 | CLI spinner / Gateway 进度消息 |
-| `thinking_callback` | 模型开始/停止思考 | CLI "thinking..." 指示器 |
-| `reasoning_callback` | 模型返回推理内容 | CLI 推理显示 |
-| `clarify_callback` | clarify 工具被调用 | CLI 输入提示 |
-| `step_callback` | 每回合完成后 | Gateway 步骤追踪 |
-| `stream_delta_callback` | 每个流式 token | CLI 流式显示 |
-| `status_callback` | 状态变更 | ACP 状态更新 |
+| 回调                     | 触发时机           | 用途                           |
+| ------------------------ | ------------------ | ------------------------------ |
+| `tool_progress_callback` | 每次工具执行前后   | CLI spinner / Gateway 进度消息 |
+| `thinking_callback`      | 模型开始/停止思考  | CLI "thinking..." 指示器       |
+| `reasoning_callback`     | 模型返回推理内容   | CLI 推理显示                   |
+| `clarify_callback`       | clarify 工具被调用 | CLI 输入提示                   |
+| `step_callback`          | 每回合完成后       | Gateway 步骤追踪               |
+| `stream_delta_callback`  | 每个流式 token     | CLI 流式显示                   |
+| `status_callback`        | 状态变更           | ACP 状态更新                   |
 
 ## 4. 记忆系统
 
@@ -210,14 +212,14 @@ model 返回 tool_call
 ```python
 class MemoryProvider(ABC):
     name: str
-    
+
     def initialize(session_id, **kwargs): ...
     def system_prompt_block() -> str: ...
     def prefetch(query, session_id) -> str: ...
     def sync_turn(user_content, assistant_content, session_id): ...
     def get_tool_schemas() -> List[Dict]: ...
     def handle_tool_call(tool_name, args, **kwargs) -> str: ...
-    
+
     # 生命周期钩子
     def on_turn_start(turn_number, message, **kwargs): ...
     def on_pre_compress(messages) -> str: ...
@@ -305,21 +307,21 @@ registry.register(
 
 ### 6.2 47 个工具，20 个 Toolset
 
-| 类别 | 工具 |
-|------|------|
-| Terminal | terminal (6 种后端) |
-| File | read_file, write_file, patch, search_files |
-| Web | web_search, web_extract |
-| Browser | 11 个浏览器自动化工具 |
-| Code | execute_code sandbox |
-| Delegation | delegate_task (子 Agent) |
-| Memory | memory (持久化) |
-| Skills | skill_create, skill_improve, skill_search |
-| Session | session_search |
-| MCP | 动态 MCP 服务工具 |
-| Cron | 定时任务管理 |
-| Vision | 图像分析 |
-| TTS | 文本转语音 |
+| 类别       | 工具                                       |
+| ---------- | ------------------------------------------ |
+| Terminal   | terminal (6 种后端)                        |
+| File       | read_file, write_file, patch, search_files |
+| Web        | web_search, web_extract                    |
+| Browser    | 11 个浏览器自动化工具                      |
+| Code       | execute_code sandbox                       |
+| Delegation | delegate_task (子 Agent)                   |
+| Memory     | memory (持久化)                            |
+| Skills     | skill_create, skill_improve, skill_search  |
+| Session    | session_search                             |
+| MCP        | 动态 MCP 服务工具                          |
+| Cron       | 定时任务管理                               |
+| Vision     | 图像分析                                   |
+| TTS        | 文本转语音                                 |
 
 ### 6.3 DANGEROUS_PATTERNS 审批
 
@@ -329,14 +331,14 @@ registry.register(
 
 ### 6.4 6 种终端后端
 
-| 后端 | 特性 |
-|------|------|
-| local | 本地进程 |
-| docker | 容器隔离 |
-| ssh | 远程机器 |
-| daytona | 无服务器持久化 (空闲休眠) |
-| modal | GPU 集群 + 无服务器 |
-| singularity | HPC 容器 |
+| 后端        | 特性                      |
+| ----------- | ------------------------- |
+| local       | 本地进程                  |
+| docker      | 容器隔离                  |
+| ssh         | 远程机器                  |
+| daytona     | 无服务器持久化 (空闲休眠) |
+| modal       | GPU 集群 + 无服务器       |
+| singularity | HPC 容器                  |
 
 ## 7. 多平台 Gateway
 
@@ -380,11 +382,11 @@ Telegram / Discord / Slack / WhatsApp / Signal / Matrix / Mattermost / Email / S
 
 ## 10. 设计原则
 
-| 原则 | 说明 |
-|------|------|
-| Prompt 稳定性 | 系统提示词不在对话中途变化 |
-| 可观察执行 | 每个工具调用通过回调对用户可见 |
-| 可中断 | API 调用和工具执行支持中途取消 |
-| 平台无关核心 | 一个 AIAgent 类服务 CLI/Gateway/ACP/Batch/API |
-| 松耦合 | 可选子系统 (MCP/插件/RL) 使用注册表模式 |
-| Profile 隔离 | 每个 Profile 独立 HOME/Config/记忆/会话 |
+| 原则          | 说明                                          |
+| ------------- | --------------------------------------------- |
+| Prompt 稳定性 | 系统提示词不在对话中途变化                    |
+| 可观察执行    | 每个工具调用通过回调对用户可见                |
+| 可中断        | API 调用和工具执行支持中途取消                |
+| 平台无关核心  | 一个 AIAgent 类服务 CLI/Gateway/ACP/Batch/API |
+| 松耦合        | 可选子系统 (MCP/插件/RL) 使用注册表模式       |
+| Profile 隔离  | 每个 Profile 独立 HOME/Config/记忆/会话       |

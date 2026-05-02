@@ -143,6 +143,28 @@ describe('run modes', () => {
     expect(exit).toEqual({ type: 'exit' })
   })
 
+  it('InteractiveMode shows context diagnostics without prompt content by default', async () => {
+    const session = await createSession('interactive-context')
+    const mode = new InteractiveMode(session)
+
+    await mode.handleInput('hello diagnostics')
+
+    const hidden = await mode.handleInput('/context')
+    expect(hidden.type).toBe('system')
+    if (hidden.type === 'system') {
+      expect(hidden.text).toContain('Prompt sections:')
+      expect(hidden.text).toContain('Prompt content hidden')
+      expect(hidden.text).not.toContain('\nsystem\n')
+    }
+
+    const visible = await mode.handleInput('/context --show-prompt')
+    expect(visible.type).toBe('system')
+    if (visible.type === 'system') {
+      expect(visible.text).toContain('\nsystem')
+      expect(visible.text).not.toContain('Prompt content hidden')
+    }
+  })
+
   it('getLastAssistantText returns empty string when no assistant text exists', () => {
     const text = getLastAssistantText([
       { role: 'user', timestamp: Date.now(), content: [{ type: 'text', text: 'only user' }] },

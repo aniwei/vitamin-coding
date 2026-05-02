@@ -23,6 +23,14 @@
     "./browser/subscription": {
       "types": "./dist/browser/subscription.d.ts",
       "import": "./dist/browser/subscription.js"
+    },
+    "./browser/data": {
+      "types": "./dist/browser/data.d.ts",
+      "import": "./dist/browser/data.js"
+    },
+    "./runtime": {
+      "types": "./dist/runtime.d.ts",
+      "import": "./dist/runtime.js"
     }
   },
   "publishConfig": {

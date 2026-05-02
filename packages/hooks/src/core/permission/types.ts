@@ -26,7 +26,12 @@ export interface PermissionContext {
   args: Record<string, unknown>
   agentName: string
   sessionId: string
+  /** Primary file path for backward compatibility and audit display. */
   filePath?: string
+  /** All file paths discovered from tool args. Path rules match any entry. */
+  filePaths?: string[]
+  /** URL-like targets discovered from tool args for network permission policies. */
+  urls?: string[]
   metadata: Record<string, unknown>
 }
 
@@ -75,6 +80,7 @@ export interface PermissionAuditEntry {
   agentName: string
   toolName: string
   filePath?: string
+  metadata?: Record<string, unknown>
   decision: PermissionDecision
 }
 

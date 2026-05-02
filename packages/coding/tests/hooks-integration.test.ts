@@ -2,11 +2,18 @@ import { describe, expect, it } from 'vitest'
 import { Agent } from '@vitamin/agent'
 import { createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent, type ToolCall } from '@vitamin/ai'
 import { createHookRegistry } from '@vitamin/hooks'
+import { appendPromptSection } from '@vitamin/prompt'
 import { createInMemorySessionStore } from '@vitamin/session'
+import { ToolRegistry } from '@vitamin/tools'
 
 import { AgentSession } from '../src/session/agent-session'
 import { createVitamin } from '../src/app/vitamin-app'
 import { createProviderRegistry } from '@vitamin/ai'
+import { createToolGuidanceHook } from '../src/hooks/tool-guidance'
+import { createSkillCatalogHook } from '../src/hooks/skill-catalog'
+import { buildMcpContextSection } from '../src/hooks/mcp-injection'
+import type { McpManager } from '@vitamin/tools'
+import type { SkillProvider } from '@vitamin/skill'
 
 function makeModel(): Model {
   return {
@@ -63,7 +70,240 @@ function createSchema<T>() {
   }
 }
 
+function makeOneTurnStream() {
+  return (_context: StreamContext, _signal: AbortSignal) => {
+    const eventStream = createEventStream<StreamEvent, AssistantMessage>()
+    const response = makeAssistantMessage([{ type: 'text', text: 'ok' }], 'end_turn')
+
+    setTimeout(() => {
+      eventStream.push({ type: 'start', partial: response })
+      eventStream.complete(response)
+    }, 0)
+
+    return eventStream
+  }
+}
+
 describe('coding hooks integration', () => {
+  it('injects skill catalog as a prompt section without skill bodies', async () => {
+    const provider: SkillProvider = {
+      async load() {
+        return { success: true, name: 'code-review' }
+      },
+      async execute() {
+        return { success: true, output: 'ok' }
+      },
+      async catalog() {
+        return '## Available Skills\n\n- **code-review**: Use when reviewing code'
+      },
+    }
+    const hooks = createHookRegistry({ preset: 'none' })
+    hooks.register(createSkillCatalogHook(provider))
+
+    const sessionStore = createInMemorySessionStore()
+    const session = await sessionStore.createSession('session-skill-catalog')
+    const agent = new Agent({ stream: makeOneTurnStream() })
+    const agentSession = new AgentSession(session, agent, {
+      model: makeModel(),
+      systemPrompt: 'base system',
+      hookRegistry: hooks,
+    })
+
+    await agentSession.prompt('hello')
+
+    const diagnostics = agentSession.getContextDiagnostics({ includePrompt: true })
+    expect(diagnostics.prompt.sections.map((section) => section.key)).toContain('skill-catalog')
+    expect(diagnostics.prompt.content).toContain('## Available Skills')
+    expect(diagnostics.prompt.content).not.toContain('Review risks first')
+  })
+
+  it('builds MCP context prompt section from manager resources, prompts and instructions', () => {
+    const manager = {
+      getServerInfos: () => [{ name: 'docs', status: 'ready' }],
+      getAllResources: () => [{ serverName: 'docs', name: 'Guide', uri: 'file:///guide.md' }],
+      getAllPrompts: () => [{ serverName: 'docs', name: 'summarize' }],
+      getServerInstructions: () => [
+        { serverName: 'docs', instructions: 'Prefer project docs before external search.' },
+      ],
+    } as unknown as McpManager
+
+    const section = buildMcpContextSection(manager)
+
+    expect(section).toContain('### MCP Context')
+    expect(section).toContain('Connected MCP servers: docs')
+    expect(section).toContain('Prefer project docs before external search.')
+    expect(section).toContain('Guide (file:///guide.md)')
+    expect(section).toContain('docs: summarize')
+  })
+
+  it('injects tool availability and deferred tool prompt sections', async () => {
+    const registry = new ToolRegistry()
+    registry.register(
+      {
+        name: 'read',
+        description: 'read files',
+        parameters: createSchema<Record<string, unknown>>() as never,
+        readonly: true,
+        async execute() {
+          return { content: [{ type: 'text' as const, text: 'ok' }] }
+        },
+      },
+      { preset: 'minimal', category: 'fs', builtin: true, guideline: 'Read before editing.' },
+    )
+    registry.register(
+      {
+        name: 'web_search',
+        description: 'search the web',
+        parameters: createSchema<Record<string, unknown>>() as never,
+        readonly: true,
+        async execute() {
+          return { content: [{ type: 'text' as const, text: 'ok' }] }
+        },
+      },
+      { preset: 'standard', category: 'web', builtin: true, shouldDefer: true },
+    )
+
+    const hooks = createHookRegistry({ preset: 'none' })
+    hooks.register(createToolGuidanceHook(registry, () => 'standard'))
+
+    const sessionStore = createInMemorySessionStore()
+    const session = await sessionStore.createSession('session-tool-guidance-sections')
+    const agent = new Agent({ stream: makeOneTurnStream() })
+    const agentSession = new AgentSession(session, agent, {
+      model: makeModel(),
+      systemPrompt: 'base system',
+      hookRegistry: hooks,
+    })
+
+    await agentSession.prompt('hello')
+
+    const diagnostics = agentSession.getContextDiagnostics()
+    const sectionKeys = diagnostics.prompt.sections.map((section) => section.key)
+
+    expect(sectionKeys).toEqual(expect.arrayContaining([
+      'system-prompt',
+      'tool-availability',
+      'deferred-tools',
+      'tool-guidance',
+    ]))
+    expect(diagnostics.prompt.content).toBeUndefined()
+
+    const visible = agentSession.getContextDiagnostics({ includePrompt: true })
+    expect(visible.prompt.content).toContain('### Tool Availability')
+    expect(visible.prompt.content).toContain('Deferred tools: web_search')
+    expect(visible.prompt.content).toContain('Use `tool_search`')
+  })
+
+  it('runs system prompt section hooks before legacy system prompt transform hooks', async () => {
+    const seenContexts: StreamContext[] = []
+    const stream = (context: StreamContext, _signal: AbortSignal) => {
+      seenContexts.push(context)
+      const eventStream = createEventStream<StreamEvent, AssistantMessage>()
+      const response = makeAssistantMessage([{ type: 'text', text: 'ok' }], 'end_turn')
+
+      setTimeout(() => {
+        eventStream.push({ type: 'start', partial: response })
+        eventStream.complete(response)
+      }, 0)
+
+      return eventStream
+    }
+
+    const hooks = createHookRegistry({ preset: 'none' })
+    hooks.on('system-prompt.sections.transform', 'append-section', (_input, output) => {
+      output.assembly = appendPromptSection(output.assembly, {
+        key: 'runtime-section',
+        content: 'runtime section',
+        layer: 'dynamic',
+        cacheable: false,
+        source: 'test',
+        priority: 20,
+      })
+    })
+    hooks.on('system-prompt.transform', 'append-legacy', (input, output) => {
+      output.systemPrompt = `${input.systemPrompt}\n\nlegacy suffix`
+    })
+
+    const sessionStore = createInMemorySessionStore()
+    const session = await sessionStore.createSession('session-system-prompt-sections')
+    const agent = new Agent({ stream })
+    const agentSession = new AgentSession(session, agent, {
+      model: makeModel(),
+      systemPrompt: 'base system',
+      hookRegistry: hooks,
+    })
+
+    await agentSession.prompt('hello')
+
+    expect(seenContexts).toHaveLength(1)
+    expect(seenContexts[0]?.systemPrompt).toBe('base system\n\nruntime section\n\nlegacy suffix')
+    expect(seenContexts[0]?.promptCache).toMatchObject({
+      staticPrefix: 'base system',
+      dynamicTail: 'runtime section\n\nlegacy suffix',
+    })
+    expect(seenContexts[0]?.promptCache?.diagnostics.sections[0]).toMatchObject({
+      key: 'system-prompt',
+      cacheable: true,
+    })
+  })
+
+  it('changes prompt cache tool fingerprint when available tools change', async () => {
+    const seenContexts: StreamContext[] = []
+    const stream = (context: StreamContext, _signal: AbortSignal) => {
+      seenContexts.push(context)
+      const eventStream = createEventStream<StreamEvent, AssistantMessage>()
+      const response = makeAssistantMessage([{ type: 'text', text: 'ok' }], 'end_turn')
+
+      setTimeout(() => {
+        eventStream.push({ type: 'start', partial: response })
+        eventStream.complete(response)
+      }, 0)
+
+      return eventStream
+    }
+
+    const readTool = {
+      name: 'read',
+      description: 'read tool',
+      parameters: createSchema<Record<string, unknown>>() as never,
+      async execute() {
+        return { content: [{ type: 'text' as const, text: 'read' }] }
+      },
+    }
+    const writeTool = {
+      name: 'write',
+      description: 'write tool',
+      parameters: createSchema<Record<string, unknown>>() as never,
+      async execute() {
+        return { content: [{ type: 'text' as const, text: 'write' }] }
+      },
+    }
+
+    const sessionStore = createInMemorySessionStore()
+    const first = new AgentSession(await sessionStore.createSession('session-cache-tools-a'), new Agent({ stream }), {
+      model: makeModel(),
+      systemPrompt: 'system',
+      tools: [readTool],
+      hookRegistry: createHookRegistry({ preset: 'none' }),
+    })
+    const second = new AgentSession(await sessionStore.createSession('session-cache-tools-b'), new Agent({ stream }), {
+      model: makeModel(),
+      systemPrompt: 'system',
+      tools: [readTool, writeTool],
+      hookRegistry: createHookRegistry({ preset: 'none' }),
+    })
+
+    await first.prompt('hello')
+    await second.prompt('hello')
+
+    expect(seenContexts).toHaveLength(2)
+    expect(seenContexts[0]?.promptCache?.toolSchemaFingerprint).toBeDefined()
+    expect(seenContexts[1]?.promptCache?.toolSchemaFingerprint).toBeDefined()
+    expect(seenContexts[0]?.promptCache?.toolSchemaFingerprint).not.toBe(
+      seenContexts[1]?.promptCache?.toolSchemaFingerprint,
+    )
+  })
+
   it('runs message, params, transform, and tool hooks through AgentSession', async () => {
     const seenContexts: StreamContext[] = []
     const stream = (context: StreamContext, _signal: AbortSignal) => {

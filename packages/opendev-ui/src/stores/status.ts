@@ -1,3 +1,4 @@
+import { isRecord, readNumber, readObject, readString } from '@vitamin/shared/browser/data'
 import { create } from 'zustand'
 import { ws } from '../api/websocket'
 
@@ -43,53 +44,10 @@ export const useStatusStore = create<StatusStore>((set) => ({
   update: (partial) => set((state) => ({ data: { ...state.data, ...partial } })),
 }))
 
-type EventData = Record<string, unknown>
-
-function asEventData(value: unknown): EventData | null {
-  if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-    return value as EventData
-  }
-
-  return null
-}
-
-function readString(data: EventData, ...keys: string[]): string | undefined {
-  for (const key of keys) {
-    const value = data[key]
-    if (typeof value === 'string') {
-      return value
-    }
-  }
-
-  return undefined
-}
-
-function readNumber(data: EventData, ...keys: string[]): number | undefined {
-  for (const key of keys) {
-    const value = data[key]
-    if (typeof value === 'number' && Number.isFinite(value)) {
-      return value
-    }
-  }
-
-  return undefined
-}
-
-function readObject<T>(data: EventData, ...keys: string[]): T | undefined {
-  for (const key of keys) {
-    const value = data[key]
-    if (typeof value === 'object' && value !== null && !Array.isArray(value)) {
-      return value as T
-    }
-  }
-
-  return undefined
-}
-
-// Subscribe to WebSocket status events
+// 订阅 WebSocket 状态事件
 ws.on('Session.statusUpdate', (message) => {
-  const d = asEventData(message.data)
-  if (!d) {return}
+  if (!isRecord(message.data)) {return}
+  const d = message.data
 
   const updates: Partial<StatusBarData> = {}
   if (typeof d.model === 'string') {updates.model = d.model}

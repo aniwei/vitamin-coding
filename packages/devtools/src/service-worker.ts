@@ -184,7 +184,7 @@ export class ServiceWorker {
 
     const seq = typeof command.seq === 'number' ? command.seq : 0
 
-    // Support CDP-style methods (Debugger.resume → continue)
+    // 支持 CDP 风格方法名（如 Debugger.resume → continue）
     const resolvedType = CDP_METHOD_TO_COMMAND[command.type] ?? command.type
 
     switch (resolvedType) {

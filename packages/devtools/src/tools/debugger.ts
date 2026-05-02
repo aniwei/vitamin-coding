@@ -2,20 +2,23 @@ import { createLogger } from '@vitamin/shared'
 import { Breakpoints, type Breakpoint } from './breakpoints'
 import type { BreakpointPoint, DebugSnapshot, PauseResult } from '../protocol'
 import type { Service } from '../service'
+import type { AuditTraceRecorder } from '../audit-trace'
 
 const logger = createLogger('@vitamin/devtools:debugger')
 
 export class Debugger {
   public readonly breakpoints: Breakpoints
   private readonly service: Service
+  private readonly auditTrace?: AuditTraceRecorder
 
   public get serviceUrl(): string {
     return this.service.url
   }
 
-  constructor(service: Service, breakpoints: Breakpoints) {
+  constructor(service: Service, breakpoints: Breakpoints, auditTrace?: AuditTraceRecorder) {
     this.service = service
     this.breakpoints = breakpoints
+    this.auditTrace = auditTrace
   }
 
   listBreakpoints(): Breakpoint[] {
@@ -47,6 +50,7 @@ export class Debugger {
   }
 
   async pause(message: DebugSnapshot): Promise<PauseResult | undefined> {
+    this.auditTrace?.recordSnapshot(message)
     if (this.shouldPause(message.point)) {
       logger.debug({ message }, 'Pausing execution at breakpoint')
       return this.service.pause(message)
@@ -55,8 +59,6 @@ export class Debugger {
   }
 
   private shouldPause(point: BreakpointPoint): boolean {
-    // TODO
-    return false
     return this.breakpoints.shouldPause(point)
   }
 }

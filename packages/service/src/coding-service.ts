@@ -55,7 +55,7 @@ export class CodingService {
 
     // 只创建对象，不注册任何监听器
     // 监听器集中在 start() 中注册，使"系统何时开始工作"一目了然
-    this.ws = new WebSocketManager()
+    this.ws = new WebSocketManager({ authToken: options.websocketAuthToken })
 
     if (vitamin.devtools) {
       this.bridge = new DebugBridge(vitamin.devtools, this.ws)
@@ -209,7 +209,7 @@ export class CodingService {
 
     const fullPath = join(this.staticDir, filePath)
 
-    // Prevent path traversal
+    // 防止路径穿越攻击
     if (!fullPath.startsWith(this.staticDir)) {
       return c.text('forbidden', 403)
     }

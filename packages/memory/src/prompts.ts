@@ -66,6 +66,37 @@ Create a brief summary in this format:
 
 Keep it concise — this will be prepended to the remaining messages of this turn.`
 
+export const SEMANTIC_RETRIEVAL_PROMPT = `Select up to {maxResults} memory entries that are relevant to the current conversation.
+
+Return only memory names, one per line, in relevance order. Return NONE if no memory is relevant.
+
+<memories>
+{memories}
+</memories>
+
+<conversation>
+{context}
+</conversation>`
+
+export const MEMORY_EXTRACTION_PROMPT = `Extract durable memories from the conversation.
+
+Only extract information that will likely matter in future sessions. Do not extract secrets, credentials, transient task details, or casual conversation.
+
+Use exactly this format for each memory:
+
+NAME: short_snake_case_name
+TYPE: user | feedback | project | reference
+DESCRIPTION: one sentence
+CONTENT:
+Specific durable memory content.
+END
+
+Return NONE if there is nothing worth remembering.
+
+<conversation>
+{conversation}
+</conversation>`
+
 // 构建完整的摘要 prompt
 export function buildSummarizationPrompt(
   messages: string,
@@ -128,6 +159,27 @@ When you learn something from this interaction that should be remembered, use th
 - Casual conversation
 </memory_guidelines>`)
 
+  return parts.join('\n')
+}
+
+export function buildLayeredMemoryInjection(
+  entries: Array<{ name: string; type: string; content: string }>,
+): string {
+  if (entries.length === 0) {
+    return ''
+  }
+
+  const parts: string[] = ['<agent_memory>']
+
+  for (const entry of entries) {
+    if (entry.content.trim()) {
+      parts.push(`[${entry.type}] ${entry.name}`)
+      parts.push(entry.content.trim())
+      parts.push('')
+    }
+  }
+
+  parts.push('</agent_memory>')
   return parts.join('\n')
 }
 

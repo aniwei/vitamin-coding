@@ -52,7 +52,7 @@ export class VitaminMcpServer {
     stdin.on('data', (chunk: string) => {
       buffer += chunk
 
-      // Content-Length framing
+      // Content-Length 分帧
       while (true) {
         const headerEnd = buffer.indexOf('\r\n\r\n')
         if (headerEnd === -1) {
@@ -66,7 +66,12 @@ export class VitaminMcpServer {
           continue
         }
 
-        const contentLength = parseInt(match[1]!, 10)
+        const lengthText = match[1]
+        if (!lengthText) {
+          buffer = buffer.substring(headerEnd + 4)
+          continue
+        }
+        const contentLength = parseInt(lengthText, 10)
         const bodyStart = headerEnd + 4
 
         if (buffer.length < bodyStart + contentLength) {

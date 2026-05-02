@@ -5,6 +5,7 @@ import {
   type StreamContext,
   type StreamEvent,
   type ToolCall,
+  PromptTooLongError,
   createEventStream,
 } from '../../ai/src/index'
 import { describe, expect, it } from 'vitest'
@@ -110,6 +111,12 @@ function makeStream(responses: AssistantMessage[]) {
       eventStream.complete(message)
     }, 0)
     return eventStream
+  }
+}
+
+function makeFailingStream(error: Error) {
+  return () => {
+    throw error
   }
 }
 
@@ -282,6 +289,160 @@ describe('workLoop', () => {
             emit: () => undefined,
           }),
         ).rejects.toThrow('Agent loop requires stream function via options.stream')
+      })
+    })
+  })
+
+  describe('#given provider reports prompt-too-long', () => {
+    describe('#when reactive compaction changes the context', () => {
+      it('#then retries with compacted messages and emits recovery metadata', async () => {
+        const messages: AgentMessage[] = [makeUserMessage('too much context')]
+        const events: AgentEvent[] = []
+        const transformCalls: Array<{ reason?: string; attempt?: number; count: number }> = []
+        let streamAttempt = 0
+
+        const result = await workLoop({
+          messages,
+          ...createRuntime({
+            transformContext: async (input, _signal, options) => {
+              transformCalls.push({
+                reason: options?.reason,
+                attempt: options?.attempt,
+                count: input.length,
+              })
+
+              if (options?.reason !== 'prompt-too-long') {
+                return input
+              }
+
+              return {
+                messages: [makeUserMessage('compacted context')],
+                metadata: {
+                  contextBudget: {
+                    strategies: ['prune', 'micro-compact'],
+                    tokensSaved: 1200,
+                  },
+                },
+              }
+            },
+          }),
+          toolExecutor: createToolExecutor([]),
+          stream: (context, signal) => {
+            streamAttempt++
+            if (streamAttempt === 1) {
+              return makeFailingStream(new PromptTooLongError('context-too-long', { tokenCount: 130000 }))(
+                context,
+                signal,
+              )
+            }
+            return makeStream([makeAssistantMessage([{ type: 'text', text: 'recovered' }], 'end_turn')])(
+              context,
+              signal,
+            )
+          },
+          signal: new AbortController().signal,
+          emit: (event) => events.push(event),
+        })
+
+        const compactionEvent = events.find((event) => event.type === 'compaction_needed')
+
+        expect(result.content[0]).toEqual({ type: 'text', text: 'recovered' })
+        expect(streamAttempt).toBe(2)
+        expect(messages[0]).toMatchObject({ role: 'user', content: 'compacted context' })
+        expect(transformCalls).toEqual([
+          { reason: 'preflight', attempt: undefined, count: 1 },
+          { reason: 'prompt-too-long', attempt: 1, count: 1 },
+          { reason: 'preflight', attempt: undefined, count: 1 },
+        ])
+        expect(compactionEvent).toMatchObject({
+          type: 'compaction_needed',
+          tokenCount: 130000,
+          threshold: 128000,
+          attempt: 1,
+          maxAttempts: 2,
+          beforeCount: 1,
+          afterCount: 1,
+          metadata: {
+            contextBudget: {
+              strategies: ['prune', 'micro-compact'],
+              tokensSaved: 1200,
+            },
+          },
+        })
+      })
+    })
+
+    describe('#when compaction cannot get under provider limits', () => {
+      it('#then stops after max retry attempts and rethrows prompt-too-long', async () => {
+        const messages: AgentMessage[] = [makeUserMessage('too much context')]
+        let streamAttempt = 0
+        let reactiveCompactions = 0
+
+        await expect(
+          workLoop({
+            messages,
+            ...createRuntime({
+              transformContext: async (input, _signal, options) => {
+                if (options?.reason !== 'prompt-too-long') {
+                  return input
+                }
+                reactiveCompactions++
+                return [makeUserMessage(`compacted-${reactiveCompactions}`)]
+              },
+            }),
+            maxPromptTooLongRetries: 1,
+            toolExecutor: createToolExecutor([]),
+            stream: (context, signal) => {
+              streamAttempt++
+              return makeFailingStream(
+                new PromptTooLongError(`context-too-long-${streamAttempt}`, { tokenCount: 130000 }),
+              )(context, signal)
+            },
+            signal: new AbortController().signal,
+            emit: () => undefined,
+          }),
+        ).rejects.toBeInstanceOf(PromptTooLongError)
+
+        expect(streamAttempt).toBe(2)
+        expect(reactiveCompactions).toBe(1)
+      })
+    })
+  })
+
+  describe('#given a tool emits progress updates', () => {
+    describe('#when workLoop executes the tool through the stream executor', () => {
+      it('#then emits tool_execution_event progress updates', async () => {
+        const events: AgentEvent[] = []
+        const progressTool: AgentTool = {
+          name: 'progress',
+          description: 'progress tool',
+          parameters: createSchema<Record<string, unknown>>(),
+          async execute(ctx) {
+            ctx.onUpdate?.('working')
+            return { content: [{ type: 'text' as const, text: 'done' }] }
+          },
+        }
+
+        await workLoop({
+          ...createRuntime(),
+          messages: [makeUserMessage('start')],
+          toolExecutor: createToolExecutor([progressTool]),
+          stream: makeStream([
+            makeAssistantMessage([makeToolCall('progress', 'tc_progress')], 'tool_use'),
+            makeAssistantMessage([{ type: 'text', text: 'finished' }], 'end_turn'),
+          ]),
+          signal: new AbortController().signal,
+          emit: (event) => events.push(event),
+        })
+
+        expect(
+          events.some(
+            (event) =>
+              event.type === 'tool_execution_event' &&
+              event.event.type === 'progress' &&
+              event.event.update === 'working',
+          ),
+        ).toBe(true)
       })
     })
   })

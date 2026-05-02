@@ -1,11 +1,14 @@
 import { Agent } from '@vitamin/agent'
+import { createLogger } from '@vitamin/shared'
 import type { AssistantMessage } from '@vitamin/ai'
-import type {
-  SwarmAgentDef,
-  SwarmContext,
-  SwarmRunContextFactory,
-  SwarmTurnResult,
-} from '../types'
+import type { AgentConfig, StreamFunction } from '@vitamin/agent'
+import type { SwarmAgentDef, SwarmContext, SwarmRunContextFactory, SwarmTurnResult } from '../types'
+
+const logger = createLogger('@vitamin/swarm')
+
+const missingStream: StreamFunction = () => {
+  throw new Error('Swarm run context did not provide an Agent stream')
+}
 
 /**
  * 执行单个 Agent 的一次回合。
@@ -40,8 +43,19 @@ export async function executeAgentTurn(options: {
     timestamp: Date.now(),
   } as import('@vitamin/ai').UserMessage)
 
+  const infrastructure = runContext as Partial<AgentConfig>
+
   // 创建临时 Agent 执行
-  const agent = new Agent()
+  const agent = new Agent({
+    stream: infrastructure.stream ?? missingStream,
+    logger: infrastructure.logger ?? logger,
+    maxToolTurns: agentDef.maxToolTurns,
+    agentName: agentDef.id,
+    sessionId: String(context.metadata.sessionId ?? ''),
+    toolHookExecutor: infrastructure.toolHookExecutor,
+    devtools: infrastructure.devtools,
+    approval: infrastructure.approval,
+  })
   const result: AssistantMessage = await agent.run(runContext)
 
   // 提取文本

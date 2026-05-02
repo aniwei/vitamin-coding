@@ -25,6 +25,37 @@ describe('builtin orchestration registration', () => {
     expect(fullNames.has('background_cancel')).toBe(true)
   })
 
+  it('builtin tool metadata coverage is complete for full preset', () => {
+    const registry = createToolRegistry('/tmp', {
+      dispatchTask: async () => ({ success: true, output: 'ok', id: 't-1' }),
+      callAgent: async () => ({ success: true, output: 'ok' }),
+      loadSkill: async () => ({ success: true, content: '' }),
+      executeSkill: async () => ({ success: true, output: '' }),
+    })
+
+    const coverage = registry.getMetadataCoverage('full')
+
+    expect(coverage.total).toBeGreaterThan(0)
+    expect(coverage.percent).toBe(100)
+    expect(coverage.issues).toEqual([])
+  })
+
+  it('full preset documents deferred builtin tools for tool_search', () => {
+    const registry = createToolRegistry('/tmp', {
+      dispatchTask: async () => ({ success: true, output: 'ok', id: 't-1' }),
+      callAgent: async () => ({ success: true, output: 'ok' }),
+      loadSkill: async () => ({ success: true, content: '' }),
+      executeSkill: async () => ({ success: true, output: '' }),
+    })
+
+    const deferred = registry.buildDeferredToolsGuidance('full')
+
+    expect(deferred).toContain('### Deferred Tools')
+    expect(deferred).toContain('Use `tool_search`')
+    expect(deferred).toContain('web_search')
+    expect(deferred).toContain('skill_load')
+  })
+
   it('task/background tools return not available when callbacks are not injected', async () => {
     const registry = createToolRegistry('/tmp', {
       dispatchTask: async () => ({ success: true, output: 'ok', id: 't-1' }),

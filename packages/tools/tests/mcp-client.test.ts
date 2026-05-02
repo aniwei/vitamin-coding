@@ -2,7 +2,7 @@
 // 测试 McpClient 生命周期、状态管理、协议握手
 
 import { describe, expect, it } from 'vitest'
-import { McpClient, createMcpClient } from '../src/mcp/mcp-client'
+import { McpClient, createMcpClient } from '@vitamin/mcp'
 
 describe('McpClient', () => {
   describe('#constructor', () => {
@@ -48,6 +48,36 @@ describe('McpClient', () => {
       } catch {
         // expected
       }
+      expect(client.getStatus()).toBe('error')
+    })
+
+    it('#then blocks localhost SSE server URLs before connecting', async () => {
+      const client = createMcpClient('local', { url: 'http://localhost:9999/mcp' })
+
+      await expect(client.connect()).rejects.toThrow('Blocked MCP server URL host')
+      expect(client.getStatus()).toBe('error')
+    })
+
+    it('#then blocks private IP SSE server URLs before connecting', async () => {
+      const client = createMcpClient('private', { url: 'http://192.168.1.10/mcp' })
+
+      await expect(client.connect()).rejects.toThrow('Blocked MCP server URL host')
+      expect(client.getStatus()).toBe('error')
+    })
+
+    it('#then blocks metadata SSE server URLs before connecting', async () => {
+      const client = createMcpClient('metadata', {
+        url: 'http://169.254.169.254/latest/meta-data',
+      })
+
+      await expect(client.connect()).rejects.toThrow('Blocked MCP server URL host')
+      expect(client.getStatus()).toBe('error')
+    })
+
+    it('#then blocks unsupported SSE server URL protocols before connecting', async () => {
+      const client = createMcpClient('file', { url: 'file:///tmp/mcp.sock' })
+
+      await expect(client.connect()).rejects.toThrow('Blocked MCP server URL protocol')
       expect(client.getStatus()).toBe('error')
     })
   })

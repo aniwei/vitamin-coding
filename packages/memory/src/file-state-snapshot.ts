@@ -1,5 +1,5 @@
-import { readdir, stat } from 'node:fs/promises'
-import { join, relative } from 'node:path'
+import { mkdir, readFile, readdir, stat, unlink, writeFile } from 'node:fs/promises'
+import { dirname, join, relative, resolve } from 'node:path'
 
 export interface FileStateSnapshot {
   timestamp: number
@@ -9,14 +9,25 @@ export interface FileStateSnapshot {
     action: 'created' | 'modified' | 'deleted'
     summary: string
   }>
+  fileContents?: FileContentSnapshot[]
   planStatus?: string
   findings: string[]
+}
+
+export interface FileContentSnapshot {
+  path: string
+  existed: boolean
+  content?: string
+  sizeBytes?: number
+  truncated?: boolean
 }
 
 export interface FileStateCapture {
   workspaceDir: string
   recentFiles?: string[]
   planStatus?: string
+  captureFileContents?: boolean
+  maxFileContentBytes?: number
 }
 
 const IGNORED_DIRS = new Set([
@@ -33,14 +44,22 @@ const IGNORED_DIRS = new Set([
 
 const MAX_TREE_DEPTH = 4
 const MAX_ENTRIES_PER_DIR = 50
+const DEFAULT_MAX_FILE_CONTENT_BYTES = 128 * 1024
 
 export class FileStateManager {
   private lastSnapshot: FileStateSnapshot | null = null
 
   async capture(input: FileStateCapture): Promise<FileStateSnapshot> {
-    const [directoryTree, modifiedFiles] = await Promise.all([
+    const [directoryTree, modifiedFiles, fileContents] = await Promise.all([
       this.buildDirectoryTree(input.workspaceDir, 0),
       this.checkRecentFiles(input.workspaceDir, input.recentFiles ?? []),
+      input.captureFileContents
+        ? this.captureFileContents(
+            input.workspaceDir,
+            input.recentFiles ?? [],
+            input.maxFileContentBytes ?? DEFAULT_MAX_FILE_CONTENT_BYTES,
+          )
+        : Promise.resolve(undefined),
     ])
 
     const findings: string[] = []
@@ -52,6 +71,7 @@ export class FileStateManager {
       timestamp: Date.now(),
       directoryTree,
       modifiedFiles,
+      fileContents,
       planStatus: input.planStatus,
       findings,
     }
@@ -80,6 +100,19 @@ export class FileStateManager {
       parts.push(`Modified Files:\n${fileLines}`)
     }
 
+    if (snapshot.fileContents && snapshot.fileContents.length > 0) {
+      const fileLines = snapshot.fileContents
+        .map((f) => {
+          if (!f.existed) {
+            return `  missing: ${f.path}`
+          }
+          const suffix = f.truncated ? ', truncated' : ''
+          return `  captured: ${f.path} (${f.sizeBytes ?? 0} bytes${suffix})`
+        })
+        .join('\n')
+      parts.push(`File Contents:\n${fileLines}`)
+    }
+
     if (snapshot.planStatus) {
       parts.push(`Plan Status: ${snapshot.planStatus}`)
     }
@@ -89,6 +122,31 @@ export class FileStateManager {
     }
 
     return parts.join('\n\n')
+  }
+
+  async restoreFileContents(workspaceDir: string, snapshot: FileStateSnapshot): Promise<string[]> {
+    const restored: string[] = []
+    for (const file of snapshot.fileContents ?? []) {
+      const fullPath = resolveWorkspacePath(workspaceDir, file.path)
+      if (!fullPath) {
+        continue
+      }
+
+      if (!file.existed) {
+        try {
+          await unlink(fullPath)
+        } catch {
+          // Missing files already match the captured state.
+        }
+        restored.push(file.path)
+        continue
+      }
+
+      await mkdir(dirname(fullPath), { recursive: true })
+      await writeFile(fullPath, file.content ?? '', 'utf-8')
+      restored.push(file.path)
+    }
+    return restored
   }
 
   private async buildDirectoryTree(dir: string, depth: number, prefix = ''): Promise<string> {
@@ -102,7 +160,7 @@ export class FileStateManager {
       entries = dirEntries
         .filter((e) => !IGNORED_DIRS.has(e.name) && !e.name.startsWith('.'))
         .sort((a, b) => {
-          // directories first
+          // 目录优先排序
           if (a.isDirectory() !== b.isDirectory()) {
             return a.isDirectory() ? -1 : 1
           }
@@ -122,7 +180,7 @@ export class FileStateManager {
         const subTree = await this.buildDirectoryTree(
           join(dir, entry.slice(0, -1)),
           depth + 1,
-          prefix + '  ',
+          `${prefix}  `,
         )
         if (subTree) {
           lines.push(subTree.trimEnd())
@@ -157,6 +215,52 @@ export class FileStateManager {
 
     return results
   }
+
+  private async captureFileContents(
+    workspaceDir: string,
+    recentFiles: string[],
+    maxBytes: number,
+  ): Promise<FileContentSnapshot[]> {
+    const snapshots: FileContentSnapshot[] = []
+
+    for (const filePath of recentFiles) {
+      const fullPath = resolveWorkspacePath(workspaceDir, filePath)
+      if (!fullPath) {
+        continue
+      }
+
+      const relPath = relative(resolve(workspaceDir), fullPath)
+      try {
+        const buffer = await readFile(fullPath)
+        const truncated = buffer.byteLength > maxBytes
+        const content = buffer.subarray(0, maxBytes).toString('utf-8')
+        snapshots.push({
+          path: relPath,
+          existed: true,
+          content,
+          sizeBytes: buffer.byteLength,
+          truncated,
+        })
+      } catch {
+        snapshots.push({
+          path: relPath,
+          existed: false,
+        })
+      }
+    }
+
+    return snapshots
+  }
+}
+
+function resolveWorkspacePath(workspaceDir: string, filePath: string): string | undefined {
+  const workspace = resolve(workspaceDir)
+  const fullPath = resolve(workspace, filePath)
+  const relativePath = relative(workspace, fullPath)
+  if (relativePath.startsWith('..') || relativePath === '') {
+    return undefined
+  }
+  return fullPath
 }
 
 function formatAge(ms: number): string {

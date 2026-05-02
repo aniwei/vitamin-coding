@@ -29,10 +29,82 @@ const MCP_PROTOCOL_VERSION = '2024-11-05'
 const MCP_CLIENT_NAME = 'vitamin-coding'
 const MCP_CLIENT_VERSION = '0.0.1'
 
+const BLOCKED_MCP_PROTOCOLS = new Set(['file:', 'ftp:', 'data:', 'javascript:'])
+const BLOCKED_MCP_HOSTS = new Set([
+  'localhost',
+  '127.0.0.1',
+  '0.0.0.0',
+  '::1',
+  'metadata.google.internal',
+  '169.254.169.254',
+])
+
 interface PendingRequest {
   resolve: (value: unknown) => void
   reject: (reason: Error) => void
   timer: ReturnType<typeof setTimeout>
+}
+
+function isPrivateMcpHost(hostname: string): boolean {
+  if (hostname.startsWith('10.')) {
+    return true
+  }
+  if (/^172\.(1[6-9]|2\d|3[0-1])\./.test(hostname)) {
+    return true
+  }
+  if (hostname.startsWith('192.168.')) {
+    return true
+  }
+  if (hostname.startsWith('169.254.')) {
+    return true
+  }
+  if (hostname.startsWith('127.')) {
+    return true
+  }
+  if (hostname === '::1') {
+    return true
+  }
+  if (/^fe80:/i.test(hostname)) {
+    return true
+  }
+  if (/^fc00:/i.test(hostname)) {
+    return true
+  }
+  if (/^fd[0-9a-f]{2}:/i.test(hostname)) {
+    return true
+  }
+  return false
+}
+
+function validateMcpServerUrl(raw: string, serverName: string): string {
+  let url: URL
+  try {
+    url = new URL(raw)
+  } catch {
+    throw new McpError(`Invalid MCP server URL for "${serverName}": ${raw}`, {
+      code: 'MCP_CONFIG_ERROR',
+    })
+  }
+
+  if (BLOCKED_MCP_PROTOCOLS.has(url.protocol)) {
+    throw new McpError(`Blocked MCP server URL protocol for "${serverName}": ${url.protocol}`, {
+      code: 'MCP_CONFIG_ERROR',
+    })
+  }
+  if (url.protocol !== 'http:' && url.protocol !== 'https:') {
+    throw new McpError(`Unsupported MCP server URL protocol for "${serverName}": ${url.protocol}`, {
+      code: 'MCP_CONFIG_ERROR',
+    })
+  }
+
+  const hostname = url.hostname.replace(/^\[|\]$/g, '')
+  if (BLOCKED_MCP_HOSTS.has(hostname) || isPrivateMcpHost(hostname)) {
+    throw new McpError(`Blocked MCP server URL host for "${serverName}": ${hostname}`, {
+      code: 'MCP_CONFIG_ERROR',
+    })
+  }
+
+  return url.href
 }
 
 export interface McpClientOptions {
@@ -61,6 +133,7 @@ export class McpClient {
   // 回调
   private toolsChangedCallback: (() => void) | null = null
   private resourcesChangedCallback: (() => void) | null = null
+  private promptsChangedCallback: (() => void) | null = null
   private disconnectedCallback: ((reason?: string) => void) | null = null
 
   constructor(serverName: string, config: McpServerConfig, options: McpClientOptions = {}) {
@@ -93,12 +166,20 @@ export class McpClient {
     return this.serverInfo
   }
 
+  getInstructions(): string | undefined {
+    return this.serverInfo?.instructions
+  }
+
   onToolsChanged(callback: () => void): void {
     this.toolsChangedCallback = callback
   }
 
   onResourcesChanged(callback: () => void): void {
     this.resourcesChangedCallback = callback
+  }
+
+  onPromptsChanged(callback: () => void): void {
+    this.promptsChangedCallback = callback
   }
 
   onDisconnected(callback: (reason?: string) => void): void {
@@ -286,7 +367,7 @@ export class McpClient {
 
   private createTransport(): McpTransport {
     if (this.config.url) {
-      return new SseTransport(this.config.url)
+      return new SseTransport(validateMcpServerUrl(this.config.url, this.serverName))
     }
 
     if (this.config.command) {
@@ -322,7 +403,7 @@ export class McpClient {
       }
 
       try {
-        this.transport!.send(message)
+        this.transport?.send(message)
       } catch (err) {
         clearTimeout(timer)
         this.pending.delete(id)
@@ -339,27 +420,28 @@ export class McpClient {
     }
 
     try {
-      this.transport!.send(message)
+      this.transport?.send(message)
     } catch (err) {
       logger.debug('Failed to send MCP notification "%s": %s', method, (err as Error).message)
     }
   }
 
   private handleMessage(message: JsonRpcResponse | JsonRpcNotification): void {
-    if (!('id' in message) || message.id === undefined) {
+    if (!('id' in message) || message.id === undefined || message.id === null) {
       this.handleNotification(message as JsonRpcNotification)
       return
     }
 
     const response = message as JsonRpcResponse
-    const pending = this.pending.get(response.id!)
+    const responseId = message.id as string | number
+    const pending = this.pending.get(responseId)
     if (!pending) {
       logger.debug('Received response for unknown request id: %s', response.id)
       return
     }
 
     clearTimeout(pending.timer)
-    this.pending.delete(response.id!)
+    this.pending.delete(responseId)
 
     if (response.error) {
       pending.reject(
@@ -385,6 +467,13 @@ export class McpClient {
         logger.info('MCP server "%s" notified resources list changed', this.serverName)
         void this.refreshResources().then(() => {
           this.resourcesChangedCallback?.()
+        })
+        break
+
+      case 'notifications/prompts/list_changed':
+        logger.info('MCP server "%s" notified prompts list changed', this.serverName)
+        void this.refreshPrompts().then(() => {
+          this.promptsChangedCallback?.()
         })
         break
 

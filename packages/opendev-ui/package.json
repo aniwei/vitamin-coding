@@ -9,6 +9,8 @@
     "lint": "oxlint src/"
   },
   "dependencies": {
+    "@vitamin/protocol": "workspace:*",
+    "@vitamin/shared": "workspace:*",
     "@heroicons/react": "2.2.0",
     "@xyflow/react": "12.10.2",
     "lucide-react": "1.7.0",

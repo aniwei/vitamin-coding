@@ -1,4 +1,5 @@
 export {
+  Error as VitaminError,
   ConfigError,
   ProviderError,
   OAuthError,
@@ -9,7 +10,10 @@ export {
   SessionError,
   ExtensionError,
   McpError,
+  isVitaminError,
+  serializeError,
 } from './error'
+export type { ErrorMetadata, ErrorOptions, SerializedError } from './error'
 
 export type {
   Brand,
@@ -54,6 +58,28 @@ export { parseJsonc, safeStringify } from './jsonc'
 
 export { request, stream } from './http'
 export type { HttpRequestOptions, HttpResponse, SseEvent } from './http'
+
+export {
+  RuntimeAbortError,
+  RuntimeTimeoutError,
+  sleep,
+  withTimeout,
+  limitConcurrency,
+} from './runtime'
+export type { SleepOptions, WithTimeoutOptions } from './runtime'
+
+export {
+  isRecord,
+  asRecord,
+  readString,
+  readNumber,
+  readBoolean,
+  readObject,
+  readArray,
+  toCamelKey,
+  normalizeKeysToCamel,
+} from './browser/data'
+export type { UnknownRecord } from './browser/data'
 
 export { Subscription } from './subscrption'
 export { BusSubscription } from './bus-subscrption'

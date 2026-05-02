@@ -21,7 +21,7 @@ function applyTextEditsToFile(
     const content = readFileSync(filePath, 'utf-8')
     const lines = content.split('\n')
 
-    // Apply edits in reverse order to preserve earlier offsets
+    // 倒序应用编辑，确保早期偏移量不受影响
     const sortedEdits = [...edits].sort((a, b) => {
       if (b.range.start.line !== a.range.start.line) {
         return b.range.start.line - a.range.start.line

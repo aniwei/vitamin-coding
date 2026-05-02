@@ -1,10 +1,13 @@
 import { createLogger, TypedEventEmitter } from '@vitamin/shared'
+import { stream as aiStream } from '@vitamin/ai'
 
 import { workLoop } from './work-loop'
 import { AbortError } from './errors'
 import { createToolExecutor } from './tool-executor'
+import { DeferredToolManager, createToolSearchTool } from './deferred-tools'
 
 import type { AssistantMessage, Message as LlmMessage } from '@vitamin/ai'
+import type { Model, ProviderRegistry } from '@vitamin/ai'
 import type {
   AgentConfig,
   AgentEvents,
@@ -31,7 +34,7 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
   private steeringQueue: AgentMessage[] = []
   private followUpQueue: AgentMessage[] = []
 
-  private readonly stream: import('./types').StreamFunction
+  private readonly stream?: import('./types').StreamFunction
   private readonly agentLogger: import('@vitamin/shared').Logger
   private readonly maxToolTurns: number
   private readonly agentName: string
@@ -52,11 +55,11 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
     return this.state.turnCount
   }
 
-  constructor(config: AgentConfig) {
+  constructor(config: AgentConfig = {}) {
     super()
 
     this.stream = config.stream
-    this.agentLogger = config.logger
+    this.agentLogger = config.logger ?? logger
     this.maxToolTurns = config.maxToolTurns ?? 25
     this.agentName = config.agentName ?? ''
     this.sessionId = config.sessionId ?? ''
@@ -124,6 +127,7 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
 
     this.transitionTo('aborted')
     this.emit('abort')
+    this.emit('aborted')
   }
 
   reset(): void {
@@ -145,11 +149,24 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
     this.abortController = new AbortController()
     const signal = this.abortController.signal
 
-    const toolExecutor = createToolExecutor(context.tools, {
-      hookExecutor: this.toolHookExecutor,
-      agentName: this.agentName,
-      sessionId: this.sessionId,
+    const deferredManager = new DeferredToolManager(context.tools)
+
+    let effectiveTools = context.tools
+    if (deferredManager.hasDeferredTools) {
+      effectiveTools = [...context.tools, createToolSearchTool(deferredManager)]
+    }
+
+    const stream = context.stream ?? this.stream
+    if (!stream) {
+      throw new Error('Agent stream is required to run')
+    }
+
+    const toolExecutor = createToolExecutor(effectiveTools, {
+      hookExecutor: context.toolHookExecutor ?? this.toolHookExecutor,
+      agentName: context.agentName ?? this.agentName,
+      sessionId: context.sessionId ?? this.sessionId,
       devtools: this.devtools,
+      deferredManager: deferredManager.hasDeferredTools ? deferredManager : undefined,
       approval: this.approval,
     })
 
@@ -163,13 +180,18 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
         temperature: context.temperature,
         convertToLLM: context.convertToLLM ?? defaultConvertToLLM,
         transformContext: context.transformContext,
+        cacheRetention: context.cacheRetention,
+        promptCache: context.promptCache,
+        scopeId: context.scopeId ?? this.sessionId,
+        maxPromptTooLongRetries: context.maxPromptTooLongRetries,
         maxToolTurns: this.maxToolTurns,
         devtools: this.devtools,
-        logger: this.agentLogger,
+        logger: context.logger ?? this.agentLogger,
         getSteeringMessages: () => this.drainSteeringQueue(),
         getFollowUpMessages: () => this.drainFollowUpQueue(),
         toolExecutor,
-        stream: this.stream,
+        deferredManager: deferredManager.hasDeferredTools ? deferredManager : undefined,
+        stream,
         signal,
         emitter: this,
         initialStatus: this.state.status,
@@ -226,6 +248,24 @@ function defaultConvertToLLM(messages: AgentMessage[]) {
   return messages.filter((m) => typeof m === 'object' && m !== null && 'role' in m) as LlmMessage[]
 }
 
-export function createAgent(config: AgentConfig): Agent {
+export function createAgent(config: AgentConfig = {}): Agent {
   return new Agent(config)
+}
+
+export function createAgentWithRegistry(
+  config: AgentConfig & {
+    model: Model
+    providerRegistry: ProviderRegistry
+  },
+): Agent {
+  return new Agent({
+    ...config,
+    stream:
+      config.stream ??
+      ((context, signal) => {
+        const model = context.model ?? config.model
+        const provider = config.providerRegistry.get(model.api)
+        return aiStream(model, provider, context, { signal })
+      }),
+  })
 }

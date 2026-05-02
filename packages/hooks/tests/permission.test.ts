@@ -7,11 +7,14 @@ import {
   createPermissionGuardHook,
   FILE_GUARD_POLICY,
   createFileGuardPolicy,
+  createNonBypassableSafetyPolicy,
+  createNetworkSafetyPolicy,
   DESTRUCTIVE_COMMAND_POLICY,
   createPermissionToolSetsFromRegistry,
   createDirectoryFreezePolicy,
   createDisabledToolsPolicy,
   createAgentBoundaryPolicy,
+  createSidechainBoundaryPolicy,
   createPermissionModePolicy,
   compilePolicyFromSetting,
 } from '../src/core/permission'
@@ -40,6 +43,8 @@ const TEST_TOOL_SETS = createPermissionToolSetsFromRegistry([
   { name: 'write', metadata: { category: 'fs' } },
   { name: 'edit', metadata: { category: 'fs' } },
   { name: 'bash', metadata: { category: 'shell' } },
+  { name: 'web_fetch', readonly: true, metadata: { category: 'web' } },
+  { name: 'mcp__docs__fetch', readonly: true },
 ])
 
 // ═══ PermissionPolicyRegistry ═══
@@ -177,6 +182,28 @@ describe('PermissionPolicyRegistry', () => {
       expect(jsDecision.effect).toBe('allow')
     })
 
+    it('matches path patterns against any extracted file path', () => {
+      const registry = new PermissionPolicyRegistry()
+
+      registry.register({
+        name: 'path-policy',
+        priority: 10,
+        enabled: true,
+        scope: {},
+        rules: [{
+          name: 'deny-env',
+          effect: 'deny',
+          match: { paths: [/\.env$/] },
+        }],
+      })
+
+      const decision = registry.evaluate(makeContext({
+        filePath: '/project/src/app.ts',
+        filePaths: ['/project/src/app.ts', '/project/.env'],
+      }))
+      expect(decision.effect).toBe('deny')
+    })
+
     it('matches by custom condition', () => {
       const registry = new PermissionPolicyRegistry()
 
@@ -287,6 +314,7 @@ describe('Built-in Policies', () => {
         { name: 'ls', readonly: true, metadata: { category: 'search' } },
         { name: 'write', metadata: { category: 'fs' } },
         { name: 'bash', metadata: { category: 'shell' } },
+        { name: 'web_search', readonly: true, metadata: { category: 'web' } },
         { name: 'task_delegate', metadata: { category: 'orchestration' } },
       ])
 
@@ -296,6 +324,7 @@ describe('Built-in Policies', () => {
       expect(toolSets.fileWriteTools.has('write')).toBe(true)
       expect(toolSets.writeTools.has('bash')).toBe(true)
       expect(toolSets.fileWriteTools.has('bash')).toBe(false)
+      expect(toolSets.networkTools.has('web_search')).toBe(true)
       expect(toolSets.writeTools.has('task_delegate')).toBe(false)
     })
   })
@@ -400,6 +429,116 @@ describe('Built-in Policies', () => {
     })
   })
 
+  describe('createNonBypassableSafetyPolicy', () => {
+    it('denies protected writes before bypass allow-all', () => {
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createNonBypassableSafetyPolicy(TEST_TOOL_SETS))
+      registry.register(createPermissionModePolicy('bypass', TEST_TOOL_SETS))
+
+      const decision = registry.evaluate(makeContext({
+        toolName: 'write',
+        filePath: '/etc/passwd',
+      }))
+
+      expect(decision.effect).toBe('deny')
+      expect(decision.policyName).toBe('builtin::non-bypassable-safety')
+      expect(decision.ruleName).toBe('deny-protected-file-writes')
+    })
+
+    it('denies root removal before bypass allow-all', () => {
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createNonBypassableSafetyPolicy(TEST_TOOL_SETS))
+      registry.register(createPermissionModePolicy('bypass', TEST_TOOL_SETS))
+
+      const decision = registry.evaluate(makeContext({
+        toolName: 'bash',
+        args: { command: 'rm -rf /' },
+      }))
+
+      expect(decision.effect).toBe('deny')
+      expect(decision.policyName).toBe('builtin::non-bypassable-safety')
+      expect(decision.ruleName).toBe('deny-root-removal')
+    })
+
+    it('does not hard-deny ordinary destructive commands that require confirmation', () => {
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createNonBypassableSafetyPolicy(TEST_TOOL_SETS))
+      registry.register(DESTRUCTIVE_COMMAND_POLICY)
+
+      const decision = registry.evaluate(makeContext({
+        toolName: 'bash',
+        args: { command: 'rm -rf /tmp/build' },
+      }))
+
+      expect(decision.effect).toBe('ask')
+      expect(decision.policyName).toBe('builtin::destructive-guard')
+    })
+  })
+
+  describe('createNetworkSafetyPolicy', () => {
+    it('denies localhost network targets', () => {
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createNetworkSafetyPolicy(TEST_TOOL_SETS))
+
+      const decision = registry.evaluate(makeContext({
+        toolName: 'web_fetch',
+        urls: ['http://localhost:3000/internal'],
+      }))
+
+      expect(decision.effect).toBe('deny')
+      expect(decision.policyName).toBe('builtin::network-safety')
+      expect(decision.ruleName).toBe('deny-blocked-network-targets')
+    })
+
+    it('denies private IP network targets', () => {
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createNetworkSafetyPolicy(TEST_TOOL_SETS))
+
+      const decision = registry.evaluate(makeContext({
+        toolName: 'web_fetch',
+        urls: ['http://192.168.1.20/admin'],
+      }))
+
+      expect(decision.effect).toBe('deny')
+    })
+
+    it('denies metadata service network targets', () => {
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createNetworkSafetyPolicy(TEST_TOOL_SETS))
+
+      const decision = registry.evaluate(makeContext({
+        toolName: 'web_fetch',
+        urls: ['http://169.254.169.254/latest/meta-data'],
+      }))
+
+      expect(decision.effect).toBe('deny')
+    })
+
+    it('allows public https network targets', () => {
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createNetworkSafetyPolicy(TEST_TOOL_SETS))
+
+      const decision = registry.evaluate(makeContext({
+        toolName: 'web_fetch',
+        urls: ['https://example.com/docs'],
+      }))
+
+      expect(decision.effect).toBe('allow')
+    })
+
+    it('applies to MCP tools with URL-like arguments', () => {
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createNetworkSafetyPolicy(TEST_TOOL_SETS))
+
+      const decision = registry.evaluate(makeContext({
+        toolName: 'mcp__docs__fetch',
+        urls: ['file:///etc/passwd'],
+      }))
+
+      expect(decision.effect).toBe('deny')
+    })
+  })
+
   describe('createDirectoryFreezePolicy', () => {
     it('allows edits within the frozen directory', () => {
       const registry = new PermissionPolicyRegistry()
@@ -419,6 +558,18 @@ describe('Built-in Policies', () => {
       const decision = registry.evaluate(makeContext({
         toolName: 'edit',
         filePath: '/project/tests/app.test.ts',
+      }))
+      expect(decision.effect).toBe('deny')
+    })
+
+    it('requires every path to stay within the frozen directory', () => {
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createDirectoryFreezePolicy('/project/src', TEST_TOOL_SETS))
+
+      const decision = registry.evaluate(makeContext({
+        toolName: 'edit',
+        filePath: '/project/src/index.ts',
+        filePaths: ['/project/src/index.ts', '/project/tests/index.ts'],
       }))
       expect(decision.effect).toBe('deny')
     })
@@ -470,6 +621,71 @@ describe('Built-in Policies', () => {
         toolName: 'write',
       }))
       expect(decision.effect).toBe('allow')
+    })
+  })
+
+  describe('createSidechainBoundaryPolicy', () => {
+    it('denies undeclared sidechain tools in restricted mode', () => {
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createSidechainBoundaryPolicy())
+
+      const decision = registry.evaluate(makeContext({
+        toolName: 'bash',
+        metadata: {
+          sidechain: {
+            policy: {
+              permissionMode: 'restricted',
+              allowedTools: ['read'],
+            },
+          },
+        },
+      }))
+
+      expect(decision.effect).toBe('deny')
+      expect(decision.policyName).toBe('builtin::sidechain-boundary')
+      expect(decision.ruleName).toBe('deny-sidechain-undeclared-tools')
+    })
+
+    it('denies tools explicitly blocked by sidechain policy', () => {
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createSidechainBoundaryPolicy())
+
+      const decision = registry.evaluate(makeContext({
+        toolName: 'bash',
+        metadata: {
+          sidechain: {
+            policy: {
+              permissionMode: 'restricted',
+              allowedTools: ['bash'],
+              deniedTools: ['bash'],
+            },
+          },
+        },
+      }))
+
+      expect(decision.effect).toBe('deny')
+      expect(decision.ruleName).toBe('deny-sidechain-denied-tools')
+    })
+
+    it('denies sidechain file access outside workspace root', () => {
+      const registry = new PermissionPolicyRegistry()
+      registry.register(createSidechainBoundaryPolicy())
+
+      const decision = registry.evaluate(makeContext({
+        toolName: 'write',
+        filePath: '../outside.ts',
+        filePaths: ['../outside.ts'],
+        metadata: {
+          sidechain: {
+            policy: {
+              workspaceRoot: '/project/allowed',
+            },
+          },
+        },
+      }))
+
+      expect(decision.effect).toBe('deny')
+      expect(decision.ruleName).toBe('deny-sidechain-workspace-escape')
     })
   })
 
@@ -607,6 +823,24 @@ describe('PermissionAuditLog', () => {
 
     expect(log.size).toBe(5)
   })
+
+  it('notifies listeners when entries are recorded', () => {
+    const log = new PermissionAuditLog()
+    const entries: string[] = []
+    const unsubscribe = log.onRecord((entry) => {
+      entries.push(`${entry.sessionId}:${entry.decision.effect}`)
+    })
+
+    log.record(makeContext({ sessionId: 's1' }), {
+      effect: 'deny', policyName: 'p', ruleName: 'r', timestamp: 1, evaluatedPolicies: 1,
+    })
+    unsubscribe()
+    log.record(makeContext({ sessionId: 's2' }), {
+      effect: 'allow', policyName: 'default', ruleName: 'default-allow', timestamp: 2, evaluatedPolicies: 0,
+    })
+
+    expect(entries).toEqual(['s1:deny'])
+  })
 })
 
 // ═══ compilePolicyFromSetting ═══
@@ -654,6 +888,35 @@ describe('compilePolicyFromSetting', () => {
     const policy = compilePolicyFromSetting(config)
     expect(policy.priority).toBe(50)
     expect(policy.enabled).toBe(true)
+  })
+
+  it('clamps setting policy priority behind builtin safety policies', () => {
+    const config: PermissionPolicySetting = {
+      name: 'unsafe-user-allow',
+      priority: -20000,
+      rules: [{ name: 'allow-all', effect: 'allow' }],
+    }
+
+    const policy = compilePolicyFromSetting(config)
+    expect(policy.priority).toBe(25)
+  })
+
+  it('does not allow a setting policy to bypass non-bypassable safety', () => {
+    const registry = new PermissionPolicyRegistry()
+    registry.register(createNonBypassableSafetyPolicy(TEST_TOOL_SETS))
+    registry.register(compilePolicyFromSetting({
+      name: 'unsafe-user-allow',
+      priority: -20000,
+      rules: [{ name: 'allow-all', effect: 'allow' }],
+    }))
+
+    const decision = registry.evaluate(makeContext({
+      toolName: 'bash',
+      args: { command: 'rm -rf /' },
+    }))
+
+    expect(decision.effect).toBe('deny')
+    expect(decision.policyName).toBe('builtin::non-bypassable-safety')
   })
 })
 
@@ -733,6 +996,69 @@ describe('createPermissionGuardHook', () => {
     expect(auditLog.getEntries()[0]!.decision.effect).toBe('allow')
   })
 
+  it('records sidechain metadata in audit log entries', () => {
+    const registry = new PermissionPolicyRegistry()
+    const auditLog = new PermissionAuditLog()
+    const hook = createPermissionGuardHook(registry, auditLog)
+
+    const input: ToolExecuteBeforeInput = {
+      toolName: 'read',
+      toolCallId: 'tc-1',
+      args: {},
+      agentName: 'subagent',
+      sessionId: 'child-1',
+      metadata: {
+        sidechain: {
+          taskId: 'task-1',
+          parentSessionId: 'parent-1',
+          policy: {
+            permissionMode: 'restricted',
+            allowedTools: ['read'],
+          },
+        },
+      },
+    }
+    const output: ToolExecuteBeforeOutput = {
+      args: {},
+      cancelled: false,
+    }
+
+    hook.handle!(input, output)
+    expect(auditLog.getEntries()[0]!.metadata).toEqual(input.metadata)
+  })
+
+  it('enforces sidechain policy through permission guard', () => {
+    const registry = new PermissionPolicyRegistry()
+    const auditLog = new PermissionAuditLog()
+    registry.register(createSidechainBoundaryPolicy())
+    const hook = createPermissionGuardHook(registry, auditLog)
+
+    const input: ToolExecuteBeforeInput = {
+      toolName: 'bash',
+      toolCallId: 'tc-1',
+      args: { command: 'ls' },
+      agentName: 'subagent',
+      sessionId: 'child-1',
+      metadata: {
+        sidechain: {
+          policy: {
+            permissionMode: 'restricted',
+            allowedTools: ['read'],
+          },
+        },
+      },
+    }
+    const output: ToolExecuteBeforeOutput = {
+      args: input.args,
+      cancelled: false,
+    }
+
+    expect(() => hook.handle!(input, output)).toThrow('Permission denied')
+    expect(output.cancelled).toBe(true)
+    expect(auditLog.getEntries()[0]!.metadata).toEqual(input.metadata)
+    expect(auditLog.getEntries()[0]!.decision.ruleName).toBe('deny-sidechain-undeclared-tools')
+  })
+
   it('sets cancelReason with [CONFIRM] prefix for ask decisions', () => {
     const registry = new PermissionPolicyRegistry()
     registry.register(createPermissionModePolicy('confirm', TEST_TOOL_SETS))
@@ -753,6 +1079,51 @@ describe('createPermissionGuardHook', () => {
     hook.handle!(input, output)
     expect(output.cancelled).toBe(false)
     expect(output.cancelReason).toMatch(/^\[CONFIRM\]/)
+  })
+
+  it('extracts multiple path arguments for policy evaluation', () => {
+    const registry = new PermissionPolicyRegistry()
+    registry.register(createFileGuardPolicy(TEST_TOOL_SETS))
+    const hook = createPermissionGuardHook(registry)
+
+    const input: ToolExecuteBeforeInput = {
+      toolName: 'write',
+      toolCallId: 'tc-1',
+      args: {
+        oldPath: '/project/src/app.ts',
+        newPath: '/project/node_modules/pkg/app.ts',
+      },
+      agentName: 'lead',
+      sessionId: 'sess-1',
+    }
+    const output: ToolExecuteBeforeOutput = {
+      args: input.args,
+      cancelled: false,
+    }
+
+    expect(() => hook.handle!(input, output)).toThrow('Permission denied')
+    expect(output.cancelled).toBe(true)
+  })
+
+  it('extracts URL arguments for network policy evaluation', () => {
+    const registry = new PermissionPolicyRegistry()
+    registry.register(createNetworkSafetyPolicy(TEST_TOOL_SETS))
+    const hook = createPermissionGuardHook(registry)
+
+    const input: ToolExecuteBeforeInput = {
+      toolName: 'web_fetch',
+      toolCallId: 'tc-1',
+      args: { url: 'http://127.0.0.1:3000/admin' },
+      agentName: 'lead',
+      sessionId: 'sess-1',
+    }
+    const output: ToolExecuteBeforeOutput = {
+      args: input.args,
+      cancelled: false,
+    }
+
+    expect(() => hook.handle!(input, output)).toThrow('Permission denied')
+    expect(output.cancelled).toBe(true)
   })
 })
 

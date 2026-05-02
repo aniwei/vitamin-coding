@@ -1,6 +1,5 @@
 import type { LogEntry } from '../types/logs'
-
-const BASE = '/api/logs'
+import { getJson } from './core'
 
 export async function fetchLogHistory(options?: {
   limit?: number
@@ -11,6 +10,5 @@ export async function fetchLogHistory(options?: {
   if (options?.limit) {params.set('limit', String(options.limit))}
   if (options?.level) {params.set('level', options.level)}
   if (options?.module) {params.set('module', options.module)}
-  const res = await fetch(`${BASE}/history?${params}`)
-  return res.json()
+  return getJson(`/logs/history?${params}`)
 }

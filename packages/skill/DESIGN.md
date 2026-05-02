@@ -18,9 +18,18 @@
 技能的注册与生命周期管理：
 
 - `register(skill)` / `unregister(name)` / `get(name)` / `list()`
-- `discover()` → 扫描目录自动发现
+- `discover()` → 扫描目录自动发现并注册
 - `match(query)` → 根据查询匹配最佳技能
+- `buildCatalog()` → 生成 system prompt 用的技能目录文本（格式：`- name: description`，供 Agent 感知可用技能）
+- `execute(name, context)` → 加载技能内容并注入上下文
 - 事件发射：`skill_discovered` / `skill_loaded` / `skill_unloaded` / `skill_error` / `skill_executed`
+
+**触发模式**：
+
+| 模式     | 触发方式                                              |
+| -------- | ----------------------------------------------------- |
+| `auto`   | Agent 在 LLM 选择后自动执行（通过 `load_skill` 工具） |
+| `manual` | 仅在用户明确请求时执行                                |
 
 ### 技能发现（skill-discovery.ts）
 

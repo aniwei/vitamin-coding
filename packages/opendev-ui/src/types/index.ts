@@ -1,4 +1,4 @@
-// Tool call information
+// 工具调用信息
 export interface ToolCallInfo {
   id: string
   name: string
@@ -10,7 +10,7 @@ export interface ToolCallInfo {
   nestedToolCalls?: ToolCallInfo[] | null
 }
 
-// Message types
+// 消息类型
 export interface Message {
   role: 'user' | 'assistant' | 'system' | 'tool_call' | 'tool_result' | 'thinking'
   content: string
@@ -31,7 +31,7 @@ export interface Message {
   reasoningContent?: string | null
 }
 
-// Session types
+// 会话类型
 export interface Session {
   id: string
   workingDirectory?: string
@@ -44,7 +44,7 @@ export interface Session {
   hasSessionModel?: boolean
 }
 
-// Configuration types
+// 配置类型
 export interface Config {
   modelProvider?: string
   model?: string
@@ -64,7 +64,7 @@ export interface Config {
   modelVlm?: string | null
 }
 
-// Provider types
+// Provider 类型
 export interface Model {
   id: string
   name: string
@@ -78,43 +78,12 @@ export interface Provider {
   models: Model[]
 }
 
-// WebSocket event types
+import type { WebSocketMessage as ProtocolWebSocketMessage } from '@vitamin/protocol'
+
+// UI stores still normalize and read event payloads defensively because older
+// service events may contain compatibility fields beyond the strict protocol.
 export interface WebSocketMessage {
-  type:
-    | 'Chat.userMessage'
-    | 'Chat.messageStart'
-    | 'Chat.messageChunk'
-    | 'Chat.messageComplete'
-    | 'Chat.toolCall'
-    | 'Chat.toolResult'
-    | 'Chat.approvalRequired'
-    | 'Chat.approvalResolved'
-    | 'Runtime.error'
-    | 'Runtime.pong'
-    | 'MCP.statusUpdate'
-    | 'MCP.serversUpdate'
-    | 'Runtime.connected'
-    | 'Runtime.disconnected'
-    | 'Chat.thinkingBlock'
-    | 'Session.statusUpdate'
-    | 'Chat.askUserRequired'
-    | 'Chat.askUserResolved'
-    | 'Session.activity'
-    | 'Chat.planApprovalRequired'
-    | 'Chat.planApprovalResolved'
-    | 'Chat.planContent'
-    | 'Chat.subagentStart'
-    | 'Chat.subagentComplete'
-    | 'Chat.parallelAgentsStart'
-    | 'Chat.parallelAgentsDone'
-    | 'Chat.taskCompleted'
-    | 'Chat.progress'
-    | 'Chat.nestedToolCall'
-    | 'Chat.nestedToolResult'
-    | 'Debugger.paused'
-    | 'Debugger.resumed'
-    | 'Debugger.breakpointsChanged'
-    | 'Log.entryAdded'
+  type: ProtocolWebSocketMessage['type'] | 'Runtime.disconnected'
   // eslint-disable-next-line @typescript-eslint/no-explicit-any
   data: any
 }
@@ -134,7 +103,7 @@ export interface ApprovalRequest {
   preview?: string
 }
 
-// Status bar info
+// 状态栏信息
 export interface StatusInfo {
   mode: 'normal' | 'plan'
   autonomyLevel: 'Manual' | 'Semi-Auto' | 'Auto'
@@ -147,7 +116,7 @@ export interface StatusInfo {
   contextUsagePct?: number
 }
 
-// Ask-user question types
+// Ask-user 问题类型
 export interface AskUserOption {
   label: string
   description?: string
@@ -165,13 +134,13 @@ export interface AskUserRequest {
   questions: AskUserQuestion[]
 }
 
-// Plan approval types
+// 计划审批类型
 export interface PlanApprovalRequest {
   requestId: string
   planContent: string
 }
 
-// Per-session state for concurrent session support
+// 每个会话的独立状态（支持并发会话）
 export interface PerSessionState {
   messages: Message[]
   isLoading: boolean

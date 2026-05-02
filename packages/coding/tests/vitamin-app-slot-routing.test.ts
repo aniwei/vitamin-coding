@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 
-import { createDefaultProviderRegistry } from '@vitamin/ai'
-import type { Model } from '@vitamin/ai'
+import { createDefaultProviderRegistry, createProviderRegistry } from '@vitamin/ai'
+import type { AssistantMessage, Model, ProviderStream } from '@vitamin/ai'
 import { createVitamin } from '../src/app/vitamin-app'
 
 function makeModel(id: string): Model {
@@ -19,6 +19,33 @@ function makeModel(id: string): Model {
     contextWindow: 128000,
     maxOutputTokens: 4096,
   }
+}
+
+function makeAssistant(text: string): AssistantMessage {
+  return {
+    role: 'assistant',
+    content: [{ type: 'text', text }],
+    api: 'openai-completions',
+    provider: 'openai',
+    usage: { inputTokens: 1, outputTokens: 1, cacheReadTokens: 0, cacheWriteTokens: 0 },
+    stopReason: 'end_turn',
+    model: 'openai/test-model',
+  }
+}
+
+function makeStreamingProviderRegistry(text: string) {
+  const registry = createProviderRegistry()
+  registry.getModelRegistry().register(makeModel('openai/test-model'))
+  registry.register('github-copilot', (): ProviderStream => ({
+    id: 'test-openai',
+    displayName: 'Test OpenAI',
+    async *converse() {
+      const message = makeAssistant(text)
+      yield { type: 'start' as const, partial: message }
+      yield { type: 'done' as const, reason: 'end_turn' as const, message }
+    },
+  }))
+  return registry
 }
 
 describe('VitaminApp slot routing', () => {
@@ -173,6 +200,116 @@ describe('VitaminApp slot routing', () => {
       expect(prompt).toContain('Workflow Guidance')
       expect(toolNames).toContain('write')
       expect(toolNames).toContain('task_delegate')
+    } finally {
+      await app.stop()
+    }
+  })
+
+  it('forks sticky task_delegate sidechain sessions from the parent session', async () => {
+    const providerRegistry = makeStreamingProviderRegistry('child summary')
+    const app = createVitamin({
+      port: 0,
+      inspect: false,
+      logger: {
+        name: 'vitamin-sidechain-test',
+        level: 'error',
+        destination: 'stdout',
+      },
+      model: makeModel('openai/test-model'),
+      providerRegistry,
+    })
+
+    try {
+      const parent = await app.createSession({ id: 'parent-sidechain' })
+      parent.session.append({
+        role: 'user',
+        timestamp: Date.now(),
+        content: [{ type: 'text', text: 'parent context' }],
+      })
+
+      const tool = app.toolRegistry.get('task_delegate')
+      expect(tool).toBeDefined()
+
+      const result = await tool!.execute({
+        id: 'delegate-1',
+        params: {
+          prompt: 'inspect child task',
+          subagent: 'explorer',
+          mode: 'sync',
+          sessionId: 'child-sidechain-sticky',
+          sessionMode: 'sticky',
+          timeoutMs: 1500,
+        },
+        signal: new AbortController().signal,
+        sessionId: parent.id,
+      })
+
+      const child = app.getSession('child-sidechain-sticky')
+      const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
+
+      expect(text).toContain('child summary')
+      expect(child).toBeDefined()
+      expect(child?.permissionMetadata).toEqual({
+        sidechain: {
+          taskId: expect.any(String),
+          parentTaskId: undefined,
+          parentSessionId: 'parent-sidechain',
+          subagent: 'explorer',
+          category: undefined,
+          policy: {
+            returnMode: 'summary_only',
+            permissionMode: 'inherit',
+            timeoutMs: 1500,
+            allowedTools: undefined,
+            deniedTools: undefined,
+          },
+        },
+      })
+      expect(child?.session.messages().some((message) =>
+        message.role === 'user' &&
+        Array.isArray(message.content) &&
+        message.content.some((part) => part.type === 'text' && part.text === 'parent context'),
+      )).toBe(true)
+    } finally {
+      await app.stop()
+    }
+  })
+
+  it('cleans up ephemeral sidechain child sessions after completion', async () => {
+    const providerRegistry = makeStreamingProviderRegistry('ephemeral child summary')
+    const app = createVitamin({
+      port: 0,
+      inspect: false,
+      logger: {
+        name: 'vitamin-sidechain-ephemeral-test',
+        level: 'error',
+        destination: 'stdout',
+      },
+      model: makeModel('openai/test-model'),
+      providerRegistry,
+    })
+
+    try {
+      const parent = await app.createSession({ id: 'parent-sidechain-ephemeral' })
+      const tool = app.toolRegistry.get('task_delegate')
+      expect(tool).toBeDefined()
+
+      const result = await tool!.execute({
+        id: 'delegate-ephemeral',
+        params: {
+          prompt: 'run child task',
+          subagent: 'explorer',
+          mode: 'sync',
+          sessionMode: 'ephemeral',
+        },
+        signal: new AbortController().signal,
+        sessionId: parent.id,
+      })
+
+      const text = result.content[0]?.type === 'text' ? result.content[0].text : ''
+      expect(result.isError).toBeUndefined()
+      expect(text).toContain('ephemeral child summary')
+      expect(app.listSessions().map((session) => session.id)).toEqual(['parent-sidechain-ephemeral'])
     } finally {
       await app.stop()
     }

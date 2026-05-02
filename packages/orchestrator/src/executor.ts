@@ -1,5 +1,6 @@
 import type { HookRegistry } from '@vitamin/hooks'
-import type { TaskInput, TaskOutput } from './types'
+import { sleep, withTimeout } from '@vitamin/shared'
+import type { SidechainContext, SidechainPolicy, Task, TaskInput, TaskOutput } from './types'
 import type { TaskStore } from './task-store'
 import type { RetryPolicy, CircuitBreaker } from './retry'
 
@@ -9,6 +10,15 @@ export interface RunSessionOptions {
   sessionMode: 'ephemeral' | 'sticky'
   agentName?: string
   slot?: TaskInput['slot']
+  signal?: AbortSignal
+  sidechain?: {
+    taskId?: string
+    parentTaskId?: string
+    parentSessionId?: string
+    subagent?: string
+    category?: string
+    policy: SidechainPolicy
+  }
   promptContext?: {
     taskTitle?: string
     taskDescription?: string
@@ -21,9 +31,20 @@ export interface RunSessionResult {
   sessionId: string
   tokenUsage?: { input: number; output: number; cacheRead: number }
   durationMs: number
+  summary?: string
+  transcript?: unknown[]
 }
 
+const DEFAULT_SIDECHAIN_POLICY: SidechainPolicy = {
+  returnMode: 'summary_only',
+  permissionMode: 'inherit',
+}
+
+const TIMEOUT_ERROR_CODE = 'EXECUTION_TIMEOUT'
+
 export class TaskExecutor {
+  private readonly activeControllers = new Map<string, AbortController>()
+
   constructor(
     private readonly taskStore: TaskStore,
     private readonly hookRegistry: HookRegistry,
@@ -41,6 +62,9 @@ export class TaskExecutor {
     sessionId?: string
     sessionMode?: 'ephemeral' | 'sticky'
     slot?: TaskInput['slot']
+    parentTaskId?: string
+    parentSessionId?: string
+    sidechain?: Partial<SidechainPolicy>
   }): Promise<{
     success: boolean
     output?: string
@@ -74,6 +98,9 @@ export class TaskExecutor {
       sessionMode: args.sessionMode ?? 'ephemeral',
       mode: args.mode,
       slot: args.slot,
+      parentTaskId: args.parentTaskId,
+      parentSessionId: args.parentSessionId,
+      sidechain: args.sidechain,
     })
 
     await this.hookRegistry.emit('task.created', {
@@ -117,6 +144,15 @@ export class TaskExecutor {
     }
   }
 
+  cancelTask(taskId: string): boolean {
+    const controller = this.activeControllers.get(taskId)
+    if (!controller) {
+      return false
+    }
+    controller.abort()
+    return true
+  }
+
   private async executeTask(taskId: string): Promise<{
     success: boolean
     output?: string
@@ -135,25 +171,66 @@ export class TaskExecutor {
       agent: task.input.subagent ?? 'default',
     })
 
-    try {
-      const result = await this.runSession({
-        prompt: task.input.prompt,
-        sessionId: task.input.sessionId,
-        sessionMode: task.sessionPolicy,
-        agentName: task.input.subagent,
-        slot: task.input.slot,
-      })
+    const controller = new AbortController()
+    this.activeControllers.set(taskId, controller)
+    const sidechainPolicy = resolveSidechainPolicy(task.input.sidechain)
+    let timedOut = false
 
+    try {
+      const result = await withTimeout(
+        this.runSession({
+          prompt: task.input.prompt,
+          sessionId: task.input.sessionId,
+          sessionMode: task.sessionPolicy,
+          agentName: task.input.subagent,
+          slot: task.input.slot,
+          signal: controller.signal,
+          sidechain: buildSidechainRunOptions(task.id, task.input),
+        }),
+        sidechainPolicy.timeoutMs,
+        {
+          onTimeout: () => {
+            timedOut = true
+            controller.abort()
+          },
+          createTimeoutError: (timeoutMs) => new TaskTimeoutError(timeoutMs),
+        },
+      )
+
+      if (timedOut) {
+        return this.finishTimedOutTask(task, sidechainPolicy)
+      }
+      if (controller.signal.aborted || (await this.isTaskCancelled(taskId))) {
+        return this.finishCancelledTask(taskId)
+      }
+
+      const outputText =
+        sidechainPolicy.returnMode === 'summary_only'
+          ? (result.summary ?? summarizeText(result.text))
+          : result.text
       const output: TaskOutput = {
-        text: result.text,
+        text: outputText,
+        summary: result.summary,
         tokenUsage: result.tokenUsage,
         durationMs: result.durationMs,
+      }
+      const sidechain: SidechainContext = {
+        isolated: true,
+        parentTaskId: task.input.parentTaskId,
+        parentSessionId: task.input.parentSessionId,
+        childSessionId: result.sessionId,
+        subagent: task.input.subagent,
+        category: task.input.category,
+        policy: sidechainPolicy,
+        summary: result.summary ?? outputText,
+        transcript: result.transcript,
       }
 
       await this.taskStore.update(taskId, {
         status: 'completed',
         output,
         sessionId: result.sessionId,
+        sidechain,
         completedAt: Date.now(),
       })
 
@@ -166,18 +243,42 @@ export class TaskExecutor {
 
       return {
         success: true,
-        output: result.text,
+        output: outputText,
         id: taskId,
         status: 'completed',
       }
     } catch (error) {
+      if (timedOut) {
+        return this.finishTimedOutTask(task, sidechainPolicy, error)
+      }
+      if (controller.signal.aborted || (await this.isTaskCancelled(taskId))) {
+        return this.finishCancelledTask(taskId)
+      }
+
       const errMsg = error instanceof Error ? error.message : String(error)
+      const sidechain: SidechainContext = {
+        isolated: true,
+        parentTaskId: task.input.parentTaskId,
+        parentSessionId: task.input.parentSessionId,
+        childSessionId: getErrorStringProperty(error, 'sidechainSessionId'),
+        subagent: task.input.subagent,
+        category: task.input.category,
+        policy: sidechainPolicy,
+        summary: `Sidechain task failed: ${errMsg}`,
+        transcript: getErrorArrayProperty(error, 'sidechainTranscript'),
+      }
 
       // 检查是否可重试
       const canRetry = this.retryPolicy.shouldRetry(task.attempts + 1)
       if (canRetry) {
         const backoff = this.retryPolicy.getBackoff(task.attempts + 1)
-        await sleep(backoff)
+        await sleep(backoff, { signal: controller.signal }).catch(() => undefined)
+        if (timedOut) {
+          return this.finishTimedOutTask(task, sidechainPolicy)
+        }
+        if (controller.signal.aborted || (await this.isTaskCancelled(taskId))) {
+          return this.finishCancelledTask(taskId)
+        }
         return this.executeTask(taskId)
       }
 
@@ -192,6 +293,7 @@ export class TaskExecutor {
       await this.taskStore.update(taskId, {
         status: 'failed',
         error: taskError,
+        sidechain,
         completedAt: Date.now(),
       })
 
@@ -206,10 +308,146 @@ export class TaskExecutor {
         id: taskId,
         status: 'failed',
       }
+    } finally {
+      if (this.activeControllers.get(taskId) === controller) {
+        this.activeControllers.delete(taskId)
+      }
+    }
+  }
+
+  private async isTaskCancelled(taskId: string): Promise<boolean> {
+    const latest = await this.taskStore.get(taskId)
+    return latest?.status === 'cancelled'
+  }
+
+  private async finishCancelledTask(taskId: string): Promise<{
+    success: boolean
+    output?: string
+    id?: string
+    status?: string
+    error?: string
+  }> {
+    await this.taskStore.update(taskId, { status: 'cancelled', completedAt: Date.now() })
+    return {
+      success: false,
+      id: taskId,
+      status: 'cancelled',
+      error: `Task cancelled: ${taskId}`,
+    }
+  }
+
+  private async finishTimedOutTask(
+    task: Task,
+    sidechainPolicy: SidechainPolicy,
+    error?: unknown,
+  ): Promise<{
+    success: boolean
+    output?: string
+    id?: string
+    status?: string
+    error?: string
+  }> {
+    const timeoutMs = sidechainPolicy.timeoutMs ?? 0
+    const message = `Task timed out after ${timeoutMs}ms`
+    const sidechain: SidechainContext = {
+      isolated: true,
+      parentTaskId: task.input.parentTaskId,
+      parentSessionId: task.input.parentSessionId,
+      childSessionId: getErrorStringProperty(error, 'sidechainSessionId'),
+      subagent: task.input.subagent,
+      category: task.input.category,
+      policy: sidechainPolicy,
+      summary: `Sidechain task timed out after ${timeoutMs}ms`,
+      transcript: getErrorArrayProperty(error, 'sidechainTranscript'),
+    }
+    const taskError = {
+      code: TIMEOUT_ERROR_CODE,
+      message,
+      retriable: false,
+    }
+
+    this.circuitBreaker.failure()
+
+    await this.taskStore.update(task.id, {
+      status: 'failed',
+      error: taskError,
+      sidechain,
+      completedAt: Date.now(),
+    })
+
+    await this.hookRegistry.emit('task.failed', {
+      task: { ...task, status: 'failed' } as unknown as Record<string, unknown>,
+      error: taskError as unknown as Record<string, unknown>,
+    })
+
+    return {
+      success: false,
+      id: task.id,
+      status: 'failed',
+      error: message,
     }
   }
 }
 
-function sleep(ms: number): Promise<void> {
-  return new Promise((resolve) => setTimeout(resolve, ms))
+function buildSidechainRunOptions(
+  taskId: string,
+  input: TaskInput,
+): NonNullable<RunSessionOptions['sidechain']> {
+  return {
+    taskId,
+    parentTaskId: input.parentTaskId,
+    parentSessionId: input.parentSessionId,
+    subagent: input.subagent,
+    category: input.category,
+    policy: resolveSidechainPolicy(input.sidechain),
+  }
+}
+
+function resolveSidechainPolicy(policy?: Partial<SidechainPolicy>): SidechainPolicy {
+  const timeoutMs = normalizeTimeoutMs(policy?.timeoutMs)
+  return {
+    ...DEFAULT_SIDECHAIN_POLICY,
+    ...policy,
+    timeoutMs,
+    allowedTools: policy?.allowedTools ? [...policy.allowedTools] : undefined,
+    deniedTools: policy?.deniedTools ? [...policy.deniedTools] : undefined,
+  }
+}
+
+function normalizeTimeoutMs(timeoutMs: number | undefined): number | undefined {
+  if (timeoutMs === undefined || !Number.isFinite(timeoutMs) || timeoutMs <= 0) {
+    return undefined
+  }
+  return Math.floor(timeoutMs)
+}
+
+class TaskTimeoutError extends Error {
+  constructor(readonly timeoutMs: number) {
+    super(`Task timed out after ${timeoutMs}ms`)
+    this.name = 'TaskTimeoutError'
+  }
+}
+
+function summarizeText(text: string): string {
+  const trimmed = text.trim()
+  if (trimmed.length <= 2000) {
+    return trimmed
+  }
+  return `${trimmed.slice(0, 2000).trimEnd()}\n[truncated sidechain output]`
+}
+
+function getErrorStringProperty(error: unknown, key: string): string | undefined {
+  if (!error || typeof error !== 'object') {
+    return undefined
+  }
+  const value = (error as Record<string, unknown>)[key]
+  return typeof value === 'string' ? value : undefined
+}
+
+function getErrorArrayProperty(error: unknown, key: string): unknown[] | undefined {
+  if (!error || typeof error !== 'object') {
+    return undefined
+  }
+  const value = (error as Record<string, unknown>)[key]
+  return Array.isArray(value) ? value : undefined
 }

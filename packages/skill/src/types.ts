@@ -110,6 +110,37 @@ export interface SkillExecutionResult {
   error?: string
 }
 
+export interface SkillSearchResult {
+  name: string
+  description: string
+  trigger: 'auto' | 'manual'
+  status: SkillStatus
+  source: SkillSource
+  relevance: number
+  matchedKeywords: string[]
+}
+
+export interface SkillCreateInput {
+  name: string
+  description: string
+  body: string
+  tags?: string[]
+  trigger?: 'auto' | 'manual'
+  overwrite?: boolean
+}
+
+export interface SkillMutationResult {
+  success: boolean
+  name?: string
+  path?: string
+  error?: string
+}
+
+export interface SkillImproveInput {
+  name: string
+  instructions: string
+}
+
 // ─── Events ───
 
 export interface SkillEvents extends Events {
@@ -135,4 +166,15 @@ export interface SkillProvider {
     input?: string,
     parameters?: Record<string, string>,
   ): Promise<SkillExecutionResult>
+  /** 搜索 skill catalog，不返回正文 */
+  search?(
+    query: string,
+    options?: { maxResults?: number; minRelevance?: number },
+  ): Promise<SkillSearchResult[]>
+  /** 创建新的项目级 SKILL.md */
+  create?(input: SkillCreateInput): Promise<SkillMutationResult>
+  /** 改进既有 SKILL.md，保留原内容并记录变更 */
+  improve?(input: SkillImproveInput): Promise<SkillMutationResult>
+  /** 构建可注入 system prompt 的 catalog 摘要 */
+  catalog?(): Promise<string>
 }

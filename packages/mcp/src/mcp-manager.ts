@@ -101,6 +101,11 @@ export class McpManager extends TypedEventEmitter<McpEvents> {
       this.emit('resources.changed', { serverName: name })
     })
 
+    client.onPromptsChanged(() => {
+      logger.info('MCP server "%s" prompts changed', name)
+      this.emit('prompts.changed', { serverName: name })
+    })
+
     // 监听断连
     client.onDisconnected((reason) => {
       logger.info('MCP server "%s" disconnected: %s', name, reason ?? 'unknown')
@@ -176,6 +181,20 @@ export class McpManager extends TypedEventEmitter<McpEvents> {
     return prompts
   }
 
+  /** 获取所有 server instructions（跨 server 聚合） */
+  getServerInstructions(): Array<{ serverName: string; instructions: string }> {
+    const instructions: Array<{ serverName: string; instructions: string }> = []
+    for (const [name, client] of this.clients) {
+      if (client.getStatus() === 'ready') {
+        const text = client.getInstructions()
+        if (text?.trim()) {
+          instructions.push({ serverName: name, instructions: text })
+        }
+      }
+    }
+    return instructions
+  }
+
   /** 通过 server name 获取 client（用于高级操作如读取 resource） */
   getClient(name: string): McpClient | undefined {
     return this.clients.get(name)
@@ -193,6 +212,7 @@ export class McpManager extends TypedEventEmitter<McpEvents> {
         tools: client.getTools(),
         resources: client.getResources(),
         prompts: client.getPrompts(),
+        instructions: client.getInstructions(),
         capabilities: client.getCapabilities() ?? undefined,
         error: client.getStatus() === 'error' ? 'Connection failed' : undefined,
       })

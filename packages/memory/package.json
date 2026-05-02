@@ -27,6 +27,7 @@
   "dependencies": {
     "@vitamin/ai": "workspace:*",
     "@vitamin/env": "workspace:*",
+    "@vitamin/manifest": "workspace:*",
     "@vitamin/persistence": "workspace:*",
     "@vitamin/shared": "workspace:*"
   }

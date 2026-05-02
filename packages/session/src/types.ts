@@ -1,4 +1,5 @@
 import type { PaginatedResult } from '@vitamin/persistence'
+export type { PaginatedResult } from '@vitamin/persistence'
 
 export type SessionEntry<T = unknown> =
   | { type: 'message'; id: string; parentId?: string; message: T; timestamp: number }
@@ -25,6 +26,33 @@ export interface SessionMetadata {
   forkPoint?: number
   tags: string[]
   title?: string
+  memoryExtraction?: {
+    lastMessageCount: number
+  }
+}
+
+export interface SessionSideEffect {
+  id: string
+  type: 'file' | 'network' | 'process' | 'unknown'
+  action: string
+  targets: string[]
+  createdAt: number
+  toolCallId?: string
+  toolName?: string
+  reversible?: boolean
+  metadata?: Record<string, unknown>
+}
+
+export interface SessionCheckpoint<T = unknown> {
+  id: string
+  label?: string
+  createdAt: number
+  entryCount: number
+  sideEffectCount: number
+  leafId?: string
+  entries: SessionEntry<T>[]
+  sideEffects: SessionSideEffect[]
+  metadata: SessionMetadata
 }
 
 export interface Session<T = unknown> {
@@ -37,6 +65,12 @@ export interface Session<T = unknown> {
   buildContext(): SessionContext<T>
   messages(): ReadonlyArray<T>
   metadata(): SessionMetadata
+  updateMetadata(patch: Partial<SessionMetadata>): void
+  recordSideEffect(effect: Omit<SessionSideEffect, 'id' | 'createdAt'>): SessionSideEffect
+  listSideEffects(): ReadonlyArray<SessionSideEffect>
+  createCheckpoint(label?: string): SessionCheckpoint<T>
+  listCheckpoints(): ReadonlyArray<SessionCheckpoint<T>>
+  restoreCheckpoint(checkpointId: string): boolean
   branch(entryId: string): void
 }
 
@@ -54,6 +88,8 @@ export interface SessionSnapshot<T = unknown> {
   entries: SessionEntry<T>[]
   metadata: SessionMetadata
   leafId?: string
+  checkpoints?: SessionCheckpoint<T>[]
+  sideEffects?: SessionSideEffect[]
 }
 
 export interface SessionPersistence<T = unknown> {

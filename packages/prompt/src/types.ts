@@ -18,6 +18,53 @@ export interface PromptProvider {
   loadMany(keys: string[]): Promise<Map<string, PromptEntry>>
 }
 
+export type PromptSectionLayer = 'static' | 'session' | 'dynamic'
+
+export interface PromptSection {
+  key: string
+  content: string
+  layer: PromptSectionLayer
+  cacheable: boolean
+  source: string
+  priority: number
+  fingerprint: string
+}
+
+export interface PromptSectionInput {
+  key: string
+  content: string
+  layer?: PromptSectionLayer
+  cacheable?: boolean
+  source?: string
+  priority?: number
+}
+
+export interface PromptSectionDiagnostic {
+  key: string
+  layer: PromptSectionLayer
+  cacheable: boolean
+  source: string
+  priority: number
+  chars: number
+  estimatedTokens: number
+  fingerprint: string
+}
+
+export interface PromptAssemblyDiagnostics {
+  sectionCount: number
+  totalChars: number
+  estimatedTokens: number
+  sections: PromptSectionDiagnostic[]
+}
+
+export interface PromptAssembly {
+  sections: PromptSection[]
+  systemPrompt: string
+  staticPrefix: string
+  dynamicTail: string
+  diagnostics: PromptAssemblyDiagnostics
+}
+
 export interface LocalProviderOptions {
   type: 'local'
   baseDir: string

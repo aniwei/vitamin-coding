@@ -5,7 +5,8 @@ import {
   type AgentProfile,
   type SubAgentPromptContext,
 } from './sub-agent-prompt'
-import type { PromptProvider } from './types'
+import { assemblePromptSections } from './prompt-assembly'
+import type { PromptAssembly, PromptProvider, PromptSectionInput } from './types'
 
 export type PromptPreset = 'main' | 'subagent'
 
@@ -50,6 +51,10 @@ export class PromptManager {
   }
 
   async assemble(): Promise<string> {
+    return (await this.assembleSections()).systemPrompt
+  }
+
+  async assembleSections(): Promise<PromptAssembly> {
     if (!this.cache.has(LEAD_GUIDANCE_KEY)) {
       const entry = await this.provider.load(LEAD_GUIDANCE_KEY)
       if (entry) {
@@ -57,19 +62,50 @@ export class PromptManager {
       }
     }
 
-    return this.cache.get(LEAD_GUIDANCE_KEY) ?? ''
+    return assemblePromptSections([
+      {
+        key: LEAD_GUIDANCE_KEY,
+        content: this.cache.get(LEAD_GUIDANCE_KEY) ?? '',
+        layer: 'static',
+        cacheable: true,
+        source: 'builtin',
+        priority: 0,
+      },
+    ])
   }
 
   async assemblePreset(options: PromptPresetOptions = { preset: 'main' }): Promise<string> {
+    return (await this.assemblePresetSections(options)).systemPrompt
+  }
+
+  async assemblePresetSections(
+    options: PromptPresetOptions = { preset: 'main' },
+  ): Promise<PromptAssembly> {
     if (options.preset === 'subagent') {
+      let content: string
+      let source: string
       if (options.profile) {
-        return assembleSubAgentPrompt(options.profile, options.context)
+        content = assembleSubAgentPrompt(options.profile, options.context)
+        source = `profile:${options.profile.name}`
+      } else {
+        content = assembleGenericSubAgentPrompt(options.agentName, options.context)
+        source = 'generic-subagent'
       }
 
-      return assembleGenericSubAgentPrompt(options.agentName, options.context)
+      const sections: PromptSectionInput[] = [
+        {
+          key: `subagent:${options.agentName}`,
+          content,
+          layer: 'static',
+          cacheable: true,
+          source,
+          priority: 0,
+        },
+      ]
+      return assemblePromptSections(sections)
     }
 
-    return this.assemble()
+    return this.assembleSections()
   }
 
   async loadSessionEndLearningPrompt(): Promise<string | null> {

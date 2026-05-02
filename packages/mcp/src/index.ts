@@ -41,7 +41,7 @@ export type {
 
 // ─── Transport ───
 export type { McpTransport } from './transport'
-export { StdioTransport, SseTransport } from './transport'
+export { StdioTransport, SseTransport, createStdioTransport, createSseTransport } from './transport'
 
 // ─── Client ───
 export { McpClient, createMcpClient } from './mcp-client'
@@ -63,6 +63,15 @@ export {
 // ─── Resource ───
 export { readMcpResource, findMcpResource, searchMcpResources } from './mcp-resource'
 export type { McpResourceEntry } from './mcp-resource'
+
+// ─── Agent Tools ───
+export {
+  createMcpAgentTools,
+  createMcpListResourcesTool,
+  createMcpReadResourceTool,
+  createMcpListPromptsTool,
+  createMcpGetPromptTool,
+} from './mcp-agent-tools'
 
 // ─── Server ───
 export { VitaminMcpServer, createMcpServer } from './mcp-server'

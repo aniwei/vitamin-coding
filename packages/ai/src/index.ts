@@ -22,6 +22,9 @@ export type {
   StreamEvent,
   ZodType,
   ToolDefinition,
+  PromptCacheSectionDiagnostic,
+  PromptCacheDiagnostics,
+  PromptCacheMetadata,
   StreamContext,
   StreamOptions,
   OAuthCredentials,
@@ -78,6 +81,13 @@ export type {
 export { GitHubCopilotOAuthProvider } from './oauth/github-copilot'
 
 export { OAuthRegistry, createOAuthRegistry, createDefaultOAuthRegistry } from './oauth-registry'
+
+// 错误类型
+export { PromptTooLongError, isPromptTooLong } from './errors'
+
+// Prompt Cache Scope
+export { getCacheScopeRegistry, createCacheScopeRegistry } from './cache-scope'
+export type { CacheRetention, CacheScopeEntry, CacheStats } from './cache-scope'
 
 // 流式入口
 export { stream, complete, simple } from './stream'

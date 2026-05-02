@@ -8,7 +8,7 @@ interface LogState {
   entries: LogEntry[]
   filteredEntries: LogEntry[]
 
-  // Filters
+  // 过滤器
   minLevel: LogLevel
   moduleFilter: string
   searchQuery: string
@@ -17,7 +17,7 @@ interface LogState {
   autoScroll: boolean
   expandedIds: Set<number>
 
-  // Actions
+  // 操作方法
   appendEntry: (entry: LogEntry) => void
   appendBatch: (entries: LogEntry[]) => void
   clear: () => void

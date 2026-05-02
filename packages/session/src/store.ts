@@ -80,6 +80,8 @@ export class InMemorySessionStore<T = unknown> implements SessionStore<T> {
         tags: [...snapshot.metadata.tags, 'fork'],
       },
       snapshot.leafId,
+      snapshot.checkpoints,
+      snapshot.sideEffects,
     )
 
     this.sessions.set(newId, forked)

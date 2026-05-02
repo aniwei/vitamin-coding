@@ -161,6 +161,32 @@ export interface ToolDefinition<TArgs = unknown> {
   visibility?: 'always' | 'when-enabled' | 'when-requested'
 }
 
+export interface PromptCacheSectionDiagnostic {
+  key: string
+  layer: string
+  cacheable: boolean
+  source: string
+  priority: number
+  chars: number
+  estimatedTokens: number
+  fingerprint: string
+}
+
+export interface PromptCacheDiagnostics {
+  sectionCount: number
+  totalChars: number
+  estimatedTokens: number
+  sections: PromptCacheSectionDiagnostic[]
+}
+
+export interface PromptCacheMetadata {
+  staticPrefix: string
+  dynamicTail: string
+  fingerprint: string
+  toolSchemaFingerprint?: string
+  diagnostics: PromptCacheDiagnostics
+}
+
 export interface StreamContext {
   model: Model
   systemPrompt: string
@@ -170,6 +196,8 @@ export interface StreamContext {
   maxTokens?: number
   temperature?: number
   cacheRetention?: 'none' | 'short' | 'long'
+  promptCache?: PromptCacheMetadata
+  scopeId?: string
 }
 
 export interface StreamOptions {

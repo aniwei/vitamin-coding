@@ -70,7 +70,10 @@ export function estimateContextTokens(
 
   // 从尾部找最后一条有 usage 的 assistant 消息
   for (let i = messages.length - 1; i >= 0; i--) {
-    const msg = messages[i]!
+    const msg = messages[i]
+    if (!msg) {
+      continue
+    }
     if (isAssistantMessage(msg) && msg.usage) {
       lastUsageIndex = i
       // inputTokens 代表了 LLM 看到的全部输入 + 输出
@@ -83,7 +86,11 @@ export function estimateContextTokens(
   let fromEstimate = 0
   if (lastUsageIndex >= 0) {
     for (let i = lastUsageIndex + 1; i < messages.length; i++) {
-      fromEstimate += estimateMessageTokens(messages[i]!, estimator)
+      const msg = messages[i]
+      if (!msg) {
+        continue
+      }
+      fromEstimate += estimateMessageTokens(msg, estimator)
     }
   } else {
     // 没有 usage 数据，全部使用估算

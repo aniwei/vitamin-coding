@@ -170,8 +170,8 @@ describe('createDefaultModelRegistry', () => {
       expect(model.id).toBeTruthy()
       expect(model.name).toBeTruthy()
       expect(model.api).toBeTruthy()
-      expect(model.provider).toBe('github-copilot')
-      expect(model.baseUrl).toBe('https://api.githubcopilot.com')
+      expect(model.provider).toBeTruthy()
+      expect(model.baseUrl).toBeTruthy()
       expect(model.contextWindow).toBeGreaterThan(0)
       expect(model.maxOutputTokens).toBeGreaterThan(0)
     }

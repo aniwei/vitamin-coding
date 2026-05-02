@@ -26,7 +26,7 @@ export async function collectEnvironment(
       snapshot.gitBranch = branch
     }
   } catch {
-    // Not in a git repository, ignore
+    // 不在 git 仓库中，忽略错误
   }
 
   try {
@@ -39,7 +39,7 @@ export async function collectEnvironment(
           : status
     }
   } catch {
-    // Ignore
+    // 忽略错误
   }
 
   return snapshot

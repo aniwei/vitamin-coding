@@ -9,11 +9,7 @@ import {
   executeHierarchical,
   executeAgentTurn,
 } from './patterns'
-import {
-  AgentNotFoundError,
-  HandoffDepthError,
-  SwarmConfigError,
-} from './errors'
+import { AgentNotFoundError, HandoffDepthError, SwarmConfigError } from './errors'
 
 import type {
   HandoffRequest,
@@ -38,15 +34,15 @@ type SwarmEvents = {
 
 /**
  * Swarm — 多 Agent 协作框架
- * 
+ *
  * 综合了多个开源 Agent 框架的设计理念：
- * 
+ *
  * - **Handoff 模式**（OpenAI Swarm）：Agent 自主决定向谁交接控制权
  * - **并行 Fleet**（OpenDev Agent Fleet）：多 Agent 同时工作，结果聚合
  * - **层级委派**（InfiAgent MLA 树形结构）：Supervisor 分解任务，Worker 执行
  * - **流水线**（gstack Sprint 流程）：Agent 按角色顺序执行
  * - **路由**（Deep Agents sub-agent、Open Agent SDK subagents）：动态分发消息
- * 
+ *
  * 核心设计原则：
  * 1. Swarm 不持有 Agent 运行时 — 通过 createRunContext 工厂由宿主注入
  * 2. Agent 定义（SwarmAgentDef）是纯声明式的，运行时由 @vitamin/agent 引擎执行
@@ -69,9 +65,7 @@ export class Swarm extends TypedEventEmitter<SwarmEvents> {
       this.agents.set(agent.id, agent)
     }
 
-    this.router = config.router
-      ? new SwarmRouter(config.router)
-      : null
+    this.router = config.router ? new SwarmRouter(config.router) : null
 
     this.context = createSwarmContext()
   }
@@ -96,14 +90,11 @@ export class Swarm extends TypedEventEmitter<SwarmEvents> {
     return this.agents.get(id)
   }
 
-  /** 
+  /**
    * 运行 Swarm — 根据配置的编排模式执行。
    * 根据 pattern 分发到对应的执行策略。
    */
-  async run(
-    input: string,
-    options?: { signal?: AbortSignal },
-  ): Promise<SwarmRunResult> {
+  async run(input: string, options?: { signal?: AbortSignal }): Promise<SwarmRunResult> {
     const signal = options?.signal ?? new AbortController().signal
     const startTime = Date.now()
 
@@ -148,7 +139,7 @@ export class Swarm extends TypedEventEmitter<SwarmEvents> {
     }
   }
 
-  /** 
+  /**
    * 直接执行指定 Agent（旁路编排模式）
    */
   async runAgent(
@@ -211,7 +202,9 @@ export class Swarm extends TypedEventEmitter<SwarmEvents> {
     const chain: SwarmAgentId[] = [currentAgentId]
 
     for (let depth = 0; depth < maxDepth; depth++) {
-      if (signal.aborted) {break}
+      if (signal.aborted) {
+        break
+      }
 
       const agentDef = this.agents.get(currentAgentId)
       if (!agentDef) {
@@ -221,19 +214,19 @@ export class Swarm extends TypedEventEmitter<SwarmEvents> {
       // 构建可 handoff 的目标列表
       let handoffTargets = [...this.agents.values()].filter((a) => a.id !== currentAgentId)
       if (agentDef.handoffTargets && agentDef.handoffTargets.length > 0) {
-        handoffTargets = handoffTargets.filter((a) => agentDef.handoffTargets!.includes(a.id))
+        const allowedTargets = agentDef.handoffTargets
+        handoffTargets = handoffTargets.filter((a) => allowedTargets.includes(a.id))
       }
 
       // 创建 handoff 工具
       let pendingHandoff: HandoffRequest | null = null
 
-      const handoffTool = handoffTargets.length > 0
-        ? createHandoffTool(
-            currentAgentId,
-            handoffTargets,
-            (request) => { pendingHandoff = request },
-          )
-        : null
+      const handoffTool =
+        handoffTargets.length > 0
+          ? createHandoffTool(currentAgentId, handoffTargets, (request) => {
+              pendingHandoff = request
+            })
+          : null
 
       emit({ type: 'agent_start', agentId: currentAgentId })
       const startTime = Date.now()
@@ -341,9 +334,7 @@ export class Swarm extends TypedEventEmitter<SwarmEvents> {
     })
 
     // 合并输出
-    const combinedText = result.tasks
-      .map((t) => `## ${t.agentId}\n${t.output.text}`)
-      .join('\n\n')
+    const combinedText = result.tasks.map((t) => `## ${t.agentId}\n${t.output.text}`).join('\n\n')
 
     const combinedOutput: SwarmTurnResult = {
       agentId: 'swarm',
@@ -477,9 +468,7 @@ export class Swarm extends TypedEventEmitter<SwarmEvents> {
     if (config.pattern === 'sequential' && config.pipeline) {
       for (const agentId of config.pipeline) {
         if (!ids.has(agentId)) {
-          throw new SwarmConfigError(
-            `Pipeline references unknown agent "${agentId}"`,
-          )
+          throw new SwarmConfigError(`Pipeline references unknown agent "${agentId}"`)
         }
       }
     }
@@ -487,9 +476,7 @@ export class Swarm extends TypedEventEmitter<SwarmEvents> {
     // 验证 supervisor 配置
     if (config.pattern === 'hierarchical' && config.supervisorId) {
       if (!ids.has(config.supervisorId)) {
-        throw new SwarmConfigError(
-          `Supervisor "${config.supervisorId}" not found`,
-        )
+        throw new SwarmConfigError(`Supervisor "${config.supervisorId}" not found`)
       }
     }
   }

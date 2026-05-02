@@ -18,6 +18,10 @@ export type {
   SkillMatch,
   SkillExecutionContext,
   SkillExecutionResult,
+  SkillSearchResult,
+  SkillCreateInput,
+  SkillMutationResult,
+  SkillImproveInput,
   SkillEvents,
   SkillProvider,
 } from './types'

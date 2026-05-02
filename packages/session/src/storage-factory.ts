@@ -1,3 +1,4 @@
+import { SessionError } from '@vitamin/shared'
 import { FileSessionPersistence } from './file-persistence'
 import { RemoteSessionPersistence } from './remote-persistence'
 import type { SessionPersistence, StorageOptions } from './types'
@@ -19,6 +20,9 @@ export function createSessionStorage<T = unknown>(options: StorageOptions): Sess
         timeoutMs: options.timeoutMs ?? 30_000,
       })
     default:
-      throw new Error(`Unsupported storage type: ${(options as { type: string }).type}`)
+      throw new SessionError(`Unsupported storage type: ${(options as { type: string }).type}`, {
+        code: 'SESSION_STORAGE_UNSUPPORTED',
+        metadata: { storageType: (options as { type: string }).type },
+      })
   }
 }

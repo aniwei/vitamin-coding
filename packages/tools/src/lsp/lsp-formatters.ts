@@ -46,7 +46,7 @@ export function formatDocumentSymbol(symbol: DocumentSymbol, indent = 0): string
 
   if (symbol.children && symbol.children.length > 0) {
     for (const child of symbol.children) {
-      result += '\n' + formatDocumentSymbol(child, indent + 1)
+      result += `\n${formatDocumentSymbol(child, indent + 1)}`
     }
   }
 
@@ -127,7 +127,7 @@ export function formatTextEdit(edit: TextEdit): string {
   const endLine = edit.range.end.line + 1
   const endChar = edit.range.end.character
   const rangeStr = `${startLine}:${startChar}-${endLine}:${endChar}`
-  const preview = edit.newText.length > 50 ? edit.newText.substring(0, 50) + '...' : edit.newText
+  const preview = edit.newText.length > 50 ? `${edit.newText.substring(0, 50)}...` : edit.newText
   return `  ${rangeStr}: "${preview}"`
 }
 

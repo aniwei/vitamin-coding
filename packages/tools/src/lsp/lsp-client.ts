@@ -56,7 +56,10 @@ export class LSPClient {
     }
 
     const [cmd, ...args] = this.server.command
-    this.process = spawn(cmd!, args, {
+    if (!cmd) {
+      throw new Error('[LSP] Server command is empty')
+    }
+    this.process = spawn(cmd, args, {
       cwd: this.root,
       env: { ...process.env, ...this.server.env },
       stdio: ['pipe', 'pipe', 'pipe'],
@@ -74,23 +77,22 @@ export class LSPClient {
       logger.error(`LSP spawn error: ${err.message}`)
     })
 
-    // Wait a moment for potential immediate crashes
+    // 等待片刻以检测进程是否立即崩溃
     await new Promise((r) => setTimeout(r, 100))
 
     if (proc.exitCode !== null) {
       const stderr = this.stderrBuffer.join('\n')
       throw new Error(
-        `LSP server exited immediately with code ${proc.exitCode}` +
-          (stderr ? `\nstderr: ${stderr}` : ''),
+        `LSP server exited immediately with code ${proc.exitCode}${stderr ? `\nstderr: ${stderr}` : ''}`,
       )
     }
 
-    // Wire up stdout parsing
+    // 连接 stdout 解析器
     proc.stdout?.on('data', (chunk: Buffer) => {
       this.processBuffer(chunk)
     })
 
-    // Wire up stderr
+    // 连接 stderr
     proc.stderr?.on('data', (chunk: Buffer) => {
       const text = chunk.toString('utf-8')
       this.stderrBuffer.push(text)
@@ -99,8 +101,7 @@ export class LSPClient {
       }
     })
 
-    // Handle server-initiated notifications / requests
-    // (publishDiagnostics, workspace/configuration, etc. handled in onMessage)
+    // 处理服务器主动发起的通知/请求（publishDiagnostics、workspace/configuration 等在 onMessage 中处理）
   }
 
   async initialize(): Promise<void> {
@@ -163,7 +164,7 @@ export class LSPClient {
   }
 
   async stop(): Promise<void> {
-    // Reject all pending requests
+    // 拒绝所有未完成的请求
     for (const [, req] of this.pending) {
       clearTimeout(req.timer)
       req.reject(new Error('LSP client stopping'))
@@ -181,7 +182,7 @@ export class LSPClient {
       const proc = this.process
       this.process = null
 
-      // Wait for graceful exit
+      // 等待优雅退出
       const exited = await Promise.race([
         new Promise<boolean>((res) => proc.on('exit', () => res(true))),
         new Promise<boolean>((res) => setTimeout(() => res(false), 5000)),
@@ -229,7 +230,7 @@ export class LSPClient {
         }
 
         if (this.contentLength === -1) {
-          // Malformed header — discard up to headerEnd
+          // 头部格式错误 — 丢弃直到 headerEnd
           this.buffer = this.buffer.subarray(headerEnd + 4)
           continue
         }
@@ -254,7 +255,7 @@ export class LSPClient {
   }
 
   private onMessage(msg: Record<string, unknown>): void {
-    // Response to a request we sent
+    // 响应我方发出的请求
     if ('id' in msg && ('result' in msg || 'error' in msg)) {
       const id = msg.id as number
       const pending = this.pending.get(id)
@@ -276,7 +277,7 @@ export class LSPClient {
       return
     }
 
-    // Server-initiated notification
+    // 服务器主动发起的通知
     if (!('id' in msg)) {
       if (method === 'textDocument/publishDiagnostics') {
         const params = msg.params as { uri?: string; diagnostics?: Diagnostic[] }
@@ -287,7 +288,7 @@ export class LSPClient {
       return
     }
 
-    // Server-initiated request (needs response)
+    // 服务器主动发起的请求（需要响应）
     const id = msg.id as number
     if (method === 'workspace/configuration') {
       const params = msg.params as { items?: Array<{ section?: string }> }
@@ -305,7 +306,7 @@ export class LSPClient {
     ) {
       this.respond(id, null)
     } else {
-      // Unknown server request — respond with null
+      // 未知的服务器请求 — 回复 null
       this.respond(id, null)
     }
   }
@@ -318,8 +319,7 @@ export class LSPClient {
     if (this.processExited || (this.process && this.process.exitCode !== null)) {
       const stderr = this.stderrBuffer.slice(-10).join('\n')
       throw new Error(
-        `LSP server already exited (code: ${this.process?.exitCode})` +
-          (stderr ? `\nstderr: ${stderr}` : ''),
+        `LSP server already exited (code: ${this.process?.exitCode})${stderr ? `\nstderr: ${stderr}` : ''}`,
       )
     }
 
@@ -331,8 +331,7 @@ export class LSPClient {
         const stderr = this.stderrBuffer.slice(-5).join('\n')
         reject(
           new Error(
-            `LSP request timeout (method: ${method})` +
-              (stderr ? `\nrecent stderr: ${stderr}` : ''),
+            `LSP request timeout (method: ${method})${stderr ? `\nrecent stderr: ${stderr}` : ''}`,
           ),
         )
       }, this.REQUEST_TIMEOUT)
@@ -340,7 +339,7 @@ export class LSPClient {
       this.pending.set(id, { resolve: resolve as (v: unknown) => void, reject, timer })
 
       const body = JSON.stringify({ jsonrpc: '2.0', id, method, params })
-      this.process!.stdin!.write(encodeMessage(body))
+      this.process?.stdin?.write(encodeMessage(body))
     })
   }
 
@@ -532,7 +531,7 @@ class LSPServerManager {
       return
     }
     this.cleanupInterval = setInterval(() => this.cleanupIdleClients(), 60_000)
-    // Don't keep process alive just for cleanup
+    // 不阻止进程仅为清理而存活
     if (this.cleanupInterval.unref) {
       this.cleanupInterval.unref()
     }
@@ -603,7 +602,7 @@ class LSPServerManager {
     const key = this.getKey(root, server.id)
     let managed = this.clients.get(key)
 
-    // Handle stale initializations
+    // 处理过期的初始化
     if (managed) {
       const now = Date.now()
       if (
@@ -621,7 +620,7 @@ class LSPServerManager {
       }
     }
 
-    // Wait for existing init
+    // 等待已有的初始化完成
     if (managed) {
       if (managed.initPromise) {
         try {
@@ -652,7 +651,7 @@ class LSPServerManager {
       }
     }
 
-    // Create new client
+    // 创建新客户端
     const client = new LSPClient(root, server)
     const initStartedAt = Date.now()
     const initPromise = (async () => {

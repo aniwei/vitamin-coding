@@ -1,4 +1,5 @@
 import { describe, expect, it } from 'vitest'
+import { SessionError } from '@vitamin/shared'
 import { InMemorySession } from '../src/in-memory-session'
 
 describe('InMemorySession', () => {
@@ -139,12 +140,142 @@ describe('InMemorySession', () => {
     })
   })
 
+  describe('#when using checkpoints', () => {
+    it('#then creates immutable checkpoint snapshots', () => {
+      const session = new InMemorySession<string>('checkpoint-1')
+      session.append('a')
+      session.updateMetadata({ title: 'before' })
+      session.recordSideEffect({
+        type: 'file',
+        action: 'write',
+        targets: ['src/a.ts'],
+        toolCallId: 'tool-1',
+        toolName: 'write',
+        reversible: true,
+      })
+
+      const checkpoint = session.createCheckpoint('before edit')
+      session.append('b')
+      session.updateMetadata({ title: 'after' })
+      session.recordSideEffect({
+        type: 'file',
+        action: 'write',
+        targets: ['src/b.ts'],
+        toolCallId: 'tool-2',
+        toolName: 'write',
+        reversible: true,
+      })
+
+      expect(checkpoint.label).toBe('before edit')
+      expect(checkpoint.entryCount).toBe(1)
+      expect(checkpoint.sideEffectCount).toBe(1)
+      expect(checkpoint.sideEffects.map((effect) => effect.targets[0])).toEqual(['src/a.ts'])
+      expect(checkpoint.metadata.title).toBe('before')
+      expect(session.listCheckpoints()).toHaveLength(1)
+      expect(session.messages()).toEqual(['a', 'b'])
+    })
+
+    it('#then restores messages and metadata to a checkpoint', () => {
+      const session = new InMemorySession<string>('checkpoint-2')
+      session.append('a')
+      session.updateMetadata({ title: 'checkpoint title', tags: ['saved'] })
+      const checkpoint = session.createCheckpoint('saved')
+
+      session.append('b')
+      session.updateMetadata({ title: 'changed', tags: ['changed'] })
+
+      expect(session.restoreCheckpoint(checkpoint.id)).toBe(true)
+      expect(session.messages()).toEqual(['a'])
+      expect(session.metadata().title).toBe('checkpoint title')
+      expect(session.metadata().tags).toEqual(['saved'])
+    })
+
+    it('#then rewinds side-effect ledger to the checkpoint', () => {
+      const session = new InMemorySession<string>('checkpoint-side-effects')
+      session.append('a')
+      session.recordSideEffect({
+        type: 'file',
+        action: 'write',
+        targets: ['src/a.ts'],
+        toolCallId: 'tool-a',
+        toolName: 'write',
+        reversible: true,
+      })
+      const checkpoint = session.createCheckpoint('after a')
+
+      session.append('b')
+      session.recordSideEffect({
+        type: 'network',
+        action: 'request',
+        targets: ['https://example.com'],
+        toolCallId: 'tool-b',
+        toolName: 'fetch',
+        reversible: false,
+      })
+
+      expect(session.listSideEffects()).toHaveLength(2)
+      expect(session.restoreCheckpoint(checkpoint.id)).toBe(true)
+      expect(session.listSideEffects()).toHaveLength(1)
+      expect(session.listSideEffects()[0]?.targets).toEqual(['src/a.ts'])
+    })
+
+    it('#then returns false for missing checkpoint id', () => {
+      const session = new InMemorySession<string>('checkpoint-missing')
+      session.append('a')
+
+      expect(session.restoreCheckpoint('missing')).toBe(false)
+      expect(session.messages()).toEqual(['a'])
+    })
+
+    it('#then checkpoints survive snapshot restore', () => {
+      const original = new InMemorySession<string>('checkpoint-snapshot')
+      original.append('a')
+      const checkpoint = original.createCheckpoint('saved')
+      original.append('b')
+
+      const snap = original.toSnapshot()
+      const restored = new InMemorySession<string>('checkpoint-snapshot')
+      restored.restoreEntries(
+        snap.entries,
+        snap.metadata,
+        snap.leafId,
+        snap.checkpoints,
+        snap.sideEffects,
+      )
+
+      expect(restored.listCheckpoints()).toHaveLength(1)
+      expect(restored.restoreCheckpoint(checkpoint.id)).toBe(true)
+      expect(restored.messages()).toEqual(['a'])
+    })
+  })
+
   describe('#when creating with parent info', () => {
     it('#then metadata records parentSessionId', () => {
       const session = new InMemorySession<string>('fork-1', 'parent-1', 5)
       const meta = session.metadata()
       expect(meta.parentSessionId).toBe('parent-1')
       expect(meta.forkPoint).toBe(5)
+    })
+  })
+
+  describe('#when branching to a missing entry', () => {
+    it('#then throws a typed session error', () => {
+      const session = new InMemorySession<string>('missing-entry')
+
+      expect(() => session.branch('entry-1')).toThrow(SessionError)
+      expect(() => session.branch('entry-1')).toThrow('Entry "entry-1" not found')
+
+      try {
+        session.branch('entry-1')
+      } catch (error) {
+        expect(error).toMatchObject({
+          code: 'SESSION_ENTRY_NOT_FOUND',
+          metadata: {
+            sessionId: 'missing-entry',
+            entryId: 'entry-1',
+          },
+        })
+      }
     })
   })
 

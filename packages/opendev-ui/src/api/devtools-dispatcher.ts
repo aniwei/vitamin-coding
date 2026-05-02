@@ -13,7 +13,7 @@ export function setupDevtoolsHandle(): void {
   ws.on('Debugger.paused', (msg) => {
     const data = msg.data as { reason: string; pauseId: string; snapshot: DebugSnapshot }
     useDevtoolsStore.getState().handlePaused(data)
-    // Auto-open debug panel on pause
+    // 暂停时自动打开调试面板
     useDevtoolsStore.getState().openPanel()
   })
 

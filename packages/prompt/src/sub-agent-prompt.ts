@@ -100,13 +100,13 @@ export function resolveAgentProfile(
   profiles: AgentProfile[],
   agentName: string,
 ): AgentProfile | undefined {
-  // Exact match
+  // 精确匹配
   const exact = profiles.find((p) => p.name === agentName)
   if (exact) {
     return exact
   }
 
-  // Fuzzy match: supports quality-reviewer / spec-reviewer / explore and similar aliases
+  // 模糊匹配：支持 quality-reviewer / spec-reviewer / explore 等别名形式
   const lower = agentName.toLowerCase()
   return profiles.find(
     (p) =>

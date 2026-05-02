@@ -1,7 +1,7 @@
 import type { AgentMessage, AgentTool, StreamFunction } from '@vitamin/agent'
 import type { Model, ProviderRegistry, ThinkingLevel, WorkflowSlot } from '@vitamin/ai'
 import type { HookRegistry } from '@vitamin/hooks'
-import type { PromptPreset, SubAgentPromptContext } from '@vitamin/prompt'
+import type { PromptAssembly, PromptPreset, SubAgentPromptContext } from '@vitamin/prompt'
 import type { Logger } from '@vitamin/shared'
 import type { Devtools } from '@vitamin/devtools'
 import type { SessionStore } from '@vitamin/session'
@@ -20,6 +20,7 @@ export interface ResolvedSessionConfig {
   maxToolTurns: number
   promptRefresh?: PromptRefresh
   workspaceDir: string
+  permissionMetadata?: Record<string, unknown>
 }
 
 // Re-export event types from @vitamin/agent so downstream packages import from there,
@@ -48,6 +49,7 @@ export interface AgentSessionOptions {
   logger: Logger
   devtools?: Devtools
   promptRefresh?: PromptRefresh
+  permissionMetadata?: Record<string, unknown>
 }
 
 // CreateAgentSessionOptions 是便捷函数接口，stream 由 providerRegistry 内部推导
@@ -70,6 +72,62 @@ export interface AgentSessionInfo {
 export interface PromptOptions {
   images?: Array<{ type: 'image'; data: string; mediaType: string }>
   streamingBehavior?: 'steer' | 'followUp'
+  signal?: AbortSignal
 }
 
-export type PromptRefresh = () => Promise<string | undefined>
+export interface ContextDiagnosticsSection {
+  key: string
+  layer: string
+  cacheable: boolean
+  source: string
+  priority: number
+  chars: number
+  estimatedTokens: number
+  fingerprint: string
+}
+
+export interface ContextDiagnosticsTool {
+  name: string
+  visibility?: AgentTool['visibility']
+  readonly: boolean | 'dynamic'
+  deferred: boolean
+}
+
+export interface ContextDiagnostics {
+  sessionId: string
+  model: string
+  provider: string
+  status: string
+  messageCount: number
+  prompt: {
+    sectionCount: number
+    totalChars: number
+    estimatedTokens: number
+    staticPrefixChars: number
+    dynamicTailChars: number
+    cacheableSectionCount: number
+    dynamicSectionCount: number
+    fingerprint?: string
+    toolSchemaFingerprint?: string
+    sections: ContextDiagnosticsSection[]
+    content?: string
+  }
+  tools: {
+    count: number
+    deferredCount: number
+    visibleCount: number
+    items: ContextDiagnosticsTool[]
+  }
+  runtime: {
+    workspaceDir: string
+    agentName: string
+    promptCacheAvailable: boolean
+    promptContentIncluded: boolean
+  }
+}
+
+export interface ContextDiagnosticsOptions {
+  includePrompt?: boolean
+}
+
+export type PromptRefresh = () => Promise<string | PromptAssembly | undefined>

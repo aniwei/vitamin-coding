@@ -32,6 +32,7 @@ export class Orchestrator {
   private readonly backgroundManager: BackgroundManager
   private readonly hookRegistry: HookRegistry
   private readonly circuitBreaker: CircuitBreaker
+  private readonly abortTask?: (taskId: string) => void
 
   private getSessionKey(sessionId?: string): string {
     return sessionId?.trim() || '__default__'
@@ -41,6 +42,7 @@ export class Orchestrator {
     const { hookRegistry, runSession, abortTask, workflowConfig, maxActiveTasks = 10 } = options
 
     this.hookRegistry = hookRegistry
+    this.abortTask = abortTask
     this.taskStore = new TaskStore()
     const retryPolicy = RetryPolicy.fromWorkflowOptions(workflowConfig)
     this.circuitBreaker = CircuitBreaker.fromWorkflowOptions(workflowConfig)
@@ -54,7 +56,10 @@ export class Orchestrator {
       maxActiveTasks,
     )
 
-    this.backgroundManager = new BackgroundManager(this.taskStore, abortTask)
+    this.backgroundManager = new BackgroundManager(this.taskStore, (taskId) => {
+      this.executor.cancelTask(taskId)
+      this.abortTask?.(taskId)
+    })
   }
 
   // ── 核心回调 ──
@@ -68,6 +73,8 @@ export class Orchestrator {
       sessionId: args.sessionId,
       sessionMode: args.sessionMode ?? 'ephemeral',
       slot: args.slot,
+      parentSessionId: args.parentSessionId,
+      sidechain: args.sidechain,
     })
   }
 
@@ -147,6 +154,8 @@ export class Orchestrator {
       if (task.status === 'completed' || task.status === 'failed' || task.status === 'cancelled') {
         return { success: false, message: `Task already in terminal state: ${task.status}` }
       }
+      this.executor.cancelTask(id)
+      this.abortTask?.(id)
       await this.taskStore.update(id, { status: 'cancelled', completedAt: Date.now() })
       await this.hookRegistry.emit('task.cancelled', { taskId: id })
       return { success: true, message: `Task ${id} cancelled` }

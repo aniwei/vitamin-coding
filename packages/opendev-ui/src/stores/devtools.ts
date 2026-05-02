@@ -10,34 +10,34 @@ import * as debugApi from '../api/devtools'
 import { ws } from '../api/websocket'
 
 interface DevtoolsState {
-  // Connection
+  // 连接状态
   enabled: boolean
   connected: boolean
 
-  // Panel
+  // 面板
   panelOpen: boolean
   activeTab: 'debugger' | 'console'
   flowPanelOpen: boolean
 
-  // Breakpoints
+  // 断点
   breakpoints: Breakpoint[]
   loadingBreakpoints: boolean
 
-  // Pause state
+  // 暫停状态
   paused: boolean
   pauseId: string | null
   pauseReason: string | null
   currentSnapshot: DebugSnapshot | null
   snapshotHistory: DebugSnapshot[]
 
-  // Command tracking
+  // 命令追踪
   pendingCommand: DebuggerCommandMethod | null
   lastRejectedReason: CommandRejectCode | null
 
-  // Context writeback draft
+  // 上下文回写草稿
   editDraft: PauseResumePayload
 
-  // Actions
+  // 操作方法
   togglePanel: () => void
   toggleFlowPanel: () => void
   openPanel: () => void
@@ -50,13 +50,13 @@ interface DevtoolsState {
   enableAll: () => Promise<void>
   disableAll: () => Promise<void>
 
-  // WS event handlers (CDP-style: Debugger.paused, Debugger.resumed)
+  // WS 事件处理器（CDP 风格: Debugger.paused, Debugger.resumed）
   handlePaused: (data: { reason: string; pauseId: string; snapshot: DebugSnapshot }) => void
   handleResumed: (data?: { pauseId?: string }) => void
   handleCommandRejected: (data: { code: CommandRejectCode; pauseId?: string }) => void
   handleBreakpointsChanged: (breakpoints: Breakpoint[]) => void
 
-  // Draft editing
+  // 草稿编辑
   updateDraftSystemPrompt: (value: string) => void
   addDraftInjectMessage: (role: 'user' | 'system', content: string) => void
   removeDraftInjectMessage: (index: number) => void
@@ -64,7 +64,7 @@ interface DevtoolsState {
   updateDraftLlmParam: (key: string, value: unknown) => void
   resetDraft: () => void
 
-  // Debugger commands (sent over WS as CDP domain methods)
+  // 调试器命令（通过 WS 以 CDP 域方法发送）
   resume: (payload?: PauseResumePayload) => void
   stepOver: (payload?: PauseResumePayload) => void
   stepInto: (payload?: PauseResumePayload) => void
@@ -160,7 +160,7 @@ export const useDevtoolsStore = create<DevtoolsState>((set, get) => ({
   // ─── CDP event: Debugger.resumed ───
   handleResumed: (data) => {
     const state = get()
-    // Only clear if pauseId matches or no pauseId provided
+    // 仅当 pauseId 匹配或未提供 pauseId 时才清除状态
     if (data?.pauseId && state.pauseId && data.pauseId !== state.pauseId) {
       return
     }
@@ -282,7 +282,7 @@ function sendDebuggerCommand(
   ws.sendCommand(method)
 }
 
-// Private helper — build payload from draft only if changes exist
+// 私有辅助函数 — 仅当草稿有变动时才构建载荷
 function buildPayload(state: DevtoolsState): PauseResumePayload | undefined {
   const { editDraft, currentSnapshot } = state
   const hasChanges =

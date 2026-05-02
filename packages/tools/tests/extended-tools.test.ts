@@ -155,15 +155,19 @@ describe('extended tools', () => {
     it('passes session hints through to dispatch', async () => {
       let received:
         | {
-            sessionId?: string
-            sessionMode?: 'ephemeral' | 'sticky'
-          }
+          sessionId?: string
+          sessionMode?: 'ephemeral' | 'sticky'
+          parentSessionId?: string
+          sidechain?: { timeoutMs?: number }
+        }
         | undefined
 
       const tool = createTaskDelegate(testDir, async (args) => {
         received = {
           sessionId: args.sessionId,
           sessionMode: args.sessionMode,
+          parentSessionId: args.parentSessionId,
+          sidechain: args.sidechain,
         }
 
         return {
@@ -180,15 +184,20 @@ describe('extended tools', () => {
           mode: 'sync',
           sessionId: 'child-1',
           sessionMode: 'sticky',
+          timeoutMs: 1500,
         },
         signal,
+        sessionId: 'parent-session',
       })
 
       expect(result.isError).toBeUndefined()
       expect(received).toEqual({
         sessionId: 'child-1',
         sessionMode: 'sticky',
+        parentSessionId: 'parent-session',
+        sidechain: { timeoutMs: 1500 },
       })
+      expect(result.details).toMatchObject({ timeoutMs: 1500 })
     })
     it('requires subagent or category', () => {
       const tool = createTaskDelegate(testDir, async () => ({ success: true }))

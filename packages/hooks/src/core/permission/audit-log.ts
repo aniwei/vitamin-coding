@@ -7,6 +7,7 @@ import type {
 
 export class PermissionAuditLog {
   private entries: PermissionAuditEntry[] = []
+  private listeners: Array<(entry: PermissionAuditEntry) => void> = []
   private readonly maxEntries: number
 
   constructor(maxEntries = 1000) {
@@ -14,14 +15,20 @@ export class PermissionAuditLog {
   }
 
   record(context: PermissionContext, decision: PermissionDecision): void {
-    this.entries.push({
+    const entry: PermissionAuditEntry = {
       timestamp: decision.timestamp,
       sessionId: context.sessionId,
       agentName: context.agentName,
       toolName: context.toolName,
       filePath: context.filePath,
+      metadata: { ...context.metadata },
       decision,
-    })
+    }
+
+    this.entries.push(entry)
+    for (const listener of this.listeners) {
+      listener(entry)
+    }
 
     if (this.entries.length > this.maxEntries) {
       this.entries.splice(0, this.entries.length - this.maxEntries)
@@ -52,6 +59,13 @@ export class PermissionAuditLog {
       this.entries = this.entries.filter((e) => e.sessionId !== sessionId)
     } else {
       this.entries = []
+    }
+  }
+
+  onRecord(listener: (entry: PermissionAuditEntry) => void): () => void {
+    this.listeners.push(listener)
+    return () => {
+      this.listeners = this.listeners.filter((item) => item !== listener)
     }
   }
 

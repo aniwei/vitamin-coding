@@ -20,7 +20,7 @@
   },
   "dependencies": {
     "@vitamin/env": "workspace:*",
-    "@vitamin/shared": "workspace:*",
-    "yaml": "2.8.3"
+    "@vitamin/manifest": "workspace:*",
+    "@vitamin/shared": "workspace:*"
   }
 }

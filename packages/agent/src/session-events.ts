@@ -1,4 +1,4 @@
-import type { ToolCallEvent } from './types'
+import type { ToolCallEvent, ToolExecutionEvent } from './types'
 import type { StreamEvent } from '@vitamin/ai'
 
 export type AgentSessionEventType = AgentSessionEvent['type']
@@ -16,7 +16,11 @@ export type AgentSessionEvent =
   | { type: 'turn_start'; sessionId: string; turnIndex: number }
   | { type: 'turn_end'; sessionId: string; turnIndex: number }
   | { type: 'tool_call_start'; sessionId: string; toolCall: ToolCallEvent }
+  | { type: 'tool_execution_event'; sessionId: string; event: ToolExecutionEvent }
   | { type: 'tool_call_end'; sessionId: string; toolCall: ToolCallEvent; isError: boolean }
+  | { type: 'review_requested'; sessionId: string; review: PatchReviewEvent }
+  | { type: 'review_passed'; sessionId: string; review: PatchReviewEvent }
+  | { type: 'review_failed'; sessionId: string; review: PatchReviewEvent; issues: string[] }
   | { type: 'compaction_start'; sessionId: string; messageCount: number }
   | { type: 'compaction_end'; sessionId: string; retainedCount: number }
   | {
@@ -44,6 +48,17 @@ export interface AskUserQuestion {
   text: string
   type?: 'text' | 'choice'
   options?: string[]
+}
+
+export interface PatchReviewEvent {
+  id: string
+  reviewType: 'patch'
+  toolCallId: string
+  toolName: string
+  risk: 'low' | 'medium' | 'high'
+  targets: string[]
+  blocked: boolean
+  reasons: string[]
 }
 
 export type AgentSessionSubscriber = (event: AgentSessionEvent) => void

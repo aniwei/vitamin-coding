@@ -5,7 +5,7 @@
  * priority=40（在 phase-injection 之后）。
  */
 
-import { buildLessonInjection } from '@vitamin/prompt'
+import { appendPromptSection, buildLessonInjection } from '@vitamin/prompt'
 import type { HookSpec } from '@vitamin/hooks'
 import { defineHook } from '@vitamin/hooks'
 import type { OperationalLearningStore } from '@vitamin/memory'
@@ -17,7 +17,7 @@ export function createLessonInjectionHook(
 ): HookSpec {
   return defineHook({
     name: 'lesson-injection',
-    timing: 'system-prompt.transform',
+    timing: 'system-prompt.sections.transform',
     priority: 40,
     handle: async (_input, output) => {
       const lessons = await learningStore.list()
@@ -25,7 +25,14 @@ export function createLessonInjectionHook(
         const template = (await promptManager.loadRuntimeLessonsTemplate()) ?? undefined
         const injection = buildLessonInjection(lessons, template)
         if (injection) {
-          output.systemPrompt = `${output.systemPrompt}\n\n${injection}`
+          output.assembly = appendPromptSection(output.assembly, {
+            key: 'runtime-lessons',
+            content: injection,
+            layer: 'dynamic',
+            cacheable: false,
+            source: 'operational-learning',
+            priority: 40,
+          })
         }
       }
     },

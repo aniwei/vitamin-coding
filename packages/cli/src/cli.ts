@@ -9,7 +9,7 @@ import type { CLIOptions, RunMode } from './types'
 const require = createRequire(import.meta.url)
 
 // 子命令集合
-export type SubCommand = 'run' | 'doctor' | 'config' | 'auth' | null
+export type SubCommand = 'run' | 'doctor' | 'config' | 'auth' | 'plugin' | null
 
 // CLI 解析结果（含子命令）
 export interface ParsedCLI {
@@ -40,7 +40,8 @@ export function parseCLI(argv: string[]): ParsedCLI {
     firstArg === 'run' ||
     firstArg === 'doctor' ||
     firstArg === 'config' ||
-    firstArg === 'auth'
+    firstArg === 'auth' ||
+    firstArg === 'plugin'
   ) {
     subCommand = firstArg
     subCommandArgs = args.slice(1).join(' ')
@@ -181,7 +182,7 @@ function printVersion(): void {
 }
 
 export async function runCli(): Promise<number> {
-  const { options, subCommand } = parseCLI(process.argv)
+  const { options, subCommand, subCommandArgs } = parseCLI(process.argv)
 
   if (subCommand === 'doctor') {
     // TODO: implement doctor
@@ -215,11 +216,16 @@ export async function runCli(): Promise<number> {
     workspaceDir: options.projectDir,
     projectConfigPath: options.configPath,
     modelId: options.model,
+    pluginRoots: [resolve(options.projectDir, '.vitamin/plugins')],
   })
 
   await app.start()
 
   try {
+    if (subCommand === 'plugin') {
+      return await runPluginCommand(app, subCommandArgs)
+    }
+
     switch (options.mode) {
       case 'print': {
         if (options.prompt) {
@@ -268,4 +274,55 @@ export async function runCli(): Promise<number> {
   } finally {
     await app.stop()
   }
+}
+
+async function runPluginCommand(
+  app: ReturnType<typeof createVitamin>,
+  argsText: string,
+): Promise<number> {
+  const [command = 'list', pluginId] = argsText.trim().split(/\s+/).filter(Boolean)
+  const manager = app.pluginManager
+  if (!manager) {
+    process.stdout.write('Plugin manager is not configured.\n')
+    return 1
+  }
+
+  if (command === 'list') {
+    const diagnostics = manager.getDiagnostics()
+    if (diagnostics.discovered.length === 0) {
+      process.stdout.write('No plugins discovered.\n')
+      return 0
+    }
+    for (const item of diagnostics.discovered) {
+      const manifest = item.manifest
+      process.stdout.write(
+        manifest
+          ? `${manifest.id}\t${manifest.status ?? 'enabled'}\t${item.path}\n`
+          : `invalid\t${item.validation.errors.join('; ')}\t${item.path}\n`,
+      )
+    }
+    return 0
+  }
+
+  if (command === 'enable' && pluginId) {
+    manager.enable(pluginId)
+    await manager.reloadAll()
+    process.stdout.write(`Plugin enabled: ${pluginId}\n`)
+    return 0
+  }
+
+  if (command === 'disable' && pluginId) {
+    manager.disable(pluginId)
+    process.stdout.write(`Plugin disabled: ${pluginId}\n`)
+    return 0
+  }
+
+  if (command === 'reload') {
+    await manager.reloadAll()
+    process.stdout.write('Plugins reloaded.\n')
+    return 0
+  }
+
+  process.stdout.write('Usage: vitamin plugin [list|enable <id>|disable <id>|reload]\n')
+  return 1
 }

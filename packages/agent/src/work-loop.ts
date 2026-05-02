@@ -1,6 +1,7 @@
-import { getToolCallsByAssistantMessage, hasToolCalls } from '@vitamin/ai'
+import { getToolCallsByAssistantMessage, hasToolCalls, isPromptTooLong } from '@vitamin/ai'
 import type {
   AssistantMessage,
+  PromptCacheMetadata,
   StreamContext,
   ThinkingLevel,
   ToolCall,
@@ -9,16 +10,22 @@ import type {
 } from '@vitamin/ai'
 import type { DebugSnapshot, PauseResult } from '@vitamin/devtools'
 import { AbortError, MaxToolTurnsError } from './errors'
+import { partitionToolCalls } from './tool-partitioner'
 import type { ToolExecutor } from './tool-executor'
 import type {
+  AgentEvent,
   AgentEventType,
   AgentEvents,
   AgentMessage,
   AgentStatus,
   AgentTool,
+  ContextTransformResult,
   StreamFunction,
+  ToolResult,
 } from './types'
 import type { MessageSummaryItem } from '@vitamin/devtools'
+
+const DEFAULT_PROMPT_TOO_LONG_RETRIES = 2
 
 interface Emitter {
   emit<K extends AgentEventType>(type: K, ...args: Parameters<AgentEvents[K]>): void
@@ -37,19 +44,38 @@ export interface WorkLoopContext {
   convertToLLM: (
     messages: AgentMessage[],
   ) => import('@vitamin/ai').Message[] | Promise<import('@vitamin/ai').Message[]>
-  transformContext?: (messages: AgentMessage[], signal?: AbortSignal) => Promise<AgentMessage[]>
+  transformContext?: import('./types').ContextTransform
+  maxPromptTooLongRetries?: number
   // 配置（来自 AgentConfig）
   maxToolTurns: number
   devtools?: import('@vitamin/devtools').Devtools
   logger: import('@vitamin/shared').Logger
   getSteeringMessages: () => Promise<AgentMessage[]>
   getFollowUpMessages: () => Promise<AgentMessage[]>
+  cacheRetention?: 'none' | 'short' | 'long'
+  promptCache?: PromptCacheMetadata
+  scopeId?: string
+  deferredManager?: import('./deferred-tools').DeferredToolManager
   // 由 Agent.runLoop() 注入
   toolExecutor: ToolExecutor
   stream: StreamFunction
   signal: AbortSignal
-  emitter: Emitter
+  emitter?: Emitter
+  emit?: (event: AgentEvent) => void
   initialStatus?: AgentStatus
+}
+
+function resolveEmitter(context: WorkLoopContext): Emitter {
+  if (context.emitter) {
+    return context.emitter
+  }
+
+  return {
+    emit(type, ...args) {
+      const payload = args[0] as Record<string, unknown> | undefined
+      context.emit?.({ type, ...(payload as Record<string, unknown>) } as AgentEvent)
+    },
+  }
 }
 
 // LLM 参数的可变快照 — devtools 在 model_before pause 时可修改
@@ -70,12 +96,8 @@ async function runTurn(
   turnIndex: number,
   lastTokenUsage: { input: number; output: number } | undefined,
 ): Promise<AssistantMessage> {
-  const {
-    signal,
-    emitter,
-    devtools,
-    logger,
-  } = ctx
+  const { signal, devtools, logger } = ctx
+  const emitter = resolveEmitter(ctx)
 
   const pause = (
     point: DebugSnapshot['point'],
@@ -107,8 +129,10 @@ async function runTurn(
   // 1. 上下文转换（压缩/裁剪/注入）
   let contextMessages = [...ctx.messages]
   if (ctx.transformContext) {
-    const transformed = await ctx.transformContext(contextMessages, signal)
-    contextMessages = transformed
+    const transformed = normalizeTransformResult(
+      await ctx.transformContext(contextMessages, signal, { reason: 'preflight' }),
+    )
+    contextMessages = transformed.messages
 
     if (contextMessages.length !== ctx.messages.length) {
       logger.info(
@@ -131,7 +155,13 @@ async function runTurn(
 
   // 2. 转换为 LLM 消息格式，构建 StreamContext
   const llmMessages = await ctx.convertToLLM(contextMessages)
-  const tools = createToolDefinitions(ctx.toolExecutor.list())
+  const tools = createToolDefinitions(ctx.toolExecutor.list(), ctx.deferredManager)
+  const promptCache = ctx.promptCache
+    ? {
+        ...ctx.promptCache,
+        toolSchemaFingerprint: fingerprintToolDefinitions(tools),
+      }
+    : undefined
 
   const streamContext: StreamContext = {
     model: ctx.model,
@@ -141,6 +171,9 @@ async function runTurn(
     thinkingLevel: params.thinkingLevel,
     maxTokens: params.maxTokens,
     temperature: params.temperature,
+    cacheRetention: ctx.cacheRetention,
+    promptCache,
+    scopeId: ctx.scopeId,
   }
 
   // 3. devtools model_before pause — 可修改 params 与 messages（影响后续 turn）
@@ -190,8 +223,8 @@ async function runTurn(
 }
 
 // ─────────────────────────────────────────────────────────────────────────────
-// runTools — 单次工具调度：readonly 并行 + mutation 串行 + steering 检查
-// 直接修改 messages（push tool result messages）
+// runTools — 按序分批工具调度：保留 LLM 给出的顺序，consecutive readonly 并行，
+// 每个 mutation 单独串行，每批前检查 steering
 // ─────────────────────────────────────────────────────────────────────────────
 async function runTools(
   assistantMessage: AssistantMessage,
@@ -199,15 +232,8 @@ async function runTools(
   turnIndex: number,
   lastTokenUsage: { input: number; output: number } | undefined,
 ): Promise<{ steeringInjected: boolean }> {
-  const {
-    toolExecutor,
-    messages,
-    signal,
-    emitter,
-    devtools,
-    logger,
-    getSteeringMessages,
-  } = ctx
+  const { toolExecutor, messages, signal, devtools, logger, getSteeringMessages } = ctx
+  const emitter = resolveEmitter(ctx)
 
   const pause = (
     point: DebugSnapshot['point'],
@@ -232,27 +258,8 @@ async function runTools(
 
   const toolCalls = getToolCallsByAssistantMessage(assistantMessage)
   const toolDefs = toolExecutor.list()
-  const readonlySet = new Set(toolDefs.filter((t) => t.readonly).map((t) => t.name))
-  const readOnlyCalls = toolCalls.filter((tc) => readonlySet.has(tc.name))
-  const mutationCalls = toolCalls.filter((tc) => !readonlySet.has(tc.name))
+  const batches = partitionToolCalls(toolCalls, toolDefs)
 
-  // steering 检查：在任何工具执行前检查一次
-  const steeringMessages = await getSteeringMessages()
-
-  await pause('steering_check', 1, {
-    metadata: {
-      hasSteeringMessages: steeringMessages.length > 0,
-      steeringCount: steeringMessages.length,
-    },
-  })
-
-  if (steeringMessages.length > 0) {
-    messages.push(...steeringMessages)
-    emitter.emit('steering_injected', { messages: steeringMessages })
-    return { steeringInjected: true }
-  }
-
-  // 执行单个工具（含完整生命周期事件）
   const executeSingleTool = async (toolCall: ToolCall) => {
     if (signal.aborted) {
       throw new AbortError()
@@ -270,7 +277,20 @@ async function runTools(
 
     await pause('tool_before', 1, { lastToolName: toolCall.name })
 
-    const result = await toolExecutor.execute(toolCall, signal)
+    let result: ToolResult | undefined
+    for await (const event of toolExecutor.executeStream(toolCall, signal)) {
+      emitter.emit('tool_execution_event', { event })
+      if (event.type === 'result') {
+        result = event.result
+      }
+    }
+
+    if (!result) {
+      result = {
+        content: [{ type: 'text', text: `Tool ${toolCall.name} completed without result event` }],
+        isError: true,
+      }
+    }
 
     const toolResultMessage: ToolResultMessage = {
       role: 'tool_result',
@@ -297,26 +317,35 @@ async function runTools(
     await pause('tool_after', 1, { lastToolName: toolCall.name })
   }
 
-  // readonly 工具：并行执行
-  if (readOnlyCalls.length > 0) {
-    logger.info('Executing %d read-only tools in parallel', readOnlyCalls.length)
-    await Promise.all(readOnlyCalls.map(executeSingleTool))
-  }
-
-  // mutation 工具：串行执行，每步前检查 steering
-  for (const toolCall of mutationCalls) {
+  for (const batch of batches) {
     if (signal.aborted) {
       throw new AbortError()
     }
 
     const steering = await getSteeringMessages()
+
+    await pause('steering_check', 1, {
+      metadata: {
+        hasSteeringMessages: steering.length > 0,
+        steeringCount: steering.length,
+      },
+    })
+
     if (steering.length > 0) {
       messages.push(...steering)
       emitter.emit('steering_injected', { messages: steering })
       return { steeringInjected: true }
     }
 
-    await executeSingleTool(toolCall)
+    if (batch.isConcurrencySafe) {
+      logger.info('Executing %d read-only tools in parallel', batch.toolCalls.length)
+      await Promise.all(batch.toolCalls.map(executeSingleTool))
+    } else {
+      const firstToolCall = batch.toolCalls[0]
+      if (firstToolCall) {
+        await executeSingleTool(firstToolCall)
+      }
+    }
   }
 
   return { steeringInjected: false }
@@ -326,19 +355,18 @@ async function runTools(
 // workLoop — 外层编排者：协调 runTurn / runTools / followUp
 // ─────────────────────────────────────────────────────────────────────────────
 export async function workLoop(context: WorkLoopContext): Promise<AssistantMessage> {
+  if (!context.stream) {
+    throw new Error('Agent loop requires stream function via options.stream')
+  }
+
   let turnIndex = 0
   let toolTurnCount = 0
   let lastAssistantMessage: AssistantMessage | null = null
   let currentStatus: AgentStatus = context.initialStatus ?? 'idle'
   let lastTokenUsage: { input: number; output: number } | undefined
 
-  const {
-    messages,
-    signal,
-    logger,
-    devtools,
-    emitter,
-  } = context
+  const { messages, signal, logger, devtools } = context
+  const emitter = resolveEmitter(context)
 
   // LLM 参数的可变快照 — devtools 在 model_before 可修改，影响后续 turn
   const params: MutableLLMParams = {
@@ -373,15 +401,15 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
       },
     })
 
+  logger.info('Agent loop started for model %s with %d messages', context.model.id, messages.length)
+
+  await pause('loop_start', 0)
+
+  let promptTooLongRetries = 0
+  const maxPromptTooLongRetries =
+    context.maxPromptTooLongRetries ?? DEFAULT_PROMPT_TOO_LONG_RETRIES
+
   try {
-    logger.info(
-      'Agent loop started for model %s with %d messages',
-      context.model.id,
-      messages.length,
-    )
-
-    await pause('loop_start', 0)
-
     outer: while (true) {
       if (signal.aborted) {
         throw new AbortError()
@@ -390,45 +418,113 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
       emitter.emit('status_change', { from: currentStatus, to: 'streaming' })
       currentStatus = 'streaming'
 
-      while (true) {
-        if (signal.aborted) {
-          throw new AbortError()
+      try {
+        while (true) {
+          if (signal.aborted) {
+            throw new AbortError()
+          }
+
+          if (toolTurnCount > (context.maxToolTurns ?? 25)) {
+            throw new MaxToolTurnsError(context.maxToolTurns ?? 25)
+          }
+
+          emitter.emit('turn_start', { turnIndex })
+          logger.info('Turn %d started', turnIndex + 1)
+
+          const assistantMessage = await runTurn(context, params, turnIndex, lastTokenUsage)
+          promptTooLongRetries = 0
+
+          messages.push(assistantMessage)
+          lastAssistantMessage = assistantMessage
+          lastTokenUsage = {
+            input: assistantMessage.usage.inputTokens,
+            output: assistantMessage.usage.outputTokens,
+          }
+
+          emitter.emit('turn_end', { turnIndex, message: assistantMessage })
+          turnIndex++
+
+          if (hasToolCalls(assistantMessage)) {
+            emitter.emit('status_change', { from: currentStatus, to: 'tool_executing' })
+            currentStatus = 'tool_executing'
+
+            await runTools(assistantMessage, context, turnIndex, lastTokenUsage)
+
+            toolTurnCount++
+
+            emitter.emit('status_change', { from: currentStatus, to: 'streaming' })
+            currentStatus = 'streaming'
+            continue
+          }
+
+          // end_turn 或 max_tokens → 退出内层循环
+          break
+        }
+      } catch (error) {
+        if (error instanceof AbortError || signal.aborted) {
+          throw error
         }
 
-        if (toolTurnCount > (context.maxToolTurns ?? 25)) {
-          throw new MaxToolTurnsError(context.maxToolTurns ?? 25)
+        if (isPromptTooLong(error) && context.transformContext) {
+          if (promptTooLongRetries >= maxPromptTooLongRetries) {
+            logger.warn(
+              'Prompt too long at turn %d after %d recovery attempt(s), giving up',
+              turnIndex + 1,
+              promptTooLongRetries,
+            )
+            throw error
+          }
+
+          const beforeCount = messages.length
+          const beforeSignature = messageSignature(messages)
+          const attempt = promptTooLongRetries + 1
+          logger.warn(
+            'Prompt too long at turn %d, triggering reactive auto-compaction attempt %d/%d',
+            turnIndex + 1,
+            attempt,
+            maxPromptTooLongRetries,
+          )
+
+          const transformed = normalizeTransformResult(
+            await context.transformContext(messages, signal, {
+              reason: 'prompt-too-long',
+              attempt,
+              error: error instanceof Error ? error : undefined,
+              tokenCount: error.tokenCount,
+            }),
+          )
+          const afterSignature = messageSignature(transformed.messages)
+
+          emitter.emit('compaction_needed', {
+            tokenCount: error.tokenCount ?? 0,
+            threshold: context.model.contextWindow,
+            attempt,
+            maxAttempts: maxPromptTooLongRetries,
+            beforeCount,
+            afterCount: transformed.messages.length,
+            metadata: transformed.metadata,
+          })
+
+          if (beforeSignature === afterSignature) {
+            logger.warn(
+              'Reactive auto-compaction made no context change at turn %d, rethrowing prompt-too-long',
+              turnIndex + 1,
+            )
+            throw error
+          }
+
+          messages.length = 0
+          messages.push(...transformed.messages)
+          promptTooLongRetries = attempt
+          logger.info(
+            'Reactive auto-compaction changed context from %d to %d messages, retrying',
+            beforeCount,
+            messages.length,
+          )
+          continue outer
         }
 
-        emitter.emit('turn_start', { turnIndex })
-        logger.info('Turn %d started', turnIndex + 1)
-
-        const assistantMessage = await runTurn(context, params, turnIndex, lastTokenUsage)
-
-        messages.push(assistantMessage)
-        lastAssistantMessage = assistantMessage
-        lastTokenUsage = {
-          input: assistantMessage.usage.inputTokens,
-          output: assistantMessage.usage.outputTokens,
-        }
-
-        emitter.emit('turn_end', { turnIndex, message: assistantMessage })
-        turnIndex++
-
-        if (hasToolCalls(assistantMessage)) {
-          emitter.emit('status_change', { from: currentStatus, to: 'tool_executing' })
-          currentStatus = 'tool_executing'
-
-          await runTools(assistantMessage, context, turnIndex, lastTokenUsage)
-
-          toolTurnCount++
-
-          emitter.emit('status_change', { from: currentStatus, to: 'streaming' })
-          currentStatus = 'streaming'
-          continue
-        }
-
-        // end_turn 或 max_tokens → 退出内层循环
-        break
+        throw error
       }
 
       await pause('loop_end', 0)
@@ -481,13 +577,57 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
 
 // ─── helpers ─────────────────────────────────────────────────────────────────
 
-function createToolDefinitions(tools: AgentTool[]): ToolDefinition[] {
-  return tools.map((tool) => ({
+function normalizeTransformResult(
+  result: AgentMessage[] | ContextTransformResult,
+): ContextTransformResult {
+  if (Array.isArray(result)) {
+    return { messages: result }
+  }
+
+  return result
+}
+
+function messageSignature(messages: AgentMessage[]): string {
+  try {
+    return JSON.stringify(messages)
+  } catch {
+    return `count:${messages.length}`
+  }
+}
+
+function createToolDefinitions(
+  tools: AgentTool[],
+  deferredManager?: import('./deferred-tools').DeferredToolManager,
+): ToolDefinition[] {
+  const active = deferredManager ? deferredManager.getActiveTools(tools) : tools
+  return active.map((tool) => ({
     name: tool.name,
     description: tool.description,
     parameters: tool.parameters,
     visibility: tool.visibility,
   }))
+}
+
+function fingerprintToolDefinitions(tools: ToolDefinition[]): string {
+  let hash = 5381
+  const input = tools
+    .map((tool) => {
+      const schema = tool.parameters.toJSONSchema?.() ?? {}
+      return JSON.stringify({
+        name: tool.name,
+        description: tool.description,
+        visibility: tool.visibility,
+        schema,
+      })
+    })
+    .sort()
+    .join('\0')
+
+  for (let i = 0; i < input.length; i++) {
+    hash = ((hash << 5) + hash) ^ input.charCodeAt(i)
+  }
+
+  return (hash >>> 0).toString(16).padStart(8, '0')
 }
 
 function summarizeMessages(messages: AgentMessage[], lastN: number): MessageSummaryItem[] {

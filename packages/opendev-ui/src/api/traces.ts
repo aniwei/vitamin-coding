@@ -1,6 +1,5 @@
 import type { OpenDevChatMessage, TraceSessionInfo } from '../types/trace'
-
-const API_BASE = '/api'
+import { getJson } from './core'
 
 function normalizeTraceSession(raw: any): TraceSessionInfo {
   return {
@@ -23,17 +22,11 @@ function normalizeTraceMessage(raw: any): OpenDevChatMessage {
 }
 
 export async function fetchTraceProjects(): Promise<string[]> {
-  const response = await fetch(`${API_BASE}/traces/projects`)
-  if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
-  return response.json()
+  return getJson('/traces/projects')
 }
 
 export async function fetchTraceSessions(project: string): Promise<TraceSessionInfo[]> {
-  const response = await fetch(
-    `${API_BASE}/traces/projects/${encodeURIComponent(project)}/sessions`,
-  )
-  if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
-  const raw = await response.json()
+  const raw = await getJson<unknown>(`/traces/projects/${encodeURIComponent(project)}/sessions`)
   return Array.isArray(raw) ? raw.map(normalizeTraceSession) : []
 }
 
@@ -41,10 +34,8 @@ export async function fetchTraceSession(
   project: string,
   sessionId: string,
 ): Promise<OpenDevChatMessage[]> {
-  const response = await fetch(
-    `${API_BASE}/traces/projects/${encodeURIComponent(project)}/sessions/${encodeURIComponent(sessionId)}`,
+  const raw = await getJson<unknown>(
+    `/traces/projects/${encodeURIComponent(project)}/sessions/${encodeURIComponent(sessionId)}`,
   )
-  if (!response.ok) {throw new Error(`API error: ${response.statusText}`)}
-  const raw = await response.json()
   return Array.isArray(raw) ? raw.map(normalizeTraceMessage) : []
 }

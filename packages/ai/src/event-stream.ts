@@ -45,7 +45,7 @@ export class EventStream<E, R> implements AsyncIterable<E> {
         waiter.resolve({ value: event, done: false })
       }
 
-      // TODO warn no waiter to receive event
+      // TODO: 当没有等待者接收事件时发出警告
     } else {
       this.events.push(event)
     }
@@ -100,7 +100,10 @@ export class EventStream<E, R> implements AsyncIterable<E> {
     return {
       next: () => {
         if (index < this.events.length) {
-          return Promise.resolve({ value: this.events[index++]!, done: false })
+          const value = this.events[index++]
+          if (value) {
+            return Promise.resolve({ value, done: false })
+          }
         }
 
         if (this.done) {

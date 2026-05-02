@@ -30,6 +30,7 @@ export const INTERCEPTOR_TIMINGS = new Set<HookTiming>([
   'tool.execute.after',
   'messages.transform',
   'chat.params',
+  'system-prompt.sections.transform',
   'system-prompt.transform',
 ] satisfies InterceptorTiming[])
 

@@ -26,6 +26,14 @@ const DelegateTaskArgsSchema = z
       .enum(['normal', 'thinking', 'compact', 'critique', 'vision'])
       .optional()
       .describe('Model slot to use for this task'),
+    timeoutMs: z
+      .number()
+      .int()
+      .positive()
+      .optional()
+      .describe(
+        'Optional child task timeout in milliseconds. When reached, the delegated task is aborted.',
+      ),
   })
   .refine((data) => data.subagent !== undefined || data.category !== undefined, {
     message: 'Must provide subagent or category',
@@ -50,6 +58,10 @@ export type TaskDispatch = (args: {
   sessionId?: string
   sessionMode?: 'ephemeral' | 'sticky'
   slot?: 'normal' | 'thinking' | 'compact' | 'critique' | 'vision'
+  parentSessionId?: string
+  sidechain?: {
+    timeoutMs?: number
+  }
 }) => Promise<TaskDispatchResult>
 
 export function createTaskDelegate(
@@ -63,7 +75,7 @@ export function createTaskDelegate(
     parameters: DelegateTaskArgsSchema,
     visibility: 'always',
 
-    async execute({ params }): Promise<ToolResult> {
+    async execute({ params, sessionId }): Promise<ToolResult> {
       if (!dispatch) {
         throw new Error('task_delegate function is not provided in options')
       }
@@ -76,6 +88,8 @@ export function createTaskDelegate(
         sessionId: params.sessionId,
         sessionMode: params.sessionMode,
         slot: params.slot,
+        parentSessionId: sessionId,
+        sidechain: params.timeoutMs ? { timeoutMs: params.timeoutMs } : undefined,
       })
 
       if (result.success) {
@@ -91,6 +105,8 @@ export function createTaskDelegate(
             status: result.status,
             sessionId: params.sessionId,
             sessionMode: params.sessionMode,
+            parentSessionId: sessionId,
+            timeoutMs: params.timeoutMs,
           },
         }
       }

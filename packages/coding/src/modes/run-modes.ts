@@ -1,5 +1,6 @@
 import type { AgentMessage } from '@vitamin/agent'
 import type { AgentSession } from '../session/agent-session'
+import type { ContextDiagnostics } from '../session/types'
 
 export interface JsonModeResult {
   sessionId: string
@@ -108,7 +109,15 @@ export class InteractiveMode {
     if (command === 'help') {
       return {
         type: 'system',
-        text: 'Commands: /help, /abort, /compact <count> <summary>, /exit',
+        text: 'Commands: /help, /context [--show-prompt], /abort, /compact <count> <summary>, /exit',
+      }
+    }
+
+    if (command === 'context') {
+      const includePrompt = rest.includes('--show-prompt')
+      return {
+        type: 'system',
+        text: formatContextDiagnostics(this.session.getContextDiagnostics({ includePrompt })),
       }
     }
 
@@ -126,6 +135,30 @@ export class InteractiveMode {
 
     return { type: 'system', text: `Unknown command: /${command}` }
   }
+}
+
+export function formatContextDiagnostics(diagnostics: ContextDiagnostics): string {
+  const lines = [
+    `Session: ${diagnostics.sessionId}`,
+    `Model: ${diagnostics.model} (${diagnostics.provider})`,
+    `Messages: ${diagnostics.messageCount}`,
+    `Prompt sections: ${diagnostics.prompt.sectionCount}, estimated tokens: ${diagnostics.prompt.estimatedTokens}`,
+    `Prompt cache: static=${diagnostics.prompt.staticPrefixChars} chars, dynamic=${diagnostics.prompt.dynamicTailChars} chars`,
+    `Tools: ${diagnostics.tools.count} total, ${diagnostics.tools.deferredCount} deferred`,
+    'Sections:',
+    ...diagnostics.prompt.sections.map((section) => {
+      const cache = section.cacheable ? 'cacheable' : 'dynamic'
+      return `- ${section.key} [${section.layer}, ${cache}, ${section.source}] ~${section.estimatedTokens} tokens`
+    }),
+  ]
+
+  if (diagnostics.prompt.content !== undefined) {
+    lines.push('', diagnostics.prompt.content)
+  } else {
+    lines.push('', 'Prompt content hidden. Use /context --show-prompt to include it.')
+  }
+
+  return lines.join('\n')
 }
 
 export function getLastAssistantText(messages: readonly AgentMessage[]): string {

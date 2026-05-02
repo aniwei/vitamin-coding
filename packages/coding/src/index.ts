@@ -14,6 +14,7 @@ export type { CodingSessionManagerOptions as SessionManagerOptions } from './ses
 
 export {
   InteractiveMode,
+  formatContextDiagnostics,
   getLastAssistantText,
   runJsonMode,
   runPrintMode,
@@ -30,6 +31,10 @@ export type {
 export type {
   AgentSessionOptions,
   AgentSessionInfo,
+  ContextDiagnostics,
+  ContextDiagnosticsOptions,
+  ContextDiagnosticsSection,
+  ContextDiagnosticsTool,
   CreateAgentSessionOptions,
   PromptOptions,
 } from './session/types'

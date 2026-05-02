@@ -86,12 +86,21 @@ describe('TaskExecutor.dispatch', () => {
     })
 
     expect(result.success).toBe(true)
-    expect(seen).toEqual([{
+    expect(seen).toMatchObject([{
       prompt: 'review this diff',
       sessionId: 'child-review',
       sessionMode: 'sticky',
       agentName: 'quality-reviewer',
       slot: 'critique',
+      sidechain: {
+        parentTaskId: undefined,
+        parentSessionId: undefined,
+        subagent: 'quality-reviewer',
+        policy: {
+          returnMode: 'summary_only',
+          permissionMode: 'inherit',
+        },
+      },
     }])
   })
 
@@ -118,6 +127,131 @@ describe('TaskExecutor.dispatch', () => {
     expect(seen[0]).toMatchObject({
       prompt: 'dispatch with context',
       sessionMode: 'ephemeral',
+    })
+  })
+
+  it('returns only sidechain summary to parent while storing transcript metadata', async () => {
+    const { executor, taskStore } = makeExecutor({
+      runSession: makeRunSession((opts) => ({
+        text: 'full child transcript output that should not be returned',
+        summary: 'child summary only',
+        transcript: [
+          { role: 'user', content: 'private child prompt' },
+          { role: 'assistant', content: 'private child reasoning' },
+        ],
+        sessionId: 'child-sidechain',
+        durationMs: 30,
+      })),
+    })
+
+    const result = await executor.dispatch({
+      prompt: 'inspect implementation',
+      subagent: 'explorer',
+      category: 'codebase',
+      mode: 'sync',
+      parentTaskId: 'task-parent',
+      parentSessionId: 'session-parent',
+      sidechain: {
+        permissionMode: 'restricted',
+        workspaceRoot: '/workspace/pkg',
+        allowedTools: ['read', 'grep'],
+        deniedTools: ['write'],
+      },
+    })
+
+    expect(result).toMatchObject({
+      success: true,
+      output: 'child summary only',
+      status: 'completed',
+    })
+
+    const task = await taskStore.get(result.id!)
+    expect(task?.output).toMatchObject({
+      text: 'child summary only',
+      summary: 'child summary only',
+    })
+    expect(task?.sidechain).toMatchObject({
+      isolated: true,
+      parentTaskId: 'task-parent',
+      parentSessionId: 'session-parent',
+      childSessionId: 'child-sidechain',
+      subagent: 'explorer',
+      category: 'codebase',
+      policy: {
+        returnMode: 'summary_only',
+        permissionMode: 'restricted',
+        workspaceRoot: '/workspace/pkg',
+        allowedTools: ['read', 'grep'],
+        deniedTools: ['write'],
+      },
+      summary: 'child summary only',
+    })
+    expect(task?.sidechain?.transcript).toHaveLength(2)
+  })
+
+  it('can expose full child text when sidechain return mode opts in', async () => {
+    const { executor } = makeExecutor({
+      runSession: makeRunSession(() => ({
+        text: 'full child output',
+        summary: 'short summary',
+        sessionId: 'child-full',
+        durationMs: 10,
+      })),
+    })
+
+    const result = await executor.dispatch({
+      prompt: 'deep task',
+      subagent: 'worker',
+      mode: 'sync',
+      sidechain: { returnMode: 'full_text' },
+    })
+
+    expect(result.output).toBe('full child output')
+  })
+
+  it('records sidechain metadata when child session fails', async () => {
+    const failure = new Error('child failed') as Error & {
+      sidechainSessionId?: string
+      sidechainTranscript?: unknown[]
+    }
+    failure.sidechainSessionId = 'failed-child'
+    failure.sidechainTranscript = [{ role: 'user', content: 'private child prompt' }]
+
+    const { executor, taskStore } = makeExecutor({
+      runSession: makeRunSession(() => {
+        throw failure
+      }),
+    })
+
+    const result = await executor.dispatch({
+      prompt: 'fail child',
+      subagent: 'explorer',
+      mode: 'sync',
+      parentTaskId: 'task-parent',
+      parentSessionId: 'session-parent',
+      sidechain: { permissionMode: 'restricted', allowedTools: ['read'] },
+    })
+
+    expect(result).toMatchObject({
+      success: false,
+      status: 'failed',
+      error: 'child failed',
+    })
+
+    const task = await taskStore.get(result.id!)
+    expect(task?.sidechain).toMatchObject({
+      isolated: true,
+      parentTaskId: 'task-parent',
+      parentSessionId: 'session-parent',
+      childSessionId: 'failed-child',
+      subagent: 'explorer',
+      policy: {
+        returnMode: 'summary_only',
+        permissionMode: 'restricted',
+        allowedTools: ['read'],
+      },
+      summary: 'Sidechain task failed: child failed',
+      transcript: [{ role: 'user', content: 'private child prompt' }],
     })
   })
 
@@ -151,6 +285,120 @@ describe('TaskExecutor.dispatch', () => {
     // wait for background to complete
     await new Promise(r => setTimeout(r, 150))
     expect(resolved).toBe(true)
+  })
+
+  it('aborts a running task and preserves cancelled state', async () => {
+    let seenSignal: AbortSignal | undefined
+    const { executor, taskStore } = makeExecutor({
+      runSession: makeRunSession((opts) => {
+        seenSignal = opts.signal
+        return new Promise<RunSessionResult>((resolve, reject) => {
+          opts.signal?.addEventListener('abort', () => {
+            reject(new Error('aborted by test'))
+          }, { once: true })
+          setTimeout(() => {
+            resolve({ text: 'late success', sessionId: 'late-session', durationMs: 100 })
+          }, 100)
+        })
+      }),
+    })
+
+    const result = await executor.dispatch({ prompt: 'long task', mode: 'background' })
+    expect(result.success).toBe(true)
+
+    await new Promise(r => setTimeout(r, 10))
+    expect(seenSignal?.aborted).toBe(false)
+    expect(executor.cancelTask(result.id!)).toBe(true)
+    expect(seenSignal?.aborted).toBe(true)
+
+    await new Promise(r => setTimeout(r, 20))
+    const task = await taskStore.get(result.id!)
+    expect(task?.status).toBe('cancelled')
+
+    await new Promise(r => setTimeout(r, 120))
+    const latest = await taskStore.get(result.id!)
+    expect(latest?.status).toBe('cancelled')
+    expect(latest?.output).toBeUndefined()
+  })
+
+  it('does not retry a task that is cancelled during retry backoff', async () => {
+    let callCount = 0
+    const { executor, taskStore } = makeExecutor({
+      retryPolicy: new RetryPolicy({
+        enabled: true,
+        maxAttempts: 3,
+        backoffMs: 50,
+        backoffMultiplier: 1,
+      }),
+      runSession: makeRunSession(async () => {
+        callCount++
+        await new Promise(r => setTimeout(r, 20))
+        throw new Error('retryable failure')
+      }),
+    })
+
+    const result = await executor.dispatch({ prompt: 'cancel during backoff', mode: 'background' })
+    expect(result.success).toBe(true)
+
+    await new Promise(r => setTimeout(r, 30))
+    expect(executor.cancelTask(result.id!)).toBe(true)
+
+    await new Promise(r => setTimeout(r, 80))
+    const task = await taskStore.get(result.id!)
+    expect(task?.status).toBe('cancelled')
+    expect(callCount).toBe(1)
+  })
+
+  it('times out a sidechain task and ignores late completion', async () => {
+    let seenSignal: AbortSignal | undefined
+    let resolved = false
+    const { executor, taskStore } = makeExecutor({
+      runSession: makeRunSession((opts) => {
+        seenSignal = opts.signal
+        return new Promise<RunSessionResult>((resolve) => {
+          setTimeout(() => {
+            resolved = true
+            resolve({ text: 'late success', sessionId: 'late-session', durationMs: 80 })
+          }, 80)
+        })
+      }),
+    })
+
+    const result = await executor.dispatch({
+      prompt: 'timeout child',
+      subagent: 'explorer',
+      mode: 'sync',
+      sidechain: { timeoutMs: 20 },
+    })
+
+    expect(result).toMatchObject({
+      success: false,
+      status: 'failed',
+      error: 'Task timed out after 20ms',
+    })
+    expect(seenSignal?.aborted).toBe(true)
+
+    const task = await taskStore.get(result.id!)
+    expect(task?.status).toBe('failed')
+    expect(task?.error).toMatchObject({
+      code: 'EXECUTION_TIMEOUT',
+      message: 'Task timed out after 20ms',
+      retriable: false,
+    })
+    expect(task?.sidechain).toMatchObject({
+      policy: {
+        returnMode: 'summary_only',
+        permissionMode: 'inherit',
+        timeoutMs: 20,
+      },
+      summary: 'Sidechain task timed out after 20ms',
+    })
+
+    await new Promise(r => setTimeout(r, 90))
+    expect(resolved).toBe(true)
+    const latest = await taskStore.get(result.id!)
+    expect(latest?.status).toBe('failed')
+    expect(latest?.output).toBeUndefined()
   })
 
   it('rejects when max active tasks reached', async () => {

@@ -65,7 +65,7 @@ export class LocalPromptProvider implements PromptProvider {
         }
       }
     } catch {
-      // directory doesn't exist, return empty
+      // 目录不存在，返回空列表
     }
     return keys
   }

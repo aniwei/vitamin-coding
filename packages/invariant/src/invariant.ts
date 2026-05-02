@@ -34,7 +34,7 @@ function override<M extends ConsoleFunctionName>(name: M) {
   return function () {
     if (VERBOSITY_LEVELS.indexOf(name) >= verbosityLevel) {
       const fn = console[name] || console.log
-      return fn.apply(console, arguments as unknown[])
+      return fn.apply(console, Array.from(arguments) as unknown[])
     }
   } as (typeof console)[M]
 }

@@ -1,6 +1,9 @@
 import { TypedEventEmitter, createLogger } from '@vitamin/shared'
+import * as fs from 'node:fs'
+import * as path from 'node:path'
 import { discoverSkills, getDefaultGlobalSkillDirs } from './skill-discovery'
 import { matchSkills } from './skill-matcher'
+import { parseSkillContent } from './skill-parser'
 import type {
   SkillDefinition,
   SkillLibraryConfig,
@@ -11,6 +14,10 @@ import type {
   SkillExecutionContext,
   SkillExecutionResult,
   SkillEvents,
+  SkillSearchResult,
+  SkillCreateInput,
+  SkillMutationResult,
+  SkillImproveInput,
 } from './types'
 
 const logger = createLogger('@vitamin/skill:registry')
@@ -171,6 +178,83 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
     return matchSkills(query, this.skills, options)
   }
 
+  async search(
+    query: string,
+    options?: { maxResults?: number; minRelevance?: number },
+  ): Promise<SkillSearchResult[]> {
+    return this.match(query, options).map((match) => {
+      const { definition, source, status } = match.skill
+      return {
+        name: definition.metadata.name,
+        description: definition.metadata.description,
+        trigger: definition.metadata.trigger ?? 'auto',
+        status,
+        source,
+        relevance: match.relevance,
+        matchedKeywords: match.matchedKeywords,
+      }
+    })
+  }
+
+  async create(input: SkillCreateInput): Promise<SkillMutationResult> {
+    const validation = validateSkillName(input.name)
+    if (validation) {
+      return { success: false, error: validation }
+    }
+
+    const skillDir = path.join(this.workspaceDir, '.vitamin', 'skills', input.name)
+    const skillFile = path.join(skillDir, 'SKILL.md')
+    if (fs.existsSync(skillFile) && !input.overwrite) {
+      return { success: false, error: `Skill "${input.name}" already exists` }
+    }
+
+    fs.mkdirSync(skillDir, { recursive: true })
+    const content = renderSkillFile(input)
+    fs.writeFileSync(skillFile, content, 'utf-8')
+
+    try {
+      const definition = parseSkillContent(content, skillFile, skillDir, [])
+      this.register(definition, { type: 'project', root: path.join(this.workspaceDir, '.vitamin', 'skills') })
+      return { success: true, name: input.name, path: skillFile }
+    } catch (error) {
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  }
+
+  async improve(input: SkillImproveInput): Promise<SkillMutationResult> {
+    const registered = this.skills.get(input.name)
+    if (!registered) {
+      return { success: false, error: `Skill "${input.name}" not found` }
+    }
+    if (registered.status === 'disabled') {
+      return { success: false, error: `Skill "${input.name}" is disabled` }
+    }
+
+    const filePath = registered.definition.filePath
+    const existing = fs.readFileSync(filePath, 'utf-8')
+    const timestamp = new Date().toISOString()
+    const updated = `${existing.trimEnd()}\n\n## Improvement Log\n\n- ${timestamp}: ${input.instructions.trim()}\n`
+    fs.writeFileSync(filePath, updated, 'utf-8')
+
+    try {
+      const definition = parseSkillContent(
+        updated,
+        filePath,
+        registered.definition.directory,
+        registered.definition.supportingFiles,
+      )
+      this.register(definition, registered.source)
+      return { success: true, name: input.name, path: filePath }
+    } catch (error) {
+      fs.writeFileSync(filePath, existing, 'utf-8')
+      return { success: false, error: error instanceof Error ? error.message : String(error) }
+    }
+  }
+
+  async catalog(): Promise<string> {
+    return this.buildCatalog()
+  }
+
   /**
    * 禁用 skill
    */
@@ -219,6 +303,30 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
   get size(): number {
     return this.skills.size
   }
+}
+
+function validateSkillName(name: string): string | undefined {
+  if (!/^[a-z0-9][a-z0-9-]*[a-z0-9]$|^[a-z0-9]$/.test(name)) {
+    return 'Skill name must be kebab-case'
+  }
+  return undefined
+}
+
+function renderSkillFile(input: SkillCreateInput): string {
+  const lines = [
+    '---',
+    `name: ${input.name}`,
+    `description: ${input.description}`,
+    `trigger: ${input.trigger ?? 'manual'}`,
+  ]
+  if (input.tags?.length) {
+    lines.push('tags:')
+    for (const tag of input.tags) {
+      lines.push(`  - ${tag}`)
+    }
+  }
+  lines.push('---', '', input.body.trim(), '')
+  return lines.join('\n')
 }
 
 // ─── 工厂 ───

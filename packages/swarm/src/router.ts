@@ -1,12 +1,6 @@
 import { createLogger } from '@vitamin/shared'
 
-import type {
-  RouterConfig,
-  RoutingDecision,
-  RouteRule,
-  SwarmAgentDef,
-  SwarmContext,
-} from './types'
+import type { RouterConfig, RoutingDecision, RouteRule, SwarmAgentDef, SwarmContext } from './types'
 import { RoutingError } from './errors'
 
 const logger = createLogger('@vitamin/swarm:router')
@@ -44,17 +38,12 @@ export class SwarmRouter {
   }
 
   /** 基于规则路由 */
-  private routeByRule(
-    input: string,
-    agents: SwarmAgentDef[],
-  ): RoutingDecision {
+  private routeByRule(input: string, agents: SwarmAgentDef[]): RoutingDecision {
     const rules = this.config.rules ?? []
     const lowerInput = input.toLowerCase()
 
     // 按优先级排序
-    const sorted = [...rules].sort(
-      (a, b) => (b.priority ?? 0) - (a.priority ?? 0),
-    )
+    const sorted = [...rules].sort((a, b) => (b.priority ?? 0) - (a.priority ?? 0))
 
     for (const rule of sorted) {
       if (this.matchRule(rule, lowerInput)) {
@@ -74,7 +63,10 @@ export class SwarmRouter {
 
   /** 轮转路由 */
   private routeRoundRobin(agents: SwarmAgentDef[]): RoutingDecision {
-    const agent = agents[this.roundRobinIndex % agents.length]!
+    const agent = agents[this.roundRobinIndex % agents.length] ?? agents[0]
+    if (!agent) {
+      return this.fallback(agents, 'No agents available for round-robin selection')
+    }
     this.roundRobinIndex++
 
     return {
@@ -87,7 +79,10 @@ export class SwarmRouter {
   /** 随机路由 */
   private routeRandom(agents: SwarmAgentDef[]): RoutingDecision {
     const index = Math.floor(Math.random() * agents.length)
-    const agent = agents[index]!
+    const agent = agents[index] ?? agents[0]
+    if (!agent) {
+      return this.fallback(agents, 'No agents available for random selection')
+    }
 
     return {
       agentId: agent.id,
@@ -130,10 +125,7 @@ export class SwarmRouter {
   }
 
   /** 简易关键词匹配 fallback */
-  private routeByKeywordMatch(
-    input: string,
-    agents: SwarmAgentDef[],
-  ): RoutingDecision {
+  private routeByKeywordMatch(input: string, agents: SwarmAgentDef[]): RoutingDecision {
     const lowerInput = input.toLowerCase()
     let bestMatch: { agent: SwarmAgentDef; score: number } | null = null
 
@@ -166,10 +158,7 @@ export class SwarmRouter {
   }
 
   /** Fallback 到默认 Agent */
-  private fallback(
-    agents: SwarmAgentDef[],
-    reason: string,
-  ): RoutingDecision {
+  private fallback(agents: SwarmAgentDef[], reason: string): RoutingDecision {
     const fallbackId = this.config.fallbackAgentId ?? agents[0]?.id
     if (!fallbackId) {
       throw new RoutingError(`${reason} and no fallback agent configured`)

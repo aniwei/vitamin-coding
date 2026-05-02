@@ -34,8 +34,10 @@ export { createSessionStorage } from './storage-factory'
 export type {
   Session,
   SessionContext,
+  SessionCheckpoint,
   SessionEntry,
   SessionMetadata,
+  SessionSideEffect,
   SessionStore,
   SessionSnapshot,
   SessionPersistence,

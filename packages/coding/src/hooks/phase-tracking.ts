@@ -12,7 +12,7 @@
  *   - phase-cleanup (session.deleted observer)
  */
 
-import { extractPhaseFromMessage, injectPhaseContext } from '@vitamin/prompt'
+import { appendPromptSection, extractPhaseFromMessage, injectPhaseContext } from '@vitamin/prompt'
 import type { PhaseAnnotation } from '@vitamin/prompt'
 import type { HookSpec } from '@vitamin/hooks'
 import { defineHook } from '@vitamin/hooks'
@@ -26,7 +26,7 @@ export function createPhaseTrackingHooks(): HookSpec[] {
 
   const injectionHook = defineHook({
     name: 'phase-injection',
-    timing: 'system-prompt.transform',
+    timing: 'system-prompt.sections.transform',
     priority: 30,
     handle: async (input, output) => {
       const history = phaseTracker.get(input.sessionId)
@@ -36,7 +36,15 @@ export function createPhaseTrackingHooks(): HookSpec[] {
           currentPhase,
           phaseHistory: history,
         }
-        output.systemPrompt = injectPhaseContext(output.systemPrompt, annotation)
+        const section = injectPhaseContext('', annotation).trim()
+        output.assembly = appendPromptSection(output.assembly, {
+          key: 'phase-context',
+          content: section,
+          layer: 'dynamic',
+          cacheable: false,
+          source: 'phase-tracker',
+          priority: 30,
+        })
       }
     },
   })

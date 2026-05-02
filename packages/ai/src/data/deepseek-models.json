@@ -1,0 +1,28 @@
+[
+  {
+    "id": "deepseek/deepseek-v4-flash",
+    "name": "deepseek-v4-flash",
+    "api": "openai-completions",
+    "provider": "deepseek",
+    "baseUrl": "https://api.deepseek.com",
+    "reasoning": true,
+    "input": ["text"],
+    "cost": { "input": 0.14, "output": 0.28, "cacheRead": 0.0028, "cacheWrite": 0 },
+    "contextWindow": 1000000,
+    "maxOutputTokens": 384000,
+    "thinkingLevels": ["minimal", "low", "medium", "high", "xhigh"]
+  },
+  {
+    "id": "deepseek/deepseek-v4-pro",
+    "name": "deepseek-v4-pro",
+    "api": "openai-completions",
+    "provider": "deepseek",
+    "baseUrl": "https://api.deepseek.com",
+    "reasoning": true,
+    "input": ["text"],
+    "cost": { "input": 0.435, "output": 0.87, "cacheRead": 0.003625, "cacheWrite": 0 },
+    "contextWindow": 1000000,
+    "maxOutputTokens": 384000,
+    "thinkingLevels": ["minimal", "low", "medium", "high", "xhigh"]
+  }
+]

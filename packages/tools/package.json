@@ -31,6 +31,7 @@
     "@vitamin/hooks": "workspace:*",
     "@vitamin/invariant": "workspace:*",
     "@vitamin/mcp": "workspace:*",
+    "@vitamin/schema": "workspace:*",
     "@vitamin/setting": "workspace:*",
     "@vitamin/shared": "workspace:*",
     "chalk": "5.6.2",

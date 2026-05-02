@@ -7,6 +7,7 @@ import { createSettingRoute } from './routes/setting'
 import { createDevtoolsRoute } from './routes/devtools'
 import { createLoggerRoute } from './routes/logs'
 import { createWorkspaceRoute } from './routes/workspace'
+import { createEventsRoute } from './routes/events'
 import type { Devtools } from '@vitamin/devtools'
 import type { CodingService } from './coding-service'
 import type { DebugBridge } from './debug-bridge'
@@ -39,6 +40,7 @@ export function createApp(context: CodingService, options: AppOptions = {}): Hon
   app.route('/api/setting', createSettingRoute(context))
   app.route('/api/devtools', createDevtoolsRoute(context, options.devtools || null))
   app.route('/api/logs', createLoggerRoute(context))
+  app.route('/api/events', createEventsRoute(context))
 
   if (options.staticDir) {
     app.get('*', (c) => {

@@ -1,1 +1,5 @@
-// Removed: tests merged into extended-tools.test.ts
+import { describe, it } from 'vitest'
+
+describe.skip('search tools duplicate coverage', () => {
+  it('is covered by extended-tools.test.ts', () => {})
+})

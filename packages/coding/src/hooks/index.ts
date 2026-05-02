@@ -7,6 +7,8 @@
  */
 
 export { createToolGuidanceHook } from './tool-guidance'
+export { createSkillCatalogHook } from './skill-catalog'
+export { createMcpContextHook, buildMcpContextSection } from './mcp-injection'
 export { createEnvironmentInjectionHook } from './environment-injection'
 export { createLessonInjectionHook } from './lesson-injection'
 export { createPhaseTrackingHooks } from './phase-tracking'

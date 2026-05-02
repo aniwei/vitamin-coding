@@ -4,12 +4,12 @@
 
 ## 文档索引
 
-| 文档 | 说明 |
-|------|------|
-| [architecture.md](./architecture.md) | Hermes Agent 架构全景与核心子系统分析 |
-| [advantages.md](./advantages.md) | Hermes 核心优势清单及与 Vitamin 对比 |
-| [integration-design.md](./integration-design.md) | 整合设计方案 — 新增/增强的包与接口 |
-| [roadmap.md](./roadmap.md) | 分阶段实施路线图与关键设计决策 |
+| 文档                                             | 说明                                  |
+| ------------------------------------------------ | ------------------------------------- |
+| [architecture.md](./architecture.md)             | Hermes Agent 架构全景与核心子系统分析 |
+| [advantages.md](./advantages.md)                 | Hermes 核心优势清单及与 Vitamin 对比  |
+| [integration-design.md](./integration-design.md) | 整合设计方案 — 新增/增强的包与接口    |
+| [roadmap.md](./roadmap.md)                       | 分阶段实施路线图与关键设计决策        |
 
 ## 核心结论
 
@@ -20,10 +20,10 @@
 
 ## 技术栈差异
 
-| 维度 | Vitamin | Hermes |
-|------|---------|--------|
-| 语言 | TypeScript (严格 ESM) | Python 93.3% |
-| 架构 | 20+ 独立包分层模块化 | 单体 (run_agent.py ~9,200 行) |
-| Stars | — | 72.3k |
-| 贡献者 | — | 403 |
-| 许可证 | — | MIT |
+| 维度   | Vitamin               | Hermes                        |
+| ------ | --------------------- | ----------------------------- |
+| 语言   | TypeScript (严格 ESM) | Python 93.3%                  |
+| 架构   | 20+ 独立包分层模块化  | 单体 (run_agent.py ~9,200 行) |
+| Stars  | —                     | 72.3k                         |
+| 贡献者 | —                     | 403                           |
+| 许可证 | —                     | MIT                           |

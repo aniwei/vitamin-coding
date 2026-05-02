@@ -5,14 +5,14 @@
  * priority=25（在 tool-guidance 之后，phase-injection 之前）。
  */
 
-import { collectEnvironment, formatEnvironmentBlock } from '@vitamin/prompt'
+import { appendPromptSection, collectEnvironment, formatEnvironmentBlock } from '@vitamin/prompt'
 import type { HookSpec } from '@vitamin/hooks'
 import { defineHook } from '@vitamin/hooks'
 
 export function createEnvironmentInjectionHook(workspaceDir: string): HookSpec {
   return defineHook({
     name: 'environment-injection',
-    timing: 'system-prompt.transform',
+    timing: 'system-prompt.sections.transform',
     priority: 25,
     handle: async (_input, output) => {
       const exec = async (cmd: string, cwd: string) => {
@@ -22,7 +22,14 @@ export function createEnvironmentInjectionHook(workspaceDir: string): HookSpec {
       try {
         const env = await collectEnvironment(workspaceDir, exec)
         const block = formatEnvironmentBlock(env)
-        output.systemPrompt = `${output.systemPrompt}\n\n${block}`
+        output.assembly = appendPromptSection(output.assembly, {
+          key: 'environment',
+          content: block,
+          layer: 'dynamic',
+          cacheable: false,
+          source: 'workspace',
+          priority: 25,
+        })
       } catch {
         // 环境收集失败不应中断 prompt 组装
       }

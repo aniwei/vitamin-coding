@@ -103,24 +103,24 @@
 
 ## 2. 维度对比矩阵
 
-| 维度 | Vitamin (TypeScript) | Hermes (Python) | 领先方 |
-|------|---------------------|-----------------|--------|
-| **类型安全** | 严格 TS + ESM + 15+ 编译规则 | Python 弱类型 | **Vitamin** |
-| **模块化** | 20+ 独立包，明确分层依赖 | 单体 9,200 行核心 | **Vitamin** |
-| **Hook 系统** | 31+ 拦截点，7 类 Hook，PermissionPolicy | 简单 pre/post_tool_call | **Vitamin** |
-| **Swarm 协作** | 5 种模式 (Handoff/Sequential/Parallel/Hierarchical/Router) | 基础 delegate_task | **Vitamin** |
-| **编排器** | LLM 驱动，TaskStore + FleetExecutor + Checkpoint | 无独立编排层 | **Vitamin** |
-| **断点调试** | 14+ 暂停点 (devtools 集成) | 无 | **Vitamin** |
-| **闭环学习** | 基础 memory + skill | Skill 自创建/自改进 + Nudge + 用户建模 | **Hermes** |
-| **跨会话搜索** | 无 | FTS5 + LLM 摘要 | **Hermes** |
-| **多平台 Gateway** | Web UI 为主 | 15+ 消息平台 | **Hermes** |
-| **运行时环境** | 本地 | 6 种后端 (含无服务器) | **Hermes** |
-| **Cron 调度** | 无 | 自然语言 cron | **Hermes** |
-| **安全审批** | 7+ Policy | DANGEROUS_PATTERNS + LLM 智能审批 | **持平** |
-| **Provider 回退** | 无自动回退 | 回退链 + 辅助独立回退 | **Hermes** |
-| **上下文压缩** | transformContext hook | 自动阈值 + 记忆预刷新 | **Hermes 略优** |
-| **RL 训练** | 无 | 研训一体 | **Hermes** |
-| **社区规模** | 内部项目 | 72.3k stars, 403 贡献者 | **Hermes** |
+| 维度               | Vitamin (TypeScript)                                       | Hermes (Python)                        | 领先方          |
+| ------------------ | ---------------------------------------------------------- | -------------------------------------- | --------------- |
+| **类型安全**       | 严格 TS + ESM + 15+ 编译规则                               | Python 弱类型                          | **Vitamin**     |
+| **模块化**         | 20+ 独立包，明确分层依赖                                   | 单体 9,200 行核心                      | **Vitamin**     |
+| **Hook 系统**      | 31+ 拦截点，7 类 Hook，PermissionPolicy                    | 简单 pre/post_tool_call                | **Vitamin**     |
+| **Swarm 协作**     | 5 种模式 (Handoff/Sequential/Parallel/Hierarchical/Router) | 基础 delegate_task                     | **Vitamin**     |
+| **编排器**         | LLM 驱动，TaskStore + FleetExecutor + Checkpoint           | 无独立编排层                           | **Vitamin**     |
+| **断点调试**       | 14+ 暂停点 (devtools 集成)                                 | 无                                     | **Vitamin**     |
+| **闭环学习**       | 基础 memory + skill                                        | Skill 自创建/自改进 + Nudge + 用户建模 | **Hermes**      |
+| **跨会话搜索**     | 无                                                         | FTS5 + LLM 摘要                        | **Hermes**      |
+| **多平台 Gateway** | Web UI 为主                                                | 15+ 消息平台                           | **Hermes**      |
+| **运行时环境**     | 本地                                                       | 6 种后端 (含无服务器)                  | **Hermes**      |
+| **Cron 调度**      | 无                                                         | 自然语言 cron                          | **Hermes**      |
+| **安全审批**       | 7+ Policy                                                  | DANGEROUS_PATTERNS + LLM 智能审批      | **持平**        |
+| **Provider 回退**  | 无自动回退                                                 | 回退链 + 辅助独立回退                  | **Hermes**      |
+| **上下文压缩**     | transformContext hook                                      | 自动阈值 + 记忆预刷新                  | **Hermes 略优** |
+| **RL 训练**        | 无                                                         | 研训一体                               | **Hermes**      |
+| **社区规模**       | 内部项目                                                   | 72.3k stars, 403 贡献者                | **Hermes**      |
 
 ---
 

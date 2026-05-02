@@ -32,6 +32,9 @@ export function createBash(
     description: 'Execute a shell command and return stdout/stderr. Default timeout is 30 seconds.',
     parameters: BashArgsSchema,
     visibility: 'always',
+    readonly: (params) => isReadOnlyShellCommand(params.command),
+    isReadOnly: (params) => isReadOnlyShellCommand(params.command),
+    isConcurrencySafe: (params) => isReadOnlyShellCommand(params.command),
 
     async execute({ params, signal }): Promise<ToolResult> {
       const targetDir = resolve(projectRoot, params.targetDir ?? '.')
@@ -40,6 +43,70 @@ export function createBash(
       return await bash(params.command, targetDir, timeout, onProgress, signal)
     },
   }
+}
+
+export function isReadOnlyShellCommand(command: string): boolean {
+  const normalized = command.trim()
+  if (!normalized) return false
+  if (hasWriteRedirection(normalized) || /[`$][({]/.test(normalized)) return false
+
+  const segments = normalized
+    .split(/\s*(?:&&|\|\||;|\|)\s*/)
+    .map((segment) => segment.trim())
+    .filter(Boolean)
+
+  if (segments.length === 0) return false
+  return segments.every(isReadOnlyShellSegment)
+}
+
+function isReadOnlyShellSegment(segment: string): boolean {
+  const withoutEnv = segment.replace(/^(?:[A-Za-z_][A-Za-z0-9_]*=(?:"[^"]*"|'[^']*'|\S+)\s+)+/, '')
+  const tokens =
+    withoutEnv.match(/"[^"]*"|'[^']*'|\S+/g)?.map((token) => token.replace(/^['"]|['"]$/g, '')) ??
+    []
+  const command = tokens[0]
+  if (!command) return false
+
+  if (command === 'git') {
+    const subcommand = tokens.find((token, index) => index > 0 && !token.startsWith('-'))
+    return (
+      subcommand !== undefined &&
+      ['status', 'diff', 'log', 'show', 'branch', 'rev-parse', 'ls-files', 'grep'].includes(
+        subcommand,
+      )
+    )
+  }
+
+  if ((command === 'sed' && tokens.includes('-i')) || (command === 'perl' && tokens.includes('-pi'))) {
+    return false
+  }
+
+  return [
+    'pwd',
+    'ls',
+    'cat',
+    'head',
+    'tail',
+    'grep',
+    'rg',
+    'find',
+    'fd',
+    'wc',
+    'du',
+    'df',
+    'stat',
+    'file',
+    'which',
+    'type',
+    'test',
+    '[',
+    'true',
+    'false',
+  ].includes(command)
+}
+
+function hasWriteRedirection(command: string): boolean {
+  return /(^|[^\\])(?:>>?|[0-9]>>?|&>)/.test(command)
 }
 
 async function bash(

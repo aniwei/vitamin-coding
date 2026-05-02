@@ -27,7 +27,7 @@ export type WriteTodos = (args: {
 }) => Promise<{ success: boolean; todos: TodoItem[] }>
 
 export function createWriteTodos(writeTodos?: WriteTodos): AgentTool<WriteTodosArgs> {
-  // In-memory store as default, scoped by session to avoid cross-session leakage.
+  // 默认使用内存存储，按会话隔离，防止跨会话数据泄露
   const storeBySession = new Map<string, TodoItem[]>()
 
   const defaultWriteTodos: WriteTodos = async ({ action, todos, sessionId }) => {

@@ -19,18 +19,18 @@ const HTML_ENTITIES: Record<string, string> = {
 }
 
 function decodeHtmlEntities(text: string): string {
-  // Named entities
+  // 命名实体
   let result = text.replace(/&[a-zA-Z]+;/g, (entity) => {
     return HTML_ENTITIES[entity] ?? entity
   })
 
-  // Numeric entities (decimal)
+  // 十进制数字实体
   result = result.replace(/&#(\d+);/g, (_, code) => {
     const num = parseInt(code, 10)
     return num > 0 && num < 0x10ffff ? String.fromCodePoint(num) : ''
   })
 
-  // Numeric entities (hex)
+  // 十六进制数字实体
   result = result.replace(/&#x([0-9a-fA-F]+);/g, (_, code) => {
     const num = parseInt(code, 16)
     return num > 0 && num < 0x10ffff ? String.fromCodePoint(num) : ''

@@ -115,6 +115,41 @@ export function routeSessionEvent(event: AgentSessionEvent): WebSocketMessage[] 
         },
       ]
 
+    case 'tool_execution_event':
+      return [
+        {
+          type: 'Chat.toolExecutionEvent',
+          data: {
+            sessionId: sid,
+            event: event.event,
+          },
+        },
+      ]
+
+    case 'review_requested':
+      return [
+        {
+          type: 'Chat.reviewRequested',
+          data: { sessionId: sid, review: event.review },
+        },
+      ]
+
+    case 'review_passed':
+      return [
+        {
+          type: 'Chat.reviewPassed',
+          data: { sessionId: sid, review: event.review },
+        },
+      ]
+
+    case 'review_failed':
+      return [
+        {
+          type: 'Chat.reviewFailed',
+          data: { sessionId: sid, review: event.review, issues: event.issues },
+        },
+      ]
+
     // ── 权限审批 ──────────────────────────────────────────────────────────────
     case 'approval_required':
       return [

@@ -304,3 +304,9 @@ export class Service extends TypedEventEmitter<ServiceEvents> {
     this.emit('Debugger.stopped')
   }
 }
+
+export class DevtoolsService extends Service {
+  constructor(options: ServiceOptions = {}, breakpoints = new Breakpoints()) {
+    super(breakpoints, options)
+  }
+}

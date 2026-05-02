@@ -24,7 +24,13 @@ export {
 } from './transform'
 export type { ContextInjectorConfig, ContextProvider } from './transform'
 
-export { createCommentCheckerHook, createBabysittingHook, createRalphLoopHook } from './quality'
+export {
+  createCommentCheckerHook,
+  createBabysittingHook,
+  createRalphLoopHook,
+  createPatchReviewGateHook,
+} from './quality'
+export type { PatchReviewGateConfig, PatchReviewSummary } from './quality'
 
 export {
   createStreamMetricsHook,
@@ -68,6 +74,7 @@ export {
   createDirectoryFreezePolicy,
   createDisabledToolsPolicy,
   createAgentBoundaryPolicy,
+  createSidechainBoundaryPolicy,
   createPermissionModePolicy,
   createPermissionRegistry,
 } from './permission'

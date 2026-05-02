@@ -1,4 +1,4 @@
-// Types
+// 类型
 export type {
   LSPServerConfig,
   Position,
@@ -23,7 +23,7 @@ export type {
   ResolvedServer,
 } from './types'
 
-// Constants
+// 常量
 export {
   SYMBOL_KIND_MAP,
   SEVERITY_MAP,
@@ -35,10 +35,10 @@ export {
   BUILTIN_SERVERS,
 } from './constants'
 
-// Client
+// 客户端
 export { LSPClient, lspManager, validateCwd } from './lsp-client'
 
-// Config
+// 配置
 export {
   getLanguageId,
   isServerInstalled,
@@ -47,10 +47,10 @@ export {
   getConfigPaths,
 } from './server-config'
 
-// Wrapper
+// 封装层
 export { withLspClient, findWorkspaceRoot, formatServerLookupError } from './lsp-wrapper'
 
-// Formatters
+// 格式化工具
 export {
   formatLocation,
   formatSymbolKind,
@@ -65,11 +65,11 @@ export {
   formatApplyResult,
 } from './lsp-formatters'
 
-// Workspace edit
+// Workspace 编辑
 export { uriToPath, applyWorkspaceEdit } from './workspace-edit'
 export type { ApplyResult } from './workspace-edit'
 
-// Tool factories
+// 工具工厂函数
 export { createLspDefinition } from './definition'
 export { createLspReferences } from './references'
 export { createLspSymbols } from './symbols'

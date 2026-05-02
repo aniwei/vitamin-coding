@@ -40,10 +40,14 @@ function matchesRule(match: RuleMatch, ctx: PermissionContext): boolean {
   }
   // paths 匹配
   if (match.paths && match.paths.length > 0) {
-    if (!ctx.filePath) {
+    const filePaths = ctx.filePaths ?? (ctx.filePath ? [ctx.filePath] : [])
+    if (filePaths.length === 0) {
       return false
     }
-    const pathMatched = match.paths.some((pattern) => pattern.test(ctx.filePath as string))
+    const paths = match.paths
+    const pathMatched = filePaths.some((filePath) =>
+      paths.some((pattern) => pattern.test(filePath)),
+    )
     if (!pathMatched) {
       return false
     }
@@ -64,6 +68,8 @@ const DEFAULT_ALLOW: PermissionDecision = {
   timestamp: 0,
   evaluatedPolicies: 0,
 }
+
+const MIN_SETTING_POLICY_PRIORITY = 25
 
 export class PermissionPolicyRegistry {
   private policies: PermissionPolicy[] = []
@@ -167,7 +173,7 @@ export function compilePolicyFromSetting(setting: PermissionPolicySetting): Perm
 
   return {
     name: setting.name,
-    priority: setting.priority ?? 50,
+    priority: Math.max(setting.priority ?? 50, MIN_SETTING_POLICY_PRIORITY),
     enabled: setting.enabled ?? true,
     scope: {
       agents: setting.scope?.agents,

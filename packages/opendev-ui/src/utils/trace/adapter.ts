@@ -5,7 +5,7 @@
 import type { ContentBlock, OpenDevChatMessage, SessionData, TraceEvent } from '../../types/trace'
 
 function makeUuid(index: number, suffix?: string): string {
-  // Deterministic pseudo-uuid from line index for stable graph IDs
+  // 基于行索引的确定性伪 UUID，用于图节点的稳定 ID
   const base = `opendev-${String(index).padStart(6, '0')}`
   return suffix ? `${base}-${suffix}` : base
 }
@@ -60,7 +60,7 @@ export function adaptOpenDevMessages(
       const uuid = makeUuid(i, 'assistant')
       const contentBlocks: ContentBlock[] = []
 
-      // Add thinking block if present
+      // 如存在 thinking 块则先添加
       if (msg.thinkingTrace) {
         contentBlocks.push({ type: 'thinking', thinking: msg.thinkingTrace })
       }
@@ -68,12 +68,12 @@ export function adaptOpenDevMessages(
         contentBlocks.push({ type: 'thinking', thinking: msg.reasoningContent })
       }
 
-      // Add text content
+      // 添加文本内容
       if (msg.content) {
         contentBlocks.push({ type: 'text', text: msg.content })
       }
 
-      // Add tool_use blocks for each tool call
+      // 添加每个工具调用的 tool_use 块
       const toolCalls = msg.toolCalls ?? []
       for (const tc of toolCalls) {
         contentBlocks.push({
@@ -84,7 +84,7 @@ export function adaptOpenDevMessages(
         })
       }
 
-      // Map token usage to the trace-view shape.
+      // 将 token 使用量映射到 trace 视图所需的格式
       const usage = msg.tokenUsage
         ? {
             inputTokens: (msg.tokenUsage.inputTokens ??
@@ -113,7 +113,7 @@ export function adaptOpenDevMessages(
       })
       prevUuid = uuid
 
-      // If there are tool calls, synthesize a "user" event with tool_result blocks
+      // 如有工具调用，合成包含 tool_result 块的“user”事件
       if (toolCalls.length > 0) {
         const resultUuid = makeUuid(i, 'tool-result')
         const resultBlocks: ContentBlock[] = []

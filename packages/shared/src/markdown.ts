@@ -84,17 +84,21 @@ export function extractBoldLabels(node: MdastNode): Array<{ label: string; rest:
   const children = node.children
 
   for (let i = 0; i < children.length; i++) {
-    const child = children[i]!
+    const child = children[i]
+    if (!child) {
+      continue
+    }
     if (child.type === 'strong' && child.children?.length) {
       const strongText = getNodeText(child)
       if (strongText.endsWith(':')) {
         const label = strongText.slice(0, -1)
         const restParts: string[] = []
         for (let j = i + 1; j < children.length; j++) {
-          if (children[j]!.type === 'strong') {
+          const restChild = children[j]
+          if (!restChild || restChild.type === 'strong') {
             break
           }
-          restParts.push(getNodeText(children[j]!))
+          restParts.push(getNodeText(restChild))
         }
         results.push({ label, rest: restParts.join('').trim() })
       }
@@ -172,7 +176,8 @@ export function extractBodyFromAst(content: string, yamlNode: YamlNode | undefin
     return content.trim()
   }
 
-  const afterFrontmatter = content.slice(yamlNode.position.end.offset!)
+  const offset = yamlNode.position.end.offset ?? 0
+  const afterFrontmatter = content.slice(offset)
   const closingMatch = afterFrontmatter.match(/^[^\S\n]*---[^\S\n]*\r?\n?/)
   const bodyStart = closingMatch ? afterFrontmatter.slice(closingMatch[0].length) : afterFrontmatter
 
