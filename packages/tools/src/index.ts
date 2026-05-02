@@ -65,6 +65,27 @@ export type {
   ClaudeCodePluginImportResult,
 } from './claude-code-compat'
 export {
+  DEFAULT_PLUGIN_CONFIRM_FLAG,
+  applyPluginCommandArgumentDefaults,
+  buildPluginCommandInvocation,
+  consumePluginConfirmationFlag,
+  formatPluginCommandInvalidArguments,
+  formatPluginCommandInvocationError,
+  formatPluginCommandMissingArguments,
+  formatPluginCommandUnexpectedArguments,
+  formatPluginCommandUsage,
+  getInvalidPluginCommandArguments,
+  getMissingPluginCommandArguments,
+  getUnexpectedPluginCommandArguments,
+} from './plugin-command-invocation'
+export type {
+  BuildPluginCommandInvocationOptions,
+  InvalidPluginCommandArgument,
+  PluginCommandInvocation,
+  PluginCommandInvocationError,
+  PluginCommandInvocationResult,
+} from './plugin-command-invocation'
+export {
   PluginCommandRegistry,
   PluginAgentRegistry,
   createPluginCommandRegistry,

@@ -1,12 +1,26 @@
 import type { AgentMessage } from '@vitamin/agent'
-import type {
-  PluginAgentManifest,
-  PluginAgentRegistry,
-  PluginCommandManifest,
-  PluginCommandRegistry,
+import {
+  buildPluginCommandInvocation,
+  consumePluginConfirmationFlag,
+  formatPluginCommandInvocationError,
+  type PluginAgentManifest,
+  type PluginAgentRegistry,
+  type PluginCommandManifest,
+  type PluginCommandRegistry,
 } from '@vitamin/tools'
 import type { AgentSession } from '../session/agent-session'
 import type { ContextDiagnostics } from '../session/types'
+
+export {
+  applyPluginCommandArgumentDefaults,
+  consumePluginConfirmationFlag,
+  formatPluginCommandInvalidArguments,
+  formatPluginCommandMissingArguments,
+  formatPluginCommandUnexpectedArguments,
+  getInvalidPluginCommandArguments,
+  getMissingPluginCommandArguments,
+  getUnexpectedPluginCommandArguments,
+} from '@vitamin/tools'
 
 export interface JsonModeResult {
   sessionId: string
@@ -212,37 +226,20 @@ export class InteractiveMode {
           text: formatPluginConfirmationRequired('command', pluginCommand.pluginId, command),
         }
       }
-      const commandArgs = applyPluginCommandArgumentDefaults(
+      const invocationResult = buildPluginCommandInvocation(
         pluginCommand.command,
         confirmation.args,
+        { confirmed: confirmation.confirmed },
       )
-      const missingArguments = getMissingPluginCommandArguments(pluginCommand.command, commandArgs)
-      if (missingArguments.length > 0) {
+      if (!invocationResult.ok) {
         return {
           type: 'system',
-          text: formatPluginCommandMissingArguments(pluginCommand.command, missingArguments),
-        }
-      }
-      const unexpectedArguments = getUnexpectedPluginCommandArguments(
-        pluginCommand.command,
-        commandArgs,
-      )
-      if (unexpectedArguments.length > 0) {
-        return {
-          type: 'system',
-          text: formatPluginCommandUnexpectedArguments(pluginCommand.command, unexpectedArguments),
-        }
-      }
-      const invalidArguments = getInvalidPluginCommandArguments(pluginCommand.command, commandArgs)
-      if (invalidArguments.length > 0) {
-        return {
-          type: 'system',
-          text: formatPluginCommandInvalidArguments(pluginCommand.command, invalidArguments),
+          text: formatPluginCommandInvocationError(invocationResult.error),
         }
       }
       const response = await runPrintMode(
         this.session,
-        renderPluginCommandPrompt(pluginCommand.command, commandArgs),
+        renderPluginCommandPrompt(pluginCommand.command, invocationResult.invocation.arguments),
         () => {},
       )
       return { type: 'response', text: response }
@@ -306,115 +303,12 @@ export function parseInteractiveSlashInput(input: string): string[] {
   return tokens
 }
 
-export function consumePluginConfirmationFlag(args: readonly string[]): {
-  confirmed: boolean
-  args: string[]
-} {
-  const filtered = args.filter((arg) => arg !== PLUGIN_CONFIRM_FLAG)
-  return { confirmed: filtered.length !== args.length, args: filtered }
-}
-
 export function formatPluginConfirmationRequired(
   kind: 'agent' | 'command',
   pluginId: string,
   name: string,
 ): string {
   return `Plugin ${kind} requires confirmation: ${pluginId}/${name}. Re-run with ${PLUGIN_CONFIRM_FLAG} to execute.`
-}
-
-export function getMissingPluginCommandArguments(
-  command: PluginCommandManifest,
-  args: readonly string[],
-): string[] {
-  const commandArguments = command.arguments ?? []
-  return commandArguments
-    .map((argument, index) => ({ argument, index }))
-    .filter(({ argument, index }) => argument.required && args[index] === undefined)
-    .map(({ argument }) => argument.name)
-}
-
-export function formatPluginCommandMissingArguments(
-  command: PluginCommandManifest,
-  missingArguments: readonly string[],
-): string {
-  return `Plugin command "/${command.name}" requires arguments: ${missingArguments.join(', ')}. Usage: /${command.name}${formatPluginCommandUsage(command)}`
-}
-
-export function getUnexpectedPluginCommandArguments(
-  command: PluginCommandManifest,
-  args: readonly string[],
-): string[] {
-  if (!command.arguments) {
-    return []
-  }
-  return args.slice(command.arguments.length)
-}
-
-export function formatPluginCommandUnexpectedArguments(
-  command: PluginCommandManifest,
-  unexpectedArguments: readonly string[],
-): string {
-  return `Plugin command "/${command.name}" received unexpected arguments: ${unexpectedArguments.join(', ')}. Usage: /${command.name}${formatPluginCommandUsage(command)}`
-}
-
-export function applyPluginCommandArgumentDefaults(
-  command: PluginCommandManifest,
-  args: readonly string[],
-): string[] {
-  const resolved = [...args]
-  for (const [index, argument] of (command.arguments ?? []).entries()) {
-    if (resolved[index] === undefined && argument.default !== undefined) {
-      resolved[index] = argument.default
-    }
-  }
-  return resolved
-}
-
-export interface InvalidPluginCommandArgument {
-  name: string
-  expectedType: string
-  value: string
-}
-
-export function getInvalidPluginCommandArguments(
-  command: PluginCommandManifest,
-  args: readonly string[],
-): InvalidPluginCommandArgument[] {
-  const invalid: InvalidPluginCommandArgument[] = []
-  for (const [index, argument] of (command.arguments ?? []).entries()) {
-    const value = args[index]
-    if (value === undefined) {
-      continue
-    }
-    if (
-      argument.type !== undefined &&
-      argument.type !== 'string' &&
-      !isPluginCommandArgumentValueType(value, argument.type)
-    ) {
-      invalid.push({ name: argument.name, expectedType: argument.type, value })
-      continue
-    }
-    if (argument.choices && argument.choices.length > 0 && !argument.choices.includes(value)) {
-      invalid.push({
-        name: argument.name,
-        expectedType: `one of ${argument.choices.join(', ')}`,
-        value,
-      })
-    }
-  }
-  return invalid
-}
-
-export function formatPluginCommandInvalidArguments(
-  command: PluginCommandManifest,
-  invalidArguments: readonly InvalidPluginCommandArgument[],
-): string {
-  const details = invalidArguments
-    .map(
-      (argument) => `${argument.name} expected ${argument.expectedType}, got "${argument.value}"`,
-    )
-    .join('; ')
-  return `Plugin command "/${command.name}" has invalid arguments: ${details}. Usage: /${command.name}${formatPluginCommandUsage(command)}`
 }
 
 export function renderPluginCommandPrompt(
@@ -447,21 +341,6 @@ export function renderPluginCommandPrompt(
   return lines.join('\n')
 }
 
-function formatPluginCommandUsage(command: PluginCommandManifest): string {
-  const commandArguments = command.arguments ?? []
-  if (commandArguments.length === 0) {
-    return ''
-  }
-  return ` ${commandArguments
-    .map((argument) => {
-      const type = argument.type ? `:${argument.type}` : ''
-      const defaultValue = argument.default !== undefined ? `=${argument.default}` : ''
-      const typedName = `${argument.name}${type}${defaultValue}`
-      return argument.required ? `<${typedName}>` : `[${typedName}]`
-    })
-    .join(' ')}`
-}
-
 function formatPluginCommandArgumentSchema(command: PluginCommandManifest): string | undefined {
   if (!command.arguments || command.arguments.length === 0) {
     return undefined
@@ -479,19 +358,6 @@ function formatPluginCommandArgumentSchema(command: PluginCommandManifest): stri
     lines.push(`- ${argument.name} (${required}, ${type}${choices}${defaultValue})${description}`)
   }
   return lines.join('\n')
-}
-
-function isPluginCommandArgumentValueType(
-  value: string,
-  type: NonNullable<PluginCommandManifest['arguments']>[number]['type'],
-): boolean {
-  if (type === 'number') {
-    return value.trim() !== '' && Number.isFinite(Number(value))
-  }
-  if (type === 'boolean') {
-    return value === 'true' || value === 'false'
-  }
-  return true
 }
 
 export function renderPluginAgentPrompt(
