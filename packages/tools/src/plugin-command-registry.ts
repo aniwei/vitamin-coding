@@ -103,7 +103,10 @@ export function createPluginAgentRegistry(): PluginAgentRegistry {
 function cloneCommand(command: PluginCommandManifest): PluginCommandManifest {
   return {
     ...command,
-    arguments: command.arguments?.map((arg) => ({ ...arg })),
+    arguments: command.arguments?.map((arg) => ({
+      ...arg,
+      choices: arg.choices ? [...arg.choices] : undefined,
+    })),
   }
 }
 

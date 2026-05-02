@@ -30,7 +30,7 @@ describe('Claude Code plugin compatibility importer', () => {
     )
     await writeFile(
       join(root, 'commands/review.md'),
-      '---\nname: review\ndescription: Run review\narguments:\n  - name: path\n    description: Target path\n    required: true\n    type: string\n---\nReview $ARGUMENTS.\n',
+      '---\nname: review\ndescription: Run review\narguments:\n  - name: path\n    description: Target path\n    required: true\n    type: string\n    default: src/app.ts\n    choices:\n      - src/app.ts\n      - src/index.ts\n---\nReview $ARGUMENTS.\n',
       'utf-8',
     )
     await writeFile(
@@ -71,7 +71,16 @@ describe('Claude Code plugin compatibility importer', () => {
           name: 'review',
           description: 'Run review',
           prompt: 'Review $ARGUMENTS.',
-          arguments: [{ name: 'path', description: 'Target path', required: true, type: 'string' }],
+          arguments: [
+            {
+              name: 'path',
+              description: 'Target path',
+              required: true,
+              type: 'string',
+              choices: ['src/app.ts', 'src/index.ts'],
+              default: 'src/app.ts',
+            },
+          ],
         },
       ],
       agents: [

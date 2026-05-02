@@ -43,7 +43,16 @@ const manifest = {
       name: 'review',
       description: 'Run review command',
       prompt: 'Review $ARGUMENTS.',
-      arguments: [{ name: 'path', description: 'Target path', required: true, type: 'string' }],
+      arguments: [
+        {
+          name: 'path',
+          description: 'Target path',
+          required: true,
+          type: 'string',
+          choices: ['src/app.ts', 'src/index.ts'],
+          default: 'src/app.ts',
+        },
+      ],
     },
   ],
   agents: [
@@ -106,7 +115,12 @@ describe('plugin manifest', () => {
       tools: [{ name: 'dup' }, { name: 'dup' }],
       skills: [{ name: 'skill', path: '', trigger: 'sometimes' }],
       mcpServers: [{ name: 'mcp' }, { name: 'mcp' }],
-      commands: [{ name: 'bad-command', arguments: [{ required: 'yes', type: 'object' }] }],
+      commands: [
+        {
+          name: 'bad-command',
+          arguments: [{ required: 'yes', type: 'object', choices: [''], default: '' }],
+        },
+      ],
       devtools: { providers: [{ name: 'bad-provider', kind: 'trace' }] },
       logs: { sinks: [{ name: 'bad-sink', kind: 'raw' }] },
     })
@@ -121,6 +135,8 @@ describe('plugin manifest', () => {
     expect(result.errors).toContain('commands[0].arguments[0].name is required')
     expect(result.errors).toContain('commands[0].arguments[0].required must be a boolean')
     expect(result.errors).toContain('commands[0].arguments[0].type must be string, number or boolean')
+    expect(result.errors).toContain('commands[0].arguments[0].choices[0] is required')
+    expect(result.errors).toContain('commands[0].arguments[0].default is required')
     expect(result.errors).toContain('devtools.providers[0].kind must be diagnostics or timeline')
     expect(result.errors).toContain('logs.sinks[0].kind must be memory, devtools or custom')
     expect(result.warnings).toContain('tools[0].module is missing; loader must provide tool implementation')
@@ -158,7 +174,16 @@ describe('plugin manifest', () => {
           name: 'review',
           description: 'Run review command',
           prompt: 'Review $ARGUMENTS.',
-          arguments: [{ name: 'path', description: 'Target path', required: true, type: 'string' }],
+          arguments: [
+            {
+              name: 'path',
+              description: 'Target path',
+              required: true,
+              type: 'string',
+              choices: ['src/app.ts', 'src/index.ts'],
+              default: 'src/app.ts',
+            },
+          ],
         },
       ],
       agents: [

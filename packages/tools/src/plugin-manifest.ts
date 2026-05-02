@@ -48,6 +48,8 @@ export interface PluginCommandArgumentManifest {
   description?: string
   required?: boolean
   type?: 'string' | 'number' | 'boolean'
+  choices?: string[]
+  default?: string
 }
 
 export interface PluginAgentManifest {
@@ -870,7 +872,38 @@ function validateCommandArguments(
     ) {
       errors.push(`${field}[${index}].type must be string, number or boolean`)
     }
+    if (arg.choices !== undefined) {
+      if (!Array.isArray(arg.choices)) {
+        errors.push(`${field}[${index}].choices must be an array`)
+      } else {
+        for (const [choiceIndex, choice] of arg.choices.entries()) {
+          requireString(choice, `${field}[${index}].choices[${choiceIndex}]`, errors)
+        }
+      }
+    }
+    if (arg.default !== undefined) {
+      requireString(arg.default, `${field}[${index}].default`, errors)
+      if (!isCommandArgumentValueType(arg.default, arg.type)) {
+        errors.push(`${field}[${index}].default must match ${arg.type}`)
+      }
+      if (arg.choices && arg.choices.length > 0 && !arg.choices.includes(arg.default)) {
+        errors.push(`${field}[${index}].default must be one of ${arg.choices.join(', ')}`)
+      }
+    }
   }
+}
+
+function isCommandArgumentValueType(
+  value: string,
+  type: PluginCommandArgumentManifest['type'],
+): boolean {
+  if (type === 'number') {
+    return value.trim() !== '' && Number.isFinite(Number(value))
+  }
+  if (type === 'boolean') {
+    return value === 'true' || value === 'false'
+  }
+  return true
 }
 
 function validateAgents(agents: PluginAgentManifest[] | undefined, errors: string[]): void {

@@ -575,14 +575,14 @@ function normalizeCommandArguments(value: unknown): PluginCommandArgumentManifes
       description: getString(object.description),
       required: typeof object.required === 'boolean' ? object.required : undefined,
       type: getCommandArgumentType(object.type),
+      choices: getStringArray(object.choices),
+      default: getString(object.default),
     })
   }
   return args.length > 0 ? args : undefined
 }
 
-function getCommandArgumentType(
-  value: unknown,
-): PluginCommandArgumentManifest['type'] | undefined {
+function getCommandArgumentType(value: unknown): PluginCommandArgumentManifest['type'] | undefined {
   return value === 'string' || value === 'number' || value === 'boolean' ? value : undefined
 }
 

@@ -125,7 +125,7 @@ export class InteractiveMode {
       return { type: 'response', text: response }
     }
 
-    const [command, ...rest] = text.slice(1).split(/\s+/)
+    const [command, ...rest] = parseInteractiveSlashInput(text)
     if (!command) {
       return { type: 'noop' }
     }
@@ -212,20 +212,28 @@ export class InteractiveMode {
           text: formatPluginConfirmationRequired('command', pluginCommand.pluginId, command),
         }
       }
-      const missingArguments = getMissingPluginCommandArguments(
+      const commandArgs = applyPluginCommandArgumentDefaults(
         pluginCommand.command,
         confirmation.args,
       )
+      const missingArguments = getMissingPluginCommandArguments(pluginCommand.command, commandArgs)
       if (missingArguments.length > 0) {
         return {
           type: 'system',
           text: formatPluginCommandMissingArguments(pluginCommand.command, missingArguments),
         }
       }
-      const invalidArguments = getInvalidPluginCommandArguments(
+      const unexpectedArguments = getUnexpectedPluginCommandArguments(
         pluginCommand.command,
-        confirmation.args,
+        commandArgs,
       )
+      if (unexpectedArguments.length > 0) {
+        return {
+          type: 'system',
+          text: formatPluginCommandUnexpectedArguments(pluginCommand.command, unexpectedArguments),
+        }
+      }
+      const invalidArguments = getInvalidPluginCommandArguments(pluginCommand.command, commandArgs)
       if (invalidArguments.length > 0) {
         return {
           type: 'system',
@@ -234,7 +242,7 @@ export class InteractiveMode {
       }
       const response = await runPrintMode(
         this.session,
-        renderPluginCommandPrompt(pluginCommand.command, confirmation.args),
+        renderPluginCommandPrompt(pluginCommand.command, commandArgs),
         () => {},
       )
       return { type: 'response', text: response }
@@ -242,6 +250,60 @@ export class InteractiveMode {
 
     return { type: 'system', text: `Unknown command: /${command}` }
   }
+}
+
+export function parseInteractiveSlashInput(input: string): string[] {
+  const text = input.trim()
+  const slashless = text.startsWith('/') ? text.slice(1) : text
+  const tokens: string[] = []
+  let current = ''
+  let quote: '"' | "'" | undefined
+  let escaped = false
+
+  for (const char of slashless) {
+    if (escaped) {
+      current += char
+      escaped = false
+      continue
+    }
+
+    if (char === '\\') {
+      escaped = true
+      continue
+    }
+
+    if (quote) {
+      if (char === quote) {
+        quote = undefined
+      } else {
+        current += char
+      }
+      continue
+    }
+
+    if (char === '"' || char === "'") {
+      quote = char
+      continue
+    }
+
+    if (/\s/.test(char)) {
+      if (current.length > 0) {
+        tokens.push(current)
+        current = ''
+      }
+      continue
+    }
+
+    current += char
+  }
+
+  if (escaped) {
+    current += '\\'
+  }
+  if (current.length > 0) {
+    tokens.push(current)
+  }
+  return tokens
 }
 
 export function consumePluginConfirmationFlag(args: readonly string[]): {
@@ -278,6 +340,36 @@ export function formatPluginCommandMissingArguments(
   return `Plugin command "/${command.name}" requires arguments: ${missingArguments.join(', ')}. Usage: /${command.name}${formatPluginCommandUsage(command)}`
 }
 
+export function getUnexpectedPluginCommandArguments(
+  command: PluginCommandManifest,
+  args: readonly string[],
+): string[] {
+  if (!command.arguments) {
+    return []
+  }
+  return args.slice(command.arguments.length)
+}
+
+export function formatPluginCommandUnexpectedArguments(
+  command: PluginCommandManifest,
+  unexpectedArguments: readonly string[],
+): string {
+  return `Plugin command "/${command.name}" received unexpected arguments: ${unexpectedArguments.join(', ')}. Usage: /${command.name}${formatPluginCommandUsage(command)}`
+}
+
+export function applyPluginCommandArgumentDefaults(
+  command: PluginCommandManifest,
+  args: readonly string[],
+): string[] {
+  const resolved = [...args]
+  for (const [index, argument] of (command.arguments ?? []).entries()) {
+    if (resolved[index] === undefined && argument.default !== undefined) {
+      resolved[index] = argument.default
+    }
+  }
+  return resolved
+}
+
 export interface InvalidPluginCommandArgument {
   name: string
   expectedType: string
@@ -291,11 +383,23 @@ export function getInvalidPluginCommandArguments(
   const invalid: InvalidPluginCommandArgument[] = []
   for (const [index, argument] of (command.arguments ?? []).entries()) {
     const value = args[index]
-    if (value === undefined || argument.type === undefined || argument.type === 'string') {
+    if (value === undefined) {
       continue
     }
-    if (!isPluginCommandArgumentValueType(value, argument.type)) {
+    if (
+      argument.type !== undefined &&
+      argument.type !== 'string' &&
+      !isPluginCommandArgumentValueType(value, argument.type)
+    ) {
       invalid.push({ name: argument.name, expectedType: argument.type, value })
+      continue
+    }
+    if (argument.choices && argument.choices.length > 0 && !argument.choices.includes(value)) {
+      invalid.push({
+        name: argument.name,
+        expectedType: `one of ${argument.choices.join(', ')}`,
+        value,
+      })
     }
   }
   return invalid
@@ -306,7 +410,9 @@ export function formatPluginCommandInvalidArguments(
   invalidArguments: readonly InvalidPluginCommandArgument[],
 ): string {
   const details = invalidArguments
-    .map((argument) => `${argument.name} expected ${argument.expectedType}, got "${argument.value}"`)
+    .map(
+      (argument) => `${argument.name} expected ${argument.expectedType}, got "${argument.value}"`,
+    )
     .join('; ')
   return `Plugin command "/${command.name}" has invalid arguments: ${details}. Usage: /${command.name}${formatPluginCommandUsage(command)}`
 }
@@ -348,7 +454,9 @@ function formatPluginCommandUsage(command: PluginCommandManifest): string {
   }
   return ` ${commandArguments
     .map((argument) => {
-      const typedName = argument.type ? `${argument.name}:${argument.type}` : argument.name
+      const type = argument.type ? `:${argument.type}` : ''
+      const defaultValue = argument.default !== undefined ? `=${argument.default}` : ''
+      const typedName = `${argument.name}${type}${defaultValue}`
       return argument.required ? `<${typedName}>` : `[${typedName}]`
     })
     .join(' ')}`
@@ -362,8 +470,13 @@ function formatPluginCommandArgumentSchema(command: PluginCommandManifest): stri
   for (const argument of command.arguments) {
     const required = argument.required ? 'required' : 'optional'
     const type = argument.type ?? 'string'
+    const choices =
+      argument.choices && argument.choices.length > 0
+        ? `, choices: ${argument.choices.join(', ')}`
+        : ''
+    const defaultValue = argument.default !== undefined ? `, default: ${argument.default}` : ''
     const description = argument.description ? `: ${argument.description}` : ''
-    lines.push(`- ${argument.name} (${required}, ${type})${description}`)
+    lines.push(`- ${argument.name} (${required}, ${type}${choices}${defaultValue})${description}`)
   }
   return lines.join('\n')
 }

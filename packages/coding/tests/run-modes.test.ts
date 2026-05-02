@@ -8,13 +8,17 @@ import { createPluginAgentRegistry, createPluginCommandRegistry } from '@vitamin
 import { AgentSession } from '../src/session/agent-session'
 import {
   InteractiveMode,
+  applyPluginCommandArgumentDefaults,
   consumePluginConfirmationFlag,
   formatPluginConfirmationRequired,
   formatPluginCommandInvalidArguments,
   formatPluginCommandMissingArguments,
+  formatPluginCommandUnexpectedArguments,
   getInvalidPluginCommandArguments,
   getMissingPluginCommandArguments,
+  getUnexpectedPluginCommandArguments,
   getLastAssistantText,
+  parseInteractiveSlashInput,
   renderPluginAgentPrompt,
   renderPluginCommandPrompt,
   runJsonMode,
@@ -257,6 +261,119 @@ describe('run modes', () => {
     }
   })
 
+  it('InteractiveMode rejects plugin slash commands outside declared choices', async () => {
+    const session = await createSession('interactive-plugin-command-choice-args')
+    const registry = createPluginCommandRegistry()
+    registry.register(
+      {
+        name: 'deploy',
+        description: 'Deploy to an environment.',
+        arguments: [
+          {
+            name: 'environment',
+            required: true,
+            type: 'string',
+            choices: ['staging', 'production'],
+          },
+        ],
+      },
+      'deploy-plugin',
+    )
+    const mode = new InteractiveMode(session, { pluginCommandRegistry: registry })
+
+    const rejected = await mode.handleInput('/deploy preview')
+    expect(rejected).toEqual({
+      type: 'system',
+      text: 'Plugin command "/deploy" has invalid arguments: environment expected one of staging, production, got "preview". Usage: /deploy <environment:string>',
+    })
+
+    const response = await mode.handleInput('/deploy staging')
+    expect(response.type).toBe('response')
+    if (response.type === 'response') {
+      expect(response.text).toContain('Arguments: staging')
+      expect(response.text).toContain('- environment (required, string, choices: staging, production)')
+    }
+  })
+
+  it('InteractiveMode applies plugin slash command argument defaults before execution', async () => {
+    const session = await createSession('interactive-plugin-command-default-args')
+    const registry = createPluginCommandRegistry()
+    registry.register(
+      {
+        name: 'deploy',
+        description: 'Deploy with a default environment.',
+        arguments: [
+          {
+            name: 'environment',
+            required: false,
+            type: 'string',
+            choices: ['staging', 'production'],
+            default: 'staging',
+          },
+        ],
+      },
+      'deploy-plugin',
+    )
+    const mode = new InteractiveMode(session, { pluginCommandRegistry: registry })
+
+    const response = await mode.handleInput('/deploy')
+    expect(response.type).toBe('response')
+    if (response.type === 'response') {
+      expect(response.text).toContain('Arguments: staging')
+      expect(response.text).toContain(
+        '- environment (optional, string, choices: staging, production, default: staging)',
+      )
+    }
+  })
+
+  it('InteractiveMode rejects extra plugin slash command arguments when schema is declared', async () => {
+    const session = await createSession('interactive-plugin-command-extra-args')
+    const registry = createPluginCommandRegistry()
+    registry.register(
+      {
+        name: 'deploy',
+        description: 'Deploy to an environment.',
+        arguments: [{ name: 'environment', required: true, choices: ['staging', 'production'] }],
+      },
+      'deploy-plugin',
+    )
+    const mode = new InteractiveMode(session, { pluginCommandRegistry: registry })
+
+    const rejected = await mode.handleInput('/deploy staging now')
+    expect(rejected).toEqual({
+      type: 'system',
+      text: 'Plugin command "/deploy" received unexpected arguments: now. Usage: /deploy <environment>',
+    })
+
+    const response = await mode.handleInput('/deploy production')
+    expect(response.type).toBe('response')
+    if (response.type === 'response') {
+      expect(response.text).toContain('Arguments: production')
+    }
+  })
+
+  it('InteractiveMode parses quoted plugin slash command arguments before validation', async () => {
+    const session = await createSession('interactive-plugin-command-quoted-args')
+    const registry = createPluginCommandRegistry()
+    registry.register(
+      {
+        name: 'review',
+        description: 'Review a path with spaces.',
+        arguments: [{ name: 'path', required: true }],
+      },
+      'review-plugin',
+    )
+    const mode = new InteractiveMode(session, { pluginCommandRegistry: registry })
+
+    const response = await mode.handleInput('/review "src/app shell.ts"')
+
+    expect(response.type).toBe('response')
+    if (response.type === 'response') {
+      expect(response.text).toContain('Arguments: src/app shell.ts')
+      expect(response.text).not.toContain('unexpected arguments')
+    }
+  })
+
   it('InteractiveMode routes plugin agents through the current session', async () => {
     const session = await createSession('interactive-plugin-agent')
     const registry = createPluginAgentRegistry()
@@ -313,6 +430,17 @@ describe('run modes', () => {
     }
   })
 
+  it('InteractiveMode parses quoted compact summaries', async () => {
+    const session = await createSession('interactive-compact-quoted')
+    const mode = new InteractiveMode(session)
+
+    await mode.handleInput('hello before compact')
+    const response = await mode.handleInput('/compact 1 "quoted summary"')
+
+    expect(response).toEqual({ type: 'system', text: 'Compaction complete.' })
+    expect(session.session.buildContext().summary).toBe('quoted summary')
+  })
+
   it('consumePluginConfirmationFlag removes only confirmation tokens', () => {
     expect(consumePluginConfirmationFlag(['--confirm-plugin', 'src/app.ts'])).toEqual({
       confirmed: true,
@@ -328,6 +456,24 @@ describe('run modes', () => {
     expect(formatPluginConfirmationRequired('command', 'review-plugin', 'review')).toBe(
       'Plugin command requires confirmation: review-plugin/review. Re-run with --confirm-plugin to execute.',
     )
+  })
+
+  it('parseInteractiveSlashInput supports quotes and escaped whitespace', () => {
+    expect(parseInteractiveSlashInput('/review "src/app shell.ts" focus\\ mode')).toEqual([
+      'review',
+      'src/app shell.ts',
+      'focus mode',
+    ])
+    expect(parseInteractiveSlashInput("/review 'single quoted' plain")).toEqual([
+      'review',
+      'single quoted',
+      'plain',
+    ])
+    expect(parseInteractiveSlashInput('/review --confirm-plugin "src/app.ts"')).toEqual([
+      'review',
+      '--confirm-plugin',
+      'src/app.ts',
+    ])
   })
 
   it('getMissingPluginCommandArguments reports missing required positional args', () => {
@@ -361,6 +507,48 @@ describe('run modes', () => {
     ).toBe('Plugin command "/review" requires arguments: path. Usage: /review <path> [focus]')
   })
 
+  it('getUnexpectedPluginCommandArguments reports overflow only when schema exists', () => {
+    expect(
+      getUnexpectedPluginCommandArguments(
+        {
+          name: 'deploy',
+          arguments: [{ name: 'environment', required: true }],
+        },
+        ['staging', 'now'],
+      ),
+    ).toEqual(['now'])
+    expect(getUnexpectedPluginCommandArguments({ name: 'freeform' }, ['anything'])).toEqual([])
+  })
+
+  it('formatPluginCommandUnexpectedArguments includes usage from command schema', () => {
+    expect(
+      formatPluginCommandUnexpectedArguments(
+        {
+          name: 'deploy',
+          arguments: [{ name: 'environment', required: true }],
+        },
+        ['now'],
+      ),
+    ).toBe(
+      'Plugin command "/deploy" received unexpected arguments: now. Usage: /deploy <environment>',
+    )
+  })
+
+  it('applyPluginCommandArgumentDefaults fills missing positional values only', () => {
+    expect(
+      applyPluginCommandArgumentDefaults(
+        {
+          name: 'deploy',
+          arguments: [
+            { name: 'environment', default: 'staging' },
+            { name: 'force', type: 'boolean', default: 'false' },
+          ],
+        },
+        ['production'],
+      ),
+    ).toEqual(['production', 'false'])
+  })
+
   it('getInvalidPluginCommandArguments reports typed positional arg failures', () => {
     expect(
       getInvalidPluginCommandArguments(
@@ -369,14 +557,15 @@ describe('run modes', () => {
           arguments: [
             { name: 'count', required: true, type: 'number' },
             { name: 'dryRun', required: false, type: 'boolean' },
-            { name: 'label', required: false, type: 'string' },
+            { name: 'label', required: false, type: 'string', choices: ['safe', 'fast'] },
           ],
         },
-        ['NaNish', 'yes', 'anything'],
+        ['NaNish', 'yes', 'unsafe'],
       ),
     ).toEqual([
       { name: 'count', expectedType: 'number', value: 'NaNish' },
       { name: 'dryRun', expectedType: 'boolean', value: 'yes' },
+      { name: 'label', expectedType: 'one of safe, fast', value: 'unsafe' },
     ])
   })
 
@@ -413,14 +602,20 @@ describe('run modes', () => {
           name: 'review',
           prompt: 'Review $ARGUMENTS.',
           arguments: [
-            { name: 'path', description: 'Target path', required: true },
+            {
+              name: 'path',
+              description: 'Target path',
+              required: true,
+              choices: ['src/app.ts', 'src/index.ts'],
+              default: 'src/app.ts',
+            },
             { name: 'focus', required: false },
           ],
         },
         ['src/app.ts'],
       ),
     ).toBe(
-      'Review src/app.ts.\n\nArgument schema:\n- path (required, string): Target path\n- focus (optional, string)',
+      'Review src/app.ts.\n\nArgument schema:\n- path (required, string, choices: src/app.ts, src/index.ts, default: src/app.ts): Target path\n- focus (optional, string)',
     )
   })
 
