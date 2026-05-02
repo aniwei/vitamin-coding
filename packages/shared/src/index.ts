@@ -35,8 +35,26 @@ export {
 } from './disposable'
 export type { Disposable, AsyncDisposable } from './disposable'
 
-export { createLogger, getRootLogger, attachLogListener } from './logger'
-export type { Logger, LogLevel, LoggerOptions } from './logger'
+export {
+  createLogger,
+  getRootLogger,
+  attachLogListener,
+  registerPluginLogContribution,
+  unregisterPluginLogContribution,
+  listPluginLogContributions,
+  getPluginLogSinkEntries,
+  redactLogValue,
+} from './logger'
+export type {
+  Logger,
+  LogLevel,
+  LoggerOptions,
+  PluginLogSinkContribution,
+  PluginLogFormatterContribution,
+  PluginLogViewerContribution,
+  PluginLogContribution,
+  PluginLogSinkEntry,
+} from './logger'
 
 export { mkdirp, rimraf, exists, mime, isFile, isDirectory } from './fs-extra'
 

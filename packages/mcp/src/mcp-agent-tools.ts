@@ -24,7 +24,9 @@ const GetPromptArgs = z.object({
   arguments: z.record(z.string(), z.string()).optional().describe('Prompt arguments'),
 })
 
-export function createMcpListResourcesTool(manager: McpManager): AgentTool<z.infer<typeof ListResourcesArgs>> {
+export function createMcpListResourcesTool(
+  manager: McpManager,
+): AgentTool<z.infer<typeof ListResourcesArgs>> {
   return {
     name: 'mcp_list_resources',
     description: 'List available MCP resources across connected MCP servers.',
@@ -38,7 +40,9 @@ export function createMcpListResourcesTool(manager: McpManager): AgentTool<z.inf
         .getAllResources()
         .filter((resource) => !params.serverName || resource.serverName === params.serverName)
         .filter((resource) => {
-          if (!query) return true
+          if (!query) {
+            return true
+          }
           return [resource.uri, resource.name, resource.description ?? '']
             .join('\n')
             .toLowerCase()
@@ -72,7 +76,9 @@ export function createMcpListResourcesTool(manager: McpManager): AgentTool<z.inf
   }
 }
 
-export function createMcpReadResourceTool(manager: McpManager): AgentTool<z.infer<typeof ReadResourceArgs>> {
+export function createMcpReadResourceTool(
+  manager: McpManager,
+): AgentTool<z.infer<typeof ReadResourceArgs>> {
   return {
     name: 'mcp_read_resource',
     description: 'Read a resource from a specific MCP server.',
@@ -95,7 +101,9 @@ export function createMcpReadResourceTool(manager: McpManager): AgentTool<z.infe
   }
 }
 
-export function createMcpListPromptsTool(manager: McpManager): AgentTool<z.infer<typeof ListPromptsArgs>> {
+export function createMcpListPromptsTool(
+  manager: McpManager,
+): AgentTool<z.infer<typeof ListPromptsArgs>> {
   return {
     name: 'mcp_list_prompts',
     description: 'List available MCP prompts across connected MCP servers.',
@@ -109,7 +117,9 @@ export function createMcpListPromptsTool(manager: McpManager): AgentTool<z.infer
         .getAllPrompts()
         .filter((prompt) => !params.serverName || prompt.serverName === params.serverName)
         .filter((prompt) => {
-          if (!query) return true
+          if (!query) {
+            return true
+          }
           return [prompt.name, prompt.description ?? ''].join('\n').toLowerCase().includes(query)
         })
 
@@ -140,7 +150,9 @@ export function createMcpListPromptsTool(manager: McpManager): AgentTool<z.infer
   }
 }
 
-export function createMcpGetPromptTool(manager: McpManager): AgentTool<z.infer<typeof GetPromptArgs>> {
+export function createMcpGetPromptTool(
+  manager: McpManager,
+): AgentTool<z.infer<typeof GetPromptArgs>> {
   return {
     name: 'mcp_get_prompt',
     description: 'Get a prompt from a specific MCP server.',
@@ -175,7 +187,14 @@ export function createMcpGetPromptTool(manager: McpManager): AgentTool<z.infer<t
   }
 }
 
-export function createMcpAgentTools(manager: McpManager): AgentTool<any>[] {
+export function createMcpAgentTools(
+  manager: McpManager,
+): Array<
+  | AgentTool<z.infer<typeof ListResourcesArgs>>
+  | AgentTool<z.infer<typeof ReadResourceArgs>>
+  | AgentTool<z.infer<typeof ListPromptsArgs>>
+  | AgentTool<z.infer<typeof GetPromptArgs>>
+> {
   return [
     createMcpListResourcesTool(manager),
     createMcpReadResourceTool(manager),
@@ -185,23 +204,35 @@ export function createMcpAgentTools(manager: McpManager): AgentTool<any>[] {
 }
 
 function formatResourceContents(contents: McpResourceContents[]): string {
-  if (contents.length === 0) return '(empty resource)'
+  if (contents.length === 0) {
+    return '(empty resource)'
+  }
   return contents
     .map((content) => {
-      if (content.text !== undefined) return content.text
-      if (content.blob !== undefined) return `[Binary resource: ${content.uri}]`
+      if (content.text !== undefined) {
+        return content.text
+      }
+      if (content.blob !== undefined) {
+        return `[Binary resource: ${content.uri}]`
+      }
       return `[Resource: ${content.uri}]`
     })
     .join('\n\n')
 }
 
 function formatPromptMessages(messages: McpPromptMessage[]): string {
-  if (messages.length === 0) return '(empty prompt)'
+  if (messages.length === 0) {
+    return '(empty prompt)'
+  }
   return messages
     .map((message) => {
       const content = message.content
-      if (content.type === 'text') return `${message.role}: ${content.text}`
-      if (content.type === 'image') return `${message.role}: [Image: ${content.mimeType}]`
+      if (content.type === 'text') {
+        return `${message.role}: ${content.text}`
+      }
+      if (content.type === 'image') {
+        return `${message.role}: [Image: ${content.mimeType}]`
+      }
       return `${message.role}: ${content.resource.text ?? `[Resource: ${content.resource.uri}]`}`
     })
     .join('\n\n')

@@ -600,12 +600,16 @@ export class AgentSession extends Subscription {
             sessionId: this.id,
             metadata: this.permissionMetadata,
           }),
-          transformContext: async (contextMessages: AgentMessage[], signal?: AbortSignal, options?: {
-            reason: 'preflight' | 'prompt-too-long'
-            attempt?: number
-            error?: Error
-            tokenCount?: number
-          }) => {
+          transformContext: async (
+            contextMessages: AgentMessage[],
+            signal?: AbortSignal,
+            options?: {
+              reason: 'preflight' | 'prompt-too-long'
+              attempt?: number
+              error?: Error
+              tokenCount?: number
+            },
+          ) => {
             if (signal?.aborted) {
               return contextMessages
             }
@@ -1025,7 +1029,7 @@ export class AgentSession extends Subscription {
     const tools = this.tools.map((tool) => ({
       name: tool.name,
       visibility: tool.visibility,
-      readonly: typeof tool.readonly === 'function' ? 'dynamic' as const : tool.readonly === true,
+      readonly: typeof tool.readonly === 'function' ? ('dynamic' as const) : tool.readonly === true,
       deferred: tool.shouldDefer === true,
     }))
     const promptContent = this.lastEffectiveSystemPrompt ?? assembly.systemPrompt
@@ -1043,7 +1047,9 @@ export class AgentSession extends Subscription {
         staticPrefixChars: assembly.staticPrefix.length,
         dynamicTailChars: assembly.dynamicTail.length,
         cacheableSectionCount: sections.filter((section) => section.cacheable).length,
-        dynamicSectionCount: sections.filter((section) => !section.cacheable || section.layer === 'dynamic').length,
+        dynamicSectionCount: sections.filter(
+          (section) => !section.cacheable || section.layer === 'dynamic',
+        ).length,
         fingerprint: this.lastPromptCache?.fingerprint,
         toolSchemaFingerprint: this.lastPromptCache?.toolSchemaFingerprint,
         sections,

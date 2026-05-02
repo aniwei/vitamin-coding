@@ -34,12 +34,8 @@ export function sleep(ms: number, options?: SleepOptions): Promise<void> {
   }
 
   return new Promise((resolve, reject) => {
-    let timeout: ReturnType<typeof setTimeout> | undefined
-
     const cleanup = () => {
-      if (timeout) {
-        clearTimeout(timeout)
-      }
+      clearTimeout(timeout)
       signal?.removeEventListener('abort', onAbort)
     }
 
@@ -48,7 +44,7 @@ export function sleep(ms: number, options?: SleepOptions): Promise<void> {
       reject(createAbortError(signal))
     }
 
-    timeout = setTimeout(() => {
+    const timeout = setTimeout(() => {
       cleanup()
       resolve()
     }, delay)

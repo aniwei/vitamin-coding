@@ -3,7 +3,13 @@ import type { AgentTool } from '@vitamin/agent'
 import type { AuthStore, Model, ProviderRegistry } from '@vitamin/ai'
 import type { ModelRegistry } from '@vitamin/ai'
 import type { HookRegistry, PermissionPolicyRegistry, PermissionAuditLog } from '@vitamin/hooks'
-import type { ToolRegistry, PluginManager } from '@vitamin/tools'
+import type {
+  ToolRegistry,
+  PluginManager,
+  PluginStateStore,
+  PluginCommandRegistry,
+  PluginAgentRegistry,
+} from '@vitamin/tools'
 import type { McpManager } from '@vitamin/tools'
 import type { PromptProviderOptions } from '@vitamin/prompt'
 import type { ResourceManager } from '@vitamin/resources'
@@ -27,6 +33,8 @@ export interface VitaminContext {
   readonly auditLog: PermissionAuditLog
   readonly toolRegistry: ToolRegistry
   readonly pluginManager: PluginManager | undefined
+  readonly pluginCommandRegistry: PluginCommandRegistry
+  readonly pluginAgentRegistry: PluginAgentRegistry
   readonly mcpManager: McpManager | undefined
   readonly sessionManager: CodingSessionManager
   readonly authStore: AuthStore
@@ -83,6 +91,18 @@ export interface VitaminAppOptions {
   mcpManager?: McpManager
   /** 本地插件根目录。启动时扫描并加载其中的 plugin.json / vitamin-plugin.json。 */
   pluginRoots?: string[]
+  /**
+   * 插件状态存储。提供后 App start 会加载 trusted/disabled 状态。
+   */
+  pluginStateStore?: PluginStateStore
+  /**
+   * 已信任插件 ID。运行时注入点，可与 pluginStateStore 合并使用。
+   */
+  trustedPluginIds?: string[]
+  /**
+   * 已禁用插件 ID。运行时注入点，可与 pluginStateStore 合并使用。
+   */
+  disabledPluginIds?: string[]
   /**
    * 使用远端 session 存储时必填（sessionUrl 指定时生效）。
    */

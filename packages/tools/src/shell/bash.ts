@@ -47,15 +47,21 @@ export function createBash(
 
 export function isReadOnlyShellCommand(command: string): boolean {
   const normalized = command.trim()
-  if (!normalized) return false
-  if (hasWriteRedirection(normalized) || /[`$][({]/.test(normalized)) return false
+  if (!normalized) {
+    return false
+  }
+  if (hasWriteRedirection(normalized) || /[`$][({]/.test(normalized)) {
+    return false
+  }
 
   const segments = normalized
     .split(/\s*(?:&&|\|\||;|\|)\s*/)
     .map((segment) => segment.trim())
     .filter(Boolean)
 
-  if (segments.length === 0) return false
+  if (segments.length === 0) {
+    return false
+  }
   return segments.every(isReadOnlyShellSegment)
 }
 
@@ -65,7 +71,9 @@ function isReadOnlyShellSegment(segment: string): boolean {
     withoutEnv.match(/"[^"]*"|'[^']*'|\S+/g)?.map((token) => token.replace(/^['"]|['"]$/g, '')) ??
     []
   const command = tokens[0]
-  if (!command) return false
+  if (!command) {
+    return false
+  }
 
   if (command === 'git') {
     const subcommand = tokens.find((token, index) => index > 0 && !token.startsWith('-'))
@@ -77,7 +85,10 @@ function isReadOnlyShellSegment(segment: string): boolean {
     )
   }
 
-  if ((command === 'sed' && tokens.includes('-i')) || (command === 'perl' && tokens.includes('-pi'))) {
+  if (
+    (command === 'sed' && tokens.includes('-i')) ||
+    (command === 'perl' && tokens.includes('-pi'))
+  ) {
     return false
   }
 

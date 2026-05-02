@@ -52,7 +52,9 @@ export function createSkillSearch(search?: SearchSkills): AgentTool<SkillSearchA
               .map((skill) =>
                 [
                   `- ${skill.name}${skill.trigger === 'manual' ? ' [manual]' : ''}: ${skill.description}`,
-                  skill.relevance !== undefined ? `  relevance: ${skill.relevance.toFixed(2)}` : undefined,
+                  skill.relevance !== undefined
+                    ? `  relevance: ${skill.relevance.toFixed(2)}`
+                    : undefined,
                   skill.matchedKeywords?.length
                     ? `  matched: ${skill.matchedKeywords.join(', ')}`
                     : undefined,

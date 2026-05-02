@@ -450,9 +450,7 @@ class AnthropicStream implements ProviderStream {
       max_tokens: effectiveMaxTokens,
       ...(context.systemPrompt
         ? {
-            system: useCache
-              ? buildSystemWithPromptCache(context)
-              : context.systemPrompt,
+            system: useCache ? buildSystemWithPromptCache(context) : context.systemPrompt,
           }
         : {}),
       messages,

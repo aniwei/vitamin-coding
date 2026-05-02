@@ -1,10 +1,18 @@
+import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
-import { resolve } from 'node:path'
+import { join, relative, resolve } from 'node:path'
 import { createInterface } from 'node:readline'
 
 import { createVitamin, InteractiveMode, runJsonMode, runPrintMode } from '@vitamin/coding'
 
 import type { CLIOptions, RunMode } from './types'
+import {
+  createFilePluginStateStore,
+  importClaudeCodePlugin,
+  type PluginLifecycleStep,
+  type PluginManagerDiagnostics,
+  type PluginStateStore,
+} from '@vitamin/tools'
 
 const require = createRequire(import.meta.url)
 
@@ -204,6 +212,8 @@ export async function runCli(): Promise<number> {
     return 1
   }
 
+  const pluginStateStore = createFilePluginStateStore({ workspaceDir: options.projectDir })
+
   // 创建并启动 VitaminApp
   const app = createVitamin({
     port: typeof options.inspect === 'number' ? options.inspect : 9229,
@@ -217,13 +227,14 @@ export async function runCli(): Promise<number> {
     projectConfigPath: options.configPath,
     modelId: options.model,
     pluginRoots: [resolve(options.projectDir, '.vitamin/plugins')],
+    pluginStateStore,
   })
 
   await app.start()
 
   try {
     if (subCommand === 'plugin') {
-      return await runPluginCommand(app, subCommandArgs)
+      return await runPluginCommand(app, subCommandArgs, pluginStateStore)
     }
 
     switch (options.mode) {
@@ -244,7 +255,11 @@ export async function runCli(): Promise<number> {
       }
       case 'interactive': {
         const session = await app.createSession()
-        const interactive = new InteractiveMode(session)
+        const interactive = new InteractiveMode(session, {
+          pluginAgentRegistry: app.pluginAgentRegistry,
+          pluginCommandRegistry: app.pluginCommandRegistry,
+          requirePluginConfirmation: true,
+        })
         const rl = createInterface({ input: process.stdin, output: process.stdout })
         const prompt = () => rl.question('vitamin> ', async (input) => {
           const result = await interactive.handleInput(input)
@@ -276,11 +291,13 @@ export async function runCli(): Promise<number> {
   }
 }
 
-async function runPluginCommand(
+export async function runPluginCommand(
   app: ReturnType<typeof createVitamin>,
   argsText: string,
+  stateStore?: PluginStateStore,
 ): Promise<number> {
-  const [command = 'list', pluginId] = argsText.trim().split(/\s+/).filter(Boolean)
+  const args = argsText.trim().split(/\s+/).filter(Boolean)
+  const [command = 'list', pluginId] = args
   const manager = app.pluginManager
   if (!manager) {
     process.stdout.write('Plugin manager is not configured.\n')
@@ -289,22 +306,12 @@ async function runPluginCommand(
 
   if (command === 'list') {
     const diagnostics = manager.getDiagnostics()
-    if (diagnostics.discovered.length === 0) {
-      process.stdout.write('No plugins discovered.\n')
-      return 0
-    }
-    for (const item of diagnostics.discovered) {
-      const manifest = item.manifest
-      process.stdout.write(
-        manifest
-          ? `${manifest.id}\t${manifest.status ?? 'enabled'}\t${item.path}\n`
-          : `invalid\t${item.validation.errors.join('; ')}\t${item.path}\n`,
-      )
-    }
+    process.stdout.write(formatPluginDiagnostics(diagnostics))
     return 0
   }
 
   if (command === 'enable' && pluginId) {
+    await stateStore?.enable(pluginId)
     manager.enable(pluginId)
     await manager.reloadAll()
     process.stdout.write(`Plugin enabled: ${pluginId}\n`)
@@ -312,8 +319,24 @@ async function runPluginCommand(
   }
 
   if (command === 'disable' && pluginId) {
-    manager.disable(pluginId)
+    await stateStore?.disable(pluginId)
+    await manager.disable(pluginId)
     process.stdout.write(`Plugin disabled: ${pluginId}\n`)
+    return 0
+  }
+
+  if (command === 'trust' && pluginId) {
+    await stateStore?.trust(pluginId)
+    manager.trust(pluginId)
+    await manager.reloadAll()
+    process.stdout.write(`Plugin trusted: ${pluginId}\n`)
+    return 0
+  }
+
+  if (command === 'untrust' && pluginId) {
+    await stateStore?.untrust(pluginId)
+    await manager.untrust(pluginId)
+    process.stdout.write(`Plugin untrusted: ${pluginId}\n`)
     return 0
   }
 
@@ -323,6 +346,143 @@ async function runPluginCommand(
     return 0
   }
 
-  process.stdout.write('Usage: vitamin plugin [list|enable <id>|disable <id>|reload]\n')
+  if ((command === 'import-claude-code' || command === 'import-claude') && pluginId) {
+    return await importClaudeCodePluginCommand(app, pluginId, args.includes('--force'))
+  }
+
+  process.stdout.write(
+    'Usage: vitamin plugin [list|enable <id>|disable <id>|trust <id>|untrust <id>|reload|import-claude-code <dir> [--force]]\n',
+  )
   return 1
+}
+
+async function importClaudeCodePluginCommand(
+  app: ReturnType<typeof createVitamin>,
+  sourceDir: string,
+  force: boolean,
+): Promise<number> {
+  const manager = app.pluginManager
+  if (!manager) {
+    process.stdout.write('Plugin manager is not configured.\n')
+    return 1
+  }
+
+  const imported = await importClaudeCodePlugin(resolve(sourceDir))
+  const roots = manager.getDiagnostics().roots
+  const pluginRoot = roots[0] ?? join(app.workspaceDir, '.vitamin/plugins')
+  const targetDir = join(pluginRoot, toPluginDirectoryName(imported.manifest.id))
+
+  if (isPathInside(resolve(sourceDir), targetDir)) {
+    process.stdout.write('Cannot import a plugin into a directory inside its source tree.\n')
+    return 1
+  }
+
+  await mkdir(pluginRoot, { recursive: true })
+  if (force) {
+    await rm(targetDir, { recursive: true, force: true })
+  }
+
+  try {
+    await cp(resolve(sourceDir), targetDir, {
+      recursive: true,
+      errorOnExist: true,
+      force: false,
+    })
+  } catch (error) {
+    if (isNodeError(error) && (error.code === 'ERR_FS_CP_EEXIST' || error.code === 'EEXIST')) {
+      process.stdout.write(`Plugin target already exists: ${targetDir}\n`)
+      process.stdout.write('Use --force to overwrite it.\n')
+      return 1
+    }
+    throw error
+  }
+
+  await writeFile(join(targetDir, 'plugin.json'), JSON.stringify(imported.manifest, null, 2) + '\n')
+  await manager.reloadAll()
+
+  process.stdout.write(`Claude Code plugin imported: ${imported.manifest.id}\n`)
+  process.stdout.write(`Target: ${targetDir}\n`)
+  process.stdout.write(formatClaudeCodeImportReport(imported.report))
+  return 0
+}
+
+function formatClaudeCodeImportReport(
+  report: Awaited<ReturnType<typeof importClaudeCodePlugin>>['report'],
+): string {
+  const lines = [
+    `skills\t${report.imported.skills.length}`,
+    `commands\t${report.imported.commands.length}`,
+    `agents\t${report.imported.agents.length}`,
+    `mcpServers\t${report.imported.mcpServers.length}`,
+  ]
+  for (const warning of report.warnings) {
+    lines.push(`warning\t${warning}`)
+  }
+  for (const item of report.unsupported) {
+    lines.push(`unsupported\t${item.component}\t${item.reason}`)
+  }
+  return `${lines.join('\n')}\n`
+}
+
+export function formatPluginDiagnostics(diagnostics: PluginManagerDiagnostics): string {
+  if (diagnostics.discovered.length === 0) {
+    return 'No plugins discovered.\n'
+  }
+
+  const loaded = new Set(diagnostics.loaded.map((plugin) => plugin.pluginId))
+  const results = new Map(diagnostics.results.map((result) => [result.pluginId, result]))
+  const trusted = new Set(diagnostics.state.trustedPluginIds)
+  const disabled = new Set(diagnostics.state.disabledPluginIds)
+  const lines: string[] = []
+
+  for (const item of diagnostics.discovered) {
+    const manifest = item.manifest
+    if (!manifest) {
+      lines.push(`invalid\t${item.validation.errors.join('; ')}\t${item.path}`)
+      continue
+    }
+
+    const result = results.get(manifest.id)
+    const state = disabled.has(manifest.id)
+      ? 'disabled'
+      : loaded.has(manifest.id)
+        ? 'loaded'
+        : (manifest.status ?? 'enabled')
+    const trust = trusted.has(manifest.id) ? 'trusted' : 'untrusted'
+    lines.push(`${manifest.id}\t${state}\t${trust}\t${item.path}`)
+
+    if (result) {
+      for (const step of result.steps) {
+        lines.push(`  ${formatPluginLifecycleStep(step)}`)
+      }
+      for (const error of result.errors) {
+        lines.push(`  error\t${error}`)
+      }
+      for (const warning of result.warnings) {
+        lines.push(`  warning\t${warning}`)
+      }
+    }
+  }
+
+  return `${lines.join('\n')}\n`
+}
+
+function formatPluginLifecycleStep(step: PluginLifecycleStep): string {
+  const detail = step.error ?? step.warning
+  return detail
+    ? `${step.type}:${step.name}\t${step.status}\t${detail}`
+    : `${step.type}:${step.name}\t${step.status}`
+}
+
+function toPluginDirectoryName(pluginId: string): string {
+  return pluginId.replace(/[^a-zA-Z0-9._-]/g, '-')
+}
+
+function isPathInside(parent: string, child: string): boolean {
+  const rel = relative(parent, child)
+  return rel === '' || (!rel.startsWith('..') && !rel.startsWith('/'))
+}
+
+function isNodeError(error: unknown): error is NodeJS.ErrnoException {
+  return error instanceof Error && 'code' in error
 }

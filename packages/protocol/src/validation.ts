@@ -144,13 +144,7 @@ function validateSpecificMessage(
 }
 
 function validateConnectionState(data: Record<string, unknown>): WebSocketMessageValidation {
-  const validStatus = new Set([
-    'connecting',
-    'connected',
-    'reconnecting',
-    'disconnected',
-    'stale',
-  ])
+  const validStatus = new Set(['connecting', 'connected', 'reconnecting', 'disconnected', 'stale'])
   if (typeof data.status !== 'string' || !validStatus.has(data.status)) {
     return { valid: false, reason: 'data.status must be a known connection status' }
   }

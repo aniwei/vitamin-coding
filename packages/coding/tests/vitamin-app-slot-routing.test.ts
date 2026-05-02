@@ -2,6 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { createDefaultProviderRegistry, createProviderRegistry } from '@vitamin/ai'
 import type { AssistantMessage, Model, ProviderStream } from '@vitamin/ai'
+import { isPromptAssembly } from '@vitamin/prompt'
 import { createVitamin } from '../src/app/vitamin-app'
 
 function makeModel(id: string): Model {
@@ -46,6 +47,13 @@ function makeStreamingProviderRegistry(text: string) {
     },
   }))
   return registry
+}
+
+function toSystemPrompt(value: Awaited<ReturnType<NonNullable<Awaited<ReturnType<ReturnType<typeof createVitamin>['createSession']>>['promptRefresh']>>>): string {
+  if (isPromptAssembly(value)) {
+    return value.systemPrompt
+  }
+  return value ?? ''
 }
 
 describe('VitaminApp slot routing', () => {
@@ -158,7 +166,7 @@ describe('VitaminApp slot routing', () => {
         agentName: 'quality-reviewer',
       })
 
-      const prompt = await session.promptRefresh?.()
+      const prompt = toSystemPrompt(await session.promptRefresh?.())
       const toolNames = session.tools.map((tool) => tool.name).sort()
 
       expect(prompt).toContain('代码审查专项子代理')
@@ -193,7 +201,7 @@ describe('VitaminApp slot routing', () => {
         promptPreset: 'main',
       })
 
-      const prompt = await session.promptRefresh?.()
+      const prompt = toSystemPrompt(await session.promptRefresh?.())
       const toolNames = session.tools.map((tool) => tool.name)
 
       expect(prompt).toContain('Identity & Environment')

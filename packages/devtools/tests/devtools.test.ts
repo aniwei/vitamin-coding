@@ -40,4 +40,32 @@ describe('Devtools', () => {
     expect(trace.events[0]!.type).toBe('debug.snapshot')
     expect(trace.events[0]!.payload.point).toBe('loop_start')
   })
+
+  it('registers and unregisters plugin devtools contributions without owning the host', () => {
+    const devtools = createDevtools({ port: 3905 })
+
+    devtools.registerPluginContribution(
+      {
+        panels: [{ name: 'trace-panel', title: 'Trace Panel' }],
+        providers: [{ name: 'trace-provider', kind: 'timeline' }],
+        actions: [{ name: 'clear-trace', title: 'Clear Trace' }],
+      },
+      'trace-plugin',
+    )
+
+    expect(devtools.listPluginContributions()).toEqual([
+      {
+        pluginId: 'trace-plugin',
+        contribution: {
+          panels: [{ name: 'trace-panel', title: 'Trace Panel' }],
+          providers: [{ name: 'trace-provider', kind: 'timeline' }],
+          actions: [{ name: 'clear-trace', title: 'Clear Trace' }],
+        },
+      },
+    ])
+
+    devtools.unregisterPluginContribution('trace-plugin')
+
+    expect(devtools.listPluginContributions()).toEqual([])
+  })
 })

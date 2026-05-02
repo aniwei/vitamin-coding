@@ -2,12 +2,19 @@ import type { ToolCall } from '@vitamin/ai'
 import type { AgentTool } from './types'
 
 export function isToolCallReadOnly(tool: AgentTool | undefined, toolCall: ToolCall): boolean {
-  if (!tool) return false
+  if (!tool) {
+    return false
+  }
   return resolveToolReadOnly(tool, toolCall.arguments)
 }
 
-export function isToolCallConcurrencySafe(tool: AgentTool | undefined, toolCall: ToolCall): boolean {
-  if (!tool) return false
+export function isToolCallConcurrencySafe(
+  tool: AgentTool | undefined,
+  toolCall: ToolCall,
+): boolean {
+  if (!tool) {
+    return false
+  }
 
   const args = toolCall.arguments
   if (tool.isConcurrencySafe) {
@@ -17,10 +24,7 @@ export function isToolCallConcurrencySafe(tool: AgentTool | undefined, toolCall:
   return resolveToolReadOnly(tool, args)
 }
 
-export function resolveToolReadOnly(
-  tool: AgentTool,
-  args: Record<string, unknown>,
-): boolean {
+export function resolveToolReadOnly(tool: AgentTool, args: Record<string, unknown>): boolean {
   if (tool.isReadOnly) {
     return safeResolve(() => tool.isReadOnly?.(args) === true)
   }

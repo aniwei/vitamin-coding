@@ -15,6 +15,10 @@ import type { PermissionMode, PermissionPolicySetting } from '@vitamin/hooks'
 import {
   createToolRegistry,
   createPluginManager,
+  createPluginAgentRegistry,
+  createPluginCommandRegistry,
+  type PluginAgentRegistry,
+  type PluginCommandRegistry,
   ToolRegistry,
   type ExecuteSkill,
   type LoadSkill,
@@ -23,6 +27,7 @@ import {
   type ImproveSkill,
   type McpManager,
   type PluginManager,
+  type PluginStateStore,
 } from '@vitamin/tools'
 import { SESSION_MAX } from '@vitamin/env'
 import { createResourceManager, SettingsManager } from '@vitamin/resources'
@@ -31,7 +36,13 @@ import type { RunSessionOptions, RunSessionResult } from '@vitamin/orchestrator'
 import { FileStateManager, OperationalLearningStore } from '@vitamin/memory'
 import type { SkillProvider } from '@vitamin/skill'
 
-import { attachLogListener, createLogger, type Logger } from '@vitamin/shared'
+import {
+  attachLogListener,
+  createLogger,
+  registerPluginLogContribution,
+  unregisterPluginLogContribution,
+  type Logger,
+} from '@vitamin/shared'
 import { AgentSession } from '../session/agent-session'
 import { getLastAssistantText } from '../modes/run-modes'
 import {
@@ -152,12 +163,15 @@ export class VitaminApp implements VitaminContext {
   public readonly devtools: Devtools | null = null
   public readonly mcpManager: McpManager | undefined
   public readonly pluginManager: PluginManager | undefined
+  public readonly pluginCommandRegistry: PluginCommandRegistry
+  public readonly pluginAgentRegistry: PluginAgentRegistry
 
   private readonly fileStateManager: FileStateManager
   private readonly learningStore: OperationalLearningStore
   private readonly promptManager: PromptManager
   private readonly defaultModel?: Model
   private readonly skillProvider?: SkillProvider
+  private readonly pluginStateStore?: PluginStateStore
 
   private readonly orchestrator: Orchestrator
 
@@ -207,6 +221,7 @@ export class VitaminApp implements VitaminContext {
     } = options
     this.mcpManager = options.mcpManager
     this.skillProvider = options.skillProvider
+    this.pluginStateStore = options.pluginStateStore
 
     this.maxSessions = maxSessions ?? SESSION_MAX
     this.maxToolTurns = maxToolTurns ?? 10
@@ -288,8 +303,72 @@ export class VitaminApp implements VitaminContext {
     this.codingSessionManager = this.initSessionManager(options, defaultModel)
     this.orchestrator = this.initOrchestrator()
     this.toolRegistry = this.initToolRegistry(options)
+    this.pluginCommandRegistry = createPluginCommandRegistry()
+    this.pluginAgentRegistry = createPluginAgentRegistry()
     this.pluginManager = options.pluginRoots?.length
-      ? createPluginManager({ roots: options.pluginRoots, toolRegistry: this.toolRegistry })
+      ? createPluginManager({
+          roots: options.pluginRoots,
+          toolRegistry: this.toolRegistry,
+          hookRegistry: this.hookRegistry,
+          lifecycleAdapters: {
+            loadSkill: this.skillProvider
+              ? async (skill) => {
+                  const loaded = await this.skillProvider?.load(skill.path)
+                  if (!loaded?.success) {
+                    throw new Error(loaded?.error ?? `Failed to load skill "${skill.name}"`)
+                  }
+                }
+              : undefined,
+            unloadSkill: this.skillProvider?.unload
+              ? async (skill) => {
+                  const unloaded = await this.skillProvider?.unload?.(skill.name)
+                  if (!unloaded?.success) {
+                    throw new Error(unloaded?.error ?? `Failed to unload skill "${skill.name}"`)
+                  }
+                }
+              : undefined,
+            connectMcpServer: this.mcpManager
+              ? async (name, config, pluginId) => {
+                  await this.mcpManager?.connect(getPluginMcpServerName(pluginId, name), config)
+                }
+              : undefined,
+            disconnectMcpServer: this.mcpManager
+              ? async (name, pluginId) => {
+                  await this.mcpManager?.disconnect(getPluginMcpServerName(pluginId, name))
+                }
+              : undefined,
+            registerCommand: async (command, pluginId) => {
+              this.pluginCommandRegistry.register(command, pluginId)
+            },
+            unregisterCommand: async (command, pluginId) => {
+              this.pluginCommandRegistry.unregister(command.name, pluginId)
+            },
+            registerAgent: async (agent, pluginId) => {
+              this.pluginAgentRegistry.register(agent, pluginId)
+            },
+            unregisterAgent: async (agent, pluginId) => {
+              this.pluginAgentRegistry.unregister(agent.name, pluginId)
+            },
+            registerDevtools: this.devtools
+              ? async (contribution, pluginId) => {
+                  this.devtools?.registerPluginContribution(contribution, pluginId)
+                }
+              : undefined,
+            unregisterDevtools: this.devtools
+              ? async (pluginId) => {
+                  this.devtools?.unregisterPluginContribution(pluginId)
+                }
+              : undefined,
+            registerLogs: async (contribution, pluginId) => {
+              registerPluginLogContribution(contribution, pluginId)
+            },
+            unregisterLogs: async (pluginId) => {
+              unregisterPluginLogContribution(pluginId)
+            },
+          },
+          trustedPluginIds: options.trustedPluginIds,
+          disabledPluginIds: options.disabledPluginIds,
+        })
       : undefined
     const { permissionRegistry, auditLog } = this.initPermissions()
     this.permissionRegistry = permissionRegistry
@@ -387,6 +466,9 @@ export class VitaminApp implements VitaminContext {
     }
 
     if (this.pluginManager) {
+      if (this.pluginStateStore) {
+        this.pluginManager.applyState(await this.pluginStateStore.load())
+      }
       const diagnostics = await this.pluginManager.loadAll()
       if (diagnostics.errors.length > 0) {
         this.logger.warn(
@@ -708,7 +790,8 @@ export class VitaminApp implements VitaminContext {
           error: 'Skill provider not configured. Pass skillProvider to createVitamin().',
         })
     const searchSkills: SearchSkills | undefined = skillProvider?.search
-      ? (query, searchOptions) => skillProvider.search?.(query, searchOptions) ?? Promise.resolve([])
+      ? (query, searchOptions) =>
+          skillProvider.search?.(query, searchOptions) ?? Promise.resolve([])
       : undefined
     const createSkill: CreateSkill | undefined = skillProvider?.create
       ? (input) => skillProvider.create?.(input) ?? Promise.resolve({ success: false })
@@ -883,4 +966,8 @@ export class VitaminApp implements VitaminContext {
 
 export function createVitamin(options: VitaminAppOptions): VitaminApp {
   return new VitaminApp(options)
+}
+
+function getPluginMcpServerName(pluginId: string, name: string): string {
+  return `${pluginId}:${name}`
 }

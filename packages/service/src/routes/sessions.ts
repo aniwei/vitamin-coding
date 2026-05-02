@@ -52,9 +52,11 @@ export function createSessionsRoute(context: CodingService): Hono {
     if (!session) {
       return c.json({ status: 'error', message: 'no active session' }, 404)
     }
-    return c.json(session.getContextDiagnostics({
-      includePrompt: c.req.query('includePrompt') === 'true',
-    }))
+    return c.json(
+      session.getContextDiagnostics({
+        includePrompt: c.req.query('includePrompt') === 'true',
+      }),
+    )
   })
 
   app.get('/bridge-info', (c) => {
@@ -78,9 +80,11 @@ export function createSessionsRoute(context: CodingService): Hono {
     if (!session) {
       return c.json({ status: 'error', message: 'session not found' }, 404)
     }
-    return c.json(session.getContextDiagnostics({
-      includePrompt: c.req.query('includePrompt') === 'true',
-    }))
+    return c.json(
+      session.getContextDiagnostics({
+        includePrompt: c.req.query('includePrompt') === 'true',
+      }),
+    )
   })
 
   app.post('/:id/resume', (c) => {

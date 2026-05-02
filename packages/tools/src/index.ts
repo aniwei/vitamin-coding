@@ -45,8 +45,32 @@ export {
   applyPluginRuntimePlan,
   disablePluginRuntimePlan,
 } from './plugin-manifest'
-export { PluginManager, createPluginManager, importPluginTool, importPluginHook } from './plugin-manager'
+export {
+  PluginManager,
+  createPluginManager,
+  importPluginTool,
+  importPluginHook,
+} from './plugin-manager'
 export type { PluginManagerOptions, PluginManagerDiagnostics, LoadedPlugin } from './plugin-manager'
+export { createFilePluginStateStore, normalizePluginState } from './plugin-state-store'
+export type {
+  PluginState,
+  PluginStateStore,
+  FilePluginStateStoreOptions,
+} from './plugin-state-store'
+export { importClaudeCodePlugin } from './claude-code-compat'
+export type {
+  ClaudeCodePluginImportOptions,
+  ClaudeCodePluginImportReport,
+  ClaudeCodePluginImportResult,
+} from './claude-code-compat'
+export {
+  PluginCommandRegistry,
+  PluginAgentRegistry,
+  createPluginCommandRegistry,
+  createPluginAgentRegistry,
+} from './plugin-command-registry'
+export type { PluginCommandRegistration, PluginAgentRegistration } from './plugin-command-registry'
 export type {
   PluginManifest,
   PluginManifestStatus,
@@ -56,7 +80,16 @@ export type {
   PluginMcpManifest,
   PluginHookManifest,
   PluginCommandManifest,
+  PluginCommandArgumentManifest,
   PluginAgentManifest,
+  PluginDevtoolsPanelManifest,
+  PluginDevtoolsProviderManifest,
+  PluginDevtoolsActionManifest,
+  PluginDevtoolsManifest,
+  PluginLogSinkManifest,
+  PluginLogFormatterManifest,
+  PluginLogViewerManifest,
+  PluginLogsManifest,
   PluginManifestValidation,
   PluginManifestSummary,
   PluginRuntimePlan,

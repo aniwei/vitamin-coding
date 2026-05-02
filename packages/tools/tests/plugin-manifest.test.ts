@@ -38,8 +38,32 @@ const manifest = {
       module: './hooks/review-hook.js',
     },
   ],
-  commands: [{ name: 'review', description: 'Run review command' }],
-  agents: [{ name: 'reviewer', description: 'Review agent', tools: ['review_patch'] }],
+  commands: [
+    {
+      name: 'review',
+      description: 'Run review command',
+      prompt: 'Review $ARGUMENTS.',
+      arguments: [{ name: 'path', description: 'Target path', required: true, type: 'string' }],
+    },
+  ],
+  agents: [
+    {
+      name: 'reviewer',
+      description: 'Review agent',
+      prompt: 'Review the implementation.',
+      tools: ['review_patch'],
+    },
+  ],
+  devtools: {
+    panels: [{ name: 'review-panel', title: 'Review Panel', path: './devtools/review.html' }],
+    providers: [{ name: 'review-diagnostics', kind: 'diagnostics' as const }],
+    actions: [{ name: 'rerun-review', title: 'Rerun Review' }],
+  },
+  logs: {
+    sinks: [{ name: 'review-sink', kind: 'memory' as const }],
+    formatters: [{ name: 'review-json', mediaType: 'application/json' }],
+    viewers: [{ name: 'review-logs', title: 'Review Logs' }],
+  },
 }
 
 describe('plugin manifest', () => {
@@ -61,6 +85,12 @@ describe('plugin manifest', () => {
       hookCount: 1,
       commandCount: 1,
       agentCount: 1,
+      devtoolsPanelCount: 1,
+      devtoolsProviderCount: 1,
+      devtoolsActionCount: 1,
+      logSinkCount: 1,
+      logFormatterCount: 1,
+      logViewerCount: 1,
       permissions: ['tools', 'filesystem'],
       deferredTools: ['review_patch'],
     })
@@ -76,6 +106,9 @@ describe('plugin manifest', () => {
       tools: [{ name: 'dup' }, { name: 'dup' }],
       skills: [{ name: 'skill', path: '', trigger: 'sometimes' }],
       mcpServers: [{ name: 'mcp' }, { name: 'mcp' }],
+      commands: [{ name: 'bad-command', arguments: [{ required: 'yes', type: 'object' }] }],
+      devtools: { providers: [{ name: 'bad-provider', kind: 'trace' }] },
+      logs: { sinks: [{ name: 'bad-sink', kind: 'raw' }] },
     })
 
     expect(result.valid).toBe(false)
@@ -85,6 +118,11 @@ describe('plugin manifest', () => {
     expect(result.errors).toContain('skills[0].path is required')
     expect(result.errors).toContain('skills[0].trigger must be manual or auto')
     expect(result.errors).toContain('mcpServers.name contains duplicate value: mcp')
+    expect(result.errors).toContain('commands[0].arguments[0].name is required')
+    expect(result.errors).toContain('commands[0].arguments[0].required must be a boolean')
+    expect(result.errors).toContain('commands[0].arguments[0].type must be string, number or boolean')
+    expect(result.errors).toContain('devtools.providers[0].kind must be diagnostics or timeline')
+    expect(result.errors).toContain('logs.sinks[0].kind must be memory, devtools or custom')
     expect(result.warnings).toContain('tools[0].module is missing; loader must provide tool implementation')
   })
 
@@ -115,8 +153,32 @@ describe('plugin manifest', () => {
           module: './hooks/review-hook.js',
         },
       ],
-      commands: [{ name: 'review', description: 'Run review command' }],
-      agents: [{ name: 'reviewer', description: 'Review agent', tools: ['review_patch'] }],
+      commands: [
+        {
+          name: 'review',
+          description: 'Run review command',
+          prompt: 'Review $ARGUMENTS.',
+          arguments: [{ name: 'path', description: 'Target path', required: true, type: 'string' }],
+        },
+      ],
+      agents: [
+        {
+          name: 'reviewer',
+          description: 'Review agent',
+          prompt: 'Review the implementation.',
+          tools: ['review_patch'],
+        },
+      ],
+      devtools: {
+        panels: [{ name: 'review-panel', title: 'Review Panel', path: './devtools/review.html' }],
+        providers: [{ name: 'review-diagnostics', kind: 'diagnostics' }],
+        actions: [{ name: 'rerun-review', title: 'Rerun Review' }],
+      },
+      logs: {
+        sinks: [{ name: 'review-sink', kind: 'memory' }],
+        formatters: [{ name: 'review-json', mediaType: 'application/json' }],
+        viewers: [{ name: 'review-logs', title: 'Review Logs' }],
+      },
       permissions: ['tools', 'filesystem'],
       errors: [],
       warnings: [],
@@ -137,12 +199,20 @@ describe('plugin manifest', () => {
       connectMcpServer: async (name, config, pluginId) => {
         calls.push(`mcp:${name}:${pluginId}:${config.command}`)
       },
+      registerDevtools: async (contribution, pluginId) => {
+        calls.push(`devtools:${pluginId}:${contribution.panels?.[0]?.name}`)
+      },
+      registerLogs: async (contribution, pluginId) => {
+        calls.push(`logs:${pluginId}:${contribution.sinks?.[0]?.name}`)
+      },
     })
 
     expect(calls).toEqual([
       'tool:review_patch:review-tools',
       'skill:code-review:review-tools',
       'mcp:docs:review-tools:mcp-docs',
+      'devtools:review-tools:review-panel',
+      'logs:review-tools:review-sink',
     ])
     expect(result).toMatchObject({
       pluginId: 'review-tools',
@@ -155,6 +225,8 @@ describe('plugin manifest', () => {
         { type: 'hook', name: 'review-hook', status: 'skipped' },
         { type: 'command', name: 'review', status: 'skipped' },
         { type: 'agent', name: 'reviewer', status: 'skipped' },
+        { type: 'devtools', name: 'devtools', status: 'loaded' },
+        { type: 'log', name: 'logs', status: 'loaded' },
       ],
     })
   })
@@ -200,10 +272,24 @@ describe('plugin manifest', () => {
         status: 'skipped',
         warning: 'agent adapter is not configured',
       },
+      {
+        type: 'devtools',
+        name: 'devtools',
+        status: 'skipped',
+        warning: 'devtools adapter is not configured',
+      },
+      {
+        type: 'log',
+        name: 'logs',
+        status: 'skipped',
+        warning: 'log adapter is not configured',
+      },
     ])
     expect(result.errors).toEqual(['tool "review_patch" failed: registration failed'])
     expect(result.warnings).toContain('skill "code-review": skill loader adapter is not configured')
     expect(result.warnings).toContain('mcp "docs": mcp manager adapter is not configured')
+    expect(result.warnings).toContain('devtools "devtools": devtools adapter is not configured')
+    expect(result.warnings).toContain('log "logs": log adapter is not configured')
   })
 
   it('disables runtime plan through host lifecycle adapters', async () => {
@@ -219,15 +305,37 @@ describe('plugin manifest', () => {
       disconnectMcpServer: async (name, pluginId) => {
         calls.push(`mcp:${name}:${pluginId}`)
       },
+      unloadHook: async (hook, pluginId) => {
+        calls.push(`hook:${hook.name}:${pluginId}`)
+      },
+      unregisterCommand: async (command, pluginId) => {
+        calls.push(`command:${command.name}:${pluginId}`)
+      },
+      unregisterAgent: async (agent, pluginId) => {
+        calls.push(`agent:${agent.name}:${pluginId}`)
+      },
+      unregisterDevtools: async (pluginId) => {
+        calls.push(`devtools:${pluginId}`)
+      },
+      unregisterLogs: async (pluginId) => {
+        calls.push(`logs:${pluginId}`)
+      },
     })
 
     expect(calls).toEqual([
       'tool:review_patch:review-tools',
       'skill:code-review:review-tools',
       'mcp:docs:review-tools',
+      'hook:review-hook:review-tools',
+      'command:review:review-tools',
+      'agent:reviewer:review-tools',
+      'devtools:review-tools',
+      'logs:review-tools',
     ])
     expect(result.enabled).toBe(false)
     expect(result.steps.map((step) => step.status)).toEqual([
+      'disabled',
+      'disabled',
       'disabled',
       'disabled',
       'disabled',
@@ -276,5 +384,20 @@ describe('plugin manifest', () => {
     expect(invalidManifest?.validation.valid).toBe(false)
     expect(invalidManifest?.validation.errors[0]).toContain('Invalid JSON')
     expect(result.errors[0]).toContain('Cannot read plugin root')
+  })
+
+  it('discovers a plugin when the root itself is the plugin directory', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugin-dir-'))
+    await writeFile(join(root, 'plugin.json'), JSON.stringify(manifest), 'utf-8')
+
+    const result = await discoverPluginManifests([root])
+
+    expect(result.errors).toEqual([])
+    expect(result.manifests).toHaveLength(1)
+    expect(result.manifests[0]).toMatchObject({
+      manifest: { id: 'review-tools' },
+      runtimePlan: { pluginId: 'review-tools' },
+      validation: { valid: true },
+    })
   })
 })

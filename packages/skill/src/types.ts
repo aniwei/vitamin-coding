@@ -160,6 +160,10 @@ export interface SkillEvents extends Events {
 export interface SkillProvider {
   /** 从指定路径加载 SKILL.md 定义 */
   load(path: string): Promise<{ success: boolean; name?: string; error?: string }>
+  /** 卸载已加载或已注册的 skill（插件 lifecycle 可选反向 adapter） */
+  unload?(
+    name: string,
+  ): Promise<{ success: boolean; error?: string }> | { success: boolean; error?: string }
   /** 执行已加载的 skill */
   execute(
     name: string,

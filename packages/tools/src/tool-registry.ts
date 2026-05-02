@@ -202,7 +202,9 @@ export class ToolRegistry {
       'Categories:',
     ]
 
-    for (const [category, names] of [...categories.entries()].sort(([a], [b]) => a.localeCompare(b))) {
+    for (const [category, names] of [...categories.entries()].sort(([a], [b]) =>
+      a.localeCompare(b),
+    )) {
       lines.push(`- ${category}: ${names.sort().join(', ')}`)
     }
 
@@ -223,7 +225,10 @@ export class ToolRegistry {
       '',
       ...deferred
         .sort((a, b) => a.name.localeCompare(b.name))
-        .map((tool) => `- ${tool.name} [${tool.metadata.category ?? 'uncategorized'}]: ${tool.description}`),
+        .map(
+          (tool) =>
+            `- ${tool.name} [${tool.metadata.category ?? 'uncategorized'}]: ${tool.description}`,
+        ),
     ]
 
     return lines.join('\n')

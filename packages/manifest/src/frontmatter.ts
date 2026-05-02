@@ -85,10 +85,7 @@ export function parseYamlFrontmatter(content: string, filePath?: string): Parsed
   }
 }
 
-export function serializeYamlFrontmatter(
-  metadata: Record<string, unknown>,
-  body: string,
-): string {
+export function serializeYamlFrontmatter(metadata: Record<string, unknown>, body: string): string {
   const yaml = stringifyYaml(metadata).trimEnd()
   const trimmedBody = body.trim()
   return `---\n${yaml}\n---\n\n${trimmedBody}\n`

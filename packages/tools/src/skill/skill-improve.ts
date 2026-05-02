@@ -34,7 +34,10 @@ export function createSkillImprove(improve?: ImproveSkill): AgentTool<SkillImpro
       if (result.success) {
         return {
           content: [
-            { type: 'text', text: `Skill "${result.name ?? params.name}" improved at ${result.path}` },
+            {
+              type: 'text',
+              text: `Skill "${result.name ?? params.name}" improved at ${result.path}`,
+            },
           ],
         }
       }

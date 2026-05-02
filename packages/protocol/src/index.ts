@@ -19,8 +19,5 @@ export type {
   DebuggerSetBreakpointsActiveData,
 } from './types'
 
-export {
-  validateWebSocketMessage,
-  isValidWebSocketMessage,
-} from './validation'
+export { validateWebSocketMessage, isValidWebSocketMessage } from './validation'
 export type { WebSocketMessageValidation } from './validation'

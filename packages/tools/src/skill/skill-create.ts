@@ -38,7 +38,10 @@ export function createSkillCreate(create?: CreateSkill): AgentTool<SkillCreateAr
       if (result.success) {
         return {
           content: [
-            { type: 'text', text: `Skill "${result.name ?? params.name}" created at ${result.path}` },
+            {
+              type: 'text',
+              text: `Skill "${result.name ?? params.name}" created at ${result.path}`,
+            },
           ],
         }
       }

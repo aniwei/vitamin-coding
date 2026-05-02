@@ -4,6 +4,7 @@ import type {
   PermissionAuditEntry,
   RuleEffect,
 } from './types'
+import { redactLogValue } from '@vitamin/shared'
 
 export class PermissionAuditLog {
   private entries: PermissionAuditEntry[] = []
@@ -27,7 +28,7 @@ export class PermissionAuditLog {
 
     this.entries.push(entry)
     for (const listener of this.listeners) {
-      listener(entry)
+      listener(redactPermissionAuditEntry(entry))
     }
 
     if (this.entries.length > this.maxEntries) {
@@ -44,6 +45,10 @@ export class PermissionAuditLog {
       result = result.filter((e) => e.decision.effect === filter.effect)
     }
     return result
+  }
+
+  getRedactedEntries(filter?: { sessionId?: string; effect?: RuleEffect }): PermissionAuditEntry[] {
+    return this.getEntries(filter).map((entry) => redactPermissionAuditEntry(entry))
   }
 
   getDenyCount(sessionId?: string): number {
@@ -71,5 +76,15 @@ export class PermissionAuditLog {
 
   get size(): number {
     return this.entries.length
+  }
+}
+
+function redactPermissionAuditEntry(entry: PermissionAuditEntry): PermissionAuditEntry {
+  return {
+    ...entry,
+    metadata: entry.metadata
+      ? (redactLogValue(entry.metadata) as Record<string, unknown>)
+      : undefined,
+    decision: { ...entry.decision },
   }
 }

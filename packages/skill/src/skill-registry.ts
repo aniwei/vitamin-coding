@@ -214,7 +214,10 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
 
     try {
       const definition = parseSkillContent(content, skillFile, skillDir, [])
-      this.register(definition, { type: 'project', root: path.join(this.workspaceDir, '.vitamin', 'skills') })
+      this.register(definition, {
+        type: 'project',
+        root: path.join(this.workspaceDir, '.vitamin', 'skills'),
+      })
       return { success: true, name: input.name, path: skillFile }
     } catch (error) {
       return { success: false, error: error instanceof Error ? error.message : String(error) }

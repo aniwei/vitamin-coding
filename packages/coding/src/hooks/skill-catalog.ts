@@ -10,7 +10,9 @@ export function createSkillCatalogHook(provider: SkillProvider): HookSpec {
     priority: 23,
     handle: async (_input, output) => {
       const catalog = await provider.catalog?.()
-      if (!catalog) return
+      if (!catalog) {
+        return
+      }
 
       output.assembly = appendPromptSection(output.assembly, {
         key: 'skill-catalog',

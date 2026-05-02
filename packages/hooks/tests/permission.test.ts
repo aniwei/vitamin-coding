@@ -841,6 +841,30 @@ describe('PermissionAuditLog', () => {
 
     expect(entries).toEqual(['s1:deny'])
   })
+
+  it('exposes redacted audit copies to subscribers', () => {
+    const log = new PermissionAuditLog()
+    const observed: unknown[] = []
+    const unsubscribe = log.onRecord((entry) => {
+      observed.push(entry.metadata)
+    })
+
+    log.record(makeContext({ metadata: { token: 'secret-token', safe: 'visible' } }), {
+      effect: 'allow',
+      policyName: 'p',
+      ruleName: 'r',
+      timestamp: 1,
+      evaluatedPolicies: 1,
+    })
+    unsubscribe()
+
+    expect(log.getEntries()[0]!.metadata).toEqual({ token: 'secret-token', safe: 'visible' })
+    expect(log.getRedactedEntries()[0]!.metadata).toEqual({
+      token: '[REDACTED]',
+      safe: 'visible',
+    })
+    expect(observed).toEqual([{ token: '[REDACTED]', safe: 'visible' }])
+  })
 })
 
 // ═══ compilePolicyFromSetting ═══

@@ -1,11 +1,15 @@
+import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
 import { createDefaultProviderRegistry, createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent } from '@vitamin/ai'
 import { createHookRegistry } from '@vitamin/hooks'
 import { InteractiveMode, runJsonMode, runPrintMode } from '@vitamin/coding'
+import { createFilePluginStateStore } from '@vitamin/tools'
 
 import { createVitamin, type VitaminAppOptions } from '@vitamin/coding'
 import { createInMemoryResourceManager } from '@vitamin/resources'
-import { parseCLI } from '../src/cli'
+import { formatPluginDiagnostics, parseCLI, runPluginCommand } from '../src/cli'
 
 function makeModel(): Model {
   return {
@@ -149,5 +153,194 @@ describe('parseCLI', () => {
 
     expect(parsed.options.mode).toBe('print')
     expect(parsed.options.prompt).toBe('hello')
+  })
+})
+
+describe('plugin diagnostics formatting', () => {
+  it('shows lifecycle steps and skipped reasons for plugin list output', () => {
+    const output = formatPluginDiagnostics({
+      roots: ['/workspace/.vitamin/plugins'],
+      state: { trustedPluginIds: ['review'], disabledPluginIds: [] },
+      discovered: [
+        {
+          path: '/workspace/.vitamin/plugins/review/plugin.json',
+          manifest: {
+            id: 'review',
+            name: 'Review',
+            version: '1.0.0',
+            commands: [{ name: 'review' }],
+            agents: [{ name: 'reviewer' }],
+          },
+          validation: { valid: true, errors: [], warnings: [] },
+        },
+      ],
+      loaded: [
+        {
+          pluginId: 'review',
+          manifestPath: '/workspace/.vitamin/plugins/review/plugin.json',
+          manifest: {
+            id: 'review',
+            name: 'Review',
+            version: '1.0.0',
+            commands: [{ name: 'review' }],
+            agents: [{ name: 'reviewer' }],
+          },
+          hookNames: [],
+          result: {
+            pluginId: 'review',
+            enabled: true,
+            errors: [],
+            warnings: [],
+            steps: [
+              {
+                type: 'command',
+                name: 'review',
+                status: 'skipped',
+                warning: 'command adapter is not configured',
+              },
+              {
+                type: 'agent',
+                name: 'reviewer',
+                status: 'skipped',
+                warning: 'agent adapter is not configured',
+              },
+            ],
+          },
+        },
+      ],
+      results: [
+        {
+          pluginId: 'review',
+          enabled: true,
+          errors: [],
+          warnings: [],
+          steps: [
+            {
+              type: 'command',
+              name: 'review',
+              status: 'skipped',
+              warning: 'command adapter is not configured',
+            },
+            {
+              type: 'agent',
+              name: 'reviewer',
+              status: 'skipped',
+              warning: 'agent adapter is not configured',
+            },
+          ],
+        },
+      ],
+      errors: [],
+    })
+
+    expect(output).toContain('review\tloaded\ttrusted\t/workspace/.vitamin/plugins/review/plugin.json')
+    expect(output).toContain('command:review\tskipped\tcommand adapter is not configured')
+    expect(output).toContain('agent:reviewer\tskipped\tagent adapter is not configured')
+  })
+
+  it('persists plugin state changes from plugin commands', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vitamin-cli-plugin-state-'))
+    const pluginRoot = join(root, '.vitamin/plugins')
+    const pluginDir = join(pluginRoot, 'review')
+    await mkdir(pluginDir, { recursive: true })
+    await writeFile(
+      join(pluginDir, 'plugin.json'),
+      JSON.stringify({
+        id: 'review',
+        name: 'Review',
+        version: '1.0.0',
+        commands: [{ name: 'review' }],
+      }),
+      'utf-8',
+    )
+
+    const stateStore = createFilePluginStateStore({ workspaceDir: root })
+    const pluginApp = createVitamin(makeBaseOptions({
+      workspaceDir: root,
+      pluginRoots: [pluginRoot],
+      pluginStateStore: stateStore,
+    }))
+    await pluginApp.start()
+
+    const writes: string[] = []
+    const originalWrite = process.stdout.write
+    process.stdout.write = ((chunk: string | Uint8Array) => {
+      writes.push(String(chunk))
+      return true
+    }) as typeof process.stdout.write
+    try {
+      await runPluginCommand(pluginApp, 'trust review', stateStore)
+      await runPluginCommand(pluginApp, 'disable review', stateStore)
+    } finally {
+      process.stdout.write = originalWrite
+      await pluginApp.stop()
+    }
+
+    expect(writes.join('')).toContain('Plugin trusted: review')
+    expect(writes.join('')).toContain('Plugin disabled: review')
+    expect(await stateStore.load()).toEqual({
+      trustedPluginIds: ['review'],
+      disabledPluginIds: ['review'],
+    })
+  })
+
+  it('imports a Claude Code plugin into the project plugin root', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'vitamin-cli-claude-import-'))
+    const pluginRoot = join(root, '.vitamin/plugins')
+    const sourceDir = join(root, 'claude-review')
+    await mkdir(join(sourceDir, '.claude-plugin'), { recursive: true })
+    await mkdir(join(sourceDir, 'skills/review'), { recursive: true })
+    await mkdir(join(sourceDir, 'commands'), { recursive: true })
+    await writeFile(
+      join(sourceDir, '.claude-plugin/plugin.json'),
+      JSON.stringify({
+        name: 'claude-review',
+        description: 'Claude Review',
+        version: '1.2.3',
+      }),
+      'utf-8',
+    )
+    await writeFile(
+      join(sourceDir, 'skills/review/SKILL.md'),
+      '---\nname: review-skill\n---\n# Review skill\n',
+      'utf-8',
+    )
+    await writeFile(
+      join(sourceDir, 'commands/review.md'),
+      '---\nname: review\n---\nReview command\n',
+      'utf-8',
+    )
+
+    const pluginApp = createVitamin(makeBaseOptions({
+      workspaceDir: root,
+      pluginRoots: [pluginRoot],
+    }))
+    await pluginApp.start()
+
+    const writes: string[] = []
+    const originalWrite = process.stdout.write
+    process.stdout.write = ((chunk: string | Uint8Array) => {
+      writes.push(String(chunk))
+      return true
+    }) as typeof process.stdout.write
+    try {
+      const code = await runPluginCommand(pluginApp, `import-claude-code ${sourceDir}`)
+      expect(code).toBe(0)
+    } finally {
+      process.stdout.write = originalWrite
+      await pluginApp.stop()
+    }
+
+    const output = writes.join('')
+    const manifest = JSON.parse(
+      await readFile(join(pluginRoot, 'claude-review/plugin.json'), 'utf-8'),
+    ) as { id: string; skills?: unknown[]; commands?: unknown[] }
+
+    expect(output).toContain('Claude Code plugin imported: claude-review')
+    expect(output).toContain('skills\t1')
+    expect(output).toContain('commands\t1')
+    expect(manifest.id).toBe('claude-review')
+    expect(manifest.skills).toHaveLength(1)
+    expect(manifest.commands).toHaveLength(1)
   })
 })

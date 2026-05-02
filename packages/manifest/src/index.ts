@@ -4,8 +4,4 @@ export {
   parseYamlFrontmatter,
   serializeYamlFrontmatter,
 } from './frontmatter'
-export type {
-  FrontmatterErrorCode,
-  ExtractedFrontmatter,
-  ParsedFrontmatter,
-} from './frontmatter'
+export type { FrontmatterErrorCode, ExtractedFrontmatter, ParsedFrontmatter } from './frontmatter'

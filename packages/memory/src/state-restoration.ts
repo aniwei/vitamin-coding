@@ -336,7 +336,11 @@ function extractSkillNamesFromText(text: string): string[] {
 
   for (const objectText of extractJsonObjects(text)) {
     try {
-      const parsed = JSON.parse(objectText) as { skillName?: unknown; skill_name?: unknown; name?: unknown }
+      const parsed = JSON.parse(objectText) as {
+        skillName?: unknown
+        skill_name?: unknown
+        name?: unknown
+      }
       const value = parsed.skillName ?? parsed.skill_name ?? parsed.name
       if (typeof value === 'string' && value.trim()) {
         names.add(value.trim())

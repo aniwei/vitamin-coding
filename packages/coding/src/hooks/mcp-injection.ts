@@ -10,7 +10,9 @@ export function createMcpContextHook(manager: McpManager): HookSpec {
     priority: 24,
     handle: async (_input, output) => {
       const content = buildMcpContextSection(manager)
-      if (!content) return
+      if (!content) {
+        return
+      }
 
       output.assembly = appendPromptSection(output.assembly, {
         key: 'mcp-context',

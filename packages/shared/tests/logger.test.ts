@@ -1,6 +1,12 @@
 import { readFile } from 'node:fs/promises'
 import { describe, expect, it } from 'vitest'
-import { createLogger, getRootLogger } from '../src/logger'
+import {
+  createLogger,
+  getRootLogger,
+  getPluginLogSinkEntries,
+  registerPluginLogContribution,
+  unregisterPluginLogContribution,
+} from '../src/logger'
 import { LOG_FILE } from '@vitamin/env'
 
 describe('createLogger', () => {
@@ -48,6 +54,42 @@ describe('createLogger', () => {
         expect(parsed.name).toBe('test:file-output')
       }
     })
+  })
+})
+
+describe('plugin log contributions', () => {
+  it('#then plugin sinks receive redacted log events', async () => {
+    registerPluginLogContribution({ sinks: [{ name: 'memory-sink', kind: 'memory' }] }, 'log-plugin')
+    const log = createLogger('test:plugin-sink')
+    const marker = `plugin-log-${Date.now()}`
+
+    log.info(
+      {
+        marker,
+        token: 'secret-token',
+        nested: { apiKey: 'secret-key', safe: 'visible' },
+      },
+      'plugin sink redaction test',
+    )
+
+    let entries = getPluginLogSinkEntries('log-plugin')
+    for (let attempt = 0; attempt < 10; attempt++) {
+      entries = getPluginLogSinkEntries('log-plugin').filter((entry) =>
+        JSON.stringify(entry.event).includes(marker),
+      )
+      if (entries.length > 0) break
+      await new Promise((resolve) => setTimeout(resolve, 50))
+    }
+
+    expect(entries).toHaveLength(1)
+    expect(entries[0]!.sinkName).toBe('memory-sink')
+    expect(entries[0]!.event).toMatchObject({
+      marker,
+      token: '[REDACTED]',
+      nested: { apiKey: '[REDACTED]', safe: 'visible' },
+    })
+
+    unregisterPluginLogContribution('log-plugin')
   })
 })
 

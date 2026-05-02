@@ -17,30 +17,30 @@
 
 ## 模块统计
 
-| Package | TS/TSX 文件数 | 源码行数 | 内部依赖数 | 被内部依赖数 | 判断 |
-| --- | ---: | ---: | ---: | ---: | --- |
-| `@vitamin/opendev-ui` | 131 | 19141 | 0 | 0 | 前端应用层，存在大量可抽通用 UI/API 辅助 |
-| `@vitamin/tools` | 63 | 8233 | 8 | 3 | 能力聚合偏重，适合拆 schema/tool-kit/plugin-kit |
-| `@vitamin/memory` | 20 | 4363 | 4 | 2 | 领域能力独立，少量解析/预算模型可公共化 |
-| `@vitamin/coding` | 19 | 3778 | 15 | 2 | 应用编排层，不适合再作为公共依赖 |
-| `@vitamin/ai` | 17 | 3565 | 2 | 8 | 模型协议公共层，应保持 provider 纯度 |
-| `@vitamin/hooks` | 42 | 3447 | 2 | 5 | 横切治理层，可承接 policy/validation 抽象 |
-| `@vitamin/service` | 20 | 2694 | 6 | 0 | 服务应用层，协议可抽，路由实现不宜下沉 |
-| `@vitamin/agent` | 11 | 2264 | 5 | 7 | 核心 agent runtime，适合作为 tool/session 协议边界 |
-| `@vitamin/mcp` | 9 | 2019 | 2 | 1 | MCP 协议能力层，可移出 tools 下重复 MCP 代码 |
-| `@vitamin/swarm` | 12 | 1803 | 3 | 0 | 高阶编排层，可复用 orchestrator/agent 基础抽象 |
-| `@vitamin/devtools` | 9 | 1337 | 2 | 3 | 调试基础设施，可和 service 共享 WS/debug protocol |
-| `@vitamin/shared` | 18 | 1241 | 2 | 15 | 现有公共基础层，适合继续接纳低耦合纯工具 |
-| `@vitamin/session` | 10 | 1199 | 2 | 1 | 会话存储模型，应保持独立 |
-| `@vitamin/orchestrator` | 7 | 1195 | 5 | 1 | 编排领域层，可与 swarm 进一步收敛边界 |
-| `@vitamin/setting` | 11 | 985 | 4 | 6 | 配置公共层，适合承接持久化配置 schema |
-| `@vitamin/skill` | 6 | 958 | 2 | 1 | Skill 领域层，解析能力可与 manifest/frontmatter 抽象复用 |
-| `@vitamin/prompt` | 13 | 865 | 1 | 2 | Prompt 公共层，section/diagnostics 应保持公共 |
-| `@vitamin/persistence` | 9 | 544 | 1 | 3 | 存储抽象公共层 |
-| `@vitamin/resources` | 6 | 531 | 4 | 1 | 资源组合层，依赖偏多但规模小 |
-| `@vitamin/cli` | 3 | 358 | 5 | 0 | 命令入口层，不适合作公共依赖 |
-| `@vitamin/invariant` | 4 | 309 | 0 | 5 | 编译/断言基础层 |
-| `@vitamin/env` | 1 | 149 | 0 | 9 | 常量层，但已开始承载跨领域常量，需治理 |
+| Package                 | TS/TSX 文件数 | 源码行数 | 内部依赖数 | 被内部依赖数 | 判断                                                     |
+| ----------------------- | ------------: | -------: | ---------: | -----------: | -------------------------------------------------------- |
+| `@vitamin/opendev-ui`   |           131 |    19141 |          0 |            0 | 前端应用层，存在大量可抽通用 UI/API 辅助                 |
+| `@vitamin/tools`        |            63 |     8233 |          8 |            3 | 能力聚合偏重，适合拆 schema/tool-kit/plugin-kit          |
+| `@vitamin/memory`       |            20 |     4363 |          4 |            2 | 领域能力独立，少量解析/预算模型可公共化                  |
+| `@vitamin/coding`       |            19 |     3778 |         15 |            2 | 应用编排层，不适合再作为公共依赖                         |
+| `@vitamin/ai`           |            17 |     3565 |          2 |            8 | 模型协议公共层，应保持 provider 纯度                     |
+| `@vitamin/hooks`        |            42 |     3447 |          2 |            5 | 横切治理层，可承接 policy/validation 抽象                |
+| `@vitamin/service`      |            20 |     2694 |          6 |            0 | 服务应用层，协议可抽，路由实现不宜下沉                   |
+| `@vitamin/agent`        |            11 |     2264 |          5 |            7 | 核心 agent runtime，适合作为 tool/session 协议边界       |
+| `@vitamin/mcp`          |             9 |     2019 |          2 |            1 | MCP 协议能力层，可移出 tools 下重复 MCP 代码             |
+| `@vitamin/swarm`        |            12 |     1803 |          3 |            0 | 高阶编排层，可复用 orchestrator/agent 基础抽象           |
+| `@vitamin/devtools`     |             9 |     1337 |          2 |            3 | 调试基础设施，可和 service 共享 WS/debug protocol        |
+| `@vitamin/shared`       |            18 |     1241 |          2 |           15 | 现有公共基础层，适合继续接纳低耦合纯工具                 |
+| `@vitamin/session`      |            10 |     1199 |          2 |            1 | 会话存储模型，应保持独立                                 |
+| `@vitamin/orchestrator` |             7 |     1195 |          5 |            1 | 编排领域层，可与 swarm 进一步收敛边界                    |
+| `@vitamin/setting`      |            11 |      985 |          4 |            6 | 配置公共层，适合承接持久化配置 schema                    |
+| `@vitamin/skill`        |             6 |      958 |          2 |            1 | Skill 领域层，解析能力可与 manifest/frontmatter 抽象复用 |
+| `@vitamin/prompt`       |            13 |      865 |          1 |            2 | Prompt 公共层，section/diagnostics 应保持公共            |
+| `@vitamin/persistence`  |             9 |      544 |          1 |            3 | 存储抽象公共层                                           |
+| `@vitamin/resources`    |             6 |      531 |          4 |            1 | 资源组合层，依赖偏多但规模小                             |
+| `@vitamin/cli`          |             3 |      358 |          5 |            0 | 命令入口层，不适合作公共依赖                             |
+| `@vitamin/invariant`    |             4 |      309 |          0 |            5 | 编译/断言基础层                                          |
+| `@vitamin/env`          |             1 |      149 |          0 |            9 | 常量层，但已开始承载跨领域常量，需治理                   |
 
 ## 当前公共模块边界
 
@@ -60,18 +60,18 @@
 
 ## 可抽象候选
 
-| 优先级 | 候选公共模块 | 当前重复/耦合点 | 建议归属 | 收益 | 风险 |
-| --- | --- | --- | --- | --- | --- |
-| P0 | `@vitamin/protocol` | `service/src/types.ts`、`service/src/ws-protocol.ts`、`opendev-ui/src/types/index.ts` 的 WebSocket message 类型重复 | 新包或 `@vitamin/shared/protocol` | 前后端共用 WS/CDP/Event 类型和校验，减少漂移 | 需要让 UI 能消费 workspace 包或生成类型 |
-| P0 | `@vitamin/client` 或 `@vitamin/http-client` | `opendev-ui/src/api/client.ts`、`api/mcp.ts`、`api/traces.ts` 重复 fetch/error/json/camelCase | 新包或 UI 内先建 `src/api/core.ts` | 大幅减少 API 客户端重复，统一错误模型 | 若直接公共化要处理浏览器/Node fetch 差异 |
-| P0 | `@vitamin/data` / `@vitamin/shape` | `asRecord/readString/readNumber/normalizeToCamel/toCamelKey` 在 service/UI 多处重复 | `@vitamin/shared` browser-safe 子导出 | 纯函数低风险，service/UI/hooks 都可复用 | 命名要克制，避免变成杂物包 |
-| P1 | `@vitamin/schema` / `@vitamin/toolkit` | 大量 tool 参数 schema、`validateToolArgs`、MCP JSON Schema -> Zod、Plugin manifest 手写校验 | 新包或 `@vitamin/tools/schema` | 统一 Zod/JSON Schema/manifest 校验，减少 tools/mcp/plugin 重复 | `zod` 版本目前 agent 用 v3，tools/mcp 用 v4，需要先统一 |
-| P1 | `@vitamin/manifest` | Skill frontmatter、Memory frontmatter、Plugin manifest、Markdown frontmatter 解析分散 | 新包或扩展 `@vitamin/shared/markdown` | 统一 frontmatter 解析、诊断、序列化 | 领域字段不同，需保留领域 schema 层 |
-| P1 | `@vitamin/errors` | 多包 `throw new Error` 和局部错误类混杂；shared 已有基础 error 类型 | 扩展 `@vitamin/shared/error` | 错误 code/cause/retryable/metadata 一致，CLI/service 展示更稳 | 一次性迁移成本高，建议渐进 |
-| P1 | `@vitamin/runtime` | Deferred、tool side-effect、abort/heartbeat/retry、queue 等运行时模式分散 | 新包或 `@vitamin/agent/runtime` | agent/orchestrator/swarm/service 共享异步运行时工具 | 容易过度抽象，需从稳定纯工具开始 |
-| P2 | `@vitamin/fs` | tools fs/read/write/edit、shared fs-extra、memory file snapshot、path normalize 交叉 | 新包或扩展 `@vitamin/shared/fs` | 统一路径校验、workspace 边界、文件变更摘要 | 权限语义属于 hooks/tools，不应下沉 |
-| P2 | `@vitamin/bridge` | service websocket manager、debug bridge、UI websocket client 共享连接状态协议 | 基于 `@vitamin/protocol` 后再抽 | Bridge 可靠性可复用到 CLI/TUI | 当前实现仍偏应用，先抽协议更稳 |
-| P2 | `@vitamin/orchestration-core` | orchestrator、swarm、tools/orchestration 有相近 task/agent/task store 概念 | 后续 RFC | 收敛 task lifecycle、background task、subagent result | 当前语义未完全一致，贸然抽象风险高 |
+| 优先级 | 候选公共模块                                | 当前重复/耦合点                                                                                                     | 建议归属                              | 收益                                                           | 风险                                                    |
+| ------ | ------------------------------------------- | ------------------------------------------------------------------------------------------------------------------- | ------------------------------------- | -------------------------------------------------------------- | ------------------------------------------------------- |
+| P0     | `@vitamin/protocol`                         | `service/src/types.ts`、`service/src/ws-protocol.ts`、`opendev-ui/src/types/index.ts` 的 WebSocket message 类型重复 | 新包或 `@vitamin/shared/protocol`     | 前后端共用 WS/CDP/Event 类型和校验，减少漂移                   | 需要让 UI 能消费 workspace 包或生成类型                 |
+| P0     | `@vitamin/client` 或 `@vitamin/http-client` | `opendev-ui/src/api/client.ts`、`api/mcp.ts`、`api/traces.ts` 重复 fetch/error/json/camelCase                       | 新包或 UI 内先建 `src/api/core.ts`    | 大幅减少 API 客户端重复，统一错误模型                          | 若直接公共化要处理浏览器/Node fetch 差异                |
+| P0     | `@vitamin/data` / `@vitamin/shape`          | `asRecord/readString/readNumber/normalizeToCamel/toCamelKey` 在 service/UI 多处重复                                 | `@vitamin/shared` browser-safe 子导出 | 纯函数低风险，service/UI/hooks 都可复用                        | 命名要克制，避免变成杂物包                              |
+| P1     | `@vitamin/schema` / `@vitamin/toolkit`      | 大量 tool 参数 schema、`validateToolArgs`、MCP JSON Schema -> Zod、Plugin manifest 手写校验                         | 新包或 `@vitamin/tools/schema`        | 统一 Zod/JSON Schema/manifest 校验，减少 tools/mcp/plugin 重复 | `zod` 版本目前 agent 用 v3，tools/mcp 用 v4，需要先统一 |
+| P1     | `@vitamin/manifest`                         | Skill frontmatter、Memory frontmatter、Plugin manifest、Markdown frontmatter 解析分散                               | 新包或扩展 `@vitamin/shared/markdown` | 统一 frontmatter 解析、诊断、序列化                            | 领域字段不同，需保留领域 schema 层                      |
+| P1     | `@vitamin/errors`                           | 多包 `throw new Error` 和局部错误类混杂；shared 已有基础 error 类型                                                 | 扩展 `@vitamin/shared/error`          | 错误 code/cause/retryable/metadata 一致，CLI/service 展示更稳  | 一次性迁移成本高，建议渐进                              |
+| P1     | `@vitamin/runtime`                          | Deferred、tool side-effect、abort/heartbeat/retry、queue 等运行时模式分散                                           | 新包或 `@vitamin/agent/runtime`       | agent/orchestrator/swarm/service 共享异步运行时工具            | 容易过度抽象，需从稳定纯工具开始                        |
+| P2     | `@vitamin/fs`                               | tools fs/read/write/edit、shared fs-extra、memory file snapshot、path normalize 交叉                                | 新包或扩展 `@vitamin/shared/fs`       | 统一路径校验、workspace 边界、文件变更摘要                     | 权限语义属于 hooks/tools，不应下沉                      |
+| P2     | `@vitamin/bridge`                           | service websocket manager、debug bridge、UI websocket client 共享连接状态协议                                       | 基于 `@vitamin/protocol` 后再抽       | Bridge 可靠性可复用到 CLI/TUI                                  | 当前实现仍偏应用，先抽协议更稳                          |
+| P2     | `@vitamin/orchestration-core`               | orchestrator、swarm、tools/orchestration 有相近 task/agent/task store 概念                                          | 后续 RFC                              | 收敛 task lifecycle、background task、subagent result          | 当前语义未完全一致，贸然抽象风险高                      |
 
 ## 重复热点分析
 

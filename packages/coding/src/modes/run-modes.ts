@@ -1,4 +1,10 @@
 import type { AgentMessage } from '@vitamin/agent'
+import type {
+  PluginAgentManifest,
+  PluginAgentRegistry,
+  PluginCommandManifest,
+  PluginCommandRegistry,
+} from '@vitamin/tools'
 import type { AgentSession } from '../session/agent-session'
 import type { ContextDiagnostics } from '../session/types'
 
@@ -28,6 +34,14 @@ export type InteractiveResult =
   | { type: 'system'; text: string }
   | { type: 'exit' }
   | { type: 'noop' }
+
+export interface InteractiveModeOptions {
+  pluginAgentRegistry?: PluginAgentRegistry
+  pluginCommandRegistry?: PluginCommandRegistry
+  requirePluginConfirmation?: boolean
+}
+
+const PLUGIN_CONFIRM_FLAG = '--confirm-plugin'
 
 export async function runPrintMode(
   session: AgentSession,
@@ -87,7 +101,18 @@ export async function runRpcMode(session: AgentSession, request: RpcRequest): Pr
 }
 
 export class InteractiveMode {
-  constructor(private readonly session: AgentSession) {}
+  private readonly pluginAgentRegistry?: PluginAgentRegistry
+  private readonly pluginCommandRegistry?: PluginCommandRegistry
+  private readonly requirePluginConfirmation: boolean
+
+  constructor(
+    private readonly session: AgentSession,
+    options: InteractiveModeOptions = {},
+  ) {
+    this.pluginAgentRegistry = options.pluginAgentRegistry
+    this.pluginCommandRegistry = options.pluginCommandRegistry
+    this.requirePluginConfirmation = options.requirePluginConfirmation ?? false
+  }
 
   async handleInput(input: string): Promise<InteractiveResult> {
     const text = input.trim()
@@ -101,15 +126,28 @@ export class InteractiveMode {
     }
 
     const [command, ...rest] = text.slice(1).split(/\s+/)
+    if (!command) {
+      return { type: 'noop' }
+    }
 
     if (command === 'exit' || command === 'quit') {
       return { type: 'exit' }
     }
 
     if (command === 'help') {
+      const pluginAgents = this.pluginAgentRegistry?.list() ?? []
+      const pluginCommands = this.pluginCommandRegistry?.list() ?? []
+      const suffix =
+        pluginCommands.length > 0
+          ? `\nPlugin commands: ${pluginCommands.map((entry) => `/${entry.command.name}`).join(', ')}`
+          : ''
+      const agentSuffix =
+        pluginAgents.length > 0
+          ? `\nPlugin agents: ${pluginAgents.map((entry) => entry.agent.name).join(', ')}`
+          : ''
       return {
         type: 'system',
-        text: 'Commands: /help, /context [--show-prompt], /abort, /compact <count> <summary>, /exit',
+        text: `Commands: /help, /context [--show-prompt], /abort, /compact <count> <summary>, /agent <name> [args], /exit${suffix}${agentSuffix}`,
       }
     }
 
@@ -133,8 +171,235 @@ export class InteractiveMode {
       return { type: 'system', text: 'Compaction complete.' }
     }
 
+    if (command === 'agent') {
+      const [agentName, ...agentArgs] = rest
+      if (!agentName) {
+        const pluginAgents = this.pluginAgentRegistry?.list() ?? []
+        const names = pluginAgents.map((entry) => entry.agent.name)
+        return {
+          type: 'system',
+          text:
+            names.length > 0
+              ? `Plugin agents: ${names.join(', ')}`
+              : 'No plugin agents registered.',
+        }
+      }
+      const pluginAgent = this.pluginAgentRegistry?.get(agentName)
+      if (!pluginAgent) {
+        return { type: 'system', text: `Unknown plugin agent: ${agentName}` }
+      }
+      const confirmation = consumePluginConfirmationFlag(agentArgs)
+      if (this.requirePluginConfirmation && !confirmation.confirmed) {
+        return {
+          type: 'system',
+          text: formatPluginConfirmationRequired('agent', pluginAgent.pluginId, agentName),
+        }
+      }
+      const response = await runPrintMode(
+        this.session,
+        renderPluginAgentPrompt(pluginAgent.agent, confirmation.args),
+        () => {},
+      )
+      return { type: 'response', text: response }
+    }
+
+    const pluginCommand = this.pluginCommandRegistry?.get(command)
+    if (pluginCommand) {
+      const confirmation = consumePluginConfirmationFlag(rest)
+      if (this.requirePluginConfirmation && !confirmation.confirmed) {
+        return {
+          type: 'system',
+          text: formatPluginConfirmationRequired('command', pluginCommand.pluginId, command),
+        }
+      }
+      const missingArguments = getMissingPluginCommandArguments(
+        pluginCommand.command,
+        confirmation.args,
+      )
+      if (missingArguments.length > 0) {
+        return {
+          type: 'system',
+          text: formatPluginCommandMissingArguments(pluginCommand.command, missingArguments),
+        }
+      }
+      const invalidArguments = getInvalidPluginCommandArguments(
+        pluginCommand.command,
+        confirmation.args,
+      )
+      if (invalidArguments.length > 0) {
+        return {
+          type: 'system',
+          text: formatPluginCommandInvalidArguments(pluginCommand.command, invalidArguments),
+        }
+      }
+      const response = await runPrintMode(
+        this.session,
+        renderPluginCommandPrompt(pluginCommand.command, confirmation.args),
+        () => {},
+      )
+      return { type: 'response', text: response }
+    }
+
     return { type: 'system', text: `Unknown command: /${command}` }
   }
+}
+
+export function consumePluginConfirmationFlag(args: readonly string[]): {
+  confirmed: boolean
+  args: string[]
+} {
+  const filtered = args.filter((arg) => arg !== PLUGIN_CONFIRM_FLAG)
+  return { confirmed: filtered.length !== args.length, args: filtered }
+}
+
+export function formatPluginConfirmationRequired(
+  kind: 'agent' | 'command',
+  pluginId: string,
+  name: string,
+): string {
+  return `Plugin ${kind} requires confirmation: ${pluginId}/${name}. Re-run with ${PLUGIN_CONFIRM_FLAG} to execute.`
+}
+
+export function getMissingPluginCommandArguments(
+  command: PluginCommandManifest,
+  args: readonly string[],
+): string[] {
+  const commandArguments = command.arguments ?? []
+  return commandArguments
+    .map((argument, index) => ({ argument, index }))
+    .filter(({ argument, index }) => argument.required && args[index] === undefined)
+    .map(({ argument }) => argument.name)
+}
+
+export function formatPluginCommandMissingArguments(
+  command: PluginCommandManifest,
+  missingArguments: readonly string[],
+): string {
+  return `Plugin command "/${command.name}" requires arguments: ${missingArguments.join(', ')}. Usage: /${command.name}${formatPluginCommandUsage(command)}`
+}
+
+export interface InvalidPluginCommandArgument {
+  name: string
+  expectedType: string
+  value: string
+}
+
+export function getInvalidPluginCommandArguments(
+  command: PluginCommandManifest,
+  args: readonly string[],
+): InvalidPluginCommandArgument[] {
+  const invalid: InvalidPluginCommandArgument[] = []
+  for (const [index, argument] of (command.arguments ?? []).entries()) {
+    const value = args[index]
+    if (value === undefined || argument.type === undefined || argument.type === 'string') {
+      continue
+    }
+    if (!isPluginCommandArgumentValueType(value, argument.type)) {
+      invalid.push({ name: argument.name, expectedType: argument.type, value })
+    }
+  }
+  return invalid
+}
+
+export function formatPluginCommandInvalidArguments(
+  command: PluginCommandManifest,
+  invalidArguments: readonly InvalidPluginCommandArgument[],
+): string {
+  const details = invalidArguments
+    .map((argument) => `${argument.name} expected ${argument.expectedType}, got "${argument.value}"`)
+    .join('; ')
+  return `Plugin command "/${command.name}" has invalid arguments: ${details}. Usage: /${command.name}${formatPluginCommandUsage(command)}`
+}
+
+export function renderPluginCommandPrompt(
+  command: PluginCommandManifest,
+  args: readonly string[],
+): string {
+  const argumentsText = args.join(' ')
+  const argumentSchema = formatPluginCommandArgumentSchema(command)
+  if (command.prompt) {
+    const prompt = command.prompt.includes('$ARGUMENTS')
+      ? command.prompt.replaceAll('$ARGUMENTS', argumentsText)
+      : command.prompt
+    const promptWithArguments =
+      argumentsText && !command.prompt.includes('$ARGUMENTS')
+        ? `${prompt}\n\nArguments: ${argumentsText}`
+        : prompt
+    return argumentSchema ? `${promptWithArguments}\n\n${argumentSchema}` : promptWithArguments
+  }
+
+  const lines = [`Run plugin command "/${command.name}".`]
+  if (command.description) {
+    lines.push('', command.description)
+  }
+  if (args.length > 0) {
+    lines.push('', `Arguments: ${args.join(' ')}`)
+  }
+  if (argumentSchema) {
+    lines.push('', argumentSchema)
+  }
+  return lines.join('\n')
+}
+
+function formatPluginCommandUsage(command: PluginCommandManifest): string {
+  const commandArguments = command.arguments ?? []
+  if (commandArguments.length === 0) {
+    return ''
+  }
+  return ` ${commandArguments
+    .map((argument) => {
+      const typedName = argument.type ? `${argument.name}:${argument.type}` : argument.name
+      return argument.required ? `<${typedName}>` : `[${typedName}]`
+    })
+    .join(' ')}`
+}
+
+function formatPluginCommandArgumentSchema(command: PluginCommandManifest): string | undefined {
+  if (!command.arguments || command.arguments.length === 0) {
+    return undefined
+  }
+  const lines = ['Argument schema:']
+  for (const argument of command.arguments) {
+    const required = argument.required ? 'required' : 'optional'
+    const type = argument.type ?? 'string'
+    const description = argument.description ? `: ${argument.description}` : ''
+    lines.push(`- ${argument.name} (${required}, ${type})${description}`)
+  }
+  return lines.join('\n')
+}
+
+function isPluginCommandArgumentValueType(
+  value: string,
+  type: NonNullable<PluginCommandManifest['arguments']>[number]['type'],
+): boolean {
+  if (type === 'number') {
+    return value.trim() !== '' && Number.isFinite(Number(value))
+  }
+  if (type === 'boolean') {
+    return value === 'true' || value === 'false'
+  }
+  return true
+}
+
+export function renderPluginAgentPrompt(
+  agent: PluginAgentManifest,
+  args: readonly string[],
+): string {
+  const argumentsText = args.join(' ')
+  const lines = [`Run plugin agent "${agent.name}".`]
+  if (agent.description) {
+    lines.push('', agent.description)
+  }
+  if (agent.tools && agent.tools.length > 0) {
+    lines.push('', `Preferred tools: ${agent.tools.join(', ')}`)
+  }
+  if (agent.prompt) {
+    lines.push('', agent.prompt)
+  }
+  if (argumentsText) {
+    lines.push('', `Task: ${argumentsText}`)
+  }
+  return lines.join('\n')
 }
 
 export function formatContextDiagnostics(diagnostics: ContextDiagnostics): string {

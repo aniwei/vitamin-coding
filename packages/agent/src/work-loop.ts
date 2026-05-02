@@ -406,8 +406,7 @@ export async function workLoop(context: WorkLoopContext): Promise<AssistantMessa
   await pause('loop_start', 0)
 
   let promptTooLongRetries = 0
-  const maxPromptTooLongRetries =
-    context.maxPromptTooLongRetries ?? DEFAULT_PROMPT_TOO_LONG_RETRIES
+  const maxPromptTooLongRetries = context.maxPromptTooLongRetries ?? DEFAULT_PROMPT_TOO_LONG_RETRIES
 
   try {
     outer: while (true) {
