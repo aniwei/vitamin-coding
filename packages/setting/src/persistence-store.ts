@@ -1,9 +1,9 @@
-import { createPersistence } from '@vitamin/persistence'
-import { safeStringify } from '@vitamin/shared'
+import { createPersistence } from '@x-mars/persistence'
+import { safeStringify } from '@x-mars/shared'
 
-import type { Persistence, Snapshot } from '@vitamin/persistence'
+import type { Persistence, Snapshot } from '@x-mars/persistence'
 import type { SettingStore, FileSettingStoreOptions, HttpSettingStoreOptions } from './store'
-import type { VitaminSetting } from './types'
+import type { XMarsSetting } from './types'
 
 interface StoredSetting {
   content: string
@@ -25,7 +25,7 @@ class PersistenceSettingStore implements SettingStore {
     return snapshot?.data.content
   }
 
-  async write(path: string, config: Partial<VitaminSetting>): Promise<void> {
+  async write(path: string, config: Partial<XMarsSetting>): Promise<void> {
     const existing = await this.persistence.load(path)
     const now = Date.now()
 

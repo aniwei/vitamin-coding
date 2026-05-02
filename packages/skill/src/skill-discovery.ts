@@ -3,11 +3,11 @@
 
 import * as fs from 'node:fs'
 import * as path from 'node:path'
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { parseSkillContent } from './skill-parser'
 import type { SkillDefinition, SkillSource, SkillSourceType, SkillLibraryConfig } from './types'
 
-const logger = createLogger('@vitamin/skill:discovery')
+const logger = createLogger('@x-mars/skill:discovery')
 
 const SKILL_FILENAME = 'SKILL.md'
 
@@ -21,7 +21,7 @@ export async function discoverSkills(
   const results = new Map<string, { definition: SkillDefinition; source: SkillSource }>()
 
   // 1. 扫描项目本地 skill 目录
-  const projectDirs = config.projectDirs ?? ['.vitamin/skills']
+  const projectDirs = config.projectDirs ?? ['.x-mars/skills']
   for (const relDir of projectDirs) {
     const absDir = path.resolve(workspaceDir, relDir)
     const source: SkillSource = { type: 'project', root: absDir }
@@ -161,7 +161,7 @@ export function getDefaultGlobalSkillDirs(): string[] {
     return []
   }
 
-  return [path.join(home, '.vitamin', 'skills')]
+  return [path.join(home, '.x-mars', 'skills')]
 }
 
 /**

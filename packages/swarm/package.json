@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/swarm",
+  "name": "@x-mars/swarm",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -25,9 +25,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/agent": "workspace:*",
-    "@vitamin/ai": "workspace:*",
-    "@vitamin/shared": "workspace:*",
+    "@x-mars/agent": "workspace:*",
+    "@x-mars/ai": "workspace:*",
+    "@x-mars/shared": "workspace:*",
     "zod": "^3.24.4"
   }
 }

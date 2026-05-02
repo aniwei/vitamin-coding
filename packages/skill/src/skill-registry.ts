@@ -1,4 +1,4 @@
-import { TypedEventEmitter, createLogger } from '@vitamin/shared'
+import { TypedEventEmitter, createLogger } from '@x-mars/shared'
 import * as fs from 'node:fs'
 import * as path from 'node:path'
 import { discoverSkills, getDefaultGlobalSkillDirs } from './skill-discovery'
@@ -20,7 +20,7 @@ import type {
   SkillImproveInput,
 } from './types'
 
-const logger = createLogger('@vitamin/skill:registry')
+const logger = createLogger('@x-mars/skill:registry')
 
 export interface SkillRegistryOptions {
   /** 工作目录 */
@@ -50,7 +50,7 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
    */
   async discover(): Promise<void> {
     const config: SkillLibraryConfig = {
-      projectDirs: this.library?.projectDirs ?? ['.vitamin/skills'],
+      projectDirs: this.library?.projectDirs ?? ['.x-mars/skills'],
       globalDirs: this.library?.globalDirs ?? getDefaultGlobalSkillDirs(),
       disabled: [...this.disabledSet],
     }
@@ -202,7 +202,7 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
       return { success: false, error: validation }
     }
 
-    const skillDir = path.join(this.workspaceDir, '.vitamin', 'skills', input.name)
+    const skillDir = path.join(this.workspaceDir, '.x-mars', 'skills', input.name)
     const skillFile = path.join(skillDir, 'SKILL.md')
     if (fs.existsSync(skillFile) && !input.overwrite) {
       return { success: false, error: `Skill "${input.name}" already exists` }
@@ -216,7 +216,7 @@ export class SkillRegistry extends TypedEventEmitter<SkillEvents> {
       const definition = parseSkillContent(content, skillFile, skillDir, [])
       this.register(definition, {
         type: 'project',
-        root: path.join(this.workspaceDir, '.vitamin', 'skills'),
+        root: path.join(this.workspaceDir, '.x-mars', 'skills'),
       })
       return { success: true, name: input.name, path: skillFile }
     } catch (error) {

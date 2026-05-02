@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/skill",
+  "name": "@x-mars/skill",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -19,8 +19,8 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@vitamin/env": "workspace:*",
-    "@vitamin/manifest": "workspace:*",
-    "@vitamin/shared": "workspace:*"
+    "@x-mars/env": "workspace:*",
+    "@x-mars/manifest": "workspace:*",
+    "@x-mars/shared": "workspace:*"
   }
 }

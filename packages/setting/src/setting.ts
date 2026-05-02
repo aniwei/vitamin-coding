@@ -1,11 +1,11 @@
-import { createLogger, parseJsonc } from '@vitamin/shared'
-import { LOG_LEVELS, TOOL_PRESETS, VITAMIN_SETTING_KEYS } from './types'
+import { createLogger, parseJsonc } from '@x-mars/shared'
+import { LOG_LEVELS, TOOL_PRESETS, X_MARS_SETTING_KEYS } from './types'
 import { migrate } from './migrator'
 
-import { type VitaminSetting, type LoadSettingOptions, VITAMIN_DEFAULT_CONFIG } from './types'
+import { type XMarsSetting, type LoadSettingOptions, X_MARS_DEFAULT_CONFIG } from './types'
 import type { SettingStore } from './store'
 
-const logger = createLogger('@vitamin/setting')
+const logger = createLogger('@x-mars/setting')
 const LOG_LEVEL_SET = new Set<string>(LOG_LEVELS)
 const TOOL_PRESET_SET = new Set<string>(TOOL_PRESETS)
 
@@ -38,7 +38,7 @@ function isStringArray(value: unknown): value is string[] {
   return Array.isArray(value) && value.every((item) => typeof item === 'string')
 }
 
-function dropInvalidField(target: Partial<VitaminSetting>, key: string, message: string): void {
+function dropInvalidField(target: Partial<XMarsSetting>, key: string, message: string): void {
   logger.warn({ key, message }, 'Config validation issue')
   delete target[key]
 }
@@ -64,7 +64,7 @@ function deepMerge(
   return result
 }
 
-function merge(...layers: Partial<VitaminSetting>[]): Partial<VitaminSetting> {
+function merge(...layers: Partial<XMarsSetting>[]): Partial<XMarsSetting> {
   const [lower, higher, ...others] = layers
   const result = { ...lower }
 
@@ -79,7 +79,7 @@ function merge(...layers: Partial<VitaminSetting>[]): Partial<VitaminSetting> {
         const incoming = value as string[]
 
         result[key] = [...new Set([...existing, ...incoming])]
-      } else if (isPlainObject(value) && isPlainObject(result[key as keyof VitaminSetting])) {
+      } else if (isPlainObject(value) && isPlainObject(result[key as keyof XMarsSetting])) {
         result[key] = deepMerge(result[key] as Record<string, unknown>, value)
       } else {
         result[key] = value
@@ -94,32 +94,32 @@ function merge(...layers: Partial<VitaminSetting>[]): Partial<VitaminSetting> {
   return result
 }
 
-function loadSettingFromEnv(): Partial<VitaminSetting> {
-  const setting: Partial<VitaminSetting> = {}
+function loadSettingFromEnv(): Partial<XMarsSetting> {
+  const setting: Partial<XMarsSetting> = {}
 
-  const model = process.env.VITAMIN_MODEL
+  const model = process.env.X_MARS_MODEL
   if (model) {
     setting.model = model
   }
 
-  const theme = process.env.VITAMIN_THEME
+  const theme = process.env.X_MARS_THEME
   if (theme) {
     setting.theme = theme
   }
 
-  const logLevel = process.env.VITAMIN_LOG_LEVEL
+  const logLevel = process.env.X_MARS_LOG_LEVEL
   if (logLevel) {
     if (LOG_LEVEL_SET.has(logLevel)) {
-      setting.log_level = logLevel as VitaminSetting['log_level']
+      setting.log_level = logLevel as XMarsSetting['log_level']
     }
   }
 
   return setting
 }
 
-function validate(setting: Partial<VitaminSetting>): Partial<VitaminSetting> {
-  const knownKeys = new Set<string>(VITAMIN_SETTING_KEYS)
-  const validated: Partial<VitaminSetting> = { ...setting }
+function validate(setting: Partial<XMarsSetting>): Partial<XMarsSetting> {
+  const knownKeys = new Set<string>(X_MARS_SETTING_KEYS)
+  const validated: Partial<XMarsSetting> = { ...setting }
 
   for (const key of REMOVED_LEGACY_KEYS) {
     if (validated[key] !== undefined) {
@@ -174,14 +174,14 @@ function validate(setting: Partial<VitaminSetting>): Partial<VitaminSetting> {
 async function loadSettingFromStore(
   store: SettingStore,
   paths: string[],
-): Promise<Partial<VitaminSetting>[]> {
-  const layers: Partial<VitaminSetting>[] = []
+): Promise<Partial<XMarsSetting>[]> {
+  const layers: Partial<XMarsSetting>[] = []
 
   for (const path of paths) {
     try {
       const content = await store.read(path)
       if (content !== undefined) {
-        const parsed = parseJsonc<Partial<VitaminSetting>>(content)
+        const parsed = parseJsonc<Partial<XMarsSetting>>(content)
         layers.push(parsed)
         logger.debug({ path }, 'Config loaded from store')
       }
@@ -200,25 +200,25 @@ export class SettingLoader {
     this.store = store
   }
 
-  async load(options: LoadSettingOptions = {}): Promise<VitaminSetting> {
+  async load(options: LoadSettingOptions = {}): Promise<XMarsSetting> {
     const { store = this.store, paths = [] } = options
 
     const layers = store && paths.length > 0 ? await loadSettingFromStore(store, paths) : []
 
     const env = loadSettingFromEnv()
-    const merged = merge(VITAMIN_DEFAULT_CONFIG, ...layers, env)
+    const merged = merge(X_MARS_DEFAULT_CONFIG, ...layers, env)
 
     const { config: migrated, applied } = migrate(merged as Record<string, unknown>)
     if (applied.length > 0) {
       logger.info({ applied }, 'Config migrations applied')
     }
 
-    const validated = validate(migrated as Partial<VitaminSetting>)
+    const validated = validate(migrated as Partial<XMarsSetting>)
 
-    return { ...VITAMIN_DEFAULT_CONFIG, ...validated }
+    return { ...X_MARS_DEFAULT_CONFIG, ...validated }
   }
 
-  async save(path: string, config: Partial<VitaminSetting>): Promise<void> {
+  async save(path: string, config: Partial<XMarsSetting>): Promise<void> {
     if (!this.store) {
       throw new Error('Cannot save setting: no SettingStore configured')
     }
@@ -226,7 +226,7 @@ export class SettingLoader {
   }
 }
 
-export async function loadSetting(options: LoadSettingOptions = {}): Promise<VitaminSetting> {
+export async function loadSetting(options: LoadSettingOptions = {}): Promise<XMarsSetting> {
   const loader = new SettingLoader(options.store)
   return loader.load(options)
 }

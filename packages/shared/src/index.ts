@@ -1,5 +1,5 @@
 export {
-  Error as VitaminError,
+  Error as XMarsError,
   ConfigError,
   ProviderError,
   OAuthError,
@@ -10,7 +10,7 @@ export {
   SessionError,
   ExtensionError,
   McpError,
-  isVitaminError,
+  isXMarsError,
   serializeError,
 } from './error'
 export type { ErrorMetadata, ErrorOptions, SerializedError } from './error'
@@ -64,8 +64,8 @@ export {
   normalizePath,
   createTempLoggerDir,
   createTempLoggerPath,
-  getVitaminHomeDir,
-  getVitaminProjectDir,
+  getXMarsHomeDir,
+  getXMarsProjectDir,
   getThirdPartyToolDir,
   getThirdPartyToolBinaryDir,
 } from './path'

@@ -1,4 +1,4 @@
-import { ProviderError } from '@vitamin/shared'
+import { ProviderError } from '@x-mars/shared'
 
 export class PromptTooLongError extends ProviderError {
   readonly tokenCount?: number

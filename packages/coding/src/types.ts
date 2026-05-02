@@ -1,26 +1,26 @@
-import type { SkillProvider } from '@vitamin/skill'
-import type { AgentTool } from '@vitamin/agent'
-import type { AuthStore, Model, ProviderRegistry } from '@vitamin/ai'
-import type { ModelRegistry } from '@vitamin/ai'
-import type { HookRegistry, PermissionPolicyRegistry, PermissionAuditLog } from '@vitamin/hooks'
+import type { SkillProvider } from '@x-mars/skill'
+import type { AgentTool } from '@x-mars/agent'
+import type { AuthStore, Model, ProviderRegistry } from '@x-mars/ai'
+import type { ModelRegistry } from '@x-mars/ai'
+import type { HookRegistry, PermissionPolicyRegistry, PermissionAuditLog } from '@x-mars/hooks'
 import type {
   ToolRegistry,
   PluginManager,
   PluginStateStore,
   PluginCommandRegistry,
   PluginAgentRegistry,
-} from '@vitamin/tools'
-import type { McpManager } from '@vitamin/tools'
-import type { PromptProviderOptions } from '@vitamin/prompt'
-import type { ResourceManager } from '@vitamin/resources'
-import type { SettingsManager } from '@vitamin/resources'
+} from '@x-mars/tools'
+import type { McpManager } from '@x-mars/tools'
+import type { PromptProviderOptions } from '@x-mars/prompt'
+import type { ResourceManager } from '@x-mars/resources'
+import type { SettingsManager } from '@x-mars/resources'
 import type { CodingSessionManager } from './session/coding-session-manager'
 import type { AgentSessionInfo, AgentSessionOptions, ResolvedSessionConfig } from './session/types'
 import type { AgentSession } from './session/agent-session'
-import type { Logger, LogLevel } from '@vitamin/shared'
-import type { Devtools } from '@vitamin/devtools'
+import type { Logger, LogLevel } from '@x-mars/shared'
+import type { Devtools } from '@x-mars/devtools'
 
-export interface VitaminContext {
+export interface XMarsContext {
   readonly workspaceDir: string
   readonly tools: AgentTool[]
 
@@ -57,7 +57,7 @@ export interface VitaminContext {
   ): Promise<AgentSession | undefined>
 }
 
-export interface VitaminAppOptions {
+export interface XMarsAppOptions {
   port: number
   inspect: boolean
   logger: {
@@ -84,12 +84,12 @@ export interface VitaminAppOptions {
   /**
    * skill 实现注入点（可选）。
    * 未提供时 skill_load / skill_execute 工具仍注册，但返回"功能未配置"提示。
-   * 未来可注入基于 @vitamin/skill 的完整实现。
+   * 未来可注入基于 @x-mars/skill 的完整实现。
    */
   skillProvider?: SkillProvider
   /** 可选 MCP manager。提供后注册 MCP resource/prompt 工具并注入 MCP prompt section。 */
   mcpManager?: McpManager
-  /** 本地插件根目录。启动时扫描并加载其中的 plugin.json / vitamin-plugin.json。 */
+  /** 本地插件根目录。启动时扫描并加载其中的 plugin.json / x-mars-plugin.json。 */
   pluginRoots?: string[]
   /**
    * 插件状态存储。提供后 App start 会加载 trusted/disabled 状态。

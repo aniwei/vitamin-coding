@@ -7,7 +7,7 @@ import { createSkillRegistry } from '../src'
 
 describe('SkillRegistry mutations', () => {
   it('#then creates a valid project SKILL.md and registers it', async () => {
-    const workspaceDir = mkdtempSync(join(tmpdir(), 'vitamin-skill-'))
+    const workspaceDir = mkdtempSync(join(tmpdir(), 'x-mars-skill-'))
     const registry = createSkillRegistry({ workspaceDir, library: { globalDirs: [] } })
 
     const result = await registry.create({
@@ -27,7 +27,7 @@ describe('SkillRegistry mutations', () => {
   })
 
   it('#then searches available auto skills without returning body content', async () => {
-    const workspaceDir = mkdtempSync(join(tmpdir(), 'vitamin-skill-'))
+    const workspaceDir = mkdtempSync(join(tmpdir(), 'x-mars-skill-'))
     const registry = createSkillRegistry({ workspaceDir, library: { globalDirs: [] } })
     await registry.create({
       name: 'test-driven-development',
@@ -47,7 +47,7 @@ describe('SkillRegistry mutations', () => {
   })
 
   it('#then improves an existing skill and records a change log', async () => {
-    const workspaceDir = mkdtempSync(join(tmpdir(), 'vitamin-skill-'))
+    const workspaceDir = mkdtempSync(join(tmpdir(), 'x-mars-skill-'))
     const registry = createSkillRegistry({ workspaceDir, library: { globalDirs: [] } })
     await registry.create({
       name: 'debugging',

@@ -1,4 +1,4 @@
-# @vitamin/invariant
+# @x-mars/invariant
 
 ## 模块定位
 
@@ -36,7 +36,7 @@ export { createStripInvariantInProductionPlugin } from './tsup-strip-invariant-p
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/invariant build
-pnpm --filter @vitamin/invariant typecheck
-pnpm --filter @vitamin/invariant clean
+pnpm --filter @x-mars/invariant build
+pnpm --filter @x-mars/invariant typecheck
+pnpm --filter @x-mars/invariant clean
 ```

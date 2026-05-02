@@ -1,11 +1,11 @@
 // ls 工具 — 目录列表（递归可选）
-import { exists, formatBytes, isDirectory, normalizePath, truncateHead } from '@vitamin/shared'
-import { TOOLS_LS_MAX_ENTRIES, TOOLS_MAX_OUTPUT_BYTES, TOOLS_MAX_OUTPUT_LINES } from '@vitamin/env'
+import { exists, formatBytes, isDirectory, normalizePath, truncateHead } from '@x-mars/shared'
+import { TOOLS_LS_MAX_ENTRIES, TOOLS_MAX_OUTPUT_BYTES, TOOLS_MAX_OUTPUT_LINES } from '@x-mars/env'
 import { resolve } from 'node:path'
 import { readdir } from 'node:fs/promises'
 import { z } from 'zod'
 
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 const LsArgsSchema = z.object({
   path: z

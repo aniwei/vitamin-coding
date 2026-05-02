@@ -1,6 +1,6 @@
-// @vitamin/orchestrator — Orchestrator 核心类
+// @x-mars/orchestrator — Orchestrator 核心类
 
-import type { HookRegistry } from '@vitamin/hooks'
+import type { HookRegistry } from '@x-mars/hooks'
 import type {
   CreateTask,
   GetTask,
@@ -12,7 +12,7 @@ import type {
   GetBackgroundOutput,
   CancelBackground,
   TodoItem,
-} from '@vitamin/tools'
+} from '@x-mars/tools'
 import type { OrchestratorOptions } from './types'
 
 import { TaskStore } from './task-store'

@@ -10,8 +10,8 @@
  *   AgentSession.publish() → EventBridge.subscribe() → routeSessionEvent() → ws.sendToSession()
  */
 
-import type { AgentSessionEvent } from '@vitamin/agent'
-import type { StreamEvent } from '@vitamin/ai'
+import type { AgentSessionEvent } from '@x-mars/agent'
+import type { StreamEvent } from '@x-mars/ai'
 import type { WebSocketMessage } from './types'
 
 // ─── 主路由函数 ────────────────────────────────────────────────────────────────
@@ -122,6 +122,17 @@ export function routeSessionEvent(event: AgentSessionEvent): WebSocketMessage[] 
           data: {
             sessionId: sid,
             event: event.event,
+          },
+        },
+      ]
+
+    case 'plugin_command_diagnostic':
+      return [
+        {
+          type: 'Plugin.commandDiagnostic',
+          data: {
+            sessionId: sid,
+            diagnostic: event.diagnostic,
           },
         },
       ]

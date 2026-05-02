@@ -52,7 +52,7 @@ describe('FileSettingStore', () => {
   })
 
   it('reads a JSONC file from disk', async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'vitamin-cfg-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'x-mars-cfg-'))
     const filePath = join(tempDir, 'config.jsonc')
 
     const { writeFile } = await import('node:fs/promises')
@@ -67,12 +67,12 @@ describe('FileSettingStore', () => {
 
   it('returns undefined for non-existent file', async () => {
     const store = new FileSettingStore()
-    const content = await store.read('/tmp/does-not-exist-vitamin-test-' + Date.now())
+    const content = await store.read('/tmp/does-not-exist-x-mars-test-' + Date.now())
     expect(content).toBeUndefined()
   })
 
   it('writes config and creates directories', async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'vitamin-cfg-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'x-mars-cfg-'))
     const filePath = join(tempDir, 'sub', 'dir', 'config.json')
 
     const store = new FileSettingStore()
@@ -83,7 +83,7 @@ describe('FileSettingStore', () => {
   })
 
   it('checks file existence', async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'vitamin-cfg-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'x-mars-cfg-'))
     const filePath = join(tempDir, 'config.json')
 
     const store = new FileSettingStore()

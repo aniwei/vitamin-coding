@@ -1,4 +1,4 @@
-# @vitamin/swarm 设计说明
+# @x-mars/swarm 设计说明
 
 ## 设计目标
 
@@ -8,8 +8,8 @@
 
 ## 非目标
 
-- 不实现单 Agent 执行循环（由 `@vitamin/agent` 完成）。
-- 不管理具体工具（由 `@vitamin/tools` 完成）。
+- 不实现单 Agent 执行循环（由 `@x-mars/agent` 完成）。
+- 不管理具体工具（由 `@x-mars/tools` 完成）。
 
 ## 实现原理
 
@@ -82,7 +82,7 @@ Agent 间直接转交控制权：
 ```typescript
 interface SwarmAgentDef {
   id: string
-  profile: string // Agent Profile ID（来自 @vitamin/setting 预设）
+  profile: string // Agent Profile ID（来自 @x-mars/setting 预设）
   capabilities?: string[] // 能力标签（路由匹配用）
   instructions?: string // 附加指令（追加到系统提示）
   maxRounds?: number // 最大执行轮次
@@ -90,7 +90,7 @@ interface SwarmAgentDef {
 }
 ```
 
-**运行时分离**：`SwarmAgentDef` 仅描述行为规范，实际执行由 `createRunContext(def, context)` 工厂函数创建 `AgentRunContext`，再由 `@vitamin/agent` 的 Agent 实例执行。这种分离使 Swarm 在测试时可注入 mock 执行器。
+**运行时分离**：`SwarmAgentDef` 仅描述行为规范，实际执行由 `createRunContext(def, context)` 工厂函数创建 `AgentRunContext`，再由 `@x-mars/agent` 的 Agent 实例执行。这种分离使 Swarm 在测试时可注入 mock 执行器。
 
 ## 实现流程
 
@@ -137,7 +137,7 @@ Router:
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/agent`、`@vitamin/ai`、`@vitamin/shared`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/agent`、`@x-mars/ai`、`@x-mars/shared`、`@x-mars/invariant`
 - **外部依赖**：无
 
 ## 测试策略

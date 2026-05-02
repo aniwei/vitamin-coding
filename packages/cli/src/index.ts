@@ -5,7 +5,7 @@ runCli().then((code) => {
     process.exitCode = code
   }
 }).catch((err) => {
-  process.stderr.write(`vitamin: ${err instanceof Error ? err.message : String(err)}\n`)
+  process.stderr.write(`x-mars: ${err instanceof Error ? err.message : String(err)}\n`)
   process.exitCode = 1
 })
 

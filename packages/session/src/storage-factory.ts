@@ -1,4 +1,4 @@
-import { SessionError } from '@vitamin/shared'
+import { SessionError } from '@x-mars/shared'
 import { FileSessionPersistence } from './file-persistence'
 import { RemoteSessionPersistence } from './remote-persistence'
 import type { SessionPersistence, StorageOptions } from './types'

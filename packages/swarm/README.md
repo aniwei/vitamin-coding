@@ -1,4 +1,4 @@
-# @vitamin/swarm
+# @x-mars/swarm
 
 ## 模块定位
 
@@ -44,11 +44,11 @@ src/
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/swarm build
-pnpm --filter @vitamin/swarm typecheck
-pnpm --filter @vitamin/swarm clean
+pnpm --filter @x-mars/swarm build
+pnpm --filter @x-mars/swarm typecheck
+pnpm --filter @x-mars/swarm clean
 ```
 
 ## 关联包
 
-`@vitamin/agent`、`@vitamin/ai`、`@vitamin/shared`、`@vitamin/invariant`
+`@x-mars/agent`、`@x-mars/ai`、`@x-mars/shared`、`@x-mars/invariant`

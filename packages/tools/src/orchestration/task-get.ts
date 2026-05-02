@@ -1,7 +1,7 @@
 // task-get 工具 — 获取任务详情
 import { z } from 'zod'
 
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 const TaskGetArgsSchema = z.object({
   id: z.string().describe('Task ID to retrieve'),

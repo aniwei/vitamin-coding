@@ -1,4 +1,4 @@
-# @vitamin/resources
+# @x-mars/resources
 
 ## 模块定位
 
@@ -6,13 +6,13 @@
 
 ## 核心功能
 
-| 模块                           | 功能                             |
-| ------------------------------ | -------------------------------- |
-| DefaultResourceManager         | 多源并行加载 → 合并 → 冲突检测   |
-| SettingsManager                | @vitamin/setting 封装 + 事件通知 |
-| PersistentMemorySource         | AGENTS.md 记忆注入               |
-| FilesystemPromptTemplateSource | 提示模板文件扫描                 |
-| CollisionDetection             | 同名资源冲突检测                 |
+| 模块                           | 功能                            |
+| ------------------------------ | ------------------------------- |
+| DefaultResourceManager         | 多源并行加载 → 合并 → 冲突检测  |
+| SettingsManager                | @x-mars/setting 封装 + 事件通知 |
+| PersistentMemorySource         | AGENTS.md 记忆注入              |
+| FilesystemPromptTemplateSource | 提示模板文件扫描                |
+| CollisionDetection             | 同名资源冲突检测                |
 
 ## LoadedResources
 
@@ -42,11 +42,11 @@ tests/                        # 4 个测试文件
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/resources build
-pnpm --filter @vitamin/resources typecheck
-pnpm --filter @vitamin/resources clean
+pnpm --filter @x-mars/resources build
+pnpm --filter @x-mars/resources typecheck
+pnpm --filter @x-mars/resources clean
 ```
 
 ## 关联包
 
-`@vitamin/setting`、`@vitamin/memory`、`@vitamin/prompt`、`@vitamin/shared`、`@vitamin/env`
+`@x-mars/setting`、`@x-mars/memory`、`@x-mars/prompt`、`@x-mars/shared`、`@x-mars/env`

@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/opendev-ui",
+  "name": "@x-mars/opendev-ui",
   "version": "0.1.0",
   "type": "module",
   "scripts": {
@@ -9,8 +9,8 @@
     "lint": "oxlint src/"
   },
   "dependencies": {
-    "@vitamin/protocol": "workspace:*",
-    "@vitamin/shared": "workspace:*",
+    "@x-mars/protocol": "workspace:*",
+    "@x-mars/shared": "workspace:*",
     "@heroicons/react": "2.2.0",
     "@xyflow/react": "12.10.2",
     "lucide-react": "1.7.0",

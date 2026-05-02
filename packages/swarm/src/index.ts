@@ -1,4 +1,4 @@
-// @vitamin/swarm — Agent Swarm 多 Agent 协作框架
+// @x-mars/swarm — Agent Swarm 多 Agent 协作框架
 
 // 核心类
 export { Swarm, createSwarm } from './swarm'

@@ -1,8 +1,8 @@
-# @vitamin/setting 设计说明
+# @x-mars/setting 设计说明
 
 ## 设计目标
 
-- 提供 Vitamin 配置的加载、合并、校验、迁移与监控能力。
+- 提供 X-Mars 配置的加载、合并、校验、迁移与监控能力。
 - 支持多源配置（默认值 → 全局 → 项目 → 环境变量 → CLI 参数）的四层深度合并。
 - 支持 JSONC 格式（带注释和尾随逗号的 JSON），提升配置文件可读性。
 - 内置 Agent Profile 预设和模型定义，开箱即用。
@@ -16,10 +16,10 @@
 
 ### 配置类型（types.ts）
 
-`VitaminSetting` 定义完整配置结构：
+`XMarsSetting` 定义完整配置结构：
 
 ```typescript
-interface VitaminSetting {
+interface XMarsSetting {
   config_version?: string // 配置版本号（用于 migration）
   model?: {
     default: string // 默认使用的模型 ID
@@ -50,9 +50,9 @@ interface VitaminSetting {
 │  层级（优先级从低到高）                   │
 ├──────────────────────────────────────────┤
 │ 1. 内置默认值（DEFAULT_SETTING）         │
-│ 2. 全局配置 ~/.vitamin/setting.jsonc     │
-│ 3. 项目配置 .vitamin/setting.jsonc       │
-│ 4. 环境变量（VITAMIN_MODEL 等）          │
+│ 2. 全局配置 ~/.x-mars/setting.jsonc     │
+│ 3. 项目配置 .x-mars/setting.jsonc       │
+│ 4. 环境变量（X_MARS_MODEL 等）          │
 │ 5. CLI 参数（--model, --preset 等）      │
 └──────────────────────────────────────────┘
 ```
@@ -68,7 +68,7 @@ interface VitaminSetting {
 
 ### JSONC 解析
 
-`SettingLoader` 使用 `@vitamin/shared` 的 `parseJsonc()` 解析配置文件：
+`SettingLoader` 使用 `@x-mars/shared` 的 `parseJsonc()` 解析配置文件：
 
 - 移除 `// 单行注释` 和 `/* 多行注释 */`
 - 移除尾随逗号（trailing commas）
@@ -79,11 +79,11 @@ interface VitaminSetting {
 `SettingLoader.load()` 执行流程：
 
 ```
-1. 加载全局配置  ~/.vitamin/setting.jsonc
-2. 加载项目配置  .vitamin/setting.jsonc（从 WORKSPACE_DIR 向上查找）
+1. 加载全局配置  ~/.x-mars/setting.jsonc
+2. 加载项目配置  .x-mars/setting.jsonc（从 WORKSPACE_DIR 向上查找）
 3. deepMerge(DEFAULT_SETTING, globalConfig, projectConfig)
 4. 应用环境变量覆盖
-5. 应用 CLI 参数覆盖（VitaminApp 启动时传入）
+5. 应用 CLI 参数覆盖（XMarsApp 启动时传入）
 6. MigrationRunner.migrate(merged, config_version)
 7. validate(merged) → 删除非法字段（不抛出错误）
 8. 缓存并返回
@@ -95,7 +95,7 @@ interface VitaminSetting {
 
 三种存储后端：
 
-- `FileSettingStore`：从 `~/.vitamin/setting.jsonc` 或 `.vitamin/setting.jsonc` 加载 JSONC
+- `FileSettingStore`：从 `~/.x-mars/setting.jsonc` 或 `.x-mars/setting.jsonc` 加载 JSONC
 - `RemoteSettingStore`：从 HTTP 远程端点 GET 加载（支持 Bearer Token）
 - `InMemorySettingStore`：纯内存，用于测试
 
@@ -107,7 +107,7 @@ interface VitaminSetting {
 - 文件变化 → 重新加载 → 发射 `setting:changed` 事件
 - 支持 graceful stop（`dispose()`）
 
-`VitaminApp` 在初始化后启动 `SettingWatcher`，配置变更时通知各子系统重新读取相关配置（如 hooks、tool preset）。
+`XMarsApp` 在初始化后启动 `SettingWatcher`，配置变更时通知各子系统重新读取相关配置（如 hooks、tool preset）。
 
 ### 迁移系统（migration.ts）
 
@@ -148,7 +148,7 @@ interface VitaminSetting {
 ### 配置加载与合并
 
 ```
-VitaminApp.initialize()
+XMarsApp.initialize()
        │
   SettingLoader.load(cliOverrides)
        │
@@ -157,7 +157,7 @@ VitaminApp.initialize()
        │
   deepMerge(DEFAULT_SETTING, globalConfig, projectConfig)
        │
-  applyEnvOverrides(merged) → 读取 VITAMIN_MODEL 等环境变量
+  applyEnvOverrides(merged) → 读取 X_MARS_MODEL 等环境变量
        │
   deepMerge(merged, cliOverrides)  ← CLI 参数最高优先级
        │
@@ -165,7 +165,7 @@ VitaminApp.initialize()
        │
   dropInvalidFields(config) → 静默移除非法字段
        │
-  返回 VitaminSetting
+  返回 XMarsSetting
        │
   SettingWatcher.start(settingPaths) → 监控文件变化
 ```
@@ -185,32 +185,32 @@ setting.jsonc 文件被修改
        │
   emit('setting:changed', newSetting)
        │
-  VitaminApp 回调：更新 hooks / toolRegistry / permissionRegistry
+  XMarsApp 回调：更新 hooks / toolRegistry / permissionRegistry
 ```
 
 ## 模块分层
 
-| 文件                                    | 职责                                                    |
-| --------------------------------------- | ------------------------------------------------------- |
-| `src/types.ts`                          | VitaminSetting / AgentProfile / PermissionConfig 等类型 |
-| `src/setting-loader.ts`                 | 多层加载 + 深度合并 + 校验                              |
-| `src/setting-watcher.ts`                | 文件监控 + 防抖                                         |
-| `src/migration.ts`                      | 版本迁移系统                                            |
-| `src/deep-merge.ts`                     | 递归深度合并                                            |
-| `src/validate.ts`                       | 配置校验（dropInvalidFields）                           |
-| `src/defaults.ts`                       | DEFAULT_SETTING 内置默认值                              |
-| `src/stores/file-setting-store.ts`      | 文件存储（JSONC 解析）                                  |
-| `src/stores/remote-setting-store.ts`    | 远程 HTTP 存储                                          |
-| `src/stores/in-memory-setting-store.ts` | 内存存储（测试）                                        |
-| `src/presets/agents.ts`                 | 8 个内置 Agent Profile                                  |
-| `src/presets/models.ts`                 | 9 个 Copilot 模型定义                                   |
-| `src/presets/task-profiles.ts`          | 任务类型到 Profile 的映射                               |
-| `src/index.ts`                          | barrel 导出                                             |
+| 文件                                    | 职责                                                  |
+| --------------------------------------- | ----------------------------------------------------- |
+| `src/types.ts`                          | XMarsSetting / AgentProfile / PermissionConfig 等类型 |
+| `src/setting-loader.ts`                 | 多层加载 + 深度合并 + 校验                            |
+| `src/setting-watcher.ts`                | 文件监控 + 防抖                                       |
+| `src/migration.ts`                      | 版本迁移系统                                          |
+| `src/deep-merge.ts`                     | 递归深度合并                                          |
+| `src/validate.ts`                       | 配置校验（dropInvalidFields）                         |
+| `src/defaults.ts`                       | DEFAULT_SETTING 内置默认值                            |
+| `src/stores/file-setting-store.ts`      | 文件存储（JSONC 解析）                                |
+| `src/stores/remote-setting-store.ts`    | 远程 HTTP 存储                                        |
+| `src/stores/in-memory-setting-store.ts` | 内存存储（测试）                                      |
+| `src/presets/agents.ts`                 | 8 个内置 Agent Profile                                |
+| `src/presets/models.ts`                 | 9 个 Copilot 模型定义                                 |
+| `src/presets/task-profiles.ts`          | 任务类型到 Profile 的映射                             |
+| `src/index.ts`                          | barrel 导出                                           |
 
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/shared`（parseJsonc / logger）、`@vitamin/env`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/shared`（parseJsonc / logger）、`@x-mars/env`、`@x-mars/invariant`
 - **外部依赖**：`semver`（迁移版本比较）
 
 ## 测试策略
@@ -220,25 +220,25 @@ setting.jsonc 文件被修改
 
 ## 模块分层
 
-| 文件                                    | 职责                                                    |
-| --------------------------------------- | ------------------------------------------------------- |
-| `src/types.ts`                          | VitaminSetting / AgentProfile / PermissionConfig 等类型 |
-| `src/setting-loader.ts`                 | 多源加载 + 深度合并 + 校验                              |
-| `src/setting-watcher.ts`                | 文件监控 + 防抖                                         |
-| `src/migration.ts`                      | 版本迁移系统                                            |
-| `src/deep-merge.ts`                     | 递归深度合并                                            |
-| `src/stores/file-setting-store.ts`      | 文件存储                                                |
-| `src/stores/remote-setting-store.ts`    | 远程存储                                                |
-| `src/stores/in-memory-setting-store.ts` | 内存存储                                                |
-| `src/presets/agents.ts`                 | 8 个内置 Agent Profile                                  |
-| `src/presets/models.ts`                 | 9 个 Copilot 模型                                       |
-| `src/presets/task-profiles.ts`          | 任务映射                                                |
-| `src/index.ts`                          | barrel 导出                                             |
+| 文件                                    | 职责                                                  |
+| --------------------------------------- | ----------------------------------------------------- |
+| `src/types.ts`                          | XMarsSetting / AgentProfile / PermissionConfig 等类型 |
+| `src/setting-loader.ts`                 | 多源加载 + 深度合并 + 校验                            |
+| `src/setting-watcher.ts`                | 文件监控 + 防抖                                       |
+| `src/migration.ts`                      | 版本迁移系统                                          |
+| `src/deep-merge.ts`                     | 递归深度合并                                          |
+| `src/stores/file-setting-store.ts`      | 文件存储                                              |
+| `src/stores/remote-setting-store.ts`    | 远程存储                                              |
+| `src/stores/in-memory-setting-store.ts` | 内存存储                                              |
+| `src/presets/agents.ts`                 | 8 个内置 Agent Profile                                |
+| `src/presets/models.ts`                 | 9 个 Copilot 模型                                     |
+| `src/presets/task-profiles.ts`          | 任务映射                                              |
+| `src/index.ts`                          | barrel 导出                                           |
 
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`
 - **外部依赖**：`semver`
 
 ## 测试策略

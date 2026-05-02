@@ -1,4 +1,4 @@
-// @vitamin/memory — 摘要 Prompt 模板
+// @x-mars/memory — 摘要 Prompt 模板
 
 /** 初次压缩摘要模板 */
 export const SUMMARIZATION_PROMPT = `You are a conversation summarizer for an AI coding assistant. Your task is to create a structured summary of the conversation that preserves all information needed to continue the work.

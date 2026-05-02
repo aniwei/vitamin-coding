@@ -30,7 +30,7 @@ describe('createPersistence', () => {
   })
 
   it('passes custom codec into disk persistence', async () => {
-    const tempDir = await mkdtemp(join(tmpdir(), 'vitamin-persistence-factory-'))
+    const tempDir = await mkdtemp(join(tmpdir(), 'x-mars-persistence-factory-'))
     const codec = {
       encode(snapshot: Snapshot<string>): string {
         return `FACTORY:${JSON.stringify(snapshot)}`
@@ -68,7 +68,7 @@ describe('createPersistence', () => {
       type: 'http',
       baseUrl: 'https://example.com/api',
       getAuth: async () => ({ token: 'abc' }),
-      getHeaders: async () => ({ 'X-Team': 'vitamin' }),
+      getHeaders: async () => ({ 'X-Team': 'xMars' }),
       fetch: (async (_input: string | URL | Request, init?: RequestInit) => {
         requests.push({ headers: Object.fromEntries(Object.entries(init?.headers ?? {})) as Record<string, string> })
         return new Response(JSON.stringify({ ids: [] }), {
@@ -79,7 +79,7 @@ describe('createPersistence', () => {
     })
 
     await p.list()
-    expect(requests[0]!.headers['X-Team']).toBe('vitamin')
+    expect(requests[0]!.headers['X-Team']).toBe('xMars')
     expect(requests[0]!.headers['Authorization']).toBe('Bearer abc')
   })
 

@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { findCutPoint, needsCompaction, isEligibleForManualCompact, prepareCompaction } from '../src/compaction'
 import { estimateTokens } from '../src/token-estimator'
 
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 
 function userMsg(text: string): Message {
   return { role: 'user', content: [{ type: 'text', text }], timestamp: Date.now() }

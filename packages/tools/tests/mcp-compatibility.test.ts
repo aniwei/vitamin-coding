@@ -11,7 +11,7 @@ import {
   McpManager as McpManagerFromMcp,
   SseTransport as SseTransportFromMcp,
   StdioTransport as StdioTransportFromMcp,
-} from '@vitamin/mcp'
+} from '@x-mars/mcp'
 
 import {
   createMcpAgentTools,
@@ -31,7 +31,7 @@ import {
 } from '../src/mcp/mcp-tool-adapter'
 
 describe('tools MCP compatibility exports', () => {
-  it('#then root compatibility exports point to @vitamin/mcp implementations', () => {
+  it('#then root compatibility exports point to @x-mars/mcp implementations', () => {
     expect(McpClient).toBe(McpClientFromMcp)
     expect(createMcpClient).toBe(createMcpClientFromMcp)
     expect(McpManager).toBe(McpManagerFromMcp)

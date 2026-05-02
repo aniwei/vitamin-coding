@@ -1,6 +1,6 @@
-import type { MemoryManager } from '@vitamin/memory'
-import type { AgentMessage } from '@vitamin/agent'
-import type { Message } from '@vitamin/ai'
+import type { MemoryManager } from '@x-mars/memory'
+import type { AgentMessage } from '@x-mars/agent'
+import type { Message } from '@x-mars/ai'
 
 type AutoCompactionOutput = {
   messages: AgentMessage[]

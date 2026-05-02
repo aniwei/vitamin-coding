@@ -194,7 +194,7 @@ function transformSource(source: string, fileName: string, invariantImportSource
 export function createStripInvariantInProductionPlugin(
   options: StripInvariantPluginOptions,
 ): RolldownPlugin {
-  const invariantImportSource = options.invariantImportSource ?? '@vitamin/invariant'
+  const invariantImportSource = options.invariantImportSource ?? '@x-mars/invariant'
 
   return {
     name: 'strip-invariant-in-production',

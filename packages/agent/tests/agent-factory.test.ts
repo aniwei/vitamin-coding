@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 
 import { Agent, createAgentWithRegistry } from '../src/index'
 import { createEventStream } from '../../ai/src/index'
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 
 import type {
   AssistantMessage,

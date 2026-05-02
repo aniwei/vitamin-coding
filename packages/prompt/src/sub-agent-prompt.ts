@@ -56,7 +56,7 @@ export function assembleGenericSubAgentPrompt(
   const replacements = buildContextReplacements(context)
 
   return [
-    `You are a sub-agent "${agentName}" in the Vitamin system.`,
+    `You are a sub-agent "${agentName}" in the X-Mars system.`,
     'You are responsible for executing one clearly scoped sub-task. Do not interact with users directly, handle overall planning, or further delegate to other sub-agents.',
     '',
 

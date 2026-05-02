@@ -1,4 +1,4 @@
-// @vitamin/orchestrator — 后台任务管理
+// @x-mars/orchestrator — 后台任务管理
 
 import type { TaskStore } from './task-store'
 

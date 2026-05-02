@@ -1,5 +1,5 @@
-import { Devtools } from '@vitamin/devtools'
-import { createModelSlot, createDefaultProviderRegistry, ModelRegistry } from '@vitamin/ai'
+import { Devtools } from '@x-mars/devtools'
+import { createModelSlot, createDefaultProviderRegistry, ModelRegistry } from '@x-mars/ai'
 import {
   createHookRegistry,
   PermissionPolicyRegistry,
@@ -10,8 +10,8 @@ import {
   createDisabledToolsPolicy,
   compilePolicyFromSetting,
   createPermissionRegistry,
-} from '@vitamin/hooks'
-import type { PermissionMode, PermissionPolicySetting } from '@vitamin/hooks'
+} from '@x-mars/hooks'
+import type { PermissionMode, PermissionPolicySetting } from '@x-mars/hooks'
 import {
   createToolRegistry,
   createPluginManager,
@@ -28,13 +28,13 @@ import {
   type McpManager,
   type PluginManager,
   type PluginStateStore,
-} from '@vitamin/tools'
-import { SESSION_MAX } from '@vitamin/env'
-import { createResourceManager, SettingsManager } from '@vitamin/resources'
-import { Orchestrator } from '@vitamin/orchestrator'
-import type { RunSessionOptions, RunSessionResult } from '@vitamin/orchestrator'
-import { FileStateManager, OperationalLearningStore } from '@vitamin/memory'
-import type { SkillProvider } from '@vitamin/skill'
+} from '@x-mars/tools'
+import { SESSION_MAX } from '@x-mars/env'
+import { createResourceManager, SettingsManager } from '@x-mars/resources'
+import { Orchestrator } from '@x-mars/orchestrator'
+import type { RunSessionOptions, RunSessionResult } from '@x-mars/orchestrator'
+import { FileStateManager, OperationalLearningStore } from '@x-mars/memory'
+import type { SkillProvider } from '@x-mars/skill'
 
 import {
   attachLogListener,
@@ -42,7 +42,7 @@ import {
   registerPluginLogContribution,
   unregisterPluginLogContribution,
   type Logger,
-} from '@vitamin/shared'
+} from '@x-mars/shared'
 import { AgentSession } from '../session/agent-session'
 import { getLastAssistantText } from '../modes/run-modes'
 import {
@@ -66,18 +66,18 @@ import {
   resolveAgentToolNames,
   createPromptProvider,
   BUILTIN_PROMPTS_DIR,
-} from '@vitamin/prompt'
-import type { AgentProfile } from '@vitamin/prompt'
-import { BUILTIN_AGENT_PROFILES } from '@vitamin/setting'
+} from '@x-mars/prompt'
+import type { AgentProfile } from '@x-mars/prompt'
+import { BUILTIN_AGENT_PROFILES } from '@x-mars/setting'
 
-import type { AgentTool } from '@vitamin/agent'
-import type { AuthStore, Model, ProviderRegistry, WorkflowSlot } from '@vitamin/ai'
-import type { HookRegistry } from '@vitamin/hooks'
+import type { AgentTool } from '@x-mars/agent'
+import type { AuthStore, Model, ProviderRegistry, WorkflowSlot } from '@x-mars/ai'
+import type { HookRegistry } from '@x-mars/hooks'
 import type { AgentSessionInfo, AgentSessionOptions, ResolvedSessionConfig } from '../session/types'
 
-import type { VitaminAppOptions, VitaminContext } from '../types'
-import type { ResourceManager } from '@vitamin/resources'
-export { type VitaminAppOptions, type VitaminContext } from '../types'
+import type { XMarsAppOptions, XMarsContext } from '../types'
+import type { ResourceManager } from '@x-mars/resources'
+export { type XMarsAppOptions, type XMarsContext } from '../types'
 
 function filterToolsByNames(tools: AgentTool[], names: string[]): AgentTool[] {
   const nameSet = new Set(names)
@@ -145,7 +145,7 @@ interface AgentSources {
   profile?: AgentProfile // 供 prompt 组装使用
 }
 
-export class VitaminApp implements VitaminContext {
+export class XMarsApp implements XMarsContext {
   public readonly settings: SettingsManager
   public readonly toolRegistry: ToolRegistry
   public readonly resourceManager: ResourceManager
@@ -208,7 +208,7 @@ export class VitaminApp implements VitaminContext {
 
   private globalLogSubscription: ReturnType<typeof attachLogListener> | null = null
 
-  constructor(options: VitaminAppOptions) {
+  constructor(options: XMarsAppOptions) {
     const {
       inspect,
       logger,
@@ -288,7 +288,7 @@ export class VitaminApp implements VitaminContext {
 
     this.fileStateManager = new FileStateManager()
     this.learningStore = new OperationalLearningStore({
-      path: `${this.workspaceDir}/.vitamin/lessons.json`,
+      path: `${this.workspaceDir}/.x-mars/lessons.json`,
     })
 
     const promptProvider = createPromptProvider(
@@ -337,8 +337,8 @@ export class VitaminApp implements VitaminContext {
                   await this.mcpManager?.disconnect(getPluginMcpServerName(pluginId, name))
                 }
               : undefined,
-            registerCommand: async (command, pluginId) => {
-              this.pluginCommandRegistry.register(command, pluginId)
+            registerCommand: async (command, pluginId, handler) => {
+              this.pluginCommandRegistry.register(command, pluginId, handler)
             },
             unregisterCommand: async (command, pluginId) => {
               this.pluginCommandRegistry.unregister(command.name, pluginId)
@@ -436,7 +436,7 @@ export class VitaminApp implements VitaminContext {
     }
 
     throw new Error(
-      'No model configured. Set model in .vitamin/config.jsonc or pass modelId to createVitamin().',
+      'No model configured. Set model in .x-mars/config.jsonc or pass modelId to createXMars().',
     )
   }
 
@@ -480,7 +480,7 @@ export class VitaminApp implements VitaminContext {
       this.updatePermissionPolicies(this.settings.snapshot)
     }
 
-    this.logger.info('VitaminApp started')
+    this.logger.info('XMarsApp started')
   }
 
   async stop(): Promise<void> {
@@ -506,7 +506,7 @@ export class VitaminApp implements VitaminContext {
     }
 
     this.disposed = true
-    this.logger.info('Vitamin app stopped')
+    this.logger.info('X-Mars app stopped')
   }
 
   async createSession(options: Partial<AgentSessionOptions> = {}): Promise<AgentSession> {
@@ -528,7 +528,7 @@ export class VitaminApp implements VitaminContext {
    *   slot:         options.slot > agentConfig.slot > agentProfile.tier → slot
    *   tools:        options.tools > agentConfig.tools 过滤 > agentProfile.tools 过滤 > 全量
    *   systemPrompt: options.systemPrompt > agentConfig.system_prompt > promptRefresh()
-   *   maxToolTurns: options.maxToolTurns > agentConfig > agentProfile > VitaminApp.maxToolTurns
+   *   maxToolTurns: options.maxToolTurns > agentConfig > agentProfile > XMarsApp.maxToolTurns
    */
   private async resolveSessionConfig(
     options: Partial<AgentSessionOptions>,
@@ -622,7 +622,7 @@ export class VitaminApp implements VitaminContext {
    * 正常 createSession 走 resolveSessionConfig 完整解析。
    */
   private initSessionManager(
-    options: VitaminAppOptions,
+    options: XMarsAppOptions,
     defaultModel: Model | undefined,
   ): CodingSessionManager {
     // configProvider 仅供 restore / restoreAll 路径使用
@@ -658,7 +658,7 @@ export class VitaminApp implements VitaminContext {
       if (!options.sessionFetch || !options.sessionGetAuth) {
         throw new Error(
           'sessionFetch and sessionGetAuth are required when using sessionUrl. ' +
-            'Pass them in VitaminAppOptions.',
+            'Pass them in XMarsAppOptions.',
         )
       }
       return createRemoteCodingSessionManager({
@@ -773,21 +773,21 @@ export class VitaminApp implements VitaminContext {
     })
   }
 
-  private initToolRegistry(options: VitaminAppOptions): ToolRegistry {
+  private initToolRegistry(options: XMarsAppOptions): ToolRegistry {
     const skillProvider = options.skillProvider
 
     const loadSkill: LoadSkill = skillProvider
       ? (path) => skillProvider.load(path)
       : async () => ({
           success: false,
-          error: 'Skill provider not configured. Pass skillProvider to createVitamin().',
+          error: 'Skill provider not configured. Pass skillProvider to createXMars().',
         })
 
     const executeSkill: ExecuteSkill = skillProvider
       ? (name, input, parameters) => skillProvider.execute(name, input, parameters)
       : async () => ({
           success: false,
-          error: 'Skill provider not configured. Pass skillProvider to createVitamin().',
+          error: 'Skill provider not configured. Pass skillProvider to createXMars().',
         })
     const searchSkills: SearchSkills | undefined = skillProvider?.search
       ? (query, searchOptions) =>
@@ -959,13 +959,13 @@ export class VitaminApp implements VitaminContext {
 
   private ensureNotDisposed(): void {
     if (this.disposed) {
-      throw new Error('VitaminApp has been stopped and cannot be reused.')
+      throw new Error('XMarsApp has been stopped and cannot be reused.')
     }
   }
 }
 
-export function createVitamin(options: VitaminAppOptions): VitaminApp {
-  return new VitaminApp(options)
+export function createXMars(options: XMarsAppOptions): XMarsApp {
+  return new XMarsApp(options)
 }
 
 function getPluginMcpServerName(pluginId: string, name: string): string {

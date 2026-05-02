@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/mcp",
+  "name": "@x-mars/mcp",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -19,9 +19,9 @@
     "typecheck": "tsc --noEmit"
   },
   "dependencies": {
-    "@vitamin/agent": "workspace:*",
-    "@vitamin/schema": "workspace:*",
-    "@vitamin/shared": "workspace:*",
+    "@x-mars/agent": "workspace:*",
+    "@x-mars/schema": "workspace:*",
+    "@x-mars/shared": "workspace:*",
     "zod": "4.3.6"
   }
 }

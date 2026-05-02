@@ -1,4 +1,4 @@
-# @vitamin/persistence 设计说明
+# @x-mars/persistence 设计说明
 
 ## 设计目标
 
@@ -150,7 +150,7 @@ service.listSessions({ page: 1, pageSize: 20, sortBy: 'updatedAt', order: 'desc'
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/shared`、`@vitamin/env`
+- **内部依赖**：`@x-mars/shared`、`@x-mars/env`
 - **外部依赖**：无
 
 ## 测试策略
@@ -248,7 +248,7 @@ save(key, data)
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/shared`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/shared`、`@x-mars/invariant`
 - **外部依赖**：无
 
 ## 测试策略

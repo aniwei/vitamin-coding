@@ -1,5 +1,5 @@
 import type { AgentTool, ToolCallContext, ToolResult } from './types'
-import type { ZodType } from '@vitamin/ai'
+import type { ZodType } from '@x-mars/ai'
 
 const TOOL_SEARCH_NAME = 'tool_search'
 

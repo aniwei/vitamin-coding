@@ -1,5 +1,5 @@
-// @vitamin/tools MCP 模块入口
-// 迁移至 @vitamin/mcp，此处保留 re-export 以保持向后兼容
+// @x-mars/tools MCP 模块入口
+// 迁移至 @x-mars/mcp，此处保留 re-export 以保持向后兼容
 
 export {
   McpClient,
@@ -17,7 +17,7 @@ export {
   SseTransport,
   createStdioTransport,
   createSseTransport,
-} from '@vitamin/mcp'
+} from '@x-mars/mcp'
 
 export type {
   McpClientOptions,
@@ -39,4 +39,4 @@ export type {
   McpResourceContents,
   McpPrompt,
   McpPromptMessage,
-} from '@vitamin/mcp'
+} from '@x-mars/mcp'

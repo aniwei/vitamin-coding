@@ -158,7 +158,7 @@ export function LandingPage() {
     <div className="relative flex flex-col items-center justify-center h-full px-6 bg-bg-100 overflow-hidden">
       <div className="absolute inset-0 flex items-center justify-center pointer-events-none">
         <span className="text-5xl md:text-7xl font-mono font-bold tracking-wider text-bg-300 animate-breathe select-none">
-          Vitamin
+          X-Mars
         </span>
         <div className="absolute animate-spin-slow" style={{ width: 360, height: 360 }}>
           {Array.from({ length: 24 }).map((_, i) => {

@@ -1,5 +1,5 @@
 // Agent 错误类型
-import { AgentError } from '@vitamin/shared'
+import { AgentError } from '@x-mars/shared'
 
 // Agent 循环错误
 export class AgentLoopError extends AgentError {

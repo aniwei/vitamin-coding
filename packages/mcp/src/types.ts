@@ -1,8 +1,8 @@
 // MCP (Model Context Protocol) 类型定义
 // 遵循 MCP 2024-11-05 规范
-// 从 @vitamin/tools 迁移并增强
+// 从 @x-mars/tools 迁移并增强
 
-import type { Events } from '@vitamin/shared'
+import type { Events } from '@x-mars/shared'
 
 // ─── JSON-RPC 基础 ───
 

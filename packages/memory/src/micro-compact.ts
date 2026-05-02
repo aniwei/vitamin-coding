@@ -1,4 +1,4 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import {
   estimateTokens as defaultEstimateTokens,
   estimateMessagesTokens,
@@ -10,7 +10,7 @@ import {
   DEFAULT_CACHED_MICRO_CONFIG,
 } from './defaults'
 
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 import type {
   TimeBasedMicroConfig,
   TimeBasedMicroResult,
@@ -18,7 +18,7 @@ import type {
   CachedMicroResult,
 } from './types'
 
-const logger = createLogger('@vitamin/memory:micro-compact')
+const logger = createLogger('@x-mars/memory:micro-compact')
 
 // --- Time-based micro-compact (no LLM) ---
 

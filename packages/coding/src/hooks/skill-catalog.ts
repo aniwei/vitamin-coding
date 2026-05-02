@@ -1,7 +1,7 @@
-import type { HookSpec } from '@vitamin/hooks'
-import { defineHook } from '@vitamin/hooks'
-import { appendPromptSection } from '@vitamin/prompt'
-import type { SkillProvider } from '@vitamin/skill'
+import type { HookSpec } from '@x-mars/hooks'
+import { defineHook } from '@x-mars/hooks'
+import { appendPromptSection } from '@x-mars/prompt'
+import type { SkillProvider } from '@x-mars/skill'
 
 export function createSkillCatalogHook(provider: SkillProvider): HookSpec {
   return defineHook({

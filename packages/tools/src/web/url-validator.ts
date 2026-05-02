@@ -1,6 +1,6 @@
 // URL 验证 + SSRF 防护
 
-import { ToolError } from '@vitamin/shared'
+import { ToolError } from '@x-mars/shared'
 
 const BLOCKED_PROTOCOLS = new Set(['file:', 'ftp:', 'data:', 'javascript:'])
 

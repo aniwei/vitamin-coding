@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import { TOOLS_MAX_OUTPUT_BYTES, TOOLS_MAX_OUTPUT_LINES } from '@vitamin/env'
+import { TOOLS_MAX_OUTPUT_BYTES, TOOLS_MAX_OUTPUT_LINES } from '@x-mars/env'
 import {
   createLogger,
   exists,
@@ -7,13 +7,13 @@ import {
   isDirectory,
   normalizePath,
   truncateHead,
-} from '@vitamin/shared'
+} from '@x-mars/shared'
 import { join, relative, resolve } from 'node:path'
 import { glob } from 'node:fs/promises'
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 import type { BinaryToolExecutorRegistry } from '../binary/binary-executor-registry'
 
-const logger = createLogger('@vitamin/tools:find')
+const logger = createLogger('@x-mars/tools:find')
 
 const FindArgsSchema = z.object({
   pattern: z

@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/resources",
+  "name": "@x-mars/resources",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -24,9 +24,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/env": "workspace:*",
-    "@vitamin/memory": "workspace:*",
-    "@vitamin/setting": "workspace:*",
-    "@vitamin/shared": "workspace:*"
+    "@x-mars/env": "workspace:*",
+    "@x-mars/memory": "workspace:*",
+    "@x-mars/setting": "workspace:*",
+    "@x-mars/shared": "workspace:*"
   }
 }

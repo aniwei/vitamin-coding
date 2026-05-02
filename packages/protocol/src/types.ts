@@ -81,6 +81,23 @@ export interface ProtocolPatchReviewEvent {
   reasons: string[]
 }
 
+export interface ProtocolPluginCommandDiagnostic {
+  kind: 'plugin-command'
+  pluginId: string
+  commandName: string
+  stage: string
+  status: string
+  confirmed?: boolean
+  permission?: string
+  effect?: string
+  reason?: string
+  message?: string
+  resultType?: string
+  rawArgumentCount?: number
+  argumentNames?: string[]
+  typedArgumentKeys?: string[]
+}
+
 export type WebSocketMessage =
   | { type: 'Runtime.connected'; data: { clientId: string } }
   | { type: 'Runtime.connectionState'; data: RuntimeConnectionStateData }
@@ -117,6 +134,10 @@ export type WebSocketMessage =
   | {
       type: 'Chat.toolExecutionEvent'
       data: { sessionId: string; event: ProtocolToolExecutionEvent }
+    }
+  | {
+      type: 'Plugin.commandDiagnostic'
+      data: { sessionId: string; diagnostic: ProtocolPluginCommandDiagnostic }
     }
   | {
       type: 'Chat.nestedToolCall'

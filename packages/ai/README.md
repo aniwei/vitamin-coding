@@ -1,4 +1,4 @@
-# @vitamin/ai
+# @x-mars/ai
 
 ## 模块定位
 
@@ -80,12 +80,12 @@ export { isClaudeFamily, isGPTFamily, isGeminiFamily, hasToolCalls, mergeUsage }
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/ai build
-pnpm --filter @vitamin/ai typecheck
-pnpm --filter @vitamin/ai generate:models
-pnpm --filter @vitamin/ai clean
+pnpm --filter @x-mars/ai build
+pnpm --filter @x-mars/ai typecheck
+pnpm --filter @x-mars/ai generate:models
+pnpm --filter @x-mars/ai clean
 ```
 
 ## 关联包
 
-`@vitamin/setting`、`@vitamin/env`、`@vitamin/shared`
+`@x-mars/setting`、`@x-mars/env`、`@x-mars/shared`

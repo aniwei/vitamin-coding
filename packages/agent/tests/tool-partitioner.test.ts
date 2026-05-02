@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { partitionToolCalls } from '../src/tool-partitioner'
-import type { ToolCall } from '@vitamin/ai'
+import type { ToolCall } from '@x-mars/ai'
 import type { AgentTool } from '../src/types'
 import { z } from 'zod'
 

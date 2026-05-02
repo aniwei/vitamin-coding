@@ -1,9 +1,9 @@
 // Token Budget Hook — 在 chat.params 阶段强制 token 预算
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'
 
-const log = createLogger('@vitamin/hooks:token-budget')
+const log = createLogger('@x-mars/hooks:token-budget')
 
 export interface TokenBudgetConfig {
   /** 单次请求最大输出 token (默认 16384) */

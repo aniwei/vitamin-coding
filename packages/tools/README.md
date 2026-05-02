@@ -1,4 +1,4 @@
-# @vitamin/tools
+# @x-mars/tools
 
 ## 模块定位
 
@@ -48,11 +48,11 @@ tests/                        # 8 个测试文件
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/tools build
-pnpm --filter @vitamin/tools typecheck
-pnpm --filter @vitamin/tools clean
+pnpm --filter @x-mars/tools build
+pnpm --filter @x-mars/tools typecheck
+pnpm --filter @x-mars/tools clean
 ```
 
 ## 关联包
 
-`@vitamin/agent`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+`@x-mars/agent`、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`

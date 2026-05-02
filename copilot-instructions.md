@@ -13,7 +13,7 @@
 - 区分 `dependencies` 与 `devDependencies`：仅运行时需要的包放 `dependencies`，构建/测试/类型等放 `devDependencies`。
 - 引用 monorepo 内部包统一使用 `workspace:*`：
   ```json
-  { "dependencies": { "@vitamin/shared": "workspace:*" } }
+  { "dependencies": { "@x-mars/shared": "workspace:*" } }
   ```
 
 ## 工具链
@@ -34,7 +34,7 @@
 - 所有跨包任务通过 Nx 执行，不要直接 `cd packages/xxx && pnpm build`。
   ```bash
   pnpm build                         # 构建所有包
-  npx nx build @vitamin/agent        # 构建单个包
+  npx nx build @x-mars/agent        # 构建单个包
   npx nx run-many -t build --affected  # 仅构建受变更影响的包
   ```
 - 每个包的 `scripts` 须与 `nx.json` 中定义的 target 保持一致。
@@ -58,7 +58,7 @@
 
 ```json
 {
-  "name": "@vitamin/<name>",
+  "name": "@x-mars/<name>",
   "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
@@ -106,11 +106,11 @@ web-ui                      ← 前端，仅通过 WebSocket 与 service 通信
 
 ### 环境变量与常量
 
-**所有**环境变量读取和全局常量必须定义在 `@vitamin/env`，其他包从中导入，不得在各自包内重复读取 `process.env`：
+**所有**环境变量读取和全局常量必须定义在 `@x-mars/env`，其他包从中导入，不得在各自包内重复读取 `process.env`：
 
 ```ts
 // 正确
-import { TOOLS_EXECUTE_TIMEOUT_MS, VITAMIN_HOME } from '@vitamin/env'
+import { TOOLS_EXECUTE_TIMEOUT_MS, X_MARS_HOME } from '@x-mars/env'
 
 // 错误
 const timeout = parseInt(process.env['TOOLS_EXECUTE_TIMEOUT_MS'] ?? '30000', 10)
@@ -118,10 +118,10 @@ const timeout = parseInt(process.env['TOOLS_EXECUTE_TIMEOUT_MS'] ?? '30000', 10)
 
 ### Hook 系统
 
-需要在 agent 生命周期中注入逻辑时，使用 `@vitamin/hooks` 提供的 `HookRegistry`，不要在 agent 核心代码中直接硬编码副作用：
+需要在 agent 生命周期中注入逻辑时，使用 `@x-mars/hooks` 提供的 `HookRegistry`，不要在 agent 核心代码中直接硬编码副作用：
 
 ```ts
-import { createHookRegistry } from '@vitamin/hooks'
+import { createHookRegistry } from '@x-mars/hooks'
 ```
 
 ## TypeScript 规范

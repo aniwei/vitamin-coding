@@ -1,5 +1,5 @@
-export { createVitamin, VitaminApp } from './app/vitamin-app'
-export type { VitaminAppOptions, VitaminContext } from './types'
+export { createXMars, XMarsApp } from './app/x-mars-app'
+export type { XMarsAppOptions, XMarsContext } from './types'
 
 export { AgentSession } from './session/agent-session'
 export { createAgentSession } from './session/create-agent-session'

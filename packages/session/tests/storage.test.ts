@@ -8,7 +8,7 @@ describe('createSessionStorage', () => {
   let tempDir: string
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'vitamin-storage-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'x-mars-storage-'))
   })
 
   afterEach(async () => {

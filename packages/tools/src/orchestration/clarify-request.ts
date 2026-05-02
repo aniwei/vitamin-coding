@@ -1,7 +1,7 @@
 // clarify_request 工具 — subagent 向父任务请求补充说明
 import { z } from 'zod'
 
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 const ClarifyRequestArgsSchema = z.object({
   taskId: z.string().describe('Task ID of the current task requesting clarification'),

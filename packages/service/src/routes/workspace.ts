@@ -40,7 +40,7 @@ export function createWorkspaceRoute(context: CodingService): Hono {
 
   app.post('/browse-directory', async (c) => {
     const body = await c.req.json<{ path?: string; showHidden?: boolean }>()
-    const targetPath = body.path || context.vitamin.workspaceDir || homedir()
+    const targetPath = body.path || context.xMars.workspaceDir || homedir()
     const showHidden = body.showHidden ?? false
 
     const resolved = targetPath.startsWith('~')
@@ -83,9 +83,9 @@ export function createWorkspaceRoute(context: CodingService): Hono {
   app.get('/files', (c) => {
     const query = c.req.query('query')
     try {
-      const entries = readdirSync(context.vitamin.workspaceDir, { withFileTypes: true })
+      const entries = readdirSync(context.xMars.workspaceDir, { withFileTypes: true })
       let files = entries.map((e) => ({
-        path: join(context.vitamin.workspaceDir, e.name),
+        path: join(context.xMars.workspaceDir, e.name),
         name: e.name,
         isFile: e.isFile(),
       }))

@@ -6,9 +6,9 @@
     "ignoreDeprecations": "6.0",
     "baseUrl": ".",
     "paths": {
-      "@vitamin/ai": ["../ai/src/index.ts"],
-      "@vitamin/agent": ["../agent/src/index.ts"],
-      "@vitamin/shared": ["../shared/src/index.ts"]
+      "@x-mars/ai": ["../ai/src/index.ts"],
+      "@x-mars/agent": ["../agent/src/index.ts"],
+      "@x-mars/shared": ["../shared/src/index.ts"]
     }
   },
   "include": ["src"]

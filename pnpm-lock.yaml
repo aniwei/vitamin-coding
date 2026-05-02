@@ -47,19 +47,19 @@ importers:
 
   packages/agent:
     dependencies:
-      '@vitamin/ai':
+      '@x-mars/ai':
         specifier: workspace:*
         version: link:../ai
-      '@vitamin/devtools':
+      '@x-mars/devtools':
         specifier: workspace:*
         version: link:../devtools
-      '@vitamin/invariant':
+      '@x-mars/invariant':
         specifier: workspace:*
         version: link:../invariant
-      '@vitamin/setting':
+      '@x-mars/setting':
         specifier: workspace:*
         version: link:../setting
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
 
@@ -68,10 +68,10 @@ importers:
       '@anthropic-ai/sdk':
         specifier: 0.88.0
         version: 0.88.0(zod@4.3.6)
-      '@vitamin/env':
+      '@x-mars/env':
         specifier: workspace:*
         version: link:../env
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
       eventsource-parser:
@@ -83,76 +83,76 @@ importers:
 
   packages/cli:
     dependencies:
-      '@vitamin/ai':
+      '@x-mars/ai':
         specifier: workspace:*
         version: link:../ai
-      '@vitamin/coding':
+      '@x-mars/coding':
         specifier: workspace:*
         version: link:../coding
-      '@vitamin/hooks':
+      '@x-mars/hooks':
         specifier: workspace:*
         version: link:../hooks
-      '@vitamin/setting':
+      '@x-mars/setting':
         specifier: workspace:*
         version: link:../setting
-      '@vitamin/tools':
+      '@x-mars/tools':
         specifier: workspace:*
         version: link:../tools
 
   packages/coding:
     dependencies:
-      '@vitamin/agent':
+      '@x-mars/agent':
         specifier: workspace:*
         version: link:../agent
-      '@vitamin/ai':
+      '@x-mars/ai':
         specifier: workspace:*
         version: link:../ai
-      '@vitamin/devtools':
+      '@x-mars/devtools':
         specifier: workspace:*
         version: link:../devtools
-      '@vitamin/env':
+      '@x-mars/env':
         specifier: workspace:*
         version: link:../env
-      '@vitamin/hooks':
+      '@x-mars/hooks':
         specifier: workspace:*
         version: link:../hooks
-      '@vitamin/invariant':
+      '@x-mars/invariant':
         specifier: workspace:*
         version: link:../invariant
-      '@vitamin/memory':
+      '@x-mars/memory':
         specifier: workspace:*
         version: link:../memory
-      '@vitamin/orchestrator':
+      '@x-mars/orchestrator':
         specifier: workspace:*
         version: link:../orchestrator
-      '@vitamin/prompt':
+      '@x-mars/prompt':
         specifier: workspace:*
         version: link:../prompt
-      '@vitamin/resources':
+      '@x-mars/resources':
         specifier: workspace:*
         version: link:../resources
-      '@vitamin/session':
+      '@x-mars/session':
         specifier: workspace:*
         version: link:../session
-      '@vitamin/setting':
+      '@x-mars/setting':
         specifier: workspace:*
         version: link:../setting
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
-      '@vitamin/skill':
+      '@x-mars/skill':
         specifier: workspace:*
         version: link:../skill
-      '@vitamin/tools':
+      '@x-mars/tools':
         specifier: workspace:*
         version: link:../tools
 
   packages/devtools:
     dependencies:
-      '@vitamin/invariant':
+      '@x-mars/invariant':
         specifier: workspace:*
         version: link:../invariant
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
       eventsource-parser:
@@ -176,10 +176,10 @@ importers:
 
   packages/hooks:
     dependencies:
-      '@vitamin/agent':
+      '@x-mars/agent':
         specifier: workspace:*
         version: link:../agent
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
 
@@ -197,13 +197,13 @@ importers:
 
   packages/mcp:
     dependencies:
-      '@vitamin/agent':
+      '@x-mars/agent':
         specifier: workspace:*
         version: link:../agent
-      '@vitamin/schema':
+      '@x-mars/schema':
         specifier: workspace:*
         version: link:../schema
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
       zod:
@@ -212,19 +212,19 @@ importers:
 
   packages/memory:
     dependencies:
-      '@vitamin/ai':
+      '@x-mars/ai':
         specifier: workspace:*
         version: link:../ai
-      '@vitamin/env':
+      '@x-mars/env':
         specifier: workspace:*
         version: link:../env
-      '@vitamin/manifest':
+      '@x-mars/manifest':
         specifier: workspace:*
         version: link:../manifest
-      '@vitamin/persistence':
+      '@x-mars/persistence':
         specifier: workspace:*
         version: link:../persistence
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
 
@@ -233,10 +233,10 @@ importers:
       '@heroicons/react':
         specifier: 2.2.0
         version: 2.2.0(react@19.2.4)
-      '@vitamin/protocol':
+      '@x-mars/protocol':
         specifier: workspace:*
         version: link:../protocol
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
       '@xyflow/react':
@@ -285,31 +285,31 @@ importers:
 
   packages/orchestrator:
     dependencies:
-      '@vitamin/agent':
+      '@x-mars/agent':
         specifier: workspace:*
         version: link:../agent
-      '@vitamin/hooks':
+      '@x-mars/hooks':
         specifier: workspace:*
         version: link:../hooks
-      '@vitamin/setting':
+      '@x-mars/setting':
         specifier: workspace:*
         version: link:../setting
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
-      '@vitamin/tools':
+      '@x-mars/tools':
         specifier: workspace:*
         version: link:../tools
 
   packages/persistence:
     dependencies:
-      '@vitamin/env':
+      '@x-mars/env':
         specifier: workspace:*
         version: link:../env
 
   packages/prompt:
     dependencies:
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
 
@@ -317,16 +317,16 @@ importers:
 
   packages/resources:
     dependencies:
-      '@vitamin/env':
+      '@x-mars/env':
         specifier: workspace:*
         version: link:../env
-      '@vitamin/memory':
+      '@x-mars/memory':
         specifier: workspace:*
         version: link:../memory
-      '@vitamin/setting':
+      '@x-mars/setting':
         specifier: workspace:*
         version: link:../setting
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
 
@@ -341,25 +341,25 @@ importers:
       '@hono/node-server':
         specifier: 1.19.13
         version: 1.19.13(hono@4.12.12)
-      '@vitamin/agent':
+      '@x-mars/agent':
         specifier: workspace:*
         version: link:../agent
-      '@vitamin/ai':
+      '@x-mars/ai':
         specifier: workspace:*
         version: link:../ai
-      '@vitamin/coding':
+      '@x-mars/coding':
         specifier: workspace:*
         version: link:../coding
-      '@vitamin/devtools':
+      '@x-mars/devtools':
         specifier: workspace:*
         version: link:../devtools
-      '@vitamin/hooks':
+      '@x-mars/hooks':
         specifier: workspace:*
         version: link:../hooks
-      '@vitamin/protocol':
+      '@x-mars/protocol':
         specifier: workspace:*
         version: link:../protocol
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
       hono:
@@ -375,13 +375,13 @@ importers:
 
   packages/session:
     dependencies:
-      '@vitamin/env':
+      '@x-mars/env':
         specifier: workspace:*
         version: link:../env
-      '@vitamin/persistence':
+      '@x-mars/persistence':
         specifier: workspace:*
         version: link:../persistence
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
       better-sqlite3:
@@ -390,16 +390,16 @@ importers:
 
   packages/setting:
     dependencies:
-      '@vitamin/ai':
+      '@x-mars/ai':
         specifier: workspace:*
         version: link:../ai
-      '@vitamin/persistence':
+      '@x-mars/persistence':
         specifier: workspace:*
         version: link:../persistence
-      '@vitamin/prompt':
+      '@x-mars/prompt':
         specifier: workspace:*
         version: link:../prompt
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
       semver:
@@ -412,10 +412,10 @@ importers:
 
   packages/shared:
     dependencies:
-      '@vitamin/env':
+      '@x-mars/env':
         specifier: workspace:*
         version: link:../env
-      '@vitamin/invariant':
+      '@x-mars/invariant':
         specifier: workspace:*
         version: link:../invariant
       eventsource-parser:
@@ -458,25 +458,25 @@ importers:
 
   packages/skill:
     dependencies:
-      '@vitamin/env':
+      '@x-mars/env':
         specifier: workspace:*
         version: link:../env
-      '@vitamin/manifest':
+      '@x-mars/manifest':
         specifier: workspace:*
         version: link:../manifest
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
 
   packages/swarm:
     dependencies:
-      '@vitamin/agent':
+      '@x-mars/agent':
         specifier: workspace:*
         version: link:../agent
-      '@vitamin/ai':
+      '@x-mars/ai':
         specifier: workspace:*
         version: link:../ai
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
       zod:
@@ -485,31 +485,31 @@ importers:
 
   packages/tools:
     dependencies:
-      '@vitamin/agent':
+      '@x-mars/agent':
         specifier: workspace:*
         version: link:../agent
-      '@vitamin/ai':
+      '@x-mars/ai':
         specifier: workspace:*
         version: link:../ai
-      '@vitamin/env':
+      '@x-mars/env':
         specifier: workspace:*
         version: link:../env
-      '@vitamin/hooks':
+      '@x-mars/hooks':
         specifier: workspace:*
         version: link:../hooks
-      '@vitamin/invariant':
+      '@x-mars/invariant':
         specifier: workspace:*
         version: link:../invariant
-      '@vitamin/mcp':
+      '@x-mars/mcp':
         specifier: workspace:*
         version: link:../mcp
-      '@vitamin/schema':
+      '@x-mars/schema':
         specifier: workspace:*
         version: link:../schema
-      '@vitamin/setting':
+      '@x-mars/setting':
         specifier: workspace:*
         version: link:../setting
-      '@vitamin/shared':
+      '@x-mars/shared':
         specifier: workspace:*
         version: link:../shared
       chalk:

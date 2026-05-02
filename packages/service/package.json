@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/service",
+  "name": "@x-mars/service",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -24,13 +24,13 @@
   },
   "dependencies": {
     "@hono/node-server": "1.19.13",
-    "@vitamin/agent": "workspace:*",
-    "@vitamin/ai": "workspace:*",
-    "@vitamin/coding": "workspace:*",
-    "@vitamin/devtools": "workspace:*",
-    "@vitamin/hooks": "workspace:*",
-    "@vitamin/protocol": "workspace:*",
-    "@vitamin/shared": "workspace:*",
+    "@x-mars/agent": "workspace:*",
+    "@x-mars/ai": "workspace:*",
+    "@x-mars/coding": "workspace:*",
+    "@x-mars/devtools": "workspace:*",
+    "@x-mars/hooks": "workspace:*",
+    "@x-mars/protocol": "workspace:*",
+    "@x-mars/shared": "workspace:*",
     "hono": "4.12.12",
     "ws": "8.20.0"
   },

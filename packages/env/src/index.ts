@@ -35,18 +35,18 @@ function readPackageVersion(): string {
 }
 
 /// 环境变量和常量定义
-export const VITAMIN_USER_AGENT = `vitamin/${readPackageVersion()}`
-export const VITAMIN_ROOT = '.vitamin'
-export const VITAMIN_HOME = normalizePath(
-  process.env['VITAMIN_HOME'] || `${homedir()}/${VITAMIN_ROOT}`,
+export const X_MARS_USER_AGENT = `x-mars/${readPackageVersion()}`
+export const X_MARS_ROOT = '.x-mars'
+export const X_MARS_HOME = normalizePath(
+  process.env['X_MARS_HOME'] || `${homedir()}/${X_MARS_ROOT}`,
 )
-export const VITAMIN_USER_CONFIG_DIR = normalizePath(`${homedir()}/.config/vitamin`)
-export const VITAMIN_PROJECT_DIR = normalizePath(`${process.cwd()}/${VITAMIN_ROOT}`)
-export const VITAMIN_PROJECT_ROOT = VITAMIN_PROJECT_DIR
+export const X_MARS_USER_CONFIG_DIR = normalizePath(`${homedir()}/.config/x-mars`)
+export const X_MARS_PROJECT_DIR = normalizePath(`${process.cwd()}/${X_MARS_ROOT}`)
+export const X_MARS_PROJECT_ROOT = X_MARS_PROJECT_DIR
 
-export const LOG_FILE = normalizePath(process.env['VITAMIN_LOG_FILE'] ?? '/tmp/vitamin.log')
+export const LOG_FILE = normalizePath(process.env['X_MARS_LOG_FILE'] ?? '/tmp/x-mars.log')
 export const LOG_LEVEL =
-  (process.env['VITAMIN_LOG_LEVEL'] as 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal') ||
+  (process.env['X_MARS_LOG_LEVEL'] as 'info' | 'warn' | 'error' | 'debug' | 'trace' | 'fatal') ||
   (process.env.NODE_ENV === 'production' ? 'info' : 'trace')
 
 export const TOOLS_SEARCH_MAX_OUTPUT_LINES = normalizeEnv(
@@ -67,7 +67,7 @@ export const TOOLS_BINARY_DOWNLOAD_TIMEOUT_MS = normalizeEnv(
 
 export const AGENT_TOOLS_MAX_TURNS = normalizeEnv(process.env['AGENT_TOOLS_MAX_TURNS'], 25)
 
-// @vitamin/memory 默认阈值与工具分类常量
+// @x-mars/memory 默认阈值与工具分类常量
 export const MEMORY_COMPACTION_TRIGGER_FRACTION = 0.85
 export const MEMORY_COMPACTION_KEEP_RECENT_FRACTION = 0.1
 export const MEMORY_COMPACTION_RESERVE_TOKENS = 16384
@@ -111,34 +111,34 @@ export const MEMORY_ARCHIVE_SNAPSHOT_VERSION = normalizeEnv(
 )
 
 export const SETTING_OFFLINE_MODE_ENABLED =
-  process.env['VITAMIN_OFFLINE'] === '1' ||
-  process.env['VITAMIN_OFFLINE']?.toLowerCase() === 'true' ||
-  process.env['VITAMIN_OFFLINE']?.toLowerCase() === 'yes'
+  process.env['X_MARS_OFFLINE'] === '1' ||
+  process.env['X_MARS_OFFLINE']?.toLowerCase() === 'true' ||
+  process.env['X_MARS_OFFLINE']?.toLowerCase() === 'yes'
 
-export const SESSION_DIR = process.env['VITAMIN_SESSION_DIR']
-  ? normalizePath(process.env['VITAMIN_SESSION_DIR'])
+export const SESSION_DIR = process.env['X_MARS_SESSION_DIR']
+  ? normalizePath(process.env['X_MARS_SESSION_DIR'])
   : undefined
-export const SESSION_REMOTE_URL = process.env['VITAMIN_SESSION_REMOTE_URL'] || undefined
+export const SESSION_REMOTE_URL = process.env['X_MARS_SESSION_REMOTE_URL'] || undefined
 export const SESSION_IDLE_TIMEOUT_MS = normalizeEnv(
-  process.env['VITAMIN_SESSION_IDLE_TIMEOUT_MS'],
+  process.env['X_MARS_SESSION_IDLE_TIMEOUT_MS'],
   30 * 60 * 1000,
 )
-export const SESSION_MAX = normalizeEnv(process.env['VITAMIN_SESSION_MAX'], 50)
-export const SESSION_PAGE_SIZE = normalizeEnv(process.env['VITAMIN_SESSION_PAGE_SIZE'], 20)
+export const SESSION_MAX = normalizeEnv(process.env['X_MARS_SESSION_MAX'], 50)
+export const SESSION_PAGE_SIZE = normalizeEnv(process.env['X_MARS_SESSION_PAGE_SIZE'], 20)
 export const SESSION_SNAPSHOT_VERSION = normalizeEnv(
-  process.env['VITAMIN_SESSION_SNAPSHOT_VERSION'],
+  process.env['X_MARS_SESSION_SNAPSHOT_VERSION'],
   1,
 )
 
-export const CHECKPOINT_DIR = process.env['VITAMIN_CHECKPOINT_DIR']
-  ? normalizePath(process.env['VITAMIN_CHECKPOINT_DIR'])
+export const CHECKPOINT_DIR = process.env['X_MARS_CHECKPOINT_DIR']
+  ? normalizePath(process.env['X_MARS_CHECKPOINT_DIR'])
   : undefined
 export const CHECKPOINT_SNAPSHOT_VERSION = normalizeEnv(
-  process.env['VITAMIN_CHECKPOINT_SNAPSHOT_VERSION'],
+  process.env['X_MARS_CHECKPOINT_SNAPSHOT_VERSION'],
   1,
 )
 
-export const AUTH_PATH = normalizePath(`${VITAMIN_USER_CONFIG_DIR}/auth.json`)
+export const AUTH_PATH = normalizePath(`${X_MARS_USER_CONFIG_DIR}/auth.json`)
 
 export const GITHUB_CLIENT_ID = decode(
   process.env['GITHUB_CLIENT_ID'] || 'SXYxLmI1MDdhMDhjODdlY2ZlOTg=',

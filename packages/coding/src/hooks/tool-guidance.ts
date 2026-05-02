@@ -5,10 +5,10 @@
  * 注入顺序在 environment-injection 之前（priority=20）。
  */
 
-import type { HookSpec } from '@vitamin/hooks'
-import { defineHook } from '@vitamin/hooks'
-import { appendPromptSection } from '@vitamin/prompt'
-import type { ToolRegistry } from '@vitamin/tools'
+import type { HookSpec } from '@x-mars/hooks'
+import { defineHook } from '@x-mars/hooks'
+import { appendPromptSection } from '@x-mars/prompt'
+import type { ToolRegistry } from '@x-mars/tools'
 
 export function createToolGuidanceHook(
   toolRegistry: ToolRegistry,

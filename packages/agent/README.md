@@ -1,4 +1,4 @@
-# @vitamin/agent
+# @x-mars/agent
 
 ## 模块定位
 
@@ -47,11 +47,11 @@ tests/               # 5 个测试文件
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/agent build
-pnpm --filter @vitamin/agent typecheck
-pnpm --filter @vitamin/agent clean
+pnpm --filter @x-mars/agent build
+pnpm --filter @x-mars/agent typecheck
+pnpm --filter @x-mars/agent clean
 ```
 
 ## 关联包
 
-`@vitamin/ai`、`@vitamin/setting`、`@vitamin/shared`、`@vitamin/invariant`、`@vitamin/devtools`
+`@x-mars/ai`、`@x-mars/setting`、`@x-mars/shared`、`@x-mars/invariant`、`@x-mars/devtools`

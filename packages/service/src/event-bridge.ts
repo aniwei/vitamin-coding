@@ -9,7 +9,7 @@
 
 import { routeSessionEvent } from './session-event-router'
 import type { IMessageSender } from './types'
-import type { AgentSession } from '@vitamin/coding'
+import type { AgentSession } from '@x-mars/coding'
 
 export class EventBridge {
   private unsubscribeSession?: () => void

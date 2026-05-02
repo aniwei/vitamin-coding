@@ -15,7 +15,7 @@ describe('SettingWatcher', () => {
 
   describe('#given a watched file', () => {
     it('#then emits change event on file modification', async () => {
-      tempDir = await mkdtemp(join(tmpdir(), 'vitamin-watch-'))
+      tempDir = await mkdtemp(join(tmpdir(), 'x-mars-watch-'))
       const configPath = join(tempDir, 'config.jsonc')
       await writeFile(configPath, '{ "log_level": "info" }')
 
@@ -50,7 +50,7 @@ describe('SettingWatcher', () => {
 
   describe('#given dispose is called', () => {
     it('#then cleans up watchers', async () => {
-      tempDir = await mkdtemp(join(tmpdir(), 'vitamin-watch-'))
+      tempDir = await mkdtemp(join(tmpdir(), 'x-mars-watch-'))
       const configPath = join(tempDir, 'config.jsonc')
       await writeFile(configPath, '{ "log_level": "info" }')
 
@@ -72,7 +72,7 @@ describe('SettingWatcher', () => {
     it('#then does not throw during construction', () => {
       expect(() =>
         createSettingWatcher({
-          paths: [`/tmp/does-not-exist-vitamin-test-${Date.now()}`],
+          paths: [`/tmp/does-not-exist-x-mars-test-${Date.now()}`],
           reload: async () => ({}),
         }),
       ).not.toThrow()

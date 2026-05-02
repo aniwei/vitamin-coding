@@ -39,7 +39,7 @@ export async function prepareSandboxWorkspace(sourceDir: string): Promise<Prepar
     }
   }
 
-  const sandboxRoot = await mkdtemp(join(tmpdir(), 'vitamin-coding-example-'))
+  const sandboxRoot = await mkdtemp(join(tmpdir(), 'x-mars-coding-example-'))
   const cleanup = async () => {
     await rm(sandboxRoot, { recursive: true, force: true })
   }

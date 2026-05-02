@@ -1,4 +1,4 @@
-import { getToolCallsByAssistantMessage, hasToolCalls, isPromptTooLong } from '@vitamin/ai'
+import { getToolCallsByAssistantMessage, hasToolCalls, isPromptTooLong } from '@x-mars/ai'
 import type {
   AssistantMessage,
   PromptCacheMetadata,
@@ -7,8 +7,8 @@ import type {
   ToolCall,
   ToolDefinition,
   ToolResultMessage,
-} from '@vitamin/ai'
-import type { DebugSnapshot, PauseResult } from '@vitamin/devtools'
+} from '@x-mars/ai'
+import type { DebugSnapshot, PauseResult } from '@x-mars/devtools'
 import { AbortError, MaxToolTurnsError } from './errors'
 import { partitionToolCalls } from './tool-partitioner'
 import type { ToolExecutor } from './tool-executor'
@@ -23,7 +23,7 @@ import type {
   StreamFunction,
   ToolResult,
 } from './types'
-import type { MessageSummaryItem } from '@vitamin/devtools'
+import type { MessageSummaryItem } from '@x-mars/devtools'
 
 const DEFAULT_PROMPT_TOO_LONG_RETRIES = 2
 
@@ -35,7 +35,7 @@ type SnapshotMetadata = Record<string, string | number | boolean | null>
 // WorkLoopContext — workLoop 引擎的完整执行契约，由 Agent.runLoop() 组装
 export interface WorkLoopContext {
   // 执行参数（来自 AgentRunContext）
-  model: import('@vitamin/ai').Model
+  model: import('@x-mars/ai').Model
   systemPrompt: string
   messages: AgentMessage[]
   thinkingLevel: ThinkingLevel
@@ -43,13 +43,13 @@ export interface WorkLoopContext {
   temperature?: number
   convertToLLM: (
     messages: AgentMessage[],
-  ) => import('@vitamin/ai').Message[] | Promise<import('@vitamin/ai').Message[]>
+  ) => import('@x-mars/ai').Message[] | Promise<import('@x-mars/ai').Message[]>
   transformContext?: import('./types').ContextTransform
   maxPromptTooLongRetries?: number
   // 配置（来自 AgentConfig）
   maxToolTurns: number
-  devtools?: import('@vitamin/devtools').Devtools
-  logger: import('@vitamin/shared').Logger
+  devtools?: import('@x-mars/devtools').Devtools
+  logger: import('@x-mars/shared').Logger
   getSteeringMessages: () => Promise<AgentMessage[]>
   getFollowUpMessages: () => Promise<AgentMessage[]>
   cacheRetention?: 'none' | 'short' | 'long'

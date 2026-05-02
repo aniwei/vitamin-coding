@@ -1,18 +1,18 @@
 // MCP Tool → AgentTool 适配器
-// 将 MCP Server 暴露的 tools 转换为 @vitamin/agent 的 AgentTool 格式
-// 从 @vitamin/tools 迁移
+// 将 MCP Server 暴露的 tools 转换为 @x-mars/agent 的 AgentTool 格式
+// 从 @x-mars/tools 迁移
 
 import { z } from 'zod'
 import {
   jsonSchemaObjectToZod,
   jsonSchemaPropertyToZod as baseJsonSchemaPropertyToZod,
-} from '@vitamin/schema'
-import { createLogger } from '@vitamin/shared'
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+} from '@x-mars/schema'
+import { createLogger } from '@x-mars/shared'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 import type { McpClient } from './mcp-client'
 import type { McpToolDefinition, McpJsonSchemaProperty, McpContent } from './types'
 
-const logger = createLogger('@vitamin/mcp:adapter')
+const logger = createLogger('@x-mars/mcp:adapter')
 
 /**
  * 将 MCP JSON Schema property → Zod Schema

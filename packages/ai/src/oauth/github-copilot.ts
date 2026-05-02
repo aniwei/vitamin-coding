@@ -1,5 +1,5 @@
-import { GITHUB_CLIENT_ID, GITHUB_COPILOT_USER_AGENT, GITHUB_SCOPE } from '@vitamin/env'
-import { createLogger, OAuthError } from '@vitamin/shared'
+import { GITHUB_CLIENT_ID, GITHUB_COPILOT_USER_AGENT, GITHUB_SCOPE } from '@x-mars/env'
+import { createLogger, OAuthError } from '@x-mars/shared'
 import type {
   OAuthLoginOptions,
   OAuthCredentials,
@@ -7,7 +7,7 @@ import type {
   OAuthRefreshTokenOptions,
 } from '../types'
 
-const logger = createLogger('@vitamin/ai:oauth:github-copilot')
+const logger = createLogger('@x-mars/ai:oauth:github-copilot')
 
 type DeviceResponse = {
   device_code: string

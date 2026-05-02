@@ -1,12 +1,12 @@
 import { WebSocketServer } from 'ws'
-import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
+import { createLogger, TypedEventEmitter, type Events } from '@x-mars/shared'
 import type { WebSocket } from 'ws'
 import type { IncomingMessage } from 'node:http'
 import type { Socket } from 'node:net'
 import type { WebSocketMessage, WebSocketClientMessage } from './types'
 import { validateWebSocketMessage } from './ws-protocol'
 
-const logger = createLogger('@vitamin/service:websocket-manager')
+const logger = createLogger('@x-mars/service:websocket-manager')
 
 export type WebSocketClientHandler = (clientId: string, message: WebSocketClientMessage) => void
 export type SessionEventSink = (message: WebSocketMessage) => void

@@ -8,7 +8,7 @@
  * 服务端口: 8080 (匹配 web-ui vite proxy 默认目标)
  *
  * 架构:
- *   VitaminApp (session/agent 运行时)
+ *   XMarsApp (session/agent 运行时)
  *     └─ CodingService (HTTP+WS server)
  *          ├─ /api/chat/*        ← web-ui chat 页面
  *          ├─ /api/sessions/*    ← web-ui session 管理
@@ -17,15 +17,15 @@
  *          └─ /ws                ← WebSocket 实时事件流
  */
 
-import { createVitamin } from '../src'
-import { createCodingService } from '@vitamin/service'
+import { createXMars } from '../src'
+import { createCodingService } from '@x-mars/service'
 
 const modelId = process.env.CODING_EXAMPLE_MODEL_ID ?? 'github-copilot/gpt-4o'
 const SERVICE_PORT = Number(process.env.PORT) || 8080
 
 async function main() {
-  // 1. 创建 VitaminApp 容器
-  const vitamin = createVitamin({
+  // 1. 创建 XMarsApp 容器
+  const xMars = createXMars({
     port: 0, // devtools port (0 = disabled)
     inspect: false,
     logger: {
@@ -37,19 +37,19 @@ async function main() {
     workspaceDir: process.cwd(),
   })
 
-  await vitamin.start()
-  console.log('[web-service] VitaminApp started')
+  await xMars.start()
+  console.log('[web-service] XMarsApp started')
 
   // 2. 创建 CodingService (HTTP + WebSocket)
-  const service = createCodingService(vitamin, {
+  const service = createCodingService(xMars, {
     port: SERVICE_PORT,
     host: '127.0.0.1',
     corsOrigin: 'http://localhost:5173', // Vite dev server
   })
 
   // 3. 自动 attach 新建会话的事件桥
-  const originalCreate = vitamin.createSession.bind(vitamin)
-  vitamin.createSession = async (options) => {
+  const originalCreate = xMars.createSession.bind(xMars)
+  xMars.createSession = async (options) => {
     const session = await originalCreate(options)
     service.attachSession(session)
     return session
@@ -64,7 +64,7 @@ async function main() {
   const shutdown = async () => {
     console.log('\n[web-service] shutting down...')
     await service.stop()
-    await vitamin.stop()
+    await xMars.stop()
     process.exit(0)
   }
 

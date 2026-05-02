@@ -19,7 +19,7 @@ export function AppNavBar() {
           {/* Brand/Logo */}
           <Link to="/chat" className="flex items-center gap-2 hover:opacity-80 transition-opacity">
             {/* <img src="/icon_blue.png" alt="OpenDev" className="w-7 h-7 rounded-lg shadow-sm" /> */}
-            <span className="text-base font-semibold text-gray-900">VITAMIN</span>
+            <span className="text-base font-semibold text-gray-900">X-MARS</span>
           </Link>
 
           {/* Navigation Links */}

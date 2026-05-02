@@ -1,4 +1,4 @@
-# @vitamin/resources 设计说明
+# @x-mars/resources 设计说明
 
 ## 设计目标
 
@@ -15,7 +15,7 @@
 
 ### SettingsManager（settings-manager.ts）
 
-封装 `@vitamin/setting` 的 SettingLoader，增加事件通知：
+封装 `@x-mars/setting` 的 SettingLoader，增加事件通知：
 
 - `load()` → 加载配置
 - `get(key)` → 读取配置项
@@ -42,12 +42,12 @@
 
 **watch 模式**：
 
-`DefaultResourceManager.watch()` 启动文件监控（仅文件系统 Source 支持），文件变更时重新加载对应 Source 并发射 `resources:updated` 事件，`VitaminApp` 订阅此事件触发相关子系统刷新。
+`DefaultResourceManager.watch()` 启动文件监控（仅文件系统 Source 支持），文件变更时重新加载对应 Source 并发射 `resources:updated` 事件，`XMarsApp` 订阅此事件触发相关子系统刷新。
 
 ## 实现流程
 
 ```
-VitaminApp.init()
+XMarsApp.init()
        |
   createResourceManager(config)
        |
@@ -80,7 +80,7 @@ VitaminApp.init()
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/setting`、`@vitamin/memory`、`@vitamin/prompt`、`@vitamin/shared`、`@vitamin/env`
+- **内部依赖**：`@x-mars/setting`、`@x-mars/memory`、`@x-mars/prompt`、`@x-mars/shared`、`@x-mars/env`
 - **外部依赖**：无
 
 ## 测试策略

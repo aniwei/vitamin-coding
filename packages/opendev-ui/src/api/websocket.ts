@@ -1,4 +1,4 @@
-import { asRecord, normalizeKeysToCamel } from '@vitamin/shared/browser/data'
+import { asRecord, normalizeKeysToCamel } from '@x-mars/shared/browser/data'
 import type { WebSocketMessage } from '../types'
 
 export type WebSocketEventHandler = (message: WebSocketMessage) => void

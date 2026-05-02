@@ -1,4 +1,4 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 
 import { PersistentMemory, FileSystemMemoryStore } from './persistent-memory'
 import { prune } from './prune'
@@ -50,10 +50,10 @@ import type {
   ArchiveEntry,
   ArchiveStorage,
 } from './types'
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 import type { RestorationState } from './state-restoration'
 
-const logger = createLogger('@vitamin/memory')
+const logger = createLogger('@x-mars/memory')
 
 export class MemoryManager {
   private readonly persistent: PersistentMemory

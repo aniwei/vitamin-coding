@@ -12,17 +12,17 @@ const PANEL_MIN_W = 320
 const PANEL_MAX_W_RATIO = 0.7
 
 const PANEL_DEFAULT_W = 720
-const PANEL_STORAGE_W = 'vitamin.webui.devtools.panel.width'
+const PANEL_STORAGE_W = 'x-mars.webui.devtools.panel.width'
 
 const TOP_MIN_H = 200
 const TOP_MAX_H_RATIO = 0.85
 
 const TOP_DEFAULT_H = 420
-const TOP_STORAGE_H = 'vitamin.webui.devtools.top.height'
+const TOP_STORAGE_H = 'x-mars.webui.devtools.top.height'
 
 const FLOW_MIN_W = 160
 const FLOW_DEFAULT_W = 380
-const FLOW_STORAGE_W = 'vitamin.webui.devtools.flow.width'
+const FLOW_STORAGE_W = 'x-mars.webui.devtools.flow.width'
 
 function readStoredNumber(key: string, fallback: number): number {
   if (typeof window === 'undefined') {return fallback}

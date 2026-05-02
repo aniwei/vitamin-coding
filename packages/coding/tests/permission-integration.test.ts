@@ -1,5 +1,5 @@
 // Permission system integration tests
-// Verifies that VitaminApp correctly wires PermissionPolicyRegistry + PermissionGuardHook
+// Verifies that XMarsApp correctly wires PermissionPolicyRegistry + PermissionGuardHook
 // into the hook registry, and that settings changes dynamically update policies.
 import { describe, expect, it } from 'vitest'
 import {
@@ -15,9 +15,9 @@ import {
   createDirectoryFreezePolicy,
   createAgentBoundaryPolicy,
   compilePolicyFromSetting,
-} from '@vitamin/hooks'
-import type { ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from '@vitamin/hooks'
-import { Agent, type AgentMessage } from '@vitamin/agent'
+} from '@x-mars/hooks'
+import type { ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from '@x-mars/hooks'
+import { Agent, type AgentMessage } from '@x-mars/agent'
 import {
   createEventStream,
   createProviderRegistry,
@@ -26,11 +26,11 @@ import {
   type StreamContext,
   type StreamEvent,
   type ToolCall,
-} from '@vitamin/ai'
-import { createInMemorySessionStore } from '@vitamin/session'
-import { createLogger } from '@vitamin/shared'
+} from '@x-mars/ai'
+import { createInMemorySessionStore } from '@x-mars/session'
+import { createLogger } from '@x-mars/shared'
 import { AgentSession } from '../src/session/agent-session'
-import { createVitamin } from '../src/app/vitamin-app'
+import { createXMars } from '../src/app/x-mars-app'
 
 // ═══ Helpers ═══
 
@@ -274,9 +274,9 @@ describe('Permission guard in AgentSession tool execution', () => {
   })
 })
 
-// ═══ VitaminApp permission policy integration ═══
+// ═══ XMarsApp permission policy integration ═══
 
-describe('VitaminApp permission policy wiring', () => {
+describe('XMarsApp permission policy wiring', () => {
   function createTestApp(hookRegistry?: ReturnType<typeof createHookRegistry>) {
     const providerRegistry = createProviderRegistry()
     providerRegistry.register('openai-completions', () => ({
@@ -293,7 +293,7 @@ describe('VitaminApp permission policy wiring', () => {
       },
     }))
 
-    return createVitamin({
+    return createXMars({
       port: 0,
       inspect: false,
       logger: { name: 'perm-test', level: 'error', destination: 'stdout' },

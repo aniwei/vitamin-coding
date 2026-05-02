@@ -1,9 +1,9 @@
 import { randomUUID } from 'node:crypto'
-import { Subscription } from '@vitamin/shared'
+import { Subscription } from '@x-mars/shared'
 import { createToolHookExecutor } from './hooks'
-import { calculate, type AssistantMessage } from '@vitamin/ai'
-import { createHookRegistry } from '@vitamin/hooks'
-import { createLogger, type Logger } from '@vitamin/shared'
+import { calculate, type AssistantMessage } from '@x-mars/ai'
+import { createHookRegistry } from '@x-mars/hooks'
+import { createLogger, type Logger } from '@x-mars/shared'
 import {
   createAgent,
   AbortError,
@@ -14,9 +14,9 @@ import {
   type ToolCallEvent,
   type ToolExecutionEvent,
   type ToolResult,
-} from '@vitamin/agent'
-import type { HookRegistry } from '@vitamin/hooks'
-import type { Session } from '@vitamin/session'
+} from '@x-mars/agent'
+import type { HookRegistry } from '@x-mars/hooks'
+import type { Session } from '@x-mars/session'
 import type {
   Message,
   Model,
@@ -24,9 +24,9 @@ import type {
   StreamEvent,
   ThinkingLevel,
   Usage,
-} from '@vitamin/ai'
-import type { Devtools, PauseResult, DebugSnapshot, MessageSummaryItem } from '@vitamin/devtools'
-import { assemblePromptSections, isPromptAssembly, type PromptAssembly } from '@vitamin/prompt'
+} from '@x-mars/ai'
+import type { Devtools, PauseResult, DebugSnapshot, MessageSummaryItem } from '@x-mars/devtools'
+import { assemblePromptSections, isPromptAssembly, type PromptAssembly } from '@x-mars/prompt'
 import type {
   AgentSessionOptions,
   AgentSessionEvent,
@@ -34,6 +34,7 @@ import type {
   AskUserQuestion,
   ContextDiagnostics,
   ContextDiagnosticsOptions,
+  PluginCommandDiagnostic,
   PromptRefresh,
   PromptOptions,
 } from './types'
@@ -327,6 +328,22 @@ export class AgentSession extends Subscription {
             arguments: event.toolCall.arguments,
           },
           isError: event.result.isError === true,
+        },
+      ],
+    })
+  }
+
+  recordPluginCommandDiagnostic(diagnostic: PluginCommandDiagnostic): void {
+    this.devtools?.auditTrace.recordPluginCommand(
+      diagnostic as unknown as Record<string, unknown>,
+      this.id,
+    )
+    this.publish({
+      plugin_command_diagnostic: [
+        {
+          type: 'plugin_command_diagnostic' as const,
+          sessionId: this.id,
+          diagnostic,
         },
       ],
     })

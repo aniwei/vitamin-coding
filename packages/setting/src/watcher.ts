@@ -1,18 +1,18 @@
-import { TypedEventEmitter, createLogger } from '@vitamin/shared'
+import { TypedEventEmitter, createLogger } from '@x-mars/shared'
 import { type FSWatcher, watch } from 'node:fs'
-import type { Disposable, Events } from '@vitamin/shared'
-import type { VitaminSetting } from './types'
+import type { Disposable, Events } from '@x-mars/shared'
+import type { XMarsSetting } from './types'
 
-const logger = createLogger('@vitamin/setting:watcher')
+const logger = createLogger('@x-mars/setting:watcher')
 
 interface WatcherEvents extends Events {
-  change: (config: Partial<VitaminSetting>, path: string) => void
+  change: (config: Partial<XMarsSetting>, path: string) => void
   error: (error: Error) => void
 }
 
 export interface SettingWatcherOptions {
   paths: string[]
-  reload: (path: string) => Promise<Partial<VitaminSetting>>
+  reload: (path: string) => Promise<Partial<XMarsSetting>>
   debounceMs?: number
 }
 
@@ -25,7 +25,7 @@ export class SettingWatcher extends TypedEventEmitter<WatcherEvents> implements 
   private debounceTimers = new Map<string, ReturnType<typeof setTimeout>>()
 
   private readonly debounceMs: number
-  private readonly reload: (path: string) => Promise<Partial<VitaminSetting>>
+  private readonly reload: (path: string) => Promise<Partial<XMarsSetting>>
 
   constructor(options: SettingWatcherOptions) {
     super()

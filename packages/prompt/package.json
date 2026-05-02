@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/prompt",
+  "name": "@x-mars/prompt",
   "version": "0.0.1",
   "files": [
     "dist",
@@ -26,6 +26,6 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/shared": "workspace:*"
+    "@x-mars/shared": "workspace:*"
   }
 }

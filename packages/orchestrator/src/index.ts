@@ -1,4 +1,4 @@
-// @vitamin/orchestrator — 公共导出
+// @x-mars/orchestrator — 公共导出
 
 // 类型
 export type {

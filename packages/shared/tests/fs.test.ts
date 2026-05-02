@@ -16,7 +16,7 @@ describe('fs utilities', () => {
   let tempDir: string
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'vitamin-test-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'x-mars-test-'))
   })
 
   afterEach(async () => {

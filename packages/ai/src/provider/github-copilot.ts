@@ -1,4 +1,4 @@
-import { stream, createLogger, ProviderError } from '@vitamin/shared'
+import { stream, createLogger, ProviderError } from '@x-mars/shared'
 import type {
   AssistantMessage,
   Message,
@@ -13,7 +13,7 @@ import type {
 } from '../types'
 import type { ProviderStream } from '../types'
 
-const logger = createLogger('@vitamin/ai:github-copilot')
+const logger = createLogger('@x-mars/ai:github-copilot')
 
 const PROVIDER_VERSION = '1.0.0'
 const DEFAULT_COPILOT_INTEGRATION_ID = 'vscode-chat'
@@ -21,13 +21,13 @@ const DEFAULT_COPILOT_INTEGRATION_ID = 'vscode-chat'
 // 构建 Copilot 专用静态请求头
 function buildCopilotHeaders(token: string): Record<string, string> {
   const integrationId =
-    process.env['VITAMIN_COPILOT_INTEGRATION_ID'] || DEFAULT_COPILOT_INTEGRATION_ID
+    process.env['X_MARS_COPILOT_INTEGRATION_ID'] || DEFAULT_COPILOT_INTEGRATION_ID
 
   return {
     authorization: `Bearer ${token}`,
     'copilot-integration-id': integrationId,
-    'editor-version': `vitamin-coding/${PROVIDER_VERSION}`,
-    'editor-plugin-version': `vitamin-coding/${PROVIDER_VERSION}`,
+    'editor-version': `x-mars-coding/${PROVIDER_VERSION}`,
+    'editor-plugin-version': `x-mars-coding/${PROVIDER_VERSION}`,
     'openai-intent': 'conversation-panel',
   }
 }

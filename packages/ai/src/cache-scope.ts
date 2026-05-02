@@ -1,10 +1,10 @@
 // Prompt Cache Scope — manages shared cache prefix across related API calls
 // Enables fork agents to reuse the parent conversation's cache prefix
 
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import type { Message } from './types'
 
-const logger = createLogger('@vitamin/ai:cache-scope')
+const logger = createLogger('@x-mars/ai:cache-scope')
 
 export type CacheRetention = 'none' | 'short' | 'long'
 

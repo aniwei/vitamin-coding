@@ -1,15 +1,15 @@
-# Vitamin Coding
+# X-Mars Coding
 
 基于 Anthropic API 构建的 AI 编程助手代理系统，可作为 CLI 在终端运行，也可通过 WebSocket/HTTP 提供 Web 界面服务。
 
 ## 架构概览
 
 ```
-vitamin-coding/
+x-mars-coding/
 ├── packages/
 │   ├── agent/        # 核心代理运行时（多模式执行引擎）
 │   ├── ai/           # Anthropic API 客户端与流式抽象
-│   ├── cli/          # CLI 入口点（命令：vitamin）
+│   ├── cli/          # CLI 入口点（命令：x-mars）
 │   ├── coding/       # 文件系统与项目感知工具
 │   ├── devtools/     # 代理状态的 HTTP 检查服务器
 │   ├── invariant/    # 断言工具
@@ -69,7 +69,7 @@ pnpm build
 
 ## 配置
 
-代理从 `~/.config/vitamin/config.json`（或 `$VITAMIN_CONFIG_PATH`）读取配置：
+代理从 `~/.config/x-mars/config.json`（或 `$X_MARS_CONFIG_PATH`）读取配置：
 
 ```json
 {
@@ -88,7 +88,7 @@ pnpm build
 pnpm build
 
 # 构建单个包（Nx 语法）
-npx nx build @vitamin/agent
+npx nx build @x-mars/agent
 
 # 仅构建受影响的包（git 变更后）
 npx nx run-many -t build --affected
@@ -127,42 +127,42 @@ pnpm clean
 node packages/cli/dist/index.js
 
 # 或全局链接（若已发布）
-npm install -g @vitamin/cli
-vitamin
+npm install -g @x-mars/cli
+x-mars
 ```
 
 ## 运行 Web UI
 
-Web 界面需要同时启动 `@vitamin/service`（后端）和 `web-ui`（前端）。
+Web 界面需要同时启动 `@x-mars/service`（后端）和 `web-ui`（前端）。
 
 ```bash
 # 启动服务（默认端口 3000）
-npx nx dev @vitamin/service
+npx nx dev @x-mars/service
 
 # 另开终端，启动 Web UI 开发服务器
-npx nx dev @vitamin/web-ui
+npx nx dev @x-mars/web-ui
 ```
 
 然后在浏览器中打开 http://localhost:5173。
 
 ## 包说明
 
-| 包                   | 说明                                               |
-| -------------------- | -------------------------------------------------- |
-| `@vitamin/agent`     | 核心执行引擎：工具循环、流式处理、会话管理         |
-| `@vitamin/ai`        | Anthropic API 的轻量封装，支持 SSE 解析            |
-| `@vitamin/cli`       | 二进制入口点 — 解析参数并启动代理                  |
-| `@vitamin/coding`    | 工作区检测、文件树、语言感知工具                   |
-| `@vitamin/devtools`  | 暴露代理状态的 Hono HTTP 调试服务器                |
-| `@vitamin/invariant` | 带描述性错误信息的类型化断言工具                   |
-| `@vitamin/mcp`       | MCP 协议服务器 — 向 MCP 兼容客户端暴露工具         |
-| `@vitamin/service`   | Hono + WebSocket 服务器，桥接 HTTP 客户端与代理    |
-| `@vitamin/setting`   | 配置 Schema（Zod）、加载、校验与默认值             |
-| `@vitamin/shared`    | 事件类型、日志（pino）、Markdown 解析、共享 Schema |
-| `@vitamin/skill`     | 加载 YAML/JSON 技能定义并注入为工具                |
-| `@vitamin/swarm`     | 生成并协调多个代理实例                             |
-| `@vitamin/tools`     | 实现：读写文件、bash、搜索、网页抓取               |
-| `web-ui`             | React 19 + Vite 8 + Tailwind CSS v4 聊天界面       |
+| 包                  | 说明                                               |
+| ------------------- | -------------------------------------------------- |
+| `@x-mars/agent`     | 核心执行引擎：工具循环、流式处理、会话管理         |
+| `@x-mars/ai`        | Anthropic API 的轻量封装，支持 SSE 解析            |
+| `@x-mars/cli`       | 二进制入口点 — 解析参数并启动代理                  |
+| `@x-mars/coding`    | 工作区检测、文件树、语言感知工具                   |
+| `@x-mars/devtools`  | 暴露代理状态的 Hono HTTP 调试服务器                |
+| `@x-mars/invariant` | 带描述性错误信息的类型化断言工具                   |
+| `@x-mars/mcp`       | MCP 协议服务器 — 向 MCP 兼容客户端暴露工具         |
+| `@x-mars/service`   | Hono + WebSocket 服务器，桥接 HTTP 客户端与代理    |
+| `@x-mars/setting`   | 配置 Schema（Zod）、加载、校验与默认值             |
+| `@x-mars/shared`    | 事件类型、日志（pino）、Markdown 解析、共享 Schema |
+| `@x-mars/skill`     | 加载 YAML/JSON 技能定义并注入为工具                |
+| `@x-mars/swarm`     | 生成并协调多个代理实例                             |
+| `@x-mars/tools`     | 实现：读写文件、bash、搜索、网页抓取               |
+| `web-ui`            | React 19 + Vite 8 + Tailwind CSS v4 聊天界面       |
 
 ## 工具链
 

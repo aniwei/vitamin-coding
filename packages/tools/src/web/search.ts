@@ -1,7 +1,7 @@
 import { z } from 'zod'
-import { TOOLS_EXECUTE_TIMEOUT_MS } from '@vitamin/env'
+import { TOOLS_EXECUTE_TIMEOUT_MS } from '@x-mars/env'
 import { htmlToText } from './html-to-text'
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 const BRAVE_SEARCH_URL = 'https://search.brave.com/search'
 const DEFAULT_USER_AGENT =

@@ -3,8 +3,8 @@ import {
   normalizePath,
   getThirdPartyToolDir,
   getThirdPartyToolBinaryDir,
-  getVitaminHomeDir,
-  getVitaminProjectDir,
+  getXMarsHomeDir,
+  getXMarsProjectDir,
   createTempLoggerDir,
   createTempLoggerPath,
 } from '../src/path'
@@ -42,35 +42,35 @@ describe('getThirdPartyToolBinaryDir', () => {
 })
 
 describe('getThirdPartyToolDir', () => {
-  it('#returns a path under vitamin home', () => {
+  it('#returns a path under xMars home', () => {
     const dir = getThirdPartyToolDir()
     expect(dir).toContain('tools')
   })
 })
 
-describe('getVitaminHomeDir', () => {
+describe('getXMarsHomeDir', () => {
   it('#returns a non-empty string', () => {
-    expect(typeof getVitaminHomeDir()).toBe('string')
-    expect(getVitaminHomeDir().length).toBeGreaterThan(0)
+    expect(typeof getXMarsHomeDir()).toBe('string')
+    expect(getXMarsHomeDir().length).toBeGreaterThan(0)
   })
 })
 
-describe('getVitaminProjectDir', () => {
+describe('getXMarsProjectDir', () => {
   it('#returns a non-empty string', () => {
-    expect(typeof getVitaminProjectDir()).toBe('string')
-    expect(getVitaminProjectDir().length).toBeGreaterThan(0)
+    expect(typeof getXMarsProjectDir()).toBe('string')
+    expect(getXMarsProjectDir().length).toBeGreaterThan(0)
   })
 })
 
 describe('createTempLoggerDir', () => {
-  it('#returns a temp path with vitamin-coding prefix', () => {
+  it('#returns a temp path with x-mars-coding prefix', () => {
     const result = createTempLoggerDir()
-    expect(result).toContain('vitamin-coding-')
+    expect(result).toContain('x-mars-coding-')
     expect(result.endsWith('.log')).toBe(true)
   })
 
   it('#createTempLoggerPath is an alias', () => {
     const a = createTempLoggerPath()
-    expect(a).toContain('vitamin-coding-')
+    expect(a).toContain('x-mars-coding-')
   })
 })

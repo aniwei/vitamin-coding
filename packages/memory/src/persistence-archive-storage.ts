@@ -1,12 +1,12 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { formatArchive } from './archive'
-import { createPersistence } from '@vitamin/persistence'
+import { createPersistence } from '@x-mars/persistence'
 
-import type { Message } from '@vitamin/ai'
-import type { Persistence, Snapshot, StorageOptions } from '@vitamin/persistence'
+import type { Message } from '@x-mars/ai'
+import type { Persistence, Snapshot, StorageOptions } from '@x-mars/persistence'
 import type { ArchiveStorage, ArchiveEntry, StorageType } from './types'
 
-const logger = createLogger('@vitamin/memory:persistence-archive')
+const logger = createLogger('@x-mars/memory:persistence-archive')
 
 const ARCHIVE_SNAPSHOT_VERSION = 1
 

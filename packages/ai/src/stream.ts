@@ -1,4 +1,4 @@
-import { ProviderError } from '@vitamin/shared'
+import { ProviderError } from '@x-mars/shared'
 import { type EventStream, createEventStream } from './event-stream'
 
 import type {

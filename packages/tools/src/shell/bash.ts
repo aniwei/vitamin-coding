@@ -1,14 +1,14 @@
-import { createTempLoggerPath, formatBytes, truncateTail } from '@vitamin/shared'
+import { createTempLoggerPath, formatBytes, truncateTail } from '@x-mars/shared'
 import {
   TOOLS_EXECUTE_TIMEOUT_MS,
   TOOLS_MAX_OUTPUT_BYTES,
   TOOLS_MAX_OUTPUT_LINES,
-} from '@vitamin/env'
+} from '@x-mars/env'
 import { createWriteStream, WriteStream } from 'node:fs'
 import { spawn } from './process'
 import { z } from 'zod'
 
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 import { resolve } from 'node:path'
 
 // 参数 schema

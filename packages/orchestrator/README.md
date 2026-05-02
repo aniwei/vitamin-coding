@@ -1,4 +1,4 @@
-# @vitamin/orchestrator
+# @x-mars/orchestrator
 
 ## 模块定位
 
@@ -33,11 +33,11 @@ tests/                  # 6 个测试文件
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/orchestrator build
-pnpm --filter @vitamin/orchestrator typecheck
-pnpm --filter @vitamin/orchestrator clean
+pnpm --filter @x-mars/orchestrator build
+pnpm --filter @x-mars/orchestrator typecheck
+pnpm --filter @x-mars/orchestrator clean
 ```
 
 ## 关联包
 
-`@vitamin/agent`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+`@x-mars/agent`、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`

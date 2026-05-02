@@ -1,4 +1,4 @@
-// @vitamin/hooks 权限体系核心类型
+// @x-mars/hooks 权限体系核心类型
 import type { HookTiming } from '../../types'
 
 // ═══ Permission Policy ═══

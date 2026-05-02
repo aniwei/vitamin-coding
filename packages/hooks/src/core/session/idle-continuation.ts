@@ -1,5 +1,5 @@
 // Idle Continuation Hook — 会话空闲时自动继续执行未完成任务 (§S14.2)
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'
 

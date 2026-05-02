@@ -58,7 +58,7 @@ export function WelcomeScreen() {
             />
           </svg>
         </div>
-        <h2 className="text-xl font-semibold text-text-000 mb-2">Welcome to VITAMIN</h2>
+        <h2 className="text-xl font-semibold text-text-000 mb-2">Welcome to X-MARS</h2>
         <p className="text-sm text-text-300">Start a conversation with your AI coding assistant</p>
       </div>
     </div>

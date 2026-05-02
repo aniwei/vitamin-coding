@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 import type { McpManager } from './mcp-manager'
 import type { McpPromptMessage, McpResourceContents } from './types'
 

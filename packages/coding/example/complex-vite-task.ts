@@ -2,16 +2,16 @@
  * 例 2：复杂任务 —— "重构 session 模块"
  *
  * 对应 README 中的复杂任务完整流程。
- * 使用 VitaminApp 容器跑通 Full Pipeline：
+ * 使用 XMarsApp 容器跑通 Full Pipeline：
  *   Clarify → Plan → Execute (task_delegate) → Verify (review_call) → Conclude
  *
  * Lead Agent 拥有 full 工具预设（含 task_delegate / review_call / agent_task 等编排工具），
  * 会自动按 Complexity Routing 进入多步编排流程，派发子任务给 sub-agent 执行。
  *
- * 使用 GitHub Copilot 作为 LLM provider（从 ~/.config/vitamin/auth.json 读取凭据）。
+ * 使用 GitHub Copilot 作为 LLM provider（从 ~/.config/x-mars/auth.json 读取凭据）。
  */
 
-import { createVitamin, getLastAssistantText } from '../src'
+import { createXMars, getLastAssistantText } from '../src'
 import { prepareSandboxWorkspace } from './sandbox-workspace'
 
 const modelId = process.env.CODING_EXAMPLE_MODEL_ID ?? 'github-copilot/gemini-2.5-pro'
@@ -31,7 +31,7 @@ const maxToolTurns = parsePositiveInt(process.env.CODING_EXAMPLE_MAX_TOOL_TURNS,
 async function main() {
   const sandbox = await prepareSandboxWorkspace(process.cwd())
 
-  const vitamin = createVitamin({
+  const xMars = createXMars({
     port: 0,
     inspect: false,
     logger: {
@@ -45,15 +45,15 @@ async function main() {
   })
 
   try {
-    await vitamin.start()
-    console.log('[complex-task] VitaminApp started')
+    await xMars.start()
+    console.log('[complex-task] XMarsApp started')
     console.log('[complex-task] model:', modelId)
     console.log('[complex-task] maxToolTurns:', maxToolTurns)
     console.log('[complex-task] workspace:', sandbox.workspaceDir)
     console.log('[complex-task] workspaceSource:', sandbox.source)
 
     // 创建 Lead Agent 会话
-    const session = await vitamin.createSession({ id: 'complex-task-session' })
+    const session = await xMars.createSession({ id: 'complex-task-session' })
     console.log('[complex-task] session created:', session.id)
 
     // 监听事件，跟踪执行过程
@@ -88,10 +88,10 @@ async function main() {
     console.log('[complex-task] total tool calls:', toolCallCount)
 
     // 收尾
-    await vitamin.removeSession('complex-task-session')
+    await xMars.removeSession('complex-task-session')
     console.log('[complex-task] done')
   } finally {
-    await vitamin.stop().catch(() => {})
+    await xMars.stop().catch(() => {})
     await sandbox.cleanup()
   }
 }

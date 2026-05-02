@@ -1,6 +1,6 @@
 import { DEFAULT_SNIP_CONFIG } from './defaults'
 
-import type { Message, ToolResultMessage } from '@vitamin/ai'
+import type { Message, ToolResultMessage } from '@x-mars/ai'
 import type { SnipConfig, SnipResult } from './types'
 
 export function snip(messages: readonly Message[], config: Partial<SnipConfig> = {}): SnipResult {

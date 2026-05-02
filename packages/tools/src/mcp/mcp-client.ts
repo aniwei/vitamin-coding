@@ -1,2 +1,2 @@
-export { McpClient, createMcpClient } from '@vitamin/mcp'
-export type { McpClientOptions } from '@vitamin/mcp'
+export { McpClient, createMcpClient } from '@x-mars/mcp'
+export type { McpClientOptions } from '@x-mars/mcp'

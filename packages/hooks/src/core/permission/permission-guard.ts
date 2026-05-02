@@ -1,4 +1,4 @@
-import { ToolError } from '@vitamin/shared'
+import { ToolError } from '@x-mars/shared'
 
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'

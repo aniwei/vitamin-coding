@@ -2,7 +2,7 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { join } from 'node:path'
 
-import { exists } from '@vitamin/shared'
+import { exists } from '@x-mars/shared'
 
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'

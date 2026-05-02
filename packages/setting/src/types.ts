@@ -1,5 +1,5 @@
 import type { SettingStore } from './store'
-import { WORKFLOW_SLOTS, type WorkflowSlot } from '@vitamin/ai'
+import { WORKFLOW_SLOTS, type WorkflowSlot } from '@x-mars/ai'
 
 export { WORKFLOW_SLOTS }
 
@@ -159,7 +159,7 @@ export interface PermissionPolicySetting {
   rules: PermissionRuleConfig[]
 }
 
-export interface VitaminSettingFromSchema {
+export interface XMarsSettingFromSchema {
   config_version?: string
   version?: string
   log_level?: LogLevel
@@ -185,7 +185,7 @@ export interface VitaminSettingFromSchema {
   [key: string]: unknown
 }
 
-export const VITAMIN_SETTING_KEYS = [
+export const X_MARS_SETTING_KEYS = [
   'config_version',
   'version',
   'log_level',
@@ -210,7 +210,7 @@ export const VITAMIN_SETTING_KEYS = [
   '_migrations',
 ] as const
 
-export type VitaminSettingKey = (typeof VITAMIN_SETTING_KEYS)[number]
+export type XMarsSettingKey = (typeof X_MARS_SETTING_KEYS)[number]
 
 export interface SettingWarning {
   key: string
@@ -226,9 +226,9 @@ export interface LoadSettingOptions {
 }
 export type LoadConfigOptions = LoadSettingOptions
 
-export type VitaminSetting = VitaminSettingFromSchema
+export type XMarsSetting = XMarsSettingFromSchema
 
-export const VITAMIN_DEFAULT_CONFIG: VitaminSetting = {
+export const X_MARS_DEFAULT_CONFIG: XMarsSetting = {
   config_version: '1.0.0',
   log_level: 'info',
   model: undefined,

@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/devtools",
+  "name": "@x-mars/devtools",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -25,8 +25,8 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/invariant": "workspace:*",
-    "@vitamin/shared": "workspace:*",
+    "@x-mars/invariant": "workspace:*",
+    "@x-mars/shared": "workspace:*",
     "eventsource-parser": "3.0.6",
     "hono": "4.12.12",
     "uuid": "13.0.0",

@@ -10,7 +10,7 @@ import { createFind } from '../src/search/find'
 let workspaceDir = ''
 
 async function createWorkspace(): Promise<string> {
-  workspaceDir = await mkdtemp(join(tmpdir(), 'vitamin-tools-cov-'))
+  workspaceDir = await mkdtemp(join(tmpdir(), 'x-mars-tools-cov-'))
   return workspaceDir
 }
 

@@ -1,4 +1,4 @@
-// @vitamin/mcp — MCP (Model Context Protocol) 模块
+// @x-mars/mcp — MCP (Model Context Protocol) 模块
 // 提供 MCP 客户端、服务端、工具适配、资源访问等完整能力
 
 // ─── Types ───
@@ -74,5 +74,5 @@ export {
 } from './mcp-agent-tools'
 
 // ─── Server ───
-export { VitaminMcpServer, createMcpServer } from './mcp-server'
+export { XMarsMcpServer, createMcpServer } from './mcp-server'
 export type { McpServerOptions } from './mcp-server'

@@ -5,17 +5,20 @@ describe('plugin command and agent registries', () => {
   it('#then registers, lists, and unregisters plugin commands by owner', () => {
     const registry = createPluginCommandRegistry()
 
-    registry.register({ name: 'review', description: 'Review code' }, 'review-plugin')
+    registry.register(
+      { name: 'review', description: 'Review code', permissions: ['filesystem'] },
+      'review-plugin',
+    )
     registry.unregister('review', 'other-plugin')
 
     expect(registry.get('review')).toEqual({
       pluginId: 'review-plugin',
-      command: { name: 'review', description: 'Review code' },
+      command: { name: 'review', description: 'Review code', permissions: ['filesystem'] },
     })
     expect(registry.list()).toEqual([
       {
         pluginId: 'review-plugin',
-        command: { name: 'review', description: 'Review code' },
+        command: { name: 'review', description: 'Review code', permissions: ['filesystem'] },
       },
     ])
 
@@ -32,6 +35,16 @@ describe('plugin command and agent registries', () => {
     expect(() => registry.register({ name: 'review' }, 'other-plugin')).toThrow(
       'Plugin command "review" is already registered by plugin "review-plugin"',
     )
+  })
+
+  it('#then stores optional command handlers without exposing them in manifest clones', async () => {
+    const registry = createPluginCommandRegistry()
+    const handler = async () => ({ type: 'response' as const, text: 'handled' })
+
+    registry.register({ name: 'review', description: 'Review code' }, 'review-plugin', handler)
+
+    expect(registry.get('review')?.handler).toBe(handler)
+    expect(registry.list()[0]?.handler).toBe(handler)
   })
 
   it('#then registers agents with cloned tool lists', () => {

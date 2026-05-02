@@ -1,4 +1,4 @@
-import { OAuthError } from '@vitamin/shared'
+import { OAuthError } from '@x-mars/shared'
 import { GitHubCopilotOAuthProvider } from './oauth/github-copilot'
 import type { OAuthCredentials, OAuthProvider, OAuthProviderId } from './types'
 

@@ -8,16 +8,16 @@ import {
 describe('InMemoryMemoryStore', () => {
   it('#given preset data #then load returns matching sources', async () => {
     const store = new InMemoryMemoryStore()
-    store.set('~/.vitamin/AGENTS.md', 'global prefs')
+    store.set('~/.x-mars/AGENTS.md', 'global prefs')
     store.set('./AGENTS.md', 'project prefs')
 
     const result = await store.load([
-      { path: '~/.vitamin/AGENTS.md', writable: true },
+      { path: '~/.x-mars/AGENTS.md', writable: true },
       { path: './AGENTS.md', writable: false },
     ])
 
     expect(result.size).toBe(2)
-    expect(result.get('~/.vitamin/AGENTS.md')).toBe('global prefs')
+    expect(result.get('~/.x-mars/AGENTS.md')).toBe('global prefs')
     expect(result.get('./AGENTS.md')).toBe('project prefs')
   })
 
@@ -50,23 +50,23 @@ describe('PersistentMemory', () => {
   })
 
   it('#given sources with content #then load populates memories', async () => {
-    store.set('~/.vitamin/AGENTS.md', 'preferences')
+    store.set('~/.x-mars/AGENTS.md', 'preferences')
 
     const pm = new PersistentMemory(store, [
-      { path: '~/.vitamin/AGENTS.md', writable: true },
+      { path: '~/.x-mars/AGENTS.md', writable: true },
     ])
     await pm.load()
 
     const memories = pm.getMemories()
     expect(memories.size).toBe(1)
-    expect(memories.get('~/.vitamin/AGENTS.md')).toBe('preferences')
+    expect(memories.get('~/.x-mars/AGENTS.md')).toBe('preferences')
   })
 
   it('#given loaded memories #then getInjection returns formatted text', async () => {
-    store.set('~/.vitamin/AGENTS.md', 'User likes TypeScript')
+    store.set('~/.x-mars/AGENTS.md', 'User likes TypeScript')
 
     const pm = new PersistentMemory(store, [
-      { path: '~/.vitamin/AGENTS.md', writable: true },
+      { path: '~/.x-mars/AGENTS.md', writable: true },
     ])
     await pm.load()
 
@@ -109,7 +109,7 @@ describe('PersistentMemory', () => {
 describe('DEFAULT_MEMORY_SOURCES', () => {
   it('#then has three default sources', () => {
     expect(DEFAULT_MEMORY_SOURCES).toHaveLength(3)
-    expect(DEFAULT_MEMORY_SOURCES[0].path).toContain('~/.vitamin/AGENTS.md')
+    expect(DEFAULT_MEMORY_SOURCES[0].path).toContain('~/.x-mars/AGENTS.md')
     expect(DEFAULT_MEMORY_SOURCES[2].writable).toBe(false)
   })
 })

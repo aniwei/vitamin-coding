@@ -1,7 +1,7 @@
 import { existsSync, readFileSync } from 'node:fs'
 import { join } from 'node:path'
-import { getVitaminHomeDir, parseJsonc } from '@vitamin/shared'
-import { VITAMIN_PROJECT_DIR } from '@vitamin/env'
+import { getXMarsHomeDir, parseJsonc } from '@x-mars/shared'
+import { X_MARS_PROJECT_DIR } from '@x-mars/env'
 import { BUILTIN_SERVERS, EXT_TO_LANG, LSP_INSTALL_HINTS } from './constants'
 import type { ResolvedServer, ServerLookupResult } from './types'
 
@@ -80,12 +80,12 @@ export function isServerInstalled(command: string[]): boolean {
     }
   }
 
-  // Check local project node_modules, vitamin home bin
-  const vitaminHome = getVitaminHomeDir()
+  // Check local project node_modules, xMars home bin
+  const xMarsHome = getXMarsHomeDir()
   const additionalBases = [
-    join(VITAMIN_PROJECT_DIR, 'node_modules', '.bin'),
-    join(vitaminHome, 'bin'),
-    join(vitaminHome, 'node_modules', '.bin'),
+    join(X_MARS_PROJECT_DIR, 'node_modules', '.bin'),
+    join(xMarsHome, 'bin'),
+    join(xMarsHome, 'node_modules', '.bin'),
   ]
 
   for (const base of additionalBases) {
@@ -130,10 +130,10 @@ function detectConfigFilePath(base: string): string {
 }
 
 export function getConfigPaths(): { project: string; user: string } {
-  const vitaminHome = getVitaminHomeDir()
+  const xMarsHome = getXMarsHomeDir()
   return {
-    project: detectConfigFilePath(join(VITAMIN_PROJECT_DIR, 'vitamin')),
-    user: detectConfigFilePath(join(vitaminHome, 'vitamin')),
+    project: detectConfigFilePath(join(X_MARS_PROJECT_DIR, 'x-mars')),
+    user: detectConfigFilePath(join(xMarsHome, 'x-mars')),
   }
 }
 

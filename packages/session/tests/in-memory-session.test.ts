@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SessionError } from '@vitamin/shared'
+import { SessionError } from '@x-mars/shared'
 import { InMemorySession } from '../src/in-memory-session'
 
 describe('InMemorySession', () => {

@@ -1,7 +1,7 @@
 // session-manager 工具 — 会话管理
 import { z } from 'zod'
 
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 const SessionManagerArgsSchema = z.object({
   action: z

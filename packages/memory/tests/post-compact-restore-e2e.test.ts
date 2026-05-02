@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { MemoryManager } from '../src'
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 
 function user(text: string): Message {
   return {

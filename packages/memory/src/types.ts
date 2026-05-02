@@ -1,4 +1,4 @@
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 
 export type ContextSize = ['tokens', number] | ['messages', number] | ['fraction', number]
 

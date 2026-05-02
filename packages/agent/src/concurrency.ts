@@ -1,1 +1,1 @@
-export { limitConcurrency } from '@vitamin/shared'
+export { limitConcurrency } from '@x-mars/shared'

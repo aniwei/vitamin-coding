@@ -1,4 +1,4 @@
-# @vitamin/mcp 设计说明
+# @x-mars/mcp 设计说明
 
 ## 设计目标
 
@@ -65,9 +65,9 @@ MCP 协议客户端，实现 MCP 2024-11-05 规范：
 - `createMcpToolAdapters(client)` → 从 McpClient 批量创建 AgentTool 适配器
 - 每个适配器的 `execute()` 委托到 `client.callTool()`
 
-### VitaminMcpServer（mcp-server.ts）
+### XMarsMcpServer（mcp-server.ts）
 
-将 Vitamin AgentTool 暴露为 MCP 服务端：
+将 X-Mars AgentTool 暴露为 MCP 服务端：
 
 - `tools/list` → 导出所有已注册工具
 - `tools/call` → 执行工具并返回结果
@@ -98,7 +98,7 @@ MCP 协议客户端，实现 MCP 2024-11-05 规范：
   返回 ToolResult
 
 暴露本地工具：
-  VitaminMcpServer.start(transport)
+  XMarsMcpServer.start(transport)
        |
   接收 JSON-RPC 请求
        |
@@ -117,13 +117,13 @@ MCP 协议客户端，实现 MCP 2024-11-05 规范：
 | `src/transports/stdio-transport.ts` | Stdio 传输                                           |
 | `src/transports/sse-transport.ts`   | SSE 传输                                             |
 | `src/tool-adapter.ts`               | MCP → AgentTool 适配                                 |
-| `src/mcp-server.ts`                 | VitaminMcpServer（本地工具暴露）                     |
+| `src/mcp-server.ts`                 | XMarsMcpServer（本地工具暴露）                       |
 | `src/index.ts`                      | barrel 导出                                          |
 
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/agent`（类型）、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/agent`（类型）、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`
 - **外部依赖**：`zod`
 
 ## 测试策略

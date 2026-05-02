@@ -1,5 +1,5 @@
-import type { PaginatedResult } from '@vitamin/persistence'
-export type { PaginatedResult } from '@vitamin/persistence'
+import type { PaginatedResult } from '@x-mars/persistence'
+export type { PaginatedResult } from '@x-mars/persistence'
 
 export type SessionEntry<T = unknown> =
   | { type: 'message'; id: string; parentId?: string; message: T; timestamp: number }
@@ -132,7 +132,7 @@ export interface RemoteStorageOptions {
 
 export type StorageOptions = FileStorageOptions | RemoteStorageOptions
 
-// sortBy 比 @vitamin/persistence 多了 lastActiveAt（session 域字段）
+// sortBy 比 @x-mars/persistence 多了 lastActiveAt（session 域字段）
 export interface PaginationOptions {
   page: number
   pageSize?: number

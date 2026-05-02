@@ -1,5 +1,5 @@
 import type { ToolCallEvent, ToolExecutionEvent } from './types'
-import type { StreamEvent } from '@vitamin/ai'
+import type { StreamEvent } from '@x-mars/ai'
 
 export type AgentSessionEventType = AgentSessionEvent['type']
 
@@ -18,6 +18,7 @@ export type AgentSessionEvent =
   | { type: 'tool_call_start'; sessionId: string; toolCall: ToolCallEvent }
   | { type: 'tool_execution_event'; sessionId: string; event: ToolExecutionEvent }
   | { type: 'tool_call_end'; sessionId: string; toolCall: ToolCallEvent; isError: boolean }
+  | { type: 'plugin_command_diagnostic'; sessionId: string; diagnostic: PluginCommandDiagnostic }
   | { type: 'review_requested'; sessionId: string; review: PatchReviewEvent }
   | { type: 'review_passed'; sessionId: string; review: PatchReviewEvent }
   | { type: 'review_failed'; sessionId: string; review: PatchReviewEvent; issues: string[] }
@@ -59,6 +60,23 @@ export interface PatchReviewEvent {
   targets: string[]
   blocked: boolean
   reasons: string[]
+}
+
+export interface PluginCommandDiagnostic {
+  kind: 'plugin-command'
+  pluginId: string
+  commandName: string
+  stage: 'parse' | 'permission' | 'handler' | 'prompt'
+  status: 'started' | 'completed' | 'failed' | 'denied' | 'requires_confirmation' | 'handoff'
+  confirmed?: boolean
+  permission?: string
+  effect?: 'allow' | 'deny' | 'ask'
+  reason?: string
+  message?: string
+  resultType?: string
+  rawArgumentCount?: number
+  argumentNames?: string[]
+  typedArgumentKeys?: string[]
 }
 
 export type AgentSessionSubscriber = (event: AgentSessionEvent) => void

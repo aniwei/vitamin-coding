@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createAutoCompactionHook } from '../src/hooks/auto-compaction'
 
-import type { AgentMessage } from '@vitamin/agent'
+import type { AgentMessage } from '@x-mars/agent'
 
 describe('createAutoCompactionHook', () => {
   it('writes back snip-only and micro-compact results', async () => {

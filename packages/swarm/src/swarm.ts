@@ -1,4 +1,4 @@
-import { createLogger, TypedEventEmitter } from '@vitamin/shared'
+import { createLogger, TypedEventEmitter } from '@x-mars/shared'
 
 import { createSwarmContext } from './context'
 import { createHandoffTool, validateHandoff } from './handoff'
@@ -26,7 +26,7 @@ import type {
   SwarmTurnResult,
 } from './types'
 
-const logger = createLogger('@vitamin/swarm')
+const logger = createLogger('@x-mars/swarm')
 
 type SwarmEvents = {
   [key: string]: (...args: unknown[]) => void
@@ -45,7 +45,7 @@ type SwarmEvents = {
  *
  * 核心设计原则：
  * 1. Swarm 不持有 Agent 运行时 — 通过 createRunContext 工厂由宿主注入
- * 2. Agent 定义（SwarmAgentDef）是纯声明式的，运行时由 @vitamin/agent 引擎执行
+ * 2. Agent 定义（SwarmAgentDef）是纯声明式的，运行时由 @x-mars/agent 引擎执行
  * 3. 编排模式通过组合模式实现，可嵌套使用
  */
 export class Swarm extends TypedEventEmitter<SwarmEvents> {

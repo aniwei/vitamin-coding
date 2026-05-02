@@ -1,13 +1,13 @@
 import { InMemorySettingStore } from './memory-store'
 import { createFileSettingStore, createHttpSettingStore } from './persistence-store'
-import type { VitaminSetting } from './types'
+import type { XMarsSetting } from './types'
 
 export type StorageType = 'memory' | 'file' | 'http'
 
 export interface SettingStore {
   readonly type: StorageType
   read(path: string): Promise<string | undefined>
-  write(path: string, config: Partial<VitaminSetting>): Promise<void>
+  write(path: string, config: Partial<XMarsSetting>): Promise<void>
   exists(path: string): Promise<boolean>
 }
 

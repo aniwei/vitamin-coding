@@ -1,10 +1,10 @@
-import { Agent } from '@vitamin/agent'
-import { createLogger } from '@vitamin/shared'
-import type { AssistantMessage } from '@vitamin/ai'
-import type { AgentConfig, StreamFunction } from '@vitamin/agent'
+import { Agent } from '@x-mars/agent'
+import { createLogger } from '@x-mars/shared'
+import type { AssistantMessage } from '@x-mars/ai'
+import type { AgentConfig, StreamFunction } from '@x-mars/agent'
 import type { SwarmAgentDef, SwarmContext, SwarmRunContextFactory, SwarmTurnResult } from '../types'
 
-const logger = createLogger('@vitamin/swarm')
+const logger = createLogger('@x-mars/swarm')
 
 const missingStream: StreamFunction = () => {
   throw new Error('Swarm run context did not provide an Agent stream')
@@ -20,7 +20,7 @@ export async function executeAgentTurn(options: {
   context: SwarmContext
   createRunContext: SwarmRunContextFactory
   signal: AbortSignal
-  extraTools?: import('@vitamin/agent').AgentTool[]
+  extraTools?: import('@x-mars/agent').AgentTool[]
 }): Promise<SwarmTurnResult> {
   const { agentDef, input, context, createRunContext, signal, extraTools } = options
   const startTime = Date.now()
@@ -41,7 +41,7 @@ export async function executeAgentTurn(options: {
     role: 'user',
     content: [{ type: 'text', text: input }],
     timestamp: Date.now(),
-  } as import('@vitamin/ai').UserMessage)
+  } as import('@x-mars/ai').UserMessage)
 
   const infrastructure = runContext as Partial<AgentConfig>
 

@@ -1,7 +1,7 @@
 import { access, readdir, readFile } from 'node:fs/promises'
 import { basename, dirname, extname, join, relative, resolve, sep } from 'node:path'
 import { parse as parseYaml } from 'yaml'
-import type { McpServerConfig } from '@vitamin/mcp'
+import type { McpServerConfig } from '@x-mars/mcp'
 import type {
   PluginAgentManifest,
   PluginCommandArgumentManifest,
@@ -40,6 +40,17 @@ const DEFAULT_SKILLS_DIR = './skills'
 const DEFAULT_COMMANDS_DIR = './commands'
 const DEFAULT_AGENTS_DIR = './agents'
 const DEFAULT_MCP_PATH = './.mcp.json'
+const SUPPORTED_COMMAND_FRONTMATTER = new Set(['name', 'description', 'arguments', 'argument-hint'])
+const UNSUPPORTED_COMMAND_RUNTIME_FIELDS = new Set([
+  'hooks',
+  'bin',
+  'settings',
+  'runtime',
+  'permissions',
+  'allowed-tools',
+  'model',
+  'output-style',
+])
 
 export async function importClaudeCodePlugin(
   sourceDir: string,
@@ -146,6 +157,7 @@ async function discoverCommands(
     const name = getString(frontmatter.name) ?? basename(file, extname(file))
     const description = getString(frontmatter.description)
     const commandArguments = getCommandArguments(frontmatter)
+    reportUnsupportedCommandFrontmatter(root, file, name, frontmatter, report)
     commands.push({ name, description, prompt: document.body, arguments: commandArguments })
     report.imported.commands.push(name)
   }
@@ -241,12 +253,15 @@ async function collectUnsupportedComponents(
     'channels',
     'userConfig',
     'dependencies',
+    'runtime',
+    'settings',
+    'bin',
   ]) {
     if (manifest[component] !== undefined) {
       report.unsupported.push({
         component,
         reason:
-          'Vitamin compat importer records this Claude Code component but does not map it to runtime behavior yet',
+          'X-Mars compat importer records this Claude Code component but does not map it to runtime behavior yet',
       })
     }
   }
@@ -261,6 +276,36 @@ async function collectUnsupportedComponents(
   }
 }
 
+function reportUnsupportedCommandFrontmatter(
+  root: string,
+  file: string,
+  commandName: string,
+  frontmatter: Record<string, unknown>,
+  report: ClaudeCodePluginImportReport,
+): void {
+  const unsupported = Object.keys(frontmatter).filter(
+    (key) => !SUPPORTED_COMMAND_FRONTMATTER.has(key),
+  )
+  if (unsupported.length === 0) {
+    return
+  }
+
+  const path = toPluginRelativePath(root, file)
+  for (const key of unsupported.sort()) {
+    const isRuntimeField = UNSUPPORTED_COMMAND_RUNTIME_FIELDS.has(key)
+    report.unsupported.push({
+      component: `commands.${key}`,
+      path,
+      reason: isRuntimeField
+        ? `Claude Code command "${commandName}" declares runtime field "${key}"; X-Mars imports command prompt/arguments only and does not execute Claude Code runtime behavior`
+        : `Claude Code command "${commandName}" frontmatter field "${key}" is not mapped to X-Mars command manifest`,
+    })
+  }
+  report.warnings.push(
+    `Command "${commandName}" contains unsupported Claude Code fields: ${unsupported.sort().join(', ')}`,
+  )
+}
+
 async function reportUnsupportedIfExists(
   root: string,
   path: string,
@@ -272,7 +317,7 @@ async function reportUnsupportedIfExists(
     report.unsupported.push({
       component,
       path: `./${path}`,
-      reason: 'Claude Code component exists but Vitamin does not import this component type yet',
+      reason: 'Claude Code component exists but X-Mars does not import this component type yet',
     })
   } catch {
     // ignore missing optional component
@@ -365,8 +410,7 @@ function normalizeMcpConfig(
   if (raw.cwd !== undefined) {
     report.unsupported.push({
       component: 'mcpServers.cwd',
-      reason:
-        'Vitamin McpServerConfig does not support cwd; command/args were imported without cwd',
+      reason: 'X-Mars McpServerConfig does not support cwd; command/args were imported without cwd',
     })
   }
   return config
@@ -388,7 +432,7 @@ function substituteClaudeVariables(
   }
   if (/\$\{user_config\.[^}]+}/.test(result)) {
     report.warnings.push(
-      'Found ${user_config.*}; Vitamin importer leaves user configuration placeholders unchanged',
+      'Found ${user_config.*}; X-Mars importer leaves user configuration placeholders unchanged',
     )
   }
   return result
@@ -575,6 +619,9 @@ function normalizeCommandArguments(value: unknown): PluginCommandArgumentManifes
       description: getString(object.description),
       required: typeof object.required === 'boolean' ? object.required : undefined,
       type: getCommandArgumentType(object.type),
+      flag: getString(object.flag),
+      alias: getString(object.alias),
+      repeatable: typeof object.repeatable === 'boolean' ? object.repeatable : undefined,
       choices: getStringArray(object.choices),
       default: getString(object.default),
     })

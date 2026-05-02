@@ -1,8 +1,8 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 
 import type { HookSpec } from './hook-spec'
 
-const logger = createLogger('@vitamin/hooks:safe-hook')
+const logger = createLogger('@x-mars/hooks:safe-hook')
 
 // factory 抛出时捕获错误并返回 null，避免单个 Hook 初始化失败影响整体
 export function safeCreateHook(

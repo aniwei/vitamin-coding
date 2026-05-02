@@ -10,13 +10,13 @@
  * 本例: devtools on :9229, Web UI service on :8080
  *   tsx example/devtools-service.ts
  */
-import { createCodingService } from '@vitamin/service'
-import { createVitamin } from '../src'
+import { createCodingService } from '@x-mars/service'
+import { createXMars } from '../src'
 
 const modelId = process.env.CODING_EXAMPLE_MODEL_ID ?? 'github-copilot/gpt-4o'
 
 async function main() {
-  const vitamin = createVitamin({
+  const xMars = createXMars({
     port: 9229, // devtools inspector port
     inspect: true,
     logger: {
@@ -28,18 +28,18 @@ async function main() {
     workspaceDir: process.cwd(),
   })
 
-  await vitamin.start()
-  console.log('[devtools-service] VitaminApp started with devtools on :9229')
+  await xMars.start()
+  console.log('[devtools-service] XMarsApp started with devtools on :9229')
 
   // Web UI service on a separate port
-  const service = createCodingService(vitamin, {
+  const service = createCodingService(xMars, {
     port: 8080,
     host: '127.0.0.1',
     corsOrigin: 'http://localhost:5173',
   })
 
-  const originalCreate = vitamin.createSession.bind(vitamin)
-  vitamin.createSession = async (options) => {
+  const originalCreate = xMars.createSession.bind(xMars)
+  xMars.createSession = async (options) => {
     const session = await originalCreate(options)
     service.attachSession(session)
     return session
@@ -53,7 +53,7 @@ async function main() {
   const shutdown = async () => {
     console.log('\n[devtools-service] shutting down...')
     await service.stop()
-    await vitamin.stop()
+    await xMars.stop()
     process.exit(0)
   }
 

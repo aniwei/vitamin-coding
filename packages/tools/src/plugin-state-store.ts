@@ -27,7 +27,7 @@ const EMPTY_PLUGIN_STATE: PluginState = {
 }
 
 export function createFilePluginStateStore(options: FilePluginStateStoreOptions): PluginStateStore {
-  const statePath = options.path ?? resolve(options.workspaceDir, '.vitamin', 'plugins.json')
+  const statePath = options.path ?? resolve(options.workspaceDir, '.x-mars', 'plugins.json')
 
   return {
     path: statePath,

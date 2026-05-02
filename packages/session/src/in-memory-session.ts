@@ -1,4 +1,4 @@
-import { SessionError } from '@vitamin/shared'
+import { SessionError } from '@x-mars/shared'
 import type {
   Session,
   SessionCheckpoint,

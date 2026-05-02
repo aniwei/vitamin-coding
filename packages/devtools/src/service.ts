@@ -2,13 +2,13 @@ import { randomUUID } from 'node:crypto'
 import { dirname, join } from 'node:path'
 import { fileURLToPath } from 'node:url'
 import { Worker } from 'node:worker_threads'
-import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
+import { createLogger, TypedEventEmitter, type Events } from '@x-mars/shared'
 
 import type { DebugSnapshot, PauseResult, DebugCommand, PauseResumePayload } from './protocol'
 import type { BreakpointPoint } from './protocol'
 import { Breakpoints } from './tools/breakpoints'
 
-const logger = createLogger('@vitamin/devtools:service')
+const logger = createLogger('@x-mars/devtools:service')
 
 const SERVICE_HOST = '127.0.0.1'
 

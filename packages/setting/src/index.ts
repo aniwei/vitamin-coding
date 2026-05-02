@@ -1,7 +1,7 @@
 export type {
-  VitaminSetting,
-  VitaminSettingFromSchema,
-  VitaminSettingKey,
+  XMarsSetting,
+  XMarsSettingFromSchema,
+  XMarsSettingKey,
   AgentOptions,
   CategoryConfig,
   LogLevel,
@@ -21,8 +21,8 @@ export {
   LOG_LEVELS,
   PERMISSION_MODES,
   TOOL_PRESETS,
-  VITAMIN_DEFAULT_CONFIG,
-  VITAMIN_SETTING_KEYS,
+  X_MARS_DEFAULT_CONFIG,
+  X_MARS_SETTING_KEYS,
 } from './types'
 
 export { migrate, registerMigration, resetMigrations } from './migrator'

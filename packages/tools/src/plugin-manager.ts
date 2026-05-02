@@ -1,9 +1,10 @@
 import { pathToFileURL } from 'node:url'
 import { dirname, resolve, sep } from 'node:path'
 import { realpath } from 'node:fs/promises'
-import type { AgentTool } from '@vitamin/agent'
-import type { HookRegistry, HookSpec } from '@vitamin/hooks'
+import type { AgentTool } from '@x-mars/agent'
+import type { HookRegistry, HookSpec } from '@x-mars/hooks'
 import type { ToolRegistry } from './tool-registry'
+import type { PluginCommandHandler } from './plugin-command-handler'
 import {
   discoverPluginManifests,
   buildPluginRuntimePlan,
@@ -317,7 +318,7 @@ export class PluginManager {
       await this.connectMcpServer(name, config, manifest.id, result)
     }
     for (const command of manifest.commands ?? []) {
-      await this.registerCommand(command, manifest.id, result)
+      await this.registerCommand(pluginDir, command, manifest.id, result)
     }
     for (const agent of manifest.agents ?? []) {
       await this.registerAgent(agent, manifest.id, result)
@@ -456,6 +457,7 @@ export class PluginManager {
   }
 
   private async registerCommand(
+    pluginDir: string,
     command: PluginCommandManifest,
     pluginId: string,
     result: PluginLifecycleResult,
@@ -470,7 +472,10 @@ export class PluginManager {
       return
     }
     try {
-      await this.lifecycleAdapters.registerCommand(command, pluginId)
+      const handler = command.module
+        ? await importPluginCommandHandler(pluginDir, command)
+        : undefined
+      await this.lifecycleAdapters.registerCommand(command, pluginId, handler)
       result.steps.push({ type: 'command', name: command.name, status: 'loaded' })
     } catch (error) {
       const message = error instanceof Error ? error.message : String(error)
@@ -654,6 +659,25 @@ export async function importPluginHook(
   return hook
 }
 
+export async function importPluginCommandHandler(
+  pluginDir: string,
+  commandManifest: PluginCommandManifest,
+): Promise<PluginCommandHandler> {
+  if (!commandManifest.module) {
+    throw new Error('command module is required')
+  }
+
+  const modulePath = await resolvePluginModule(pluginDir, commandManifest.module)
+  const mod = await import(pathToFileURL(modulePath).href)
+  const exportName = commandManifest.exportName ?? 'default'
+  const handler = mod[exportName]
+
+  if (typeof handler !== 'function') {
+    throw new Error(`export "${exportName}" is not a valid PluginCommandHandler`)
+  }
+  return handler as PluginCommandHandler
+}
+
 export function createPluginManager(options: PluginManagerOptions): PluginManager {
   return new PluginManager(options)
 }
@@ -727,6 +751,9 @@ function requiresTrust(manifest: PluginManifest): boolean {
   for (const command of manifest.commands ?? []) {
     if (command.module) {
       hasDynamicModule = true
+    }
+    for (const permission of command.permissions ?? []) {
+      permissions.add(permission)
     }
   }
   permissions.delete('tools')

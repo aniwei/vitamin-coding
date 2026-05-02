@@ -1,27 +1,27 @@
-# @vitamin/coding 设计说明
+# @x-mars/coding 设计说明
 
 ## 设计目标
 
-- 作为应用装配层，将所有子系统组合成完整的 Vitamin 编码助手。
-- 管理 `VitaminApp`（依赖注入容器）和 `AgentSession`（单次对话生命周期）。
+- 作为应用装配层，将所有子系统组合成完整的 X-Mars 编码助手。
+- 管理 `XMarsApp`（依赖注入容器）和 `AgentSession`（单次对话生命周期）。
 - 提供 `CodingSessionManager` 管理多个 AgentSession 的创建、持久化与回收。
 - 实现四种运行模式（interactive / print / json / rpc），对接 CLI 和 Service 层。
 
 ## 非目标
 
 - 不直接实现子系统能力（所有能力由子包提供，本包负责组合）。
-- 不负责 HTTP/WebSocket 传输层（由 `@vitamin/service` 完成）。
+- 不负责 HTTP/WebSocket 传输层（由 `@x-mars/service` 完成）。
 
 ## 实现原理
 
-### VitaminApp（app/vitamin-app.ts）
+### XMarsApp（app/x-mars-app.ts）
 
-实现 `VitaminContext` 接口，作为整个系统的依赖注入容器：
+实现 `XMarsContext` 接口，作为整个系统的依赖注入容器：
 
 **初始化流程（12个阶段）**：
 
 ```
-1.  SettingLoader.load()              → VitaminSetting
+1.  SettingLoader.load()              → XMarsSetting
 2.  ModelRegistry + ModelSlot 解析    → slot → model 映射
 3.  ProviderRegistry                  → AI 提供商工厂注册
 4.  AuthStore                         → API 凭证
@@ -53,7 +53,7 @@ const TIER_TO_SLOT: Record<string, ModelSlot> = {
 
 **启动前装配**：
 
-1. 从 `VitaminApp` 获取所有依赖（hook registry / tool registry / prompt manager 等）
+1. 从 `XMarsApp` 获取所有依赖（hook registry / tool registry / prompt manager 等）
 2. 装配系统提示：`promptManager.assemblePreset()` + memory 注入 + skill 目录 + 环境上下文
 3. 创建 `Agent` 实例（注入 toolSet / hooks / model / streamOptions）
 4. 注册工具网关（approval / askUser / planApproval 覆盖 Agent 默认工具）
@@ -72,7 +72,7 @@ const TIER_TO_SLOT: Record<string, ModelSlot> = {
 
 ### CodingSessionManager（coding-session-manager.ts）
 
-多会话容器管理，委托给 `@vitamin/session` 的 `SessionManager`：
+多会话容器管理，委托给 `@x-mars/session` 的 `SessionManager`：
 
 | 实现类                         | 持久化方式       |
 | ------------------------------ | ---------------- |
@@ -95,7 +95,7 @@ const TIER_TO_SLOT: Record<string, ModelSlot> = {
 
 ### 内置 Hook 装配（hooks/）
 
-`VitaminApp.registerBuiltinHooks()` 在初始化时注册以下 Hook：
+`XMarsApp.registerBuiltinHooks()` 在初始化时注册以下 Hook：
 
 - **auto-compaction**：自动触发 memory 压缩（`messages.transform`）
 - **environment-injection**：向消息注入系统环境上下文（`messages.transform`）
@@ -111,7 +111,7 @@ const TIER_TO_SLOT: Record<string, ModelSlot> = {
 ```
 CLI / Service
        │
-  VitaminApp.create(config)
+  XMarsApp.create(config)
        │
   初始化12个子系统...
        │
@@ -154,8 +154,8 @@ CodingSessionManager.fork(sessionId, entryId)
 
 | 文件/目录                               | 职责                                              |
 | --------------------------------------- | ------------------------------------------------- |
-| `src/types.ts`                          | VitaminAppConfig / AgentSessionOptions 等类型     |
-| `src/app/vitamin-app.ts`                | 依赖注入容器（12个子系统装配）                    |
+| `src/types.ts`                          | XMarsAppConfig / AgentSessionOptions 等类型       |
+| `src/app/x-mars-app.ts`                 | 依赖注入容器（12个子系统装配）                    |
 | `src/session/agent-session.ts`          | 对话生命周期（系统提示/事件桥/工具网关/持久化）   |
 | `src/session/coding-session-manager.ts` | 多会话管理（InMemory / Disk / Remote）            |
 | `src/hooks/`                            | 内置 Hook 装配（auto-compaction / env-inject 等） |
@@ -168,22 +168,22 @@ CodingSessionManager.fork(sessionId, entryId)
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/agent`、`@vitamin/ai`、`@vitamin/hooks`、`@vitamin/tools`、`@vitamin/session`、`@vitamin/setting`、`@vitamin/persistence`、`@vitamin/prompt`、`@vitamin/memory`、`@vitamin/resources`、`@vitamin/skill`、`@vitamin/mcp`、`@vitamin/devtools`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/agent`、`@x-mars/ai`、`@x-mars/hooks`、`@x-mars/tools`、`@x-mars/session`、`@x-mars/setting`、`@x-mars/persistence`、`@x-mars/prompt`、`@x-mars/memory`、`@x-mars/resources`、`@x-mars/skill`、`@x-mars/mcp`、`@x-mars/devtools`、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`
 - **外部依赖**：无
 
 ## 测试策略
 
 - 测试文件数：5+
-- 覆盖：VitaminApp 初始化装配、AgentSession 生命周期（启动/聊天/中止）、运行模式输出格式、会话管理器 CRUD。
+- 覆盖：XMarsApp 初始化装配、AgentSession 生命周期（启动/聊天/中止）、运行模式输出格式、会话管理器 CRUD。
 
 ## 非目标
 
 - 不直接实现子系统能力（所有能力由子包提供，本包负责组合）。
-- 不负责 HTTP/WebSocket 传输层（由 `@vitamin/service` 完成）。
+- 不负责 HTTP/WebSocket 传输层（由 `@x-mars/service` 完成）。
 
 ## 实现原理
 
-### VitaminApp（vitamin-app.ts）
+### XMarsApp（x-mars-app.ts）
 
 应用级依赖注入容器，负责所有子系统的创建与装配：
 
@@ -210,7 +210,7 @@ CodingSessionManager.fork(sessionId, entryId)
 
 单次对话的完整生命周期管理：
 
-1. **初始化**：从 VitaminApp 获取所有依赖，创建 Agent 实例
+1. **初始化**：从 XMarsApp 获取所有依赖，创建 Agent 实例
 2. **消息持久化**：维护 InMemorySession，持久化到 SessionStore
 3. **工具协调**：注入 approval / askUser / planApproval 网关
 4. **系统提示装配**：通过 PromptManager 组装系统提示（含环境上下文、记忆注入、技能提示）
@@ -239,7 +239,7 @@ CodingSessionManager.fork(sessionId, entryId)
 ## 实现流程
 
 ```
-CLI / Service --> VitaminApp.create(config)
+CLI / Service --> XMarsApp.create(config)
                        |
                   初始化所有子系统
                        |
@@ -261,8 +261,8 @@ CLI / Service --> VitaminApp.create(config)
 
 | 文件                            | 职责                                           |
 | ------------------------------- | ---------------------------------------------- |
-| `src/types.ts`                  | VitaminAppConfig / AgentSessionOptions 等类型  |
-| `src/vitamin-app.ts`            | 应用容器（依赖注入 + 子系统装配）              |
+| `src/types.ts`                  | XMarsAppConfig / AgentSessionOptions 等类型    |
+| `src/x-mars-app.ts`             | 应用容器（依赖注入 + 子系统装配）              |
 | `src/agent-session.ts`          | 对话生命周期（消息持久化 + 事件桥 + 工具网关） |
 | `src/coding-session-manager.ts` | 多会话管理（InMemory / Disk / Remote）         |
 | `src/run/print.ts`              | Print 模式                                     |
@@ -274,10 +274,10 @@ CLI / Service --> VitaminApp.create(config)
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/agent`、`@vitamin/ai`、`@vitamin/hooks`、`@vitamin/tools`、`@vitamin/session`、`@vitamin/setting`、`@vitamin/persistence`、`@vitamin/prompt`、`@vitamin/memory`、`@vitamin/resources`、`@vitamin/skill`、`@vitamin/mcp`、`@vitamin/devtools`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/agent`、`@x-mars/ai`、`@x-mars/hooks`、`@x-mars/tools`、`@x-mars/session`、`@x-mars/setting`、`@x-mars/persistence`、`@x-mars/prompt`、`@x-mars/memory`、`@x-mars/resources`、`@x-mars/skill`、`@x-mars/mcp`、`@x-mars/devtools`、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`
 - **外部依赖**：无
 
 ## 测试策略
 
 - 测试文件数：5+
-- 覆盖：VitaminApp 创建、AgentSession 生命周期、运行模式、会话管理器
+- 覆盖：XMarsApp 创建、AgentSession 生命周期、运行模式、会话管理器

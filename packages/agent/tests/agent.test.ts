@@ -1,8 +1,8 @@
-// @vitamin/agent Agent 状态机测试
+// @x-mars/agent Agent 状态机测试
 import { describe, expect, it } from 'vitest'
 import { Agent } from '../src/agent'
 import { createEventStream } from '../../ai/src/index'
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 
 import type { AssistantMessage, Model, StreamContext, StreamEvent, ToolCall } from '../../ai/src/index'
 import type { AgentTool, ToolHookExecutor } from '../src/types'

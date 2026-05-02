@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/tools",
+  "name": "@x-mars/tools",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -25,15 +25,15 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/agent": "workspace:*",
-    "@vitamin/ai": "workspace:*",
-    "@vitamin/env": "workspace:*",
-    "@vitamin/hooks": "workspace:*",
-    "@vitamin/invariant": "workspace:*",
-    "@vitamin/mcp": "workspace:*",
-    "@vitamin/schema": "workspace:*",
-    "@vitamin/setting": "workspace:*",
-    "@vitamin/shared": "workspace:*",
+    "@x-mars/agent": "workspace:*",
+    "@x-mars/ai": "workspace:*",
+    "@x-mars/env": "workspace:*",
+    "@x-mars/hooks": "workspace:*",
+    "@x-mars/invariant": "workspace:*",
+    "@x-mars/mcp": "workspace:*",
+    "@x-mars/schema": "workspace:*",
+    "@x-mars/setting": "workspace:*",
+    "@x-mars/shared": "workspace:*",
     "chalk": "5.6.2",
     "diff": "8.0.4",
     "yaml": "2.8.3",

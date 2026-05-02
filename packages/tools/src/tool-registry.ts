@@ -3,8 +3,8 @@ import {
   type BinaryToolExecutorRegistry,
 } from './binary/binary-executor-registry'
 import { registerBuiltinTools, type RegisterBuiltinOptions } from './register-builtin'
-import type { AgentTool } from '@vitamin/agent'
-import type { ToolPreset } from '@vitamin/setting'
+import type { AgentTool } from '@x-mars/agent'
+import type { ToolPreset } from '@x-mars/setting'
 import type {
   RegisteredTool,
   ToolMetadata,

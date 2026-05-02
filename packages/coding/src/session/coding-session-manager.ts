@@ -3,22 +3,22 @@ import {
   InMemorySessionPersistence,
   FileSessionPersistence,
   RemoteSessionPersistence,
-} from '@vitamin/session'
-import { SESSION_MAX, SESSION_IDLE_TIMEOUT_MS, SESSION_SNAPSHOT_VERSION } from '@vitamin/env'
-import { stream as aiStream, type ProviderRegistry } from '@vitamin/ai'
-import type { AgentMessage, StreamFunction } from '@vitamin/agent'
-import { type HookRegistry } from '@vitamin/hooks'
-import { type Logger } from '@vitamin/shared'
+} from '@x-mars/session'
+import { SESSION_MAX, SESSION_IDLE_TIMEOUT_MS, SESSION_SNAPSHOT_VERSION } from '@x-mars/env'
+import { stream as aiStream, type ProviderRegistry } from '@x-mars/ai'
+import type { AgentMessage, StreamFunction } from '@x-mars/agent'
+import { type HookRegistry } from '@x-mars/hooks'
+import { type Logger } from '@x-mars/shared'
 
 import { AgentSession } from './agent-session'
 
-import type { Session, SessionPersistence } from '@vitamin/session'
-import type { Devtools } from '@vitamin/devtools'
+import type { Session, SessionPersistence } from '@x-mars/session'
+import type { Devtools } from '@x-mars/devtools'
 import type { AgentSessionInfo, ResolvedSessionConfig } from './types'
 
 /**
  * Manager 只持有基础设施配置（持久化、网络、日志）。
- * 业务配置（model、systemPrompt、tools 等）由 VitaminApp 解析后通过
+ * 业务配置（model、systemPrompt、tools 等）由 XMarsApp 解析后通过
  * ResolvedSessionConfig 传入 createSession，Manager 不做二次 merge。
  */
 export interface CodingSessionManagerOptions {
@@ -59,7 +59,7 @@ export interface RemoteSessionManagerOptions extends CodingSessionManagerOptions
   timeoutMs?: number
 }
 
-// @vitamin/agent 不感知具体 LLM 实现，由此处注入
+// @x-mars/agent 不感知具体 LLM 实现，由此处注入
 function makeStream(registry: ProviderRegistry): StreamFunction {
   return (context, signal) => {
     const provider = registry.get(context.model.api)
@@ -147,7 +147,7 @@ export class CodingSessionManager {
   }
 
   /**
-   * 使用由 VitaminApp 完整解析好的配置创建 session。
+   * 使用由 XMarsApp 完整解析好的配置创建 session。
    * 若调用方使用旧接口传入局部配置，则与 manager 默认配置合并。
    */
   async createSession(

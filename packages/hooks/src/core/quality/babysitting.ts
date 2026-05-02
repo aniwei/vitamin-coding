@@ -1,10 +1,10 @@
 // Babysitting Hook — 检测 Agent 异常行为模式
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'
 
-const log = createLogger('@vitamin/hooks:babysitting')
+const log = createLogger('@x-mars/hooks:babysitting')
 
 // 跟踪每个 session 最近的工具调用
 const sessionToolHistory = new Map<string, RecentToolCall[]>()

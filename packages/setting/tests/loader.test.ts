@@ -1,6 +1,6 @@
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { VITAMIN_DEFAULT_CONFIG } from '../src/types'
+import { X_MARS_DEFAULT_CONFIG } from '../src/types'
 import { loadSetting } from '../src/setting'
 import { createSettingStore } from '../src/store'
 
@@ -14,7 +14,7 @@ describe('loadSetting', () => {
   it('returns defaults when no overrides are provided', async () => {
     const setting = await loadSetting()
 
-    expect(setting.config_version).toBe(VITAMIN_DEFAULT_CONFIG.config_version)
+    expect(setting.config_version).toBe(X_MARS_DEFAULT_CONFIG.config_version)
     expect(setting.log_level).toBe('info')
     expect(setting.theme).toBe('auto')
     expect(setting.tool_preset).toBe('full')
@@ -44,8 +44,8 @@ describe('loadSetting', () => {
   })
 
   it('uses environment variables as the highest-priority layer', async () => {
-    process.env.VITAMIN_MODEL = 'env-model'
-    process.env.VITAMIN_LOG_LEVEL = 'debug'
+    process.env.X_MARS_MODEL = 'env-model'
+    process.env.X_MARS_LOG_LEVEL = 'debug'
 
     const store = createSettingStore({
       type: 'memory',
@@ -66,7 +66,7 @@ describe('loadSetting', () => {
   })
 
   it('ignores invalid log level from environment', async () => {
-    process.env.VITAMIN_LOG_LEVEL = 'not-a-level'
+    process.env.X_MARS_LOG_LEVEL = 'not-a-level'
 
     const setting = await loadSetting()
     expect(setting.log_level).toBe('info')

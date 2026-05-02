@@ -1,4 +1,4 @@
-# @vitamin/persistence
+# @x-mars/persistence
 
 ## 模块定位
 
@@ -32,11 +32,11 @@ tests/                    # 4 个测试文件
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/persistence build
-pnpm --filter @vitamin/persistence typecheck
-pnpm --filter @vitamin/persistence clean
+pnpm --filter @x-mars/persistence build
+pnpm --filter @x-mars/persistence typecheck
+pnpm --filter @x-mars/persistence clean
 ```
 
 ## 关联包
 
-`@vitamin/shared`、`@vitamin/invariant`
+`@x-mars/shared`、`@x-mars/invariant`

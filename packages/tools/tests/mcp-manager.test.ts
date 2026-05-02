@@ -1,8 +1,8 @@
-// @vitamin/tools MCP Manager 测试
+// @x-mars/tools MCP Manager 测试
 // 测试多服务器管理、禁用列表、工具聚合
 
 import { describe, expect, it } from 'vitest'
-import { McpManager, createMcpManager } from '@vitamin/mcp'
+import { McpManager, createMcpManager } from '@x-mars/mcp'
 
 describe('McpManager', () => {
   describe('#given empty manager', () => {

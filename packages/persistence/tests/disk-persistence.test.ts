@@ -30,7 +30,7 @@ describe('DiskPersistence', () => {
   let persistence: TestDiskPersistence<string>
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'vitamin-persistence-test-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'x-mars-persistence-test-'))
     persistence = new TestDiskPersistence<string>({ baseDir: tempDir })
   })
 

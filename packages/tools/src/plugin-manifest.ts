@@ -1,6 +1,7 @@
-import type { ToolPreset } from '@vitamin/setting'
-import type { McpServerConfig } from '@vitamin/mcp'
-import type { HookTiming } from '@vitamin/hooks'
+import type { ToolPreset } from '@x-mars/setting'
+import type { McpServerConfig } from '@x-mars/mcp'
+import type { HookTiming } from '@x-mars/hooks'
+import type { PluginCommandHandler } from './plugin-command-handler'
 
 export type PluginManifestStatus = 'enabled' | 'disabled'
 export type PluginPermission = 'tools' | 'network' | 'filesystem' | 'shell' | 'mcp' | 'skills'
@@ -41,6 +42,7 @@ export interface PluginCommandManifest {
   arguments?: PluginCommandArgumentManifest[]
   module?: string
   exportName?: string
+  permissions?: PluginPermission[]
 }
 
 export interface PluginCommandArgumentManifest {
@@ -48,6 +50,9 @@ export interface PluginCommandArgumentManifest {
   description?: string
   required?: boolean
   type?: 'string' | 'number' | 'boolean'
+  flag?: string
+  alias?: string
+  repeatable?: boolean
   choices?: string[]
   default?: string
 }
@@ -210,7 +215,11 @@ export interface PluginLifecycleAdapters {
   disconnectMcpServer?: (name: string, pluginId: string) => void | Promise<void>
   loadHook?: (hook: PluginHookManifest, pluginId: string) => void | Promise<void>
   unloadHook?: (hook: PluginHookManifest, pluginId: string) => void | Promise<void>
-  registerCommand?: (command: PluginCommandManifest, pluginId: string) => void | Promise<void>
+  registerCommand?: (
+    command: PluginCommandManifest,
+    pluginId: string,
+    handler?: PluginCommandHandler,
+  ) => void | Promise<void>
   unregisterCommand?: (command: PluginCommandManifest, pluginId: string) => void | Promise<void>
   registerAgent?: (agent: PluginAgentManifest, pluginId: string) => void | Promise<void>
   unregisterAgent?: (agent: PluginAgentManifest, pluginId: string) => void | Promise<void>
@@ -235,7 +244,7 @@ export interface PluginDiscoveryResult {
   errors: string[]
 }
 
-const MANIFEST_FILENAMES = ['plugin.json', 'vitamin-plugin.json']
+const MANIFEST_FILENAMES = ['plugin.json', 'x-mars-plugin.json']
 
 const VALID_PERMISSIONS = new Set<PluginPermission>([
   'tools',
@@ -840,6 +849,7 @@ function validateCommands(commands: PluginCommandManifest[] | undefined, errors:
     if (command.prompt !== undefined) {
       requireString(command.prompt, `commands[${index}].prompt`, errors)
     }
+    validatePermissions(command.permissions, `commands[${index}].permissions`, errors)
     validateCommandArguments(command.arguments, `commands[${index}].arguments`, errors)
   }
 }
@@ -856,6 +866,7 @@ function validateCommandArguments(
     errors.push(`${field} must be an array`)
     return
   }
+  const flags = new Set<string>()
   for (const [index, arg] of args.entries()) {
     requireString(arg.name, `${field}[${index}].name`, errors)
     if (arg.description !== undefined) {
@@ -864,6 +875,9 @@ function validateCommandArguments(
     if (arg.required !== undefined && typeof arg.required !== 'boolean') {
       errors.push(`${field}[${index}].required must be a boolean`)
     }
+    if (arg.repeatable !== undefined && typeof arg.repeatable !== 'boolean') {
+      errors.push(`${field}[${index}].repeatable must be a boolean`)
+    }
     if (
       arg.type !== undefined &&
       arg.type !== 'string' &&
@@ -871,6 +885,12 @@ function validateCommandArguments(
       arg.type !== 'boolean'
     ) {
       errors.push(`${field}[${index}].type must be string, number or boolean`)
+    }
+    if (arg.flag !== undefined) {
+      validateCommandArgumentFlag(arg.flag, `${field}[${index}].flag`, errors, flags)
+    }
+    if (arg.alias !== undefined) {
+      validateCommandArgumentFlag(arg.alias, `${field}[${index}].alias`, errors, flags)
     }
     if (arg.choices !== undefined) {
       if (!Array.isArray(arg.choices)) {
@@ -890,7 +910,36 @@ function validateCommandArguments(
         errors.push(`${field}[${index}].default must be one of ${arg.choices.join(', ')}`)
       }
     }
+    if (arg.repeatable === true && !arg.flag && index < args.length - 1) {
+      errors.push(`${field}[${index}].repeatable positional argument must be last`)
+    }
   }
+}
+
+function validateCommandArgumentFlag(
+  value: string,
+  field: string,
+  errors: string[],
+  flags: Set<string>,
+): void {
+  requireString(value, field, errors)
+  if (!isValidCommandArgumentFlag(value)) {
+    errors.push(`${field} must be a command flag name without leading dashes`)
+    return
+  }
+  if (value === 'confirm-plugin') {
+    errors.push(`${field} is reserved by the host`)
+    return
+  }
+  if (flags.has(value)) {
+    errors.push(`${field} must be unique`)
+    return
+  }
+  flags.add(value)
+}
+
+function isValidCommandArgumentFlag(value: string): boolean {
+  return /^[a-zA-Z][a-zA-Z0-9-]*$/.test(value)
 }
 
 function isCommandArgumentValueType(

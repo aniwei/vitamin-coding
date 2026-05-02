@@ -1,5 +1,5 @@
-import type { Model, ThinkingLevel } from '@vitamin/ai'
-import type { AgentMessage, AgentTool, AgentRunContext } from '@vitamin/agent'
+import type { Model, ThinkingLevel } from '@x-mars/ai'
+import type { AgentMessage, AgentTool, AgentRunContext } from '@x-mars/agent'
 
 // ─── Swarm Agent 定义 ───
 

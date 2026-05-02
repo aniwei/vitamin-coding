@@ -1,4 +1,4 @@
-# @vitamin/prompt 设计说明
+# @x-mars/prompt 设计说明
 
 ## 设计目标
 
@@ -10,8 +10,8 @@
 
 ## 非目标
 
-- 不负责提示的执行（由 `@vitamin/agent` 完成）。
-- 不管理模型选择（由 `@vitamin/ai` 完成）。
+- 不负责提示的执行（由 `@x-mars/agent` 完成）。
+- 不管理模型选择（由 `@x-mars/ai` 完成）。
 - 不做实时上下文收集（git 状态等由调用方注入）。
 
 ## 实现原理
@@ -65,7 +65,7 @@ interface AgentProfile {
 }
 ```
 
-BUILTIN_AGENT_PROFILES（`@vitamin/setting`）定义内置的 `coding`、`review`、`test` 等角色。用户可通过 `vitamin.json` 的 `agents` 字段追加自定义 profile。
+BUILTIN_AGENT_PROFILES（`@x-mars/setting`）定义内置的 `coding`、`review`、`test` 等角色。用户可通过 `x-mars.json` 的 `agents` 字段追加自定义 profile。
 
 ### 环境上下文（environment-context.ts）
 
@@ -144,7 +144,7 @@ Orchestrator.dispatchTask(agentName, prompt)
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/setting`、`@vitamin/shared`、`@vitamin/env`
+- **内部依赖**：`@x-mars/setting`、`@x-mars/shared`、`@x-mars/env`
 - **外部依赖**：无
 
 ## 测试策略
@@ -154,8 +154,8 @@ Orchestrator.dispatchTask(agentName, prompt)
 
 ## 非目标
 
-- 不负责提示的执行（由 `@vitamin/agent` 完成）。
-- 不管理模型选择（由 `@vitamin/ai` 完成）。
+- 不负责提示的执行（由 `@x-mars/agent` 完成）。
+- 不管理模型选择（由 `@x-mars/ai` 完成）。
 
 ## 实现原理
 
@@ -170,7 +170,7 @@ Orchestrator.dispatchTask(agentName, prompt)
 
 ### 提示提供者
 
-- `LocalPromptProvider`：从文件系统读取 prompt 模板（`.vitamin/prompts/` 或内置 `prompts/` 目录）
+- `LocalPromptProvider`：从文件系统读取 prompt 模板（`.x-mars/prompts/` 或内置 `prompts/` 目录）
 - `HttpPromptProvider`：从 HTTP 端点加载远程模板
 
 ### 系统提示组装流程
@@ -188,7 +188,7 @@ Orchestrator.dispatchTask(agentName, prompt)
 
 - `resolveProfile(name)`：精确名称匹配
 - `fuzzyResolveProfile(query)`：模糊匹配（支持别名、关键词）
-- 从 `@vitamin/setting` 的 BUILTIN_AGENT_PROFILES 和用户自定义 agents 中解析
+- 从 `@x-mars/setting` 的 BUILTIN_AGENT_PROFILES 和用户自定义 agents 中解析
 
 ### 环境上下文收集（environment-context.ts）
 
@@ -258,7 +258,7 @@ AgentSession.chat()
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/setting`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/setting`、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`
 - **外部依赖**：无
 
 ## 测试策略

@@ -16,11 +16,11 @@ describe('SwarmContext', () => {
 
     it('initializes with provided variables', () => {
       const ctx = createSwarmContext({
-        projectName: 'vitamin',
+        projectName: 'xMars',
         maxRetries: 3,
       })
 
-      expect(ctx.variables.get('projectName')).toBe('vitamin')
+      expect(ctx.variables.get('projectName')).toBe('xMars')
       expect(ctx.variables.get('maxRetries')).toBe(3)
       expect(ctx.variables.size).toBe(2)
     })

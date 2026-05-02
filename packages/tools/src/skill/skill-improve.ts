@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 const SkillImproveArgsSchema = z.object({
   name: z.string().describe('Existing Skill name'),

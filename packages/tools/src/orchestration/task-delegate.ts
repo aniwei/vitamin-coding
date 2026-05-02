@@ -1,7 +1,7 @@
 // delegate-task 工具 — 委派任务给子 Agent
 import { z } from 'zod'
 
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 const DelegateTaskArgsSchema = z
   .object({

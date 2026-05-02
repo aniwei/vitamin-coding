@@ -1,4 +1,4 @@
-// @vitamin/tools tool-validator 测试
+// @x-mars/tools tool-validator 测试
 import { describe, expect, it } from 'vitest'
 import { validateToolArgs } from '../src/tool-validator'
 

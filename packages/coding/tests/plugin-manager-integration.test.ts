@@ -2,12 +2,12 @@ import { mkdir, mkdtemp, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
-import { createFilePluginStateStore } from '@vitamin/tools'
-import type { McpManager } from '@vitamin/tools'
-import type { SkillProvider } from '@vitamin/skill'
-import { getPluginLogSinkEntries, listPluginLogContributions } from '@vitamin/shared'
+import { createFilePluginStateStore } from '@x-mars/tools'
+import type { McpManager } from '@x-mars/tools'
+import type { SkillProvider } from '@x-mars/skill'
+import { getPluginLogSinkEntries, listPluginLogContributions } from '@x-mars/shared'
 
-import { createVitamin } from '../src/app/vitamin-app'
+import { createXMars } from '../src/app/x-mars-app'
 
 const toolModule = `
 import { z } from 'zod'
@@ -35,9 +35,9 @@ export default {
 }
 `
 
-describe('VitaminApp plugin manager integration', () => {
+describe('XMarsApp plugin manager integration', () => {
   it('#then loads plugin tools on start and unloads them on stop', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-app-plugins-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-app-plugins-'))
     const pluginDir = join(root, 'hello-plugin')
     await mkdir(join(pluginDir, 'tools'), { recursive: true })
     await writeFile(
@@ -52,11 +52,11 @@ describe('VitaminApp plugin manager integration', () => {
     )
     await writeFile(join(pluginDir, 'tools', 'hello.js'), toolModule, 'utf-8')
 
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-test',
+        name: 'x-mars-test',
         level: 'error',
         destination: 'stdout',
       },
@@ -76,8 +76,8 @@ describe('VitaminApp plugin manager integration', () => {
   })
 
   it('#then loads plugin trust state from the configured plugin state store', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-app-plugin-state-'))
-    const pluginDir = join(root, '.vitamin/plugins/hello-plugin')
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-app-plugin-state-'))
+    const pluginDir = join(root, '.x-mars/plugins/hello-plugin')
     await mkdir(join(pluginDir, 'tools'), { recursive: true })
     await writeFile(
       join(pluginDir, 'plugin.json'),
@@ -94,16 +94,16 @@ describe('VitaminApp plugin manager integration', () => {
     const pluginStateStore = createFilePluginStateStore({ workspaceDir: root })
     await pluginStateStore.trust('hello-plugin')
 
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-test',
+        name: 'x-mars-test',
         level: 'error',
         destination: 'stdout',
       },
       workspaceDir: root,
-      pluginRoots: [join(root, '.vitamin/plugins')],
+      pluginRoots: [join(root, '.x-mars/plugins')],
       pluginStateStore,
     })
 
@@ -114,8 +114,8 @@ describe('VitaminApp plugin manager integration', () => {
     await app.stop()
   })
 
-  it('#then loads plugin hooks through VitaminApp and unloads them on stop', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-app-hook-plugins-'))
+  it('#then loads plugin hooks through XMarsApp and unloads them on stop', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-app-hook-plugins-'))
     const pluginDir = join(root, 'hook-plugin')
     await mkdir(join(pluginDir, 'hooks'), { recursive: true })
     await writeFile(
@@ -136,11 +136,11 @@ describe('VitaminApp plugin manager integration', () => {
     )
     await writeFile(join(pluginDir, 'hooks', 'message-hook.js'), hookModule, 'utf-8')
 
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-test',
+        name: 'x-mars-test',
         level: 'error',
         destination: 'stdout',
       },
@@ -176,8 +176,8 @@ describe('VitaminApp plugin manager integration', () => {
     expect(app.hookRegistry.has('plugin-message-hook')).toBe(false)
   })
 
-  it('#then wires plugin skill and mcp lifecycle adapters through VitaminApp', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-app-capability-plugins-'))
+  it('#then wires plugin skill and mcp lifecycle adapters through XMarsApp', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-app-capability-plugins-'))
     const pluginDir = join(root, 'capability-plugin')
     await mkdir(join(pluginDir, 'skills/code-review'), { recursive: true })
     await writeFile(
@@ -223,11 +223,11 @@ describe('VitaminApp plugin manager integration', () => {
       },
     } as unknown as McpManager
 
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-test',
+        name: 'x-mars-test',
         level: 'error',
         destination: 'stdout',
       },
@@ -249,8 +249,8 @@ describe('VitaminApp plugin manager integration', () => {
     ])
   })
 
-  it('#then wires plugin command and agent registries through VitaminApp', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-app-command-agent-plugins-'))
+  it('#then wires plugin command and agent registries through XMarsApp', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-app-command-agent-plugins-'))
     const pluginDir = join(root, 'command-agent-plugin')
     await mkdir(pluginDir, { recursive: true })
     await writeFile(
@@ -265,11 +265,11 @@ describe('VitaminApp plugin manager integration', () => {
       'utf-8',
     )
 
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-test',
+        name: 'x-mars-test',
         level: 'error',
         destination: 'stdout',
       },
@@ -302,8 +302,8 @@ describe('VitaminApp plugin manager integration', () => {
     expect(app.pluginAgentRegistry.list()).toEqual([])
   })
 
-  it('#then wires plugin devtools contributions through VitaminApp when inspect is enabled', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-app-devtools-plugins-'))
+  it('#then wires plugin devtools contributions through XMarsApp when inspect is enabled', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-app-devtools-plugins-'))
     const pluginDir = join(root, 'devtools-plugin')
     await mkdir(pluginDir, { recursive: true })
     await writeFile(
@@ -321,11 +321,11 @@ describe('VitaminApp plugin manager integration', () => {
       'utf-8',
     )
 
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: true,
       logger: {
-        name: 'vitamin-test',
+        name: 'x-mars-test',
         level: 'error',
         destination: 'stdout',
       },
@@ -352,8 +352,8 @@ describe('VitaminApp plugin manager integration', () => {
     expect(app.devtools?.listPluginContributions()).toEqual([])
   })
 
-  it('#then wires plugin log contributions through VitaminApp with redacted sink entries', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-app-log-plugins-'))
+  it('#then wires plugin log contributions through XMarsApp with redacted sink entries', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-app-log-plugins-'))
     const pluginDir = join(root, 'log-plugin')
     await mkdir(pluginDir, { recursive: true })
     await writeFile(
@@ -371,11 +371,11 @@ describe('VitaminApp plugin manager integration', () => {
       'utf-8',
     )
 
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-test-log-plugin',
+        name: 'x-mars-test-log-plugin',
         level: 'error',
         destination: 'stdout',
       },

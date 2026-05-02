@@ -1,9 +1,9 @@
 // Error Recovery Hook — 会话错误时尝试自动恢复 (§S14.2)
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'
 
-const logger = createLogger('@vitamin/hooks:error-recovery')
+const logger = createLogger('@x-mars/hooks:error-recovery')
 
 export interface ErrorRecoveryConfig {
   // 最大自动恢复尝试次数

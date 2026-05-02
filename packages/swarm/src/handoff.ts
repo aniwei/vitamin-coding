@@ -1,5 +1,5 @@
-import type { AgentTool, ToolResult } from '@vitamin/agent'
-import type { ZodType } from '@vitamin/ai'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
+import type { ZodType } from '@x-mars/ai'
 import { z } from 'zod'
 import type { HandoffRequest, SwarmAgentDef, SwarmAgentId } from './types'
 

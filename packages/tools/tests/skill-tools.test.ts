@@ -29,7 +29,7 @@ describe('skill tools', () => {
     const tool = createSkillCreate(async (input) => ({
       success: true,
       name: input.name,
-      path: `/workspace/.vitamin/skills/${input.name}/SKILL.md`,
+      path: `/workspace/.x-mars/skills/${input.name}/SKILL.md`,
     }))
 
     const result = await tool.execute({
@@ -52,7 +52,7 @@ describe('skill tools', () => {
     const tool = createSkillImprove(async (input) => ({
       success: true,
       name: input.name,
-      path: `/workspace/.vitamin/skills/${input.name}/SKILL.md`,
+      path: `/workspace/.x-mars/skills/${input.name}/SKILL.md`,
     }))
 
     const result = await tool.execute({

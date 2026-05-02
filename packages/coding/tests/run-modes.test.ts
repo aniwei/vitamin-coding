@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { Agent, type AgentMessage } from '@vitamin/agent'
-import { createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent } from '@vitamin/ai'
-import { createHookRegistry } from '@vitamin/hooks'
-import { createInMemorySessionStore } from '@vitamin/session'
-import { createPluginAgentRegistry, createPluginCommandRegistry } from '@vitamin/tools'
+import { Agent, type AgentMessage } from '@x-mars/agent'
+import { createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent } from '@x-mars/ai'
+import { PermissionAuditLog, PermissionPolicyRegistry, createHookRegistry } from '@x-mars/hooks'
+import { createInMemorySessionStore } from '@x-mars/session'
+import { createPluginAgentRegistry, createPluginCommandRegistry } from '@x-mars/tools'
 
 import { AgentSession } from '../src/session/agent-session'
 import {
@@ -372,6 +372,223 @@ describe('run modes', () => {
       expect(response.text).toContain('Arguments: src/app shell.ts')
       expect(response.text).not.toContain('unexpected arguments')
     }
+  })
+
+  it('InteractiveMode accepts declared plugin slash command flags', async () => {
+    const session = await createSession('interactive-plugin-command-flag-args')
+    const registry = createPluginCommandRegistry()
+    registry.register(
+      {
+        name: 'review',
+        description: 'Review a target path.',
+        arguments: [
+          { name: 'path', required: true, flag: 'path' },
+          { name: 'dryRun', type: 'boolean', flag: 'dry-run' },
+        ],
+      },
+      'review-plugin',
+    )
+    const mode = new InteractiveMode(session, { pluginCommandRegistry: registry })
+
+    const response = await mode.handleInput('/review --path "src/app shell.ts" --dry-run')
+
+    expect(response.type).toBe('response')
+    if (response.type === 'response') {
+      expect(response.text).toContain('Arguments: src/app shell.ts true')
+      expect(response.text).toContain('- path (required, string)')
+      expect(response.text).toContain('- dryRun (optional, boolean)')
+      expect(response.text).not.toContain('unexpected arguments')
+    }
+  })
+
+  it('InteractiveMode executes plugin command handlers with typed invocation input', async () => {
+    const session = await createSession('interactive-plugin-command-handler')
+    const registry = createPluginCommandRegistry()
+    registry.register(
+      {
+        name: 'batch',
+        description: 'Run a batch.',
+        arguments: [
+          { name: 'count', required: true, type: 'number' },
+          { name: 'dryRun', type: 'boolean', flag: 'dry-run' },
+        ],
+      },
+      'batch-plugin',
+      async (invocation, context) => ({
+        type: 'response',
+        text: `${context.pluginId}:${invocation.typedArguments.count}:${invocation.typedArguments.dryRun}`,
+      }),
+    )
+    const mode = new InteractiveMode(session, { pluginCommandRegistry: registry })
+
+    const response = await mode.handleInput('/batch 3 --dry-run')
+
+    expect(response).toEqual({
+      type: 'response',
+      text: 'batch-plugin:3:true',
+    })
+  })
+
+  it('InteractiveMode lets plugin command handlers hand off prompts to the current session', async () => {
+    const session = await createSession('interactive-plugin-command-handler-prompt')
+    const registry = createPluginCommandRegistry()
+    registry.register({ name: 'review' }, 'review-plugin', async () => ({
+      type: 'prompt',
+      prompt: 'handler prompt',
+    }))
+    const mode = new InteractiveMode(session, { pluginCommandRegistry: registry })
+
+    const response = await mode.handleInput('/review src/app.ts')
+
+    expect(response.type).toBe('response')
+    if (response.type === 'response') {
+      expect(response.text).toContain('echo:handler prompt')
+    }
+  })
+
+  it('InteractiveMode denies plugin command permissions before handler or prompt execution', async () => {
+    const session = await createSession('interactive-plugin-command-permission-deny')
+    const registry = createPluginCommandRegistry()
+    let called = false
+    registry.register(
+      { name: 'deploy', permissions: ['shell'] },
+      'deploy-plugin',
+      async () => {
+        called = true
+        return { type: 'response', text: 'must not run' }
+      },
+    )
+    const permissionRegistry = new PermissionPolicyRegistry()
+    permissionRegistry.register({
+      name: 'deny-plugin-shell',
+      priority: 1,
+      enabled: true,
+      scope: {},
+      rules: [
+        {
+          name: 'deny-plugin-shell',
+          effect: 'deny',
+          match: { tools: ['plugin-command:shell'] },
+          denyReason: 'shell command permission denied',
+        },
+      ],
+    })
+    const auditLog = new PermissionAuditLog()
+    const mode = new InteractiveMode(session, {
+      pluginCommandRegistry: registry,
+      permissionRegistry,
+      auditLog,
+    })
+
+    const response = await mode.handleInput('/deploy')
+
+    expect(response).toEqual({
+      type: 'system',
+      text: 'Plugin command "/deploy" permission denied for shell: shell command permission denied',
+    })
+    expect(called).toBe(false)
+    expect(auditLog.getEntries()).toMatchObject([
+      {
+        sessionId: 'interactive-plugin-command-permission-deny',
+        toolName: 'plugin-command:shell',
+        metadata: {
+          kind: 'plugin-command',
+          pluginId: 'deploy-plugin',
+          commandName: 'deploy',
+          permission: 'shell',
+        },
+        decision: { effect: 'deny' },
+      },
+    ])
+  })
+
+  it('InteractiveMode records allow audits for declared plugin command permissions', async () => {
+    const session = await createSession('interactive-plugin-command-permission-allow')
+    const registry = createPluginCommandRegistry()
+    registry.register({ name: 'deploy', permissions: ['network'] }, 'deploy-plugin', async () => ({
+      type: 'response',
+      text: 'handled',
+    }))
+    const permissionRegistry = new PermissionPolicyRegistry()
+    permissionRegistry.register({
+      name: 'allow-plugin-network',
+      priority: 1,
+      enabled: true,
+      scope: {},
+      rules: [
+        {
+          name: 'allow-plugin-network',
+          effect: 'allow',
+          match: { tools: ['plugin-command:network'] },
+        },
+      ],
+    })
+    const auditLog = new PermissionAuditLog()
+    const mode = new InteractiveMode(session, {
+      pluginCommandRegistry: registry,
+      permissionRegistry,
+      auditLog,
+    })
+
+    const response = await mode.handleInput('/deploy')
+
+    expect(response).toEqual({ type: 'response', text: 'handled' })
+    expect(auditLog.getEntries()[0]).toMatchObject({
+      toolName: 'plugin-command:network',
+      decision: { effect: 'allow' },
+    })
+  })
+
+  it('InteractiveMode emits redacted plugin command diagnostics for parse and handler stages', async () => {
+    const session = await createSession('interactive-plugin-command-diagnostics')
+    const diagnostics: unknown[] = []
+    session.subscribe((event) => {
+      if (event.type === 'plugin_command_diagnostic') {
+        diagnostics.push(event.diagnostic)
+      }
+    })
+    const registry = createPluginCommandRegistry()
+    registry.register(
+      {
+        name: 'deploy',
+        prompt: 'Deploy secret $ARGUMENTS',
+        arguments: [{ name: 'target', required: true }],
+      },
+      'deploy-plugin',
+      async () => {
+        throw new Error('handler exploded')
+      },
+    )
+    const mode = new InteractiveMode(session, { pluginCommandRegistry: registry })
+
+    await mode.handleInput('/deploy')
+    await mode.handleInput('/deploy production')
+
+    expect(diagnostics).toMatchObject([
+      {
+        kind: 'plugin-command',
+        pluginId: 'deploy-plugin',
+        commandName: 'deploy',
+        stage: 'parse',
+        status: 'failed',
+        rawArgumentCount: 0,
+      },
+      {
+        stage: 'parse',
+        status: 'completed',
+        typedArgumentKeys: ['target'],
+      },
+      {
+        stage: 'handler',
+        status: 'started',
+      },
+      {
+        stage: 'handler',
+        status: 'failed',
+        message: 'handler exploded',
+      },
+    ])
+    expect(JSON.stringify(diagnostics)).not.toContain('Deploy secret')
   })
 
   it('InteractiveMode routes plugin agents through the current session', async () => {

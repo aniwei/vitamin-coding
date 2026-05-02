@@ -1,4 +1,4 @@
-# @vitamin/session
+# @x-mars/session
 
 ## 模块定位
 
@@ -34,11 +34,11 @@ tests/                        # 6 个测试文件
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/session build
-pnpm --filter @vitamin/session typecheck
-pnpm --filter @vitamin/session clean
+pnpm --filter @x-mars/session build
+pnpm --filter @x-mars/session typecheck
+pnpm --filter @x-mars/session clean
 ```
 
 ## 关联包
 
-`@vitamin/persistence`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+`@x-mars/persistence`、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`

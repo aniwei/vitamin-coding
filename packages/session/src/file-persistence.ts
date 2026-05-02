@@ -1,5 +1,5 @@
-import { DiskPersistence } from '@vitamin/persistence'
-import { SESSION_PAGE_SIZE } from '@vitamin/env'
+import { DiskPersistence } from '@x-mars/persistence'
+import { SESSION_PAGE_SIZE } from '@x-mars/env'
 import type { SessionPersistence, SessionSnapshot } from './types'
 
 export interface FileSessionPersistenceOptions {

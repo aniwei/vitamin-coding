@@ -1,4 +1,4 @@
-// @vitamin/ai cost-calculator 测试
+// @x-mars/ai cost-calculator 测试
 import { describe, expect, it } from 'vitest'
 import { calculate, createCostTracker } from '../src/cost'
 

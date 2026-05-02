@@ -1,4 +1,4 @@
-# @vitamin/hooks 设计说明
+# @x-mars/hooks 设计说明
 
 ## 设计目标
 
@@ -10,8 +10,8 @@
 
 ## 非目标
 
-- 不实现 Agent 执行循环本身（在 `@vitamin/agent` 完成）。
-- 不管理工具注册（在 `@vitamin/tools` 完成）。
+- 不实现 Agent 执行循环本身（在 `@x-mars/agent` 完成）。
+- 不管理工具注册（在 `@x-mars/tools` 完成）。
 
 ## 实现原理
 
@@ -86,7 +86,7 @@ Hook 分为两类：
 
 - `createPermissionModePolicy(mode)` → 按 `auto`/`plan`/`dryrun`/`full` 模式生成策略。
 - `createDisabledToolsPolicy(tools)` → 黑名单策略（deny 特定工具调用）。
-- `compilePolicyFromSetting(setting)` → 将 `VitaminSetting.permission_policies[]` 编译为策略对象。
+- `compilePolicyFromSetting(setting)` → 将 `XMarsSetting.permission_policies[]` 编译为策略对象。
 
 **PermissionGuardHook**：
 
@@ -215,7 +215,7 @@ workLoop.runTurn()
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/shared`、`@vitamin/env`、`@vitamin/agent`（类型）
+- **内部依赖**：`@x-mars/shared`、`@x-mars/env`、`@x-mars/agent`（类型）
 - **外部依赖**：无
 
 ## 测试策略
@@ -225,8 +225,8 @@ workLoop.runTurn()
 
 ## 非目标
 
-- 不实现 Agent 执行循环本身（在 `@vitamin/agent` 完成）。
-- 不管理工具注册（在 `@vitamin/tools` 完成）。
+- 不实现 Agent 执行循环本身（在 `@x-mars/agent` 完成）。
+- 不管理工具注册（在 `@x-mars/tools` 完成）。
 
 ## 实现原理
 
@@ -363,7 +363,7 @@ Agent 执行循环中：
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/shared`、`@vitamin/invariant`、`@vitamin/env`
+- **内部依赖**：`@x-mars/shared`、`@x-mars/invariant`、`@x-mars/env`
 - **外部依赖**：无
 
 ## 测试策略

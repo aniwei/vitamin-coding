@@ -1,5 +1,5 @@
-import { parseYamlFrontmatter, serializeYamlFrontmatter } from '@vitamin/manifest'
-import { createLogger } from '@vitamin/shared'
+import { parseYamlFrontmatter, serializeYamlFrontmatter } from '@x-mars/manifest'
+import { createLogger } from '@x-mars/shared'
 
 import type {
   MemoryType,
@@ -10,7 +10,7 @@ import type {
   MemoryScopeFilter,
 } from './types'
 
-const log = createLogger('@vitamin/memory:layered')
+const log = createLogger('@x-mars/memory:layered')
 
 const VALID_TYPES = new Set<MemoryType>(['user', 'feedback', 'project', 'reference'])
 const INDEX_FILENAME = 'MEMORY.md'

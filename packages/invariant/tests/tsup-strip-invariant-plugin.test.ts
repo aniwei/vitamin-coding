@@ -15,7 +15,7 @@ async function runPluginTransform(
   source: string,
   options?: { invariantImportSource?: string },
 ): Promise<string> {
-  const tempRoot = await mkdtemp(join(tmpdir(), 'vitamin-invariant-'))
+  const tempRoot = await mkdtemp(join(tmpdir(), 'x-mars-invariant-'))
   const sourceDir = join(tempRoot, 'src')
   const targetFile = join(sourceDir, 'agent.ts')
 
@@ -48,7 +48,7 @@ async function runPluginTransform(
 describe('createStripInvariantInProductionPlugin', () => {
   it('strips invariant import and development invariant guard block', async () => {
     const source = `
-import { invariant, setVerbosity } from '@vitamin/invariant'
+import { invariant, setVerbosity } from '@x-mars/invariant'
 
 if (process.env.NODE_ENV !== 'production') {
   invariant(() => true, 'dev check')
@@ -61,13 +61,13 @@ setVerbosity('warn')
 
     expect(output).not.toContain("invariant(() => true, 'dev check')")
     expect(output).not.toContain("if (process.env.NODE_ENV !== 'production')")
-    expect(output).toContain("import { setVerbosity } from '@vitamin/invariant'")
+    expect(output).toContain("import { setVerbosity } from '@x-mars/invariant'")
     expect(output).toContain("setVerbosity('warn')")
   })
 
   it('keeps unrelated NODE_ENV development branch when no invariant call exists', async () => {
     const source = `
-import { setVerbosity } from '@vitamin/invariant'
+import { setVerbosity } from '@x-mars/invariant'
 
 if (process.env.NODE_ENV !== 'production') {
   setVerbosity('debug')
@@ -102,7 +102,7 @@ keepMe()
 
   it('strips invariant guard nested inside class method', async () => {
     const source = `
-import { invariant } from '@vitamin/invariant'
+import { invariant } from '@x-mars/invariant'
 
 class AgentLike {
   run() {
@@ -124,7 +124,7 @@ class AgentLike {
 
   it('strips guard when invariant is imported with alias', async () => {
     const source = `
-import { invariant as inv, setVerbosity } from '@vitamin/invariant'
+import { invariant as inv, setVerbosity } from '@x-mars/invariant'
 
 if (process.env.NODE_ENV !== 'production') {
   inv(true, 'alias dev check')
@@ -137,13 +137,13 @@ setVerbosity('warn')
 
     expect(output).not.toContain("inv(true, 'alias dev check')")
     expect(output).not.toContain("if (process.env.NODE_ENV !== 'production')")
-    expect(output).toContain("import { setVerbosity } from '@vitamin/invariant'")
+    expect(output).toContain("import { setVerbosity } from '@x-mars/invariant'")
     expect(output).toContain("setVerbosity('warn')")
   })
 
   it('preserves else branch while stripping development invariant guard', async () => {
     const source = `
-import { invariant } from '@vitamin/invariant'
+import { invariant } from '@x-mars/invariant'
 
 if (process.env.NODE_ENV !== 'production') {
   invariant(true, 'dev-only')
@@ -161,7 +161,7 @@ if (process.env.NODE_ENV !== 'production') {
 
   it('strips whole development guard when invariant appears after other statements', async () => {
     const source = `
-import { invariant } from '@vitamin/invariant'
+import { invariant } from '@x-mars/invariant'
 
 if (process.env.NODE_ENV !== 'production') {
   prepareDebugArtifacts()
@@ -178,7 +178,7 @@ if (process.env.NODE_ENV !== 'production') {
 
   it('strips whole development guard when invariant appears before other statements', async () => {
     const source = `
-import { invariant } from '@vitamin/invariant'
+import { invariant } from '@x-mars/invariant'
 
 if (process.env.NODE_ENV !== 'production') {
   invariant(true, 'dev-only')

@@ -2,7 +2,7 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import { SessionError } from '@vitamin/shared'
+import { SessionError } from '@x-mars/shared'
 import { InMemorySession } from '../src/in-memory-session'
 import { createDiskSessionPersistence } from '../src/file-persistence'
 import { InMemorySessionPersistence } from '../src/memory-persistence'
@@ -355,7 +355,7 @@ describe('SessionManager', () => {
     let tempDir: string
 
     beforeEach(async () => {
-      tempDir = await mkdtemp(join(tmpdir(), 'vitamin-session-mgr-'))
+      tempDir = await mkdtemp(join(tmpdir(), 'x-mars-session-mgr-'))
     })
 
     afterEach(async () => {

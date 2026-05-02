@@ -1,8 +1,8 @@
-# @vitamin/service
+# @x-mars/service
 
 ## 模块定位
 
-提供 Vitamin 的网络传输层：基于 Hono 的 HTTP API + WebSocket 实时通信 + 事件桥接。
+提供 X-Mars 的网络传输层：基于 Hono 的 HTTP API + WebSocket 实时通信 + 事件桥接。
 
 ## 核心功能
 
@@ -40,11 +40,11 @@ example/                 # 集成示例
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/service build
-pnpm --filter @vitamin/service typecheck
-pnpm --filter @vitamin/service clean
+pnpm --filter @x-mars/service build
+pnpm --filter @x-mars/service typecheck
+pnpm --filter @x-mars/service clean
 ```
 
 ## 关联包
 
-`@vitamin/coding`、`@vitamin/devtools`、`@vitamin/shared`、`@vitamin/env`
+`@x-mars/coding`、`@x-mars/devtools`、`@x-mars/shared`、`@x-mars/env`

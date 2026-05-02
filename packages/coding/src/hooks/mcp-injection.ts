@@ -1,7 +1,7 @@
-import type { HookSpec } from '@vitamin/hooks'
-import { defineHook } from '@vitamin/hooks'
-import { appendPromptSection } from '@vitamin/prompt'
-import type { McpManager } from '@vitamin/tools'
+import type { HookSpec } from '@x-mars/hooks'
+import { defineHook } from '@x-mars/hooks'
+import { appendPromptSection } from '@x-mars/prompt'
+import type { McpManager } from '@x-mars/tools'
 
 export function createMcpContextHook(manager: McpManager): HookSpec {
   return defineHook({

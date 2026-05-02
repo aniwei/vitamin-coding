@@ -5,11 +5,11 @@
  * priority=40（在 phase-injection 之后）。
  */
 
-import { appendPromptSection, buildLessonInjection } from '@vitamin/prompt'
-import type { HookSpec } from '@vitamin/hooks'
-import { defineHook } from '@vitamin/hooks'
-import type { OperationalLearningStore } from '@vitamin/memory'
-import type { PromptManager } from '@vitamin/prompt'
+import { appendPromptSection, buildLessonInjection } from '@x-mars/prompt'
+import type { HookSpec } from '@x-mars/hooks'
+import { defineHook } from '@x-mars/hooks'
+import type { OperationalLearningStore } from '@x-mars/memory'
+import type { PromptManager } from '@x-mars/prompt'
 
 export function createLessonInjectionHook(
   learningStore: OperationalLearningStore,

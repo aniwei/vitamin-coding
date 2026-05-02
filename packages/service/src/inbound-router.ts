@@ -3,7 +3,7 @@
  * 使 CodingService 只做组件编排，不写业务逻辑。
  */
 
-import { createLogger, readBoolean, readNumber, readObject, readString } from '@vitamin/shared'
+import { createLogger, readBoolean, readNumber, readObject, readString } from '@x-mars/shared'
 import type { WebSocketManager } from './websocket-manager'
 import type {
   WebSocketClientMessage,
@@ -18,10 +18,10 @@ import type {
   DebuggerSetBreakpointsActiveData,
 } from './types'
 import type { DebugBridge } from './debug-bridge'
-import type { VitaminContext } from '@vitamin/coding'
-import type { PauseResumePayload } from '@vitamin/devtools'
+import type { XMarsContext } from '@x-mars/coding'
+import type { PauseResumePayload } from '@x-mars/devtools'
 
-const logger = createLogger('@vitamin/service:inbound-router')
+const logger = createLogger('@x-mars/service:inbound-router')
 
 function parseChatQuery(data: Record<string, unknown>): ChatQueryData | null {
   const message = readString(data, 'message')
@@ -126,7 +126,7 @@ function parseDebuggerSetBreakpointsActive(
 export class InboundRouter {
   constructor(
     private readonly ws: WebSocketManager,
-    private readonly vitamin: VitaminContext,
+    private readonly xMars: XMarsContext,
     private readonly bridge: DebugBridge | null,
   ) {}
 
@@ -140,7 +140,7 @@ export class InboundRouter {
       case 'Session.subscribe': {
         const parsed = parseSessionSubscribe(data)
         if (parsed) {
-          if (!this.vitamin.getSession(parsed.sessionId)) {
+          if (!this.xMars.getSession(parsed.sessionId)) {
             this.ws.sendToClient(clientId, {
               type: 'Runtime.error',
               data: {
@@ -234,7 +234,7 @@ export class InboundRouter {
   }
 
   private resolveSession(sessionId?: string) {
-    return sessionId ? this.vitamin.getSession(sessionId) : this.vitamin.getActiveSession()
+    return sessionId ? this.xMars.getSession(sessionId) : this.xMars.getActiveSession()
   }
 
   private handleQuery({ message, sessionId }: ChatQueryData): void {

@@ -12,7 +12,7 @@ let testDir = ''
 const signal = new AbortController().signal
 
 async function setupTestDir(): Promise<string> {
-  const dir = await mkdtemp(join(tmpdir(), 'vitamin-tools-ext-'))
+  const dir = await mkdtemp(join(tmpdir(), 'x-mars-tools-ext-'))
   await mkdir(join(dir, 'src', 'utils'), { recursive: true })
   await writeFile(join(dir, 'src', 'index.ts'), 'export const hello = "world"\n')
   await writeFile(join(dir, 'src', 'utils', 'helper.ts'), 'export const add = (a: number, b: number) => a + b\n')
@@ -48,7 +48,7 @@ describe('extended tools', () => {
     })
 
     it('returns informative message for empty directory', async () => {
-      const emptyDir = await mkdtemp(join(tmpdir(), 'vitamin-tools-ext-empty-'))
+      const emptyDir = await mkdtemp(join(tmpdir(), 'x-mars-tools-ext-empty-'))
       try {
         const tool = createLs(emptyDir)
         const result = await tool.execute({

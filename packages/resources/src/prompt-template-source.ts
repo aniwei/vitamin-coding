@@ -1,6 +1,6 @@
 import { readdir, readFile } from 'node:fs/promises'
 import { basename, extname, join } from 'node:path'
-import { VITAMIN_HOME } from '@vitamin/env'
+import { X_MARS_HOME } from '@x-mars/env'
 
 import type { PromptTemplate, ResourceDiagnostic } from './resource-manager'
 import type { PromptTemplateSource, PromptTemplateResult } from './types'
@@ -29,8 +29,8 @@ export class FilesystemPromptTemplateSource implements PromptTemplateSource {
     const seenNames = new Map<string, string>()
 
     const dirs: Array<{ path: string; source: 'user' | 'project' }> = [
-      { path: `${VITAMIN_HOME}/prompts`, source: 'user' },
-      { path: `${this.workspaceDir}/.vitamin/prompts`, source: 'project' },
+      { path: `${X_MARS_HOME}/prompts`, source: 'user' },
+      { path: `${this.workspaceDir}/.x-mars/prompts`, source: 'project' },
     ]
 
     for (const dir of this.dynamicPromptDirs) {

@@ -1,4 +1,4 @@
-# @vitamin/devtools 设计说明
+# @x-mars/devtools 设计说明
 
 ## 设计目标
 
@@ -8,8 +8,8 @@
 
 ## 非目标
 
-- 不实现前端调试 UI（由 `@vitamin/web-ui` 完成）。
-- 不替代日志系统（与 `@vitamin/shared` logger 互补）。
+- 不实现前端调试 UI（由 `@x-mars/web-ui` 完成）。
+- 不替代日志系统（与 `@x-mars/shared` logger 互补）。
 
 ## 实现原理
 
@@ -83,7 +83,7 @@ interface DebugSnapshot {
 ## 实现流程
 
 ```
-VitaminApp 初始化
+XMarsApp 初始化
        |
   Devtools.start()
        |
@@ -121,7 +121,7 @@ VitaminApp 初始化
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/hooks`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/hooks`、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`
 - **外部依赖**：无（仅 Node.js worker_threads）
 
 ## 测试策略

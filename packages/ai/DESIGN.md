@@ -1,16 +1,16 @@
-# @vitamin/ai 设计说明
+# @x-mars/ai 设计说明
 
 ## 设计目标
 
 - 提供模型抽象、Provider 适配、流事件处理与 Token 统计等 AI 基础能力。
 - 通过 Provider Registry + Model Registry 实现多厂商模型的统一接入。
 - 支持 OAuth 认证流（GitHub Copilot Device Flow）和 API Key 双模式。
-- 将 `AssistantMessage`、`ToolCall`、`ToolResult` 等核心消息类型标准化，使上层代码（`@vitamin/agent`）与具体 Provider 解耦。
+- 将 `AssistantMessage`、`ToolCall`、`ToolResult` 等核心消息类型标准化，使上层代码（`@x-mars/agent`）与具体 Provider 解耦。
 - 提供工作流插槽（WorkflowSlot）机制，允许不同任务（普通/思考/压缩）使用不同模型。
 
 ## 非目标
 
-- 不实现具体的 Agent 执行循环（由 `@vitamin/agent` 承担）。
+- 不实现具体的 Agent 执行循环（由 `@x-mars/agent` 承担）。
 - 不直接管理会话状态。
 
 ## 实现原理
@@ -51,14 +51,14 @@ WorkflowSlot: 'normal' | 'thinking' | 'compact' | 'critique' | 'vision'
 
 - `resolve(slot?)` 先查插槽映射，未配置则回退到 `default` 模型。
 - 插槽值支持单个 `ModelSpec` 或数组（尝试顺序直到有效模型）。
-- VitaminApp 中 `TIER_TO_SLOT` 将 Agent 配置的 `preferredModelTier`（fast/standard/powerful）映射为插槽。
+- XMarsApp 中 `TIER_TO_SLOT` 将 Agent 配置的 `preferredModelTier`（fast/standard/powerful）映射为插槽。
 
 ### 认证存储（auth-store.ts）
 
 `AuthStore` 统一管理 API Key 和 OAuth 凭证：
 
 1. **环境变量映射**：`{ anthropic: 'ANTHROPIC_API_KEY', 'github-copilot': 'COPILOT_GITHUB_TOKEN' }` — 按 provider 名称查找对应环境变量。
-2. **OAuth 凭证**：存储在 `~/.vitamin/credentials.json`（`chmod 0o600`），包含 access token + 过期时间。
+2. **OAuth 凭证**：存储在 `~/.x-mars/credentials.json`（`chmod 0o600`），包含 access token + 过期时间。
 3. **自动刷新**：OAuth token 过期时调用 `OAuthRegistry` 对应 Provider 的 refresh 方法。
 4. `resolveAccessKey(model)` 的优先级：环境变量 > OAuth 凭证 > 返回 undefined。
 
@@ -106,7 +106,7 @@ stream(context, signal?)
 ### 正常流式调用链路
 
 ```
-VitaminApp / coding
+XMarsApp / coding
        |
   agent.run(context)
        |
@@ -169,7 +169,7 @@ ProviderRegistry.resolveAccessKey(model)
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/env`、`@vitamin/shared`
+- **内部依赖**：`@x-mars/env`、`@x-mars/shared`
 - **外部依赖**：`@anthropic-ai/sdk`、`eventsource-parser`、`zod`
 
 ## 测试策略

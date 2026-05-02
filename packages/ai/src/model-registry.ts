@@ -1,4 +1,4 @@
-import { ProviderError } from '@vitamin/shared'
+import { ProviderError } from '@x-mars/shared'
 import _copilotModels from './data/copilot-models.json' with { type: 'json' }
 import _anthropicModels from './data/anthropic-models.json' with { type: 'json' }
 import type { Provider, Model, ModelSpec, Api } from './types'

@@ -1,4 +1,4 @@
-# @vitamin/env
+# @x-mars/env
 
 ## 模块定位
 
@@ -8,7 +8,7 @@
 
 | 分类        | 导出示例                                                                                 |
 | ----------- | ---------------------------------------------------------------------------------------- |
-| 路径常量    | `VITAMIN_HOME`、`VITAMIN_PROJECT_DIR`、`SESSION_DIR`、`CHECKPOINT_DIR`                   |
+| 路径常量    | `X_MARS_HOME`、`X_MARS_PROJECT_DIR`、`SESSION_DIR`、`CHECKPOINT_DIR`                     |
 | 工具配置    | `TOOLS_MAX_OUTPUT_LINES`、`TOOLS_EXECUTE_TIMEOUT_MS`、`TOOLS_BINARY_DOWNLOAD_TIMEOUT_MS` |
 | Agent 配置  | `AGENT_TOOLS_MAX_TURNS`                                                                  |
 | 内存管理    | `MEMORY_COMPACTION_TRIGGER_FRACTION`、`MEMORY_PRUNE_*` 系列                              |
@@ -29,7 +29,7 @@ tests/
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/env build
-pnpm --filter @vitamin/env typecheck
-pnpm --filter @vitamin/env clean
+pnpm --filter @x-mars/env build
+pnpm --filter @x-mars/env typecheck
+pnpm --filter @x-mars/env clean
 ```

@@ -1,5 +1,5 @@
 import Anthropic from '@anthropic-ai/sdk'
-import { createLogger, ProviderError } from '@vitamin/shared'
+import { createLogger, ProviderError } from '@x-mars/shared'
 import { PromptTooLongError } from '../errors'
 import type {
   AssistantMessage,
@@ -17,7 +17,7 @@ import type { ProviderStream } from '../types'
 import { getCacheScopeRegistry } from '../cache-scope'
 import type { CacheRetention } from '../cache-scope'
 
-const logger = createLogger('@vitamin/ai:anthropic')
+const logger = createLogger('@x-mars/ai:anthropic')
 const cacheRegistry = getCacheScopeRegistry()
 
 // 凭据解析器：由上层（ProviderRegistry）注入

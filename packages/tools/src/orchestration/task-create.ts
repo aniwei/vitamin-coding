@@ -1,7 +1,7 @@
 // task-create 工具 — 创建后台任务
 import { z } from 'zod'
 
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 const TaskCreateArgsSchema = z.object({
   prompt: z.string().describe('Task description'),

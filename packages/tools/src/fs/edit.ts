@@ -1,9 +1,9 @@
 import { z } from 'zod'
-import { exists, isFile, normalizePath } from '@vitamin/shared'
+import { exists, isFile, normalizePath } from '@x-mars/shared'
 import { resolve } from 'node:path'
 import { readFile, writeFile } from 'node:fs/promises'
 import { diff } from './diff'
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 // 参数 schema
 const EditArgsSchema = z

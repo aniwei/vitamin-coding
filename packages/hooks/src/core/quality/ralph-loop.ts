@@ -1,5 +1,5 @@
 // Ralph Loop 检测 Hook — 检测工具调用死循环
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'

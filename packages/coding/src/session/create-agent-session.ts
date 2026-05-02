@@ -2,11 +2,11 @@ import {
   stream as aiStream,
   createDefaultProviderRegistry,
   type ProviderRegistry,
-} from '@vitamin/ai'
-import { createHookRegistry } from '@vitamin/hooks'
-import { createLogger } from '@vitamin/shared'
-import { createInMemorySessionStore } from '@vitamin/session'
-import type { AgentMessage, StreamFunction } from '@vitamin/agent'
+} from '@x-mars/ai'
+import { createHookRegistry } from '@x-mars/hooks'
+import { createLogger } from '@x-mars/shared'
+import { createInMemorySessionStore } from '@x-mars/session'
+import type { AgentMessage, StreamFunction } from '@x-mars/agent'
 
 import { AgentSession } from './agent-session'
 

@@ -1,4 +1,4 @@
-# @vitamin/agent 设计说明
+# @x-mars/agent 设计说明
 
 ## 设计目标
 
@@ -10,7 +10,7 @@
 
 ## 非目标
 
-- 不负责多 Agent 编排（由 `@vitamin/orchestrator` / `@vitamin/swarm` 承担）。
+- 不负责多 Agent 编排（由 `@x-mars/orchestrator` / `@x-mars/swarm` 承担）。
 - 不管理会话持久化。
 - 不处理 UI 展示，仅通过 EventEmitter 发射事件供上层消费。
 
@@ -227,7 +227,7 @@ return lastAssistantMessage
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/ai`、`@vitamin/shared`、`@vitamin/devtools`（可选）
+- **内部依赖**：`@x-mars/ai`、`@x-mars/shared`、`@x-mars/devtools`（可选）
 - **外部依赖**：`zod`
 
 ## 测试策略
@@ -238,7 +238,7 @@ return lastAssistantMessage
 
 ## 非目标
 
-- 不负责多 Agent 编排（由 `@vitamin/orchestrator` / `@vitamin/swarm` 承担）。
+- 不负责多 Agent 编排（由 `@x-mars/orchestrator` / `@x-mars/swarm` 承担）。
 - 不管理会话持久化。
 
 ## 实现原理
@@ -339,7 +339,7 @@ while true:
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/ai`、`@vitamin/setting`、`@vitamin/shared`、`@vitamin/invariant`、`@vitamin/devtools`
+- **内部依赖**：`@x-mars/ai`、`@x-mars/setting`、`@x-mars/shared`、`@x-mars/invariant`、`@x-mars/devtools`
 - **外部依赖**：无
 
 ## 测试策略

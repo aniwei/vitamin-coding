@@ -1,8 +1,8 @@
 import { InMemorySession } from './in-memory-session'
 import { InMemorySessionStore } from './store'
 import { FileSessionPersistence } from './file-persistence'
-import { SESSION_MAX, SESSION_IDLE_TIMEOUT_MS, SESSION_SNAPSHOT_VERSION } from '@vitamin/env'
-import { SessionError } from '@vitamin/shared'
+import { SESSION_MAX, SESSION_IDLE_TIMEOUT_MS, SESSION_SNAPSHOT_VERSION } from '@x-mars/env'
+import { SessionError } from '@x-mars/shared'
 import { RemoteSessionPersistence } from './remote-persistence'
 import type {
   PaginatedResult,

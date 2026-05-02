@@ -1,15 +1,15 @@
-# @vitamin/service 设计说明
+# @x-mars/service 设计说明
 
 ## 设计目标
 
-- 提供 Vitamin 的网络传输层：HTTP API + WebSocket 实时通信。
+- 提供 X-Mars 的网络传输层：HTTP API + WebSocket 实时通信。
 - 基于 Hono 框架实现轻量级 RESTful 路由。
 - 通过 EventBridge 将 AgentSession 事件映射到 WebSocket 协议。
 
 ## 非目标
 
-- 不实现业务逻辑（由 `@vitamin/coding` 提供 VitaminApp 和 AgentSession）。
-- 不负责前端渲染（由 `@vitamin/web-ui` 完成）。
+- 不实现业务逻辑（由 `@x-mars/coding` 提供 XMarsApp 和 AgentSession）。
+- 不负责前端渲染（由 `@x-mars/web-ui` 完成）。
 
 ## 实现原理
 
@@ -71,7 +71,7 @@ AgentSession 事件到 WebSocket 协议的单向映射（40+ 事件类型）：
 
 ### DebugBridge（debug-bridge.ts）
 
-将 `@vitamin/devtools` 的调试协议桥接到 HTTP/WebSocket：
+将 `@x-mars/devtools` 的调试协议桥接到 HTTP/WebSocket：
 
 - `/api/debug/breakpoints` → 断点管理
 - `/api/debug/snapshot` → 调试快照
@@ -82,7 +82,7 @@ AgentSession 事件到 WebSocket 协议的单向映射（40+ 事件类型）：
 ```
 客户端 --> HTTP 请求 --> Hono 路由 --> 业务处理 --> JSON 响应
                                         |
-                                   VitaminApp 方法调用
+                                   XMarsApp 方法调用
                                         |
 客户端 --> WebSocket 连接 --> WebSocketManager
                                 |
@@ -120,7 +120,7 @@ AgentSession 事件到 WebSocket 协议的单向映射（40+ 事件类型）：
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/coding`、`@vitamin/devtools`、`@vitamin/shared`、`@vitamin/env`
+- **内部依赖**：`@x-mars/coding`、`@x-mars/devtools`、`@x-mars/shared`、`@x-mars/env`
 - **外部依赖**：`hono`、`@hono/node-server`
 
 ## 测试策略

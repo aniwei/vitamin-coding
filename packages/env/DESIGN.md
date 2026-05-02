@@ -1,4 +1,4 @@
-# @vitamin/env 设计说明
+# @x-mars/env 设计说明
 
 ## 设计目标
 
@@ -21,10 +21,10 @@
 
 ### 路径常量
 
-基于 `process.env` 和 `os.homedir()` 计算 Vitamin 约定路径：
+基于 `process.env` 和 `os.homedir()` 计算 X-Mars 约定路径：
 
-- `VITAMIN_HOME`：用户级 Vitamin 主目录（默认 `~/.vitamin`）
-- `VITAMIN_PROJECT_DIR`：项目级 `.vitamin` 目录
+- `X_MARS_HOME`：用户级 X-Mars 主目录（默认 `~/.x-mars`）
+- `X_MARS_PROJECT_DIR`：项目级 `.x-mars` 目录
 - `SESSION_DIR` / `CHECKPOINT_DIR`：会话和检查点存储目录
 - 所有路径经 `normalizePath()` 统一为正斜杠格式。
 
@@ -45,7 +45,7 @@
 ## 实现流程
 
 ```
-@vitamin/env 模块加载
+@x-mars/env 模块加载
        |
   读取 process.env + os.homedir()
        |

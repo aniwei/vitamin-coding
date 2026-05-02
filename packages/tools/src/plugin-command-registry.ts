@@ -1,8 +1,10 @@
 import type { PluginAgentManifest, PluginCommandManifest } from './plugin-manifest'
+import type { PluginCommandHandler } from './plugin-command-handler'
 
 export interface PluginCommandRegistration {
   pluginId: string
   command: PluginCommandManifest
+  handler?: PluginCommandHandler
 }
 
 export interface PluginAgentRegistration {
@@ -13,14 +15,14 @@ export interface PluginAgentRegistration {
 export class PluginCommandRegistry {
   private readonly commands = new Map<string, PluginCommandRegistration>()
 
-  register(command: PluginCommandManifest, pluginId: string): void {
+  register(command: PluginCommandManifest, pluginId: string, handler?: PluginCommandHandler): void {
     const existing = this.commands.get(command.name)
     if (existing && existing.pluginId !== pluginId) {
       throw new Error(
         `Plugin command "${command.name}" is already registered by plugin "${existing.pluginId}"`,
       )
     }
-    this.commands.set(command.name, { pluginId, command: cloneCommand(command) })
+    this.commands.set(command.name, { pluginId, command: cloneCommand(command), handler })
   }
 
   unregister(name: string, pluginId: string): void {
@@ -32,14 +34,12 @@ export class PluginCommandRegistry {
 
   get(name: string): PluginCommandRegistration | undefined {
     const existing = this.commands.get(name)
-    return existing
-      ? { pluginId: existing.pluginId, command: cloneCommand(existing.command) }
-      : undefined
+    return existing ? cloneCommandRegistration(existing) : undefined
   }
 
   list(): PluginCommandRegistration[] {
     return [...this.commands.values()]
-      .map((entry) => ({ pluginId: entry.pluginId, command: cloneCommand(entry.command) }))
+      .map((entry) => cloneCommandRegistration(entry))
       .sort((a, b) => a.command.name.localeCompare(b.command.name))
   }
 
@@ -103,11 +103,23 @@ export function createPluginAgentRegistry(): PluginAgentRegistry {
 function cloneCommand(command: PluginCommandManifest): PluginCommandManifest {
   return {
     ...command,
+    permissions: command.permissions ? [...command.permissions] : undefined,
     arguments: command.arguments?.map((arg) => ({
       ...arg,
       choices: arg.choices ? [...arg.choices] : undefined,
     })),
   }
+}
+
+function cloneCommandRegistration(entry: PluginCommandRegistration): PluginCommandRegistration {
+  const registration: PluginCommandRegistration = {
+    pluginId: entry.pluginId,
+    command: cloneCommand(entry.command),
+  }
+  if (entry.handler) {
+    registration.handler = entry.handler
+  }
+  return registration
 }
 
 function cloneAgent(agent: PluginAgentManifest): PluginAgentManifest {

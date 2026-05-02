@@ -1,27 +1,27 @@
-# Hermes 核心能力整合到 Vitamin 的设计方案
+# Hermes 核心能力整合到 X-Mars 的设计方案
 
-> 设计原则：**不移植 Python 代码，而是参考 Hermes 设计，在 Vitamin 的 TypeScript 模块化体系中重新实现。**
+> 设计原则：**不移植 Python 代码，而是参考 Hermes 设计，在 X-Mars 的 TypeScript 模块化体系中重新实现。**
 
 ## 整合后架构全景
 
 ```
                   ┌──────────────────────────────────────┐
-                  │         整合后 Vitamin 架构             │
+                  │         整合后 X-Mars 架构             │
                   ├──────────────────────────────────────┤
-        新增 →    │  @vitamin/gateway (多平台 Gateway)     │
-                  │  @vitamin/cron (调度任务)              │
+        新增 →    │  @x-mars/gateway (多平台 Gateway)     │
+                  │  @x-mars/cron (调度任务)              │
                   ├──────────────────────────────────────┤
-        增强 →    │  @vitamin/memory (闭环学习引擎)         │
-                  │  @vitamin/skill (自创建 + 自改进)       │
-                  │  @vitamin/session (FTS5 跨会话搜索)     │
+        增强 →    │  @x-mars/memory (闭环学习引擎)         │
+                  │  @x-mars/skill (自创建 + 自改进)       │
+                  │  @x-mars/session (FTS5 跨会话搜索)     │
                   ├──────────────────────────────────────┤
-        增强 →    │  @vitamin/agent (Budget + Fallback)    │
-                  │  @vitamin/tools (安全审批 + 环境后端)    │
-                  │  @vitamin/ai (Provider 热切换)          │
+        增强 →    │  @x-mars/agent (Budget + Fallback)    │
+                  │  @x-mars/tools (安全审批 + 环境后端)    │
+                  │  @x-mars/ai (Provider 热切换)          │
                   ├──────────────────────────────────────┤
-        保持 →    │  @vitamin/orchestrator (已有优势)       │
-                  │  @vitamin/swarm (已有优势)              │
-                  │  @vitamin/hooks (已有优势)              │
+        保持 →    │  @x-mars/orchestrator (已有优势)       │
+                  │  @x-mars/swarm (已有优势)              │
+                  │  @x-mars/hooks (已有优势)              │
                   └──────────────────────────────────────┘
 ```
 
@@ -29,9 +29,9 @@
 
 ## Phase 1: 闭环学习系统
 
-> 最高优先级 — 这是 Hermes 最核心的差异化能力，也是 Vitamin 当前最大的能力缺口。
+> 最高优先级 — 这是 Hermes 最核心的差异化能力，也是 X-Mars 当前最大的能力缺口。
 
-### 1.1 `@vitamin/memory` — MemoryProvider 体系
+### 1.1 `@x-mars/memory` — MemoryProvider 体系
 
 #### 新增接口
 
@@ -193,7 +193,7 @@ export function buildMemoryContextBlock(raw: string): string {
 #### 记忆 Nudge — 通过 Hook 实现
 
 ```typescript
-// 注册为 Hook 而非硬编码到 Agent（利用 Vitamin 已有的 Hook 优势）
+// 注册为 Hook 而非硬编码到 Agent（利用 X-Mars 已有的 Hook 优势）
 hooks.register('turn:after', 'memory-nudge', async (context) => {
   const { messages, turnNumber, tokenUsage, model } = context
 
@@ -210,7 +210,7 @@ hooks.register('turn:after', 'memory-nudge', async (context) => {
 })
 ```
 
-### 1.2 `@vitamin/skill` — 自主创建 + 自改进
+### 1.2 `@x-mars/skill` — 自主创建 + 自改进
 
 #### 新增 Agent 工具
 
@@ -344,7 +344,7 @@ export interface SkillEntry extends SkillSpec {
 }
 ```
 
-### 1.3 `@vitamin/session` — FTS5 跨会话搜索
+### 1.3 `@x-mars/session` — FTS5 跨会话搜索
 
 #### 新增 Agent 工具
 
@@ -405,7 +405,7 @@ export interface SessionSearchResult {
 
 ## Phase 2: Agent 循环增强
 
-### 2.1 Iteration Budget — `@vitamin/agent`
+### 2.1 Iteration Budget — `@x-mars/agent`
 
 ```typescript
 /**
@@ -448,7 +448,7 @@ export function isBudgetExhausted(budget: IterationBudget): boolean {
 
 **集成点**: 在 Agent Work-Loop 的 tool result 追加阶段，检查预算并追加警告到最后一个 tool result。与现有 `steering`/`followUp` 机制同级。
 
-### 2.2 Provider Fallback — `@vitamin/ai`
+### 2.2 Provider Fallback — `@x-mars/ai`
 
 ```typescript
 /**
@@ -507,7 +507,7 @@ export class ResilientModel {
 }
 ```
 
-### 2.3 Smart Approval — `@vitamin/hooks`
+### 2.3 Smart Approval — `@x-mars/hooks`
 
 ```typescript
 /**
@@ -548,7 +548,7 @@ function isKnownSafePattern(command: string): boolean {
 
 ## Phase 3: 多平台 Gateway
 
-### 3.1 `@vitamin/gateway` — 新包
+### 3.1 `@x-mars/gateway` — 新包
 
 ```typescript
 /**
@@ -645,7 +645,7 @@ export class GatewayRunner {
 | P1     | Slack             | 企业场景                  |
 | P2     | WhatsApp / Signal | 移动场景                  |
 
-### 3.2 `@vitamin/cron` — 新包
+### 3.2 `@x-mars/cron` — 新包
 
 ```typescript
 export interface CronJob {
@@ -710,7 +710,7 @@ export class CronScheduler {
 
 ## Phase 4: 运行时环境扩展
 
-### 4.1 TerminalBackend 抽象 — `@vitamin/tools`
+### 4.1 TerminalBackend 抽象 — `@x-mars/tools`
 
 ```typescript
 /**
@@ -792,9 +792,9 @@ export interface ProcessHandle {
 
 ### Hook 系统利用
 
-Vitamin 的 31+ Hook 拦截点使闭环学习的实现**无需修改 Agent 核心代码**：
+X-Mars 的 31+ Hook 拦截点使闭环学习的实现**无需修改 Agent 核心代码**：
 
-| Hermes 功能  | Vitamin Hook 点     | 说明                        |
+| Hermes 功能  | X-Mars Hook 点      | 说明                        |
 | ------------ | ------------------- | --------------------------- |
 | 记忆 Nudge   | `turn:after`        | 检查上下文使用率，追加提醒  |
 | Skill 自改进 | `tool:after`        | Skill 执行失败时排队改进    |

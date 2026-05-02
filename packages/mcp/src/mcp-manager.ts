@@ -1,7 +1,7 @@
 // MCP Manager — 管理多个 MCP Server 连接的生命周期
-// 从 @vitamin/tools 迁移，增加 Resource / Prompt 聚合和事件系统
+// 从 @x-mars/tools 迁移，增加 Resource / Prompt 聚合和事件系统
 
-import { createLogger, TypedEventEmitter } from '@vitamin/shared'
+import { createLogger, TypedEventEmitter } from '@x-mars/shared'
 import { McpClient, createMcpClient } from './mcp-client'
 import { createMcpToolAdapters } from './mcp-tool-adapter'
 import type {
@@ -12,9 +12,9 @@ import type {
   McpPrompt,
   McpEvents,
 } from './types'
-import type { AgentTool } from '@vitamin/agent'
+import type { AgentTool } from '@x-mars/agent'
 
-const logger = createLogger('@vitamin/mcp:manager')
+const logger = createLogger('@x-mars/mcp:manager')
 
 export interface McpManagerOptions {
   /** 每个 MCP 请求超时 */

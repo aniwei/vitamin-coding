@@ -1,12 +1,12 @@
 import { z } from 'zod'
-import { TOOLS_MAX_OUTPUT_BYTES, TOOLS_EXECUTE_TIMEOUT_MS } from '@vitamin/env'
-import { formatBytes, truncateTail } from '@vitamin/shared'
+import { TOOLS_MAX_OUTPUT_BYTES, TOOLS_EXECUTE_TIMEOUT_MS } from '@x-mars/env'
+import { formatBytes, truncateTail } from '@x-mars/shared'
 import { validateUrl } from './url-validator'
 import { htmlToText, htmlToMarkdown } from './html-to-text'
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 const MAX_RESPONSE_BYTES = 5 * 1024 * 1024 // 5MB
-const DEFAULT_USER_AGENT = 'VitaminBot/1.0'
+const DEFAULT_USER_AGENT = 'XMarsBot/1.0'
 
 const WebFetchArgsSchema = z.object({
   url: z.string().describe('URL to fetch content from'),

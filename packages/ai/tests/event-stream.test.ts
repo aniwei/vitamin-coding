@@ -1,4 +1,4 @@
-// @vitamin/ai EventStream 测试
+// @x-mars/ai EventStream 测试
 import { describe, expect, it } from 'vitest'
 import { createEventStream } from '../src/event-stream'
 

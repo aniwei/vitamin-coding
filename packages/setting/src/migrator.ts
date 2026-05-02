@@ -1,7 +1,7 @@
 import { compare } from 'semver'
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 
-const logger = createLogger('@vitamin/setting:migrator')
+const logger = createLogger('@x-mars/setting:migrator')
 
 // 单个迁移步骤
 export interface Migration {

@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { InboundRouter } from '../src/inbound-router'
 import type { WebSocketManager } from '../src/websocket-manager'
-import type { VitaminContext } from '@vitamin/coding'
+import type { XMarsContext } from '@x-mars/coding'
 
 describe('InboundRouter', () => {
   it('subscribes only to existing sessions', () => {
@@ -9,12 +9,12 @@ describe('InboundRouter', () => {
       subscribeClient: vi.fn(),
       sendToClient: vi.fn(),
     }
-    const vitamin = {
+    const xMars = {
       getSession: vi.fn((id: string) => (id === 's1' ? { id: 's1' } : undefined)),
     }
     const router = new InboundRouter(
       ws as unknown as WebSocketManager,
-      vitamin as unknown as VitaminContext,
+      xMars as unknown as XMarsContext,
       null,
     )
 
@@ -41,13 +41,13 @@ describe('InboundRouter', () => {
       subscribeClient: vi.fn(),
       sendToClient: vi.fn(),
     }
-    const vitamin = {
+    const xMars = {
       getSession: vi.fn((id: string) => (id === 's1' ? { id: 's1', resolvePatchReview } : undefined)),
       getActiveSession: vi.fn(() => undefined),
     }
     const router = new InboundRouter(
       ws as unknown as WebSocketManager,
-      vitamin as unknown as VitaminContext,
+      xMars as unknown as XMarsContext,
       null,
     )
 

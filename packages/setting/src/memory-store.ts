@@ -1,5 +1,5 @@
 import type { SettingStore } from './store'
-import type { VitaminSetting } from './types'
+import type { XMarsSetting } from './types'
 
 export class InMemorySettingStore implements SettingStore {
   readonly type = 'memory' as const
@@ -17,7 +17,7 @@ export class InMemorySettingStore implements SettingStore {
     return this.data.get(path)
   }
 
-  async write(path: string, config: Partial<VitaminSetting>): Promise<void> {
+  async write(path: string, config: Partial<XMarsSetting>): Promise<void> {
     this.data.set(path, JSON.stringify(config, null, 2))
   }
 

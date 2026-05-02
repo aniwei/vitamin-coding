@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/setting",
+  "name": "@x-mars/setting",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -25,10 +25,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/ai": "workspace:*",
-    "@vitamin/persistence": "workspace:*",
-    "@vitamin/prompt": "workspace:*",
-    "@vitamin/shared": "workspace:*",
+    "@x-mars/ai": "workspace:*",
+    "@x-mars/persistence": "workspace:*",
+    "@x-mars/prompt": "workspace:*",
+    "@x-mars/shared": "workspace:*",
     "semver": "7.7.4"
   },
   "devDependencies": {

@@ -2,11 +2,11 @@
 // scripts/generate-models.ts
 // Phase 3 基础设施 — 模型清单自动生成脚本
 //
-// 用法: pnpm --filter @vitamin/ai generate:models
+// 用法: pnpm --filter @x-mars/ai generate:models
 //
 // 当前为占位实现。正式启用后，此脚本将:
 // 1. 从各 Provider API 或本地元数据文件拉取模型列表
-// 2. 规范化为 @vitamin/ai Model 接口
+// 2. 规范化为 @x-mars/ai Model 接口
 // 3. 写入 src/models/models.generated.ts
 // 4. 运行 typecheck 确保导出类型正确
 //

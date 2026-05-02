@@ -1,4 +1,4 @@
-# @vitamin/memory 设计说明
+# @x-mars/memory 设计说明
 
 ## 设计目标
 
@@ -9,7 +9,7 @@
 
 ## 非目标
 
-- 不直接持久化会话消息（由 `@vitamin/session` / `@vitamin/persistence` 负责）。
+- 不直接持久化会话消息（由 `@x-mars/session` / `@x-mars/persistence` 负责）。
 - 不实现 LLM 摘要调用本身（由调用方注入 `summarize` 函数）。
 
 ## 实现原理
@@ -100,7 +100,7 @@ const summary = await summarize(prompt)
 `ArchiveStorage` 接口：将压缩前的原始消息序列化后归档（支持按 sessionId 分组），便于事后审计和检索。
 
 - `InMemoryArchiveStorage`：开发/测试用，存于内存 Map。
-- `PersistenceArchiveStorage`（persistence-archive-storage.ts）：基于 `@vitamin/persistence` 持久化到磁盘。
+- `PersistenceArchiveStorage`（persistence-archive-storage.ts）：基于 `@x-mars/persistence` 持久化到磁盘。
 
 ### Token 估算（token-estimator.ts）
 
@@ -170,7 +170,7 @@ AgentSession.run() 前
        │
   memoryManager.getMemoryPrompt() → <memory>...</memory> 字符串
        │
-  注入到 systemPrompt（由 environment-injection hook 或 VitaminApp 完成）
+  注入到 systemPrompt（由 environment-injection hook 或 XMarsApp 完成）
 ```
 
 ## 模块分层
@@ -183,7 +183,7 @@ AgentSession.run() 前
 | `src/prune.ts`                       | 无 LLM 轻量裁剪                                |
 | `src/persistent-memory.ts`           | 长期记忆文件加载、格式化、写回                 |
 | `src/archive.ts`                     | 内存归档存储                                   |
-| `src/persistence-archive-storage.ts` | 磁盘归档（基于 @vitamin/persistence）          |
+| `src/persistence-archive-storage.ts` | 磁盘归档（基于 @x-mars/persistence）           |
 | `src/token-estimator.ts`             | 快速 token 数量估算                            |
 | `src/defaults.ts`                    | 按模型规格计算默认压缩/裁剪阈值                |
 | `src/prompts.ts`                     | 压缩 prompt 构建、归档引用格式化               |
@@ -198,7 +198,7 @@ AgentSession.run() 前
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/ai`（Message 类型）、`@vitamin/persistence`、`@vitamin/shared`、`@vitamin/env`
+- **内部依赖**：`@x-mars/ai`（Message 类型）、`@x-mars/persistence`、`@x-mars/shared`、`@x-mars/env`
 - **外部依赖**：无
 
 ## 测试策略
@@ -211,7 +211,7 @@ AgentSession.run() 前
 
 ## 非目标
 
-- 不负责消息存储（会话层由 `@vitamin/session` 管理）。
+- 不负责消息存储（会话层由 `@x-mars/session` 管理）。
 - 不直接调用 LLM（通过注入的 summarize 回调完成）。
 
 ## 实现原理
@@ -232,8 +232,8 @@ AgentSession.run() 前
 
 加载和管理持久化的长期记忆：
 
-- **全局记忆**：`~/.vitamin/AGENTS.md`（用户级）
-- **项目记忆**：`.vitamin/AGENTS.md`（项目级）
+- **全局记忆**：`~/.x-mars/AGENTS.md`（用户级）
+- **项目记忆**：`.x-mars/AGENTS.md`（项目级）
 - **社区记忆**：`.github/copilot-instructions.md`（社区兼容）
 - 支持 frontmatter 提取和 Markdown 解析
 - 构建 `MemoryContext`（memories + agentInstructions）
@@ -253,7 +253,7 @@ AgentSession.run() 前
 - `add(lesson)`：添加经验条目
 - `get(query)`：按相关性检索
 - `getRecentLessons(n)`：获取最近 N 条
-- 持久化到 `.vitamin/lessons.json`
+- 持久化到 `.x-mars/lessons.json`
 
 ### 文件状态管理器（file-state-manager.ts）
 
@@ -319,7 +319,7 @@ AgentSession.run() 前
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/persistence`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/persistence`、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`
 - **外部依赖**：无
 
 ## 测试策略

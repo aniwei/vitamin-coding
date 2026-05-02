@@ -1,4 +1,4 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import {
   estimateTokens as defaultEstimateTokens,
   estimateMessagesTokens,
@@ -6,10 +6,10 @@ import {
 } from './token-estimator'
 import { resolveContextSize, DEFAULT_PRUNE_CONFIG } from './defaults'
 
-import type { Message, ToolResultMessage } from '@vitamin/ai'
+import type { Message, ToolResultMessage } from '@x-mars/ai'
 import type { PruneConfig, PruneResult } from './types'
 
-const log = createLogger('@vitamin/memory:prune')
+const log = createLogger('@x-mars/memory:prune')
 
 // Prune — 裁剪旧 tool call 输出，释放 token 空间。
 // 不需要 LLM 调用，是 Compaction 前的轻量优化。

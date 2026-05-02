@@ -1,4 +1,4 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import {
   MEMORY_TOOL_READ,
   MEMORY_TOOL_GREP,
@@ -15,7 +15,7 @@ import {
   MEMORY_LEGACY_TOOL_WRITE_FILE,
   MEMORY_LEGACY_TOOL_EDIT_FILE,
   MEMORY_LEGACY_TOOL_REPLACE_STRING_IN_FILE,
-} from '@vitamin/env'
+} from '@x-mars/env'
 import {
   messageToText,
   estimateMessagesTokens,
@@ -24,7 +24,7 @@ import {
 import { resolveContextSize, DEFAULT_COMPACTION_CONFIG } from './defaults'
 import { buildSummarizationPrompt, buildTurnPrefixPrompt } from './prompts'
 
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 import type {
   CompactionConfig,
   CompactionPreparation,
@@ -33,7 +33,7 @@ import type {
   PartialCompactOptions,
 } from './types'
 
-const logger = createLogger('@vitamin/memory:compaction')
+const logger = createLogger('@x-mars/memory:compaction')
 
 const fileReadToolSet = new Set<string>([
   MEMORY_TOOL_READ,

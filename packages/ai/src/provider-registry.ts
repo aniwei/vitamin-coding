@@ -1,4 +1,4 @@
-import { ProviderError } from '@vitamin/shared'
+import { ProviderError } from '@x-mars/shared'
 import { createCopilotProvider } from './provider/github-copilot'
 import type { CopilotCredentialResolver } from './provider/github-copilot'
 import { createAnthropicProvider } from './provider/anthropic'

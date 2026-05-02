@@ -1,10 +1,10 @@
 import { dirname } from 'node:path'
-import { mkdirp, normalizePath } from '@vitamin/shared'
+import { mkdirp, normalizePath } from '@x-mars/shared'
 import { resolve } from 'node:path'
 import { writeFile } from 'node:fs/promises'
 import { z } from 'zod'
 
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 // 参数 schema
 const WriteArgsSchema = z.object({

@@ -1,9 +1,9 @@
-// MCP Server — 将 Vitamin AgentTool 暴露为 MCP Server
-// 允许外部 MCP 客户端使用 vitamin 的工具
+// MCP Server — 将 X-Mars AgentTool 暴露为 MCP Server
+// 允许外部 MCP 客户端使用 xMars 的工具
 // 参考 open-agent-sdk 的 createSdkMcpServer 模式
 
-import { createLogger } from '@vitamin/shared'
-import type { AgentTool } from '@vitamin/agent'
+import { createLogger } from '@x-mars/shared'
+import type { AgentTool } from '@x-mars/agent'
 import type {
   JsonRpcRequest,
   JsonRpcResponse,
@@ -12,7 +12,7 @@ import type {
   McpJsonSchemaProperty,
 } from './types'
 
-const logger = createLogger('@vitamin/mcp:server')
+const logger = createLogger('@x-mars/mcp:server')
 
 const MCP_PROTOCOL_VERSION = '2024-11-05'
 
@@ -27,9 +27,9 @@ export interface McpServerOptions {
 
 /**
  * 轻量级 MCP Server 实现
- * 使用 stdio 传输，将 vitamin AgentTool[] 暴露给外部客户端
+ * 使用 stdio 传输，将 xMars AgentTool[] 暴露给外部客户端
  */
-export class VitaminMcpServer {
+export class XMarsMcpServer {
   private tools: AgentTool[]
   private options: McpServerOptions
 
@@ -242,8 +242,8 @@ export class VitaminMcpServer {
 }
 
 /**
- * 创建一个 MCP Server，将 vitamin 工具暴露给外部客户端
+ * 创建一个 MCP Server，将 xMars 工具暴露给外部客户端
  */
-export function createMcpServer(tools: AgentTool[], options: McpServerOptions): VitaminMcpServer {
-  return new VitaminMcpServer(tools, options)
+export function createMcpServer(tools: AgentTool[], options: McpServerOptions): XMarsMcpServer {
+  return new XMarsMcpServer(tools, options)
 }

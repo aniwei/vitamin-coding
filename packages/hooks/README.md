@@ -1,4 +1,4 @@
-# @vitamin/hooks
+# @x-mars/hooks
 
 ## 模块定位
 
@@ -53,11 +53,11 @@ tests/                      # 7 个测试文件
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/hooks build
-pnpm --filter @vitamin/hooks typecheck
-pnpm --filter @vitamin/hooks clean
+pnpm --filter @x-mars/hooks build
+pnpm --filter @x-mars/hooks typecheck
+pnpm --filter @x-mars/hooks clean
 ```
 
 ## 关联包
 
-`@vitamin/shared`、`@vitamin/invariant`、`@vitamin/env`
+`@x-mars/shared`、`@x-mars/invariant`、`@x-mars/env`

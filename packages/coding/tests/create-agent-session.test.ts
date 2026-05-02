@@ -1,10 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { Agent, type AgentMessage } from '@vitamin/agent'
-import { createEventStream, createProviderRegistry, type AssistantMessage, type Model, type ProviderStream, type StreamContext, type StreamEvent, type ToolCall } from '@vitamin/ai'
-import { createHookRegistry } from '@vitamin/hooks'
-import { attachLogListener, createLogger } from '@vitamin/shared'
-import { createInMemorySessionStore } from '@vitamin/session'
-import type { Devtools } from '@vitamin/devtools'
+import { Agent, type AgentMessage } from '@x-mars/agent'
+import { createEventStream, createProviderRegistry, type AssistantMessage, type Model, type ProviderStream, type StreamContext, type StreamEvent, type ToolCall } from '@x-mars/ai'
+import { createHookRegistry } from '@x-mars/hooks'
+import { attachLogListener, createLogger } from '@x-mars/shared'
+import { createInMemorySessionStore } from '@x-mars/session'
+import type { Devtools } from '@x-mars/devtools'
 
 import { AgentSession } from '../src/session/agent-session'
 import { createAgentSession } from '../src/session/create-agent-session'
@@ -105,7 +105,7 @@ function createLogCollector(entries: string[]) {
   return {
     logger: createLogger(name, {
       level: 'debug',
-      destination: '/tmp/vitamin-coding-test.log',
+      destination: '/tmp/x-mars-coding-test.log',
     }),
     detach,
   }
@@ -188,7 +188,7 @@ describe('createAgentSession', () => {
     expect(store.getSession('store-test')).toBeDefined()
   })
 
-  it('runs prompt end-to-end without VitaminApp', async () => {
+  it('runs prompt end-to-end without XMarsApp', async () => {
     const hooks = createHookRegistry({ preset: 'none' })
     const store = createInMemorySessionStore<AgentMessage>()
     const sessionData = await store.createSession('e2e-test')

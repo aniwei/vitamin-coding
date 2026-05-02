@@ -2,13 +2,13 @@ import { mkdir, mkdtemp, readFile, writeFile } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { afterEach, describe, expect, it } from 'vitest'
-import { createDefaultProviderRegistry, createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent } from '@vitamin/ai'
-import { createHookRegistry } from '@vitamin/hooks'
-import { InteractiveMode, runJsonMode, runPrintMode } from '@vitamin/coding'
-import { createFilePluginStateStore } from '@vitamin/tools'
+import { createDefaultProviderRegistry, createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent } from '@x-mars/ai'
+import { createHookRegistry } from '@x-mars/hooks'
+import { InteractiveMode, runJsonMode, runPrintMode } from '@x-mars/coding'
+import { createFilePluginStateStore } from '@x-mars/tools'
 
-import { createVitamin, type VitaminAppOptions } from '@vitamin/coding'
-import { createInMemoryResourceManager } from '@vitamin/resources'
+import { createXMars, type XMarsAppOptions } from '@x-mars/coding'
+import { createInMemoryResourceManager } from '@x-mars/resources'
 import { formatPluginDiagnostics, parseCLI, runPluginCommand } from '../src/cli'
 
 function makeModel(): Model {
@@ -57,7 +57,7 @@ function makeProviderRegistry(
   return providerRegistry
 }
 
-function makeBaseOptions(overrides: Partial<VitaminAppOptions> = {}): VitaminAppOptions {
+function makeBaseOptions(overrides: Partial<XMarsAppOptions> = {}): XMarsAppOptions {
   return {
     port: 0,
     inspect: false,
@@ -71,7 +71,7 @@ function makeBaseOptions(overrides: Partial<VitaminAppOptions> = {}): VitaminApp
 }
 
 describe('CLI session modes', () => {
-  let app: ReturnType<typeof createVitamin> | null = null
+  let app: ReturnType<typeof createXMars> | null = null
 
   afterEach(async () => {
     if (app) {
@@ -82,7 +82,7 @@ describe('CLI session modes', () => {
 
   it('runPrintMode writes final assistant output', async () => {
     const writes: string[] = []
-    app = createVitamin(makeBaseOptions({
+    app = createXMars(makeBaseOptions({
       providerRegistry: makeProviderRegistry('done\nLead output.'),
     }))
     await app.start()
@@ -95,7 +95,7 @@ describe('CLI session modes', () => {
   })
 
   it('runJsonMode returns structured session output', async () => {
-    app = createVitamin(makeBaseOptions({
+    app = createXMars(makeBaseOptions({
       providerRegistry: makeProviderRegistry('done_with_concerns\nTests need rerun.'),
     }))
     await app.start()
@@ -109,7 +109,7 @@ describe('CLI session modes', () => {
   })
 
   it('InteractiveMode reuses the same session across prompts', async () => {
-    app = createVitamin(makeBaseOptions({
+    app = createXMars(makeBaseOptions({
       providerRegistry: makeProviderRegistry('done\nInteractive result.'),
     }))
     await app.start()
@@ -129,7 +129,7 @@ describe('CLI session modes', () => {
   })
 
   it('InteractiveMode can compact the current session before first prompt', async () => {
-    app = createVitamin(makeBaseOptions())
+    app = createXMars(makeBaseOptions())
     await app.start()
 
     const session = await app.createSession()
@@ -142,14 +142,14 @@ describe('CLI session modes', () => {
 
 describe('parseCLI', () => {
   it('defaults to interactive mode when no prompt is provided', () => {
-    const parsed = parseCLI(['node', 'vitamin'])
+    const parsed = parseCLI(['node', 'x-mars'])
 
     expect(parsed.options.mode).toBe('interactive')
     expect(parsed.options.prompt).toBeUndefined()
   })
 
   it('supports explicit print mode flag', () => {
-    const parsed = parseCLI(['node', 'vitamin', '--print', 'hello'])
+    const parsed = parseCLI(['node', 'x-mars', '--print', 'hello'])
 
     expect(parsed.options.mode).toBe('print')
     expect(parsed.options.prompt).toBe('hello')
@@ -159,11 +159,11 @@ describe('parseCLI', () => {
 describe('plugin diagnostics formatting', () => {
   it('shows lifecycle steps and skipped reasons for plugin list output', () => {
     const output = formatPluginDiagnostics({
-      roots: ['/workspace/.vitamin/plugins'],
+      roots: ['/workspace/.x-mars/plugins'],
       state: { trustedPluginIds: ['review'], disabledPluginIds: [] },
       discovered: [
         {
-          path: '/workspace/.vitamin/plugins/review/plugin.json',
+          path: '/workspace/.x-mars/plugins/review/plugin.json',
           manifest: {
             id: 'review',
             name: 'Review',
@@ -177,7 +177,7 @@ describe('plugin diagnostics formatting', () => {
       loaded: [
         {
           pluginId: 'review',
-          manifestPath: '/workspace/.vitamin/plugins/review/plugin.json',
+          manifestPath: '/workspace/.x-mars/plugins/review/plugin.json',
           manifest: {
             id: 'review',
             name: 'Review',
@@ -233,14 +233,14 @@ describe('plugin diagnostics formatting', () => {
       errors: [],
     })
 
-    expect(output).toContain('review\tloaded\ttrusted\t/workspace/.vitamin/plugins/review/plugin.json')
+    expect(output).toContain('review\tloaded\ttrusted\t/workspace/.x-mars/plugins/review/plugin.json')
     expect(output).toContain('command:review\tskipped\tcommand adapter is not configured')
     expect(output).toContain('agent:reviewer\tskipped\tagent adapter is not configured')
   })
 
   it('persists plugin state changes from plugin commands', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-cli-plugin-state-'))
-    const pluginRoot = join(root, '.vitamin/plugins')
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-cli-plugin-state-'))
+    const pluginRoot = join(root, '.x-mars/plugins')
     const pluginDir = join(pluginRoot, 'review')
     await mkdir(pluginDir, { recursive: true })
     await writeFile(
@@ -255,7 +255,7 @@ describe('plugin diagnostics formatting', () => {
     )
 
     const stateStore = createFilePluginStateStore({ workspaceDir: root })
-    const pluginApp = createVitamin(makeBaseOptions({
+    const pluginApp = createXMars(makeBaseOptions({
       workspaceDir: root,
       pluginRoots: [pluginRoot],
       pluginStateStore: stateStore,
@@ -285,8 +285,8 @@ describe('plugin diagnostics formatting', () => {
   })
 
   it('imports a Claude Code plugin into the project plugin root', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-cli-claude-import-'))
-    const pluginRoot = join(root, '.vitamin/plugins')
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-cli-claude-import-'))
+    const pluginRoot = join(root, '.x-mars/plugins')
     const sourceDir = join(root, 'claude-review')
     await mkdir(join(sourceDir, '.claude-plugin'), { recursive: true })
     await mkdir(join(sourceDir, 'skills/review'), { recursive: true })
@@ -311,7 +311,7 @@ describe('plugin diagnostics formatting', () => {
       'utf-8',
     )
 
-    const pluginApp = createVitamin(makeBaseOptions({
+    const pluginApp = createXMars(makeBaseOptions({
       workspaceDir: root,
       pluginRoots: [pluginRoot],
     }))

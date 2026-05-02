@@ -1,8 +1,8 @@
-// @vitamin/tools MCP Client 测试
+// @x-mars/tools MCP Client 测试
 // 测试 McpClient 生命周期、状态管理、协议握手
 
 import { describe, expect, it } from 'vitest'
-import { McpClient, createMcpClient } from '@vitamin/mcp'
+import { McpClient, createMcpClient } from '@x-mars/mcp'
 
 describe('McpClient', () => {
   describe('#constructor', () => {

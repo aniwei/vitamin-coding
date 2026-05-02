@@ -1,4 +1,4 @@
-# @vitamin/shared 设计说明
+# @x-mars/shared 设计说明
 
 ## 设计目标
 
@@ -41,7 +41,7 @@
 
 ### 路径工具（path.ts）
 
-统一路径规范化（正斜杠），提供 Vitamin 约定目录解析：`getVitaminHomeDir()` / `getVitaminProjectDir()` / `getThirdPartyToolDir()` / `getThirdPartyToolBinaryDir()` 等。
+统一路径规范化（正斜杠），提供 X-Mars 约定目录解析：`getXMarsHomeDir()` / `getXMarsProjectDir()` / `getThirdPartyToolDir()` / `getThirdPartyToolBinaryDir()` 等。
 
 ### HTTP 客户端（http.ts）
 
@@ -68,7 +68,7 @@
 ## 实现流程
 
 ```
-调用方 --import--> @vitamin/shared
+调用方 --import--> @x-mars/shared
                       |
                src/index.ts (barrel 导出)
                       |
@@ -91,7 +91,7 @@
 | `src/disposable.ts`      | 可释放资源栈（sync + async）                  |
 | `src/logger.ts`          | pino 日志器 + listener 订阅                   |
 | `src/fs-extra.ts`        | mkdirp / rimraf / exists / mime 文件工具      |
-| `src/path.ts`            | 路径规范化 + Vitamin 约定目录                 |
+| `src/path.ts`            | 路径规范化 + X-Mars 约定目录                  |
 | `src/string.ts`          | slugify 字符串工具                            |
 | `src/jsonc.ts`           | JSONC 解析 + 稳定序列化                       |
 | `src/http.ts`            | HTTP 请求 + SSE 流式读取                      |
@@ -102,7 +102,7 @@
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/env`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/env`、`@x-mars/invariant`
 - **外部依赖**：`pino`、`eventsource-parser`、`jsonc-parser`、`mime-types`、`safe-stable-stringify`、`unified` / `remark-*`、`uuid`
 
 ## 测试策略

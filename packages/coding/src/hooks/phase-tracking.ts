@@ -12,16 +12,16 @@
  *   - phase-cleanup (session.deleted observer)
  */
 
-import { appendPromptSection, extractPhaseFromMessage, injectPhaseContext } from '@vitamin/prompt'
-import type { PhaseAnnotation } from '@vitamin/prompt'
-import type { HookSpec } from '@vitamin/hooks'
-import { defineHook } from '@vitamin/hooks'
-import { createLogger } from '@vitamin/shared'
+import { appendPromptSection, extractPhaseFromMessage, injectPhaseContext } from '@x-mars/prompt'
+import type { PhaseAnnotation } from '@x-mars/prompt'
+import type { HookSpec } from '@x-mars/hooks'
+import { defineHook } from '@x-mars/hooks'
+import { createLogger } from '@x-mars/shared'
 
-const logger = createLogger('@vitamin/coding:hooks:phase-tracking')
+const logger = createLogger('@x-mars/coding:hooks:phase-tracking')
 
 export function createPhaseTrackingHooks(): HookSpec[] {
-  // 内部状态：不暴露到 VitaminApp，生命周期与 hook 绑定
+  // 内部状态：不暴露到 XMarsApp，生命周期与 hook 绑定
   const phaseTracker = new Map<string, string[]>()
 
   const injectionHook = defineHook({

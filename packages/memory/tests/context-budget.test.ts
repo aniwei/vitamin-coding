@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { MemoryManager, planContextBudget } from '../src'
 
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 
 function user(content: string): Message {
   return { role: 'user', content, timestamp: Date.now() }

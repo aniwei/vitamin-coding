@@ -1,15 +1,23 @@
-import type { AgentMessage } from '@vitamin/agent'
+import type { AgentMessage } from '@x-mars/agent'
+import type {
+  PermissionAuditLog,
+  PermissionContext,
+  PermissionDecision,
+  PermissionPolicyRegistry,
+} from '@x-mars/hooks'
 import {
   buildPluginCommandInvocation,
   consumePluginConfirmationFlag,
   formatPluginCommandInvocationError,
   type PluginAgentManifest,
   type PluginAgentRegistry,
+  type PluginCommandInvocation,
   type PluginCommandManifest,
+  type PluginCommandRegistration,
   type PluginCommandRegistry,
-} from '@vitamin/tools'
+} from '@x-mars/tools'
 import type { AgentSession } from '../session/agent-session'
-import type { ContextDiagnostics } from '../session/types'
+import type { ContextDiagnostics, PluginCommandDiagnostic } from '../session/types'
 
 export {
   applyPluginCommandArgumentDefaults,
@@ -20,7 +28,7 @@ export {
   getInvalidPluginCommandArguments,
   getMissingPluginCommandArguments,
   getUnexpectedPluginCommandArguments,
-} from '@vitamin/tools'
+} from '@x-mars/tools'
 
 export interface JsonModeResult {
   sessionId: string
@@ -52,6 +60,8 @@ export type InteractiveResult =
 export interface InteractiveModeOptions {
   pluginAgentRegistry?: PluginAgentRegistry
   pluginCommandRegistry?: PluginCommandRegistry
+  permissionRegistry?: PermissionPolicyRegistry
+  auditLog?: PermissionAuditLog
   requirePluginConfirmation?: boolean
 }
 
@@ -117,6 +127,8 @@ export async function runRpcMode(session: AgentSession, request: RpcRequest): Pr
 export class InteractiveMode {
   private readonly pluginAgentRegistry?: PluginAgentRegistry
   private readonly pluginCommandRegistry?: PluginCommandRegistry
+  private readonly permissionRegistry?: PermissionPolicyRegistry
+  private readonly auditLog?: PermissionAuditLog
   private readonly requirePluginConfirmation: boolean
 
   constructor(
@@ -125,6 +137,8 @@ export class InteractiveMode {
   ) {
     this.pluginAgentRegistry = options.pluginAgentRegistry
     this.pluginCommandRegistry = options.pluginCommandRegistry
+    this.permissionRegistry = options.permissionRegistry
+    this.auditLog = options.auditLog
     this.requirePluginConfirmation = options.requirePluginConfirmation ?? false
   }
 
@@ -232,21 +246,210 @@ export class InteractiveMode {
         { confirmed: confirmation.confirmed },
       )
       if (!invocationResult.ok) {
+        this.recordPluginCommandDiagnostic({
+          kind: 'plugin-command',
+          pluginId: pluginCommand.pluginId,
+          commandName: pluginCommand.command.name,
+          stage: 'parse',
+          status: 'failed',
+          confirmed: confirmation.confirmed,
+          rawArgumentCount: confirmation.args.length,
+          message: formatPluginCommandInvocationError(invocationResult.error),
+        })
         return {
           type: 'system',
           text: formatPluginCommandInvocationError(invocationResult.error),
         }
       }
+      this.recordPluginCommandDiagnostic(
+        createPluginCommandDiagnostic(
+          pluginCommand,
+          invocationResult.invocation,
+          'parse',
+          'completed',
+        ),
+      )
+      const permissionDenied = this.evaluatePluginCommandPermissions(
+        pluginCommand,
+        invocationResult.invocation,
+      )
+      if (permissionDenied) {
+        return { type: 'system', text: permissionDenied }
+      }
+      if (pluginCommand.handler) {
+        this.recordPluginCommandDiagnostic(
+          createPluginCommandDiagnostic(
+            pluginCommand,
+            invocationResult.invocation,
+            'handler',
+            'started',
+          ),
+        )
+        try {
+          const handlerResult = await pluginCommand.handler(invocationResult.invocation, {
+            pluginId: pluginCommand.pluginId,
+            command: pluginCommand.command,
+          })
+          this.recordPluginCommandDiagnostic({
+            ...createPluginCommandDiagnostic(
+              pluginCommand,
+              invocationResult.invocation,
+              'handler',
+              handlerResult.type === 'prompt' ? 'handoff' : 'completed',
+            ),
+            resultType: handlerResult.type,
+          })
+          if (handlerResult.type === 'system' || handlerResult.type === 'response') {
+            return { type: handlerResult.type, text: handlerResult.text }
+          }
+          this.recordPluginCommandDiagnostic(
+            createPluginCommandDiagnostic(
+              pluginCommand,
+              invocationResult.invocation,
+              'prompt',
+              'handoff',
+            ),
+          )
+          const response = await runPrintMode(this.session, handlerResult.prompt, () => {})
+          this.recordPluginCommandDiagnostic(
+            createPluginCommandDiagnostic(
+              pluginCommand,
+              invocationResult.invocation,
+              'prompt',
+              'completed',
+            ),
+          )
+          return { type: 'response', text: response }
+        } catch (error) {
+          const message = error instanceof Error ? error.message : String(error)
+          this.recordPluginCommandDiagnostic({
+            ...createPluginCommandDiagnostic(
+              pluginCommand,
+              invocationResult.invocation,
+              'handler',
+              'failed',
+            ),
+            message,
+          })
+          return { type: 'system', text: `Plugin command "/${command}" handler failed: ${message}` }
+        }
+      }
+      this.recordPluginCommandDiagnostic(
+        createPluginCommandDiagnostic(
+          pluginCommand,
+          invocationResult.invocation,
+          'prompt',
+          'handoff',
+        ),
+      )
       const response = await runPrintMode(
         this.session,
         renderPluginCommandPrompt(pluginCommand.command, invocationResult.invocation.arguments),
         () => {},
+      )
+      this.recordPluginCommandDiagnostic(
+        createPluginCommandDiagnostic(
+          pluginCommand,
+          invocationResult.invocation,
+          'prompt',
+          'completed',
+        ),
       )
       return { type: 'response', text: response }
     }
 
     return { type: 'system', text: `Unknown command: /${command}` }
   }
+
+  private evaluatePluginCommandPermissions(
+    pluginCommand: PluginCommandRegistration,
+    invocation: PluginCommandInvocation,
+  ): string | undefined {
+    const permissions = pluginCommand.command.permissions ?? []
+    if (permissions.length === 0 || !this.permissionRegistry) {
+      return undefined
+    }
+
+    for (const permission of permissions) {
+      const context: PermissionContext = {
+        timing: 'tool.execute.before',
+        toolName: `plugin-command:${permission}`,
+        args: invocation.typedArguments,
+        agentName: 'plugin-command',
+        sessionId: this.session.id,
+        metadata: {
+          kind: 'plugin-command',
+          pluginId: pluginCommand.pluginId,
+          commandName: pluginCommand.command.name,
+          permission,
+          confirmed: invocation.confirmed,
+        },
+      }
+      const decision = this.permissionRegistry.evaluate(context)
+      this.auditLog?.record(context, decision)
+      this.recordPluginCommandDiagnostic({
+        ...createPluginCommandDiagnostic(
+          pluginCommand,
+          invocation,
+          'permission',
+          decision.effect === 'allow'
+            ? 'completed'
+            : decision.effect === 'deny'
+              ? 'denied'
+              : 'requires_confirmation',
+        ),
+        permission,
+        effect: decision.effect,
+        reason: decision.reason ?? decision.ruleName,
+      })
+      const denied = formatPluginCommandPermissionDecision(
+        pluginCommand.command,
+        permission,
+        decision,
+      )
+      if (denied) {
+        return denied
+      }
+    }
+    return undefined
+  }
+
+  private recordPluginCommandDiagnostic(diagnostic: PluginCommandDiagnostic): void {
+    this.session.recordPluginCommandDiagnostic(diagnostic)
+  }
+}
+
+function createPluginCommandDiagnostic(
+  pluginCommand: PluginCommandRegistration,
+  invocation: PluginCommandInvocation,
+  stage: PluginCommandDiagnostic['stage'],
+  status: PluginCommandDiagnostic['status'],
+): PluginCommandDiagnostic {
+  return {
+    kind: 'plugin-command',
+    pluginId: pluginCommand.pluginId,
+    commandName: pluginCommand.command.name,
+    stage,
+    status,
+    confirmed: invocation.confirmed,
+    rawArgumentCount: invocation.rawArguments.length,
+    argumentNames: Object.keys(invocation.namedArguments).sort(),
+    typedArgumentKeys: Object.keys(invocation.typedArguments).sort(),
+  }
+}
+
+export function formatPluginCommandPermissionDecision(
+  command: PluginCommandManifest,
+  permission: string,
+  decision: PermissionDecision,
+): string | undefined {
+  if (decision.effect === 'deny') {
+    return `Plugin command "/${command.name}" permission denied for ${permission}: ${decision.reason ?? decision.ruleName}`
+  }
+  if (decision.effect === 'ask') {
+    return `Plugin command "/${command.name}" requires permission confirmation for ${permission}: ${decision.reason ?? decision.ruleName}`
+  }
+  return undefined
 }
 
 export function parseInteractiveSlashInput(input: string): string[] {

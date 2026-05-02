@@ -1,9 +1,9 @@
-// @vitamin/tools MCP Transport 测试
+// @x-mars/tools MCP Transport 测试
 // 测试 StdioTransport Content-Length 消息帧解析和发送
 // 以及 SseTransport 的构建
 
 import { describe, expect, it } from 'vitest'
-import { StdioTransport, SseTransport, createStdioTransport, createSseTransport } from '@vitamin/mcp'
+import { StdioTransport, SseTransport, createStdioTransport, createSseTransport } from '@x-mars/mcp'
 
 describe('StdioTransport', () => {
   describe('#constructor', () => {

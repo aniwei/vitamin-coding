@@ -1,4 +1,4 @@
-# @vitamin/shared
+# @x-mars/shared
 
 ## 模块定位
 
@@ -13,7 +13,7 @@
 | 资源生命周期 | DisposableStack / AsyncDisposableStack（LIFO 自动回收）                                                 |
 | 日志         | 基于 pino 的结构化日志，支持多目标输出和全局监听                                                        |
 | 文件系统     | mkdirp / rimraf / exists / isFile / isDirectory / mime                                                  |
-| 路径         | 跨平台规范化 + Vitamin 约定目录解析                                                                     |
+| 路径         | 跨平台规范化 + X-Mars 约定目录解析                                                                      |
 | HTTP         | request()（Fetch API）/ stream()（SSE 流式读取）                                                        |
 | JSONC        | 支持注释和尾逗号的 JSON 解析 + 稳定序列化                                                               |
 | Markdown     | unified/remark AST 解析 + 提取工具                                                                      |
@@ -86,8 +86,8 @@ export { formatBytes, truncateLine, truncateHead, truncateTail } from './truncat
 // 路径
 export {
   normalizePath,
-  getVitaminHomeDir,
-  getVitaminProjectDir,
+  getXMarsHomeDir,
+  getXMarsProjectDir,
   getThirdPartyToolDir,
   getThirdPartyToolBinaryDir,
 } from './path'
@@ -114,11 +114,11 @@ export {
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/shared build
-pnpm --filter @vitamin/shared typecheck
-pnpm --filter @vitamin/shared clean
+pnpm --filter @x-mars/shared build
+pnpm --filter @x-mars/shared typecheck
+pnpm --filter @x-mars/shared clean
 ```
 
 ## 关联包
 
-`@vitamin/env`、`@vitamin/invariant`
+`@x-mars/env`、`@x-mars/invariant`

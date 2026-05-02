@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/persistence",
+  "name": "@x-mars/persistence",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -25,6 +25,6 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/env": "workspace:*"
+    "@x-mars/env": "workspace:*"
   }
 }

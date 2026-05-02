@@ -1,5 +1,5 @@
-// @vitamin/hooks 核心类型
-import type { AgentMessage, AgentTool, ToolResult } from '@vitamin/agent'
+// @x-mars/hooks 核心类型
+import type { AgentMessage, AgentTool, ToolResult } from '@x-mars/agent'
 
 // ═══ 31 种 Hook 时机 ═══
 

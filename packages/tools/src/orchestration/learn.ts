@@ -1,7 +1,7 @@
 // learn 工具 — LLM 主动提取和记录运行经验
 import { z } from 'zod'
 
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 const LearnArgsSchema = z.object({
   tags: z.array(z.string()).describe('Free-form tags categorizing this lesson'),

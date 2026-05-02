@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { SettingsManager, createSettingsManager } from '@vitamin/resources'
+import { SettingsManager, createSettingsManager } from '@x-mars/resources'
 
 // ═══ SettingsManager ═══
 
@@ -99,7 +99,7 @@ describe('SettingsManager', () => {
 
   it('builds correct config paths from workspaceDir', async () => {
     // When workspaceDir is provided but no explicit projectConfigPath,
-    // it falls back to ${workspaceDir}/.vitamin/config.jsonc which won't exist
+    // it falls back to ${workspaceDir}/.x-mars/config.jsonc which won't exist
     // but loadSetting should still return defaults
     const mgr = await createSettingsManager({
       workspaceDir: '/tmp/test-project',

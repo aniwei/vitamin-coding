@@ -1,12 +1,12 @@
 import { readFile, writeFile, mkdir, access } from 'node:fs/promises'
 import { dirname } from 'node:path'
-import { safeStringify } from '@vitamin/shared'
-import { createLogger } from '@vitamin/shared'
+import { safeStringify } from '@x-mars/shared'
+import { createLogger } from '@x-mars/shared'
 
 import type { SettingStore } from './store'
-import type { VitaminSetting } from './types'
+import type { XMarsSetting } from './types'
 
-const logger = createLogger('@vitamin/setting:file-store')
+const logger = createLogger('@x-mars/setting:file-store')
 
 export class FileSettingStore implements SettingStore {
   readonly type = 'file' as const
@@ -23,7 +23,7 @@ export class FileSettingStore implements SettingStore {
     }
   }
 
-  async write(path: string, config: Partial<VitaminSetting>): Promise<void> {
+  async write(path: string, config: Partial<XMarsSetting>): Promise<void> {
     await mkdir(dirname(path), { recursive: true })
     const content = safeStringify(config, 2)
     await writeFile(path, content, 'utf-8')

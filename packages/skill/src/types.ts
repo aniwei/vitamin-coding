@@ -1,6 +1,6 @@
 // 兼容 Agent Skills 开放标准 (agentskills.io/specification)
 
-import type { Events } from '@vitamin/shared'
+import type { Events } from '@x-mars/shared'
 
 // ─── Skill 元数据 (YAML frontmatter) ───
 
@@ -60,7 +60,7 @@ export type SkillSourceType = 'project' | 'global' | 'plugin' | 'inline'
 
 export interface SkillSource {
   type: SkillSourceType
-  /** 来源根路径（如 project: ".vitamin/skills", global: "~/.vitamin/skills"） */
+  /** 来源根路径（如 project: ".x-mars/skills", global: "~/.x-mars/skills"） */
   root: string
 }
 
@@ -151,10 +151,10 @@ export interface SkillEvents extends Events {
   skill_executed: (info: { name: string; success: boolean; durationMs: number }) => void
 }
 
-// ─── Skill Provider 接口（供上层 VitaminApp 注入） ───
+// ─── Skill Provider 接口（供上层 XMarsApp 注入） ───
 
 /**
- * 上层（如 VitaminApp）通过此接口注入 skill 能力。
+ * 上层（如 XMarsApp）通过此接口注入 skill 能力。
  * 未注入时 skill 相关工具返回"功能未配置"提示。
  */
 export interface SkillProvider {

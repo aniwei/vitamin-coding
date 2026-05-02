@@ -1,4 +1,4 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { createFileGuardHook } from './core/tool-guard/file-guard'
 import { createOutputTruncationHook } from './core/tool-guard/output-truncation'
 import { createLabelTruncatorHook } from './core/tool-guard/label-truncator'
@@ -33,7 +33,7 @@ import {
   defineHook,
 } from './hook-spec'
 
-const logger = createLogger('@vitamin/hooks')
+const logger = createLogger('@x-mars/hooks')
 
 const HOOK_TIMINGS: HookTiming[] = [
   'chat.message.before',

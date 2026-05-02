@@ -3,11 +3,11 @@ import { existsSync, statSync } from 'node:fs'
 import { readFileSync } from 'node:fs'
 import { resolve, extname } from 'node:path'
 import { pathToFileURL } from 'node:url'
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { EXT_TO_LANG } from './constants'
 import type { Diagnostic, ResolvedServer } from './types'
 
-const logger = createLogger('@vitamin/tools:lsp')
+const logger = createLogger('@x-mars/tools:lsp')
 
 // ─── JSON-RPC transport (hand-written, no vscode-jsonrpc needed) ────────────
 

@@ -1,7 +1,7 @@
-# Vitamin 插件体系设计审计
+# X-Mars 插件体系设计审计
 
 > 审计日期：2026-05-02  
-> 审计范围：`@vitamin/tools` plugin manifest / manager、`VitaminApp` 生命周期接入、CLI plugin 命令、相关测试与 VCCG 插件 TODO 记录。  
+> 审计范围：`@x-mars/tools` plugin manifest / manager、`XMarsApp` 生命周期接入、CLI plugin 命令、相关测试与 VCCG 插件 TODO 记录。
 > 审计目标：确认当前插件体系是否形成产品级闭环，并识别后续可推进的最小设计债。
 
 ## 结论摘要
@@ -25,18 +25,18 @@
 | --------------- | --------------------------------------------------------------------------------------------------------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------ |
 | Manifest schema | `packages/tools/src/plugin-manifest.ts`                                                                                                                   | 支持 `tools/skills/mcpServers/hooks/commands/agents/permissions`，并能输出 summary/runtime plan/lifecycle result。 |
 | Runtime manager | `packages/tools/src/plugin-manager.ts`                                                                                                                    | 扫描 plugin roots，真实加载 tools/hooks，维护内存态 trusted/disabled/loaded。                                      |
-| App 生命周期    | `packages/coding/src/app/vitamin-app.ts`                                                                                                                  | `pluginRoots` 存在时构造 manager，`start()` 调 `loadAll()`，`stop()` 调 `unloadAll()`。                            |
-| CLI             | `packages/cli/src/cli.ts`                                                                                                                                 | 默认扫描 `.vitamin/plugins`，支持 `list/enable/disable/reload`，但状态不持久。                                     |
+| App 生命周期    | `packages/coding/src/app/x-mars-app.ts`                                                                                                                   | `pluginRoots` 存在时构造 manager，`start()` 调 `loadAll()`，`stop()` 调 `unloadAll()`。                            |
+| CLI             | `packages/cli/src/cli.ts`                                                                                                                                 | 默认扫描 `.x-mars/plugins`，支持 `list/enable/disable/reload`，但状态不持久。                                      |
 | 测试            | `packages/tools/tests/plugin-manifest.test.ts`、`packages/tools/tests/plugin-manager.test.ts`、`packages/coding/tests/plugin-manager-integration.test.ts` | 覆盖 manifest、坏 JSON、越界路径、危险权限未信任阻断、hook 加载/卸载、App start/stop。                             |
-| 设计账本        | `docs/rfc/vitamin-vs-claude-code-implementation-todos.md`                                                                                                 | VCCG-08/VCCG-09 标记 Done，并已记录 trust 内存态、commands/agents 仅声明的剩余风险。                               |
+| 设计账本        | `docs/rfc/x-mars-vs-claude-code-implementation-todos.md`                                                                                                  | VCCG-08/VCCG-09 标记 Done，并已记录 trust 内存态、commands/agents 仅声明的剩余风险。                               |
 
 ## 当前架构流程
 
 ```text
-CLI / createVitamin(options.pluginRoots)
-  -> VitaminApp.constructor()
+CLI / createXMars(options.pluginRoots)
+  -> XMarsApp.constructor()
   -> createPluginManager({ roots, toolRegistry })
-  -> VitaminApp.start()
+  -> XMarsApp.start()
   -> PluginManager.loadAll()
   -> discoverPluginManifests(roots)
   -> validatePluginManifest()
@@ -60,7 +60,7 @@ PluginManager.disable(pluginId)
 卸载流程：
 
 ```text
-VitaminApp.stop()
+XMarsApp.stop()
   -> PluginManager.unloadAll()
   -> unregister plugin-owned tools/hooks
   -> loaded.clear()
@@ -68,16 +68,16 @@ VitaminApp.stop()
 
 ## 能力矩阵
 
-| 能力           | Manifest 支持         | Runtime plan 支持 | PluginManager 真实加载                   | CLI 管理                | 审计判断                                                                                             |
-| -------------- | --------------------- | ----------------- | ---------------------------------------- | ----------------------- | ---------------------------------------------------------------------------------------------------- |
-| Tool           | Yes                   | Yes               | Yes，动态 import 并注册到 `ToolRegistry` | 间接支持 reload/disable | 基础可用，但 trust 边界需收紧。                                                                      |
-| Hook           | Yes                   | 仅 skipped step   | Yes，动态 import 并注册到 `HookRegistry` | 间接支持 reload/disable | 可用，但 `VitaminApp` 当前未把 `hookRegistry` 传给 `PluginManager`，默认 App 路径实际不会加载 hook。 |
-| Skill          | Yes                   | Yes               | No                                       | No                      | 仍是声明/adapter 设计，没有接入 `SkillProvider`。                                                    |
-| MCP server     | Yes                   | Yes               | No                                       | No                      | 仍是声明/adapter 设计，没有接入 `McpManager` connect/disconnect。                                    |
-| Command        | Yes                   | 仅 skipped step   | No，当前直接标记 loaded                  | No                      | 诊断语义容易误导，应改成 skipped/pending 或接入命令注册器。                                          |
-| Agent          | Yes                   | 仅 skipped step   | No，当前直接标记 loaded                  | No                      | 诊断语义容易误导，应接入 agent profile/registry。                                                    |
-| Trust          | Yes，permissions 字段 | 间接              | 内存态 gate                              | No persistent trust     | 只能阻断部分危险声明，不能作为产品级安全模型。                                                       |
-| Enable/disable | Yes，status 字段      | Yes               | 内存态 disabled set                      | No persistence          | CLI 操作跨进程失效。                                                                                 |
+| 能力           | Manifest 支持         | Runtime plan 支持 | PluginManager 真实加载                   | CLI 管理                | 审计判断                                                                                           |
+| -------------- | --------------------- | ----------------- | ---------------------------------------- | ----------------------- | -------------------------------------------------------------------------------------------------- |
+| Tool           | Yes                   | Yes               | Yes，动态 import 并注册到 `ToolRegistry` | 间接支持 reload/disable | 基础可用，但 trust 边界需收紧。                                                                    |
+| Hook           | Yes                   | 仅 skipped step   | Yes，动态 import 并注册到 `HookRegistry` | 间接支持 reload/disable | 可用，但 `XMarsApp` 当前未把 `hookRegistry` 传给 `PluginManager`，默认 App 路径实际不会加载 hook。 |
+| Skill          | Yes                   | Yes               | No                                       | No                      | 仍是声明/adapter 设计，没有接入 `SkillProvider`。                                                  |
+| MCP server     | Yes                   | Yes               | No                                       | No                      | 仍是声明/adapter 设计，没有接入 `McpManager` connect/disconnect。                                  |
+| Command        | Yes                   | 仅 skipped step   | No，当前直接标记 loaded                  | No                      | 诊断语义容易误导，应改成 skipped/pending 或接入命令注册器。                                        |
+| Agent          | Yes                   | 仅 skipped step   | No，当前直接标记 loaded                  | No                      | 诊断语义容易误导，应接入 agent profile/registry。                                                  |
+| Trust          | Yes，permissions 字段 | 间接              | 内存态 gate                              | No persistent trust     | 只能阻断部分危险声明，不能作为产品级安全模型。                                                     |
+| Enable/disable | Yes，status 字段      | Yes               | 内存态 disabled set                      | No persistence          | CLI 操作跨进程失效。                                                                               |
 
 ## 主要发现
 
@@ -95,31 +95,31 @@ VitaminApp.stop()
 
 位置：`packages/cli/src/cli.ts:219`、`packages/cli/src/cli.ts:222`、`packages/cli/src/cli.ts:307`
 
-CLI 每次创建新的 `VitaminApp`，`app.start()` 会先加载 `.vitamin/plugins`，然后 `runPluginCommand()` 才执行 `enable/disable/reload`。`manager.enable/disable` 只改内存 Set，进程退出即丢失。
+CLI 每次创建新的 `XMarsApp`，`app.start()` 会先加载 `.x-mars/plugins`，然后 `runPluginCommand()` 才执行 `enable/disable/reload`。`manager.enable/disable` 只改内存 Set，进程退出即丢失。
 
-影响：`vitamin plugin disable <id>` 对下一次启动无效；`enable` 也不会写入 manifest 或 settings。用户会误以为插件状态已被管理。
+影响：`x-mars plugin disable <id>` 对下一次启动无效；`enable` 也不会写入 manifest 或 settings。用户会误以为插件状态已被管理。
 
-建议：新增 `PluginStateStore`，将 trusted/disabled/version/source 写入 `.vitamin/plugins.json` 或 settings。CLI plugin 命令应先读取 store，再决定是否加载插件；`list` 应展示 discovered、loaded、trusted、disabled、errors。
+建议：新增 `PluginStateStore`，将 trusted/disabled/version/source 写入 `.x-mars/plugins.json` 或 settings。CLI plugin 命令应先读取 store，再决定是否加载插件；`list` 应展示 discovered、loaded、trusted、disabled、errors。
 
-### P1：`VitaminApp` 未传入 `hookRegistry`，App 默认路径加载不了 hook
+### P1：`XMarsApp` 未传入 `hookRegistry`，App 默认路径加载不了 hook
 
-位置：`packages/coding/src/app/vitamin-app.ts:291`、`packages/tools/src/plugin-manager.ts:20`、`packages/tools/src/plugin-manager.ts:233`
+位置：`packages/coding/src/app/x-mars-app.ts:291`、`packages/tools/src/plugin-manager.ts:20`、`packages/tools/src/plugin-manager.ts:233`
 
-`PluginManagerOptions` 支持 `hookRegistry`，测试中也通过显式传入 registry 验证 hook 加载。但 `VitaminApp` 构造 manager 时只传 `roots` 和 `toolRegistry`，所以真实 App 启动路径中 hook 会被标记 skipped。
+`PluginManagerOptions` 支持 `hookRegistry`，测试中也通过显式传入 registry 验证 hook 加载。但 `XMarsApp` 构造 manager 时只传 `roots` 和 `toolRegistry`，所以真实 App 启动路径中 hook 会被标记 skipped。
 
-影响：VCCG-09 文档中“可信插件可动态 import hook module 并注册到 HookRegistry”只对直接构造 `PluginManager` 成立，对默认 `VitaminApp.pluginRoots` 不成立。
+影响：VCCG-09 文档中“可信插件可动态 import hook module 并注册到 HookRegistry”只对直接构造 `PluginManager` 成立，对默认 `XMarsApp.pluginRoots` 不成立。
 
-建议：`VitaminApp` 构造 `createPluginManager({ roots, toolRegistry, hookRegistry: this.hookRegistry })`，并补 App 集成测试验证 plugin hook 在 session prompt/hook pipeline 中可见。
+建议：`XMarsApp` 构造 `createPluginManager({ roots, toolRegistry, hookRegistry: this.hookRegistry })`，并补 App 集成测试验证 plugin hook 在 session prompt/hook pipeline 中可见。
 
 ### P1：MCP/Skill manifest 与 runtime manager 脱节
 
 位置：`packages/tools/src/plugin-manifest.ts:92`、`packages/tools/src/plugin-manifest.ts:121`、`packages/tools/src/plugin-manager.ts:177`
 
-`PluginRuntimePlan` 和 `applyPluginRuntimePlan()` 支持 skills/MCP adapter，但 `PluginManager.loadDiscovered()` 没有调用 skill loader 或 MCP manager。`VitaminApp` 也没有把 `skillProvider`、`mcpManager` 注入 manager。
+`PluginRuntimePlan` 和 `applyPluginRuntimePlan()` 支持 skills/MCP adapter，但 `PluginManager.loadDiscovered()` 没有调用 skill loader 或 MCP manager。`XMarsApp` 也没有把 `skillProvider`、`mcpManager` 注入 manager。
 
 影响：插件可以声明 skill/MCP，但启动后不会真正可用；trust gate 会因 MCP/skills 声明阻断加载，却没有 trust 后的连接路径。
 
-建议：把 `PluginManager` 改成统一 adapter 驱动，接入 `loadSkill/unloadSkill/connectMcpServer/disconnectMcpServer`。`VitaminApp` 负责把 `SkillProvider`、`McpManager` 适配成 lifecycle adapters。
+建议：把 `PluginManager` 改成统一 adapter 驱动，接入 `loadSkill/unloadSkill/connectMcpServer/disconnectMcpServer`。`XMarsApp` 负责把 `SkillProvider`、`McpManager` 适配成 lifecycle adapters。
 
 ### P1：commands/agents 标记 loaded 但没有注册或执行入口
 
@@ -145,9 +145,9 @@ CLI 每次创建新的 `VitaminApp`，`app.start()` 会先加载 `.vitamin/plugi
 
 位置：`packages/tools/src/plugin-manifest.ts:245`
 
-`discoverPluginManifests()` 只读取 `roots` 下的子目录，再查找子目录中的 `plugin.json` / `vitamin-plugin.json`。如果用户把某个插件目录本身作为 root，它不会被发现。
+`discoverPluginManifests()` 只读取 `roots` 下的子目录，再查找子目录中的 `plugin.json` / `x-mars-plugin.json`。如果用户把某个插件目录本身作为 root，它不会被发现。
 
-影响：CLI 默认 `.vitamin/plugins/<plugin>/plugin.json` 可用，但 programmatic API 的 root 语义不直观。
+影响：CLI 默认 `.x-mars/plugins/<plugin>/plugin.json` 可用，但 programmatic API 的 root 语义不直观。
 
 建议：支持 root 本身就是插件目录，同时保留 root 下多插件目录扫描；diagnostics 中区分 `pluginRoot` 与 `pluginDir`。
 
@@ -163,13 +163,13 @@ CLI 每次创建新的 `VitaminApp`，`app.start()` 会先加载 `.vitamin/plugi
 
 ## 可抽象到公共模块的点
 
-| 可抽象点                     | 当前位置                                                            | 建议归属                                          | 原因                                                                                            |
-| ---------------------------- | ------------------------------------------------------------------- | ------------------------------------------------- | ----------------------------------------------------------------------------------------------- |
-| Manifest 诊断结构            | `plugin-manifest.ts` 手写 errors/warnings                           | `@vitamin/manifest` 或 `@vitamin/schema`          | Skill/Memory 已复用 frontmatter parser，Plugin JSON 仍可复用通用 diagnostics 和 schema result。 |
-| Capability lifecycle         | `applyPluginRuntimePlan()` 与 `PluginManager.loadDiscovered()` 分叉 | `@vitamin/plugin` 或 `@vitamin/runtime-lifecycle` | Tools/Skills/MCP/Hooks/Commands/Agents 都是 capability 生命周期，应该统一 step/result/adapter。 |
-| Secure module resolver       | `importPluginTool()`、`importPluginHook()` 各自校验路径             | `@vitamin/shared` 或 `@vitamin/plugin`            | 动态 import、安全路径、realpath/symlink 检查会被插件 command/agent/skill loader 复用。          |
-| Trust/permission state store | `PluginManager` 内存 Set                                            | `@vitamin/resources` 或 `@vitamin/plugin`         | trusted/disabled 是用户配置状态，应跟 settings/session/resource 生命周期统一。                  |
-| Diagnostics presenter        | CLI 手写 list 输出                                                  | `@vitamin/plugin` + CLI/UI adapter                | plugin list、context diagnostics、service API 需要同一状态视图。                                |
+| 可抽象点                     | 当前位置                                                            | 建议归属                                        | 原因                                                                                            |
+| ---------------------------- | ------------------------------------------------------------------- | ----------------------------------------------- | ----------------------------------------------------------------------------------------------- |
+| Manifest 诊断结构            | `plugin-manifest.ts` 手写 errors/warnings                           | `@x-mars/manifest` 或 `@x-mars/schema`          | Skill/Memory 已复用 frontmatter parser，Plugin JSON 仍可复用通用 diagnostics 和 schema result。 |
+| Capability lifecycle         | `applyPluginRuntimePlan()` 与 `PluginManager.loadDiscovered()` 分叉 | `@x-mars/plugin` 或 `@x-mars/runtime-lifecycle` | Tools/Skills/MCP/Hooks/Commands/Agents 都是 capability 生命周期，应该统一 step/result/adapter。 |
+| Secure module resolver       | `importPluginTool()`、`importPluginHook()` 各自校验路径             | `@x-mars/shared` 或 `@x-mars/plugin`            | 动态 import、安全路径、realpath/symlink 检查会被插件 command/agent/skill loader 复用。          |
+| Trust/permission state store | `PluginManager` 内存 Set                                            | `@x-mars/resources` 或 `@x-mars/plugin`         | trusted/disabled 是用户配置状态，应跟 settings/session/resource 生命周期统一。                  |
+| Diagnostics presenter        | CLI 手写 list 输出                                                  | `@x-mars/plugin` + CLI/UI adapter               | plugin list、context diagnostics、service API 需要同一状态视图。                                |
 
 ## 建议实施 TODO
 

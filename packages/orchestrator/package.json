@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/orchestrator",
+  "name": "@x-mars/orchestrator",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -25,10 +25,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/agent": "workspace:*",
-    "@vitamin/hooks": "workspace:*",
-    "@vitamin/setting": "workspace:*",
-    "@vitamin/shared": "workspace:*",
-    "@vitamin/tools": "workspace:*"
+    "@x-mars/agent": "workspace:*",
+    "@x-mars/hooks": "workspace:*",
+    "@x-mars/setting": "workspace:*",
+    "@x-mars/shared": "workspace:*",
+    "@x-mars/tools": "workspace:*"
   }
 }

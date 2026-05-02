@@ -1,4 +1,4 @@
-# @vitamin/memory
+# @x-mars/memory
 
 ## 模块定位
 
@@ -34,11 +34,11 @@ tests/                        # 6 个测试文件
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/memory build
-pnpm --filter @vitamin/memory typecheck
-pnpm --filter @vitamin/memory clean
+pnpm --filter @x-mars/memory build
+pnpm --filter @x-mars/memory typecheck
+pnpm --filter @x-mars/memory clean
 ```
 
 ## 关联包
 
-`@vitamin/persistence`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+`@x-mars/persistence`、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`

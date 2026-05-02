@@ -5,7 +5,7 @@ import {
   evaluateSemanticRetrieval,
 } from '../src/semantic-retrieval'
 import type { MemoryEntry, SemanticRetrievalConfig } from '../src/types'
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 
 const entries: MemoryEntry[] = [
   {

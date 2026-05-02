@@ -1,4 +1,4 @@
-# @vitamin/orchestrator 设计说明
+# @x-mars/orchestrator 设计说明
 
 ## 设计目标
 
@@ -8,8 +8,8 @@
 
 ## 非目标
 
-- 不实现 Agent 本身（由 `@vitamin/agent` 完成）。
-- 不管理 Agent 间协作拓扑（由 `@vitamin/swarm` 完成）。
+- 不实现 Agent 本身（由 `@x-mars/agent` 完成）。
+- 不管理 Agent 间协作拓扑（由 `@x-mars/swarm` 完成）。
 
 ## 实现原理
 
@@ -110,7 +110,7 @@
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/agent`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/agent`、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`
 - **外部依赖**：无
 
 ## 测试策略

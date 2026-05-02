@@ -4,7 +4,7 @@ import {
   COMPACTION_STRATEGIES,
   LOG_LEVELS,
   TOOL_PRESETS,
-  VITAMIN_SETTING_KEYS,
+  X_MARS_SETTING_KEYS,
   WORKFLOW_SLOTS,
 } from '../src/types'
 import { loadSetting } from '../src/setting'
@@ -39,13 +39,13 @@ describe('setting schema literals', () => {
   })
 
   it('lists stable top-level setting keys used by runtime validation', () => {
-    expect(VITAMIN_SETTING_KEYS).toContain('log_level')
-    expect(VITAMIN_SETTING_KEYS).toContain('tool_preset')
-    expect(VITAMIN_SETTING_KEYS).toContain('experimental')
-    expect(VITAMIN_SETTING_KEYS).not.toContain('mcp')
-    expect(VITAMIN_SETTING_KEYS).not.toContain('skills')
-    expect(VITAMIN_SETTING_KEYS).not.toContain('disabled_mcps')
-    expect(VITAMIN_SETTING_KEYS).not.toContain('disabled_skills')
+    expect(X_MARS_SETTING_KEYS).toContain('log_level')
+    expect(X_MARS_SETTING_KEYS).toContain('tool_preset')
+    expect(X_MARS_SETTING_KEYS).toContain('experimental')
+    expect(X_MARS_SETTING_KEYS).not.toContain('mcp')
+    expect(X_MARS_SETTING_KEYS).not.toContain('skills')
+    expect(X_MARS_SETTING_KEYS).not.toContain('disabled_mcps')
+    expect(X_MARS_SETTING_KEYS).not.toContain('disabled_skills')
   })
 })
 

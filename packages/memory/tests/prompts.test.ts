@@ -53,16 +53,16 @@ describe('buildMemoryInjection', () => {
 
   it('#given memory entries #then formats as agent_memory block', () => {
     const memories = new Map([
-      ['~/.vitamin/AGENTS.md', 'User prefers TypeScript'],
-      ['./.vitamin/AGENTS.md', 'Project uses pnpm'],
+      ['~/.x-mars/AGENTS.md', 'User prefers TypeScript'],
+      ['./.x-mars/AGENTS.md', 'Project uses pnpm'],
     ])
     const result = buildMemoryInjection(memories)
 
     expect(result).toContain('<agent_memory>')
     expect(result).toContain('</agent_memory>')
-    expect(result).toContain('# ~/.vitamin/AGENTS.md')
+    expect(result).toContain('# ~/.x-mars/AGENTS.md')
     expect(result).toContain('User prefers TypeScript')
-    expect(result).toContain('# ./.vitamin/AGENTS.md')
+    expect(result).toContain('# ./.x-mars/AGENTS.md')
     expect(result).toContain('Project uses pnpm')
     expect(result).toContain('<memory_guidelines>')
   })

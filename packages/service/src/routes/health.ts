@@ -4,7 +4,7 @@ import type { CodingService } from '../coding-service'
 export function createHealthRoute(_context: CodingService): Hono {
   const app = new Hono()
 
-  app.get('/', (c) => c.json({ status: 'ok', service: 'vitamin-coding' }))
+  app.get('/', (c) => c.json({ status: 'ok', service: 'x-mars-coding' }))
 
   return app
 }

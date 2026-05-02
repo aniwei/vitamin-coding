@@ -1,10 +1,10 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { Breakpoints, type Breakpoint } from './breakpoints'
 import type { BreakpointPoint, DebugSnapshot, PauseResult } from '../protocol'
 import type { Service } from '../service'
 import type { AuditTraceRecorder } from '../audit-trace'
 
-const logger = createLogger('@vitamin/devtools:debugger')
+const logger = createLogger('@x-mars/devtools:debugger')
 
 export class Debugger {
   public readonly breakpoints: Breakpoints

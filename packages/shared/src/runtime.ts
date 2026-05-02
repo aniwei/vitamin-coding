@@ -1,6 +1,6 @@
-import { Error as VitaminError } from './error'
+import { Error as XMarsError } from './error'
 
-export class RuntimeTimeoutError extends VitaminError {
+export class RuntimeTimeoutError extends XMarsError {
   constructor(message: string, metadata?: Record<string, unknown>) {
     super(message, {
       code: 'RUNTIME_TIMEOUT',
@@ -11,7 +11,7 @@ export class RuntimeTimeoutError extends VitaminError {
   }
 }
 
-export class RuntimeAbortError extends VitaminError {
+export class RuntimeAbortError extends XMarsError {
   constructor(message = 'Operation aborted', metadata?: Record<string, unknown>) {
     super(message, {
       code: 'RUNTIME_ABORTED',

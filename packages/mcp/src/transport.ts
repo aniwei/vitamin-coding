@@ -2,10 +2,10 @@
 // 支持 stdio (子进程) 和 SSE (Streamable HTTP) 两种传输方式
 
 import { spawn, type ChildProcess } from 'node:child_process'
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import type { JsonRpcRequest, JsonRpcResponse, JsonRpcNotification } from './types'
 
-const logger = createLogger('@vitamin/mcp:transport')
+const logger = createLogger('@x-mars/mcp:transport')
 
 // ─── 传输层接口 ───
 

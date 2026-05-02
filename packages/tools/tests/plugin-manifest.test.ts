@@ -43,12 +43,16 @@ const manifest = {
       name: 'review',
       description: 'Run review command',
       prompt: 'Review $ARGUMENTS.',
+      permissions: ['filesystem' as const],
       arguments: [
         {
           name: 'path',
           description: 'Target path',
           required: true,
           type: 'string',
+          flag: 'path',
+          alias: 'target',
+          repeatable: true,
           choices: ['src/app.ts', 'src/index.ts'],
           default: 'src/app.ts',
         },
@@ -118,7 +122,22 @@ describe('plugin manifest', () => {
       commands: [
         {
           name: 'bad-command',
-          arguments: [{ required: 'yes', type: 'object', choices: [''], default: '' }],
+          permissions: ['root'],
+          arguments: [
+            {
+              required: 'yes',
+              type: 'object',
+              flag: '--bad',
+              alias: 'confirm-plugin',
+              repeatable: 'yes',
+              choices: [''],
+              default: '',
+            },
+            { name: 'dupe', flag: 'same' },
+            { name: 'dupe-2', alias: 'same' },
+            { name: 'tail', repeatable: true },
+            { name: 'after-tail' },
+          ],
         },
       ],
       devtools: { providers: [{ name: 'bad-provider', kind: 'trace' }] },
@@ -132,9 +151,21 @@ describe('plugin manifest', () => {
     expect(result.errors).toContain('skills[0].path is required')
     expect(result.errors).toContain('skills[0].trigger must be manual or auto')
     expect(result.errors).toContain('mcpServers.name contains duplicate value: mcp')
+    expect(result.errors).toContain(
+      'commands[0].permissions contains invalid permission: root',
+    )
     expect(result.errors).toContain('commands[0].arguments[0].name is required')
     expect(result.errors).toContain('commands[0].arguments[0].required must be a boolean')
     expect(result.errors).toContain('commands[0].arguments[0].type must be string, number or boolean')
+    expect(result.errors).toContain('commands[0].arguments[0].repeatable must be a boolean')
+    expect(result.errors).toContain(
+      'commands[0].arguments[0].flag must be a command flag name without leading dashes',
+    )
+    expect(result.errors).toContain('commands[0].arguments[0].alias is reserved by the host')
+    expect(result.errors).toContain('commands[0].arguments[2].alias must be unique')
+    expect(result.errors).toContain(
+      'commands[0].arguments[3].repeatable positional argument must be last',
+    )
     expect(result.errors).toContain('commands[0].arguments[0].choices[0] is required')
     expect(result.errors).toContain('commands[0].arguments[0].default is required')
     expect(result.errors).toContain('devtools.providers[0].kind must be diagnostics or timeline')
@@ -174,12 +205,16 @@ describe('plugin manifest', () => {
           name: 'review',
           description: 'Run review command',
           prompt: 'Review $ARGUMENTS.',
+          permissions: ['filesystem'],
           arguments: [
             {
               name: 'path',
               description: 'Target path',
               required: true,
               type: 'string',
+              flag: 'path',
+              alias: 'target',
+              repeatable: true,
               choices: ['src/app.ts', 'src/index.ts'],
               default: 'src/app.ts',
             },
@@ -389,7 +424,7 @@ describe('plugin manifest', () => {
   })
 
   it('discovers plugin manifests from plugin roots', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugin-root-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugin-root-'))
     await mkdir(join(root, 'review-tools'), { recursive: true })
     await mkdir(join(root, 'bad-json'), { recursive: true })
     await writeFile(join(root, 'review-tools', 'plugin.json'), JSON.stringify(manifest), 'utf-8')
@@ -412,7 +447,7 @@ describe('plugin manifest', () => {
   })
 
   it('discovers a plugin when the root itself is the plugin directory', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugin-dir-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugin-dir-'))
     await writeFile(join(root, 'plugin.json'), JSON.stringify(manifest), 'utf-8')
 
     const result = await discoverPluginManifests([root])

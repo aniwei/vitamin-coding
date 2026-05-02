@@ -1,20 +1,20 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { buildMemoryInjection } from './prompts'
 
 import type { MemorySource, MemoryStore } from './types'
 
-const log = createLogger('@vitamin/memory:persistent')
+const log = createLogger('@x-mars/memory:persistent')
 
 export const DEFAULT_MEMORY_SOURCES: MemorySource[] = [
-  { path: '~/.vitamin/AGENTS.md', writable: true },
-  { path: './.vitamin/AGENTS.md', writable: true },
+  { path: '~/.x-mars/AGENTS.md', writable: true },
+  { path: './.x-mars/AGENTS.md', writable: true },
   { path: './AGENTS.md', writable: false },
 ]
 
 // L1 Persistent Memory — 加载并管理持久化知识文件。
 // AGENTS.md 文件按优先级从多个 source 加载：
-// 1. 全局用户偏好 (~/.vitamin/AGENTS.md)
-// 2. 项目级知识 (./.vitamin/AGENTS.md)
+// 1. 全局用户偏好 (~/.x-mars/AGENTS.md)
+// 2. 项目级知识 (./.x-mars/AGENTS.md)
 // 3. 社区 AGENTS.md (./AGENTS.md, 只读)
 export class PersistentMemory {
   private memories = new Map<string, string>()

@@ -1,8 +1,8 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { MEMORY_EXTRACTION_PROMPT } from './prompts'
 import { messageToText } from './token-estimator'
 
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 import type {
   MemoryEntry,
   MemoryType,
@@ -11,7 +11,7 @@ import type {
   MemoryEntryStore,
 } from './types'
 
-const log = createLogger('@vitamin/memory:extraction')
+const log = createLogger('@x-mars/memory:extraction')
 
 const VALID_TYPES = new Set<MemoryType>(['user', 'feedback', 'project', 'reference'])
 

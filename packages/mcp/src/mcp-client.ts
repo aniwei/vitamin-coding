@@ -2,7 +2,7 @@
 // 实现 MCP 2024-11-05 规范的 initialize / tools/list / tools/call
 // 扩展支持 resources/list / resources/read / prompts/list / prompts/get
 
-import { McpError, createLogger } from '@vitamin/shared'
+import { McpError, createLogger } from '@x-mars/shared'
 import { StdioTransport, SseTransport } from './transport'
 
 import type { McpTransport } from './transport'
@@ -23,10 +23,10 @@ import type {
   McpPromptMessage,
 } from './types'
 
-const logger = createLogger('@vitamin/mcp:client')
+const logger = createLogger('@x-mars/mcp:client')
 
 const MCP_PROTOCOL_VERSION = '2024-11-05'
-const MCP_CLIENT_NAME = 'vitamin-coding'
+const MCP_CLIENT_NAME = 'x-mars-coding'
 const MCP_CLIENT_VERSION = '0.0.1'
 
 const BLOCKED_MCP_PROTOCOLS = new Set(['file:', 'ftp:', 'data:', 'javascript:'])

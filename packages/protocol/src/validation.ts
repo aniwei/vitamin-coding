@@ -13,6 +13,7 @@ const MESSAGE_REQUIREMENTS: Record<string, readonly string[]> = {
   'Chat.toolCall': ['sessionId', 'id', 'name', 'arguments', 'status'],
   'Chat.toolResult': ['sessionId', 'id', 'name', 'isError'],
   'Chat.toolExecutionEvent': ['sessionId', 'event'],
+  'Plugin.commandDiagnostic': ['sessionId', 'diagnostic'],
   'Chat.nestedToolCall': ['sessionId', 'id', 'name', 'arguments'],
   'Chat.nestedToolResult': ['sessionId', 'id', 'isError'],
   'Chat.approvalRequired': ['sessionId', 'id', 'toolName', 'arguments', 'description'],
@@ -95,6 +96,8 @@ function validateSpecificMessage(
       return expectString(data, 'message')
     case 'Chat.toolExecutionEvent':
       return validateToolExecutionEvent(data.event)
+    case 'Plugin.commandDiagnostic':
+      return validatePluginCommandDiagnostic(data.diagnostic)
     case 'Chat.toolCall':
     case 'Chat.nestedToolCall':
     case 'Chat.approvalRequired':
@@ -149,6 +152,28 @@ function validateConnectionState(data: Record<string, unknown>): WebSocketMessag
     return { valid: false, reason: 'data.status must be a known connection status' }
   }
   return expectString(data, 'timestamp')
+}
+
+function validatePluginCommandDiagnostic(value: unknown): WebSocketMessageValidation {
+  if (!value || typeof value !== 'object' || Array.isArray(value)) {
+    return { valid: false, reason: 'data.diagnostic must be an object' }
+  }
+
+  const diagnostic = value as Record<string, unknown>
+  for (const key of ['kind', 'pluginId', 'commandName', 'stage', 'status']) {
+    if (diagnostic[key] === undefined) {
+      return { valid: false, reason: `missing data.diagnostic.${key}` }
+    }
+  }
+  if (diagnostic.kind !== 'plugin-command') {
+    return { valid: false, reason: 'data.diagnostic.kind must be plugin-command' }
+  }
+  for (const key of ['pluginId', 'commandName', 'stage', 'status']) {
+    if (typeof diagnostic[key] !== 'string') {
+      return { valid: false, reason: `data.diagnostic.${key} must be a string` }
+    }
+  }
+  return { valid: true }
 }
 
 function validateToolExecutionEvent(value: unknown): WebSocketMessageValidation {

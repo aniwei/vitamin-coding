@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/ai",
+  "name": "@x-mars/ai",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -27,8 +27,8 @@
   },
   "dependencies": {
     "@anthropic-ai/sdk": "0.88.0",
-    "@vitamin/env": "workspace:*",
-    "@vitamin/shared": "workspace:*",
+    "@x-mars/env": "workspace:*",
+    "@x-mars/shared": "workspace:*",
     "eventsource-parser": "3.0.6",
     "zod": "4.3.6"
   }

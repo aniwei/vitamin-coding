@@ -1,10 +1,10 @@
-# @vitamin/opendev-ui 设计说明
+# @x-mars/opendev-ui 设计说明
 
 ## 设计目标
 
-- 提供 Vitamin 的 Web 前端界面：聊天、代码百科、追踪分析、调试面板。
+- 提供 X-Mars 的 Web 前端界面：聊天、代码百科、追踪分析、调试面板。
 - 基于 Vue 3 + Vite + Tailwind CSS 构建（采用 Composition API）。
-- 通过 WebSocket + HTTP API 与 `@vitamin/service` 实时通信。
+- 通过 WebSocket + HTTP API 与 `@x-mars/service` 实时通信。
 - 提供 Agent 执行状态的可视化（消息流、工具调用、子 Agent 追踪）。
 
 ## 非目标
@@ -77,7 +77,7 @@ src/
 
 ### WebSocket 事件处理
 
-接收来自 `@vitamin/service` 的事件：
+接收来自 `@x-mars/service` 的事件：
 
 ```typescript
 // 事件格式
@@ -150,7 +150,7 @@ App.mount()
 ## 入口与依赖
 
 - **入口**：`src/main.ts`
-- **内部依赖**：无（通过 HTTP/WebSocket 与 `@vitamin/service` 通信）
+- **内部依赖**：无（通过 HTTP/WebSocket 与 `@x-mars/service` 通信）
 - **外部依赖**：`vue`、`vite`、`tailwindcss`、`pinia`、`vue-router`、`lucide-vue-next`
 
 ## 测试策略
@@ -223,7 +223,7 @@ Layout/                  # 全局布局（导航、侧边栏）
 ```
 用户打开 Web UI
        |
-  WebSocket.connect() → @vitamin/service
+  WebSocket.connect() → @x-mars/service
        |
   订阅会话事件
        |

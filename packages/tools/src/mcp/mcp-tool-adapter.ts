@@ -4,4 +4,4 @@ export {
   jsonSchemaPropertyToZod,
   mcpSchemaToZod,
   mcpContentToToolContent,
-} from '@vitamin/mcp'
+} from '@x-mars/mcp'

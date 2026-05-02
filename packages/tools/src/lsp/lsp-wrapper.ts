@@ -59,7 +59,7 @@ export function formatServerLookupError(
     '',
     `Available servers: ${result.availableServers.slice(0, 10).join(', ')}${result.availableServers.length > 10 ? '...' : ''}`,
     '',
-    "To add a custom server, configure 'lsp' in vitamin.jsonc:",
+    "To add a custom server, configure 'lsp' in x-mars.jsonc:",
     '  {',
     '    "lsp": {',
     '      "my-server": {',

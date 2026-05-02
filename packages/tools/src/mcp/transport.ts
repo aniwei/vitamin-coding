@@ -1,7 +1,2 @@
-export {
-  StdioTransport,
-  SseTransport,
-  createStdioTransport,
-  createSseTransport,
-} from '@vitamin/mcp'
-export type { McpTransport } from '@vitamin/mcp'
+export { StdioTransport, SseTransport, createStdioTransport, createSseTransport } from '@x-mars/mcp'
+export type { McpTransport } from '@x-mars/mcp'

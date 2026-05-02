@@ -1,5 +1,5 @@
-import { SETTING_OFFLINE_MODE_ENABLED } from '@vitamin/env'
-// 所有 @vitamin/* 包共享的公共类型
+import { SETTING_OFFLINE_MODE_ENABLED } from '@x-mars/env'
+// 所有 @x-mars/* 包共享的公共类型
 
 // 品牌类型辅助 —— 从基础类型创建名义类型
 // 用法示例：type UserId = Brand<string, 'UserId'>

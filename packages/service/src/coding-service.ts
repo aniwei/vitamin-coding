@@ -2,7 +2,7 @@ import { readFileSync, existsSync } from 'node:fs'
 import { join, extname } from 'node:path'
 import { Hono, type Context } from 'hono'
 import { createAdaptorServer } from '@hono/node-server'
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { WebSocketManager } from './websocket-manager'
 import { EventBridge } from './event-bridge'
 import { DebugBridge } from './debug-bridge'
@@ -11,10 +11,10 @@ import { createApp } from './create-app'
 import { type IncomingMessage, type Server } from 'node:http'
 import type { CodingServiceOptions, WebSocketClientMessage } from './types'
 import type { Socket } from 'node:net'
-import type { AgentSession, VitaminContext } from '@vitamin/coding'
-import { defineHook } from '@vitamin/hooks'
+import type { AgentSession, XMarsContext } from '@x-mars/coding'
+import { defineHook } from '@x-mars/hooks'
 
-const logger = createLogger('@vitamin/service')
+const logger = createLogger('@x-mars/service')
 
 const MIME_TYPES: Record<string, string> = {
   '.html': 'text/html',
@@ -46,7 +46,7 @@ export class CodingService {
   }
 
   constructor(
-    public readonly vitamin: VitaminContext,
+    public readonly xMars: XMarsContext,
     options: CodingServiceOptions,
   ) {
     this.host = options.host ?? '127.0.0.1'
@@ -57,15 +57,15 @@ export class CodingService {
     // 监听器集中在 start() 中注册，使"系统何时开始工作"一目了然
     this.ws = new WebSocketManager({ authToken: options.websocketAuthToken })
 
-    if (vitamin.devtools) {
-      this.bridge = new DebugBridge(vitamin.devtools, this.ws)
+    if (xMars.devtools) {
+      this.bridge = new DebugBridge(xMars.devtools, this.ws)
     }
 
-    this.router = new InboundRouter(this.ws, this.vitamin, this.bridge)
+    this.router = new InboundRouter(this.ws, this.xMars, this.bridge)
 
     this.app = createApp(this, {
       corsOrigin: options.cors,
-      devtools: vitamin.devtools ?? undefined,
+      devtools: xMars.devtools ?? undefined,
       staticDir: options.staticDir,
       debug: this.bridge,
     })
@@ -75,8 +75,8 @@ export class CodingService {
     }) as Server
   }
 
-  registerHooks(vitamin: VitaminContext): void {
-    vitamin.hookRegistry.register(
+  registerHooks(xMars: XMarsContext): void {
+    xMars.hookRegistry.register(
       defineHook({
         name: 'service_session_attach',
         timing: 'session.created',
@@ -91,16 +91,16 @@ export class CodingService {
     )
   }
 
-  unregisterHooks(vitamin: VitaminContext): void {
-    vitamin.hookRegistry.unregister('service_session_attach')
+  unregisterHooks(xMars: XMarsContext): void {
+    xMars.hookRegistry.unregister('service_session_attach')
   }
 
   getSession(sessionId: string): AgentSession | undefined {
-    return this.vitamin.getSession(sessionId)
+    return this.xMars.getSession(sessionId)
   }
 
   getActiveSession(): AgentSession | undefined {
-    return this.vitamin.getActiveSession()
+    return this.xMars.getActiveSession()
   }
 
   private readonly onUpgrade = (req: IncomingMessage, socket: Socket, head: Buffer): void => {
@@ -123,7 +123,7 @@ export class CodingService {
 
     this.server.on('upgrade', this.onUpgrade)
     this.ws.on('message', this.onWsMessage)
-    this.registerHooks(this.vitamin)
+    this.registerHooks(this.xMars)
 
     // 端口就绪后才连接 devtools，避免事件在桥接建立前丢失
     return new Promise<void>((resolve, reject) => {
@@ -139,7 +139,7 @@ export class CodingService {
   }
 
   dispose(): void {
-    this.unregisterHooks(this.vitamin)
+    this.unregisterHooks(this.xMars)
     this.bridge?.dispose()
     for (const [, bridge] of this.bridges) {
       bridge.dispose()
@@ -163,7 +163,7 @@ export class CodingService {
     this.bridges.clear()
 
     this.ws.off('message', this.onWsMessage)
-    this.unregisterHooks(this.vitamin)
+    this.unregisterHooks(this.xMars)
     this.ws.close()
 
     return new Promise<void>((resolve) => {
@@ -235,7 +235,7 @@ export class CodingService {
 }
 
 export function createCodingService(
-  context: VitaminContext,
+  context: XMarsContext,
   options: CodingServiceOptions,
 ): CodingService {
   return new CodingService(context, options)

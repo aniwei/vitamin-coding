@@ -27,7 +27,7 @@ import {
   MEMORY_TOOL_APPLY_PATCH,
   MEMORY_TOOL_CREATE_FILE,
   MEMORY_TOOL_EDIT_NOTEBOOK_FILE,
-} from '@vitamin/env'
+} from '@x-mars/env'
 
 const defaultTruncateTools = [
   MEMORY_TOOL_WRITE,

@@ -1,10 +1,10 @@
-// @vitamin/tools MCP Tool Adapter 测试
+// @x-mars/tools MCP Tool Adapter 测试
 // 测试 JSON Schema → Zod 转换、MCP 内容映射、AgentTool 适配
 
 import { describe, expect, it } from 'vitest'
 
-import { createMcpToolAdapter, createMcpToolAdapters } from '@vitamin/mcp'
-import type { McpClient, McpToolDefinition, McpToolCallResult } from '@vitamin/mcp'
+import { createMcpToolAdapter, createMcpToolAdapters } from '@x-mars/mcp'
+import type { McpClient, McpToolDefinition, McpToolCallResult } from '@x-mars/mcp'
 
 // ─── 辅助函数 ───
 

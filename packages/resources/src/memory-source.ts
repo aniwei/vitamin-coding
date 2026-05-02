@@ -1,6 +1,6 @@
-import { PersistentMemory, FileSystemMemoryStore, DEFAULT_MEMORY_SOURCES } from '@vitamin/memory'
+import { PersistentMemory, FileSystemMemoryStore, DEFAULT_MEMORY_SOURCES } from '@x-mars/memory'
 
-import type { MemorySource, MemoryStore } from '@vitamin/memory'
+import type { MemorySource, MemoryStore } from '@x-mars/memory'
 import type { MemoryInjectionSource, MemoryInjectionResult } from './types'
 
 export interface PersistentMemorySourceOptions {

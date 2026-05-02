@@ -1,5 +1,5 @@
 import os from 'node:os'
-import invariant from '@vitamin/invariant'
+import invariant from '@x-mars/invariant'
 import {
   createWriteStream,
   existsSync,
@@ -14,14 +14,14 @@ import { join, resolve } from 'node:path'
 import { Readable } from 'node:stream'
 import { pipeline } from 'node:stream/promises'
 import { spawnSync, spawn, type SpawnOptionsWithoutStdio } from 'node:child_process'
-import { getThirdPartyToolDir, getThirdPartyToolBinaryDir, createLogger } from '@vitamin/shared'
+import { getThirdPartyToolDir, getThirdPartyToolBinaryDir, createLogger } from '@x-mars/shared'
 import {
   SETTING_OFFLINE_MODE_ENABLED,
   TOOLS_BINARY_DOWNLOAD_TIMEOUT_MS,
-  VITAMIN_USER_AGENT,
-} from '@vitamin/env'
+  X_MARS_USER_AGENT,
+} from '@x-mars/env'
 
-const logger = createLogger('@vitamin/tools:binary')
+const logger = createLogger('@x-mars/tools:binary')
 
 export interface BinaryToolExecutionOptions extends SpawnOptionsWithoutStdio {}
 
@@ -77,7 +77,7 @@ async function tryDownloadAndExtract(name: string, cacheDir: string, url: string
 
   try {
     const response = await fetch(url, {
-      headers: { 'User-Agent': VITAMIN_USER_AGENT },
+      headers: { 'User-Agent': X_MARS_USER_AGENT },
       signal: AbortSignal.timeout(TOOLS_BINARY_DOWNLOAD_TIMEOUT_MS),
     })
 

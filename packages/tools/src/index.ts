@@ -1,4 +1,4 @@
-// @vitamin/tools — 工具系统
+// @x-mars/tools — 工具系统
 
 // 工具注册表
 export { ToolRegistry, createToolRegistry } from './tool-registry'
@@ -79,8 +79,14 @@ export {
   getUnexpectedPluginCommandArguments,
 } from './plugin-command-invocation'
 export type {
+  PluginCommandHandler,
+  PluginCommandHandlerContext,
+  PluginCommandHandlerResult,
+} from './plugin-command-handler'
+export type {
   BuildPluginCommandInvocationOptions,
   InvalidPluginCommandArgument,
+  PluginCommandArgumentValue,
   PluginCommandInvocation,
   PluginCommandInvocationError,
   PluginCommandInvocationResult,
@@ -148,7 +154,7 @@ export { createWebSearch } from './web/search'
 export { createSessionManager } from './session/session-manager'
 export type { SessionManager } from './session/session-manager'
 
-// Skill 工具入口（运行时已迁移至 @vitamin/coding）
+// Skill 工具入口（运行时已迁移至 @x-mars/coding）
 export type { LoadSkill } from './skill/skill-load'
 export type { ExecuteSkill } from './skill/skill-execute'
 export { createSkillSearch } from './skill/skill-search'

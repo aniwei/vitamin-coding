@@ -1,4 +1,4 @@
-import { stream, createLogger, ProviderError } from '@vitamin/shared'
+import { stream, createLogger, ProviderError } from '@x-mars/shared'
 
 import type {
   AssistantMessage,
@@ -14,7 +14,7 @@ import type {
 } from '../types'
 import type { ProviderStream } from '../types'
 
-const logger = createLogger('@vitamin/ai:openai-completions')
+const logger = createLogger('@x-mars/ai:openai-completions')
 
 export type OpenAICompatibleCredentialResolver = (model: Model) => Promise<string | undefined>
 

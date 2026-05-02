@@ -4,7 +4,7 @@ import type {
   PermissionAuditEntry,
   RuleEffect,
 } from './types'
-import { redactLogValue } from '@vitamin/shared'
+import { redactLogValue } from '@x-mars/shared'
 
 export class PermissionAuditLog {
   private entries: PermissionAuditEntry[] = []

@@ -1,8 +1,8 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { SEMANTIC_RETRIEVAL_PROMPT, buildLayeredMemoryInjection } from './prompts'
 import { messageToText } from './token-estimator'
 
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 import type {
   MemoryEntry,
   SemanticRetrievalConfig,
@@ -10,7 +10,7 @@ import type {
   SemanticRetrievalQuality,
 } from './types'
 
-const log = createLogger('@vitamin/memory:semantic-retrieval')
+const log = createLogger('@x-mars/memory:semantic-retrieval')
 
 export async function retrieveRelevantMemories(
   entries: MemoryEntry[],

@@ -4,7 +4,7 @@
 
 ```
 Phase 1 ─ 闭环学习系统 (高价值 + 低耦合)
-  │  估计影响包: @vitamin/memory, @vitamin/skill, @vitamin/session
+  │  估计影响包: @x-mars/memory, @x-mars/skill, @x-mars/session
   │
   ├─ 1.1 MemoryProvider ABC + MemoryManager
   │   ├─ 定义 MemoryProvider 接口
@@ -29,7 +29,7 @@ Phase 1 ─ 闭环学习系统 (高价值 + 低耦合)
       └─ 测试: FTS5 索引、搜索排序、血缘追踪
 
 Phase 2 ─ Agent 循环增强 (中等价值 + 增强现有)
-  │  估计影响包: @vitamin/agent, @vitamin/ai, @vitamin/hooks
+  │  估计影响包: @x-mars/agent, @x-mars/ai, @x-mars/hooks
   │
   ├─ 2.1 Iteration Budget
   │   ├─ 定义 IterationBudget 接口
@@ -52,7 +52,7 @@ Phase 2 ─ Agent 循环增强 (中等价值 + 增强现有)
 
 Phase 3 ─ 多平台 Gateway (高价值 + 新包)
   │  依赖: Phase 1 (Agent 需要记忆能力)
-  │  新增包: @vitamin/gateway, @vitamin/cron
+  │  新增包: @x-mars/gateway, @x-mars/cron
   │
   ├─ 3.1 Gateway Runner
   │   ├─ 定义 PlatformAdapter / GatewayMessageEvent 接口
@@ -71,7 +71,7 @@ Phase 3 ─ 多平台 Gateway (高价值 + 新包)
 
 Phase 4 ─ 运行时环境扩展 (扩展能力)
   │  依赖: Phase 2 (安全审批保护远程执行)
-  │  估计影响包: @vitamin/tools
+  │  估计影响包: @x-mars/tools
   │
   └─ 4.1 多终端后端
       ├─ 定义 TerminalBackend 接口
@@ -96,7 +96,7 @@ Phase 2 (独立，可与 Phase 1 并行)
   └── 2.3 Smart Approval ←── 无外部依赖
 
 Phase 3 (依赖 Phase 1)
-  ├── 3.1 Gateway        ←── 依赖 1.1 (Agent 需记忆), 依赖 @vitamin/agent
+  ├── 3.1 Gateway        ←── 依赖 1.1 (Agent 需记忆), 依赖 @x-mars/agent
   └── 3.2 Cron           ←── 依赖 3.1 (需 Gateway 投递)
 
 Phase 4 (依赖 Phase 2)
@@ -105,18 +105,18 @@ Phase 4 (依赖 Phase 2)
 
 ## 关键设计决策
 
-| #   | 决策                    | 选择                          | 理由                                                                   |
-| --- | ----------------------- | ----------------------------- | ---------------------------------------------------------------------- |
-| D1  | 代码复用方式            | 参考设计，TypeScript 全新实现 | Vitamin 严格 ESM + TS 规范不允许 Python 混合；模块化远优于 Hermes 单体 |
-| D2  | MemoryProvider 外部数量 | 至多 1 个                     | 照搬 Hermes 设计 — 防止工具 schema 膨胀和后端冲突                      |
-| D3  | 闭环学习实现方式        | 通过 Hook 系统                | Vitamin 31+ Hook 点远强于 Hermes 插件 hook，不必硬编码到 Agent 核心    |
-| D4  | Gateway 放置            | 新建 `@vitamin/gateway` 包    | 遵循分层原则，不污染 `@vitamin/service`                                |
-| D5  | Swarm 是否整合          | 保持不变                      | Vitamin 5 种协作模式已远超 Hermes `delegate_task`                      |
-| D6  | Budget 集成位置         | Agent Work-Loop 内部          | 与 steering/followUp 同级，自然位置                                    |
-| D7  | 编排器是否整合          | 保持不变                      | Vitamin 的 LLM 驱动编排器 Hermes 完全没有                              |
-| D8  | Skill 存储格式          | Markdown 文件                 | 兼容 Hermes agentskills.io 标准，便于人类阅读/编辑                     |
-| D9  | FTS5 实现               | better-sqlite3 + FTS5 扩展    | 成熟方案，与 Hermes hermes_state.py 一致                               |
-| D10 | RL 训练能力             | 暂不引入                      | 非 Vitamin 当前阶段需求，可后续评估                                    |
+| #   | 决策                    | 选择                          | 理由                                                                  |
+| --- | ----------------------- | ----------------------------- | --------------------------------------------------------------------- |
+| D1  | 代码复用方式            | 参考设计，TypeScript 全新实现 | X-Mars 严格 ESM + TS 规范不允许 Python 混合；模块化远优于 Hermes 单体 |
+| D2  | MemoryProvider 外部数量 | 至多 1 个                     | 照搬 Hermes 设计 — 防止工具 schema 膨胀和后端冲突                     |
+| D3  | 闭环学习实现方式        | 通过 Hook 系统                | X-Mars 31+ Hook 点远强于 Hermes 插件 hook，不必硬编码到 Agent 核心    |
+| D4  | Gateway 放置            | 新建 `@x-mars/gateway` 包     | 遵循分层原则，不污染 `@x-mars/service`                                |
+| D5  | Swarm 是否整合          | 保持不变                      | X-Mars 5 种协作模式已远超 Hermes `delegate_task`                      |
+| D6  | Budget 集成位置         | Agent Work-Loop 内部          | 与 steering/followUp 同级，自然位置                                   |
+| D7  | 编排器是否整合          | 保持不变                      | X-Mars 的 LLM 驱动编排器 Hermes 完全没有                              |
+| D8  | Skill 存储格式          | Markdown 文件                 | 兼容 Hermes agentskills.io 标准，便于人类阅读/编辑                    |
+| D9  | FTS5 实现               | better-sqlite3 + FTS5 扩展    | 成熟方案，与 Hermes hermes_state.py 一致                              |
+| D10 | RL 训练能力             | 暂不引入                      | 非 X-Mars 当前阶段需求，可后续评估                                    |
 
 ## 风险评估
 
@@ -143,13 +143,13 @@ Phase 4 (依赖 Phase 2)
 
 以下 Hermes 功能不在整合范围内，附理由：
 
-| 功能               | 理由                                               |
-| ------------------ | -------------------------------------------------- |
-| RL 训练 / Atropos  | 非 Vitamin 当前阶段需求                            |
-| 批量轨迹生成       | 同上                                               |
-| OpenClaw 迁移      | Hermes 特有的历史包袱                              |
-| Singularity 后端   | HPC 场景极少，优先级最低                           |
-| 语音模式 (TTS/STT) | 独立能力域，可后续评估                             |
-| ACP IDE 集成       | Vitamin 已有 `@vitamin/service` + VS Code 扩展路线 |
-| 主题/皮肤引擎      | UI 层面，与核心能力无关                            |
-| Profile 多实例     | Vitamin 架构天然支持多实例                         |
+| 功能               | 理由                                             |
+| ------------------ | ------------------------------------------------ |
+| RL 训练 / Atropos  | 非 X-Mars 当前阶段需求                           |
+| 批量轨迹生成       | 同上                                             |
+| OpenClaw 迁移      | Hermes 特有的历史包袱                            |
+| Singularity 后端   | HPC 场景极少，优先级最低                         |
+| 语音模式 (TTS/STT) | 独立能力域，可后续评估                           |
+| ACP IDE 集成       | X-Mars 已有 `@x-mars/service` + VS Code 扩展路线 |
+| 主题/皮肤引擎      | UI 层面，与核心能力无关                          |
+| Profile 多实例     | X-Mars 架构天然支持多实例                        |

@@ -1,13 +1,13 @@
-import type { AgentMessage, AgentTool, StreamFunction } from '@vitamin/agent'
-import type { Model, ProviderRegistry, ThinkingLevel, WorkflowSlot } from '@vitamin/ai'
-import type { HookRegistry } from '@vitamin/hooks'
-import type { PromptAssembly, PromptPreset, SubAgentPromptContext } from '@vitamin/prompt'
-import type { Logger } from '@vitamin/shared'
-import type { Devtools } from '@vitamin/devtools'
-import type { SessionStore } from '@vitamin/session'
+import type { AgentMessage, AgentTool, StreamFunction } from '@x-mars/agent'
+import type { Model, ProviderRegistry, ThinkingLevel, WorkflowSlot } from '@x-mars/ai'
+import type { HookRegistry } from '@x-mars/hooks'
+import type { PromptAssembly, PromptPreset, SubAgentPromptContext } from '@x-mars/prompt'
+import type { Logger } from '@x-mars/shared'
+import type { Devtools } from '@x-mars/devtools'
+import type { SessionStore } from '@x-mars/session'
 
 /**
- * 经过 VitaminApp 完整解析后的 session 配置。
+ * 经过 XMarsApp 完整解析后的 session 配置。
  * 所有业务字段均已确定，无需再做 merge。
  * Manager 层只接受此类型来创建 session，不持有业务默认值。
  */
@@ -23,14 +23,15 @@ export interface ResolvedSessionConfig {
   permissionMetadata?: Record<string, unknown>
 }
 
-// Re-export event types from @vitamin/agent so downstream packages import from there,
+// Re-export event types from @x-mars/agent so downstream packages import from there,
 // but coding-internal code (agent-session.ts etc.) can still import from this file.
 export type {
   AgentSessionEvent,
   AgentSessionEventType,
   AgentSessionSubscriber,
   AskUserQuestion,
-} from '@vitamin/agent'
+  PluginCommandDiagnostic,
+} from '@x-mars/agent'
 
 export interface AgentSessionOptions {
   id?: string

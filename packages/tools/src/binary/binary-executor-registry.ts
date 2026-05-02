@@ -1,9 +1,9 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { createFindExecutor } from './find'
 import { createRipgrepExecutor } from './ripgrep'
 import { BinaryToolExecutor, type BinaryTool } from './binary-executor'
 
-const logger = createLogger('@vitamin/tools:binary-executor-registry')
+const logger = createLogger('@x-mars/tools:binary-executor-registry')
 
 export class BinaryToolExecutorRegistry {
   private binaries: Map<string, BinaryTool> = new Map()

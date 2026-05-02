@@ -1,2 +1,2 @@
-export { validateWebSocketMessage, isValidWebSocketMessage } from '@vitamin/protocol'
-export type { WebSocketMessageValidation } from '@vitamin/protocol'
+export { validateWebSocketMessage, isValidWebSocketMessage } from '@x-mars/protocol'
+export type { WebSocketMessageValidation } from '@x-mars/protocol'

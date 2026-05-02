@@ -1,5 +1,5 @@
-import type { HookRegistry } from '@vitamin/hooks'
-import { sleep, withTimeout } from '@vitamin/shared'
+import type { HookRegistry } from '@x-mars/hooks'
+import { sleep, withTimeout } from '@x-mars/shared'
 import type { SidechainContext, SidechainPolicy, Task, TaskInput, TaskOutput } from './types'
 import type { TaskStore } from './task-store'
 import type { RetryPolicy, CircuitBreaker } from './retry'

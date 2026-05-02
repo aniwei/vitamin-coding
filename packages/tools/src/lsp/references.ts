@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 import { DEFAULT_MAX_REFERENCES } from './constants'
 import { formatLocation } from './lsp-formatters'
 import { withLspClient } from './lsp-wrapper'

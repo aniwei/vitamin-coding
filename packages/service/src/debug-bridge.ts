@@ -1,11 +1,11 @@
 import WebSocket from 'ws'
-import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
+import { createLogger, TypedEventEmitter, type Events } from '@x-mars/shared'
 import { routeDebugEvent } from './debug-event-router'
 import type { IMessageSender, LogEntryData } from './types'
-import type { Devtools } from '@vitamin/devtools'
-import type { PauseResumePayload } from '@vitamin/devtools'
+import type { Devtools } from '@x-mars/devtools'
+import type { PauseResumePayload } from '@x-mars/devtools'
 
-const logger = createLogger('@vitamin/service:debug-bridge')
+const logger = createLogger('@x-mars/service:debug-bridge')
 
 /** @deprecated Use LogEntryData from './types' instead */
 export type LogEntry = LogEntryData

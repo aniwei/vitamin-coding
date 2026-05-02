@@ -29,7 +29,7 @@ describe('FilesystemPromptTemplateSource', () => {
   let tempDir: string
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'vitamin-prompt-test-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'x-mars-prompt-test-'))
   })
 
   afterEach(async () => {
@@ -37,7 +37,7 @@ describe('FilesystemPromptTemplateSource', () => {
   })
 
   it('discovers prompt files from project directory', async () => {
-    const promptDir = join(tempDir, '.vitamin', 'prompts')
+    const promptDir = join(tempDir, '.x-mars', 'prompts')
     await mkdir(promptDir, { recursive: true })
     await writeFile(join(promptDir, 'code-review.md'), '# Code Review\nReview this code.')
     await writeFile(join(promptDir, 'refactor.md'), '# Refactor\nRefactor this code.')
@@ -57,7 +57,7 @@ describe('FilesystemPromptTemplateSource', () => {
   })
 
   it('ignores non-md files', async () => {
-    const promptDir = join(tempDir, '.vitamin', 'prompts')
+    const promptDir = join(tempDir, '.x-mars', 'prompts')
     await mkdir(promptDir, { recursive: true })
     await writeFile(join(promptDir, 'valid.md'), '# Valid')
     await writeFile(join(promptDir, 'ignored.txt'), 'should be ignored')
@@ -71,7 +71,7 @@ describe('FilesystemPromptTemplateSource', () => {
   })
 
   it('reports collision diagnostics for duplicate names', async () => {
-    const promptDir = join(tempDir, '.vitamin', 'prompts')
+    const promptDir = join(tempDir, '.x-mars', 'prompts')
     const extraDir = join(tempDir, 'extra-prompts')
     await mkdir(promptDir, { recursive: true })
     await mkdir(extraDir, { recursive: true })

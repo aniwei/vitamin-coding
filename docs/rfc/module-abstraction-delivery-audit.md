@@ -1,4 +1,4 @@
-# Vitamin 全仓公共模块抽象交付审计
+# X-Mars 全仓公共模块抽象交付审计
 
 > 审计时间：2026-05-02
 > 对应账本：[`module-abstraction-implementation-todos.md`](./module-abstraction-implementation-todos.md)
@@ -25,12 +25,12 @@ count=9 sum=900 average=100.00 rounded=100
 最新验证记录：
 
 - `pnpm vitest run packages/shared/tests/runtime.test.ts packages/agent/tests/concurrency.test.ts packages/orchestrator/tests/executor.test.ts`
-- `pnpm --filter @vitamin/shared typecheck`
-- `pnpm --filter @vitamin/shared build`
-- `pnpm --filter @vitamin/agent typecheck`
-- `pnpm --filter @vitamin/orchestrator typecheck`
-- `pnpm --filter @vitamin/agent build`
-- `pnpm --filter @vitamin/orchestrator build`
+- `pnpm --filter @x-mars/shared typecheck`
+- `pnpm --filter @x-mars/shared build`
+- `pnpm --filter @x-mars/agent typecheck`
+- `pnpm --filter @x-mars/orchestrator typecheck`
+- `pnpm --filter @x-mars/agent build`
+- `pnpm --filter @x-mars/orchestrator build`
 - `pnpm typecheck`
 
 结果：Pass。目标 vitest 3 个文件 32 项通过；全仓 typecheck 通过。
@@ -128,10 +128,10 @@ pnpm-lock.yaml | 2325 insertions, 13760 deletions
   - `packages/protocol`
   - `packages/schema`
   - `packages/manifest`
-  - `@vitamin/protocol` 被 service/UI 引入
-  - `@vitamin/schema` 被 mcp/tools 引入
-  - `@vitamin/manifest` 被 skill/memory 引入
-  - `@vitamin/shared` 被 session 等边界引入
+  - `@x-mars/protocol` 被 service/UI 引入
+  - `@x-mars/schema` 被 mcp/tools 引入
+  - `@x-mars/manifest` 被 skill/memory 引入
+  - `@x-mars/shared` 被 session 等边界引入
 - `packages/web-ui` importer 从 lockfile 中删除，并连带删除大量依赖条目。
 - 当前 `pnpm-workspace.yaml` 为 `packages/*`，但工作区里没有 `packages/web-ui` 目录，`git ls-files packages/web-ui` 也为空。
 - 因此，`packages/web-ui` 删除属于清理陈旧 lockfile 状态，不是 MA 抽象本身的直接实现内容。
@@ -145,13 +145,13 @@ pnpm-lock.yaml | 2325 insertions, 13760 deletions
 
 ## 明确排除当前 MA 提交的文件
 
-`docs/rfc/` 下还有其他未跟踪 RFC 文档，来源属于前序 Claude Code/Vitamin 对比任务，不应混入 MA 抽象交付提交：
+`docs/rfc/` 下还有其他未跟踪 RFC 文档，来源属于前序 Claude Code/X-Mars 对比任务，不应混入 MA 抽象交付提交：
 
 ```text
 docs/rfc/claude-code-agent-framework-todos.md
 docs/rfc/claude-code-source-analysis.md
-docs/rfc/vitamin-vs-claude-code-implementation-todos.md
-docs/rfc/vitamin-vs-claude-code-min-granularity.md
+docs/rfc/x-mars-vs-claude-code-implementation-todos.md
+docs/rfc/x-mars-vs-claude-code-min-granularity.md
 ```
 
 工作区还有大量非 MA 文件变更。当前 `git status --short | wc -l` 为 296 行，不能用全量 add/commit。
@@ -161,7 +161,7 @@ docs/rfc/vitamin-vs-claude-code-min-granularity.md
 建议按以下顺序拆分提交，而不是一次性提交全部工作区：
 
 1. `MA docs`：`module-abstraction-audit.md`、`module-abstraction-implementation-todos.md`、本审计文档。
-2. `MA low-level shared/protocol/schema/manifest`：`@vitamin/protocol`、`@vitamin/schema`、`@vitamin/manifest`、shared data/runtime/error。
+2. `MA low-level shared/protocol/schema/manifest`：`@x-mars/protocol`、`@x-mars/schema`、`@x-mars/manifest`、shared data/runtime/error。
 3. `MA migrations`：UI/service/tools/mcp/skill/memory/session/agent/orchestrator 的调用方迁移。
 4. `MA lockfile`：单独审查并提交 `pnpm-lock.yaml`；该提交应明确包含陈旧 `packages/web-ui` importer 清理，或重新生成只含 MA importer 的锁文件。
 

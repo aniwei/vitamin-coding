@@ -1,7 +1,7 @@
 import { describe, expect, it, vi } from 'vitest'
 import { extractAndSave, extractMemories, parseExtractionResponse } from '../src/memory-extraction'
 import type { MemoryEntry, MemoryExtractionConfig } from '../src/types'
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 
 const sampleResponse = `NAME: user_role
 TYPE: user

@@ -1,7 +1,7 @@
 // write_todos 工具 — 纯 UI/记忆工具（对齐 Claude Code manage_todo_list 模式）
 import { z } from 'zod'
 
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 const TodoItemSchema = z.object({
   id: z.string().describe('Unique todo identifier'),

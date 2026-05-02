@@ -6,7 +6,7 @@ import { describe, expect, it } from 'vitest'
 import { importClaudeCodePlugin } from '../src/claude-code-compat'
 
 describe('Claude Code plugin compatibility importer', () => {
-  it('#then converts Claude Code plugin assets into a Vitamin plugin manifest', async () => {
+  it('#then converts Claude Code plugin assets into a X-Mars plugin manifest', async () => {
     const root = await mkdtemp(join(tmpdir(), 'claude-code-plugin-'))
     await mkdir(join(root, '.claude-plugin'), { recursive: true })
     await mkdir(join(root, 'skills/code-review'), { recursive: true })
@@ -30,7 +30,7 @@ describe('Claude Code plugin compatibility importer', () => {
     )
     await writeFile(
       join(root, 'commands/review.md'),
-      '---\nname: review\ndescription: Run review\narguments:\n  - name: path\n    description: Target path\n    required: true\n    type: string\n    default: src/app.ts\n    choices:\n      - src/app.ts\n      - src/index.ts\n---\nReview $ARGUMENTS.\n',
+      '---\nname: review\ndescription: Run review\narguments:\n  - name: path\n    description: Target path\n    required: true\n    type: string\n    flag: path\n    alias: target\n    repeatable: true\n    default: src/app.ts\n    choices:\n      - src/app.ts\n      - src/index.ts\n---\nReview $ARGUMENTS.\n',
       'utf-8',
     )
     await writeFile(
@@ -77,6 +77,9 @@ describe('Claude Code plugin compatibility importer', () => {
               description: 'Target path',
               required: true,
               type: 'string',
+              flag: 'path',
+              alias: 'target',
+              repeatable: true,
               choices: ['src/app.ts', 'src/index.ts'],
               default: 'src/app.ts',
             },
@@ -182,6 +185,58 @@ describe('Claude Code plugin compatibility importer', () => {
         ],
       },
     ])
+  })
+
+  it('#then reports unsupported Claude Code command runtime fields without enabling execution', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'claude-code-plugin-'))
+    await mkdir(join(root, 'commands'), { recursive: true })
+    await writeFile(
+      join(root, 'commands/deploy.md'),
+      [
+        '---',
+        'name: deploy',
+        'description: Deploy app',
+        'runtime: node',
+        'bin: ./bin/deploy.js',
+        'hooks:',
+        '  preToolUse: ./hooks/pre.js',
+        'settings:',
+        '  mode: prod',
+        'allowed-tools:',
+        '  - Bash',
+        '---',
+        'Deploy $ARGUMENTS.',
+        '',
+      ].join('\n'),
+      'utf-8',
+    )
+
+    const { manifest, report } = await importClaudeCodePlugin(root)
+
+    expect(manifest.commands).toEqual([
+      {
+        name: 'deploy',
+        description: 'Deploy app',
+        prompt: 'Deploy $ARGUMENTS.',
+        arguments: undefined,
+      },
+    ])
+    expect(manifest.commands?.[0]).not.toHaveProperty('module')
+    expect(report.unsupported).toEqual(
+      expect.arrayContaining([
+        expect.objectContaining({ component: 'commands.runtime', path: './commands/deploy.md' }),
+        expect.objectContaining({ component: 'commands.bin', path: './commands/deploy.md' }),
+        expect.objectContaining({ component: 'commands.hooks', path: './commands/deploy.md' }),
+        expect.objectContaining({ component: 'commands.settings', path: './commands/deploy.md' }),
+        expect.objectContaining({
+          component: 'commands.allowed-tools',
+          path: './commands/deploy.md',
+        }),
+      ]),
+    )
+    expect(report.warnings).toContain(
+      'Command "deploy" contains unsupported Claude Code fields: allowed-tools, bin, hooks, runtime, settings',
+    )
   })
 
   it('#then derives plugin metadata when Claude Code manifest is missing', async () => {

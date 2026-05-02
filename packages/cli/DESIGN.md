@@ -1,15 +1,15 @@
-# @vitamin/cli 设计说明
+# @x-mars/cli 设计说明
 
 ## 设计目标
 
-- 提供 Vitamin 的命令行入口，解析参数并分发到对应运行模式。
+- 提供 X-Mars 的命令行入口，解析参数并分发到对应运行模式。
 - 支持多种输出模式：Print / JSON / Interactive / RPC。
 - 支持子命令：run / doctor / config / auth。
 
 ## 非目标
 
-- 不实现业务逻辑（由 `@vitamin/coding` VitaminApp 提供）。
-- 不负责网络传输（由 `@vitamin/service` 完成）。
+- 不实现业务逻辑（由 `@x-mars/coding` XMarsApp 提供）。
+- 不负责网络传输（由 `@x-mars/service` 完成）。
 
 ## 实现原理
 
@@ -40,10 +40,10 @@
 **子命令**（`subCommand`）：
 
 ```
-vitamin run [message]     → 默认（执行一次或进入交互）
-vitamin doctor            → 环境诊断（Node 版本/依赖/认证/模型可用性）
-vitamin config [get|set]  → 配置查看与编辑
-vitamin auth [login|logout|status] → 认证管理
+x-mars run [message]     → 默认（执行一次或进入交互）
+x-mars doctor            → 环境诊断（Node 版本/依赖/认证/模型可用性）
+x-mars config [get|set]  → 配置查看与编辑
+x-mars auth [login|logout|status] → 认证管理
 ```
 
 `subCommandArgs`：子命令后的所有参数（透传给子命令处理器）。
@@ -52,7 +52,7 @@ vitamin auth [login|logout|status] → 认证管理
 
 `runCli(options)` 是主执行入口：
 1. 解析参数 → CLI config
-2. 创建 VitaminApp（装配所有子系统）
+2. 创建 XMarsApp（装配所有子系统）
 3. 根据模式分发到对应 Runner：
    - Print → `PrintRunner`
    - JSON → `JsonRunner`
@@ -66,7 +66,7 @@ vitamin auth [login|logout|status] → 认证管理
 - `config`：查看/编辑配置
 - `auth`：登录/登出/状态查看
 
-### 二进制入口（bin/vitamin）
+### 二进制入口（bin/x-mars）
 
 ```
 #!/usr/bin/env node
@@ -76,9 +76,9 @@ require('../dist/index.js')
 ## 实现流程
 
 ```
-用户 --> vitamin "fix the bug" -p
+用户 --> x-mars "fix the bug" -p
             |
-       bin/vitamin → 加载 cli/index.js
+       bin/x-mars → 加载 cli/index.js
             |
        parseCLI(process.argv)
             |
@@ -86,7 +86,7 @@ require('../dist/index.js')
             |
        runCli(options)
             |
-       VitaminApp.create(config)
+       XMarsApp.create(config)
             |
        PrintRunner.run(app, message)
             |
@@ -107,13 +107,13 @@ require('../dist/index.js')
 | `src/commands/doctor.ts` | doctor 子命令 |
 | `src/commands/config.ts` | config 子命令 |
 | `src/commands/auth.ts` | auth 子命令 |
-| `bin/vitamin` | 二进制入口 |
+| `bin/x-mars` | 二进制入口 |
 | `src/index.ts` | barrel 导出 |
 
 ## 入口与依赖
 
-- **入口**：`src/index.ts`、`bin/vitamin`
-- **内部依赖**：`@vitamin/coding`、`@vitamin/shared`、`@vitamin/env`
+- **入口**：`src/index.ts`、`bin/x-mars`
+- **内部依赖**：`@x-mars/coding`、`@x-mars/shared`、`@x-mars/env`
 - **外部依赖**：无
 
 ## 测试策略

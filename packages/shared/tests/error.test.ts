@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import {
-  Error as VitaminError,
+  Error as XMarsError,
   AgentError,
   ConfigError,
   ExtensionError,
@@ -10,24 +10,24 @@ import {
   SessionError,
   StreamError,
   ToolError,
-  isVitaminError,
+  isXMarsError,
   serializeError,
 } from '../src/error'
 
-describe('VitaminError', () => {
-  describe('#given a VitaminError', () => {
+describe('XMarsError', () => {
+  describe('#given a XMarsError', () => {
     describe('#when constructed with code and message', () => {
       it('#then preserves code, message, and name', () => {
-        const error = new VitaminError('test message', { code: 'TEST_001' })
+        const error = new XMarsError('test message', { code: 'TEST_001' })
         expect(error.message).toBe('test message')
         expect(error.code).toBe('TEST_001')
         expect(error.name).toBe('Error')
         expect(error).toBeInstanceOf(Error)
-        expect(error).toBeInstanceOf(VitaminError)
+        expect(error).toBeInstanceOf(XMarsError)
       })
 
       it('#then captures stack trace', () => {
-        const error = new VitaminError('stack test', { code: 'STACK_001' })
+        const error = new XMarsError('stack test', { code: 'STACK_001' })
         expect(error.stack).toBeDefined()
         expect(error.stack).toContain('stack test')
       })
@@ -36,7 +36,7 @@ describe('VitaminError', () => {
     describe('#when constructed with a cause', () => {
       it('#then preserves the cause chain', () => {
         const cause = new Error('root cause')
-        const error = new VitaminError('wrapped', {
+        const error = new XMarsError('wrapped', {
           code: 'WRAP_001',
           cause,
         })
@@ -47,7 +47,7 @@ describe('VitaminError', () => {
     describe('#when constructed with metadata and retryable', () => {
       it('#then exposes structured fields and JSON serialization', () => {
         const cause = new Error('temporary failure')
-        const error = new VitaminError('wrapped', {
+        const error = new XMarsError('wrapped', {
           code: 'WRAP_RETRY',
           cause,
           retryable: true,
@@ -69,13 +69,13 @@ describe('VitaminError', () => {
   })
 
   describe('#serializeError', () => {
-    it('#then serializes Vitamin errors with code and metadata', () => {
+    it('#then serializes X-Mars errors with code and metadata', () => {
       const error = new ToolError('blocked', {
         code: 'TOOL_BLOCKED',
         metadata: { tool: 'web_fetch' },
       })
 
-      expect(isVitaminError(error)).toBe(true)
+      expect(isXMarsError(error)).toBe(true)
       expect(serializeError(error)).toMatchObject({
         name: 'ToolError',
         message: 'blocked',
@@ -102,7 +102,7 @@ describe('VitaminError', () => {
 describe('Error subclasses', () => {
   const testCases: Array<{
     name: string
-    ErrorClass: new (msg: string, opts: { code: string; cause?: Error }) => VitaminError
+    ErrorClass: new (msg: string, opts: { code: string; cause?: Error }) => XMarsError
   }> = [
     { name: 'ConfigError', ErrorClass: ConfigError },
     { name: 'ProviderError', ErrorClass: ProviderError },
@@ -117,9 +117,9 @@ describe('Error subclasses', () => {
 
   for (const { name, ErrorClass } of testCases) {
     describe(`#given ${name}`, () => {
-      it('#then is instanceof VitaminError and Error', () => {
+      it('#then is instanceof XMarsError and Error', () => {
         const error = new ErrorClass('test', { code: 'TEST_001' })
-        expect(error).toBeInstanceOf(VitaminError)
+        expect(error).toBeInstanceOf(XMarsError)
         expect(error).toBeInstanceOf(Error)
         expect(error.name).toBe(name)
       })

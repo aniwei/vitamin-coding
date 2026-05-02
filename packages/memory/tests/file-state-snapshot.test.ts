@@ -8,7 +8,7 @@ describe('FileStateManager', () => {
   let tempDir: string
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'vitamin-file-state-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'x-mars-file-state-'))
   })
 
   afterEach(async () => {

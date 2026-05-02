@@ -1,4 +1,4 @@
-// 所有 vitamin-coding 错误的基础类
+// 所有 x-mars-coding 错误的基础类
 // 每个错误必须携带 code，并可携带 cause、metadata 和 retryable 供跨包边界展示。
 export type ErrorMetadata = Record<string, unknown>
 
@@ -53,7 +53,7 @@ export class SessionError extends Error {}
 export class ExtensionError extends Error {}
 export class McpError extends Error {}
 
-export function isVitaminError(error: unknown): error is Error {
+export function isXMarsError(error: unknown): error is Error {
   return error instanceof Error
 }
 

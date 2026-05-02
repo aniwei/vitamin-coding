@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { HookRegistry } from '@vitamin/hooks'
+import { HookRegistry } from '@x-mars/hooks'
 import { TaskStore } from '../src/task-store'
 import { TaskExecutor } from '../src/executor'
 import { RetryPolicy, CircuitBreaker } from '../src/retry'

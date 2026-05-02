@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/agent",
+  "name": "@x-mars/agent",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -25,10 +25,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/ai": "workspace:*",
-    "@vitamin/devtools": "workspace:*",
-    "@vitamin/invariant": "workspace:*",
-    "@vitamin/setting": "workspace:*",
-    "@vitamin/shared": "workspace:*"
+    "@x-mars/ai": "workspace:*",
+    "@x-mars/devtools": "workspace:*",
+    "@x-mars/invariant": "workspace:*",
+    "@x-mars/setting": "workspace:*",
+    "@x-mars/shared": "workspace:*"
   }
 }

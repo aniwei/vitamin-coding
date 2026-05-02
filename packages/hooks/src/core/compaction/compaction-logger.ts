@@ -1,8 +1,8 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'
 
-const logger = createLogger('@vitamin/hooks:compaction')
+const logger = createLogger('@x-mars/hooks:compaction')
 
 // 每 session 的压缩统计
 const compactionStats = new Map<string, CompactionStats>()

@@ -1,13 +1,13 @@
-import { createLogger, TypedEventEmitter } from '@vitamin/shared'
-import { stream as aiStream } from '@vitamin/ai'
+import { createLogger, TypedEventEmitter } from '@x-mars/shared'
+import { stream as aiStream } from '@x-mars/ai'
 
 import { workLoop } from './work-loop'
 import { AbortError } from './errors'
 import { createToolExecutor } from './tool-executor'
 import { DeferredToolManager, createToolSearchTool } from './deferred-tools'
 
-import type { AssistantMessage, Message as LlmMessage } from '@vitamin/ai'
-import type { Model, ProviderRegistry } from '@vitamin/ai'
+import type { AssistantMessage, Message as LlmMessage } from '@x-mars/ai'
+import type { Model, ProviderRegistry } from '@x-mars/ai'
 import type {
   AgentConfig,
   AgentEvents,
@@ -17,7 +17,7 @@ import type {
   AgentStatus,
 } from './types'
 
-const logger = createLogger('@vitamin/agent')
+const logger = createLogger('@x-mars/agent')
 
 const VALID_TRANSITIONS: Record<AgentStatus, Set<AgentStatus>> = {
   idle: new Set(['streaming', 'aborted', 'error']),
@@ -35,12 +35,12 @@ export class Agent extends TypedEventEmitter<AgentEvents> {
   private followUpQueue: AgentMessage[] = []
 
   private readonly stream?: import('./types').StreamFunction
-  private readonly agentLogger: import('@vitamin/shared').Logger
+  private readonly agentLogger: import('@x-mars/shared').Logger
   private readonly maxToolTurns: number
   private readonly agentName: string
   private readonly sessionId: string
   private readonly toolHookExecutor?: import('./types').ToolHookExecutor
-  private readonly devtools?: import('@vitamin/devtools').Devtools
+  private readonly devtools?: import('@x-mars/devtools').Devtools
   private readonly approval?: (
     toolName: string,
     args: Record<string, unknown>,

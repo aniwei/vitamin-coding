@@ -1,4 +1,4 @@
-import { isRecord, readNumber, readObject, readString } from '@vitamin/shared/browser/data'
+import { isRecord, readNumber, readObject, readString } from '@x-mars/shared/browser/data'
 import { create } from 'zustand'
 import { ws } from '../api/websocket'
 

@@ -1,5 +1,5 @@
 import { z } from 'zod'
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 import { formatLocation } from './lsp-formatters'
 import { withLspClient } from './lsp-wrapper'
 import type { Location, LocationLink } from './types'

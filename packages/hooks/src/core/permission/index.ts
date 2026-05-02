@@ -1,4 +1,4 @@
-// @vitamin/hooks permission 模块桶导出
+// @x-mars/hooks permission 模块桶导出
 export {
   PermissionPolicyRegistry,
   compilePolicyFromSetting,

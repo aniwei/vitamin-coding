@@ -1,5 +1,5 @@
-import { getTokensFromUsage } from '@vitamin/ai'
-import type { Message, AssistantMessage } from '@vitamin/ai'
+import { getTokensFromUsage } from '@x-mars/ai'
+import type { Message, AssistantMessage } from '@x-mars/ai'
 import type { ContextTokenEstimate } from './types'
 
 export { getTokensFromUsage }

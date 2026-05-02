@@ -1,5 +1,5 @@
 // 文件守卫 Hook — 阻止写入受保护路径
-import { ToolError } from '@vitamin/shared'
+import { ToolError } from '@x-mars/shared'
 
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'

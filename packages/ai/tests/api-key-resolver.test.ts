@@ -134,7 +134,7 @@ describe('OAuthRegistry', () => {
 
 describe('AuthStore', () => {
   it('persists api key credentials to disk and loads them back', async () => {
-    const path = makeTempPath('vitamin-ai-auth-store')
+    const path = makeTempPath('x-mars-ai-auth-store')
     const store = createAuthStore({ path })
 
     try {
@@ -152,7 +152,7 @@ describe('AuthStore', () => {
   })
 
   it('refreshes expired oauth credentials and persists the refreshed value', async () => {
-    const path = makeTempPath('vitamin-ai-oauth-store')
+    const path = makeTempPath('x-mars-ai-oauth-store')
     const oauth = createOAuthRegistry()
     oauth.register(
       makeMockProvider('github-copilot', {
@@ -187,8 +187,8 @@ describe('AuthStore', () => {
   })
 
   it('falls back to configured env variable when no stored credential exists', async () => {
-    const path = makeTempPath('vitamin-ai-auth-env')
-    const keyName = 'VITAMIN_AI_TEST_OPENAI_KEY'
+    const path = makeTempPath('x-mars-ai-auth-env')
+    const keyName = 'X_MARS_AI_TEST_OPENAI_KEY'
     const previous = process.env[keyName]
     process.env[keyName] = 'env-key'
 

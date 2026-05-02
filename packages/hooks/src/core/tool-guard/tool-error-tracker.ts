@@ -1,9 +1,9 @@
 // Tool Error Tracker Hook — 工具错误频率追踪 + 熔断检测
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'
 
-const log = createLogger('@vitamin/hooks:tool-error-tracker')
+const log = createLogger('@x-mars/hooks:tool-error-tracker')
 
 interface ToolErrorRecord {
   toolName: string

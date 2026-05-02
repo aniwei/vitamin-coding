@@ -1,4 +1,4 @@
-# @vitamin/session 设计说明
+# @x-mars/session 设计说明
 
 ## 设计目标
 
@@ -9,7 +9,7 @@
 
 ## 非目标
 
-- 不执行 Agent 逻辑（由 `@vitamin/agent` 完成）。
+- 不执行 Agent 逻辑（由 `@x-mars/agent` 完成）。
 - 不直接管理工具调用。
 
 ## 实现原理
@@ -58,7 +58,7 @@
 
 **FileSessionPersistence**（file-persistence.ts）：
 
-- 基于 `@vitamin/persistence` 的 `DiskPersistence`，将会话快照序列化为 JSON 存入 `SESSION_DIR/{id}.json`。
+- 基于 `@x-mars/persistence` 的 `DiskPersistence`，将会话快照序列化为 JSON 存入 `SESSION_DIR/{id}.json`。
 - `save(session)` → 序列化 + 写文件。
 - `load(id)` → 读文件 + 反序列化。
 - `list()` → 枚举 SESSION_DIR 下所有快照文件。
@@ -164,7 +164,7 @@ AgentSession.run()
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/persistence`、`@vitamin/env`、`@vitamin/shared`
+- **内部依赖**：`@x-mars/persistence`、`@x-mars/env`、`@x-mars/shared`
 - **外部依赖**：无
 
 ## 测试策略
@@ -177,8 +177,8 @@ AgentSession.run()
 
 ## 非目标
 
-- 不负责消息的生成逻辑（由 `@vitamin/agent` 完成）。
-- 不实现业务级编排（由 `@vitamin/orchestrator` 完成）。
+- 不负责消息的生成逻辑（由 `@x-mars/agent` 完成）。
+- 不实现业务级编排（由 `@x-mars/orchestrator` 完成）。
 
 ## 实现原理
 
@@ -203,7 +203,7 @@ AgentSession.run()
 
 三种持久化适配器：
 
-- `FileSessionPersistence`：基于 `@vitamin/persistence` DiskPersistence
+- `FileSessionPersistence`：基于 `@x-mars/persistence` DiskPersistence
 - `HttpSessionPersistence`：基于 RemotePersistence
 - `RemoteSessionPersistence`：自定义 HTTP 实现
 
@@ -256,7 +256,7 @@ SessionManager
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/persistence`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/persistence`、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`
 - **外部依赖**：无
 
 ## 测试策略

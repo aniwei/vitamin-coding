@@ -1,4 +1,4 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { registerBuiltinPolicies } from './register-builtin'
 import type { RegisterBuiltinPoliciesOptions } from './register-builtin'
 import type { PermissionPolicySetting } from './types'
@@ -11,7 +11,7 @@ import type {
   PermissionRule,
 } from './types'
 
-const logger = createLogger('@vitamin/hooks:permission')
+const logger = createLogger('@x-mars/hooks:permission')
 
 function matchesScopeAgent(scope: PolicyScope, agentName: string): boolean {
   if (!scope.agents || scope.agents.length === 0) {

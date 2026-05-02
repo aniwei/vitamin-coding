@@ -1,5 +1,5 @@
-import { RemotePersistence, RemotePersistenceError } from '@vitamin/persistence'
-import { SESSION_PAGE_SIZE } from '@vitamin/env'
+import { RemotePersistence, RemotePersistenceError } from '@x-mars/persistence'
+import { SESSION_PAGE_SIZE } from '@x-mars/env'
 import type { SessionPersistence, SessionSnapshot } from './types'
 import type { HttpSessionPersistenceOptions } from './http-persistence'
 

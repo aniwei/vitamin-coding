@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/memory",
+  "name": "@x-mars/memory",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -25,10 +25,10 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/ai": "workspace:*",
-    "@vitamin/env": "workspace:*",
-    "@vitamin/manifest": "workspace:*",
-    "@vitamin/persistence": "workspace:*",
-    "@vitamin/shared": "workspace:*"
+    "@x-mars/ai": "workspace:*",
+    "@x-mars/env": "workspace:*",
+    "@x-mars/manifest": "workspace:*",
+    "@x-mars/persistence": "workspace:*",
+    "@x-mars/shared": "workspace:*"
   }
 }

@@ -21,7 +21,7 @@ describe('browser data helpers', () => {
 
   it('#reads typed values by first matching key', () => {
     const data = {
-      name: 'vitamin',
+      name: 'xMars',
       fallback: 'unused',
       count: 2,
       nan: Number.NaN,
@@ -30,7 +30,7 @@ describe('browser data helpers', () => {
       items: ['a'],
     }
 
-    expect(readString(data, 'missing', 'name', 'fallback')).toBe('vitamin')
+    expect(readString(data, 'missing', 'name', 'fallback')).toBe('xMars')
     expect(readNumber(data, 'nan')).toBeUndefined()
     expect(readNumber(data, 'count')).toBe(2)
     expect(readBoolean(data, 'enabled')).toBe(false)

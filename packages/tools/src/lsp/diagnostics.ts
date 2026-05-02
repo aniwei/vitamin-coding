@@ -2,7 +2,7 @@ import { z } from 'zod'
 import { DEFAULT_MAX_DIAGNOSTICS } from './constants'
 import { filterDiagnosticsBySeverity, formatDiagnostic } from './lsp-formatters'
 import { withLspClient } from './lsp-wrapper'
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 import type { Diagnostic } from './types'
 
 const DiagnosticsArgsSchema = z.object({

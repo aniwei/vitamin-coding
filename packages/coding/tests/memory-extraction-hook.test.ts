@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { createMemoryExtractionHooks } from '../src/hooks/memory-extraction'
 
-import type { AgentMessage } from '@vitamin/agent'
+import type { AgentMessage } from '@x-mars/agent'
 
 function makeSession(messages: AgentMessage[]) {
   let metadata = {

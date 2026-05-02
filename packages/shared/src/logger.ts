@@ -1,6 +1,6 @@
 import pino from 'pino'
-import invariant from '@vitamin/invariant'
-import { LOG_FILE, LOG_LEVEL } from '@vitamin/env'
+import invariant from '@x-mars/invariant'
+import { LOG_FILE, LOG_LEVEL } from '@x-mars/env'
 import { createRequire } from 'node:module'
 import { PassThrough } from 'node:stream'
 import { Subscription } from './subscrption'

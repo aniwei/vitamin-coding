@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/session",
+  "name": "@x-mars/session",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -25,9 +25,9 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/env": "workspace:*",
-    "@vitamin/persistence": "workspace:*",
-    "@vitamin/shared": "workspace:*",
+    "@x-mars/env": "workspace:*",
+    "@x-mars/persistence": "workspace:*",
+    "@x-mars/shared": "workspace:*",
     "better-sqlite3": "^12.9.0"
   }
 }

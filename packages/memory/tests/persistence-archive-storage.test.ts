@@ -1,12 +1,12 @@
 import { describe, it, expect, beforeEach } from 'vitest'
-import { MemoryPersistence } from '@vitamin/persistence'
+import { MemoryPersistence } from '@x-mars/persistence'
 import {
   PersistenceBackedArchiveStorage,
   createPersistenceArchiveStorage,
 } from '../src/persistence-archive-storage'
 
 import type { ArchiveRecord } from '../src/persistence-archive-storage'
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 
 function makeMessages(count: number): Message[] {
   return Array.from({ length: count }, (_, i) => ({

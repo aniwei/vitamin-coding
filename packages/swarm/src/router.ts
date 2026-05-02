@@ -1,9 +1,9 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 
 import type { RouterConfig, RoutingDecision, RouteRule, SwarmAgentDef, SwarmContext } from './types'
 import { RoutingError } from './errors'
 
-const logger = createLogger('@vitamin/swarm:router')
+const logger = createLogger('@x-mars/swarm:router')
 
 /** 路由器 — 根据策略选择目标 Agent */
 export class SwarmRouter {

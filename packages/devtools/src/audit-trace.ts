@@ -4,6 +4,7 @@ export type AuditTraceEventType =
   | 'debug.snapshot'
   | 'tool.execution'
   | 'permission.decision'
+  | 'plugin.command'
   | 'model.response'
 
 export interface AuditTraceEvent {
@@ -82,6 +83,10 @@ export class AuditTraceRecorder {
 
   recordPermissionDecision(entry: Record<string, unknown>, sessionId?: string): AuditTraceEvent {
     return this.record('permission.decision', entry, sessionId)
+  }
+
+  recordPluginCommand(entry: Record<string, unknown>, sessionId?: string): AuditTraceEvent {
+    return this.record('plugin.command', entry, sessionId)
   }
 
   recordModelResponse(response: Record<string, unknown>, sessionId?: string): AuditTraceEvent {
@@ -184,6 +189,7 @@ function summarizeTrace(trace: AuditTrace): AuditTraceReplayResult['summary'] {
     'debug.snapshot': 0,
     'tool.execution': 0,
     'permission.decision': 0,
+    'plugin.command': 0,
     'model.response': 0,
   }
   const permissionEffects: Record<string, number> = {}

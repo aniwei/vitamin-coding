@@ -1,11 +1,11 @@
 // Skill 解析器 — 解析 SKILL.md 文件为 SkillDefinition
 // 支持 YAML frontmatter + Markdown body
 
-import { parseYamlFrontmatter } from '@vitamin/manifest'
-import { createLogger } from '@vitamin/shared'
+import { parseYamlFrontmatter } from '@x-mars/manifest'
+import { createLogger } from '@x-mars/shared'
 import type { SkillMetadata, SkillDefinition } from './types'
 
-const logger = createLogger('@vitamin/skill:parser')
+const logger = createLogger('@x-mars/skill:parser')
 
 /**
  * 从 SKILL.md 原始文本解析出 SkillDefinition

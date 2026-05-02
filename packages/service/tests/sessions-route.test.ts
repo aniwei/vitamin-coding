@@ -52,7 +52,7 @@ describe('sessions route context diagnostics', () => {
   it('returns session context diagnostics without prompt content by default', async () => {
     const getContextDiagnostics = vi.fn(() => makeDiagnostics(false))
     const app = createApp({
-      vitamin: { workspaceDir: '/workspace', listSessions: () => [] },
+      xMars: { workspaceDir: '/workspace', listSessions: () => [] },
       getSession: (id: string) => (id === 's1' ? { id: 's1', getContextDiagnostics } : undefined),
       getActiveSession: () => undefined,
     } as unknown as CodingService)
@@ -71,7 +71,7 @@ describe('sessions route context diagnostics', () => {
       makeDiagnostics(options.includePrompt === true),
     )
     const app = createApp({
-      vitamin: { workspaceDir: '/workspace', listSessions: () => [] },
+      xMars: { workspaceDir: '/workspace', listSessions: () => [] },
       getSession: () => undefined,
       getActiveSession: () => ({ id: 's1', getContextDiagnostics }),
     } as unknown as CodingService)
@@ -87,7 +87,7 @@ describe('sessions route context diagnostics', () => {
 
   it('returns 404 for missing context session', async () => {
     const app = createApp({
-      vitamin: { workspaceDir: '/workspace', listSessions: () => [] },
+      xMars: { workspaceDir: '/workspace', listSessions: () => [] },
       getSession: () => undefined,
       getActiveSession: () => undefined,
     } as unknown as CodingService)

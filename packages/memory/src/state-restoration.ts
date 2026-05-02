@@ -14,9 +14,9 @@ import {
   MEMORY_LEGACY_TOOL_WRITE_FILE,
   MEMORY_LEGACY_TOOL_EDIT_FILE,
   MEMORY_LEGACY_TOOL_REPLACE_STRING_IN_FILE,
-} from '@vitamin/env'
+} from '@x-mars/env'
 import { messageToText } from './token-estimator'
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 
 export interface RestorationFile {
   path: string

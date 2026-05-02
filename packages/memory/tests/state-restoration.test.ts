@@ -1,6 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { collectRestorationState, buildRestorationMessage, createEmptyRestorationState } from '../src/state-restoration'
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 
 function makeToolResult(toolName: string, text: string, details: unknown = {}): Message {
   return {

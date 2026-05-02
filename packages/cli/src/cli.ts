@@ -3,7 +3,7 @@ import { createRequire } from 'node:module'
 import { join, relative, resolve } from 'node:path'
 import { createInterface } from 'node:readline'
 
-import { createVitamin, InteractiveMode, runJsonMode, runPrintMode } from '@vitamin/coding'
+import { createXMars, InteractiveMode, runJsonMode, runPrintMode } from '@x-mars/coding'
 
 import type { CLIOptions, RunMode } from './types'
 import {
@@ -12,7 +12,7 @@ import {
   type PluginLifecycleStep,
   type PluginManagerDiagnostics,
   type PluginStateStore,
-} from '@vitamin/tools'
+} from '@x-mars/tools'
 
 const require = createRequire(import.meta.url)
 
@@ -152,12 +152,12 @@ export function parseCLI(argv: string[]): ParsedCLI {
 
 function printHelp(): void {
   process.stdout.write(`
-vitamin - AI 助理命令行工具
+x-mars - AI 助理命令行工具
 
 用法:
-  vitamin [提示词]              使用提示词启动（print 模式）
-  vitamin                       进入交互式 TUI 模式
-  vitamin --json "query"        JSON 输出模式
+  x-mars [提示词]              使用提示词启动（print 模式）
+  x-mars                       进入交互式 TUI 模式
+  x-mars --json "query"        JSON 输出模式
 
 选项:
   -i, --interactive         Interactive 模式（默认）
@@ -175,18 +175,18 @@ vitamin - AI 助理命令行工具
   --version                 显示版本
 
 命令:
-  vitamin run <prompt>      执行一次性任务
-  vitamin doctor            检查环境健康状态
-  vitamin auth [copilot]    认证管理（GitHub Copilot OAuth）
-  vitamin install           交互式初始化
-  vitamin config            管理配置
+  x-mars run <prompt>      执行一次性任务
+  x-mars doctor            检查环境健康状态
+  x-mars auth [copilot]    认证管理（GitHub Copilot OAuth）
+  x-mars install           交互式初始化
+  x-mars config            管理配置
 `)
 }
 
 function printVersion(): void {
   const pkg = require('../package.json') as { version?: string }
   const version = pkg.version ?? '0.0.0'
-  process.stdout.write(`vitamin ${version}\n`)
+  process.stdout.write(`x-mars ${version}\n`)
 }
 
 export async function runCli(): Promise<number> {
@@ -214,19 +214,19 @@ export async function runCli(): Promise<number> {
 
   const pluginStateStore = createFilePluginStateStore({ workspaceDir: options.projectDir })
 
-  // 创建并启动 VitaminApp
-  const app = createVitamin({
+  // 创建并启动 XMarsApp
+  const app = createXMars({
     port: typeof options.inspect === 'number' ? options.inspect : 9229,
     inspect: options.inspect !== undefined,
     logger: {
-      name: 'vitamin-cli',
+      name: 'x-mars-cli',
       level: options.verbose ? 'debug' : 'info',
       destination: 'stderr',
     },
     workspaceDir: options.projectDir,
     projectConfigPath: options.configPath,
     modelId: options.model,
-    pluginRoots: [resolve(options.projectDir, '.vitamin/plugins')],
+    pluginRoots: [resolve(options.projectDir, '.x-mars/plugins')],
     pluginStateStore,
   })
 
@@ -258,10 +258,12 @@ export async function runCli(): Promise<number> {
         const interactive = new InteractiveMode(session, {
           pluginAgentRegistry: app.pluginAgentRegistry,
           pluginCommandRegistry: app.pluginCommandRegistry,
+          permissionRegistry: app.permissionRegistry,
+          auditLog: app.auditLog,
           requirePluginConfirmation: true,
         })
         const rl = createInterface({ input: process.stdin, output: process.stdout })
-        const prompt = () => rl.question('vitamin> ', async (input) => {
+        const prompt = () => rl.question('x-mars> ', async (input) => {
           const result = await interactive.handleInput(input)
           if (result.type === 'exit') {
             rl.close()
@@ -292,7 +294,7 @@ export async function runCli(): Promise<number> {
 }
 
 export async function runPluginCommand(
-  app: ReturnType<typeof createVitamin>,
+  app: ReturnType<typeof createXMars>,
   argsText: string,
   stateStore?: PluginStateStore,
 ): Promise<number> {
@@ -351,13 +353,13 @@ export async function runPluginCommand(
   }
 
   process.stdout.write(
-    'Usage: vitamin plugin [list|enable <id>|disable <id>|trust <id>|untrust <id>|reload|import-claude-code <dir> [--force]]\n',
+    'Usage: x-mars plugin [list|enable <id>|disable <id>|trust <id>|untrust <id>|reload|import-claude-code <dir> [--force]]\n',
   )
   return 1
 }
 
 async function importClaudeCodePluginCommand(
-  app: ReturnType<typeof createVitamin>,
+  app: ReturnType<typeof createXMars>,
   sourceDir: string,
   force: boolean,
 ): Promise<number> {
@@ -369,7 +371,7 @@ async function importClaudeCodePluginCommand(
 
   const imported = await importClaudeCodePlugin(resolve(sourceDir))
   const roots = manager.getDiagnostics().roots
-  const pluginRoot = roots[0] ?? join(app.workspaceDir, '.vitamin/plugins')
+  const pluginRoot = roots[0] ?? join(app.workspaceDir, '.x-mars/plugins')
   const targetDir = join(pluginRoot, toPluginDirectoryName(imported.manifest.id))
 
   if (isPathInside(resolve(sourceDir), targetDir)) {

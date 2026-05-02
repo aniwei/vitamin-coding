@@ -3,9 +3,9 @@ import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { z } from 'zod'
-import { createHookRegistry } from '@vitamin/hooks'
+import { createHookRegistry } from '@x-mars/hooks'
 
-import { PluginManager, importPluginTool } from '../src/plugin-manager'
+import { PluginManager, importPluginCommandHandler, importPluginTool } from '../src/plugin-manager'
 import { ToolRegistry } from '../src/tool-registry'
 
 async function createPlugin(root: string, id: string, manifest: object, moduleSource?: string) {
@@ -46,9 +46,18 @@ export default {
 }
 `
 
+const commandModule = `
+export async function run(invocation, context) {
+  return {
+    type: 'response',
+    text: context.pluginId + ':' + invocation.typedArguments.count,
+  }
+}
+`
+
 describe('PluginManager', () => {
   it('#then loads plugin tools from modules and stores plugin metadata', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugins-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
     await createPlugin(
       root,
       'hello-plugin',
@@ -89,7 +98,7 @@ describe('PluginManager', () => {
   })
 
   it('#then does not block other plugins when one plugin module is invalid', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugins-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
     await createPlugin(
       root,
       'good-plugin',
@@ -122,7 +131,7 @@ describe('PluginManager', () => {
   })
 
   it('#then unloadAll removes only plugin-owned tools', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugins-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
     await createPlugin(
       root,
       'hello-plugin',
@@ -164,9 +173,9 @@ describe('PluginManager', () => {
   })
 
   it('#then rejects symlinked tool modules that resolve outside plugin root', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugin-root-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugin-root-'))
     const pluginDir = join(root, 'escape-plugin')
-    const outsideDir = await mkdtemp(join(tmpdir(), 'vitamin-plugin-outside-'))
+    const outsideDir = await mkdtemp(join(tmpdir(), 'x-mars-plugin-outside-'))
     await mkdir(join(pluginDir, 'tools'), { recursive: true })
     const outsideModule = join(outsideDir, 'escape.js')
     await writeFile(outsideModule, toolModule, 'utf-8')
@@ -182,7 +191,7 @@ describe('PluginManager', () => {
   })
 
   it('#then skips dangerous plugins until trusted', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugins-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
     await createPlugin(
       root,
       'shell-plugin',
@@ -207,7 +216,7 @@ describe('PluginManager', () => {
   })
 
   it('#then does not import dynamic tool modules until trusted', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugins-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
     const sideEffectFile = join(root, 'side-effect.txt')
     await createPlugin(
       root,
@@ -259,7 +268,7 @@ export const helloTool = {
   })
 
   it('#then untrust unloads plugin capabilities without marking the plugin disabled', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugins-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
     await createPlugin(
       root,
       'dynamic-plugin',
@@ -290,7 +299,7 @@ export const helloTool = {
   })
 
   it('#then loads and unloads trusted plugin hooks', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugins-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
     const pluginDir = await createPlugin(root, 'hook-plugin', {
       id: 'hook-plugin',
       name: 'Hook Plugin',
@@ -325,7 +334,7 @@ export const helloTool = {
   })
 
   it('#then loads and unloads plugin skills and mcp servers through lifecycle adapters', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugins-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
     const pluginDir = await createPlugin(root, 'capability-plugin', {
       id: 'capability-plugin',
       name: 'Capability Plugin',
@@ -427,8 +436,117 @@ export const helloTool = {
     ])
   })
 
+  it('#then loads trusted plugin command module handlers through lifecycle adapters', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
+    const pluginDir = await createPlugin(root, 'command-plugin', {
+      id: 'command-plugin',
+      name: 'Command Plugin',
+      version: '1.0.0',
+      commands: [
+        {
+          name: 'batch',
+          description: 'Run batch command',
+          module: './commands/batch.js',
+          exportName: 'run',
+          arguments: [{ name: 'count', required: true, type: 'number' }],
+        },
+      ],
+    })
+    await mkdir(join(pluginDir, 'commands'), { recursive: true })
+    await writeFile(join(pluginDir, 'commands', 'batch.js'), commandModule, 'utf-8')
+
+    const registry = new ToolRegistry()
+    let handlerResult: unknown
+    const manager = new PluginManager({
+      roots: [root],
+      toolRegistry: registry,
+      trustedPluginIds: ['command-plugin'],
+      lifecycleAdapters: {
+        registerCommand: async (command, pluginId, handler) => {
+          handlerResult = await handler?.(
+            {
+              commandName: command.name,
+              confirmed: true,
+              rawArguments: ['3'],
+              positionalArguments: ['3'],
+              namedArguments: {},
+              repeatedArguments: {},
+              typedArguments: { count: 3 },
+              arguments: ['3'],
+            },
+            { pluginId, command },
+          )
+        },
+      },
+    })
+
+    const diagnostics = await manager.loadAll()
+
+    expect(diagnostics.errors).toEqual([])
+    expect(diagnostics.results[0]?.steps).toEqual([
+      { type: 'command', name: 'batch', status: 'loaded' },
+    ])
+    expect(handlerResult).toEqual({ type: 'response', text: 'command-plugin:3' })
+  })
+
+  it('#then does not import command modules until trusted', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
+    const sideEffectFile = join(root, 'command-side-effect.txt')
+    const pluginDir = await createPlugin(root, 'command-plugin', {
+      id: 'command-plugin',
+      name: 'Command Plugin',
+      version: '1.0.0',
+      commands: [{ name: 'batch', module: './commands/batch.js', exportName: 'run' }],
+    })
+    await mkdir(join(pluginDir, 'commands'), { recursive: true })
+    await writeFile(
+      join(pluginDir, 'commands', 'batch.js'),
+      `
+import { writeFileSync } from 'node:fs'
+writeFileSync(${JSON.stringify(sideEffectFile)}, 'imported')
+export async function run() {
+  return { type: 'response', text: 'handled' }
+}
+`,
+      'utf-8',
+    )
+
+    const registry = new ToolRegistry()
+    const manager = new PluginManager({
+      roots: [root],
+      toolRegistry: registry,
+      lifecycleAdapters: {
+        registerCommand: async () => {
+          throw new Error('must not register untrusted command')
+        },
+      },
+    })
+
+    const diagnostics = await manager.loadAll()
+
+    expect(diagnostics.loaded).toHaveLength(0)
+    expect(diagnostics.results[0]?.steps).toEqual([
+      {
+        type: 'command',
+        name: 'batch',
+        status: 'skipped',
+        warning: 'plugin requires trust before loading dynamic code or dangerous permissions',
+      },
+    ])
+    await expect(access(sideEffectFile)).rejects.toThrow()
+  })
+
+  it('#then rejects command handler modules outside plugin root', async () => {
+    await expect(
+      importPluginCommandHandler('/tmp/plugin-root', {
+        name: 'escape',
+        module: '../escape.js',
+      }),
+    ).rejects.toThrow('inside plugin root')
+  })
+
   it('#then skips log contributions until trusted', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugins-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
     await createPlugin(root, 'log-plugin', {
       id: 'log-plugin',
       name: 'Log Plugin',
@@ -454,8 +572,41 @@ export const helloTool = {
     ])
   })
 
+  it('#then skips command permissions until trusted', async () => {
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
+    await createPlugin(root, 'command-permission-plugin', {
+      id: 'command-permission-plugin',
+      name: 'Command Permission Plugin',
+      version: '1.0.0',
+      commands: [{ name: 'deploy', permissions: ['shell'] }],
+    })
+
+    const registry = new ToolRegistry()
+    const manager = new PluginManager({
+      roots: [root],
+      toolRegistry: registry,
+      lifecycleAdapters: {
+        registerCommand: async () => {
+          throw new Error('must not register untrusted command permissions')
+        },
+      },
+    })
+
+    const diagnostics = await manager.loadAll()
+
+    expect(diagnostics.loaded).toHaveLength(0)
+    expect(diagnostics.results[0]?.steps).toEqual([
+      {
+        type: 'command',
+        name: 'deploy',
+        status: 'skipped',
+        warning: 'plugin requires trust before loading dynamic code or dangerous permissions',
+      },
+    ])
+  })
+
   it('#then skips devtools contributions until trusted', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugins-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
     await createPlugin(root, 'devtools-plugin', {
       id: 'devtools-plugin',
       name: 'Devtools Plugin',
@@ -482,7 +633,7 @@ export const helloTool = {
   })
 
   it('#then reports plugin commands and agents as skipped until adapters exist', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugins-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugins-'))
     await createPlugin(root, 'declarations-plugin', {
       id: 'declarations-plugin',
       name: 'Declarations Plugin',

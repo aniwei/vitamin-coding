@@ -1,4 +1,4 @@
-# Claude Code 源码深度分析与 Vitamin-Coding 借鉴报告
+# Claude Code 源码深度分析与 X-Mars-Coding 借鉴报告
 
 > **RFC 编号**：rfc-001  
 > **状态**：正式版（v4）  
@@ -36,7 +36,7 @@
   - [4.20 Buddy 伴侣系统 — buddy/](#420-buddy-伴侣系统--buddy)
 - [五、调用依赖关系](#五调用依赖关系)
 - [六、流程逻辑图](#六流程逻辑图)
-- [七、Vitamin-Coding 借鉴分析](#七vitamin-coding-借鉴分析)
+- [七、X-Mars-Coding 借鉴分析](#七x-mars-coding-借鉴分析)
 
 ---
 
@@ -1633,27 +1633,27 @@ main.tsx
 
 ---
 
-## 七、Vitamin-Coding 借鉴分析
+## 七、X-Mars-Coding 借鉴分析
 
-### 7.1 Vitamin-Coding 现有架构概览
+### 7.1 X-Mars-Coding 现有架构概览
 
 ```
-vitamin-coding/ (26 个包，pnpm monorepo + Nx)
-├── @vitamin/agent       # 核心执行引擎 (状态机)
-├── @vitamin/ai          # Anthropic API 抽象
-├── @vitamin/cli         # CLI 入口
-├── @vitamin/coding      # DI 容器 (VitaminApp)
-├── @vitamin/hooks       # 31+ 生命周期 Hook
-├── @vitamin/tools       # 47 个工具
-├── @vitamin/service     # HTTP + WebSocket (Hono)
-├── @vitamin/session     # SQLite 会话存储
-├── @vitamin/memory      # 上下文压缩
-├── @vitamin/skill       # SKILL.md 发现
-├── @vitamin/mcp         # MCP 适配
-├── @vitamin/orchestrator # 多 Agent 调度
-├── @vitamin/swarm       # 多 Agent 协调
-├── @vitamin/devtools    # Agent 调试
-├── @vitamin/web-ui      # React 19 SPA
+x-mars-coding/ (26 个包，pnpm monorepo + Nx)
+├── @x-mars/agent       # 核心执行引擎 (状态机)
+├── @x-mars/ai          # Anthropic API 抽象
+├── @x-mars/cli         # CLI 入口
+├── @x-mars/coding      # DI 容器 (XMarsApp)
+├── @x-mars/hooks       # 31+ 生命周期 Hook
+├── @x-mars/tools       # 47 个工具
+├── @x-mars/service     # HTTP + WebSocket (Hono)
+├── @x-mars/session     # SQLite 会话存储
+├── @x-mars/memory      # 上下文压缩
+├── @x-mars/skill       # SKILL.md 发现
+├── @x-mars/mcp         # MCP 适配
+├── @x-mars/orchestrator # 多 Agent 调度
+├── @x-mars/swarm       # 多 Agent 协调
+├── @x-mars/devtools    # Agent 调试
+├── @x-mars/web-ui      # React 19 SPA
 └── ... (12+ more)
 ```
 
@@ -1668,7 +1668,7 @@ vitamin-coding/ (26 个包，pnpm monorepo + Nx)
 - 压缩后精确恢复：文件、计划、技能、工具 Schema、MCP 指令
 - PTL 重试机制：截断最老的 API-round groups，最多 3 次
 
-**Vitamin 当前状态：** `@vitamin/memory` 有基础压缩，但缺少多策略和状态恢复
+**X-Mars 当前状态：** `@x-mars/memory` 有基础压缩，但缺少多策略和状态恢复
 
 **借鉴建议：**
 
@@ -1704,12 +1704,12 @@ function partitionToolCalls(toolUses): Batch[] {
 }
 ```
 
-**Vitamin 当前状态：** `@vitamin/agent` 有 read/mutation 阶段分离，但并发策略可以更精细
+**X-Mars 当前状态：** `@x-mars/agent` 有 read/mutation 阶段分离，但并发策略可以更精细
 
 **借鉴建议：**
 
-- 在 `@vitamin/tools` 中为每个工具添加 `isConcurrencySafe()` / `isReadOnly()` 方法
-- `@vitamin/agent` 的执行引擎使用分区策略替代固定的 parallel-read → serial-mutation
+- 在 `@x-mars/tools` 中为每个工具添加 `isConcurrencySafe()` / `isReadOnly()` 方法
+- `@x-mars/agent` 的执行引擎使用分区策略替代固定的 parallel-read → serial-mutation
 
 ---
 
@@ -1722,12 +1722,12 @@ function partitionToolCalls(toolUses): Batch[] {
 - `alwaysLoad: true` 强制某些关键工具始终可用
 - 压缩后自动重新注入已发现的延迟工具
 
-**Vitamin 当前状态：** 所有 47 个工具在会话开始时全量注入
+**X-Mars 当前状态：** 所有 47 个工具在会话开始时全量注入
 
 **借鉴建议：**
 
 ```typescript
-// @vitamin/tools 添加延迟加载能力
+// @x-mars/tools 添加延迟加载能力
 interface ToolDefinition {
   // 新增
   deferred?: boolean // 延迟到 ToolSearch 时加载
@@ -1764,7 +1764,7 @@ function createStore<T>(initialState, onChange?): Store<T> {
 }
 ```
 
-**借鉴价值：** 比 Redux/Zustand 更轻量，支持 `Object.is` 快速路径和 onChange 回调。Vitamin 的 `@vitamin/shared` 可以参考此模式。
+**借鉴价值：** 比 Redux/Zustand 更轻量，支持 `Object.is` 快速路径和 onChange 回调。X-Mars 的 `@x-mars/shared` 可以参考此模式。
 
 ---
 
@@ -1782,7 +1782,7 @@ type QueryDeps = {
 // 测试时注入 fake，生产用 productionDeps()
 ```
 
-**借鉴价值：** 只注入 4 个关键 I/O 依赖，不过度设计。Vitamin 的 `@vitamin/agent` 可以参考这种窄依赖注入。
+**借鉴价值：** 只注入 4 个关键 I/O 依赖，不过度设计。X-Mars 的 `@x-mars/agent` 可以参考这种窄依赖注入。
 
 ---
 
@@ -1795,7 +1795,7 @@ type QueryDeps = {
 - Claude Sonnet 语义检索（最多 5 个相关记忆）
 - 团队记忆（Git 支持）
 
-**Vitamin 当前状态：** `@vitamin/memory` 有基础记忆，但类型分类和语义检索不够成熟
+**X-Mars 当前状态：** `@x-mars/memory` 有基础记忆，但类型分类和语义检索不够成熟
 
 **借鉴建议：**
 
@@ -1815,7 +1815,7 @@ type QueryDeps = {
 - 指纹计算优化 cache key
 - Prompt Cache Break Detection
 
-**借鉴价值：** `@vitamin/ai` 的 Anthropic 集成应实现 cache scope 和 break detection。
+**借鉴价值：** `@x-mars/ai` 的 Anthropic 集成应实现 cache scope 和 break detection。
 
 ---
 
@@ -1828,7 +1828,7 @@ type QueryDeps = {
 - 用户可覆盖 (`~/.claude/keybindings.json`)
 - 平台自适应（macOS/Linux/Windows）
 
-**借鉴价值：** `@vitamin/cli` 的交互模式可以参考此键绑定架构。
+**借鉴价值：** `@x-mars/cli` 的交互模式可以参考此键绑定架构。
 
 ---
 
@@ -1849,7 +1849,7 @@ if (feature('VOICE_MODE')) {
 const value = getFeatureValue_CACHED_MAY_BE_STALE('gate_name', defaultValue)
 ```
 
-**借鉴建议：** Vitamin 可以在构建配置中引入类似的编译时特性门控，减小生产 bundle 大小。
+**借鉴建议：** X-Mars 可以在构建配置中引入类似的编译时特性门控，减小生产 bundle 大小。
 
 ---
 
@@ -1863,7 +1863,7 @@ const value = getFeatureValue_CACHED_MAY_BE_STALE('gate_name', defaultValue)
 - `promptSuggestion()` — 生成下次提示建议
 - `jobClassifier()` — 分类任务模板
 
-**借鉴价值：** Vitamin 的 `@vitamin/hooks` 可以在 `onTurnEnd` hook 中注册类似的后台任务。
+**借鉴价值：** X-Mars 的 `@x-mars/hooks` 可以在 `onTurnEnd` hook 中注册类似的后台任务。
 
 ---
 
@@ -1876,7 +1876,7 @@ const value = getFeatureValue_CACHED_MAY_BE_STALE('gate_name', defaultValue)
 - 指数退避重连 + Keep-alive 心跳
 - JWT 会话认证
 
-**借鉴价值：** `@vitamin/service` 的 WebSocket 层可以参考其连接状态机和重连策略。
+**借鉴价值：** `@x-mars/service` 的 WebSocket 层可以参考其连接状态机和重连策略。
 
 ---
 
@@ -1889,7 +1889,7 @@ const value = getFeatureValue_CACHED_MAY_BE_STALE('gate_name', defaultValue)
 - Blit 优化（增量屏幕更新）
 - 文本测量缓存
 
-**借鉴价值：** `@vitamin/web-ui` 的聊天界面应实现虚拟滚动。
+**借鉴价值：** `@x-mars/web-ui` 的聊天界面应实现虚拟滚动。
 
 ---
 
@@ -1902,7 +1902,7 @@ const value = getFeatureValue_CACHED_MAY_BE_STALE('gate_name', defaultValue)
 - `createSignal()` 用于响应式状态变更
 - OpenTelemetry 集成的计数器/追踪器
 
-**借鉴建议：** Vitamin 的 `@vitamin/coding`（VitaminApp DI 容器）可以参考信号模式和遥测集成。
+**借鉴建议：** X-Mars 的 `@x-mars/coding`（XMarsApp DI 容器）可以参考信号模式和遥测集成。
 
 ---
 
@@ -1914,28 +1914,28 @@ const value = getFeatureValue_CACHED_MAY_BE_STALE('gate_name', defaultValue)
 - `RemoteIO` 扩展：WebSocket/SSE 传输、CCR v2 协议
 - NDJSON 安全序列化（U+2028/U+2029 转义）
 
-**借鉴价值：** `@vitamin/service` 的事件流可以参考此结构化 I/O 模式。
+**借鉴价值：** `@x-mars/service` 的事件流可以参考此结构化 I/O 模式。
 
 ---
 
 ### 7.3 架构对比总结
 
-| 维度           | Claude Code              | Vitamin-Coding        | 建议                       |
-| -------------- | ------------------------ | --------------------- | -------------------------- |
-| **架构风格**   | 单体应用 + 特性门控      | Monorepo + 26 包      | Vitamin 更模块化，保持优势 |
-| **状态管理**   | 全局单例 + 极简 Store    | DI 容器 (VitaminApp)  | 借鉴 Store 的极简实现      |
-| **工具编排**   | 只读并发/变更串行        | read/mutation 阶段    | 借鉴分区策略               |
-| **上下文压缩** | 5 种策略 + 状态恢复      | 基础压缩              | **最高优先级借鉴**         |
-| **延迟加载**   | ToolSearch + shouldDefer | 全量注入              | 借鉴延迟加载               |
-| **权限系统**   | 多路由处理器             | RBAC + 审计日志       | Vitamin 已较完善           |
-| **记忆系统**   | 4 类型 + 语义检索        | 基础记忆              | 借鉴分类 + 语义检索        |
-| **UI 渲染**    | Ink (终端 React)         | React 19 + Vite (Web) | 不同场景，各有优势         |
-| **远程协作**   | Bridge + Direct Connect  | HTTP + WebSocket      | 借鉴重连策略               |
-| **多模型**     | 单模型 (Claude)          | 10+ 提供商            | Vitamin 更灵活             |
-| **测试**       | 依赖注入 (QueryDeps)     | vitest + Playwright   | 借鉴窄 DI                  |
-| **构建**       | Bun bundler + feature()  | tsdown + Nx           | 借鉴死代码消除             |
-| **Hook 系统**  | 77 个 Hook 文件          | 31+ Hook 点           | Vitamin 设计更规范         |
-| **开发工具**   | VCR 录制/回放            | Devtools (23 断点)    | Vitamin 调试能力更强       |
+| 维度           | Claude Code              | X-Mars-Coding         | 建议                      |
+| -------------- | ------------------------ | --------------------- | ------------------------- |
+| **架构风格**   | 单体应用 + 特性门控      | Monorepo + 26 包      | X-Mars 更模块化，保持优势 |
+| **状态管理**   | 全局单例 + 极简 Store    | DI 容器 (XMarsApp)    | 借鉴 Store 的极简实现     |
+| **工具编排**   | 只读并发/变更串行        | read/mutation 阶段    | 借鉴分区策略              |
+| **上下文压缩** | 5 种策略 + 状态恢复      | 基础压缩              | **最高优先级借鉴**        |
+| **延迟加载**   | ToolSearch + shouldDefer | 全量注入              | 借鉴延迟加载              |
+| **权限系统**   | 多路由处理器             | RBAC + 审计日志       | X-Mars 已较完善           |
+| **记忆系统**   | 4 类型 + 语义检索        | 基础记忆              | 借鉴分类 + 语义检索       |
+| **UI 渲染**    | Ink (终端 React)         | React 19 + Vite (Web) | 不同场景，各有优势        |
+| **远程协作**   | Bridge + Direct Connect  | HTTP + WebSocket      | 借鉴重连策略              |
+| **多模型**     | 单模型 (Claude)          | 10+ 提供商            | X-Mars 更灵活             |
+| **测试**       | 依赖注入 (QueryDeps)     | vitest + Playwright   | 借鉴窄 DI                 |
+| **构建**       | Bun bundler + feature()  | tsdown + Nx           | 借鉴死代码消除            |
+| **Hook 系统**  | 77 个 Hook 文件          | 31+ Hook 点           | X-Mars 设计更规范         |
+| **开发工具**   | VCR 录制/回放            | Devtools (23 断点)    | X-Mars 调试能力更强       |
 
 ### 7.4 优先级排序的行动建议
 
@@ -1955,4 +1955,4 @@ const value = getFeatureValue_CACHED_MAY_BE_STALE('gate_name', defaultValue)
 
 ---
 
-> **总结**：Claude Code 是一个高度工程化的 AI 编程助手，其核心竞争力在于：(1) 多策略上下文压缩 + Prompt Cache 优化实现的极致成本控制；(2) 只读并发/变更串行的工具编排模式；(3) 延迟加载 + 特性门控的精细化资源管理。Vitamin-Coding 已具备模块化架构优势和多模型灵活性，应优先借鉴 Claude Code 在上下文管理和工具编排方面的深度实现。
+> **总结**：Claude Code 是一个高度工程化的 AI 编程助手，其核心竞争力在于：(1) 多策略上下文压缩 + Prompt Cache 优化实现的极致成本控制；(2) 只读并发/变更串行的工具编排模式；(3) 延迟加载 + 特性门控的精细化资源管理。X-Mars-Coding 已具备模块化架构优势和多模型灵活性，应优先借鉴 Claude Code 在上下文管理和工具编排方面的深度实现。

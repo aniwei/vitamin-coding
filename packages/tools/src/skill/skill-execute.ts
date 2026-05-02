@@ -1,6 +1,6 @@
 import { z } from 'zod'
 
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 const SkillExecutorArgsSchema = z.object({
   name: z.string().describe('The name of the Skill to execute'),

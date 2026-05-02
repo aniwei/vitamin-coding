@@ -1,4 +1,4 @@
-// @vitamin/agent — Agent 核心
+// @x-mars/agent — Agent 核心
 
 // Agent 类与工厂
 export { Agent, createAgent, createAgentWithRegistry } from './agent'
@@ -51,11 +51,12 @@ export type {
   StreamFunction,
 } from './types'
 
-// Session 事件类型（供 @vitamin/service 等中间层使用，避免循环依赖）
+// Session 事件类型（供 @x-mars/service 等中间层使用，避免循环依赖）
 export type {
   AgentSessionEvent,
   AgentSessionEventType,
   AgentSessionSubscriber,
   AskUserQuestion,
   PatchReviewEvent,
+  PluginCommandDiagnostic,
 } from './session-events'

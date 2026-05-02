@@ -7,7 +7,7 @@ import { createFilePluginStateStore, normalizePluginState } from '../src/plugin-
 
 describe('PluginStateStore', () => {
   it('#then returns empty state when the state file does not exist', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugin-state-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugin-state-'))
     const store = createFilePluginStateStore({ workspaceDir: root })
 
     await expect(store.load()).resolves.toEqual({
@@ -17,7 +17,7 @@ describe('PluginStateStore', () => {
   })
 
   it('#then persists trusted and disabled plugin ids', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugin-state-'))
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugin-state-'))
     const store = createFilePluginStateStore({ workspaceDir: root })
 
     await store.trust('review-plugin')
@@ -55,10 +55,10 @@ describe('PluginStateStore', () => {
   })
 
   it('#then reports invalid json with the state file path', async () => {
-    const root = await mkdtemp(join(tmpdir(), 'vitamin-plugin-state-'))
-    const statePath = join(root, '.vitamin', 'plugins.json')
+    const root = await mkdtemp(join(tmpdir(), 'x-mars-plugin-state-'))
+    const statePath = join(root, '.x-mars', 'plugins.json')
     const store = createFilePluginStateStore({ workspaceDir: root, path: statePath })
-    await mkdir(join(root, '.vitamin'), { recursive: true })
+    await mkdir(join(root, '.x-mars'), { recursive: true })
     await writeFile(statePath, '{bad', 'utf-8')
 
     await expect(store.load()).rejects.toThrow(`Invalid plugin state file ${statePath}`)

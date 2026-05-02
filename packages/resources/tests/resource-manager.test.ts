@@ -20,8 +20,8 @@ describe('ResourceManager', () => {
 
     it('loads provided memories', async () => {
       const memories = new Map<string, string>()
-      memories.set('~/.vitamin/AGENTS.md', '# Global instructions\nBe helpful.')
-      memories.set('./.vitamin/AGENTS.md', '# Project notes\nUse TypeScript.')
+      memories.set('~/.x-mars/AGENTS.md', '# Global instructions\nBe helpful.')
+      memories.set('./.x-mars/AGENTS.md', '# Project notes\nUse TypeScript.')
 
       const loader = createInMemoryResourceManager({ memories })
       const resources = await loader.load()

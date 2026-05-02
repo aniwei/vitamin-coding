@@ -1,4 +1,4 @@
-import { HttpPersistence, RemotePersistenceError } from '@vitamin/persistence'
+import { HttpPersistence, RemotePersistenceError } from '@x-mars/persistence'
 import type { SessionSnapshot } from './types'
 
 export interface HttpSessionPersistenceOptions {

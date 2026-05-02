@@ -1,7 +1,7 @@
 import { describe, expect, it } from 'vitest'
 import { DeferredToolManager, createToolSearchTool, getDeferredToolNames } from '../src/deferred-tools'
 import type { AgentTool, ToolResult } from '../src/types'
-import type { ZodType } from '@vitamin/ai'
+import type { ZodType } from '@x-mars/ai'
 
 function makeSchema(props: Record<string, unknown> = {}): ZodType {
   return {

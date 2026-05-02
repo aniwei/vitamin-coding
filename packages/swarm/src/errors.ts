@@ -1,4 +1,4 @@
-import { AgentError } from '@vitamin/shared'
+import { AgentError } from '@x-mars/shared'
 
 /** Handoff 目标找不到 */
 export class HandoffTargetError extends AgentError {

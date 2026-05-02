@@ -1,10 +1,10 @@
 import { z } from 'zod'
 import { readFile } from 'node:fs/promises'
 import { resolve } from 'node:path'
-import { isFile, exists, mime } from '@vitamin/shared'
-import { truncateHead, formatBytes, normalizePath } from '@vitamin/shared'
-import { TOOLS_MAX_OUTPUT_BYTES, TOOLS_MAX_OUTPUT_LINES } from '@vitamin/env'
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import { isFile, exists, mime } from '@x-mars/shared'
+import { truncateHead, formatBytes, normalizePath } from '@x-mars/shared'
+import { TOOLS_MAX_OUTPUT_BYTES, TOOLS_MAX_OUTPUT_LINES } from '@x-mars/env'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 // 参数 schema
 const ReadArgsSchema = z.object({

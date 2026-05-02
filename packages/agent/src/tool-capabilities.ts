@@ -1,4 +1,4 @@
-import type { ToolCall } from '@vitamin/ai'
+import type { ToolCall } from '@x-mars/ai'
 import type { AgentTool } from './types'
 
 export function isToolCallReadOnly(tool: AgentTool | undefined, toolCall: ToolCall): boolean {

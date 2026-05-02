@@ -9,7 +9,7 @@ import type {
   PruneConfig,
   SnipConfig,
 } from './types'
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 
 export interface ContextBudgetPlannerConfig {
   contextWindow: number

@@ -78,7 +78,7 @@ export interface Provider {
   models: Model[]
 }
 
-import type { WebSocketMessage as ProtocolWebSocketMessage } from '@vitamin/protocol'
+import type { WebSocketMessage as ProtocolWebSocketMessage } from '@x-mars/protocol'
 
 // UI stores still normalize and read event payloads defensively because older
 // service events may contain compatibility fields beyond the strict protocol.

@@ -1,4 +1,4 @@
-# @vitamin/prompt
+# @x-mars/prompt
 
 ## 模块定位
 
@@ -37,11 +37,11 @@ tests/                      # 6 个测试文件
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/prompt build
-pnpm --filter @vitamin/prompt typecheck
-pnpm --filter @vitamin/prompt clean
+pnpm --filter @x-mars/prompt build
+pnpm --filter @x-mars/prompt typecheck
+pnpm --filter @x-mars/prompt clean
 ```
 
 ## 关联包
 
-`@vitamin/setting`、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+`@x-mars/setting`、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`

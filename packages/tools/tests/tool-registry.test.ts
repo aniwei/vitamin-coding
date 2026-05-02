@@ -1,8 +1,8 @@
-// @vitamin/tools ToolRegistry 测试
+// @x-mars/tools ToolRegistry 测试
 import { describe, expect, it } from 'vitest'
 import { ToolRegistry } from '../src/tool-registry'
 
-import type { AgentTool } from '@vitamin/agent'
+import type { AgentTool } from '@x-mars/agent'
 
 // 最小 AgentTool stub
 function makeTool(name: string): AgentTool {

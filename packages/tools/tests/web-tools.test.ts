@@ -1,5 +1,5 @@
 import { afterEach, describe, expect, it, vi } from 'vitest'
-import { ToolError } from '@vitamin/shared'
+import { ToolError } from '@x-mars/shared'
 import { htmlToText, htmlToMarkdown } from '../src/web/html-to-text'
 import { validateUrl } from '../src/web/url-validator'
 import { createWebFetch } from '../src/web/fetch'

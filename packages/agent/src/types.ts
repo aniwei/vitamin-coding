@@ -9,9 +9,9 @@ import type {
   TextContent,
   ThinkingLevel,
   ZodType,
-} from '@vitamin/ai'
-import type { Logger } from '@vitamin/shared'
-import type { Devtools, BreakpointPoint } from '@vitamin/devtools'
+} from '@x-mars/ai'
+import type { Logger } from '@x-mars/shared'
+import type { Devtools, BreakpointPoint } from '@x-mars/devtools'
 
 // Agent 运行状态
 export type AgentStatus =
@@ -78,7 +78,7 @@ export type AgentEvents = {
   [K in AgentEventType]: keyof AgentEventPayload<K> extends never
     ? () => void
     : (payload: AgentEventPayload<K>) => void
-} & import('@vitamin/shared').Events
+} & import('@x-mars/shared').Events
 
 // 工具调用事件信息
 export interface ToolCallEvent {

@@ -1,7 +1,7 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { readFile, writeFile, mkdir, chmod } from 'node:fs/promises'
 import { dirname } from 'node:path'
-import { AUTH_PATH } from '@vitamin/env'
+import { AUTH_PATH } from '@x-mars/env'
 import { OAuthRegistry, createDefaultOAuthRegistry } from './oauth-registry'
 
 import type { OAuthCredentials, OAuthLoginOptions, Provider } from './types'
@@ -26,7 +26,7 @@ export interface AuthStoreOptions {
   oauth?: OAuthRegistry
 }
 
-const logger = createLogger('@vitamin/ai:auth-store')
+const logger = createLogger('@x-mars/ai:auth-store')
 
 export class AuthStore {
   private readonly cache = new Map<string, AuthEntry>()

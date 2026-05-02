@@ -2,7 +2,7 @@ import { describe, expect, it } from 'vitest'
 import { prune } from '../src/prune'
 import { estimateTokens } from '../src/token-estimator'
 
-import type { Message, ToolResultMessage } from '@vitamin/ai'
+import type { Message, ToolResultMessage } from '@x-mars/ai'
 
 function userMsg(text: string): Message {
   return { role: 'user', content: [{ type: 'text', text }], timestamp: Date.now() }

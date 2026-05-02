@@ -1,2 +1,2 @@
-export { McpManager, createMcpManager } from '@vitamin/mcp'
-export type { McpManagerOptions } from '@vitamin/mcp'
+export { McpManager, createMcpManager } from '@x-mars/mcp'
+export type { McpManagerOptions } from '@x-mars/mcp'

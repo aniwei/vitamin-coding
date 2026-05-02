@@ -9,7 +9,7 @@ describe('DiskSessionPersistence', () => {
   let persistence: DiskSessionPersistence<string>
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'vitamin-session-test-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'x-mars-session-test-'))
     persistence = new DiskSessionPersistence<string>({ baseDir: tempDir })
   })
 
@@ -135,7 +135,7 @@ describe('DiskSessionPersistence#listPaginated', () => {
   let persistence: DiskSessionPersistence<string>
 
   beforeEach(async () => {
-    tempDir = await mkdtemp(join(tmpdir(), 'vitamin-session-page-'))
+    tempDir = await mkdtemp(join(tmpdir(), 'x-mars-session-page-'))
     persistence = new DiskSessionPersistence<string>({ baseDir: tempDir })
   })
 

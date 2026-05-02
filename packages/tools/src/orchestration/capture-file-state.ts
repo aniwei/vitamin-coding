@@ -1,7 +1,7 @@
 // capture_file_state 工具 — 捕获工作空间文件状态快照
 import { z } from 'zod'
 
-import type { AgentTool, ToolResult } from '@vitamin/agent'
+import type { AgentTool, ToolResult } from '@x-mars/agent'
 
 const CaptureFileStateArgsSchema = z.object({
   plan_status: z.string().optional().describe('Current plan execution status summary'),

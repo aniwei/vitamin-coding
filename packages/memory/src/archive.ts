@@ -1,12 +1,12 @@
 import { join } from 'node:path'
 import { writeFile, mkdir, readFile, readdir, stat } from 'node:fs/promises'
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { messageToText } from './token-estimator'
 
-import type { Message } from '@vitamin/ai'
+import type { Message } from '@x-mars/ai'
 import type { ArchiveStorage, ArchiveEntry, StorageType, StorageOptions } from './types'
 
-const logger = createLogger('@vitamin/memory:archive')
+const logger = createLogger('@x-mars/memory:archive')
 
 export class InMemoryArchiveStorage implements ArchiveStorage {
   readonly type: StorageType = 'memory'
@@ -177,7 +177,7 @@ export function createArchiveStorage(options: StorageOptions): ArchiveStorage {
     case 'file': {
       const baseDir =
         options.baseDir ??
-        `${process.env['VITAMIN_HOME'] ?? `${process.env['HOME']}/.vitamin`}/agent/archives`
+        `${process.env['X_MARS_HOME'] ?? `${process.env['HOME']}/.x-mars`}/agent/archives`
       return new LocalArchiveStorage(baseDir)
     }
 

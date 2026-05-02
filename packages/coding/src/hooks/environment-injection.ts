@@ -5,9 +5,9 @@
  * priority=25（在 tool-guidance 之后，phase-injection 之前）。
  */
 
-import { appendPromptSection, collectEnvironment, formatEnvironmentBlock } from '@vitamin/prompt'
-import type { HookSpec } from '@vitamin/hooks'
-import { defineHook } from '@vitamin/hooks'
+import { appendPromptSection, collectEnvironment, formatEnvironmentBlock } from '@x-mars/prompt'
+import type { HookSpec } from '@x-mars/hooks'
+import { defineHook } from '@x-mars/hooks'
 
 export function createEnvironmentInjectionHook(workspaceDir: string): HookSpec {
   return defineHook({

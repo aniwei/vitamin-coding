@@ -1,4 +1,4 @@
-import { normalizeKeysToCamel } from '@vitamin/shared/browser/data'
+import { normalizeKeysToCamel } from '@x-mars/shared/browser/data'
 
 export const API_BASE = '/api'
 

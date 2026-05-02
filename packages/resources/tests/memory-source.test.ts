@@ -12,8 +12,8 @@ describe('InMemoryMemorySource', () => {
 
   it('returns injection with memories', async () => {
     const memories = new Map<string, string>()
-    memories.set('~/.vitamin/AGENTS.md', '# Global\nBe helpful.')
-    memories.set('./.vitamin/AGENTS.md', '# Project\nUse TypeScript.')
+    memories.set('~/.x-mars/AGENTS.md', '# Global\nBe helpful.')
+    memories.set('./.x-mars/AGENTS.md', '# Project\nUse TypeScript.')
 
     const source = new InMemoryMemorySource(memories)
     const result = await source.load()

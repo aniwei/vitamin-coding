@@ -4,7 +4,7 @@ import { dirname, join } from 'node:path'
 import { spawnSync } from 'node:child_process'
 import { afterEach, describe, expect, it } from 'vitest'
 
-import { getThirdPartyToolBinaryDir, getThirdPartyToolDir } from '@vitamin/shared'
+import { getThirdPartyToolBinaryDir, getThirdPartyToolDir } from '@x-mars/shared'
 
 import {
   BinaryToolExecutor,
@@ -36,7 +36,7 @@ class DummyBinaryExecutor extends BinaryToolExecutor {
 }
 
 class EnsurePathExecutor extends BinaryToolExecutor {
-  public readonly name = 'vitamin_ensure_local_bin'
+  public readonly name = 'x_mars_ensure_local_bin'
   public readonly version = '1.0.0'
   public readonly repository = 'owner/repo'
 
@@ -68,10 +68,10 @@ describe('binary tools', () => {
     const ext = process.platform === 'win32' ? '.exe' : ''
     rmSync(getThirdPartyToolBinaryDir('fd') + ext, { force: true })
     rmSync(getThirdPartyToolBinaryDir('ripgrep') + ext, { force: true })
-    rmSync(getThirdPartyToolBinaryDir('vitamin_ensure_local_bin') + ext, { force: true })
+    rmSync(getThirdPartyToolBinaryDir('x_mars_ensure_local_bin') + ext, { force: true })
     rmSync(join(getThirdPartyToolDir(), 'fd-10.4.2'), { recursive: true, force: true })
     rmSync(join(getThirdPartyToolDir(), 'rg-15.1.0'), { recursive: true, force: true })
-    rmSync(join(getThirdPartyToolDir(), 'vitamin_ensure_local_bin-1.0.0'), { recursive: true, force: true })
+    rmSync(join(getThirdPartyToolDir(), 'x_mars_ensure_local_bin-1.0.0'), { recursive: true, force: true })
     process.env.PATH = originalPath
   })
 
@@ -140,7 +140,7 @@ describe('binary tools', () => {
   it('ensure returns third-party tool path when binary exists locally', async () => {
     const ext = process.platform === 'win32' ? '.exe' : ''
     const localPath =
-      getThirdPartyToolBinaryDir('vitamin_ensure_local_bin-1.0.0', 'vitamin_ensure_local_bin') + ext
+      getThirdPartyToolBinaryDir('x_mars_ensure_local_bin-1.0.0', 'x_mars_ensure_local_bin') + ext
 
     mkdirSync(dirname(localPath), { recursive: true })
     writeFileSync(localPath, 'placeholder', 'utf8')
@@ -160,7 +160,7 @@ describe('binary tools', () => {
 
   it('fd ensure resolves executable path in real environment', async () => {
     const canRun = isCommandAvailable('fd')
-    const allowDownload = process.env.VITAMIN_TEST_ALLOW_BINARY_DOWNLOAD === '1'
+    const allowDownload = process.env.X_MARS_TEST_ALLOW_BINARY_DOWNLOAD === '1'
 
     if (!canRun && !allowDownload) {
       return
@@ -175,7 +175,7 @@ describe('binary tools', () => {
 
   it('fd execute --version works in real environment', async () => {
     const canRun = isCommandAvailable('fd')
-    const allowDownload = process.env.VITAMIN_TEST_ALLOW_BINARY_DOWNLOAD === '1'
+    const allowDownload = process.env.X_MARS_TEST_ALLOW_BINARY_DOWNLOAD === '1'
 
     if (!canRun && !allowDownload) {
       return
@@ -190,7 +190,7 @@ describe('binary tools', () => {
 
   it('ripgrep ensure resolves executable path in real environment', async () => {
     const canRun = isCommandAvailable('rg')
-    const allowDownload = process.env.VITAMIN_TEST_ALLOW_BINARY_DOWNLOAD === '1'
+    const allowDownload = process.env.X_MARS_TEST_ALLOW_BINARY_DOWNLOAD === '1'
 
     if (!canRun && !allowDownload) {
       return
@@ -205,7 +205,7 @@ describe('binary tools', () => {
 
   it('ripgrep execute --version works in real environment', async () => {
     const canRun = isCommandAvailable('rg')
-    const allowDownload = process.env.VITAMIN_TEST_ALLOW_BINARY_DOWNLOAD === '1'
+    const allowDownload = process.env.X_MARS_TEST_ALLOW_BINARY_DOWNLOAD === '1'
 
     if (!canRun && !allowDownload) {
       return

@@ -1,4 +1,4 @@
-# @vitamin/tools 设计说明
+# @x-mars/tools 设计说明
 
 ## 设计目标
 
@@ -8,8 +8,8 @@
 
 ## 非目标
 
-- 不负责工具执行管线（由 `@vitamin/agent` ToolExecutor 完成）。
-- 不做权限判定（由 `@vitamin/hooks` PermissionGuardHook 完成）。
+- 不负责工具执行管线（由 `@x-mars/agent` ToolExecutor 完成）。
+- 不做权限判定（由 `@x-mars/hooks` PermissionGuardHook 完成）。
 
 ## 实现原理
 
@@ -119,7 +119,7 @@ interface ToolEntry {
 ## 实现流程
 
 ```
-VitaminApp 初始化
+XMarsApp 初始化
        |
   createToolRegistry() --> ToolRegistry
        |
@@ -153,7 +153,7 @@ VitaminApp 初始化
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/agent`（类型）、`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/agent`（类型）、`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`
 - **外部依赖**：`zod`
 
 ## 测试策略

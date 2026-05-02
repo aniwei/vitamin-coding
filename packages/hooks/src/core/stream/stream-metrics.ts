@@ -1,9 +1,9 @@
 // Stream Metrics Hook — 流式响应性能追踪
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'
 
-const log = createLogger('@vitamin/hooks:stream-metrics')
+const log = createLogger('@x-mars/hooks:stream-metrics')
 
 // 每 session 的流式指标
 const sessionMetrics = new Map<string, StreamMetrics>()

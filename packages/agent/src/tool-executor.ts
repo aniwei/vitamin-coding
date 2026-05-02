@@ -1,10 +1,10 @@
-import type { ToolCall } from '@vitamin/ai'
+import type { ToolCall } from '@x-mars/ai'
 import type {
   Devtools,
   PauseResumePayload,
   DebugSnapshot,
   MessageSummaryItem,
-} from '@vitamin/devtools'
+} from '@x-mars/devtools'
 import type {
   AgentMessage,
   AgentTool,

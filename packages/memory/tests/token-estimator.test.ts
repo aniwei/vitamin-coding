@@ -7,7 +7,7 @@ import {
   estimateContextTokens,
 } from '../src/token-estimator'
 
-import type { Message, AssistantMessage } from '@vitamin/ai'
+import type { Message, AssistantMessage } from '@x-mars/ai'
 
 function userMsg(text: string): Message {
   return { role: 'user', content: [{ type: 'text', text }], timestamp: Date.now() }

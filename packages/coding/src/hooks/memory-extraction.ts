@@ -1,10 +1,10 @@
-import type { HookSpec } from '@vitamin/hooks'
-import { defineHook } from '@vitamin/hooks'
-import { createLogger } from '@vitamin/shared'
-import type { MemoryManager } from '@vitamin/memory'
+import type { HookSpec } from '@x-mars/hooks'
+import { defineHook } from '@x-mars/hooks'
+import { createLogger } from '@x-mars/shared'
+import type { MemoryManager } from '@x-mars/memory'
 import type { AgentSession } from '../session/agent-session'
 
-const logger = createLogger('@vitamin/coding:hooks:memory-extraction')
+const logger = createLogger('@x-mars/coding:hooks:memory-extraction')
 const EXTRACTION_CONTEXT_MESSAGES = 2
 
 export function createMemoryExtractionHooks(

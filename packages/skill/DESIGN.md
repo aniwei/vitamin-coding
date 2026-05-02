@@ -1,4 +1,4 @@
-# @vitamin/skill 设计说明
+# @x-mars/skill 设计说明
 
 ## 设计目标
 
@@ -35,8 +35,8 @@
 
 自动扫描技能文件：
 
-- 项目级：`.vitamin/skills/` 目录
-- 用户级：`~/.vitamin/skills/` 目录
+- 项目级：`.x-mars/skills/` 目录
+- 用户级：`~/.x-mars/skills/` 目录
 - 递归扫描 `*.md` 文件
 - 返回 `DiscoveredSkill[]`（路径 + 元信息）
 
@@ -69,11 +69,11 @@
 ## 实现流程
 
 ```
-VitaminApp.init()
+XMarsApp.init()
        |
   SkillRegistry.discover()
        |
-  扫描 .vitamin/skills/ + ~/.vitamin/skills/
+  扫描 .x-mars/skills/ + ~/.x-mars/skills/
        |
   遍历 *.md → SkillParser.parse() → Skill 对象
        |
@@ -101,7 +101,7 @@ VitaminApp.init()
 ## 入口与依赖
 
 - **入口**：`src/index.ts`
-- **内部依赖**：`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+- **内部依赖**：`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`
 - **外部依赖**：无
 
 ## 测试策略

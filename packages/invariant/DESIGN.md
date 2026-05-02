@@ -1,10 +1,10 @@
-# @vitamin/invariant 设计说明
+# @x-mars/invariant 设计说明
 
 ## 设计目标
 
 - 提供轻量的运行时断言工具，替代 `if (!cond) throw new Error(...)` 模式。
 - 提供构建期的 Rollup/tsdown 插件，在生产构建中删除 invariant 调用，减小包体积。
-- 作为全局最底层依赖，自身不依赖任何其他 Vitamin 包。
+- 作为全局最底层依赖，自身不依赖任何其他 X-Mars 包。
 - 支持开发期精确断言 + 生产构建自动剥离，实现零运行时开销。
 
 ## 非目标

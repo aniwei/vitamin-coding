@@ -1,8 +1,8 @@
-# @vitamin/web-ui
+# @x-mars/web-ui
 
 ## 模块定位
 
-Vitamin 的 Web 前端界面，基于 React 18 + Vite + Tailwind CSS 构建，提供聊天、代码百科、追踪分析三大页面。
+X-Mars 的 Web 前端界面，基于 React 18 + Vite + Tailwind CSS 构建，提供聊天、代码百科、追踪分析三大页面。
 
 ## 核心功能
 
@@ -45,11 +45,11 @@ src/
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/web-ui dev       # Vite 开发服务器
-pnpm --filter @vitamin/web-ui build     # 生产构建
-pnpm --filter @vitamin/web-ui preview   # 预览构建产物
+pnpm --filter @x-mars/web-ui dev       # Vite 开发服务器
+pnpm --filter @x-mars/web-ui build     # 生产构建
+pnpm --filter @x-mars/web-ui preview   # 预览构建产物
 ```
 
 ## 关联包
 
-通过 HTTP/WebSocket 与 `@vitamin/service` 通信。
+通过 HTTP/WebSocket 与 `@x-mars/service` 通信。

@@ -1,8 +1,8 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import type { SettingStore, HttpSettingStoreOptions } from './store'
-import type { VitaminSetting } from './types'
+import type { XMarsSetting } from './types'
 
-const logger = createLogger('@vitamin/setting:remote-store')
+const logger = createLogger('@x-mars/setting:remote-store')
 
 export class RemoteSettingStore implements SettingStore {
   readonly type = 'http' as const
@@ -57,7 +57,7 @@ export class RemoteSettingStore implements SettingStore {
     }
   }
 
-  async write(path: string, setting: Partial<VitaminSetting>): Promise<void> {
+  async write(path: string, setting: Partial<XMarsSetting>): Promise<void> {
     const response = await this.fetch(`${this.baseUrl}/setting`, {
       method: 'PUT',
       headers: await this.headers(),

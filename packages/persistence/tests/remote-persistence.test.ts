@@ -128,13 +128,13 @@ describe('RemotePersistence', () => {
     const { persistence, captured } = createTestPersistence({
       handler: () => jsonResponse({ ids: [] }),
       token: 'secret-token',
-      getHeaders: async () => ({ 'X-Team': 'vitamin' }),
+      getHeaders: async () => ({ 'X-Team': 'xMars' }),
     })
 
     await persistence.list()
 
     expect(captured[0]!.headers['Authorization']).toBe('Bearer secret-token')
-    expect(captured[0]!.headers['X-Team']).toBe('vitamin')
+    expect(captured[0]!.headers['X-Team']).toBe('xMars')
     expect(captured[0]!.headers['Accept']).toBe('application/json')
   })
 

@@ -1,19 +1,19 @@
 import { describe, expect, it } from 'vitest'
-import { Agent } from '@vitamin/agent'
-import { createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent, type ToolCall } from '@vitamin/ai'
-import { createHookRegistry } from '@vitamin/hooks'
-import { appendPromptSection } from '@vitamin/prompt'
-import { createInMemorySessionStore } from '@vitamin/session'
-import { ToolRegistry } from '@vitamin/tools'
+import { Agent } from '@x-mars/agent'
+import { createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent, type ToolCall } from '@x-mars/ai'
+import { createHookRegistry } from '@x-mars/hooks'
+import { appendPromptSection } from '@x-mars/prompt'
+import { createInMemorySessionStore } from '@x-mars/session'
+import { ToolRegistry } from '@x-mars/tools'
 
 import { AgentSession } from '../src/session/agent-session'
-import { createVitamin } from '../src/app/vitamin-app'
-import { createProviderRegistry } from '@vitamin/ai'
+import { createXMars } from '../src/app/x-mars-app'
+import { createProviderRegistry } from '@x-mars/ai'
 import { createToolGuidanceHook } from '../src/hooks/tool-guidance'
 import { createSkillCatalogHook } from '../src/hooks/skill-catalog'
 import { buildMcpContextSection } from '../src/hooks/mcp-injection'
-import type { McpManager } from '@vitamin/tools'
-import type { SkillProvider } from '@vitamin/skill'
+import type { McpManager } from '@x-mars/tools'
+import type { SkillProvider } from '@x-mars/skill'
 
 function makeModel(): Model {
   return {
@@ -406,7 +406,7 @@ describe('coding hooks integration', () => {
     expect(toolResultMessage?.content[0]?.text).toBe('from-after-hook')
   })
 
-  it('emits session lifecycle hooks through VitaminApp', async () => {
+  it('emits session lifecycle hooks through XMarsApp', async () => {
     const lifecycleEvents: string[] = []
     const hooks = createHookRegistry({ preset: 'none' })
     hooks.on('session.created', 'track-created', (input) => {
@@ -431,11 +431,11 @@ describe('coding hooks integration', () => {
       },
     }))
 
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-test',
+        name: 'x-mars-test',
         level: 'error',
         destination: 'stdout',
       },
@@ -491,7 +491,7 @@ describe('coding hooks integration', () => {
     expect(compactionEvents[1]).toMatch(/^after:\d+$/)
   })
 
-  it('emits background.start and background.end hooks through VitaminApp', async () => {
+  it('emits background.start and background.end hooks through XMarsApp', async () => {
     const bgEvents: string[] = []
     const hooks = createHookRegistry({ preset: 'none' })
     hooks.on('background.start', 'track-bg-start', (input) => {
@@ -501,11 +501,11 @@ describe('coding hooks integration', () => {
       bgEvents.push(`end:${input.taskId}:${input.agentName}:${input.success}`)
     })
 
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-test',
+        name: 'x-mars-test',
         level: 'error',
         destination: 'stdout',
       },

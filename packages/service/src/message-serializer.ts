@@ -4,9 +4,9 @@
  * 统一的消息序列化工具，供 chat 和 sessions 路由共用。
  */
 
-import type { AgentSession } from '@vitamin/coding'
-import type { AgentMessage } from '@vitamin/agent'
-import type { TextContent, ToolCall } from '@vitamin/ai'
+import type { AgentSession } from '@x-mars/coding'
+import type { AgentMessage } from '@x-mars/agent'
+import type { TextContent, ToolCall } from '@x-mars/ai'
 
 export interface SerializedToolCall {
   id: string

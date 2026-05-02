@@ -6,14 +6,14 @@ export function createSessionsRoute(context: CodingService): Hono {
   const app = new Hono()
 
   app.get('/', (c) => {
-    const sessions = context.vitamin.listSessions()
+    const sessions = context.xMars.listSessions()
     return c.json(
       sessions.map((s) => ({
         id: s.id,
         createdAt: s.createdAt.toISOString(),
         updatedAt: s.updatedAt?.toISOString(),
         messageCount: s.messageCount,
-        workingDirectory: context.vitamin.workspaceDir,
+        workingDirectory: context.xMars.workspaceDir,
         title: s.model ?? s.id,
         status: s.status,
       })),
@@ -22,13 +22,13 @@ export function createSessionsRoute(context: CodingService): Hono {
 
   app.post('/', async (c) => {
     await c.req.json<{ workingDirectory?: string }>().catch(() => ({}))
-    const session = await context.vitamin.createSession()
+    const session = await context.xMars.createSession()
     return c.json({
       status: 'ok',
       message: 'session created',
       session: {
         id: session.id,
-        workingDirectory: context.vitamin.workspaceDir,
+        workingDirectory: context.xMars.workspaceDir,
         createdAt: new Date().toISOString(),
       },
     })
@@ -41,7 +41,7 @@ export function createSessionsRoute(context: CodingService): Hono {
     }
     return c.json({
       id: session.id,
-      workingDirectory: context.vitamin.workspaceDir,
+      workingDirectory: context.xMars.workspaceDir,
       messageCount: session.session.messages().length,
       status: session.status,
     })

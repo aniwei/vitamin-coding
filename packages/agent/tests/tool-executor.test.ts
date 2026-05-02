@@ -1,9 +1,9 @@
-// @vitamin/agent tool-executor 测试
+// @x-mars/agent tool-executor 测试
 import { describe, expect, it } from 'vitest'
 import { createToolExecutor } from '../src/tool-executor'
 import { DeferredToolManager } from '../src/deferred-tools'
 
-import type { ToolCall } from '@vitamin/ai'
+import type { ToolCall } from '@x-mars/ai'
 import type { AgentTool, ToolHookExecutor } from '../src/types'
 
 // 简单 Zod-like schema stub

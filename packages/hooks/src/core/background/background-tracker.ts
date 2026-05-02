@@ -1,8 +1,8 @@
-import { createLogger } from '@vitamin/shared'
+import { createLogger } from '@x-mars/shared'
 import { defineHook } from '../../hook-spec'
 import type { HookSpec } from '../../hook-spec'
 
-const log = createLogger('@vitamin/hooks:background-tracker')
+const log = createLogger('@x-mars/hooks:background-tracker')
 
 interface BackgroundTaskRecord {
   taskId: string

@@ -1,5 +1,5 @@
-import type { ToolHookExecutor, ToolResult } from '@vitamin/agent'
-import type { HookRegistry } from '@vitamin/hooks'
+import type { ToolHookExecutor, ToolResult } from '@x-mars/agent'
+import type { HookRegistry } from '@x-mars/hooks'
 
 interface ToolHookOptions {
   hookRegistry: HookRegistry

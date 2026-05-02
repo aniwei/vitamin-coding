@@ -1,1 +1,1 @@
-export type * from '@vitamin/mcp'
+export type * from '@x-mars/mcp'

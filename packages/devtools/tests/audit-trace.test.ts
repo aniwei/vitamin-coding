@@ -7,7 +7,7 @@ import {
 } from '../src/audit-trace'
 
 describe('AuditTraceRecorder', () => {
-  it('records debug, tool, permission, and model events with redaction', () => {
+  it('records debug, tool, permission, plugin command, and model events with redaction', () => {
     let now = 1000
     const recorder = new AuditTraceRecorder({
       id: 'trace-test',
@@ -30,6 +30,14 @@ describe('AuditTraceRecorder', () => {
       toolName: 'bash',
       decision: { effect: 'deny', ruleName: 'deny-test' },
     }, 's1')
+    recorder.recordPluginCommand({
+      kind: 'plugin-command',
+      pluginId: 'deploy-plugin',
+      commandName: 'deploy',
+      stage: 'handler',
+      status: 'failed',
+      token: 'secret',
+    }, 's1')
     recorder.recordModelResponse({
       model: 'test-model',
       apiKey: 'secret',
@@ -44,13 +52,15 @@ describe('AuditTraceRecorder', () => {
       createdAt: 1000,
       metadata: { token: '[REDACTED]', scenario: 'unit' },
     })
-    expect(trace.events.map((event) => event.seq)).toEqual([1, 2, 3, 4])
+    expect(trace.events.map((event) => event.seq)).toEqual([1, 2, 3, 4, 5])
     expect(trace.events[1]!.payload).toEqual({
       type: 'started',
       toolName: 'bash',
       args: { command: 'echo ok', authorization: '[REDACTED]' },
     })
-    expect(trace.events[3]!.payload.apiKey).toBe('[REDACTED]')
+    expect(trace.events[3]!.type).toBe('plugin.command')
+    expect(trace.events[3]!.payload.token).toBe('[REDACTED]')
+    expect(trace.events[4]!.payload.apiKey).toBe('[REDACTED]')
   })
 
   it('keeps only the newest maxEvents entries', () => {
@@ -93,12 +103,18 @@ describe('replayAuditTrace', () => {
           type: 'permission.decision',
           payload: { decision: { effect: 'deny' } },
         },
+        {
+          seq: 4,
+          timestamp: 4,
+          type: 'plugin.command',
+          payload: { kind: 'plugin-command', commandName: 'deploy', stage: 'handler' },
+        },
       ],
     }
 
     const result = replayAuditTrace(trace, {
-      minEvents: 3,
-      eventTypes: ['debug.snapshot', 'tool.execution', 'permission.decision'],
+      minEvents: 4,
+      eventTypes: ['debug.snapshot', 'tool.execution', 'permission.decision', 'plugin.command'],
       permissionEffects: ['deny'],
       toolNames: ['bash'],
     })

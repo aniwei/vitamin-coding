@@ -11,7 +11,7 @@ import { createWrite } from '../src/fs/write'
 let workspaceDir = ''
 
 async function createWorkspace(): Promise<string> {
-  workspaceDir = await mkdtemp(join(tmpdir(), 'vitamin-tools-'))
+  workspaceDir = await mkdtemp(join(tmpdir(), 'x-mars-tools-'))
   return workspaceDir
 }
 

@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/coding",
+  "name": "@x-mars/coding",
   "version": "0.0.1",
   "files": [
     "dist"
@@ -19,8 +19,8 @@
   },
   "scripts": {
     "run:example:auth": "tsx example/auth-store-example.ts",
-    "run:example": "tsx example/vitamin-app-example.tsx",
-    "run:example:smoke": "tsx example/vitamin-app-smoke.tsx",
+    "run:example": "tsx example/x-mars-app-example.tsx",
+    "run:example:smoke": "tsx example/x-mars-app-smoke.tsx",
     "run:example:simple": "tsx example/simple-task.ts",
     "run:example:simple:write": "tsx example/simple-write-file-task.ts",
     "run:example:complex": "tsx example/complex-task.ts",
@@ -35,20 +35,20 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/agent": "workspace:*",
-    "@vitamin/ai": "workspace:*",
-    "@vitamin/devtools": "workspace:*",
-    "@vitamin/env": "workspace:*",
-    "@vitamin/hooks": "workspace:*",
-    "@vitamin/invariant": "workspace:*",
-    "@vitamin/memory": "workspace:*",
-    "@vitamin/orchestrator": "workspace:*",
-    "@vitamin/prompt": "workspace:*",
-    "@vitamin/resources": "workspace:*",
-    "@vitamin/session": "workspace:*",
-    "@vitamin/setting": "workspace:*",
-    "@vitamin/shared": "workspace:*",
-    "@vitamin/skill": "workspace:*",
-    "@vitamin/tools": "workspace:*"
+    "@x-mars/agent": "workspace:*",
+    "@x-mars/ai": "workspace:*",
+    "@x-mars/devtools": "workspace:*",
+    "@x-mars/env": "workspace:*",
+    "@x-mars/hooks": "workspace:*",
+    "@x-mars/invariant": "workspace:*",
+    "@x-mars/memory": "workspace:*",
+    "@x-mars/orchestrator": "workspace:*",
+    "@x-mars/prompt": "workspace:*",
+    "@x-mars/resources": "workspace:*",
+    "@x-mars/session": "workspace:*",
+    "@x-mars/setting": "workspace:*",
+    "@x-mars/shared": "workspace:*",
+    "@x-mars/skill": "workspace:*",
+    "@x-mars/tools": "workspace:*"
   }
 }

@@ -7,7 +7,7 @@ import {
   registerPluginLogContribution,
   unregisterPluginLogContribution,
 } from '../src/logger'
-import { LOG_FILE } from '@vitamin/env'
+import { LOG_FILE } from '@x-mars/env'
 
 describe('createLogger', () => {
   describe('#given a name', () => {
@@ -22,7 +22,7 @@ describe('createLogger', () => {
   })
 
   describe('#given log output to file', () => {
-    it('#then writes JSON Lines to vitamin.log', async () => {
+    it('#then writes JSON Lines to x-mars.log', async () => {
       const log = createLogger('test:file-output')
       const batch = `test-batch-${Date.now()}`
       for (let index = 0; index < 10; index++) {

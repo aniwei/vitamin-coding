@@ -32,6 +32,35 @@ describe('routeSessionEvent', () => {
     ])
   })
 
+  it('routes plugin command diagnostics to websocket messages', () => {
+    const diagnostic = {
+      kind: 'plugin-command' as const,
+      pluginId: 'deploy-plugin',
+      commandName: 'deploy',
+      stage: 'permission' as const,
+      status: 'denied' as const,
+      permission: 'shell',
+      effect: 'deny' as const,
+      reason: 'blocked by policy',
+    }
+
+    const messages = routeSessionEvent({
+      type: 'plugin_command_diagnostic',
+      sessionId: 's1',
+      diagnostic,
+    })
+
+    expect(messages).toEqual([
+      {
+        type: 'Plugin.commandDiagnostic',
+        data: {
+          sessionId: 's1',
+          diagnostic,
+        },
+      },
+    ])
+  })
+
   it('routes patch review events to websocket messages', () => {
     const review = {
       id: 'tc1:patch-review',

@@ -7,7 +7,7 @@ export function createSettingRoute(service: CodingService): Hono {
   app.get('/', (c) => {
     const active = service.getActiveSession()
     return c.json({
-      workingDirectory: service.vitamin.workspaceDir,
+      workingDirectory: service.xMars.workspaceDir,
       model: active?.model?.id,
       modelProvider: active?.model?.provider,
     })
@@ -19,7 +19,7 @@ export function createSettingRoute(service: CodingService): Hono {
   })
 
   app.get('/providers', (c) => {
-    const providerApis = service.vitamin.providerRegistry.list()
+    const providerApis = service.xMars.providerRegistry.list()
     return c.json(
       providerApis.map((api) => ({
         id: api,
@@ -32,7 +32,7 @@ export function createSettingRoute(service: CodingService): Hono {
   app.post('/verify-model', async (c) => {
     const body = await c.req.json<{ provider: string; model: string }>()
     try {
-      const model = service.vitamin.modelRegistry.resolve(body.model)
+      const model = service.xMars.modelRegistry.resolve(body.model)
       return c.json({ valid: !!model })
     } catch {
       return c.json({ valid: false, error: 'model not found' })

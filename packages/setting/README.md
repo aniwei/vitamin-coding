@@ -1,8 +1,8 @@
-# @vitamin/setting
+# @x-mars/setting
 
 ## 模块定位
 
-提供 Vitamin 配置的加载、合并、校验、迁移与监控能力，支持文件/远程/内存三种配置源。
+提供 X-Mars 配置的加载、合并、校验、迁移与监控能力，支持文件/远程/内存三种配置源。
 
 ## 核心功能
 
@@ -35,11 +35,11 @@ tests/                  # 5 个测试文件
 ## 开发命令
 
 ```bash
-pnpm --filter @vitamin/setting build
-pnpm --filter @vitamin/setting typecheck
-pnpm --filter @vitamin/setting clean
+pnpm --filter @x-mars/setting build
+pnpm --filter @x-mars/setting typecheck
+pnpm --filter @x-mars/setting clean
 ```
 
 ## 关联包
 
-`@vitamin/shared`、`@vitamin/env`、`@vitamin/invariant`
+`@x-mars/shared`、`@x-mars/env`、`@x-mars/invariant`

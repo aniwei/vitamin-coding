@@ -11,13 +11,13 @@
  *   - session-learning-cleanup (session.deleted observer)
  */
 
-import type { HookSpec } from '@vitamin/hooks'
-import { defineHook } from '@vitamin/hooks'
-import { createLogger } from '@vitamin/shared'
+import type { HookSpec } from '@x-mars/hooks'
+import { defineHook } from '@x-mars/hooks'
+import { createLogger } from '@x-mars/shared'
 import type { AgentSession } from '../session/agent-session'
-import type { PromptManager } from '@vitamin/prompt'
+import type { PromptManager } from '@x-mars/prompt'
 
-const logger = createLogger('@vitamin/coding:hooks:session-learning')
+const logger = createLogger('@x-mars/coding:hooks:session-learning')
 
 export function createSessionLearningHooks(
   getSession: (id: string) => AgentSession | undefined,

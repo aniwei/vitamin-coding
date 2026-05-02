@@ -1,5 +1,5 @@
-import type { AgentSessionEvent } from '@vitamin/agent'
-import type { WebSocketMessage } from '@vitamin/protocol'
+import type { AgentSessionEvent } from '@x-mars/agent'
+import type { WebSocketMessage } from '@x-mars/protocol'
 
 export type {
   WebSocketMessage,
@@ -16,7 +16,7 @@ export type {
   DebuggerCommandData,
   DebuggerSetBreakpointData,
   DebuggerSetBreakpointsActiveData,
-} from '@vitamin/protocol'
+} from '@x-mars/protocol'
 
 // ─── Service options ──────────────────────────────────────────────────────────
 

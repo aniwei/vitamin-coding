@@ -7,8 +7,8 @@ import type {
   SwarmContext,
   SwarmRunContextFactory,
 } from '../src/types'
-import type { AgentRunContext } from '@vitamin/agent'
-import type { Model } from '@vitamin/ai'
+import type { AgentRunContext } from '@x-mars/agent'
+import type { Model } from '@x-mars/ai'
 
 // ─── 测试用 fixtures ───
 

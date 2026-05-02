@@ -1,19 +1,19 @@
-import { loadSetting, createSettingWatcher } from '@vitamin/setting'
-import type { VitaminSetting, SettingStore } from '@vitamin/setting'
-import { createLogger, TypedEventEmitter, type Events } from '@vitamin/shared'
-import type { SettingWatcher } from '@vitamin/setting'
+import { loadSetting, createSettingWatcher } from '@x-mars/setting'
+import type { XMarsSetting, SettingStore } from '@x-mars/setting'
+import { createLogger, TypedEventEmitter, type Events } from '@x-mars/shared'
+import type { SettingWatcher } from '@x-mars/setting'
 import { resolve } from 'node:path'
 
-const logger = createLogger('@vitamin/resource:settings-manager')
+const logger = createLogger('@x-mars/resource:settings-manager')
 
 export interface SettingsOptions {
   workspaceDir?: string
   projectConfigPath?: string
-  overrides?: Partial<VitaminSetting>
+  overrides?: Partial<XMarsSetting>
 }
 
 interface SettingsEvents extends Events {
-  change: (config: VitaminSetting) => void
+  change: (config: XMarsSetting) => void
 }
 
 export type SettingsManagerOptions = SettingsOptions
@@ -23,10 +23,10 @@ export class SettingsManager extends TypedEventEmitter<SettingsEvents> {
 
   private readonly paths: string[]
   private readonly watch: boolean
-  private overrides: Partial<VitaminSetting>
+  private overrides: Partial<XMarsSetting>
 
   private store: SettingStore | undefined
-  private setting: VitaminSetting = {} as VitaminSetting
+  private setting: XMarsSetting = {} as XMarsSetting
 
   constructor(options: SettingsOptions = {}) {
     super()
@@ -35,31 +35,31 @@ export class SettingsManager extends TypedEventEmitter<SettingsEvents> {
     this.overrides = { ...options.overrides }
   }
 
-  get<K extends keyof VitaminSetting>(key: K): VitaminSetting[K] {
+  get<K extends keyof XMarsSetting>(key: K): XMarsSetting[K] {
     return this.setting[key]
   }
 
-  get config(): Readonly<VitaminSetting> {
+  get config(): Readonly<XMarsSetting> {
     return this.snapshot
   }
 
-  get model(): VitaminSetting['model'] {
+  get model(): XMarsSetting['model'] {
     return this.setting.model
   }
 
-  get compaction(): VitaminSetting['compaction'] {
+  get compaction(): XMarsSetting['compaction'] {
     return this.setting.compaction
   }
 
-  get session(): VitaminSetting['session'] {
+  get session(): XMarsSetting['session'] {
     return this.setting.session
   }
 
-  get snapshot(): Readonly<VitaminSetting> {
+  get snapshot(): Readonly<XMarsSetting> {
     return this.setting
   }
 
-  async load(): Promise<VitaminSetting> {
+  async load(): Promise<XMarsSetting> {
     const setting = await this.reload(this.overrides)
 
     if (this.watch && this.paths.length > 0 && !this.watcher) {
@@ -69,7 +69,7 @@ export class SettingsManager extends TypedEventEmitter<SettingsEvents> {
     return setting
   }
 
-  async reload(overrides?: Partial<VitaminSetting>): Promise<VitaminSetting> {
+  async reload(overrides?: Partial<XMarsSetting>): Promise<XMarsSetting> {
     const setting = await loadSetting({
       store: this.store,
       paths: this.paths,
@@ -85,7 +85,7 @@ export class SettingsManager extends TypedEventEmitter<SettingsEvents> {
     return this.setting
   }
 
-  async update(overrides: Partial<VitaminSetting>): Promise<VitaminSetting> {
+  async update(overrides: Partial<XMarsSetting>): Promise<XMarsSetting> {
     this.overrides = {
       ...this.overrides,
       ...overrides,
@@ -126,7 +126,7 @@ function buildSettingPaths(options: SettingsOptions): string[] {
   }
 
   if (options.workspaceDir) {
-    return [resolve(options.workspaceDir, '.vitamin/config.jsonc')]
+    return [resolve(options.workspaceDir, '.x-mars/config.jsonc')]
   }
 
   return []

@@ -1,5 +1,5 @@
 {
-  "name": "@vitamin/cli",
+  "name": "@x-mars/cli",
   "version": "0.0.1",
   "type": "module",
   "main": "./dist/index.js",
@@ -14,7 +14,7 @@
     "dist"
   ],
   "bin": {
-    "vitamin": "./bin/vitamin.js"
+    "x-mars": "./bin/x-mars"
   },
   "scripts": {
     "build": "tsdown",
@@ -24,11 +24,11 @@
     "clean": "rm -rf dist"
   },
   "dependencies": {
-    "@vitamin/ai": "workspace:*",
-    "@vitamin/coding": "workspace:*",
-    "@vitamin/setting": "workspace:*",
-    "@vitamin/hooks": "workspace:*",
-    "@vitamin/tools": "workspace:*"
+    "@x-mars/ai": "workspace:*",
+    "@x-mars/coding": "workspace:*",
+    "@x-mars/setting": "workspace:*",
+    "@x-mars/hooks": "workspace:*",
+    "@x-mars/tools": "workspace:*"
   },
   "publishConfig": {
     "access": "public",

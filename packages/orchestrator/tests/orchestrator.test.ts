@@ -1,5 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import { HookRegistry } from '@vitamin/hooks'
+import { HookRegistry } from '@x-mars/hooks'
 import { Orchestrator } from '../src/orchestrator'
 import type { RunSessionOptions, RunSessionResult } from '../src/executor'
 

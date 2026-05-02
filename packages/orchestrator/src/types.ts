@@ -1,4 +1,4 @@
-import type { HookRegistry } from '@vitamin/hooks'
+import type { HookRegistry } from '@x-mars/hooks'
 import type { RunSessionOptions, RunSessionResult } from './executor'
 
 export type TaskStatus =
@@ -87,7 +87,7 @@ export interface Task {
 
 export interface OrchestratorOptions {
   hookRegistry: HookRegistry
-  /** 由 VitaminApp 注入：创建子 session → prompt → 提取输出文本 */
+  /** 由 XMarsApp 注入：创建子 session → prompt → 提取输出文本 */
   runSession: (options: RunSessionOptions) => Promise<RunSessionResult>
   /** 可选：外部 abort 回调 */
   abortTask?: (taskId: string) => void

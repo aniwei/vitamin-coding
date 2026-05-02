@@ -7,12 +7,12 @@
  *  3. 直接写入并持久化 API key
  *  4. GitHub Copilot OAuth 登录 / 登出
  *  5. 自定义凭据文件路径
- *  6. 通过 VitaminApp 访问 authStore
+ *  6. 通过 XMarsApp 访问 authStore
  */
 
-import { createVitamin } from '../src'
-import { createDefaultAuthStore } from '@vitamin/ai'
-import type { OAuthInfo } from '@vitamin/ai'
+import { createXMars } from '../src'
+import { createDefaultAuthStore } from '@x-mars/ai'
+import type { OAuthInfo } from '@x-mars/ai'
 
 // ─── 场景 1：环境变量自动读取 ────────────────────────────────────────────────
 
@@ -89,7 +89,7 @@ async function exampleOAuthLogin() {
 
 async function exampleCustomPath() {
   const projectStore = createDefaultAuthStore({
-    path: '/tmp/my-project/.vitamin/auth.json',
+    path: '/tmp/my-project/.x-mars/auth.json',
     env: {
       openai: 'MY_PROJECT_OPENAI_KEY', // 覆盖默认环境变量名
     },
@@ -100,10 +100,10 @@ async function exampleCustomPath() {
   console.log('project auth saved to:', projectStore.path)
 }
 
-// ─── 场景 6：通过 VitaminApp 访问 authStore ──────────────────────────────────
+// ─── 场景 6：通过 XMarsApp 访问 authStore ──────────────────────────────────
 
-async function exampleVitaminAppAuth() {
-  const app = createVitamin({
+async function exampleXMarsAppAuth() {
+  const app = createXMars({
     port: 3000,
     inspect: false,
     logger: {
@@ -145,7 +145,7 @@ async function exampleVitaminAppAuth() {
   }
 
   await app.start()
-  console.log('VitaminApp started with authStore path:', app.authStore.path)
+  console.log('XMarsApp started with authStore path:', app.authStore.path)
   await app.stop()
 }
 
@@ -167,8 +167,8 @@ async function main() {
   console.log('\n=== 场景 5：自定义凭据文件路径 ===')
   await exampleCustomPath()
 
-  console.log('\n=== 场景 6：通过 VitaminApp 访问 authStore ===')
-  await exampleVitaminAppAuth()
+  console.log('\n=== 场景 6：通过 XMarsApp 访问 authStore ===')
+  await exampleXMarsAppAuth()
 }
 
 main().catch((error) => {

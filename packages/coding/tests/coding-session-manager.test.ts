@@ -1,8 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { Agent } from '@vitamin/agent'
-import { createDefaultProviderRegistry, createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent } from '@vitamin/ai'
-import { createHookRegistry } from '@vitamin/hooks'
-import { attachLogListener, createLogger } from '@vitamin/shared'
+import { Agent } from '@x-mars/agent'
+import { createDefaultProviderRegistry, createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent } from '@x-mars/ai'
+import { createHookRegistry } from '@x-mars/hooks'
+import { attachLogListener, createLogger } from '@x-mars/shared'
 
 import { CodingSessionManager as SessionManager, createInMemoryCodingSessionManager } from '../src/session/coding-session-manager'
 import { AgentSession } from '../src/session/agent-session'
@@ -60,7 +60,7 @@ function createLogCollector(entries: string[]) {
   return {
     logger: createLogger(name, {
       level: 'debug',
-      destination: '/tmp/vitamin-coding-test.log',
+      destination: '/tmp/x-mars-coding-test.log',
     }),
     detach,
   }

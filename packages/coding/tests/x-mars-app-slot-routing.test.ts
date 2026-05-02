@@ -1,9 +1,9 @@
 import { describe, expect, it } from 'vitest'
 
-import { createDefaultProviderRegistry, createProviderRegistry } from '@vitamin/ai'
-import type { AssistantMessage, Model, ProviderStream } from '@vitamin/ai'
-import { isPromptAssembly } from '@vitamin/prompt'
-import { createVitamin } from '../src/app/vitamin-app'
+import { createDefaultProviderRegistry, createProviderRegistry } from '@x-mars/ai'
+import type { AssistantMessage, Model, ProviderStream } from '@x-mars/ai'
+import { isPromptAssembly } from '@x-mars/prompt'
+import { createXMars } from '../src/app/x-mars-app'
 
 function makeModel(id: string): Model {
   const [, name = id] = id.split('/')
@@ -49,14 +49,14 @@ function makeStreamingProviderRegistry(text: string) {
   return registry
 }
 
-function toSystemPrompt(value: Awaited<ReturnType<NonNullable<Awaited<ReturnType<ReturnType<typeof createVitamin>['createSession']>>['promptRefresh']>>>): string {
+function toSystemPrompt(value: Awaited<ReturnType<NonNullable<Awaited<ReturnType<ReturnType<typeof createXMars>['createSession']>>['promptRefresh']>>>): string {
   if (isPromptAssembly(value)) {
     return value.systemPrompt
   }
   return value ?? ''
 }
 
-describe('VitaminApp slot routing', () => {
+describe('XMarsApp slot routing', () => {
   it('uses explicit slot mapping when creating a session', async () => {
     const baseModel = makeModel('openai/base-model')
     const reviewModel = makeModel('openai/review-model')
@@ -64,11 +64,11 @@ describe('VitaminApp slot routing', () => {
 
     providerRegistry.getModelRegistry().registerMany([baseModel, reviewModel])
 
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-slot-test',
+        name: 'x-mars-slot-test',
         level: 'error',
         destination: 'stdout',
       },
@@ -104,11 +104,11 @@ describe('VitaminApp slot routing', () => {
 
     providerRegistry.getModelRegistry().registerMany([baseModel, reviewModel])
 
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-slot-agent-default-test',
+        name: 'x-mars-slot-agent-default-test',
         level: 'error',
         destination: 'stdout',
       },
@@ -148,11 +148,11 @@ describe('VitaminApp slot routing', () => {
 
     providerRegistry.getModelRegistry().register(baseModel)
 
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-subagent-preset-test',
+        name: 'x-mars-subagent-preset-test',
         level: 'error',
         destination: 'stdout',
       },
@@ -182,11 +182,11 @@ describe('VitaminApp slot routing', () => {
 
     providerRegistry.getModelRegistry().register(baseModel)
 
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-main-preset-override-test',
+        name: 'x-mars-main-preset-override-test',
         level: 'error',
         destination: 'stdout',
       },
@@ -215,11 +215,11 @@ describe('VitaminApp slot routing', () => {
 
   it('forks sticky task_delegate sidechain sessions from the parent session', async () => {
     const providerRegistry = makeStreamingProviderRegistry('child summary')
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-sidechain-test',
+        name: 'x-mars-sidechain-test',
         level: 'error',
         destination: 'stdout',
       },
@@ -285,11 +285,11 @@ describe('VitaminApp slot routing', () => {
 
   it('cleans up ephemeral sidechain child sessions after completion', async () => {
     const providerRegistry = makeStreamingProviderRegistry('ephemeral child summary')
-    const app = createVitamin({
+    const app = createXMars({
       port: 0,
       inspect: false,
       logger: {
-        name: 'vitamin-sidechain-ephemeral-test',
+        name: 'x-mars-sidechain-ephemeral-test',
         level: 'error',
         destination: 'stdout',
       },

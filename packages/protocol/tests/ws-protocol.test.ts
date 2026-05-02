@@ -50,6 +50,22 @@ describe('websocket protocol validation', () => {
 
     expect(
       validateWebSocketMessage({
+        type: 'Plugin.commandDiagnostic',
+        data: {
+          sessionId: 's1',
+          diagnostic: {
+            kind: 'plugin-command',
+            pluginId: 'deploy-plugin',
+            commandName: 'deploy',
+            stage: 'permission',
+            status: 'denied',
+          },
+        },
+      }),
+    ).toEqual({ valid: true })
+
+    expect(
+      validateWebSocketMessage({
         type: 'Chat.reviewFailed',
         data: {
           sessionId: 's1',
