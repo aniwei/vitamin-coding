@@ -19,11 +19,7 @@ import {
   compilePolicyFromSetting,
 } from '../src/core/permission'
 
-import type {
-  PermissionPolicy,
-  PermissionContext,
-  PermissionPolicySetting,
-} from '../src/core/permission'
+import type { PermissionContext, PermissionPolicySetting } from '../src/core/permission'
 import type { ToolExecuteBeforeInput, ToolExecuteBeforeOutput } from '../src/types'
 
 function makeContext(overrides: Partial<PermissionContext> = {}): PermissionContext {

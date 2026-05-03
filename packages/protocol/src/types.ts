@@ -98,11 +98,23 @@ export interface ProtocolPluginCommandDiagnostic {
   typedArgumentKeys?: string[]
 }
 
+export interface GatewayMessageReceivedData {
+  eventId: string
+  source: 'webhook'
+  sessionId: string
+  channel: string
+  timestamp: string
+  userId?: string
+  threadId?: string
+  metadataKeys?: string[]
+}
+
 export type WebSocketMessage =
   | { type: 'Runtime.connected'; data: { clientId: string } }
   | { type: 'Runtime.connectionState'; data: RuntimeConnectionStateData }
   | { type: 'Runtime.pong'; data: { timestamp: number } }
   | { type: 'Runtime.error'; data: { sessionId?: string; message: string } }
+  | { type: 'Gateway.messageReceived'; data: GatewayMessageReceivedData }
   | { type: 'Chat.userMessage'; data: { sessionId: string; content: string; timestamp: string } }
   | { type: 'Chat.messageStart'; data: { sessionId: string; role: string } }
   | { type: 'Chat.messageChunk'; data: { sessionId: string; content: string; role: string } }

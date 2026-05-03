@@ -150,6 +150,7 @@ export function parseCLI(argv: string[]): ParsedCLI {
         continueSession = args[i]
         break
       case '--inspect': {
+        inspect = true
         break
       }
       case '--help':
@@ -162,6 +163,11 @@ export function parseCLI(argv: string[]): ParsedCLI {
         process.exit(0)
         break
       default:
+        if (arg?.startsWith('--inspect=')) {
+          const port = Number(arg.slice('--inspect='.length))
+          inspect = Number.isFinite(port) ? port : true
+          break
+        }
         if (arg && !arg.startsWith('-') && !subCommand) {
           if (prompt === undefined && mode === 'interactive') {
             mode = 'print'

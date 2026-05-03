@@ -1,8 +1,8 @@
 import { describe, it, expect } from 'vitest'
-import { SwarmRouter, createRouter } from '../src/router'
+import { createRouter } from '../src/router'
 import { RoutingError } from '../src/errors'
 import { createSwarmContext } from '../src/context'
-import type { SwarmAgentDef, RouterConfig } from '../src/types'
+import type { SwarmAgentDef } from '../src/types'
 
 function makeAgent(id: string, opts?: Partial<SwarmAgentDef>): SwarmAgentDef {
   return {

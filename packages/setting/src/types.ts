@@ -62,6 +62,21 @@ export interface BackgroundTaskConfig {
   [key: string]: unknown
 }
 
+export interface GatewayConfig {
+  enabled?: boolean
+  webhookSecret?: string
+  webhook_secret?: string
+  deliveryUrl?: string
+  delivery_url?: string
+  deliverySecret?: string
+  delivery_secret?: string
+  deliverySigningSecret?: string
+  delivery_signing_secret?: string
+  deliveryRetries?: number
+  delivery_retries?: number
+  [key: string]: unknown
+}
+
 export interface ExperimentalConfig {
   features?: Record<string, boolean>
   background_task?: BackgroundTaskConfig
@@ -197,6 +212,7 @@ export interface XMarsSettingFromSchema {
   workflow?: WorkflowOptions
   model_slots?: ModelSlotConfig
   background_task?: BackgroundTaskConfig
+  gateway?: GatewayConfig
   experimental?: ExperimentalConfig
   disabled_agents?: string[]
   disabled_hooks?: string[]
@@ -224,6 +240,7 @@ export const X_MARS_SETTING_KEYS = [
   'workflow',
   'model_slots',
   'background_task',
+  'gateway',
   'experimental',
   'disabled_agents',
   'disabled_hooks',
@@ -264,6 +281,7 @@ export const X_MARS_DEFAULT_CONFIG: XMarsSetting = {
   compaction: {},
   workflow: {},
   background_task: {},
+  gateway: {},
   experimental: {},
   disabled_agents: [],
   disabled_hooks: [],

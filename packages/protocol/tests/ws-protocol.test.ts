@@ -16,6 +16,25 @@ describe('websocket protocol validation', () => {
     expect(isValidWebSocketMessage(message)).toBe(true)
   })
 
+  it('#accepts gateway audit messages', () => {
+    const message: WebSocketMessage = {
+      type: 'Gateway.messageReceived',
+      data: {
+        eventId: 'evt-1',
+        source: 'webhook',
+        sessionId: 'gateway:slack:thread-1',
+        channel: 'slack',
+        timestamp: '2026-05-03T00:00:00.000Z',
+        userId: 'user-1',
+        threadId: 'thread-1',
+        metadataKeys: ['team'],
+      },
+    }
+
+    expect(validateWebSocketMessage(message)).toEqual({ valid: true })
+    expect(isValidWebSocketMessage(message)).toBe(true)
+  })
+
   it('#rejects unknown message types and missing fields', () => {
     expect(validateWebSocketMessage({ type: 'Unknown.event', data: {} })).toEqual({
       valid: false,

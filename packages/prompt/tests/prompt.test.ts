@@ -19,6 +19,7 @@ import {
   resolveAgentToolNames,
   BUILTIN_PROMPTS_DIR,
 } from '../src/index'
+import type { PromptProviderOptions } from '../src/index'
 
 const __dirname = dirname(fileURLToPath(import.meta.url))
 const fixtureDir = resolve(__dirname, '..', 'prompts')
@@ -397,9 +398,9 @@ describe('createPromptProvider factory', () => {
   })
 
   it('throws on unknown type', () => {
-    expect(() => createPromptProvider({ type: 'unknown' } as any)).toThrow(
-      'Unknown prompt provider type',
-    )
+    expect(() =>
+      createPromptProvider({ type: 'unknown' } as unknown as PromptProviderOptions),
+    ).toThrow('Unknown prompt provider type')
   })
 })
 

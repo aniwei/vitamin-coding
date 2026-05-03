@@ -16,11 +16,8 @@ describe('handoff', () => {
   describe('createHandoffTool', () => {
     it('creates a tool with correct name and description', () => {
       const targets = [makeAgent('b'), makeAgent('c')]
-      let capturedRequest: HandoffRequest | null = null
 
-      const tool = createHandoffTool('a', targets, (r) => {
-        capturedRequest = r
-      })
+      const tool = createHandoffTool('a', targets, () => {})
 
       expect(tool.name).toBe('handoff_to_agent')
       expect(tool.description).toContain('b')

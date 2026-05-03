@@ -5,7 +5,7 @@ interface TestEvents {
   message: (text: string) => void
   count: (n: number) => void
   pair: (a: string, b: number) => void
-  [key: string]: (...args: any[]) => void
+  [key: string]: (...args: unknown[]) => void
 }
 
 // 创建调用记录器，替代 vi.fn()

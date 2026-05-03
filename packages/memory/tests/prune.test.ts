@@ -1,6 +1,5 @@
 import { describe, expect, it } from 'vitest'
 import { prune } from '../src/prune'
-import { estimateTokens } from '../src/token-estimator'
 
 import type { Message, ToolResultMessage } from '@x-mars/ai'
 

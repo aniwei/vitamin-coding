@@ -1,6 +1,5 @@
 import { describe, expect, it, vi } from 'vitest'
 import { timeMicroCompact, cachedMicroCompact, MicroCompactCache } from '../src/micro-compact'
-import { estimateTokens } from '../src/token-estimator'
 
 import type { Message, ToolResultMessage } from '@x-mars/ai'
 

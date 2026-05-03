@@ -1,12 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { Agent } from '@x-mars/agent'
 import {
   createDefaultProviderRegistry,
-  createEventStream,
   type AssistantMessage,
+  type Message,
   type Model,
-  type StreamContext,
-  type StreamEvent,
 } from '@x-mars/ai'
 import { createHookRegistry } from '@x-mars/hooks'
 import { InMemorySessionPersistence } from '@x-mars/session'
@@ -47,18 +44,6 @@ function makeAssistantMessage(): AssistantMessage {
   }
 }
 
-function makeStream() {
-  return (_context: StreamContext, _signal: AbortSignal) => {
-    const eventStream = createEventStream<StreamEvent, AssistantMessage>()
-    setTimeout(() => {
-      const msg = makeAssistantMessage()
-      eventStream.push({ type: 'start', partial: msg })
-      eventStream.complete(msg)
-    }, 0)
-    return eventStream
-  }
-}
-
 function createLogCollector(entries: string[]) {
   const name = `coding-session-manager-test-${crypto.randomUUID()}`
   const detach = attachLogListener((log) => {
@@ -92,6 +77,21 @@ function createManager(
     workspaceDir: process.cwd(),
     ...overrides,
   })
+}
+
+function makeUserTextMessage(text: string): Message {
+  return {
+    role: 'user',
+    timestamp: Date.now(),
+    content: [{ type: 'text', text }],
+  }
+}
+
+function makeAssistantTextMessage(text: string): Message {
+  return {
+    ...makeAssistantMessage(),
+    content: [{ type: 'text', text }],
+  }
 }
 
 // ═══ SessionManager ═══
@@ -211,10 +211,8 @@ describe('SessionManager', () => {
       const mgr = createManager()
       const session = await mgr.createSession({ id: 'search-active' })
       session.session.append({
-        role: 'user',
-        timestamp: Date.now(),
-        content: [{ type: 'text', text: 'Investigate web_fetch domain filtering regression' }],
-      } as any)
+        ...makeUserTextMessage('Investigate web_fetch domain filtering regression'),
+      })
 
       const results = await mgr.searchSessions({ query: 'domain filtering', limit: 3 })
 
@@ -240,10 +238,8 @@ describe('SessionManager', () => {
       const created = await first.createSession({ id: 'persisted-search' })
       created.session.updateMetadata({ title: 'Hermes comparison' })
       created.session.append({
-        role: 'assistant',
-        timestamp: Date.now(),
-        content: [{ type: 'text', text: 'Hermes execute_code should become a safe RPC tool.' }],
-      } as any)
+        ...makeAssistantTextMessage('Hermes execute_code should become a safe RPC tool.'),
+      })
       await first.save('persisted-search')
 
       const second = new SessionManager(
@@ -274,15 +270,11 @@ describe('SessionManager', () => {
       const summarySession = await mgr.createSession({ id: 'summary-hit' })
       summarySession.session.updateMetadata({ parentSessionId: 'root-session' })
       summarySession.session.append({
-        role: 'user',
-        timestamp: Date.now(),
-        content: [{ type: 'text', text: 'Earlier planning notes' }],
-      } as any)
+        ...makeUserTextMessage('Earlier planning notes'),
+      })
       summarySession.session.append({
-        role: 'assistant',
-        timestamp: Date.now(),
-        content: [{ type: 'text', text: 'Unrelated message body' }],
-      } as any)
+        ...makeAssistantTextMessage('Unrelated message body'),
+      })
       summarySession.session.compact('FTS index should return focused summary evidence.', 2)
 
       const results = await mgr.searchSessions({ query: 'FTS index', limit: 5 })
@@ -306,20 +298,16 @@ describe('SessionManager', () => {
         workspaceDir: '/workspace/alpha',
       })
       alpha.session.append({
-        role: 'user',
-        timestamp: Date.now(),
-        content: [{ type: 'text', text: 'Shared query belongs to alpha workspace' }],
-      } as any)
+        ...makeUserTextMessage('Shared query belongs to alpha workspace'),
+      })
 
       const beta = await mgr.createSession({
         id: 'workspace-beta',
         workspaceDir: '/workspace/beta',
       })
       beta.session.append({
-        role: 'user',
-        timestamp: Date.now(),
-        content: [{ type: 'text', text: 'Shared query belongs to beta workspace' }],
-      } as any)
+        ...makeUserTextMessage('Shared query belongs to beta workspace'),
+      })
 
       expect(beta.session.metadata().workspaceDir).toBe('/workspace/beta')
 
@@ -378,10 +366,8 @@ describe('SessionManager', () => {
       const original = await mgr.createSession({ id: 'source' })
       // Add a message to make the fork non-trivial
       original.session.append({
-        role: 'user',
-        timestamp: Date.now(),
-        content: [{ type: 'text', text: 'hello' }],
-      } as any)
+        ...makeUserTextMessage('hello'),
+      })
 
       const forked = await mgr.forkSession('source', 'forked-1')
 

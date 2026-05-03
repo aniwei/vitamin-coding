@@ -9,7 +9,6 @@ import {
   createPermissionGuardHook,
   createFileGuardPolicy,
   createPermissionToolSetsFromRegistry,
-  DESTRUCTIVE_COMMAND_POLICY,
   createPermissionModePolicy,
   createDisabledToolsPolicy,
   createDirectoryFreezePolicy,
@@ -178,8 +177,6 @@ describe('Permission guard through HookRegistry', () => {
 
 describe('Permission guard in AgentSession tool execution', () => {
   it('blocked tool returns error result to LLM', async () => {
-    const toolResults: string[] = []
-
     const stream = (context: StreamContext, _signal: AbortSignal) => {
       const eventStream = createEventStream<StreamEvent, AssistantMessage>()
       setTimeout(() => {

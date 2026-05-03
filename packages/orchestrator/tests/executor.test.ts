@@ -143,7 +143,7 @@ describe('TaskExecutor.dispatch', () => {
 
   it('returns only sidechain summary to parent while storing transcript metadata', async () => {
     const { executor, taskStore } = makeExecutor({
-      runSession: makeRunSession((opts) => ({
+      runSession: makeRunSession(() => ({
         text: 'full child transcript output that should not be returned',
         summary: 'child summary only',
         transcript: [

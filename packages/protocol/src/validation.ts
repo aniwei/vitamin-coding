@@ -5,6 +5,7 @@ const MESSAGE_REQUIREMENTS: Record<string, readonly string[]> = {
   'Runtime.connectionState': ['status', 'timestamp'],
   'Runtime.pong': ['timestamp'],
   'Runtime.error': ['message'],
+  'Gateway.messageReceived': ['eventId', 'source', 'sessionId', 'channel', 'timestamp'],
   'Chat.userMessage': ['sessionId', 'content', 'timestamp'],
   'Chat.messageStart': ['sessionId', 'role'],
   'Chat.messageChunk': ['sessionId', 'content', 'role'],
@@ -94,6 +95,14 @@ function validateSpecificMessage(
       return expectNumber(data, 'timestamp')
     case 'Runtime.error':
       return expectString(data, 'message')
+    case 'Gateway.messageReceived':
+      return allValid([
+        expectString(data, 'eventId'),
+        expectString(data, 'source'),
+        expectString(data, 'sessionId'),
+        expectString(data, 'channel'),
+        expectString(data, 'timestamp'),
+      ])
     case 'Chat.toolExecutionEvent':
       return validateToolExecutionEvent(data.event)
     case 'Plugin.commandDiagnostic':

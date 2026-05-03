@@ -26,6 +26,7 @@ const ROOT_OBJECT_KEYS = [
   'workflow',
   'model_slots',
   'background_task',
+  'gateway',
   'experimental',
 ] as const
 const ROOT_OBJECT_ARRAY_KEYS = ['permissions', 'command_hooks'] as const

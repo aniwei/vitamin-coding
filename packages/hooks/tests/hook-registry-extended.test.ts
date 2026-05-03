@@ -1,7 +1,7 @@
 // HookRegistry + 新 Hook 测试
 import { describe, expect, it } from 'vitest'
 
-import { HookRegistry, createHookRegistry } from '../src/hook-registry'
+import { createHookRegistry } from '../src/hook-registry'
 import {
   createStreamMetricsHook,
   createStreamEndMetricsHook,

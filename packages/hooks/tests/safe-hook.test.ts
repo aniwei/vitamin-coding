@@ -3,8 +3,6 @@ import { describe, expect, it } from 'vitest'
 
 import { isHookEnabled, safeCreateHook, safeHookEnabled } from '../src/safe-hook'
 
-import type { HookRegistration } from '../src/types'
-
 describe('safeCreateHook', () => {
   describe('#given enabled=true and factory succeeds', () => {
     it('#then returns the created hook', () => {

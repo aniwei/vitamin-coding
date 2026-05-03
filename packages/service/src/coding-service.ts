@@ -33,6 +33,20 @@ interface SchedulerRuntime {
   tick(input?: { now?: number }): Promise<unknown>
 }
 
+interface GatewaySetting {
+  enabled?: unknown
+  webhookSecret?: unknown
+  webhook_secret?: unknown
+  deliveryUrl?: unknown
+  delivery_url?: unknown
+  deliverySecret?: unknown
+  delivery_secret?: unknown
+  deliverySigningSecret?: unknown
+  delivery_signing_secret?: unknown
+  deliveryRetries?: unknown
+  delivery_retries?: unknown
+}
+
 export class CodingService {
   private readonly app: Hono
   private readonly server: Server
@@ -76,11 +90,14 @@ export class CodingService {
 
     this.router = new InboundRouter(this.ws, this.xMars, this.bridge)
 
+    const gateway = resolveGatewayOptions(xMars, options)
+
     this.app = createApp(this, {
       corsOrigin: options.cors,
       devtools: xMars.devtools ?? undefined,
       staticDir: options.staticDir,
       debug: this.bridge,
+      gateway,
     })
 
     this.server = createAdaptorServer({
@@ -379,4 +396,58 @@ export function createCodingService(
   options: CodingServiceOptions,
 ): CodingService {
   return new CodingService(context, options)
+}
+
+function resolveGatewayOptions(
+  context: XMarsContext,
+  options: CodingServiceOptions,
+): CodingServiceOptions['gateway'] {
+  const setting = readGatewaySetting(context)
+  const explicit = options.gateway
+
+  return {
+    enabled: explicit?.enabled ?? readBoolean(setting?.enabled) ?? true,
+    webhookSecret:
+      explicit?.webhookSecret ??
+      readString(setting?.webhookSecret) ??
+      readString(setting?.webhook_secret),
+    deliveryUrl:
+      explicit?.deliveryUrl ??
+      readString(setting?.deliveryUrl) ??
+      readString(setting?.delivery_url),
+    deliverySecret:
+      explicit?.deliverySecret ??
+      readString(setting?.deliverySecret) ??
+      readString(setting?.delivery_secret),
+    deliverySigningSecret:
+      explicit?.deliverySigningSecret ??
+      readString(setting?.deliverySigningSecret) ??
+      readString(setting?.delivery_signing_secret),
+    deliveryRetries:
+      explicit?.deliveryRetries ??
+      readNumber(setting?.deliveryRetries) ??
+      readNumber(setting?.delivery_retries),
+    deliveryFetch: explicit?.deliveryFetch,
+  }
+}
+
+function readGatewaySetting(context: XMarsContext): GatewaySetting | undefined {
+  const value = (
+    context.settings as unknown as { get?: (key: string) => unknown } | undefined
+  )?.get?.('gateway')
+  return typeof value === 'object' && value !== null && !Array.isArray(value)
+    ? (value as GatewaySetting)
+    : undefined
+}
+
+function readString(value: unknown): string | undefined {
+  return typeof value === 'string' && value.length > 0 ? value : undefined
+}
+
+function readBoolean(value: unknown): boolean | undefined {
+  return typeof value === 'boolean' ? value : undefined
+}
+
+function readNumber(value: unknown): number | undefined {
+  return typeof value === 'number' && Number.isFinite(value) ? value : undefined
 }

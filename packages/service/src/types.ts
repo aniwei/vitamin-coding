@@ -16,6 +16,7 @@ export type {
   DebuggerCommandData,
   DebuggerSetBreakpointData,
   DebuggerSetBreakpointsActiveData,
+  GatewayMessageReceivedData,
 } from '@x-mars/protocol'
 
 // ─── Service options ──────────────────────────────────────────────────────────
@@ -34,6 +35,31 @@ export interface CodingServiceOptions {
     /** Defaults to true so due jobs are picked up immediately on service start. */
     tickOnStart?: boolean
   }
+  gateway?: {
+    /** Defaults to true. Set false to disable the gateway HTTP route. */
+    enabled?: boolean
+    /** Optional shared secret accepted via Authorization: Bearer <secret> or x-x-mars-webhook-secret. */
+    webhookSecret?: string
+    /** Optional outbound webhook URL for session events produced by gateway sessions. */
+    deliveryUrl?: string
+    /** Optional outbound bearer token used when posting delivery events. */
+    deliverySecret?: string
+    /** Optional HMAC secret used to sign outbound delivery payloads. */
+    deliverySigningSecret?: string
+    /** Number of retry attempts after the initial outbound delivery attempt. Defaults to 2. */
+    deliveryRetries?: number
+    /** Test/runtime injection point for outbound delivery. Defaults to global fetch. */
+    deliveryFetch?: typeof fetch
+  }
+}
+
+export interface GatewayWebhookBody {
+  message?: string
+  sessionId?: string
+  channel?: string
+  userId?: string
+  threadId?: string
+  metadata?: Record<string, unknown>
 }
 
 // ─── Message sender interface ─────────────────────────────────────────────────

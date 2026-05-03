@@ -1,7 +1,7 @@
 import { describe, it, expect } from 'vitest'
-import { createSwarm, Swarm, type SwarmRunResult } from '../src/swarm'
-import { SwarmConfigError, AgentNotFoundError } from '../src/errors'
-import type { SwarmAgentDef, SwarmConfig, SwarmContext, SwarmRunContextFactory } from '../src/types'
+import { createSwarm, Swarm } from '../src/swarm'
+import { SwarmConfigError } from '../src/errors'
+import type { SwarmAgentDef, SwarmContext, SwarmRunContextFactory } from '../src/types'
 import type { AgentRunContext } from '@x-mars/agent'
 import type { Model } from '@x-mars/ai'
 

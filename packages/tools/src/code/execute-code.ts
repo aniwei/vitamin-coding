@@ -203,7 +203,6 @@ async function runScriptInChildProcess(input: RunScriptInChildProcessInput): Pro
     const executionAbort = new AbortController()
     let settled = false
     let toolCallsStarted = 0
-    let timer: NodeJS.Timeout | undefined
     let killTimer: NodeJS.Timeout | undefined
 
     const sendToChild = (message: ParentToChildMessage) => {
@@ -324,7 +323,7 @@ async function runScriptInChildProcess(input: RunScriptInChildProcessInput): Pro
     }
 
     input.signal.addEventListener('abort', onAbort, { once: true })
-    timer = setTimeout(
+    const timer = setTimeout(
       () => settleWithError(new Error(`Execution timed out after ${input.timeoutMs}ms`)),
       input.timeoutMs,
     )

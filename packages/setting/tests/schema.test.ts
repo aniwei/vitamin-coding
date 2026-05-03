@@ -36,6 +36,7 @@ describe('setting schema literals', () => {
     expect(X_MARS_SETTING_KEYS).toContain('log_level')
     expect(X_MARS_SETTING_KEYS).toContain('tool_preset')
     expect(X_MARS_SETTING_KEYS).toContain('experimental')
+    expect(X_MARS_SETTING_KEYS).toContain('gateway')
     expect(X_MARS_SETTING_KEYS).not.toContain('mcp')
     expect(X_MARS_SETTING_KEYS).not.toContain('skills')
     expect(X_MARS_SETTING_KEYS).not.toContain('disabled_mcps')
@@ -82,6 +83,34 @@ describe('setting validation without zod', () => {
     })
 
     expect((setting as Record<string, unknown>).custom_plugin_field).toBe('hello')
+  })
+
+  it('keeps gateway config as a validated top-level object', async () => {
+    const store = createSettingStore({
+      type: 'memory',
+      initial: {
+        main: JSON.stringify({
+          gateway: {
+            webhook_secret: 'inbound',
+            delivery_url: 'https://hooks.example.test/x-mars',
+            delivery_signing_secret: 'signing',
+            delivery_retries: 2,
+          },
+        }),
+      },
+    })
+
+    const setting = await loadSetting({
+      store,
+      paths: ['main'],
+    })
+
+    expect(setting.gateway).toMatchObject({
+      webhook_secret: 'inbound',
+      delivery_url: 'https://hooks.example.test/x-mars',
+      delivery_signing_secret: 'signing',
+      delivery_retries: 2,
+    })
   })
 
   it('drops removed legacy mcp and skill fields', async () => {

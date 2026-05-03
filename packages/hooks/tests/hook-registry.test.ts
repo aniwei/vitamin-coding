@@ -1,7 +1,7 @@
 // HookRegistry 单元测试
 import { describe, expect, it } from 'vitest'
 
-import { HookRegistry, createHookRegistry } from '../src/hook-registry'
+import { createHookRegistry } from '../src/hook-registry'
 
 import type { HookRegistration } from '../src/types'
 

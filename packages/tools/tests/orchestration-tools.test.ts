@@ -339,7 +339,7 @@ describe('orchestration tools (additional coverage)', () => {
   it('write_todos passes sessionId through', async () => {
     let receivedSessionId: string | undefined
 
-    const tool = createWriteTodos(async ({ action, todos, sessionId }) => {
+    const tool = createWriteTodos(async ({ todos, sessionId }) => {
       receivedSessionId = sessionId
       return {
         success: true,

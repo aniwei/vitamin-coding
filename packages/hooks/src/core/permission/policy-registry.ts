@@ -253,11 +253,12 @@ function matchesShellCommand(pattern: string, args: Record<string, unknown>): bo
 }
 
 function globToRegExp(pattern: string): RegExp {
+  const globstarPlaceholder = '__X_MARS_GLOBSTAR__'
   const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&')
   const regex = escaped
-    .replace(/\*\*/g, '\u0000')
+    .replace(/\*\*/g, globstarPlaceholder)
     .replace(/\*/g, '[^/]*')
     .replace(/\?/g, '.')
-    .replace(/\u0000/g, '.*')
+    .replaceAll(globstarPlaceholder, '.*')
   return new RegExp(`^${regex}$`)
 }

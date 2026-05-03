@@ -28,18 +28,6 @@ function assistantMsg(
   } as AssistantMessage
 }
 
-function toolResultMsg(toolName: string, text: string): Message {
-  return {
-    role: 'tool_result',
-    toolCallId: 'tc_1',
-    toolName,
-    content: [{ type: 'text', text }],
-    details: null,
-    isError: false,
-    timestamp: Date.now(),
-  }
-}
-
 describe('estimateTokens', () => {
   it('#given an empty string #then returns 0', () => {
     expect(estimateTokens('')).toBe(0)

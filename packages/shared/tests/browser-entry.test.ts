@@ -11,7 +11,7 @@ interface BrowserEvents {
   ready: (value: boolean) => void
   update: (id: string, count: number) => void
   '*': (type: string, ...args: unknown[]) => void
-  [key: string]: (...args: any[]) => void
+  [key: string]: (...args: unknown[]) => void
 }
 
 describe('shared browser entry', () => {

@@ -4,6 +4,7 @@ export type {
   LogEntryData,
   ProtocolToolExecutionEvent,
   ProtocolPatchReviewEvent,
+  GatewayMessageReceivedData,
   WebSocketMessage,
   WebSocketEventType,
   WebSocketClientMessage,

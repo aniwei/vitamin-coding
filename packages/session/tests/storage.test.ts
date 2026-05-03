@@ -3,6 +3,7 @@ import { mkdtemp, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
 import { createSessionStorage } from '../src/storage-factory'
+import type { StorageOptions } from '../src/types'
 
 describe('createSessionStorage', () => {
   let tempDir: string
@@ -29,8 +30,8 @@ describe('createSessionStorage', () => {
   })
 
   it('#then throws for unknown storage type', () => {
-    expect(() => createSessionStorage({ type: 'unknown' as any, baseDir: '/' })).toThrow(
-      'Unsupported storage type',
-    )
+    expect(() =>
+      createSessionStorage({ type: 'unknown', baseDir: '/' } as unknown as StorageOptions),
+    ).toThrow('Unsupported storage type')
   })
 })

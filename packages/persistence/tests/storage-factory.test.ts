@@ -6,7 +6,7 @@ import { HttpPersistence } from '../src/http-persistence'
 import { mkdtemp, readFile, rm } from 'node:fs/promises'
 import { tmpdir } from 'node:os'
 import { join } from 'node:path'
-import type { Snapshot } from '../src/types'
+import type { Snapshot, StorageOptions } from '../src/types'
 
 describe('createPersistence', () => {
   it('creates MemoryPersistence for type "memory"', () => {
@@ -89,7 +89,7 @@ describe('createPersistence', () => {
   })
 
   it('throws for unknown storage type', () => {
-    expect(() => createPersistence({ type: 'unknown' as any } as any)).toThrow(
+    expect(() => createPersistence({ type: 'unknown' } as unknown as StorageOptions)).toThrow(
       'Unsupported storage type',
     )
   })

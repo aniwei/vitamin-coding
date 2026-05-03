@@ -8,15 +8,18 @@ import { createDevtoolsRoute } from './routes/devtools'
 import { createLoggerRoute } from './routes/logs'
 import { createWorkspaceRoute } from './routes/workspace'
 import { createEventsRoute } from './routes/events'
+import { createGatewayRoute } from './routes/gateway'
 import type { Devtools } from '@x-mars/devtools'
 import type { CodingService } from './coding-service'
 import type { DebugBridge } from './debug-bridge'
+import type { CodingServiceOptions } from './types'
 
 interface AppOptions {
   corsOrigin?: string
   devtools?: Devtools
   staticDir?: string
   debug?: DebugBridge | null
+  gateway?: CodingServiceOptions['gateway']
 }
 
 export function createApp(context: CodingService, options: AppOptions = {}): Hono {
@@ -41,6 +44,9 @@ export function createApp(context: CodingService, options: AppOptions = {}): Hon
   app.route('/api/devtools', createDevtoolsRoute(context, options.devtools || null))
   app.route('/api/logs', createLoggerRoute(context))
   app.route('/api/events', createEventsRoute(context))
+  if (options.gateway?.enabled !== false) {
+    app.route('/api/gateway', createGatewayRoute(context, options.gateway))
+  }
 
   if (options.staticDir) {
     app.get('*', (c) => {
