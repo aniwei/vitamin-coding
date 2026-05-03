@@ -10,7 +10,7 @@
 
 - `src/types.ts`：共享消息、事件和 DTO 类型。
 - `src/validation.ts`：协议消息校验。
-- `package exports`：对 service、opendev-ui、tests 暴露协议入口。
+- `package exports`：对 service、外部客户端和 tests 暴露协议入口。
 
 ### 方法论
 

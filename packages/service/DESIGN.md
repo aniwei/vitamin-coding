@@ -9,7 +9,7 @@
 ## 非目标
 
 - 不实现业务逻辑（由 `@x-mars/coding` 提供 XMarsApp 和 AgentSession）。
-- 不负责前端渲染（由 `@x-mars/web-ui` 完成）。
+- 不负责前端渲染；service 只提供 HTTP/WebSocket 协议入口。
 
 ## 实现原理
 

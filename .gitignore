@@ -1,11 +1,15 @@
 node_modules/
 .nx/
 dist/
+.next/
 .turbo/
 *.tsbuildinfo
 coverage/
 .DS_Store
 /tmp/
 *.log
+.env
+.env.*
+!.env.example
 .x-mars/config.local.jsonc
 packages/opendev/

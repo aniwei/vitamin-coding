@@ -1,18 +1,18 @@
 /**
- * 例: Web UI Service —— 启动 HTTP+WebSocket 服务对接 web-ui
+ * 例: Coding Service -- 启动 HTTP+WebSocket 服务供客户端接入
  *
  * 启动步骤：
  *   1. tsx example/web-service.ts
- *   2. cd ../web-ui && pnpm dev   (connects to http://localhost:8080)
+ *   2. 客户端连接 http://localhost:8080 或 ws://localhost:8080/ws
  *
- * 服务端口: 8080 (匹配 web-ui vite proxy 默认目标)
+ * 服务端口: 8080
  *
  * 架构:
  *   XMarsApp (session/agent 运行时)
  *     └─ CodingService (HTTP+WS server)
- *          ├─ /api/chat/*        ← web-ui chat 页面
- *          ├─ /api/sessions/*    ← web-ui session 管理
- *          ├─ /api/config/*      ← web-ui 配置面板
+ *          ├─ /api/chat/*        ← chat HTTP API
+ *          ├─ /api/sessions/*    ← session 管理 API
+ *          ├─ /api/config/*      ← 配置 API
  *          ├─ /api/health        ← 健康检查
  *          └─ /ws                ← WebSocket 实时事件流
  */
@@ -44,7 +44,7 @@ async function main() {
   const service = createCodingService(xMars, {
     port: SERVICE_PORT,
     host: '127.0.0.1',
-    corsOrigin: 'http://localhost:5173', // Vite dev server
+    corsOrigin: '*',
   })
 
   // 3. 自动 attach 新建会话的事件桥
@@ -58,7 +58,7 @@ async function main() {
   await service.start()
   console.log(`[web-service] HTTP service on http://127.0.0.1:${SERVICE_PORT}`)
   console.log(`[web-service] WebSocket on ws://127.0.0.1:${SERVICE_PORT}/ws`)
-  console.log(`[web-service] Start web-ui: cd ../web-ui && pnpm dev`)
+  console.log(`[web-service] Connect an HTTP/WebSocket client to this service`)
 
   // Graceful shutdown
   const shutdown = async () => {

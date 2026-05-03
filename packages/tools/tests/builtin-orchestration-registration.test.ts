@@ -30,6 +30,7 @@ describe('builtin orchestration registration', () => {
     expect(fullNames.has('background_output')).toBe(true)
     expect(fullNames.has('background_cancel')).toBe(true)
     expect(fullNames.has('agent_list')).toBe(true)
+    expect(fullNames.has('scheduler_job')).toBe(true)
   })
 
   it('builtin tool metadata coverage is complete for full preset', () => {

@@ -45,6 +45,7 @@
     "@x-mars/orchestrator": "workspace:*",
     "@x-mars/prompt": "workspace:*",
     "@x-mars/resources": "workspace:*",
+    "@x-mars/scheduler": "workspace:*",
     "@x-mars/session": "workspace:*",
     "@x-mars/setting": "workspace:*",
     "@x-mars/shared": "workspace:*",

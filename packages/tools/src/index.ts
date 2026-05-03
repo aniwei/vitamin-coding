@@ -151,6 +151,12 @@ export { createAgentList } from './orchestration/agent-list'
 export type { AgentListEntry, ListAgents } from './orchestration/agent-list'
 export { createAgentCancel } from './orchestration/agent-cancel'
 export type { AgentCancelResult, CancelAgent } from './orchestration/agent-cancel'
+export { createSchedulerJob } from './orchestration/scheduler-job'
+export type {
+  SchedulerControl,
+  SchedulerJobView,
+  SchedulerTickView,
+} from './orchestration/scheduler-job'
 
 // Web 工具
 export { createWebFetch, nativeWebFetchProvider } from './web/fetch'

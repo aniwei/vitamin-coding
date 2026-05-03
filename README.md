@@ -1,6 +1,6 @@
 # X-Mars Coding
 
-基于 Anthropic API 构建的 AI 编程助手代理系统，可作为 CLI 在终端运行，也可通过 WebSocket/HTTP 提供 Web 界面服务。
+基于 Anthropic API 构建的 AI 编程助手代理系统，可作为 CLI 在终端运行，也可通过 WebSocket/HTTP 提供服务入口。
 
 ## 架构概览
 
@@ -14,14 +14,13 @@ x-mars-coding/
 │   ├── devtools/     # 代理状态的 HTTP 检查服务器
 │   ├── invariant/    # 断言工具
 │   ├── mcp/          # MCP（模型上下文协议）服务器适配器
-│   ├── service/      # HTTP + WebSocket 服务（供 web-ui 使用）
+│   ├── service/      # HTTP + WebSocket 服务
 │   ├── setting/      # 配置加载与 Schema
 │   ├── shared/       # 共享类型、Schema、事件总线、日志
 │   ├── skill/        # Skill/工具插件加载器
 │   ├── swarm/        # 多代理集群编排
 │   ├── tools/        # 文件、Shell、搜索工具实现
-│   ├── assistant-ui/ # React 前端（占位/设计参考）
-│   └── web-ui/       # Web 聊天界面（React + Vite + Tailwind v4）
+│   └── assistant-ui/ # React 前端（占位/设计参考）
 ```
 
 ### 包依赖关系
@@ -35,8 +34,7 @@ cli ──► agent ──► ai (Anthropic)
           ├──► setting  (配置：API Key、模型等)
           └──► devtools (检查 HTTP 服务器)
 
-service ──► agent    (将代理封装为 HTTP/WS 供 web-ui 使用)
-web-ui  ──► service  (React SPA 通过 WebSocket 连接)
+service ──► agent    (将代理封装为 HTTP/WS)
 ```
 
 ### 代理运行模式
@@ -50,7 +48,7 @@ web-ui  ──► service  (React SPA 通过 WebSocket 连接)
 | `json`        | 单次运行 — 将结构化 JSON 事件输出到 stdout           |
 | `rpc`         | 服务器模式 — 通过 stdin/stdout 暴露 JSON-RPC 接口    |
 
-`web-ui` 通过 `service` 与代理通信，`service` 将 `rpc` 模式封装为 WebSocket。
+`service` 将 `rpc` 模式封装为 HTTP/WebSocket，供外部客户端接入。
 
 ## 环境要求
 
@@ -131,19 +129,13 @@ npm install -g @x-mars/cli
 x-mars
 ```
 
-## 运行 Web UI
+## 运行 HTTP/WebSocket 服务
 
-Web 界面需要同时启动 `@x-mars/service`（后端）和 `web-ui`（前端）。
+服务入口通过 `@x-mars/service` 暴露 HTTP 和 WebSocket。
 
 ```bash
-# 启动服务（默认端口 3000）
-npx nx dev @x-mars/service
-
-# 另开终端，启动 Web UI 开发服务器
-npx nx dev @x-mars/web-ui
+pnpm dev:service
 ```
-
-然后在浏览器中打开 http://localhost:5173。
 
 ## 包说明
 
@@ -162,7 +154,6 @@ npx nx dev @x-mars/web-ui
 | `@x-mars/skill`     | 加载 YAML/JSON 技能定义并注入为工具                |
 | `@x-mars/swarm`     | 生成并协调多个代理实例                             |
 | `@x-mars/tools`     | 实现：读写文件、bash、搜索、网页抓取               |
-| `web-ui`            | React 19 + Vite 8 + Tailwind CSS v4 聊天界面       |
 
 ## 工具链
 
@@ -170,7 +161,6 @@ npx nx dev @x-mars/web-ui
 | -------------- | -------------------------------------------------- |
 | **Nx**         | Monorepo 任务编排 — 按依赖顺序构建，缓存结果       |
 | **tsup**       | 库打包器（ESM 输出，`.d.ts` 生成）                 |
-| **Vite**       | `web-ui` 的前端打包器                              |
 | **oxlint**     | 基于 Rust 的高速 Linter（替代 Biome linter）       |
 | **oxfmt**      | 基于 Rust 的高速格式化工具（替代 Biome formatter） |
 | **vitest**     | 单元测试运行器                                     |

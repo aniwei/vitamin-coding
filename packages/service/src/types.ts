@@ -26,6 +26,14 @@ export interface CodingServiceOptions {
   staticDir?: string
   cors?: string
   websocketAuthToken?: string
+  scheduler?: {
+    /** Defaults to true when the XMars context exposes a scheduler. */
+    enabled?: boolean
+    /** Defaults to 60 seconds. */
+    tickIntervalMs?: number
+    /** Defaults to true so due jobs are picked up immediately on service start. */
+    tickOnStart?: boolean
+  }
 }
 
 // ─── Message sender interface ─────────────────────────────────────────────────

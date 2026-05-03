@@ -16,9 +16,7 @@
     "prepublish:check": "pnpm lint && pnpm typecheck && pnpm test && pnpm build",
     "publish:packages": "nx run-many -t build && pnpm -r publish --access public --no-git-checks",
     "dev:service": "tsx packages/service/example/devtools-service.ts",
-    "dev:opendev-ui": "pnpm --filter @x-mars/opendev-ui dev",
-    "dev:web-ui": "pnpm --filter @x-mars/web-ui dev",
-    "dev": "pnpm dev:service & pnpm dev:web-ui"
+    "dev": "pnpm dev:service"
   },
   "devDependencies": {
     "@types/better-sqlite3": "^7.6.13",

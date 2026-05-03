@@ -36,11 +36,15 @@ import {
   type CancelAgent,
   type SearchSessions,
   type ProgrammaticToolInvoker,
+  type SchedulerControl,
+  type SchedulerJobView,
 } from '@x-mars/tools'
 import { SESSION_MAX } from '@x-mars/env'
 import { createResourceManager, SettingsManager } from '@x-mars/resources'
 import { Orchestrator } from '@x-mars/orchestrator'
 import type { RunSessionOptions, RunSessionResult } from '@x-mars/orchestrator'
+import { Scheduler, createFileSchedulerJobStore } from '@x-mars/scheduler'
+import type { SchedulerJob } from '@x-mars/scheduler'
 import { FileStateManager, OperationalLearningStore } from '@x-mars/memory'
 import type { SkillProvider } from '@x-mars/skill'
 
@@ -175,6 +179,7 @@ export class XMarsApp implements XMarsContext {
   public readonly pluginManager: PluginManager | undefined
   public readonly pluginCommandRegistry: PluginCommandRegistry
   public readonly pluginAgentRegistry: PluginAgentRegistry
+  public readonly scheduler: Scheduler
 
   private readonly fileStateManager: FileStateManager
   private readonly learningStore: OperationalLearningStore
@@ -318,6 +323,7 @@ export class XMarsApp implements XMarsContext {
 
     this.codingSessionManager = this.initSessionManager(options, defaultModel)
     this.orchestrator = this.initOrchestrator()
+    this.scheduler = this.initScheduler()
     this.toolRegistry = this.initToolRegistry(options)
     this.pluginCommandRegistry = createPluginCommandRegistry()
     this.pluginAgentRegistry = createPluginAgentRegistry()
@@ -803,6 +809,61 @@ export class XMarsApp implements XMarsContext {
     return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 10
   }
 
+  private initScheduler(): Scheduler {
+    return new Scheduler({
+      store: createFileSchedulerJobStore(`${this.workspaceDir}/.x-mars/scheduler-jobs.json`),
+      dispatchTask: async (input) => {
+        const result = await this.orchestrator.dispatchTask({
+          prompt: input.prompt,
+          subagent: input.subagent,
+          category: input.category,
+          parentSessionId: input.parentSessionId,
+          mode: 'background',
+        })
+
+        return {
+          success: result.success,
+          id: result.id,
+          status: result.status,
+          output: result.output,
+          error: result.error,
+        }
+      },
+    })
+  }
+
+  private createSchedulerControl(): SchedulerControl {
+    const toView = (job: SchedulerJob): SchedulerJobView => ({
+      id: job.id,
+      prompt: job.prompt,
+      schedule: job.schedule.expression,
+      status: job.status,
+      nextRunAt: job.nextRunAt,
+      lastRunAt: job.lastRunAt,
+      lastTaskId: job.lastTaskId,
+      lastRunStatus: job.lastRunStatus,
+      lastError: job.lastError,
+      parentSessionId: job.parentSessionId,
+      runCount: job.runCount,
+      failureCount: job.failureCount,
+    })
+
+    return {
+      create: async (input) => toView(await this.scheduler.createJob(input)),
+      list: async () => (await this.scheduler.listJobs()).map(toView),
+      pause: async (id) => {
+        const job = await this.scheduler.pauseJob(id)
+        return job ? toView(job) : undefined
+      },
+      resume: async (id) => {
+        const job = await this.scheduler.resumeJob(id)
+        return job ? toView(job) : undefined
+      },
+      trigger: async (id) => await this.scheduler.triggerJob(id),
+      tick: async (input) => await this.scheduler.tick(input),
+    }
+  }
+
   private initToolRegistry(options: XMarsAppOptions): ToolRegistry {
     const skillProvider = options.skillProvider
 
@@ -975,7 +1036,7 @@ export class XMarsApp implements XMarsContext {
     }
     const searchSessions: SearchSessions = (input) =>
       this.codingSessionManager.searchSessions(input)
-    const invokeProgrammaticTool: ProgrammaticToolInvoker = async ({ name, params }) => {
+    const invokeProgrammaticTool: ProgrammaticToolInvoker = async ({ name, params, signal }) => {
       if (name === 'execute_code') {
         return {
           content: [{ type: 'text', text: 'execute_code cannot call itself' }],
@@ -1009,7 +1070,7 @@ export class XMarsApp implements XMarsContext {
           name,
           arguments: params,
         },
-        new AbortController().signal,
+        signal ?? new AbortController().signal,
       )
     }
 
@@ -1027,6 +1088,7 @@ export class XMarsApp implements XMarsContext {
       invokeProgrammaticTool,
       webFetchProvider: options.webFetchProvider,
       webSearchProvider: options.webSearchProvider,
+      scheduler: this.createSchedulerControl(),
       dispatchTask: this.orchestrator.dispatchTask,
       createTask: this.orchestrator.createTask,
       getTask: this.orchestrator.getTask,

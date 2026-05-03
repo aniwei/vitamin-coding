@@ -29,14 +29,23 @@ const MIME_TYPES: Record<string, string> = {
   '.woff': 'font/woff',
 }
 
+interface SchedulerRuntime {
+  tick(input?: { now?: number }): Promise<unknown>
+}
+
 export class CodingService {
   private readonly app: Hono
   private readonly server: Server
   private readonly host: string
   private readonly port: number
   private readonly staticDir?: string
+  private readonly schedulerEnabled: boolean
+  private readonly schedulerTickIntervalMs: number
+  private readonly schedulerTickOnStart: boolean
   private readonly bridges = new Map<string, EventBridge>()
   private readonly router: InboundRouter
+  private schedulerInterval: ReturnType<typeof setInterval> | null = null
+  private schedulerTickRunning = false
   private started = false
 
   public readonly bridge: DebugBridge | null = null
@@ -53,6 +62,9 @@ export class CodingService {
     this.host = options.host ?? '127.0.0.1'
     this.port = options.port
     this.staticDir = options.staticDir
+    this.schedulerEnabled = options.scheduler?.enabled ?? true
+    this.schedulerTickIntervalMs = Math.max(1000, options.scheduler?.tickIntervalMs ?? 60_000)
+    this.schedulerTickOnStart = options.scheduler?.tickOnStart ?? true
 
     // 只创建对象，不注册任何监听器
     // 监听器集中在 start() 中注册，使"系统何时开始工作"一目了然
@@ -185,6 +197,63 @@ export class CodingService {
     }
   }
 
+  private getSchedulerRuntime(): SchedulerRuntime | undefined {
+    const maybeScheduler = (this.xMars as unknown as { scheduler?: SchedulerRuntime }).scheduler
+    return typeof maybeScheduler?.tick === 'function' ? maybeScheduler : undefined
+  }
+
+  private startSchedulerDaemon(): void {
+    if (!this.schedulerEnabled || this.schedulerInterval) {
+      return
+    }
+
+    const scheduler = this.getSchedulerRuntime()
+    if (!scheduler) {
+      return
+    }
+
+    if (this.schedulerTickOnStart) {
+      void this.runSchedulerTick()
+    }
+
+    this.schedulerInterval = setInterval(() => {
+      void this.runSchedulerTick()
+    }, this.schedulerTickIntervalMs)
+    this.schedulerInterval.unref?.()
+  }
+
+  private stopSchedulerDaemon(): void {
+    if (!this.schedulerInterval) {
+      return
+    }
+
+    clearInterval(this.schedulerInterval)
+    this.schedulerInterval = null
+  }
+
+  private async runSchedulerTick(): Promise<void> {
+    if (this.schedulerTickRunning) {
+      return
+    }
+
+    const scheduler = this.getSchedulerRuntime()
+    if (!scheduler) {
+      return
+    }
+
+    this.schedulerTickRunning = true
+    try {
+      await scheduler.tick()
+    } catch (error) {
+      logger.warn(
+        { error: error instanceof Error ? error.message : String(error) },
+        'scheduler tick failed',
+      )
+    } finally {
+      this.schedulerTickRunning = false
+    }
+  }
+
   async start(): Promise<void> {
     if (this.started) {
       return
@@ -199,6 +268,7 @@ export class CodingService {
       this.server.listen(this.port, this.host, () => {
         this.started = true
         this.bridge?.attach()
+        this.startSchedulerDaemon()
         logger.info({ host: this.host, port: this.port }, 'service started')
         resolve()
       })
@@ -224,6 +294,7 @@ export class CodingService {
     }
 
     // 与 start() 顺序相反，确保拆除干净
+    this.stopSchedulerDaemon()
     this.bridge?.detach()
 
     for (const [, bridge] of this.bridges) {

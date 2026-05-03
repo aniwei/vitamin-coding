@@ -577,7 +577,7 @@ describe('coding hooks integration', () => {
       command_hooks: [
         {
           name: 'deny-bash',
-          command: `node -e "process.stderr.write('denied by settings hook'); process.exit(7)"`,
+          command: `node -e "require('node:fs').writeSync(2, 'denied by settings hook'); process.exit(7)"`,
           matcher: { tools: ['bash'], agents: ['default'] },
           cancel_on_non_zero_exit: true,
         },

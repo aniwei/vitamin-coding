@@ -26,6 +26,7 @@ export interface SessionMetadata {
   forkPoint?: number
   tags: string[]
   title?: string
+  workspaceDir?: string
   memoryExtraction?: {
     lastMessageCount: number
   }

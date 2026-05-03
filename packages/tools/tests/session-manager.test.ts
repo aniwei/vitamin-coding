@@ -143,6 +143,99 @@ describe('session_search tool', () => {
     expect(result.content[0]?.text).toContain('s1 — web tools')
     expect(result.content[0]?.text).toContain('user: web_fetch domain filter')
     expect(result.details?.results).toHaveLength(1)
+    expect(result.details?.groups).toHaveLength(1)
+  })
+
+  it('groups related session search results by groupId', async () => {
+    const tool = createSessionSearch({
+      searchSessions: async () => [
+        {
+          id: 'root',
+          title: 'migration root',
+          messageCount: 5,
+          lastActiveAt: 100,
+          score: 10,
+          groupId: 'root',
+          matchedTerms: ['migration'],
+          summary: 'Root migration planning',
+          matches: [{ source: 'summary', text: 'migration planning' }],
+        },
+        {
+          id: 'fork',
+          title: 'migration fork',
+          messageCount: 3,
+          lastActiveAt: 120,
+          score: 7,
+          groupId: 'root',
+          matchedTerms: ['migration', 'rollback'],
+          summary: 'Fork rollback details',
+          matches: [{ role: 'assistant', text: 'rollback details' }],
+        },
+        {
+          id: 'other',
+          messageCount: 2,
+          lastActiveAt: 90,
+          score: 4,
+          groupId: 'other',
+          summary: 'Separate result',
+          matches: [{ role: 'user', text: 'migration elsewhere' }],
+        },
+      ],
+    })
+
+    const result = await tool.execute({
+      id: 'ss-group',
+      params: { query: 'migration' },
+      signal,
+    })
+
+    expect(result.content[0]?.text).toContain('Group root')
+    expect(result.content[0]?.text).toContain('2 sessions')
+    expect(result.content[0]?.text).toContain('2 evidence')
+    expect(result.content[0]?.text).toContain('Matched terms: migration, rollback')
+    expect(result.content[0]?.text).toContain('root — migration root')
+    expect(result.content[0]?.text).toContain('fork — migration fork')
+    expect(result.details?.groups).toHaveLength(2)
+    expect(result.details?.groups?.[0]).toMatchObject({
+      groupId: 'root',
+      score: 17,
+      messageCount: 8,
+      sessionCount: 2,
+      evidenceCount: 2,
+      matchedTerms: ['migration', 'rollback'],
+    })
+    expect(String(result.details?.groups?.[0]?.summary)).toContain('2 related sessions matched')
+    expect(String(result.details?.groups?.[0]?.summary)).toContain('Evidence:')
+  })
+
+  it('allows host-provided focused summaries for grouped results', async () => {
+    const tool = createSessionSearch({
+      searchSessions: async () => [
+        {
+          id: 's1',
+          messageCount: 4,
+          lastActiveAt: 123,
+          score: 9,
+          groupId: 'g1',
+          summary: 'Raw local summary',
+          matches: [{ role: 'user', text: 'raw evidence' }],
+        },
+      ],
+      summarizeGroups: async ({ query, groups }) =>
+        groups.map((group) => ({
+          ...group,
+          summary: `Focused ${query}: ${group.sessions.map((session) => session.id).join(', ')}`,
+        })),
+    })
+
+    const result = await tool.execute({
+      id: 'ss-summarizer',
+      params: { query: 'handoff' },
+      signal,
+    })
+
+    expect(result.content[0]?.text).toContain('Focused handoff: s1')
+    expect(result.details?.groups?.[0]?.summary).toBe('Focused handoff: s1')
   })
 
   it('returns a clear empty state', async () => {

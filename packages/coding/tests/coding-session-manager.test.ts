@@ -265,6 +265,72 @@ describe('SessionManager', () => {
         title: 'Hermes comparison',
       })
     })
+
+    it('uses indexed title and summary evidence for session search', async () => {
+      const mgr = createManager()
+      const titleSession = await mgr.createSession({ id: 'title-hit' })
+      titleSession.session.updateMetadata({ title: 'FTS search roadmap' })
+
+      const summarySession = await mgr.createSession({ id: 'summary-hit' })
+      summarySession.session.updateMetadata({ parentSessionId: 'root-session' })
+      summarySession.session.append({
+        role: 'user',
+        timestamp: Date.now(),
+        content: [{ type: 'text', text: 'Earlier planning notes' }],
+      } as any)
+      summarySession.session.append({
+        role: 'assistant',
+        timestamp: Date.now(),
+        content: [{ type: 'text', text: 'Unrelated message body' }],
+      } as any)
+      summarySession.session.compact('FTS index should return focused summary evidence.', 2)
+
+      const results = await mgr.searchSessions({ query: 'FTS index', limit: 5 })
+
+      expect(results[0]).toMatchObject({
+        id: 'summary-hit',
+        groupId: 'root-session',
+      })
+      expect(results[0]?.matchedTerms).toEqual(expect.arrayContaining(['fts', 'index']))
+      expect(results[0]?.matches[0]).toMatchObject({
+        source: 'summary',
+        text: expect.stringContaining('FTS index'),
+      })
+      expect(results.map((result) => result.id)).toContain('title-hit')
+    })
+
+    it('scopes session search to the active workspace', async () => {
+      const mgr = createManager({ workspaceDir: '/workspace/default' })
+      const alpha = await mgr.createSession({
+        id: 'workspace-alpha',
+        workspaceDir: '/workspace/alpha',
+      })
+      alpha.session.append({
+        role: 'user',
+        timestamp: Date.now(),
+        content: [{ type: 'text', text: 'Shared query belongs to alpha workspace' }],
+      } as any)
+
+      const beta = await mgr.createSession({
+        id: 'workspace-beta',
+        workspaceDir: '/workspace/beta',
+      })
+      beta.session.append({
+        role: 'user',
+        timestamp: Date.now(),
+        content: [{ type: 'text', text: 'Shared query belongs to beta workspace' }],
+      } as any)
+
+      expect(beta.session.metadata().workspaceDir).toBe('/workspace/beta')
+
+      const betaResults = await mgr.searchSessions({ query: 'shared query', limit: 5 })
+      expect(betaResults.map((result) => result.id)).toEqual(['workspace-beta'])
+      expect(betaResults[0]?.workspaceDir).toBe('/workspace/beta')
+
+      mgr.setActive('workspace-alpha')
+      const alphaResults = await mgr.searchSessions({ query: 'shared query', limit: 5 })
+      expect(alphaResults.map((result) => result.id)).toEqual(['workspace-alpha'])
+    })
   })
 
   describe('active session', () => {

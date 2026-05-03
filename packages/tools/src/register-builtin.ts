@@ -38,6 +38,7 @@ import { createLearn, type LearnCallback } from './orchestration/learn'
 import { createToolOutputRead } from './orchestration/tool-output-read'
 import { createAgentList, type ListAgents } from './orchestration/agent-list'
 import { createAgentCancel, type CancelAgent } from './orchestration/agent-cancel'
+import { createSchedulerJob, type SchedulerControl } from './orchestration/scheduler-job'
 
 // Session
 import { createSessionManager, type SessionManager } from './session/session-manager'
@@ -82,6 +83,7 @@ export interface RegisterBuiltinOptions {
   learn?: LearnCallback
   listAgents?: ListAgents
   cancelAgent?: CancelAgent
+  scheduler?: SchedulerControl
   sessionId?: string
   mcpManager?: McpManager
   webFetchProvider?: WebFetchProvider
@@ -212,6 +214,7 @@ export function registerBuiltinTools(
       createCaptureFileState(options.captureFileState),
       createLearn(options.sessionId ?? '', options.learn),
       createExecuteCode({ invokeTool: options.invokeProgrammaticTool }),
+      createSchedulerJob(options.scheduler),
     ],
     {
       preset: 'full',
@@ -225,6 +228,7 @@ export function registerBuiltinTools(
         'Use capture_file_state when conversation is long and you need to refresh understanding of workspace changes.',
         'Use learn to record reusable insights (patterns, mistakes, strategies) — not routine progress notes.',
         'Use execute_code only for compact, repeated tool-call workflows. Always pass the smallest allowedTools whitelist.',
+        'Use scheduler_job to create or inspect recurring background agent jobs; prefer list before creating duplicates.',
         'Check task status with task_get/task_list before creating duplicate tasks. Cancel stale tasks with task_update.',
         'Use agent_cancel when a named sub-agent has stale or unwanted active tasks. Use agent_list first to inspect activeTaskCount and runningTaskIds.',
         'Monitor background tasks with background_output periodically. Cancel unresponsive tasks rather than waiting indefinitely.',
