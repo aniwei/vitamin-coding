@@ -18,7 +18,9 @@ describe('handoff', () => {
       const targets = [makeAgent('b'), makeAgent('c')]
       let capturedRequest: HandoffRequest | null = null
 
-      const tool = createHandoffTool('a', targets, (r) => { capturedRequest = r })
+      const tool = createHandoffTool('a', targets, (r) => {
+        capturedRequest = r
+      })
 
       expect(tool.name).toBe('handoff_to_agent')
       expect(tool.description).toContain('b')
@@ -29,7 +31,9 @@ describe('handoff', () => {
       const targets = [makeAgent('b'), makeAgent('c')]
       let capturedRequest: HandoffRequest | null = null
 
-      const tool = createHandoffTool('a', targets, (r) => { capturedRequest = r })
+      const tool = createHandoffTool('a', targets, (r) => {
+        capturedRequest = r
+      })
 
       const result = await tool.execute({
         id: 'tool-1',
@@ -51,7 +55,9 @@ describe('handoff', () => {
       const targets = [makeAgent('b')]
       let capturedRequest: HandoffRequest | null = null
 
-      const tool = createHandoffTool('a', targets, (r) => { capturedRequest = r })
+      const tool = createHandoffTool('a', targets, (r) => {
+        capturedRequest = r
+      })
 
       const result = await tool.execute({
         id: 'tool-1',
@@ -70,7 +76,9 @@ describe('handoff', () => {
       const targets = [makeAgent('b')]
       let capturedRequest: HandoffRequest | null = null
 
-      const tool = createHandoffTool('a', targets, (r) => { capturedRequest = r })
+      const tool = createHandoffTool('a', targets, (r) => {
+        capturedRequest = r
+      })
 
       await tool.execute({
         id: 'tool-1',
@@ -99,9 +107,7 @@ describe('handoff', () => {
     })
 
     it('rejects unknown source', () => {
-      const agents = new Map<string, SwarmAgentDef>([
-        ['b', makeAgent('b')],
-      ])
+      const agents = new Map<string, SwarmAgentDef>([['b', makeAgent('b')]])
 
       const result = validateHandoff({ from: 'a', to: 'b', reason: 'test' }, agents)
       expect(result.valid).toBe(false)
@@ -109,9 +115,7 @@ describe('handoff', () => {
     })
 
     it('rejects unknown target', () => {
-      const agents = new Map<string, SwarmAgentDef>([
-        ['a', makeAgent('a')],
-      ])
+      const agents = new Map<string, SwarmAgentDef>([['a', makeAgent('a')]])
 
       const result = validateHandoff({ from: 'a', to: 'b', reason: 'test' }, agents)
       expect(result.valid).toBe(false)

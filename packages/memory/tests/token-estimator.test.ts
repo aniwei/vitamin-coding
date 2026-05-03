@@ -13,7 +13,10 @@ function userMsg(text: string): Message {
   return { role: 'user', content: [{ type: 'text', text }], timestamp: Date.now() }
 }
 
-function assistantMsg(text: string, usage?: { inputTokens: number; outputTokens: number }): AssistantMessage {
+function assistantMsg(
+  text: string,
+  usage?: { inputTokens: number; outputTokens: number },
+): AssistantMessage {
   return {
     role: 'assistant',
     content: [{ type: 'text', text }],

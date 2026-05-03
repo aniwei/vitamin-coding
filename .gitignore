@@ -7,4 +7,5 @@ coverage/
 .DS_Store
 /tmp/
 *.log
+.x-mars/config.local.jsonc
 packages/opendev/

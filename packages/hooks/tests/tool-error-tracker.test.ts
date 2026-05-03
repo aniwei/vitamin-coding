@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  createToolErrorTrackerHook,
-  getToolErrors,
-  clearToolErrors,
-} from '../src/index'
+import { createToolErrorTrackerHook, getToolErrors, clearToolErrors } from '../src/index'
 import type { ToolExecuteAfterOutput } from '../src/types'
 
 function makeInput(toolName: string, sessionId: string, isError: boolean) {

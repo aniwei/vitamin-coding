@@ -19,10 +19,7 @@ describe('Background task tracker hooks', () => {
     clearBackgroundTaskHistory()
     const hook = createBackgroundStartHook()
 
-    hook.handle(
-      { taskId: 'task-1', agentName: 'worker-a' },
-      undefined as never,
-    )
+    hook.handle({ taskId: 'task-1', agentName: 'worker-a' }, undefined as never)
 
     const active = getActiveBackgroundTasks()
     expect(active.size).toBe(1)
@@ -35,15 +32,9 @@ describe('Background task tracker hooks', () => {
     const startHook = createBackgroundStartHook()
     const endHook = createBackgroundEndHook()
 
-    startHook.handle(
-      { taskId: 'task-2', agentName: 'worker-b' },
-      undefined as never,
-    )
+    startHook.handle({ taskId: 'task-2', agentName: 'worker-b' }, undefined as never)
 
-    endHook.handle(
-      { taskId: 'task-2', agentName: 'worker-b', success: true },
-      undefined as never,
-    )
+    endHook.handle({ taskId: 'task-2', agentName: 'worker-b', success: true }, undefined as never)
 
     expect(getActiveBackgroundTasks().size).toBe(0)
     const completed = getCompletedBackgroundTasks()
@@ -58,15 +49,9 @@ describe('Background task tracker hooks', () => {
     const startHook = createBackgroundStartHook()
     const endHook = createBackgroundEndHook()
 
-    startHook.handle(
-      { taskId: 'task-3', agentName: 'worker-c' },
-      undefined as never,
-    )
+    startHook.handle({ taskId: 'task-3', agentName: 'worker-c' }, undefined as never)
 
-    endHook.handle(
-      { taskId: 'task-3', agentName: 'worker-c', success: false },
-      undefined as never,
-    )
+    endHook.handle({ taskId: 'task-3', agentName: 'worker-c', success: false }, undefined as never)
 
     const completed = getCompletedBackgroundTasks()
     expect(completed[0]!.success).toBe(false)

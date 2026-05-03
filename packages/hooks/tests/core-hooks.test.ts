@@ -7,10 +7,37 @@ import { createKeywordDetectionHook } from '../src/core/session/keyword-detectio
 import { createFileGuardHook } from '../src/core/tool-guard/file-guard'
 import { createLabelTruncatorHook } from '../src/core/tool-guard/label-truncator'
 import { createOutputTruncationHook } from '../src/core/tool-guard/output-truncation'
+import { createToolOutputPersistenceHook } from '../src/core/tool-guard/output-persistence'
 import { createAnthropicEffortHook } from '../src/core/transform/anthropic-effort'
-import { createTokenBudgetHook, clearTokenUsage, trackTokenUsage } from '../src/core/transform/token-budget'
+import {
+  createTokenBudgetHook,
+  clearTokenUsage,
+  trackTokenUsage,
+} from '../src/core/transform/token-budget'
 import { createCommentCheckerHook } from '../src/core/quality/comment-checker'
 import { createRalphLoopHook } from '../src/core/quality/ralph-loop'
+import { mkdtempSync, readFileSync, writeFileSync } from 'node:fs'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
+
+function makeToolOutputPersistenceInput(toolCallId: string, text: string) {
+  return {
+    toolName: 'grep',
+    toolCallId,
+    args: {},
+    result: { content: [{ type: 'text' as const, text }] },
+    agentName: 'test',
+    sessionId: 'sess-1',
+    durationMs: 50,
+  }
+}
+
+function makeToolOutputPersistenceOutput(text: string) {
+  return {
+    result: { content: [{ type: 'text' as const, text }] },
+    metadata: {} as Record<string, unknown>,
+  }
+}
 
 describe('core hooks', () => {
   describe('first-message-variant', () => {
@@ -25,7 +52,11 @@ describe('core hooks', () => {
           isFirstMessage: true,
           metadata: {},
         }
-        const output = { message: input.message, metadata: {} as Record<string, unknown>, cancelled: false }
+        const output = {
+          message: input.message,
+          metadata: {} as Record<string, unknown>,
+          cancelled: false,
+        }
         await engine.execute('chat.message.before', input as never, output as never)
 
         expect(output.metadata.isFirstMessage).toBe(true)
@@ -44,7 +75,11 @@ describe('core hooks', () => {
           isFirstMessage: false,
           metadata: {},
         }
-        const output = { message: input.message, metadata: {} as Record<string, unknown>, cancelled: false }
+        const output = {
+          message: input.message,
+          metadata: {} as Record<string, unknown>,
+          cancelled: false,
+        }
         await engine.execute('chat.message.before', input as never, output as never)
 
         expect(output.metadata.variant).toBeUndefined()
@@ -64,7 +99,11 @@ describe('core hooks', () => {
           isFirstMessage: false,
           metadata: {},
         }
-        const output = { message: input.message, metadata: {} as Record<string, unknown>, cancelled: false }
+        const output = {
+          message: input.message,
+          metadata: {} as Record<string, unknown>,
+          cancelled: false,
+        }
         await engine.execute('chat.message.before', input as never, output as never)
 
         expect(output.metadata.detectedKeyword).toBe('plan')
@@ -82,7 +121,11 @@ describe('core hooks', () => {
           isFirstMessage: false,
           metadata: {},
         }
-        const output = { message: input.message, metadata: {} as Record<string, unknown>, cancelled: false }
+        const output = {
+          message: input.message,
+          metadata: {} as Record<string, unknown>,
+          cancelled: false,
+        }
         await engine.execute('chat.message.before', input as never, output as never)
 
         expect(output.metadata.detectedKeyword).toBe('build')
@@ -197,10 +240,127 @@ describe('core hooks', () => {
         await engine.execute('tool.execute.after', input, output)
 
         const totalText = output.result.content
-          .map((p) => p.type === 'text' ? p.text : '')
+          .map((p) => (p.type === 'text' ? p.text : ''))
           .join('')
         expect(totalText.length).toBeLessThan(200)
         expect(output.metadata.truncated).toBe(true)
+      })
+    })
+  })
+
+  describe('tool-output-persistence', () => {
+    describe('#given tool output exceeding the inline threshold', () => {
+      it('#then writes the full output to an artifact and keeps a preview inline', async () => {
+        const baseDir = mkdtempSync(join(tmpdir(), 'x-mars-tool-output-'))
+        const engine = createHookRegistry()
+        engine.register(
+          createToolOutputPersistenceHook({
+            baseDir,
+            maxInlineBytes: 100,
+            previewBytes: 20,
+          }),
+        )
+
+        const longText = 'x'.repeat(200)
+        const input = {
+          toolName: 'grep',
+          toolCallId: 'tool-call-1',
+          args: {},
+          result: { content: [{ type: 'text' as const, text: longText }] },
+          agentName: 'test',
+          sessionId: 'sess-1',
+          durationMs: 50,
+        }
+        const output = {
+          result: { content: [{ type: 'text' as const, text: longText }] },
+          metadata: {} as Record<string, unknown>,
+        }
+
+        await engine.execute('tool.execute.after', input, output)
+
+        expect(output.metadata.persistedOutput).toBe(true)
+        expect(output.metadata.outputArtifact).toContain('tool-call-1.txt')
+        expect(readFileSync(output.metadata.outputArtifact as string, 'utf-8')).toBe(longText)
+        expect(output.result.content[0]?.text).toContain('Full tool output saved to:')
+        expect(output.result.content[0]?.text).not.toBe(longText)
+        expect(output.result.content[0]?.text.startsWith('x'.repeat(20))).toBe(true)
+        expect(output.result.content[0]?.text).not.toContain('x'.repeat(100))
+        expect(output.result.details).toMatchObject({
+          outputArtifact: { sizeBytes: 200, previewBytes: 20 },
+        })
+      })
+    })
+
+    describe('#given the artifact directory cannot be written', () => {
+      it('#then keeps a preview inline and records the persistence error', async () => {
+        const baseDir = mkdtempSync(join(tmpdir(), 'x-mars-tool-output-'))
+        const conflictPath = join(baseDir, 'not-a-directory')
+        writeFileSync(conflictPath, 'conflict', 'utf-8')
+        const engine = createHookRegistry()
+        engine.register(
+          createToolOutputPersistenceHook({
+            baseDir: conflictPath,
+            maxInlineBytes: 100,
+            previewBytes: 20,
+          }),
+        )
+
+        const longText = 'x'.repeat(200)
+        const input = makeToolOutputPersistenceInput('tool-call-1', longText)
+        const output = makeToolOutputPersistenceOutput(longText)
+
+        await engine.execute('tool.execute.after', input, output)
+
+        expect(output.metadata.persistedOutput).toBe(false)
+        expect(output.metadata.outputPersistenceError).toBeDefined()
+        expect(output.metadata.originalSize).toBe(200)
+        expect(output.result.content[0]?.text).toContain('Full tool output could not be saved:')
+        expect(output.result.content[0]?.text.startsWith('x'.repeat(20))).toBe(true)
+        expect(output.result.content[0]?.text).not.toBe(longText)
+        expect(output.result.details).toMatchObject({
+          outputArtifact: { sizeBytes: 200, previewBytes: 20 },
+        })
+      })
+    })
+
+    describe('#given aggregate preview budget is exhausted for a session', () => {
+      it('#then persists later outputs without adding another large preview', async () => {
+        const baseDir = mkdtempSync(join(tmpdir(), 'x-mars-tool-output-'))
+        const engine = createHookRegistry()
+        engine.register(
+          createToolOutputPersistenceHook({
+            baseDir,
+            maxInlineBytes: 100,
+            previewBytes: 20,
+            maxAggregatePreviewBytes: 20,
+          }),
+        )
+
+        const longText = 'x'.repeat(200)
+        const firstOutput = makeToolOutputPersistenceOutput(longText)
+        const secondOutput = makeToolOutputPersistenceOutput(longText)
+
+        await engine.execute(
+          'tool.execute.after',
+          makeToolOutputPersistenceInput('tool-call-1', longText),
+          firstOutput,
+        )
+        await engine.execute(
+          'tool.execute.after',
+          makeToolOutputPersistenceInput('tool-call-2', longText),
+          secondOutput,
+        )
+
+        expect(firstOutput.result.content[0]?.text.startsWith('x'.repeat(20))).toBe(true)
+        expect(secondOutput.result.content[0]?.text).toContain('preview omitted')
+        expect(secondOutput.result.content[0]?.text).not.toContain('x'.repeat(20))
+        expect(secondOutput.result.details).toMatchObject({
+          outputArtifact: {
+            previewBytes: 0,
+            aggregatePreviewBytes: 20,
+            aggregatePreviewLimitBytes: 20,
+          },
+        })
       })
     })
   })
@@ -257,18 +417,26 @@ describe('core hooks', () => {
         trackTokenUsage(sessionA, 'gpt-5.2', 2, 0)
 
         const outputA = { metadata: {} as Record<string, unknown> }
-        await engine.execute('chat.params', {
-          sessionId: sessionA,
-          model: 'gpt-5.2',
-          provider: 'openai',
-        } as never, outputA as never)
+        await engine.execute(
+          'chat.params',
+          {
+            sessionId: sessionA,
+            model: 'gpt-5.2',
+            provider: 'openai',
+          } as never,
+          outputA as never,
+        )
 
         const outputB = { metadata: {} as Record<string, unknown> }
-        await engine.execute('chat.params', {
-          sessionId: sessionB,
-          model: 'gpt-5.2',
-          provider: 'openai',
-        } as never, outputB as never)
+        await engine.execute(
+          'chat.params',
+          {
+            sessionId: sessionB,
+            model: 'gpt-5.2',
+            provider: 'openai',
+          } as never,
+          outputB as never,
+        )
 
         expect(outputA.metadata.tokenBudgetWarning).toMatchObject({
           sessionId: sessionA,
@@ -329,14 +497,26 @@ describe('core hooks', () => {
         })
 
         // 创建重复模式: edit, read × 3 次 = 6 次调用
-        const lastOutput = { result: { content: [] as { type: 'text'; text: string }[] }, metadata: {} as Record<string, unknown> }
+        const lastOutput = {
+          result: { content: [] as { type: 'text'; text: string }[] },
+          metadata: {} as Record<string, unknown>,
+        }
         for (let i = 0; i < 3; i++) {
           const editInput = makeInput('edit')
-          const editOutput = { result: { content: [{ type: 'text' as const, text: 'ok' }] }, metadata: {} as Record<string, unknown> }
+          const editOutput = {
+            result: { content: [{ type: 'text' as const, text: 'ok' }] },
+            metadata: {} as Record<string, unknown>,
+          }
           await engine.execute('tool.execute.after', editInput, editOutput)
 
           const readInput = makeInput('read')
-          const readOutput = i === 2 ? lastOutput : { result: { content: [{ type: 'text' as const, text: 'ok' }] }, metadata: {} as Record<string, unknown> }
+          const readOutput =
+            i === 2
+              ? lastOutput
+              : {
+                  result: { content: [{ type: 'text' as const, text: 'ok' }] },
+                  metadata: {} as Record<string, unknown>,
+                }
           readOutput.result.content = [{ type: 'text' as const, text: 'ok' }]
           await engine.execute('tool.execute.after', readInput, readOutput)
         }
@@ -352,30 +532,54 @@ describe('core hooks', () => {
 
       // 注册所有 14 个核心 Hook
       engine.register(createFirstMessageVariantHook())
-      engine.register(
-        { name: 'session-recovery', timing: 'chat.message.before', priority: 20, enabled: true, handle() {} },
-      )
+      engine.register({
+        name: 'session-recovery',
+        timing: 'chat.message.before',
+        priority: 20,
+        enabled: true,
+        handle() {},
+      })
       engine.register(createKeywordDetectionHook())
-      engine.register(
-        { name: 'session-history', timing: 'chat.message.before', priority: 40, enabled: true, handle() {} },
-      )
+      engine.register({
+        name: 'session-history',
+        timing: 'chat.message.before',
+        priority: 40,
+        enabled: true,
+        handle() {},
+      })
       engine.register(createFileGuardHook())
       engine.register(createLabelTruncatorHook())
-      engine.register(
-        { name: 'rules-injector', timing: 'tool.execute.before', priority: 30, enabled: true, handle() {} },
-      )
+      engine.register({
+        name: 'rules-injector',
+        timing: 'tool.execute.before',
+        priority: 30,
+        enabled: true,
+        handle() {},
+      })
       engine.register(createOutputTruncationHook())
-      engine.register(
-        { name: 'context-injector', timing: 'messages.transform', priority: 10, enabled: true, handle() {} },
-      )
-      engine.register(
-        { name: 'thinking-validator', timing: 'messages.transform', priority: 20, enabled: true, handle() {} },
-      )
+      engine.register({
+        name: 'context-injector',
+        timing: 'messages.transform',
+        priority: 10,
+        enabled: true,
+        handle() {},
+      })
+      engine.register({
+        name: 'thinking-validator',
+        timing: 'messages.transform',
+        priority: 20,
+        enabled: true,
+        handle() {},
+      })
       engine.register(createAnthropicEffortHook())
       engine.register(createCommentCheckerHook())
-      engine.register(
-        { name: 'babysitting', timing: 'tool.execute.after', priority: 30, enabled: true, handle() {} },
-      )
+      engine.register({
+        name: 'babysitting',
+        timing: 'tool.execute.after',
+        priority: 30,
+        enabled: true,
+        handle() {},
+      })
       engine.register(createRalphLoopHook())
 
       const allHooks = engine.getRegistered()

@@ -17,13 +17,7 @@ describe('setting schema literals', () => {
   })
 
   it('exposes known workflow and compaction option sets', () => {
-    expect(WORKFLOW_SLOTS).toEqual([
-      'normal',
-      'thinking',
-      'compact',
-      'critique',
-      'vision',
-    ])
+    expect(WORKFLOW_SLOTS).toEqual(['normal', 'thinking', 'compact', 'critique', 'vision'])
     expect(COMPACTION_STRATEGIES).toEqual(['summary', 'sliding-window', 'incremental'])
   })
 

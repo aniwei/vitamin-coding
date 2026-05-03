@@ -8,13 +8,17 @@ import type { HookRegistration } from '../src/types'
 describe('safeCreateHook', () => {
   describe('#given enabled=true and factory succeeds', () => {
     it('#then returns the created hook', () => {
-      const hook = safeCreateHook<'chat.message.before'>('test', () => ({
-        name: 'test',
-        timing: 'chat.message.before',
-        priority: 10,
-        enabled: true,
-        handle() {},
-      }), { enabled: true })
+      const hook = safeCreateHook<'chat.message.before'>(
+        'test',
+        () => ({
+          name: 'test',
+          timing: 'chat.message.before',
+          priority: 10,
+          enabled: true,
+          handle() {},
+        }),
+        { enabled: true },
+      )
 
       expect(hook).not.toBeNull()
       expect(hook?.name).toBe('test')
@@ -24,16 +28,20 @@ describe('safeCreateHook', () => {
   describe('#given enabled=false', () => {
     it('#then returns null without calling factory', () => {
       let called = false
-      const hook = safeCreateHook<'chat.message.before'>('test', () => {
-        called = true
-        return {
-          name: 'test',
-          timing: 'chat.message.before',
-          priority: 10,
-          enabled: true,
-          handle() {},
-        }
-      }, { enabled: false })
+      const hook = safeCreateHook<'chat.message.before'>(
+        'test',
+        () => {
+          called = true
+          return {
+            name: 'test',
+            timing: 'chat.message.before',
+            priority: 10,
+            enabled: true,
+            handle() {},
+          }
+        },
+        { enabled: false },
+      )
 
       expect(hook).toBeNull()
       expect(called).toBe(false)
@@ -42,9 +50,13 @@ describe('safeCreateHook', () => {
 
   describe('#given factory throws', () => {
     it('#then returns null without propagating error', () => {
-      const hook = safeCreateHook<'chat.message.before'>('bad-hook', () => {
-        throw new Error('Factory exploded')
-      }, { enabled: true })
+      const hook = safeCreateHook<'chat.message.before'>(
+        'bad-hook',
+        () => {
+          throw new Error('Factory exploded')
+        },
+        { enabled: true },
+      )
 
       expect(hook).toBeNull()
     })

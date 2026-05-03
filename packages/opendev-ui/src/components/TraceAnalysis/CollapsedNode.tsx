@@ -40,14 +40,14 @@ function CollapsedNodeComponent({ data, selected }: NodeProps<CollapsedFlowNode>
       }`}
       style={{ height: nodeHeight, boxSizing: 'border-box' }}
     >
-      <Handle type="target" position={Position.Top} className="!w-2 !h-2 !bg-gray-400" />
+      <Handle type='target' position={Position.Top} className='!w-2 !h-2 !bg-gray-400' />
 
-      <div className="flex items-center gap-1.5 mb-1.5 shrink-0">
-        <span className="bg-bg-300 border border-border-300/30 text-text-400 rounded-full px-2 text-[10px] font-bold">
+      <div className='flex items-center gap-1.5 mb-1.5 shrink-0'>
+        <span className='bg-bg-300 border border-border-300/30 text-text-400 rounded-full px-2 text-[10px] font-bold'>
           {data.count} events
         </span>
         {data.subagentId && (
-          <span className="text-text-400 text-[9px] ml-auto">
+          <span className='text-text-400 text-[9px] ml-auto'>
             sub:{data.subagentId.slice(0, 7)}
           </span>
         )}
@@ -57,7 +57,7 @@ function CollapsedNodeComponent({ data, selected }: NodeProps<CollapsedFlowNode>
         {Object.entries(typeCounts).map(([type, count]) => (
           <span
             key={type}
-            className="inline-flex items-center gap-1 bg-bg-300 border border-border-300/30 rounded px-1.5 text-[9px] text-text-400"
+            className='inline-flex items-center gap-1 bg-bg-300 border border-border-300/30 rounded px-1.5 text-[9px] text-text-400'
           >
             <span
               className={`w-[5px] h-[5px] rounded-full shrink-0 ${TYPE_DOT_CLASSES[type as NodeEventType] ?? 'bg-gray-400'}`}
@@ -68,20 +68,20 @@ function CollapsedNodeComponent({ data, selected }: NodeProps<CollapsedFlowNode>
       </div>
 
       {shownTools.length > 0 && (
-        <div className="flex flex-wrap gap-1 overflow-hidden">
+        <div className='flex flex-wrap gap-1 overflow-hidden'>
           {shownTools.map((tool, i) => (
             <span
               key={i}
-              className="bg-bg-100 border border-border-300/20 text-text-400 rounded px-1.5 text-[9px]"
+              className='bg-bg-100 border border-border-300/20 text-text-400 rounded px-1.5 text-[9px]'
             >
               {tool}
             </span>
           ))}
-          {extraTools > 0 && <span className="text-text-400 text-[9px]">+{extraTools}</span>}
+          {extraTools > 0 && <span className='text-text-400 text-[9px]'>+{extraTools}</span>}
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} className="!w-2 !h-2 !bg-gray-400" />
+      <Handle type='source' position={Position.Bottom} className='!w-2 !h-2 !bg-gray-400' />
     </div>
   )
 }

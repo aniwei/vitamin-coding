@@ -9,9 +9,9 @@
     "lint": "oxlint src/"
   },
   "dependencies": {
+    "@heroicons/react": "2.2.0",
     "@x-mars/protocol": "workspace:*",
     "@x-mars/shared": "workspace:*",
-    "@heroicons/react": "2.2.0",
     "@xyflow/react": "12.10.2",
     "lucide-react": "1.7.0",
     "react": "19.2.4",

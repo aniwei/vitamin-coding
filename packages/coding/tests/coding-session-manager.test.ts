@@ -1,10 +1,21 @@
 import { describe, expect, it } from 'vitest'
 import { Agent } from '@x-mars/agent'
-import { createDefaultProviderRegistry, createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent } from '@x-mars/ai'
+import {
+  createDefaultProviderRegistry,
+  createEventStream,
+  type AssistantMessage,
+  type Model,
+  type StreamContext,
+  type StreamEvent,
+} from '@x-mars/ai'
 import { createHookRegistry } from '@x-mars/hooks'
+import { InMemorySessionPersistence } from '@x-mars/session'
 import { attachLogListener, createLogger } from '@x-mars/shared'
 
-import { CodingSessionManager as SessionManager, createInMemoryCodingSessionManager } from '../src/session/coding-session-manager'
+import {
+  CodingSessionManager as SessionManager,
+  createInMemoryCodingSessionManager,
+} from '../src/session/coding-session-manager'
 import { AgentSession } from '../src/session/agent-session'
 
 const defaultProviderRegistry = createDefaultProviderRegistry()
@@ -70,7 +81,9 @@ async function flushLogs(): Promise<void> {
   await new Promise((resolve) => setTimeout(resolve, 20))
 }
 
-function createManager(overrides: Partial<Parameters<typeof createInMemoryCodingSessionManager>[0]> = {}) {
+function createManager(
+  overrides: Partial<Parameters<typeof createInMemoryCodingSessionManager>[0]> = {},
+) {
   return createInMemoryCodingSessionManager({
     model: makeModel(),
     hookRegistry: createHookRegistry({ preset: 'none' }),
@@ -192,6 +205,65 @@ describe('SessionManager', () => {
       })
 
       expect(await session.promptRefresh?.()).toBe('session-prompt')
+    })
+
+    it('searches active session messages by query', async () => {
+      const mgr = createManager()
+      const session = await mgr.createSession({ id: 'search-active' })
+      session.session.append({
+        role: 'user',
+        timestamp: Date.now(),
+        content: [{ type: 'text', text: 'Investigate web_fetch domain filtering regression' }],
+      } as any)
+
+      const results = await mgr.searchSessions({ query: 'domain filtering', limit: 3 })
+
+      expect(results[0]).toMatchObject({
+        id: 'search-active',
+        messageCount: 1,
+      })
+      expect(results[0]?.matches[0]?.text).toContain('web_fetch domain filtering')
+    })
+
+    it('searches persisted sessions without restoring them', async () => {
+      const persistence = new InMemorySessionPersistence()
+      const first = new SessionManager(
+        {
+          model: makeModel(),
+          hookRegistry: createHookRegistry({ preset: 'none' }),
+          providerRegistry: defaultProviderRegistry,
+          logger: createLogger('persisted-search-first'),
+          workspaceDir: process.cwd(),
+        },
+        persistence,
+      )
+      const created = await first.createSession({ id: 'persisted-search' })
+      created.session.updateMetadata({ title: 'Hermes comparison' })
+      created.session.append({
+        role: 'assistant',
+        timestamp: Date.now(),
+        content: [{ type: 'text', text: 'Hermes execute_code should become a safe RPC tool.' }],
+      } as any)
+      await first.save('persisted-search')
+
+      const second = new SessionManager(
+        {
+          model: makeModel(),
+          hookRegistry: createHookRegistry({ preset: 'none' }),
+          providerRegistry: defaultProviderRegistry,
+          logger: createLogger('persisted-search-second'),
+          workspaceDir: process.cwd(),
+        },
+        persistence,
+      )
+
+      const results = await second.searchSessions({ query: 'execute_code RPC', limit: 5 })
+
+      expect(second.listSessions()).toHaveLength(0)
+      expect(results[0]).toMatchObject({
+        id: 'persisted-search',
+        title: 'Hermes comparison',
+      })
     })
   })
 

@@ -51,9 +51,9 @@ describe('PersistenceBackedArchiveStorage', () => {
   it('lists archives filtered by sessionId', async () => {
     const messages = makeMessages(1)
     await storage.archive('s1', messages, 'summary-1')
-    await new Promise(r => setTimeout(r, 2))
+    await new Promise((r) => setTimeout(r, 2))
     await storage.archive('s2', messages, 'summary-2')
-    await new Promise(r => setTimeout(r, 2))
+    await new Promise((r) => setTimeout(r, 2))
     await storage.archive('s1', messages, 'summary-3')
 
     const s1Entries = await storage.list('s1')
@@ -74,7 +74,7 @@ describe('PersistenceBackedArchiveStorage', () => {
     const messages = makeMessages(1)
     const path1 = await storage.archive('s1', messages, 'first')
     // small delay to ensure different timestamps
-    await new Promise(r => setTimeout(r, 5))
+    await new Promise((r) => setTimeout(r, 5))
     const path2 = await storage.archive('s1', messages, 'second')
 
     const entries = await storage.list('s1')

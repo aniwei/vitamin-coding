@@ -25,13 +25,19 @@ const FLOW_DEFAULT_W = 380
 const FLOW_STORAGE_W = 'x-mars.webui.devtools.flow.width'
 
 function readStoredNumber(key: string, fallback: number): number {
-  if (typeof window === 'undefined') {return fallback}
+  if (typeof window === 'undefined') {
+    return fallback
+  }
 
   const raw = window.localStorage.getItem(key)
-  if (!raw) {return fallback}
+  if (!raw) {
+    return fallback
+  }
 
   const parsed = Number(raw)
-  if (!Number.isFinite(parsed) || parsed <= 0) {return fallback}
+  if (!Number.isFinite(parsed) || parsed <= 0) {
+    return fallback
+  }
 
   return parsed
 }
@@ -146,41 +152,43 @@ export function Devtools() {
     [flowWidth, panelWidth],
   )
 
-  if (!panelOpen) {return null}
+  if (!panelOpen) {
+    return null
+  }
 
   return (
     <aside
       ref={asideRef}
-      className="border-l border-gray-200 bg-white flex flex-col shrink-0 h-full overflow-hidden relative"
+      className='border-l border-gray-200 bg-white flex flex-col shrink-0 h-full overflow-hidden relative'
       style={{ width: panelWidth }}
     >
       {/* Left-edge panel resize */}
       <div
         onMouseDown={onPanelDragStart}
-        className="absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400/40 active:bg-blue-500/50 z-20"
+        className='absolute left-0 top-0 bottom-0 w-1 cursor-col-resize hover:bg-blue-400/40 active:bg-blue-500/50 z-20'
       />
 
       {/* ── Full-width top bar ── */}
-      <div className="flex items-center px-3 py-1 border-b border-gray-200 bg-gray-50/60 shrink-0">
-        {paused && <span className="ml-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse" />}
-        <div className="flex-1" />
+      <div className='flex items-center px-3 py-1 border-b border-gray-200 bg-gray-50/60 shrink-0'>
+        {paused && <span className='ml-1.5 w-1.5 h-1.5 rounded-full bg-amber-400 animate-pulse' />}
+        <div className='flex-1' />
         <button
           onClick={closePanel}
-          className="p-0.5 rounded hover:bg-gray-100 text-gray-400"
-          title="Hide panel"
+          className='p-0.5 rounded hover:bg-gray-100 text-gray-400'
+          title='Hide panel'
         >
-          <PanelRightClose className="w-3.5 h-3.5" />
+          <PanelRightClose className='w-3.5 h-3.5' />
         </button>
       </div>
 
       {/* ── Top: Flow (left) + DebugTab (right) ── */}
-      <div className="flex flex-row shrink-0 overflow-hidden" style={{ height: topHeight }}>
+      <div className='flex flex-row shrink-0 overflow-hidden' style={{ height: topHeight }}>
         {/* Flow panel */}
-        <div className="flex flex-col overflow-hidden" style={{ width: flowWidth }}>
-          <div className="flex items-center px-3 py-1 border-b border-gray-200 bg-gray-50/60 shrink-0">
-            <span className="text-[11px] font-semibold text-gray-400">Flow</span>
+        <div className='flex flex-col overflow-hidden' style={{ width: flowWidth }}>
+          <div className='flex items-center px-3 py-1 border-b border-gray-200 bg-gray-50/60 shrink-0'>
+            <span className='text-[11px] font-semibold text-gray-400'>Flow</span>
           </div>
-          <div className="flex-1 overflow-hidden min-h-0">
+          <div className='flex-1 overflow-hidden min-h-0'>
             <BreakpointFlow />
           </div>
         </div>
@@ -188,11 +196,11 @@ export function Devtools() {
         {/* Flow/Breakpoint vertical drag handle */}
         <div
           onMouseDown={onFlowDragStart}
-          className="w-1 shrink-0 cursor-col-resize hover:bg-blue-400/40 active:bg-blue-500/50 border-l border-gray-200"
+          className='w-1 shrink-0 cursor-col-resize hover:bg-blue-400/40 active:bg-blue-500/50 border-l border-gray-200'
         />
 
-        <div className="flex-1 flex flex-col overflow-hidden min-w-0">
-          <div className="flex-1 overflow-hidden min-h-0">
+        <div className='flex-1 flex flex-col overflow-hidden min-w-0'>
+          <div className='flex-1 overflow-hidden min-h-0'>
             <Debug />
           </div>
         </div>
@@ -200,19 +208,18 @@ export function Devtools() {
 
       <div
         onMouseDown={onTopDragStart}
-        className="h-1 shrink-0 cursor-row-resize hover:bg-blue-400/40 active:bg-blue-500/50 border-t border-gray-300"
+        className='h-1 shrink-0 cursor-row-resize hover:bg-blue-400/40 active:bg-blue-500/50 border-t border-gray-300'
       />
 
-      <div className="flex-1 flex flex-col overflow-hidden min-h-0">
-        <div className="flex items-center px-3 py-1 border-b border-gray-200 bg-gray-50/60 shrink-0">
-          <Terminal className="w-3 h-3 text-gray-400 mr-1" />
-          <span className="text-[11px] font-semibold text-gray-500">Console</span>
+      <div className='flex-1 flex flex-col overflow-hidden min-h-0'>
+        <div className='flex items-center px-3 py-1 border-b border-gray-200 bg-gray-50/60 shrink-0'>
+          <Terminal className='w-3 h-3 text-gray-400 mr-1' />
+          <span className='text-[11px] font-semibold text-gray-500'>Console</span>
         </div>
-        <div className="flex-1 overflow-hidden min-h-0">
+        <div className='flex-1 overflow-hidden min-h-0'>
           <Console />
         </div>
       </div>
     </aside>
   )
 }
-

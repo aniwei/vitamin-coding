@@ -66,7 +66,9 @@ describe('LocalPromptProvider', () => {
 
 describe('HttpPromptProvider', () => {
   function normalizeHeaders(headers?: HeadersInit): Record<string, string> {
-    if (!headers) return {}
+    if (!headers) {
+      return {}
+    }
     if (headers instanceof Headers) {
       return Object.fromEntries(headers.entries())
     }
@@ -80,7 +82,10 @@ describe('HttpPromptProvider', () => {
     const calls: Array<{ method: string; url: string; headers: Record<string, string> }> = []
     const entries = new Map([
       ['lead-guidance', { key: 'lead-guidance', content: '远程引导', version: 1 }],
-      ['lesson/session-end-learning', { key: 'lesson/session-end-learning', content: '远程学习', version: 1 }],
+      [
+        'lesson/session-end-learning',
+        { key: 'lesson/session-end-learning', content: '远程学习', version: 1 },
+      ],
     ])
 
     const fetchImpl: typeof globalThis.fetch = async (input, init) => {
@@ -105,7 +110,9 @@ describe('HttpPromptProvider', () => {
 
       if (pathname === '/prompts/batch' && method === 'POST') {
         const body = JSON.parse((init?.body as string) ?? '{}') as { keys?: string[] }
-        const items = (body.keys ?? []).map((key) => entries.get(key)).filter((entry) => entry !== undefined)
+        const items = (body.keys ?? [])
+          .map((key) => entries.get(key))
+          .filter((entry) => entry !== undefined)
         return new Response(JSON.stringify(items), { status: 200 })
       }
 
@@ -138,7 +145,10 @@ describe('HttpPromptProvider', () => {
     const calls: Array<{ method: string; pathname: string }> = []
     const entries = new Map([
       ['lead-guidance', { key: 'lead-guidance', content: 'fallback-1', version: 1 }],
-      ['lesson/session-end-learning', { key: 'lesson/session-end-learning', content: 'fallback-2', version: 1 }],
+      [
+        'lesson/session-end-learning',
+        { key: 'lesson/session-end-learning', content: 'fallback-2', version: 1 },
+      ],
     ])
 
     const fetchImpl: typeof globalThis.fetch = async (input, init) => {
@@ -154,7 +164,9 @@ describe('HttpPromptProvider', () => {
       if (pathname.startsWith('/prompts/') && method === 'GET') {
         const key = decodeURIComponent(pathname.replace('/prompts/', ''))
         const entry = entries.get(key)
-        if (!entry) return new Response('', { status: 404 })
+        if (!entry) {
+          return new Response('', { status: 404 })
+        }
         return new Response(JSON.stringify(entry), { status: 200 })
       }
 
@@ -385,7 +397,9 @@ describe('createPromptProvider factory', () => {
   })
 
   it('throws on unknown type', () => {
-    expect(() => createPromptProvider({ type: 'unknown' } as any)).toThrow('Unknown prompt provider type')
+    expect(() => createPromptProvider({ type: 'unknown' } as any)).toThrow(
+      'Unknown prompt provider type',
+    )
   })
 })
 
@@ -446,14 +460,17 @@ describe('sub-agent prompt helpers', () => {
   })
 
   it('resolveAgentProfile matches reviewer aliases', () => {
-    const profile = resolveAgentProfile([
-      {
-        name: 'reviewer',
-        taskTypes: ['review'],
-        capabilities: ['review', 'audit'],
-        systemPromptTemplate: 'x',
-      },
-    ], 'quality-reviewer')
+    const profile = resolveAgentProfile(
+      [
+        {
+          name: 'reviewer',
+          taskTypes: ['review'],
+          capabilities: ['review', 'audit'],
+          systemPromptTemplate: 'x',
+        },
+      ],
+      'quality-reviewer',
+    )
 
     expect(profile?.name).toBe('reviewer')
   })

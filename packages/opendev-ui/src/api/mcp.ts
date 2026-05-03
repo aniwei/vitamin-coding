@@ -26,9 +26,13 @@ export async function connectMCPServer(name: string): Promise<MCPApiResponse> {
 }
 
 export async function disconnectMCPServer(name: string): Promise<MCPApiResponse> {
-  return postJson<MCPApiResponse>(`/mcp/servers/${encodeURIComponent(name)}/disconnect`, undefined, {
-    normalizeCamel: true,
-  })
+  return postJson<MCPApiResponse>(
+    `/mcp/servers/${encodeURIComponent(name)}/disconnect`,
+    undefined,
+    {
+      normalizeCamel: true,
+    },
+  )
 }
 
 export async function testMCPServer(name: string): Promise<MCPApiResponse> {

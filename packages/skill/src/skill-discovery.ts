@@ -20,7 +20,7 @@ export async function discoverSkills(
 ): Promise<Map<string, { definition: SkillDefinition; source: SkillSource }>> {
   const results = new Map<string, { definition: SkillDefinition; source: SkillSource }>()
 
-  // 1. 扫描项目本地 skill 目录
+  // Claude Code 风格来源层级：项目级覆盖用户级，用户级覆盖 bundled/MCP。
   const projectDirs = config.projectDirs ?? ['.x-mars/skills']
   for (const relDir of projectDirs) {
     const absDir = path.resolve(workspaceDir, relDir)
@@ -28,19 +28,40 @@ export async function discoverSkills(
     const skills = await scanDirectory(absDir, source)
 
     for (const [name, entry] of skills) {
-      // 项目 skill 优先于全局 skill
       results.set(name, entry)
     }
   }
 
-  // 2. 扫描全局 skill 目录
   const globalDirs = config.globalDirs ?? []
   for (const absDir of globalDirs) {
     const source: SkillSource = { type: 'global', root: absDir }
     const skills = await scanDirectory(absDir, source)
 
     for (const [name, entry] of skills) {
-      // 不覆盖已有的项目 skill
+      if (!results.has(name)) {
+        results.set(name, entry)
+      }
+    }
+  }
+
+  const bundledDirs = config.bundledDirs ?? []
+  for (const absDir of bundledDirs) {
+    const source: SkillSource = { type: 'bundled', root: absDir }
+    const skills = await scanDirectory(absDir, source)
+
+    for (const [name, entry] of skills) {
+      if (!results.has(name)) {
+        results.set(name, entry)
+      }
+    }
+  }
+
+  const mcpDirs = config.mcpDirs ?? []
+  for (const absDir of mcpDirs) {
+    const source: SkillSource = { type: 'mcp', root: absDir }
+    const skills = await scanDirectory(absDir, source)
+
+    for (const [name, entry] of skills) {
       if (!results.has(name)) {
         results.set(name, entry)
       }
@@ -50,7 +71,7 @@ export async function discoverSkills(
   logger.info(
     'Discovered %d skills from %d directories',
     results.size,
-    projectDirs.length + globalDirs.length,
+    projectDirs.length + globalDirs.length + bundledDirs.length + mcpDirs.length,
   )
 
   return results

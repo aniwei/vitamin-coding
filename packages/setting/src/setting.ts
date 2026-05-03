@@ -28,6 +28,7 @@ const ROOT_OBJECT_KEYS = [
   'background_task',
   'experimental',
 ] as const
+const ROOT_OBJECT_ARRAY_KEYS = ['permissions', 'command_hooks'] as const
 const REMOVED_LEGACY_KEYS = ['mcp', 'skills', 'disabled_mcps', 'disabled_skills'] as const
 
 function isPlainObject(value: unknown): value is Record<string, unknown> {
@@ -165,6 +166,16 @@ function validate(setting: Partial<XMarsSetting>): Partial<XMarsSetting> {
     const value = validated[key]
     if (value !== undefined && !isPlainObject(value)) {
       dropInvalidField(validated, key, 'Expected object')
+    }
+  }
+
+  for (const key of ROOT_OBJECT_ARRAY_KEYS) {
+    const value = validated[key]
+    if (
+      value !== undefined &&
+      (!Array.isArray(value) || !value.every((item) => isPlainObject(item)))
+    ) {
+      dropInvalidField(validated, key, 'Expected object[]')
     }
   }
 

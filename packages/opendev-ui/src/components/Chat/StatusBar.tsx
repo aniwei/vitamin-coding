@@ -2,14 +2,22 @@ import { useChatStore } from '../../stores/chat'
 import { useStatusStore } from '../../stores/status'
 
 function formatTokens(n: number): string {
-  if (n >= 1_000_000) {return `${(n / 1_000_000).toFixed(1)}M`}
-  if (n >= 1_000) {return `${(n / 1_000).toFixed(1)}k`}
+  if (n >= 1_000_000) {
+    return `${(n / 1_000_000).toFixed(1)}M`
+  }
+  if (n >= 1_000) {
+    return `${(n / 1_000).toFixed(1)}k`
+  }
   return String(n)
 }
 
 function contextColor(pct: number): string {
-  if (pct >= 90) {return 'text-red-400'}
-  if (pct >= 70) {return 'text-yellow-400'}
+  if (pct >= 90) {
+    return 'text-red-400'
+  }
+  if (pct >= 70) {
+    return 'text-yellow-400'
+  }
   return 'text-text-300'
 }
 
@@ -19,7 +27,9 @@ export function StatusBar() {
   const currentSessionId = useChatStore((s) => s.currentSessionId)
   const runningSessions = useChatStore((s) => s.runningSessions)
 
-  if (!currentSessionId) {return null}
+  if (!currentSessionId) {
+    return null
+  }
 
   const runningCount = runningSessions.size
 
@@ -31,9 +41,9 @@ export function StatusBar() {
   const contextPct = data.contextUsagePct || status?.contextUsagePct || 0
 
   return (
-    <div className="flex items-center gap-4 px-4 py-1.5 bg-bg-100 border-t border-border-300/30 text-xs font-mono text-text-400 select-none shrink-0">
+    <div className='flex items-center gap-4 px-4 py-1.5 bg-bg-100 border-t border-border-300/30 text-xs font-mono text-text-400 select-none shrink-0'>
       {/* Model */}
-      <span className="text-text-200 font-medium truncate max-w-[180px]" title={model}>
+      <span className='text-text-200 font-medium truncate max-w-[180px]' title={model}>
         {model}
       </span>
 
@@ -52,16 +62,16 @@ export function StatusBar() {
 
       {/* Git branch */}
       {branch && (
-        <span className="text-text-300 truncate max-w-[120px]" title={branch}>
-          <span className="text-text-400 mr-1">⎇</span>
+        <span className='text-text-300 truncate max-w-[120px]' title={branch}>
+          <span className='text-text-400 mr-1'>⎇</span>
           {branch}
         </span>
       )}
 
-      <div className="flex-1" />
+      <div className='flex-1' />
 
       {/* Tokens */}
-      <span className="text-text-300">
+      <span className='text-text-300'>
         {formatTokens(totalTokens)}/{formatTokens(data.maxTokens)}
       </span>
 
@@ -78,22 +88,22 @@ export function StatusBar() {
       )}
 
       {/* Cost */}
-      {cost > 0 && <span className="text-text-300">${cost.toFixed(2)}</span>}
+      {cost > 0 && <span className='text-text-300'>${cost.toFixed(2)}</span>}
 
       {/* Running sessions (background tasks) */}
       {runningCount > 0 && (
-        <span className="text-blue-400 flex items-center gap-1">
-          <span className="inline-block w-2 h-2 bg-blue-400 rounded-full animate-pulse" />
+        <span className='text-blue-400 flex items-center gap-1'>
+          <span className='inline-block w-2 h-2 bg-blue-400 rounded-full animate-pulse' />
           {runningCount} running
         </span>
       )}
 
       {/* File changes */}
       {data.fileChanges && data.fileChanges.files > 0 && (
-        <span className="text-text-300">
+        <span className='text-text-300'>
           {data.fileChanges.files} files
-          <span className="text-green-400 ml-1">+{data.fileChanges.additions}</span>
-          <span className="text-red-400 ml-1">-{data.fileChanges.deletions}</span>
+          <span className='text-green-400 ml-1'>+{data.fileChanges.additions}</span>
+          <span className='text-red-400 ml-1'>-{data.fileChanges.deletions}</span>
         </span>
       )}
     </div>

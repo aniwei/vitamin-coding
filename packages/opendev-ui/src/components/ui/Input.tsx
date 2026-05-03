@@ -16,7 +16,7 @@ export const Input = forwardRef<HTMLInputElement, InputProps>(function Input(
   return (
     <div className={cn('relative', className)}>
       {leftIcon && (
-        <span className="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400">
+        <span className='absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-gray-400'>
           {leftIcon}
         </span>
       )}

@@ -15,13 +15,15 @@ function makeRunSession(
   return async (opts) => impl(opts)
 }
 
-function makeExecutor(overrides: {
-  runSession?: (opts: RunSessionOptions) => Promise<RunSessionResult>
-  maxActiveTasks?: number
-  hookRegistry?: HookRegistry
-  retryPolicy?: RetryPolicy
-  circuitBreaker?: CircuitBreaker
-} = {}) {
+function makeExecutor(
+  overrides: {
+    runSession?: (opts: RunSessionOptions) => Promise<RunSessionResult>
+    maxActiveTasks?: number
+    hookRegistry?: HookRegistry
+    retryPolicy?: RetryPolicy
+    circuitBreaker?: CircuitBreaker
+  } = {},
+) {
   const taskStore = new TaskStore()
   const hookRegistry = overrides.hookRegistry ?? new HookRegistry()
   const retryPolicy = overrides.retryPolicy ?? new RetryPolicy({ enabled: false })
@@ -30,7 +32,14 @@ function makeExecutor(overrides: {
   const maxActiveTasks = overrides.maxActiveTasks ?? 10
 
   return {
-    executor: new TaskExecutor(taskStore, hookRegistry, retryPolicy, circuitBreaker, runSession, maxActiveTasks),
+    executor: new TaskExecutor(
+      taskStore,
+      hookRegistry,
+      retryPolicy,
+      circuitBreaker,
+      runSession,
+      maxActiveTasks,
+    ),
     taskStore,
     hookRegistry,
   }
@@ -86,22 +95,24 @@ describe('TaskExecutor.dispatch', () => {
     })
 
     expect(result.success).toBe(true)
-    expect(seen).toMatchObject([{
-      prompt: 'review this diff',
-      sessionId: 'child-review',
-      sessionMode: 'sticky',
-      agentName: 'quality-reviewer',
-      slot: 'critique',
-      sidechain: {
-        parentTaskId: undefined,
-        parentSessionId: undefined,
-        subagent: 'quality-reviewer',
-        policy: {
-          returnMode: 'summary_only',
-          permissionMode: 'inherit',
+    expect(seen).toMatchObject([
+      {
+        prompt: 'review this diff',
+        sessionId: 'child-review',
+        sessionMode: 'sticky',
+        agentName: 'quality-reviewer',
+        slot: 'critique',
+        sidechain: {
+          parentTaskId: undefined,
+          parentSessionId: undefined,
+          subagent: 'quality-reviewer',
+          policy: {
+            returnMode: 'summary_only',
+            permissionMode: 'inherit',
+          },
         },
       },
-    }])
+    ])
   })
 
   it('forwards task metadata to runSession', async () => {
@@ -257,7 +268,9 @@ describe('TaskExecutor.dispatch', () => {
 
   it('returns error when runSession throws', async () => {
     const { executor } = makeExecutor({
-      runSession: makeRunSession(() => { throw new Error('session failed') }),
+      runSession: makeRunSession(() => {
+        throw new Error('session failed')
+      }),
     })
 
     const result = await executor.dispatch({ prompt: 'fail', mode: 'sync' })
@@ -270,7 +283,7 @@ describe('TaskExecutor.dispatch', () => {
     let resolved = false
     const { executor } = makeExecutor({
       runSession: makeRunSession(async () => {
-        await new Promise(r => setTimeout(r, 50))
+        await new Promise((r) => setTimeout(r, 50))
         resolved = true
         return { text: 'bg done', sessionId: 'bg-1', durationMs: 50 }
       }),
@@ -283,7 +296,7 @@ describe('TaskExecutor.dispatch', () => {
     expect(resolved).toBe(false)
 
     // wait for background to complete
-    await new Promise(r => setTimeout(r, 150))
+    await new Promise((r) => setTimeout(r, 150))
     expect(resolved).toBe(true)
   })
 
@@ -293,9 +306,13 @@ describe('TaskExecutor.dispatch', () => {
       runSession: makeRunSession((opts) => {
         seenSignal = opts.signal
         return new Promise<RunSessionResult>((resolve, reject) => {
-          opts.signal?.addEventListener('abort', () => {
-            reject(new Error('aborted by test'))
-          }, { once: true })
+          opts.signal?.addEventListener(
+            'abort',
+            () => {
+              reject(new Error('aborted by test'))
+            },
+            { once: true },
+          )
           setTimeout(() => {
             resolve({ text: 'late success', sessionId: 'late-session', durationMs: 100 })
           }, 100)
@@ -306,16 +323,16 @@ describe('TaskExecutor.dispatch', () => {
     const result = await executor.dispatch({ prompt: 'long task', mode: 'background' })
     expect(result.success).toBe(true)
 
-    await new Promise(r => setTimeout(r, 10))
+    await new Promise((r) => setTimeout(r, 10))
     expect(seenSignal?.aborted).toBe(false)
     expect(executor.cancelTask(result.id!)).toBe(true)
     expect(seenSignal?.aborted).toBe(true)
 
-    await new Promise(r => setTimeout(r, 20))
+    await new Promise((r) => setTimeout(r, 20))
     const task = await taskStore.get(result.id!)
     expect(task?.status).toBe('cancelled')
 
-    await new Promise(r => setTimeout(r, 120))
+    await new Promise((r) => setTimeout(r, 120))
     const latest = await taskStore.get(result.id!)
     expect(latest?.status).toBe('cancelled')
     expect(latest?.output).toBeUndefined()
@@ -332,7 +349,7 @@ describe('TaskExecutor.dispatch', () => {
       }),
       runSession: makeRunSession(async () => {
         callCount++
-        await new Promise(r => setTimeout(r, 20))
+        await new Promise((r) => setTimeout(r, 20))
         throw new Error('retryable failure')
       }),
     })
@@ -340,10 +357,10 @@ describe('TaskExecutor.dispatch', () => {
     const result = await executor.dispatch({ prompt: 'cancel during backoff', mode: 'background' })
     expect(result.success).toBe(true)
 
-    await new Promise(r => setTimeout(r, 30))
+    await new Promise((r) => setTimeout(r, 30))
     expect(executor.cancelTask(result.id!)).toBe(true)
 
-    await new Promise(r => setTimeout(r, 80))
+    await new Promise((r) => setTimeout(r, 80))
     const task = await taskStore.get(result.id!)
     expect(task?.status).toBe('cancelled')
     expect(callCount).toBe(1)
@@ -394,7 +411,7 @@ describe('TaskExecutor.dispatch', () => {
       summary: 'Sidechain task timed out after 20ms',
     })
 
-    await new Promise(r => setTimeout(r, 90))
+    await new Promise((r) => setTimeout(r, 90))
     expect(resolved).toBe(true)
     const latest = await taskStore.get(result.id!)
     expect(latest?.status).toBe('failed')
@@ -405,7 +422,7 @@ describe('TaskExecutor.dispatch', () => {
     const { executor } = makeExecutor({
       maxActiveTasks: 1,
       runSession: makeRunSession(async () => {
-        await new Promise(r => setTimeout(r, 200))
+        await new Promise((r) => setTimeout(r, 200))
         return { text: 'ok', sessionId: 's1', durationMs: 200 }
       }),
     })
@@ -413,7 +430,7 @@ describe('TaskExecutor.dispatch', () => {
     // start first task in background (it will be running)
     await executor.dispatch({ prompt: 'task1', mode: 'background' })
     // give it a tick to start executing
-    await new Promise(r => setTimeout(r, 10))
+    await new Promise((r) => setTimeout(r, 10))
 
     // second task should be rejected
     const result = await executor.dispatch({ prompt: 'task2', mode: 'sync' })
@@ -461,9 +478,30 @@ describe('TaskExecutor.dispatch', () => {
     const hookRegistry = new HookRegistry()
     const events: string[] = []
 
-    hookRegistry.on('task.created', 'test-created', () => { events.push('created') }, 0)
-    hookRegistry.on('task.started', 'test-started', () => { events.push('started') }, 0)
-    hookRegistry.on('task.completed', 'test-completed', () => { events.push('completed') }, 0)
+    hookRegistry.on(
+      'task.created',
+      'test-created',
+      () => {
+        events.push('created')
+      },
+      0,
+    )
+    hookRegistry.on(
+      'task.started',
+      'test-started',
+      () => {
+        events.push('started')
+      },
+      0,
+    )
+    hookRegistry.on(
+      'task.completed',
+      'test-completed',
+      () => {
+        events.push('completed')
+      },
+      0,
+    )
 
     const { executor } = makeExecutor({ hookRegistry })
 
@@ -515,12 +553,14 @@ describe('TaskExecutor.callAgent', () => {
     })
 
     expect(result.success).toBe(true)
-    expect(seen).toEqual([{
-      prompt: 'check against spec',
-      sessionMode: 'ephemeral',
-      agentName: 'spec-reviewer',
-      slot: 'critique',
-    }])
+    expect(seen).toEqual([
+      {
+        prompt: 'check against spec',
+        sessionMode: 'ephemeral',
+        agentName: 'spec-reviewer',
+        slot: 'critique',
+      },
+    ])
   })
 
   it('bypasses the circuit breaker gate for direct agent calls', async () => {
@@ -570,7 +610,9 @@ describe('TaskExecutor.callAgent', () => {
 
   it('returns error on failure', async () => {
     const { executor } = makeExecutor({
-      runSession: makeRunSession(() => { throw new Error('agent crash') }),
+      runSession: makeRunSession(() => {
+        throw new Error('agent crash')
+      }),
     })
 
     const result = await executor.callAgent('coder', 'fail', {})

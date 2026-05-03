@@ -101,7 +101,9 @@ describe('BackgroundManager.cancel', () => {
     const task = await taskStore.create({ prompt: 'test' })
     await taskStore.update(task.id, { status: 'running' })
     const aborted: string[] = []
-    const mgr = new BackgroundManager(taskStore, (id) => { aborted.push(id) })
+    const mgr = new BackgroundManager(taskStore, (id) => {
+      aborted.push(id)
+    })
 
     await mgr.cancel(task.id)
     expect(aborted).toEqual([task.id])

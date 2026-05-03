@@ -7,14 +7,16 @@ describe('Breakpoints', () => {
   it('initializes all predefined points as enabled', () => {
     const breakpoints = new Breakpoints()
 
-    expect(breakpoints.list().map(item => item.point)).toEqual(BREAKPOINT_POINTS.map(item => item.point))
+    expect(breakpoints.list().map((item) => item.point)).toEqual(
+      BREAKPOINT_POINTS.map((item) => item.point),
+    )
     expect(breakpoints.get('loop_start')).toMatchObject({
       point: 'loop_start',
       name: 'Loop Start',
       category: 'agent_work_loop',
       enabled: true,
     })
-    expect(breakpoints.list().every(item => item.enabled)).toBe(true)
+    expect(breakpoints.list().every((item) => item.enabled)).toBe(true)
   })
 
   it('disables and enables a single point', () => {
@@ -31,10 +33,10 @@ describe('Breakpoints', () => {
     const breakpoints = new Breakpoints()
 
     breakpoints.disableAll()
-    expect(breakpoints.list().every(item => item.enabled === false)).toBe(true)
+    expect(breakpoints.list().every((item) => item.enabled === false)).toBe(true)
 
     breakpoints.enableAll()
-    expect(breakpoints.list().every(item => item.enabled === true)).toBe(true)
+    expect(breakpoints.list().every((item) => item.enabled === true)).toBe(true)
   })
 
   it('returns snapshot objects from get/list', () => {

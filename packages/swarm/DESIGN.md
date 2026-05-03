@@ -143,3 +143,41 @@ Router:
 ## 测试策略
 
 - 测试文件覆盖各协作模式和路由策略
+
+## 模块设计基线
+
+### 设计目的
+
+提供多 Agent 协作、路由、handoff、并行、串行和层级模式，用于比单 Agent 更复杂的任务分解。
+
+### 接口设计
+
+- `Swarm` / `createSwarm()`：创建和运行协作网络。
+- `SwarmRouter` / `createRouter()`：选择目标 Agent。
+- `createHandoffTool()` / `validateHandoff()`：Agent 间交接。
+- `createSwarmContext()`：共享状态和调用图。
+
+### 方法论
+
+单 Agent 保持独立，Swarm 只做协作结构和上下文传递；路由策略可插拔，handoff 必须受深度和目标校验约束。
+
+### 实现逻辑
+
+用户任务进入 swarm 后按模式选择 Agent；执行结果写入共享上下文；必要时 handoff 或聚合多个 Agent 输出。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[task] --> B[Swarm]
+  B --> C{pattern}
+  C --> D[sequential]
+  C --> E[parallel]
+  C --> F[hierarchical]
+  C --> G[router/handoff]
+  D --> H[SwarmContext]
+  E --> H
+  F --> H
+  G --> H
+  H --> I[result]
+```

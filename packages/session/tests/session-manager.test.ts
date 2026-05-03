@@ -123,17 +123,23 @@ describe('SessionManager', () => {
       const store = new InMemorySessionStore<string>()
       const manager = new SessionManager<string>({ store, maxSessions: 10 })
 
-      const source = await manager.create('source', 'Debug HTTP issue') as InMemorySession<string>
+      const source = (await manager.create('source', 'Debug HTTP issue')) as InMemorySession<string>
       source.addTag('important')
 
       await manager.create('other', 'Refactor database')
-      const child = await manager.fork('source', 'child') as InMemorySession<string>
+      const child = (await manager.fork('source', 'child')) as InMemorySession<string>
       child.setTags(['fork'])
       child.setTitle('Branch notes')
 
-      expect(manager.filter({ tags: ['important'] }).map((session: { id: string }) => session.id)).toEqual(['source'])
-      expect(manager.filter({ hasParent: true }).map((session: { id: string }) => session.id)).toEqual(['child'])
-      expect(manager.filter({ titleContains: 'HTTP' }).map((session: { id: string }) => session.id)).toEqual(['source'])
+      expect(
+        manager.filter({ tags: ['important'] }).map((session: { id: string }) => session.id),
+      ).toEqual(['source'])
+      expect(
+        manager.filter({ hasParent: true }).map((session: { id: string }) => session.id),
+      ).toEqual(['child'])
+      expect(
+        manager.filter({ titleContains: 'HTTP' }).map((session: { id: string }) => session.id),
+      ).toEqual(['source'])
 
       manager.dispose()
     })
@@ -147,8 +153,12 @@ describe('SessionManager', () => {
       await sleep(10)
       await manager.create('later')
 
-      expect(manager.filter({ createdBefore: cutoff }).map((session) => session.id)).toEqual(['earlier'])
-      expect(manager.filter({ createdAfter: cutoff }).map((session) => session.id)).toEqual(['later'])
+      expect(manager.filter({ createdBefore: cutoff }).map((session) => session.id)).toEqual([
+        'earlier',
+      ])
+      expect(manager.filter({ createdAfter: cutoff }).map((session) => session.id)).toEqual([
+        'later',
+      ])
 
       manager.dispose()
     })
@@ -190,7 +200,7 @@ describe('SessionManager', () => {
       })
 
       for (let i = 0; i < 60; i++) {
-        const session = await manager.create(`s-${i}`) as InMemorySession<string>
+        const session = (await manager.create(`s-${i}`)) as InMemorySession<string>
         if (i < 30) {
           session.addTag('important')
         }
@@ -205,13 +215,19 @@ describe('SessionManager', () => {
       expect(listPage1.items).toHaveLength(10)
       expect(listPage1.hasNext).toBe(false)
 
-      const filteredPage0 = manager.filterPaginated({ tags: ['important'] }, { page: 0, pageSize: 10 })
+      const filteredPage0 = manager.filterPaginated(
+        { tags: ['important'] },
+        { page: 0, pageSize: 10 },
+      )
       expect(filteredPage0.total).toBe(30)
       expect(filteredPage0.items).toHaveLength(10)
       expect(filteredPage0.totalPages).toBe(3)
       expect(filteredPage0.hasNext).toBe(true)
 
-      const filteredPage2 = manager.filterPaginated({ tags: ['important'] }, { page: 2, pageSize: 10 })
+      const filteredPage2 = manager.filterPaginated(
+        { tags: ['important'] },
+        { page: 2, pageSize: 10 },
+      )
       expect(filteredPage2.items).toHaveLength(10)
       expect(filteredPage2.hasNext).toBe(false)
 
@@ -242,7 +258,7 @@ describe('SessionManager', () => {
         persistence,
       })
 
-      const session = await writer.create('checkpoint-persist') as InMemorySession<string>
+      const session = (await writer.create('checkpoint-persist')) as InMemorySession<string>
       session.append('before')
       session.recordSideEffect({
         type: 'file',
@@ -323,7 +339,7 @@ describe('SessionManager', () => {
   describe('#when collecting idle sessions', () => {
     it('#then collectIdle removes stale sessions', async () => {
       const manager = createInMemorySessionManager<string>({ idleTimeoutMs: 50 })
-      const stale = await manager.create('stale') as InMemorySession<string>
+      const stale = (await manager.create('stale')) as InMemorySession<string>
 
       ageSession(stale, 100)
 
@@ -335,7 +351,7 @@ describe('SessionManager', () => {
 
     it('#then collectIdle removes idle sessions on demand', async () => {
       const manager = createInMemorySessionManager<string>({ idleTimeoutMs: 20 })
-      const session = await manager.create('keep-me') as InMemorySession<string>
+      const session = (await manager.create('keep-me')) as InMemorySession<string>
 
       // Not yet idle — lastActiveAt is recent
       expect(manager.collectIdle()).toHaveLength(0)
@@ -396,7 +412,7 @@ describe('SessionManager', () => {
         persistence,
       })
 
-      const session = await writer.create('disk-checkpoint') as InMemorySession<string>
+      const session = (await writer.create('disk-checkpoint')) as InMemorySession<string>
       session.append('before')
       session.recordSideEffect({
         type: 'file',

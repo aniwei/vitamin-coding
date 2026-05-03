@@ -92,13 +92,15 @@ export interface OrchestratorOptions {
   /** 可选：外部 abort 回调 */
   abortTask?: (taskId: string) => void
   workflowConfig?: WorkflowOptions
-  maxActiveTasks?: number
+  maxActiveTasks?: number | (() => number)
   maxBackgroundTasks?: number
   defaultMaxAttempts?: number
 }
 
 export interface WorkflowOptions {
   enabled?: boolean
+  maxActiveTasks?: number
+  max_active_tasks?: number
   review?: {
     enabled?: boolean
   }

@@ -255,3 +255,38 @@ save(key, data)
 
 - 测试文件数：4
 - 覆盖：三种后端 CRUD、快照版本控制、分页、编解码器
+
+## 模块设计基线
+
+### 设计目的
+
+提供通用持久化抽象，支持磁盘、远端和内存后端，为 session、memory、setting 等模块复用。
+
+### 接口设计
+
+- `DiskPersistence`：文件系统 JSON 存储。
+- `RemotePersistence`：HTTP 存储。
+- `InMemoryPersistence`：测试和临时存储。
+- `PaginatedResult`：列表分页结果结构。
+
+### 方法论
+
+存储接口按 key/value 和列表能力抽象，领域模块负责序列化语义，persistence 只负责可靠读写。
+
+### 实现逻辑
+
+调用方选择后端并提交结构化数据；持久化层完成路径/请求封装、读写、列举和错误归一化。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[domain module] --> B[persistence interface]
+  B --> C{backend}
+  C --> D[disk]
+  C --> E[remote http]
+  C --> F[memory]
+  D --> G[stored snapshot]
+  E --> G
+  F --> G
+```

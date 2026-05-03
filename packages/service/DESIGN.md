@@ -126,3 +126,37 @@ AgentSession 事件到 WebSocket 协议的单向映射（40+ 事件类型）：
 ## 测试策略
 
 - 测试文件位于 `example/` 目录，以集成示例形式验证
+
+## 模块设计基线
+
+### 设计目的
+
+提供 HTTP/WebSocket 服务层，把浏览器、RPC 或外部客户端请求桥接到 XMarsApp 和 AgentSession。
+
+### 接口设计
+
+- `createApp()`：创建服务应用。
+- `CodingService`：持有 XMarsContext、会话和事件桥。
+- `InboundRouter`：处理入站协议消息。
+- `routes/*`：health、sessions、setting、workspace、devtools 等 HTTP 路由。
+
+### 方法论
+
+Service 只处理传输、序列化和事件桥接，不把 Agent 执行细节泄漏给前端；所有入站消息先校验再路由。
+
+### 实现逻辑
+
+客户端连接后发送请求或订阅事件；service 校验消息，调用 session/runtime，序列化事件并通过 WebSocket 或 HTTP 返回。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[client] --> B[HTTP/WebSocket]
+  B --> C[createApp routes / InboundRouter]
+  C --> D[CodingService]
+  D --> E[XMarsApp]
+  E --> F[AgentSession]
+  F --> G[events]
+  G --> B
+```

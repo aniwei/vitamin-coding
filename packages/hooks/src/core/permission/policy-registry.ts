@@ -70,6 +70,18 @@ const DEFAULT_ALLOW: PermissionDecision = {
 }
 
 const MIN_SETTING_POLICY_PRIORITY = 25
+const READ_TOOL_NAMES = [
+  'read',
+  'grep',
+  'glob',
+  'ls',
+  'web_fetch',
+  'web_search',
+  'skill_search',
+  'skill_view',
+  'tool_output_read',
+]
+const WRITE_TOOL_NAMES = ['write', 'edit', 'multi_edit', 'apply_patch']
 
 export class PermissionPolicyRegistry {
   private policies: PermissionPolicy[] = []
@@ -163,10 +175,7 @@ export function compilePolicyFromSetting(setting: PermissionPolicySetting): Perm
   const rules: PermissionRule[] = setting.rules.map((rc) => ({
     name: rc.name,
     effect: rc.effect,
-    match: {
-      tools: rc.tools,
-      paths: rc.paths?.map((p) => new RegExp(p)),
-    },
+    match: compileRuleMatch(rc.match, rc.tools, rc.paths),
     denyReason: rc.deny_reason,
     askPrompt: rc.ask_prompt,
   }))
@@ -181,4 +190,74 @@ export function compilePolicyFromSetting(setting: PermissionPolicySetting): Perm
     },
     rules,
   }
+}
+
+function compileRuleMatch(
+  dsl: string | undefined,
+  tools: string[] | undefined,
+  paths: string[] | undefined,
+): PermissionRule['match'] {
+  const base = dsl ? compilePermissionDsl(dsl) : {}
+  return {
+    ...base,
+    tools: tools ?? base.tools,
+    paths: paths ? paths.map((p) => new RegExp(p)) : base.paths,
+  }
+}
+
+function compilePermissionDsl(dsl: string): PermissionRule['match'] {
+  const match = /^(Read|Write|Bash)\((.*)\)$/.exec(dsl.trim())
+  if (!match) {
+    throw new Error(`Invalid permission DSL: ${dsl}`)
+  }
+
+  const kind = match[1]
+  const pattern = match[2]?.trim() ?? '*'
+
+  if (kind === 'Read') {
+    return {
+      tools: READ_TOOL_NAMES,
+      paths: compilePathPattern(pattern),
+    }
+  }
+
+  if (kind === 'Write') {
+    return {
+      tools: WRITE_TOOL_NAMES,
+      paths: compilePathPattern(pattern),
+    }
+  }
+
+  return {
+    tools: ['bash'],
+    condition: (context) => matchesShellCommand(pattern, context.args),
+  }
+}
+
+function compilePathPattern(pattern: string): RegExp[] | undefined {
+  if (!pattern || pattern === '*') {
+    return undefined
+  }
+  return [globToRegExp(pattern)]
+}
+
+function matchesShellCommand(pattern: string, args: Record<string, unknown>): boolean {
+  const command = args.command ?? args.cmd
+  if (typeof command !== 'string') {
+    return false
+  }
+  if (!pattern || pattern === '*') {
+    return true
+  }
+  return globToRegExp(pattern).test(command.trim())
+}
+
+function globToRegExp(pattern: string): RegExp {
+  const escaped = pattern.replace(/[.+^${}()|[\]\\]/g, '\\$&')
+  const regex = escaped
+    .replace(/\*\*/g, '\u0000')
+    .replace(/\*/g, '[^/]*')
+    .replace(/\?/g, '.')
+    .replace(/\u0000/g, '.*')
+  return new RegExp(`^${regex}$`)
 }

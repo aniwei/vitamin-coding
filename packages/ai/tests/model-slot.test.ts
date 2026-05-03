@@ -25,10 +25,7 @@ describe('ModelSlot', () => {
       const defaultModel = makeModel('openai/gpt-4')
       registry.register(defaultModel)
 
-      const slot = new ModelSlot(
-        { slots: {}, default: 'openai/gpt-4' },
-        registry,
-      )
+      const slot = new ModelSlot({ slots: {}, default: 'openai/gpt-4' }, registry)
       const resolved = slot.resolve()
       expect(resolved.id).toBe('openai/gpt-4')
     })
@@ -54,10 +51,7 @@ describe('ModelSlot', () => {
       const registry = createModelRegistry()
       registry.register(makeModel('openai/gpt-4'))
 
-      const slot = new ModelSlot(
-        { slots: {}, default: 'openai/gpt-4' },
-        registry,
-      )
+      const slot = new ModelSlot({ slots: {}, default: 'openai/gpt-4' }, registry)
       const resolved = slot.resolve('thinking')
       expect(resolved.id).toBe('openai/gpt-4')
     })
@@ -118,10 +112,7 @@ describe('createModelSlot', () => {
     const registry = createModelRegistry()
     registry.register(makeModel('openai/gpt-4'))
 
-    const slot = createModelSlot(
-      { slots: {}, default: 'openai/gpt-4' },
-      registry,
-    )
+    const slot = createModelSlot({ slots: {}, default: 'openai/gpt-4' }, registry)
     expect(slot).toBeInstanceOf(ModelSlot)
     expect(slot.resolve().id).toBe('openai/gpt-4')
   })

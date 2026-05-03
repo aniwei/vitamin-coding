@@ -130,9 +130,15 @@ describe('AsyncDisposableStack', () => {
     it('#then disposes in LIFO order', async () => {
       const order: number[] = []
       const stack = new AsyncDisposableStack()
-      stack.defer(async () => { order.push(1) })
-      stack.defer(async () => { order.push(2) })
-      stack.defer(async () => { order.push(3) })
+      stack.defer(async () => {
+        order.push(1)
+      })
+      stack.defer(async () => {
+        order.push(2)
+      })
+      stack.defer(async () => {
+        order.push(3)
+      })
       await stack[Symbol.asyncDispose]()
       expect(order).toEqual([3, 2, 1])
     })

@@ -46,11 +46,15 @@ export const useStatusStore = create<StatusStore>((set) => ({
 
 // 订阅 WebSocket 状态事件
 ws.on('Session.statusUpdate', (message) => {
-  if (!isRecord(message.data)) {return}
+  if (!isRecord(message.data)) {
+    return
+  }
   const d = message.data
 
   const updates: Partial<StatusBarData> = {}
-  if (typeof d.model === 'string') {updates.model = d.model}
+  if (typeof d.model === 'string') {
+    updates.model = d.model
+  }
   updates.provider = readString(d, 'provider', 'modelProvider') ?? updates.provider
   updates.inputTokens = readNumber(d, 'inputTokens') ?? updates.inputTokens
   updates.outputTokens = readNumber(d, 'outputTokens') ?? updates.outputTokens
@@ -66,7 +70,8 @@ ws.on('Session.statusUpdate', (message) => {
     updates.thinkingLevel
   updates.mcpConnected = readNumber(d, 'mcpConnected') ?? updates.mcpConnected
   updates.mcpTotal = readNumber(d, 'mcpTotal') ?? updates.mcpTotal
-  updates.fileChanges = readObject<StatusBarData['fileChanges']>(d, 'fileChanges') ?? updates.fileChanges
+  updates.fileChanges =
+    readObject<StatusBarData['fileChanges']>(d, 'fileChanges') ?? updates.fileChanges
 
   useStatusStore.getState().update(updates)
 })

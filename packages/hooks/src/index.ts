@@ -18,6 +18,7 @@ export {
   createLabelTruncatorHook,
   createRulesInjectorHook,
   createOutputTruncationHook,
+  createToolOutputPersistenceHook,
   createContextInjectorHook,
   createThinkingValidatorHook,
   createAnthropicEffortHook,
@@ -50,6 +51,8 @@ export {
   trackTokenUsage,
   getTokenUsage,
   clearTokenUsage,
+  createCommandHook,
+  isCommandHookConfig,
 } from './core'
 export type {
   ContextInjectorConfig,
@@ -57,9 +60,15 @@ export type {
   IdleContinuationConfig,
   ErrorRecoveryConfig,
   ToolErrorTrackerConfig,
+  ToolOutputPersistenceConfig,
   TokenBudgetConfig,
   PatchReviewGateConfig,
   PatchReviewSummary,
+  CommandHookConfig,
+  CommandHookMatcher,
+  CommandHookRunner,
+  CommandHookRunInput,
+  CommandHookRunResult,
 } from './core'
 
 // Permission

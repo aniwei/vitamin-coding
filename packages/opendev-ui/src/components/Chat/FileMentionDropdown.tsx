@@ -58,10 +58,10 @@ export function FileMentionDropdown({
     return (
       <div
         ref={dropdownRef}
-        className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg"
+        className='fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg'
         style={{ top: position.top, left: position.left }}
       >
-        <div className="px-4 py-3 text-sm text-gray-500">No files found</div>
+        <div className='px-4 py-3 text-sm text-gray-500'>No files found</div>
       </div>
     )
   }
@@ -69,7 +69,7 @@ export function FileMentionDropdown({
   return (
     <div
       ref={dropdownRef}
-      className="fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg w-96 max-h-64 overflow-y-auto"
+      className='fixed z-50 bg-white border border-gray-300 rounded-lg shadow-lg w-96 max-h-64 overflow-y-auto'
       style={{ top: position.top, left: position.left }}
     >
       {files.map((file, index) => (
@@ -81,10 +81,10 @@ export function FileMentionDropdown({
             index === selectedIndex ? 'bg-gray-100' : 'hover:bg-gray-50'
           }`}
         >
-          <DocumentIcon className="w-4 h-4 text-gray-400 flex-shrink-0" />
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-gray-900 truncate">{file.name}</div>
-            <div className="text-xs text-gray-500 truncate">{file.path}</div>
+          <DocumentIcon className='w-4 h-4 text-gray-400 flex-shrink-0' />
+          <div className='flex-1 min-w-0'>
+            <div className='text-sm font-medium text-gray-900 truncate'>{file.name}</div>
+            <div className='text-xs text-gray-500 truncate'>{file.path}</div>
           </div>
         </div>
       ))}

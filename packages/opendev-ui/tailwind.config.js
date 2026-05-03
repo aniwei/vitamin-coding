@@ -72,13 +72,7 @@ export default {
           'Arial',
           'sans-serif',
         ],
-        mono: [
-          'JetBrains Mono',
-          'Fira Code',
-          'Monaco',
-          'Courier New',
-          'monospace',
-        ],
+        mono: ['JetBrains Mono', 'Fira Code', 'Monaco', 'Courier New', 'monospace'],
       },
       spacing: {
         18: '4.5rem',

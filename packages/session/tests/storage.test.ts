@@ -29,6 +29,8 @@ describe('createSessionStorage', () => {
   })
 
   it('#then throws for unknown storage type', () => {
-    expect(() => createSessionStorage({ type: 'unknown' as any, baseDir: '/' })).toThrow('Unsupported storage type')
+    expect(() => createSessionStorage({ type: 'unknown' as any, baseDir: '/' })).toThrow(
+      'Unsupported storage type',
+    )
   })
 })

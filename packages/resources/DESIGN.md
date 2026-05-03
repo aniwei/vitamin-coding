@@ -87,3 +87,38 @@ XMarsApp.init()
 
 - 测试文件数：4
 - 覆盖：资源加载合并、冲突检测、Settings 事件转发、Source 接口
+
+## 模块设计基线
+
+### 设计目的
+
+统一管理可注入运行时的资源来源，包括设置、记忆、提示模板和文件化资源。
+
+### 接口设计
+
+- `SettingsManager`：加载和暴露运行时设置资源。
+- `MemorySource`：读取记忆资源。
+- `PromptTemplateSource`：读取提示模板资源。
+- `ResourceManager`：聚合多个 resource source。
+
+### 方法论
+
+资源以 source 形式注册，消费方通过统一查询接口获取内容；资源模块不直接决定 prompt 或工具行为。
+
+### 实现逻辑
+
+初始化时注册资源来源；调用方按 URI/类型查询资源；source 负责读取、转换和返回标准资源对象。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[resource request] --> B[ResourceManager]
+  B --> C{source type}
+  C --> D[settings]
+  C --> E[memory]
+  C --> F[prompt template]
+  D --> G[resource result]
+  E --> G
+  F --> G
+```

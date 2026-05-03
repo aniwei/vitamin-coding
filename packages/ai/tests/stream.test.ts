@@ -2,7 +2,13 @@ import { describe, expect, it } from 'vitest'
 
 import { complete, stream, simple } from '../src/stream'
 
-import type { AssistantMessage, Model, ProviderStream, StreamContext, StreamEvent } from '../src/types'
+import type {
+  AssistantMessage,
+  Model,
+  ProviderStream,
+  StreamContext,
+  StreamEvent,
+} from '../src/types'
 
 function makeModel(): Model {
   return {

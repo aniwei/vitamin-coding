@@ -1,6 +1,13 @@
 import { describe, expect, it } from 'vitest'
 import { Agent } from '@x-mars/agent'
-import { createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent, type ToolCall } from '@x-mars/ai'
+import {
+  createEventStream,
+  type AssistantMessage,
+  type Model,
+  type StreamContext,
+  type StreamEvent,
+  type ToolCall,
+} from '@x-mars/ai'
 import { createHookRegistry } from '@x-mars/hooks'
 import { appendPromptSection } from '@x-mars/prompt'
 import { createInMemorySessionStore } from '@x-mars/session'
@@ -180,12 +187,14 @@ describe('coding hooks integration', () => {
     const diagnostics = agentSession.getContextDiagnostics()
     const sectionKeys = diagnostics.prompt.sections.map((section) => section.key)
 
-    expect(sectionKeys).toEqual(expect.arrayContaining([
-      'system-prompt',
-      'tool-availability',
-      'deferred-tools',
-      'tool-guidance',
-    ]))
+    expect(sectionKeys).toEqual(
+      expect.arrayContaining([
+        'system-prompt',
+        'tool-availability',
+        'deferred-tools',
+        'tool-guidance',
+      ]),
+    )
     expect(diagnostics.prompt.content).toBeUndefined()
 
     const visible = agentSession.getContextDiagnostics({ includePrompt: true })
@@ -280,18 +289,26 @@ describe('coding hooks integration', () => {
     }
 
     const sessionStore = createInMemorySessionStore()
-    const first = new AgentSession(await sessionStore.createSession('session-cache-tools-a'), new Agent({ stream }), {
-      model: makeModel(),
-      systemPrompt: 'system',
-      tools: [readTool],
-      hookRegistry: createHookRegistry({ preset: 'none' }),
-    })
-    const second = new AgentSession(await sessionStore.createSession('session-cache-tools-b'), new Agent({ stream }), {
-      model: makeModel(),
-      systemPrompt: 'system',
-      tools: [readTool, writeTool],
-      hookRegistry: createHookRegistry({ preset: 'none' }),
-    })
+    const first = new AgentSession(
+      await sessionStore.createSession('session-cache-tools-a'),
+      new Agent({ stream }),
+      {
+        model: makeModel(),
+        systemPrompt: 'system',
+        tools: [readTool],
+        hookRegistry: createHookRegistry({ preset: 'none' }),
+      },
+    )
+    const second = new AgentSession(
+      await sessionStore.createSession('session-cache-tools-b'),
+      new Agent({ stream }),
+      {
+        model: makeModel(),
+        systemPrompt: 'system',
+        tools: [readTool, writeTool],
+        hookRegistry: createHookRegistry({ preset: 'none' }),
+      },
+    )
 
     await first.prompt('hello')
     await second.prompt('hello')
@@ -312,12 +329,20 @@ describe('coding hooks integration', () => {
 
       setTimeout(() => {
         const hasToolResult = context.messages.some((message) => {
-          return typeof message === 'object' && message !== null && 'role' in message && message.role === 'tool_result'
+          return (
+            typeof message === 'object' &&
+            message !== null &&
+            'role' in message &&
+            message.role === 'tool_result'
+          )
         })
 
         const response = hasToolResult
           ? makeAssistantMessage([{ type: 'text', text: 'complete' }], 'end_turn')
-          : makeAssistantMessage([makeToolCall('echo', 'tc_echo', { value: 'from-model' })], 'tool_use')
+          : makeAssistantMessage(
+              [makeToolCall('echo', 'tc_echo', { value: 'from-model' })],
+              'tool_use',
+            )
 
         eventStream.push({ type: 'start', partial: response })
         eventStream.complete(response)
@@ -329,13 +354,21 @@ describe('coding hooks integration', () => {
     const hooks = createHookRegistry({ preset: 'none' })
     hooks.on('chat.message.before', 'rewrite-user-message', (_input, output) => {
       output.message = {
-        ...(output.message as { role: 'user'; timestamp: number; content: Array<{ type: 'text'; text: string }> }),
+        ...(output.message as {
+          role: 'user'
+          timestamp: number
+          content: Array<{ type: 'text'; text: string }>
+        }),
         content: [{ type: 'text', text: 'rewritten by hook' }],
       }
     })
     hooks.on('messages.transform', 'prepend-transform-message', (input, output) => {
       output.messages = [
-        { role: 'user', timestamp: Date.now(), content: [{ type: 'text', text: 'transform marker' }] },
+        {
+          role: 'user',
+          timestamp: Date.now(),
+          content: [{ type: 'text', text: 'transform marker' }],
+        },
         ...input.messages,
       ]
     })
@@ -400,7 +433,12 @@ describe('coding hooks integration', () => {
     })
 
     const toolResultMessage = persistedMessages.find((message) => {
-      return typeof message === 'object' && message !== null && 'role' in message && message.role === 'tool_result'
+      return (
+        typeof message === 'object' &&
+        message !== null &&
+        'role' in message &&
+        message.role === 'tool_result'
+      )
     }) as { role: 'tool_result'; content: Array<{ type: string; text?: string }> } | undefined
 
     expect(toolResultMessage?.content[0]?.text).toBe('from-after-hook')
@@ -513,11 +551,104 @@ describe('coding hooks integration', () => {
     })
 
     await app.hookRegistry.emit('background.start', { taskId: 'task-1', agentName: 'worker-agent' })
-    await app.hookRegistry.emit('background.end', { taskId: 'task-1', agentName: 'worker-agent', success: true })
+    await app.hookRegistry.emit('background.end', {
+      taskId: 'task-1',
+      agentName: 'worker-agent',
+      success: true,
+    })
 
-    expect(bgEvents).toEqual([
-      'start:task-1:worker-agent',
-      'end:task-1:worker-agent:true',
+    expect(bgEvents).toEqual(['start:task-1:worker-agent', 'end:task-1:worker-agent:true'])
+  })
+
+  it('syncs command hooks from settings and gates matching tool execution', async () => {
+    const hooks = createHookRegistry({ preset: 'none' })
+    const app = createXMars({
+      port: 0,
+      inspect: false,
+      logger: {
+        name: 'x-mars-test',
+        level: 'error',
+        destination: 'stdout',
+      },
+      hookRegistry: hooks,
+    })
+
+    await app.settings.update({
+      command_hooks: [
+        {
+          name: 'deny-bash',
+          command: `node -e "process.stderr.write('denied by settings hook'); process.exit(7)"`,
+          matcher: { tools: ['bash'], agents: ['default'] },
+          cancel_on_non_zero_exit: true,
+        },
+      ],
+    })
+
+    expect(app.hookRegistry.has('setting::command-hook::deny-bash')).toBe(true)
+
+    const output = {
+      args: { command: 'git status' },
+      cancelled: false,
+    }
+
+    await app.hookRegistry.execute(
+      'tool.execute.before',
+      {
+        toolName: 'bash',
+        toolCallId: 'call-1',
+        args: { command: 'git status' },
+        agentName: 'default',
+        sessionId: 'session-1',
+      },
+      output,
+    )
+
+    expect(output.cancelled).toBe(true)
+    expect(output.cancelReason).toContain('denied by settings hook')
+  })
+
+  it('runs execute_code subtool calls through tool hooks', async () => {
+    const hooks = createHookRegistry({ preset: 'none' })
+    hooks.on(
+      'tool.execute.before',
+      'deny-programmatic-read',
+      (input, output) => {
+        if (input.toolName === 'read' && input.agentName === 'execute_code') {
+          output.cancelled = true
+          output.cancelReason = 'programmatic read denied'
+        }
+      },
+      1,
+    )
+
+    const app = createXMars({
+      port: 0,
+      inspect: false,
+      logger: {
+        name: 'x-mars-test',
+        level: 'error',
+        destination: 'stdout',
+      },
+      hookRegistry: hooks,
+    })
+    const executeCode = app.toolRegistry.get('execute_code')
+
+    const result = await executeCode!.execute({
+      id: 'ec-hook',
+      params: {
+        script: `await rpc.callTool('read', { path: 'package.json' })`,
+        allowedTools: ['read'],
+      },
+      signal: new AbortController().signal,
+    })
+
+    expect(result.content[0]?.text).toContain('read: error')
+    expect(result.details?.calls).toEqual([
+      {
+        name: 'read',
+        params: { path: 'package.json' },
+        isError: true,
+      },
     ])
   })
 })

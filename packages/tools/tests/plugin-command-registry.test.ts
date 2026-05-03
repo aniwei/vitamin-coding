@@ -1,5 +1,8 @@
 import { describe, expect, it } from 'vitest'
-import { createPluginAgentRegistry, createPluginCommandRegistry } from '../src/plugin-command-registry'
+import {
+  createPluginAgentRegistry,
+  createPluginCommandRegistry,
+} from '../src/plugin-command-registry'
 
 describe('plugin command and agent registries', () => {
   it('#then registers, lists, and unregisters plugin commands by owner', () => {

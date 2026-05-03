@@ -106,7 +106,9 @@ function makeStream(responses: AssistantMessage[]) {
     const eventStream = createEventStream<StreamEvent, AssistantMessage>()
     const message = responses[index++]
     setTimeout(() => {
-      if (!message) return
+      if (!message) {
+        return
+      }
       eventStream.push({ type: 'start', partial: message })
       eventStream.complete(message)
     }, 0)
@@ -258,7 +260,12 @@ describe('workLoop', () => {
             message.toolCallId === 'tc_err'
           )
         }) as
-          | { role: 'tool_result'; toolCallId: string; content: Array<{ type: string; text?: string }>; isError?: boolean }
+          | {
+              role: 'tool_result'
+              toolCallId: string
+              content: Array<{ type: string; text?: string }>
+              isError?: boolean
+            }
           | undefined
 
         expect(result.content[0]).toEqual({ type: 'text', text: 'recovered' })
@@ -330,15 +337,13 @@ describe('workLoop', () => {
           stream: (context, signal) => {
             streamAttempt++
             if (streamAttempt === 1) {
-              return makeFailingStream(new PromptTooLongError('context-too-long', { tokenCount: 130000 }))(
-                context,
-                signal,
-              )
+              return makeFailingStream(
+                new PromptTooLongError('context-too-long', { tokenCount: 130000 }),
+              )(context, signal)
             }
-            return makeStream([makeAssistantMessage([{ type: 'text', text: 'recovered' }], 'end_turn')])(
-              context,
-              signal,
-            )
+            return makeStream([
+              makeAssistantMessage([{ type: 'text', text: 'recovered' }], 'end_turn'),
+            ])(context, signal)
           },
           signal: new AbortController().signal,
           emit: (event) => events.push(event),
@@ -482,7 +487,14 @@ describe('workLoop', () => {
           emit: (event) => events.push(event),
         })
 
-        expect(events.some((event) => event.type === 'status_change' && event.from === 'completed' && event.to === 'streaming')).toBe(true)
+        expect(
+          events.some(
+            (event) =>
+              event.type === 'status_change' &&
+              event.from === 'completed' &&
+              event.to === 'streaming',
+          ),
+        ).toBe(true)
       })
     })
   })

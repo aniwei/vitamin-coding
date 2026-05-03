@@ -7,13 +7,7 @@ import {
   buildCopilotDynamicHeaders,
 } from '../src/provider/github-copilot'
 
-import type {
-  AssistantMessage,
-  Message,
-  Model,
-  ToolResultMessage,
-  UserMessage,
-} from '../src/types'
+import type { AssistantMessage, Message, Model, ToolResultMessage, UserMessage } from '../src/types'
 
 function makeModel(): Model {
   return {

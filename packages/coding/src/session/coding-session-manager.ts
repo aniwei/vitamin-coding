@@ -9,10 +9,11 @@ import { stream as aiStream, type ProviderRegistry } from '@x-mars/ai'
 import type { AgentMessage, StreamFunction } from '@x-mars/agent'
 import { type HookRegistry } from '@x-mars/hooks'
 import { type Logger } from '@x-mars/shared'
+import type { SessionSearchMatch, SessionSearchResult } from '@x-mars/tools'
 
 import { AgentSession } from './agent-session'
 
-import type { Session, SessionPersistence } from '@x-mars/session'
+import type { Session, SessionPersistence, SessionSnapshot } from '@x-mars/session'
 import type { Devtools } from '@x-mars/devtools'
 import type { AgentSessionInfo, ResolvedSessionConfig } from './types'
 
@@ -330,6 +331,45 @@ export class CodingSessionManager {
     }
   }
 
+  async searchSessions(input: { query: string; limit?: number }): Promise<SessionSearchResult[]> {
+    const query = input.query.trim()
+    if (!query) {
+      return []
+    }
+
+    const limit = Math.max(1, Math.min(input.limit ?? 5, 20))
+    const terms = tokenizeSearchQuery(query)
+    const snapshots = new Map<string, SessionSnapshot<AgentMessage>>()
+
+    for (const [id, agentSession] of this.sessions) {
+      const rawSession = agentSession.session
+      if (rawSession instanceof InMemorySession) {
+        snapshots.set(id, {
+          version: SESSION_SNAPSHOT_VERSION,
+          id,
+          ...rawSession.toSnapshot(),
+        })
+      }
+    }
+
+    for (const id of await this.persistence.list()) {
+      if (snapshots.has(id)) {
+        continue
+      }
+
+      const snapshot = await this.persistence.load(id)
+      if (snapshot) {
+        snapshots.set(id, snapshot)
+      }
+    }
+
+    return [...snapshots.values()]
+      .map((snapshot) => scoreSessionSnapshot(snapshot, query, terms))
+      .filter((result): result is SessionSearchResult => result !== null)
+      .sort((a, b) => b.score - a.score || b.lastActiveAt - a.lastActiveAt)
+      .slice(0, limit)
+  }
+
   /**
    * 从持久化存储恢复单个 session。
    * 若未提供 configProvider 则返回 null。
@@ -475,6 +515,128 @@ export class CodingSessionManager {
     this.configs.clear()
     this.activeSessionId = undefined
   }
+}
+
+function tokenizeSearchQuery(query: string): string[] {
+  const terms = query
+    .toLowerCase()
+    .split(/[^a-z0-9_./:-]+/i)
+    .map((term) => term.trim())
+    .filter(Boolean)
+
+  return terms.length > 0 ? [...new Set(terms)] : [query.toLowerCase()]
+}
+
+function scoreSessionSnapshot(
+  snapshot: SessionSnapshot<AgentMessage>,
+  query: string,
+  terms: string[],
+): SessionSearchResult | null {
+  const messages = snapshot.entries
+    .filter((entry) => entry.type === 'message')
+    .map((entry) => ({
+      timestamp: entry.timestamp,
+      ...agentMessageToSearchText(entry.message),
+    }))
+    .filter((message) => message.text.length > 0)
+  const summaryEntries = snapshot.entries
+    .filter((entry) => entry.type === 'compaction')
+    .map((entry) => entry.summary)
+  const title = snapshot.metadata.title
+  const haystack = [title, ...summaryEntries, ...messages.map((message) => message.text)]
+    .filter((value): value is string => Boolean(value))
+    .join('\n')
+    .toLowerCase()
+
+  let score = haystack.includes(query.toLowerCase()) ? 20 : 0
+  for (const term of terms) {
+    score += countOccurrences(haystack, term)
+  }
+
+  if (score <= 0) {
+    return null
+  }
+
+  const matches: SessionSearchMatch[] = messages
+    .filter((message) => textMatchesTerms(message.text, terms, query))
+    .slice(0, 5)
+    .map((message) => ({
+      role: message.role,
+      text: truncateSearchText(message.text, 240),
+      timestamp: message.timestamp,
+    }))
+
+  const summary =
+    summaryEntries.at(-1) ??
+    matches[0]?.text ??
+    (title ? `Session titled "${title}" matched query.` : 'Session matched query.')
+
+  return {
+    id: snapshot.id,
+    title,
+    messageCount: snapshot.metadata.messageCount,
+    lastActiveAt: snapshot.metadata.lastActiveAt,
+    score,
+    summary: truncateSearchText(summary, 280),
+    matches,
+  }
+}
+
+function agentMessageToSearchText(message: AgentMessage): { role?: string; text: string } {
+  if (typeof message !== 'object' || message === null) {
+    return { text: String(message) }
+  }
+
+  const record = message as unknown as Record<string, unknown>
+  const role = typeof record.role === 'string' ? record.role : undefined
+  const content = record.content
+
+  if (typeof content === 'string') {
+    return { role, text: content }
+  }
+
+  if (Array.isArray(content)) {
+    const text = content
+      .map((part) => {
+        if (typeof part === 'string') {
+          return part
+        }
+        if (typeof part === 'object' && part !== null && 'text' in part) {
+          const value = (part as { text?: unknown }).text
+          return typeof value === 'string' ? value : ''
+        }
+        return ''
+      })
+      .filter(Boolean)
+      .join('\n')
+    return { role, text }
+  }
+
+  return { role, text: '' }
+}
+
+function countOccurrences(text: string, term: string): number {
+  if (!term) {
+    return 0
+  }
+
+  let count = 0
+  let index = text.indexOf(term)
+  while (index !== -1) {
+    count++
+    index = text.indexOf(term, index + term.length)
+  }
+  return count
+}
+
+function textMatchesTerms(text: string, terms: string[], query: string): boolean {
+  const normalized = text.toLowerCase()
+  return normalized.includes(query.toLowerCase()) || terms.some((term) => normalized.includes(term))
+}
+
+function truncateSearchText(text: string, maxChars: number): string {
+  const normalized = text.replace(/\s+/g, ' ').trim()
+  return normalized.length <= maxChars ? normalized : `${normalized.slice(0, maxChars - 1)}…`
 }
 
 export function createDiskCodingSessionManager(

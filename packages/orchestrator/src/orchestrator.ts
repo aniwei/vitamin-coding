@@ -157,7 +157,13 @@ export class Orchestrator {
       this.executor.cancelTask(id)
       this.abortTask?.(id)
       await this.taskStore.update(id, { status: 'cancelled', completedAt: Date.now() })
-      await this.hookRegistry.emit('task.cancelled', { taskId: id })
+      await this.hookRegistry.emit('task.cancelled', {
+        taskId: id,
+        task: { ...task, status: 'cancelled', completedAt: Date.now() } as unknown as Record<
+          string,
+          unknown
+        >,
+      })
       return { success: true, message: `Task ${id} cancelled` }
     }
 

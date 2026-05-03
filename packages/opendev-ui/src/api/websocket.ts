@@ -150,7 +150,9 @@ class WebSocketClient {
       this.handlers.set(eventType, new Set())
     }
     const set = this.handlers.get(eventType)
-    if (set) {set.add(handler)}
+    if (set) {
+      set.add(handler)
+    }
 
     // 返回取消订阅函数
     return () => {
@@ -165,13 +167,17 @@ class WebSocketClient {
     // 向具体类型的处理器分发
     const typeHandlers = this.handlers.get(message.type)
     if (typeHandlers) {
-      for (const handler of typeHandlers) {handler(message)}
+      for (const handler of typeHandlers) {
+        handler(message)
+      }
     }
 
     // 向通配处理器分发
     const wildcardHandlers = this.handlers.get('*')
     if (wildcardHandlers) {
-      for (const handler of wildcardHandlers) {handler(message)}
+      for (const handler of wildcardHandlers) {
+        handler(message)
+      }
     }
   }
 
@@ -265,5 +271,4 @@ class WebSocketClient {
     })
   }
 }
- export const ws = new WebSocketClient()
- 
+export const ws = new WebSocketClient()

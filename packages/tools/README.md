@@ -2,7 +2,7 @@
 
 ## 模块定位
 
-提供 Agent 可用工具的注册、分组与发现能力，内置 30+ 工具覆盖 8 个功能域。
+提供 Agent 可用工具的注册、分组与发现能力，内置工具覆盖文件系统、搜索、Shell、Web、编排、会话、技能等功能域。
 
 ## 核心功能
 
@@ -15,7 +15,6 @@
 | 编排     | `task_delegate` / `write_todos` / `agent_call` / `review_call` / `plan_call` / `ask_user` / `plan_approval` / `approval` / `abort_task` |
 | 会话     | `session_summary` / `session_history`                                                                                                   |
 | 技能     | `load_skill`                                                                                                                            |
-| LSP      | `lsp_definition` / `lsp_references` / `lsp_symbols` / `lsp_diagnostics` / `lsp_rename`                                                  |
 
 ## 预设层级
 
@@ -40,7 +39,6 @@ src/
     orchestration/            # 编排工具
     session/                  # 会话工具
     skill/                    # 技能工具
-    lsp/                      # LSP 工具
   index.ts
 tests/                        # 8 个测试文件
 ```

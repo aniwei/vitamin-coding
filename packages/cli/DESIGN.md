@@ -19,12 +19,12 @@
 
 **输出模式标志**：
 
-| 标志               | 模式        | 说明                                    |
-| ------------------ | ----------- | --------------------------------------- |
-| 无标志             | interactive | 默认交互式 REPL                         |
-| `-p` / `--print`   | print       | 单次执行，文本流式输出到 stdout         |
-| `--json`           | json        | 单次执行，JSON 事件流输出               |
-| `--rpc`            | rpc         | JSON-RPC stdin/stdout（供父进程控制）   |
+| 标志             | 模式        | 说明                                  |
+| ---------------- | ----------- | ------------------------------------- |
+| 无标志           | interactive | 默认交互式 REPL                       |
+| `-p` / `--print` | print       | 单次执行，文本流式输出到 stdout       |
+| `--json`         | json        | 单次执行，JSON 事件流输出             |
+| `--rpc`          | rpc         | JSON-RPC stdin/stdout（供父进程控制） |
 
 **其他参数**：
 
@@ -51,6 +51,7 @@ x-mars auth [login|logout|status] → 认证管理
 ### 运行入口（run-cli.ts）
 
 `runCli(options)` 是主执行入口：
+
 1. 解析参数 → CLI config
 2. 创建 XMarsApp（装配所有子系统）
 3. 根据模式分发到对应 Runner：
@@ -99,16 +100,16 @@ require('../dist/index.js')
 
 ## 模块分层
 
-| 文件 | 职责 |
-|------|------|
-| `src/types.ts` | CLIOptions / CLIConfig 类型 |
-| `src/parse-cli.ts` | 参数解析 |
-| `src/run-cli.ts` | 主执行入口 + 模式分发 |
-| `src/commands/doctor.ts` | doctor 子命令 |
-| `src/commands/config.ts` | config 子命令 |
-| `src/commands/auth.ts` | auth 子命令 |
-| `bin/x-mars` | 二进制入口 |
-| `src/index.ts` | barrel 导出 |
+| 文件                     | 职责                        |
+| ------------------------ | --------------------------- |
+| `src/types.ts`           | CLIOptions / CLIConfig 类型 |
+| `src/parse-cli.ts`       | 参数解析                    |
+| `src/run-cli.ts`         | 主执行入口 + 模式分发       |
+| `src/commands/doctor.ts` | doctor 子命令               |
+| `src/commands/config.ts` | config 子命令               |
+| `src/commands/auth.ts`   | auth 子命令                 |
+| `bin/x-mars`             | 二进制入口                  |
+| `src/index.ts`           | barrel 导出                 |
 
 ## 入口与依赖
 
@@ -120,3 +121,38 @@ require('../dist/index.js')
 
 - 测试文件数：3
 - 覆盖：参数解析边界、模式分发、子命令基本行为
+
+## 模块设计基线
+
+### 设计目的
+
+提供 `x-mars` 命令行入口，把用户参数、子命令和输出模式转换为 coding runtime 的执行请求。
+
+### 接口设计
+
+- `bin/x-mars`：可执行入口。
+- `parseCLI(argv)`：解析 run / doctor / config / auth / plugin 等子命令。
+- `runCli()`：创建应用并分发到 print、json、interactive、rpc 模式。
+- `runPluginCommand()`：执行插件提供的命令入口。
+
+### 方法论
+
+CLI 只做参数归一化和运行模式分发，不把业务逻辑写入命令层；所有能力通过 `@x-mars/coding` 和插件命令接口获得。
+
+### 实现逻辑
+
+解析 argv 后生成运行配置，初始化 XMarsApp，按模式选择 runner 或子命令处理器，最后返回进程退出码。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[x-mars argv] --> B[parseCLI]
+  B --> C{subcommand?}
+  C -- run --> D[create XMarsApp]
+  C -- plugin/config/auth/doctor --> E[subcommand handler]
+  D --> F{mode}
+  F --> G[print/json/interactive/rpc]
+  E --> H[exit code]
+  G --> H
+```

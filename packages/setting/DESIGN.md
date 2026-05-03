@@ -245,3 +245,38 @@ setting.jsonc 文件被修改
 
 - 测试文件数：5
 - 覆盖：配置加载合并、深度合并边界、迁移链、文件监控、存储后端
+
+## 模块设计基线
+
+### 设计目的
+
+负责 X-Mars 设置的加载、合并、校验、迁移、存储和监听，为运行时提供稳定配置视图。
+
+### 接口设计
+
+- `SettingLoader` / `loadSetting()`：加载多层配置。
+- `createSettingStore()`：创建 memory/file/http 配置存储。
+- `migrate()` / `registerMigration()`：配置版本迁移。
+- `SettingWatcher`：监听文件变化并重新加载。
+
+### 方法论
+
+配置按低到高优先级深度合并；未知字段可透传但关键字段必须校验；历史配置通过 migration 前移。
+
+### 实现逻辑
+
+加载默认值、全局、项目、环境和 CLI 覆盖，执行迁移与校验，输出 `XMarsSetting` 供 app 装配。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[defaults] --> F[deep merge]
+  B[global config] --> F
+  C[project config] --> F
+  D[env vars] --> F
+  E[CLI overrides] --> F
+  F --> G[migrate]
+  G --> H[validate]
+  H --> I[XMarsSetting]
+```

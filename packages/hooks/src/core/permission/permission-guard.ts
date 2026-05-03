@@ -79,6 +79,14 @@ export class PermissionGuardHook {
 
   private extractUrls(args: Record<string, unknown>): string[] {
     const urlKeys = ['url', 'uri', 'endpoint', 'baseUrl', 'base_url']
+    const domainKeys = [
+      'domain',
+      'domains',
+      'allowedDomains',
+      'allowed_domains',
+      'blockedDomains',
+      'blocked_domains',
+    ]
     const urls: string[] = []
 
     for (const key of urlKeys) {
@@ -88,8 +96,33 @@ export class PermissionGuardHook {
       }
     }
 
+    for (const key of domainKeys) {
+      const value = args[key]
+      const domains = Array.isArray(value) ? value : typeof value === 'string' ? [value] : []
+      for (const domain of domains) {
+        if (typeof domain !== 'string') {
+          continue
+        }
+        const url = normalizeDomainTarget(domain)
+        if (url && !urls.includes(url)) {
+          urls.push(url)
+        }
+      }
+    }
+
     return urls
   }
+}
+
+function normalizeDomainTarget(value: string): string | undefined {
+  const trimmed = value.trim().toLowerCase().replace(/^\*\./, '').replace(/\.$/, '')
+  if (!trimmed) {
+    return undefined
+  }
+  if (/^[a-z][a-z0-9+.-]*:/i.test(trimmed)) {
+    return trimmed
+  }
+  return `https://${trimmed}`
 }
 
 export function createPermissionGuardHook(

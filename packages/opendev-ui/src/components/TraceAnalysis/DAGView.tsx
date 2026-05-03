@@ -154,7 +154,9 @@ export function DAGView({ sessionData, loading }: Props) {
   const handleSearchSelect = useCallback(
     (nodeId: string, eventIndex?: number) => {
       const node = nodes.find((n) => n.id === nodeId)
-      if (!node) {return}
+      if (!node) {
+        return
+      }
 
       if (node.type === 'collapsedNode') {
         setSelectedChain(node.data as CollapsedNodeData)
@@ -187,47 +189,47 @@ export function DAGView({ sessionData, loading }: Props) {
 
   if (loading) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-bg-100 font-sans">
-        <div className="w-8 h-8 border-[3px] border-border-300/30 border-t-accent-secondary-100 rounded-full animate-spin" />
-        <span className="text-text-400 mt-3 text-[13px]">Loading trace\u2026</span>
+      <div className='flex-1 flex flex-col items-center justify-center bg-bg-100 font-sans'>
+        <div className='w-8 h-8 border-[3px] border-border-300/30 border-t-accent-secondary-100 rounded-full animate-spin' />
+        <span className='text-text-400 mt-3 text-[13px]'>Loading trace\u2026</span>
       </div>
     )
   }
 
   if (!sessionData) {
     return (
-      <div className="flex-1 flex flex-col items-center justify-center bg-bg-100 font-sans">
-        <div className="text-5xl mb-4 opacity-20">\u25c8</div>
-        <span className="text-text-400 text-sm">Select a session to visualize its trace DAG</span>
+      <div className='flex-1 flex flex-col items-center justify-center bg-bg-100 font-sans'>
+        <div className='text-5xl mb-4 opacity-20'>\u25c8</div>
+        <span className='text-text-400 text-sm'>Select a session to visualize its trace DAG</span>
       </div>
     )
   }
 
   return (
-    <div className="flex-1 flex flex-col overflow-hidden bg-bg-100">
+    <div className='flex-1 flex flex-col overflow-hidden bg-bg-100'>
       {/* Stats bar */}
-      <div className="flex items-center gap-3 px-4 py-1.5 bg-bg-200 border-b border-border-300/20 font-sans shrink-0">
-        <span className="text-[11px] font-bold text-text-200">{stats.total} events</span>
-        <span className="text-[10px] text-text-400">
+      <div className='flex items-center gap-3 px-4 py-1.5 bg-bg-200 border-b border-border-300/20 font-sans shrink-0'>
+        <span className='text-[11px] font-bold text-text-200'>{stats.total} events</span>
+        <span className='text-[10px] text-text-400'>
           {stats.chains} chains \u00b7 {stats.junctions} junctions
         </span>
         {Object.entries(stats.byType).map(([type, count]) => (
-          <span key={type} className="text-[10px] text-text-400 flex items-center">
+          <span key={type} className='text-[10px] text-text-400 flex items-center'>
             <span
               className={`inline-block w-1.5 h-1.5 rounded-full mr-1 ${NODE_TYPE_DOT_CLASSES[type] || 'bg-gray-400'}`}
             />
             {type}: {count}
           </span>
         ))}
-        <span className="ml-auto text-text-400 text-[10px] font-mono">
+        <span className='ml-auto text-text-400 text-[10px] font-mono'>
           {sessionData.sessionId.slice(0, 16)}\u2026
         </span>
       </div>
 
       {/* Main layout */}
-      <div className="flex flex-1 overflow-hidden">
+      <div className='flex flex-1 overflow-hidden'>
         <SearchPanel nodes={nodes} onSelectNode={handleSearchSelect} />
-        <div className="flex-1 react-flow-wrapper">
+        <div className='flex-1 react-flow-wrapper'>
           <ReactFlow
             nodes={nodes}
             edges={edges}
@@ -244,15 +246,17 @@ export function DAGView({ sessionData, loading }: Props) {
             maxZoom={3}
             proOptions={{ hideAttribution: true }}
           >
-            <Background color="hsl(var(--border-300) / 0.3)" gap={24} size={1} />
+            <Background color='hsl(var(--border-300) / 0.3)' gap={24} size={1} />
             <Controls />
             <MiniMap
               nodeColor={(n) => {
-                if (n.type === 'collapsedNode') {return 'hsl(var(--border-300))'}
+                if (n.type === 'collapsedNode') {
+                  return 'hsl(var(--border-300))'
+                }
                 const data = n.data as TraceNodeData | ToolNodeData | TaskNodeData
                 return NODE_TYPE_COLORS[data?.eventType] || '#9ca3af'
               }}
-              maskColor="rgba(255,255,255,0.6)"
+              maskColor='rgba(255,255,255,0.6)'
             />
           </ReactFlow>
         </div>

@@ -108,3 +108,37 @@ XMarsApp.init()
 
 - 测试文件数：5
 - 覆盖：技能发现、YAML 解析、名称/描述/标签匹配、注册生命周期
+
+## 模块设计基线
+
+### 设计目的
+
+发现、解析、匹配和执行 SKILL.md 技能，使外部方法论可被运行时按需加载进上下文。
+
+### 接口设计
+
+- `SkillRegistry` / `createSkillRegistry()`：技能注册、发现、匹配、执行。
+- `discoverSkills()`：扫描项目、用户和插件技能目录。
+- `parseSkillContent()`：解析 frontmatter 与正文。
+- `matchSkills()`：按名称、描述和标签评分匹配。
+
+### 方法论
+
+技能是文件化方法论，不直接执行代码；运行时只在用户或模型明确需要时加载相关技能内容。
+
+### 实现逻辑
+
+启动或请求时扫描技能文件，解析元数据并注册；查询时评分匹配；执行时返回技能内容和上下文注入结果。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[skill dirs] --> B[discoverSkills]
+  B --> C[parseSkillContent]
+  C --> D[SkillRegistry]
+  E[user/model query] --> F[matchSkills]
+  F --> D
+  D --> G[execute/load skill]
+  G --> H[prompt/context injection]
+```

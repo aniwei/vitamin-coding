@@ -9,6 +9,8 @@ export type {
   PermissionMode,
   PermissionRuleConfig,
   PermissionPolicySetting,
+  CommandHookMatcherSetting,
+  CommandHookSetting,
   SettingWarning,
   ConfigWarning,
   LoadSettingOptions,
@@ -29,6 +31,8 @@ export { migrate, registerMigration, resetMigrations } from './migrator'
 export type { Migration } from './migrator'
 
 export { loadSetting, SettingLoader } from './setting'
+export { discoverFileAgents, parseAgentMarkdown } from './agent-files'
+export type { DiscoverFileAgentsOptions, FileAgentProfile } from './agent-files'
 
 export { createSettingWatcher, SettingWatcher } from './watcher'
 export type { SettingWatcherOptions } from './watcher'

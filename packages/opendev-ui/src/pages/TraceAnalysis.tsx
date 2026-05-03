@@ -9,11 +9,11 @@ export function TraceAnalysis() {
   const selectedSessionId = useTraceStore((s) => s.selectedSessionId)
 
   return (
-    <div className="h-screen flex flex-col bg-bg-100">
+    <div className='h-screen flex flex-col bg-bg-100'>
       <TopBar />
-      <div className="flex-1 flex overflow-hidden">
+      <div className='flex-1 flex overflow-hidden'>
         <TraceProjectSidebar />
-        <main className="flex-1 flex flex-col overflow-hidden bg-bg-000">
+        <main className='flex-1 flex flex-col overflow-hidden bg-bg-000'>
           <DAGView
             sessionData={selectedSessionId ? sessionData : null}
             loading={loading && !!selectedSessionId}

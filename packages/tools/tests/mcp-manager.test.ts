@@ -110,7 +110,9 @@ describe('McpManager', () => {
     it('#then can register callback without error', () => {
       const manager = createMcpManager()
       let called = false
-      manager.onToolsChanged(() => { called = true })
+      manager.onToolsChanged(() => {
+        called = true
+      })
       // 只验证注册不报错；触发需要真实 server 通知
       expect(called).toBe(false)
     })

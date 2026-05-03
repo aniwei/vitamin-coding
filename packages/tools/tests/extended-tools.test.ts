@@ -15,7 +15,10 @@ async function setupTestDir(): Promise<string> {
   const dir = await mkdtemp(join(tmpdir(), 'x-mars-tools-ext-'))
   await mkdir(join(dir, 'src', 'utils'), { recursive: true })
   await writeFile(join(dir, 'src', 'index.ts'), 'export const hello = "world"\n')
-  await writeFile(join(dir, 'src', 'utils', 'helper.ts'), 'export const add = (a: number, b: number) => a + b\n')
+  await writeFile(
+    join(dir, 'src', 'utils', 'helper.ts'),
+    'export const add = (a: number, b: number) => a + b\n',
+  )
   await writeFile(join(dir, 'README.md'), '# Test Project\n')
   return dir
 }
@@ -66,18 +69,23 @@ describe('extended tools', () => {
 
     it('throws when path does not exist', async () => {
       const tool = createLs(testDir)
-      await expect(tool.execute({
-        id: 'ls2',
-        params: { path: 'ghost-dir', limit: 200 },
-        signal,
-      })).rejects.toThrow('ENOENT')
+      await expect(
+        tool.execute({
+          id: 'ls2',
+          params: { path: 'ghost-dir', limit: 200 },
+          signal,
+        }),
+      ).rejects.toThrow('ENOENT')
     })
   })
 
   describe('find', () => {
     it('finds files via injected glob implementation', async () => {
       const tool = createFind(testDir, {
-        glob: async () => [join(testDir, 'src', 'index.ts'), join(testDir, 'src', 'utils', 'helper.ts')],
+        glob: async () => [
+          join(testDir, 'src', 'index.ts'),
+          join(testDir, 'src', 'utils', 'helper.ts'),
+        ],
       })
 
       const result = await tool.execute({
@@ -110,22 +118,26 @@ describe('extended tools', () => {
 
     it('throws when neither glob nor fd executor is available', async () => {
       const tool = createFind(testDir, {})
-      await expect(tool.execute({
-        id: 'find-no-exec',
-        params: { pattern: '*.ts', limit: 100 },
-        signal,
-      })).rejects.toThrow('Find tool requires a glob implementation or fd binary available')
+      await expect(
+        tool.execute({
+          id: 'find-no-exec',
+          params: { pattern: '*.ts', limit: 100 },
+          signal,
+        }),
+      ).rejects.toThrow('Find tool requires a glob implementation or fd binary available')
     })
   })
 
   describe('grep', () => {
     it('throws when binary executor is not provided', async () => {
       const tool = createGrep(testDir, {})
-      await expect(tool.execute({
-        id: 'grep1',
-        params: { pattern: 'hello' },
-        signal,
-      })).rejects.toThrow('Binary tool executor registry is not available')
+      await expect(
+        tool.execute({
+          id: 'grep1',
+          params: { pattern: 'hello' },
+          signal,
+        }),
+      ).rejects.toThrow('Binary tool executor registry is not available')
     })
   })
 
@@ -155,11 +167,11 @@ describe('extended tools', () => {
     it('passes session hints through to dispatch', async () => {
       let received:
         | {
-          sessionId?: string
-          sessionMode?: 'ephemeral' | 'sticky'
-          parentSessionId?: string
-          sidechain?: { timeoutMs?: number }
-        }
+            sessionId?: string
+            sessionMode?: 'ephemeral' | 'sticky'
+            parentSessionId?: string
+            sidechain?: { timeoutMs?: number }
+          }
         | undefined
 
       const tool = createTaskDelegate(testDir, async (args) => {
@@ -216,5 +228,4 @@ describe('extended tools', () => {
       expect(valid.success).toBe(true)
     })
   })
-
 })

@@ -145,48 +145,59 @@ export { createCaptureFileState } from './orchestration/capture-file-state'
 export type { CaptureFileState } from './orchestration/capture-file-state'
 export { createLearn } from './orchestration/learn'
 export type { LearnCallback } from './orchestration/learn'
+export { createToolOutputRead } from './orchestration/tool-output-read'
+export type { ToolOutputReadArgs } from './orchestration/tool-output-read'
+export { createAgentList } from './orchestration/agent-list'
+export type { AgentListEntry, ListAgents } from './orchestration/agent-list'
+export { createAgentCancel } from './orchestration/agent-cancel'
+export type { AgentCancelResult, CancelAgent } from './orchestration/agent-cancel'
 
 // Web 工具
-export { createWebFetch } from './web/fetch'
-export { createWebSearch } from './web/search'
+export { createWebFetch, nativeWebFetchProvider } from './web/fetch'
+export type {
+  WebFetchOptions,
+  WebFetchProvider,
+  WebFetchProviderInput,
+  WebFetchProviderOutput,
+} from './web/fetch'
+export { createWebSearch, braveHtmlSearchProvider } from './web/search'
+export type {
+  SearchResult,
+  WebSearchOptions,
+  WebSearchProvider,
+  WebSearchProviderInput,
+  WebSearchProviderOutput,
+} from './web/search'
 
 // 会话管理
 export { createSessionManager } from './session/session-manager'
 export type { SessionManager } from './session/session-manager'
+export { createSessionSearch } from './session/session-search'
+export type {
+  SearchSessions,
+  SessionSearchMatch,
+  SessionSearchResult,
+} from './session/session-search'
+
+// Programmatic tool calling
+export { createExecuteCode } from './code'
+export type {
+  ProgrammaticToolCall,
+  ProgrammaticToolCallResult,
+  ProgrammaticToolInvoker,
+} from './code'
 
 // Skill 工具入口（运行时已迁移至 @x-mars/coding）
 export type { LoadSkill } from './skill/skill-load'
 export type { ExecuteSkill } from './skill/skill-execute'
 export { createSkillSearch } from './skill/skill-search'
 export type { SearchSkills, SkillSearchEntry } from './skill/skill-search'
+export { createSkillView } from './skill/skill-view'
+export type { ViewSkill } from './skill/skill-view'
 export { createSkillCreate } from './skill/skill-create'
 export type { CreateSkill } from './skill/skill-create'
 export { createSkillImprove } from './skill/skill-improve'
 export type { ImproveSkill } from './skill/skill-improve'
-
-// LSP 工具
-export {
-  createLspDefinition,
-  createLspReferences,
-  createLspSymbols,
-  createLspDiagnostics,
-  createLspPrepareRename,
-  createLspRename,
-} from './lsp'
-export { withLspClient, findWorkspaceRoot } from './lsp'
-export { LSPClient, lspManager } from './lsp'
-export type {
-  LSPServerConfig,
-  Location,
-  LocationLink,
-  SymbolInfo,
-  DocumentSymbol,
-  Diagnostic as LspDiagnostic,
-  WorkspaceEdit,
-  PrepareRenameResult,
-  ServerLookupResult,
-  ResolvedServer,
-} from './lsp'
 
 // 注册表类型
 export type {

@@ -126,6 +126,8 @@ export interface WorkflowRouting {
 
 export interface WorkflowOptions {
   enabled?: boolean
+  maxActiveTasks?: number
+  max_active_tasks?: number
   review?: WorkflowReview
   retry?: WorkflowRetry
   circuitBreaker?: WorkflowCircuitBreaker
@@ -142,6 +144,7 @@ export type PermissionMode = (typeof PERMISSION_MODES)[number]
 export interface PermissionRuleConfig {
   name: string
   effect: 'allow' | 'deny' | 'ask'
+  match?: string
   tools?: string[]
   paths?: string[]
   deny_reason?: string
@@ -157,6 +160,25 @@ export interface PermissionPolicySetting {
     sessions?: string[]
   }
   rules: PermissionRuleConfig[]
+}
+
+export interface CommandHookMatcherSetting {
+  tools?: string[]
+  agents?: string[]
+}
+
+export interface CommandHookSetting {
+  name: string
+  command: string
+  timing?: 'tool.execute.before'
+  matcher?: CommandHookMatcherSetting
+  env?: Record<string, string>
+  timeout_ms?: number
+  timeoutMs?: number
+  priority?: number
+  enabled?: boolean
+  cancel_on_non_zero_exit?: boolean
+  cancelOnNonZeroExit?: boolean
 }
 
 export interface XMarsSettingFromSchema {
@@ -181,6 +203,7 @@ export interface XMarsSettingFromSchema {
   disabled_tools?: string[]
   permission_mode?: PermissionMode
   permissions?: PermissionPolicySetting[]
+  command_hooks?: CommandHookSetting[]
   _migrations?: string[]
   [key: string]: unknown
 }
@@ -207,6 +230,7 @@ export const X_MARS_SETTING_KEYS = [
   'disabled_tools',
   'permission_mode',
   'permissions',
+  'command_hooks',
   '_migrations',
 ] as const
 
@@ -246,4 +270,5 @@ export const X_MARS_DEFAULT_CONFIG: XMarsSetting = {
   disabled_tools: [],
   permission_mode: 'auto',
   permissions: [],
+  command_hooks: [],
 }

@@ -28,11 +28,13 @@ describe('read tool coverage branches', () => {
     const root = await createWorkspace()
     const readTool = createRead(root)
 
-    await expect(readTool.execute({
-      id: 'r1',
-      params: { path: 'missing.ts' },
-      signal,
-    })).rejects.toThrow('ENOENT')
+    await expect(
+      readTool.execute({
+        id: 'r1',
+        params: { path: 'missing.ts' },
+        signal,
+      }),
+    ).rejects.toThrow('ENOENT')
   })
 
   it('throws for directory path', async () => {
@@ -40,18 +42,20 @@ describe('read tool coverage branches', () => {
     await mkdir(join(root, 'subdir'))
     const readTool = createRead(root)
 
-    await expect(readTool.execute({
-      id: 'r2',
-      params: { path: 'subdir' },
-      signal,
-    })).rejects.toThrow('Not a file')
+    await expect(
+      readTool.execute({
+        id: 'r2',
+        params: { path: 'subdir' },
+        signal,
+      }),
+    ).rejects.toThrow('Not a file')
   })
 
   it('returns image content for png', async () => {
     const root = await createWorkspace()
     const pngBuffer = Buffer.from(
       '89504e470d0a1a0a0000000d49484452000000010000000108060000001f15c489' +
-      '0000000a49444154789c626000000002000198e195280000000049454e44ae426082',
+        '0000000a49444154789c626000000002000198e195280000000049454e44ae426082',
       'hex',
     )
     await writeFile(join(root, 'tiny.png'), pngBuffer)
@@ -115,15 +119,17 @@ describe('edit tool coverage branches', () => {
     const root = await createWorkspace()
     const editTool = createEdit(root)
 
-    await expect(editTool.execute({
-      id: 'e2',
-      params: {
-        path: 'missing.ts',
-        oldContent: 'x',
-        newContent: 'y',
-      },
-      signal,
-    })).rejects.toThrow('ENOENT')
+    await expect(
+      editTool.execute({
+        id: 'e2',
+        params: {
+          path: 'missing.ts',
+          oldContent: 'x',
+          newContent: 'y',
+        },
+        signal,
+      }),
+    ).rejects.toThrow('ENOENT')
   })
 
   it('returns explanatory message when oldContent is missing', async () => {
@@ -142,7 +148,9 @@ describe('edit tool coverage branches', () => {
     })
 
     expect(result.isError).toBeUndefined()
-    expect((result.content[0] as { text: string })?.text).toContain('Could not find the specified text')
+    expect((result.content[0] as { text: string })?.text).toContain(
+      'Could not find the specified text',
+    )
   })
 })
 

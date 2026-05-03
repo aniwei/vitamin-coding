@@ -9,6 +9,7 @@ import type {
   McpServerInfo,
   McpClientStatus,
   McpResource,
+  McpResourceContents,
   McpPrompt,
   McpEvents,
 } from './types'
@@ -166,6 +167,15 @@ export class McpManager extends TypedEventEmitter<McpEvents> {
       }
     }
     return resources
+  }
+
+  /** 读取指定 server 的 MCP resource（兼容 @x-mars/skill MCP resource provider） */
+  async readResource(serverName: string, uri: string): Promise<McpResourceContents[]> {
+    const client = this.clients.get(serverName)
+    if (!client) {
+      throw new Error(`MCP server "${serverName}" not found`)
+    }
+    return client.readResource(uri)
   }
 
   /** 获取所有可用 prompts（跨 server 聚合） */

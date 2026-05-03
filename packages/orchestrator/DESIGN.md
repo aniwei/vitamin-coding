@@ -117,3 +117,38 @@
 
 - 测试文件数：6
 - 覆盖：TaskStore CRUD、执行器调度、重试策略、断路器状态机、后台管理器、协调器编排
+
+## 模块设计基线
+
+### 设计目的
+
+提供多任务、后台任务、子代理调用和任务状态管理的编排能力，是 Agent 工具调用与多会话执行之间的调度层。
+
+### 接口设计
+
+- `Orchestrator`：任务创建、派发、查询、取消和输出读取。
+- `createTask` / `task_delegate` / `agent_call` 等工具回调类型。
+- `BackgroundManager`：后台任务生命周期。
+- `Executor`：封装 runSession 回调执行。
+
+### 方法论
+
+编排器不直接执行模型，只调度 session runtime；任务状态必须可查询、可取消、可追踪输出。
+
+### 实现逻辑
+
+工具创建任务后，orchestrator 根据执行模式同步或后台调用 runSession，持续记录状态、输出和错误，供用户或主 Agent 查询。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[orchestration tool call] --> B[Orchestrator]
+  B --> C[Task registry]
+  C --> D{background?}
+  D -- yes --> E[BackgroundManager]
+  D -- no --> F[Executor]
+  E --> F
+  F --> G[runSession callback]
+  G --> H[task output/status]
+```

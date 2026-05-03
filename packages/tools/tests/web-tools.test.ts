@@ -212,6 +212,24 @@ describe('web_fetch', () => {
     expect(tool.parameters).toBeDefined()
   })
 
+  it('keeps a stable Claude Code style parameter contract', () => {
+    expect(Object.keys(tool.parameters.shape)).toEqual([
+      'url',
+      'format',
+      'headers',
+      'allowedDomains',
+      'maxLength',
+    ])
+    expect(
+      tool.parameters.safeParse({
+        url: 'https://example.com',
+        format: 'markdown',
+        allowedDomains: ['example.com'],
+        maxLength: 10_000,
+      }).success,
+    ).toBe(true)
+  })
+
   it('rejects SSRF URLs', async () => {
     await expect(
       tool.execute({
@@ -254,7 +272,90 @@ describe('web_fetch', () => {
 
     expect(result.isError).toBe(true)
     expect(result.content[0]?.text).toContain('404')
+    expect(result.details).toMatchObject({ provider: 'native-fetch', status: 404 })
   }, 20_000)
+
+  it('enforces allowed domain constraints before fetching', async () => {
+    await expect(
+      tool.execute({
+        id: 'f5',
+        params: { url: 'https://example.com/page', allowedDomains: ['docs.example.org'] },
+        signal: new AbortController().signal,
+      }),
+    ).rejects.toThrow('not allowed')
+  })
+
+  it('allows subdomains for allowed domain constraints', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        return new Response('<html><body><h1>Docs</h1></body></html>', {
+          status: 200,
+          headers: { 'Content-Type': 'text/html' },
+        })
+      }),
+    )
+
+    const result = await tool.execute({
+      id: 'f6',
+      params: { url: 'https://api.example.com/docs', allowedDomains: ['example.com'] },
+      signal: new AbortController().signal,
+    })
+
+    expect(result.isError).toBeFalsy()
+    expect(result.details).toMatchObject({ allowedDomains: ['example.com'] })
+    expect(result.content[0]?.text).toContain('Docs')
+  })
+
+  it('supports an injected fetch provider for provider-backed extraction', async () => {
+    const provider = {
+      fetch: vi.fn(async () => ({
+        provider: 'fake-extract',
+        status: 200,
+        statusText: 'OK',
+        contentType: 'text/html',
+        contentLength: 37,
+        body: new TextEncoder().encode('<html><body><h1>Provider Docs</h1></body></html>').buffer,
+      })),
+    }
+    const providerTool = createWebFetch('/tmp/test', { provider })
+
+    const result = await providerTool.execute({
+      id: 'f7',
+      params: { url: 'https://docs.example.com/provider', allowedDomains: ['example.com'] },
+      signal: new AbortController().signal,
+    })
+
+    expect(provider.fetch).toHaveBeenCalledWith(
+      expect.objectContaining({ url: expect.any(URL), signal: expect.any(AbortSignal) }),
+    )
+    expect(result.isError).toBeFalsy()
+    expect(result.details).toMatchObject({ provider: 'fake-extract' })
+    expect(result.content[0]?.text).toContain('Provider Docs')
+  })
+
+  it('returns provider diagnostics when an injected fetch provider fails', async () => {
+    const provider = {
+      name: 'failing-fetch',
+      fetch: vi.fn(async () => {
+        throw new Error('provider unavailable')
+      }),
+    }
+    const providerTool = createWebFetch('/tmp/test', { provider })
+
+    const result = await providerTool.execute({
+      id: 'f8',
+      params: { url: 'https://docs.example.com/provider', allowedDomains: ['example.com'] },
+      signal: new AbortController().signal,
+    })
+
+    expect(result.isError).toBe(true)
+    expect(result.content[0]?.text).toContain('provider unavailable')
+    expect(result.details).toMatchObject({
+      provider: 'failing-fetch',
+      allowedDomains: ['example.com'],
+    })
+  })
 })
 
 // ─── WebSearch Tool ───────────────────────────────────────────────────────
@@ -267,6 +368,25 @@ describe('web_search', () => {
     expect(tool.description).toContain('Search')
     expect(tool.readonly).toBe(true)
     expect(tool.parameters).toBeDefined()
+  })
+
+  it('keeps a stable Claude Code style parameter contract', () => {
+    expect(Object.keys(tool.parameters.shape)).toEqual([
+      'query',
+      'domains',
+      'blockedDomains',
+      'recencyDays',
+      'limit',
+    ])
+    expect(
+      tool.parameters.safeParse({
+        query: 'release notes',
+        domains: ['example.com'],
+        blockedDomains: ['blog.example.com'],
+        recencyDays: 14,
+        limit: 5,
+      }).success,
+    ).toBe(true)
   })
 
   it('returns search results for a common query', async () => {
@@ -306,4 +426,188 @@ describe('web_search', () => {
     // Should have at least one numbered result
     expect(text).toMatch(/\d+\./)
   }, 20_000)
+
+  it('adds domain and recency constraints to the search query', async () => {
+    vi.useFakeTimers()
+    vi.setSystemTime(new Date('2026-05-03T00:00:00.000Z'))
+
+    let requestedUrl = ''
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async (url: string | URL | Request) => {
+        requestedUrl = String(url)
+        return new Response(
+          `
+          <html>
+            <body>
+              <div class="snippet" data-type="web">
+                <a href="https://docs.example.com/page" class="result svelte-abc">
+                  <div class="title search-snippet-title" title="Example Docs"></div>
+                </a>
+                <div class="generic-snippet"><div class="content">Recent documentation.</div></div>
+              </div>
+            </body>
+          </html>
+          `,
+          {
+            status: 200,
+            headers: { 'Content-Type': 'text/html' },
+          },
+        )
+      }),
+    )
+
+    const result = await tool.execute({
+      id: 's2',
+      params: {
+        query: 'release notes',
+        domains: ['example.com'],
+        blockedDomains: ['blog.example.com'],
+        recencyDays: 7,
+        limit: 5,
+      },
+      signal: AbortSignal.timeout(15_000),
+    })
+
+    const q = new URL(requestedUrl).searchParams.get('q') ?? ''
+    expect(q).toContain('release notes')
+    expect(q).toContain('site:example.com')
+    expect(q).toContain('-site:blog.example.com')
+    expect(q).toContain('after:2026-04-26')
+    expect(result.details).toMatchObject({
+      searchQuery: q,
+      domains: ['example.com'],
+      blockedDomains: ['blog.example.com'],
+      afterDate: '2026-04-26',
+    })
+    expect(result.content[0]?.text).toContain('Example Docs')
+
+    vi.useRealTimers()
+  })
+
+  it('filters parsed results by allowed and blocked domains', async () => {
+    vi.stubGlobal(
+      'fetch',
+      vi.fn(async () => {
+        return new Response(
+          `
+          <html>
+            <body>
+              <div class="snippet" data-type="web">
+                <a href="https://docs.example.com/page" class="result svelte-abc">
+                  <div class="title search-snippet-title" title="Allowed Docs"></div>
+                </a>
+                <div class="generic-snippet"><div class="content">Allowed result.</div></div>
+              </div>
+              <div class="snippet" data-type="web">
+                <a href="https://blog.example.com/page" class="result svelte-def">
+                  <div class="title search-snippet-title" title="Blocked Blog"></div>
+                </a>
+                <div class="generic-snippet"><div class="content">Blocked result.</div></div>
+              </div>
+              <div class="snippet" data-type="web">
+                <a href="https://unrelated.test/page" class="result svelte-ghi">
+                  <div class="title search-snippet-title" title="Unrelated"></div>
+                </a>
+                <div class="generic-snippet"><div class="content">Unrelated result.</div></div>
+              </div>
+            </body>
+          </html>
+          `,
+          {
+            status: 200,
+            headers: { 'Content-Type': 'text/html' },
+          },
+        )
+      }),
+    )
+
+    const result = await tool.execute({
+      id: 's3',
+      params: {
+        query: 'documentation',
+        domains: ['example.com'],
+        blockedDomains: ['blog.example.com'],
+        limit: 10,
+      },
+      signal: AbortSignal.timeout(15_000),
+    })
+
+    const text = result.content[0]?.text ?? ''
+    expect(text).toContain('Allowed Docs')
+    expect(text).not.toContain('Blocked Blog')
+    expect(text).not.toContain('Unrelated')
+    expect(result.details).toMatchObject({ resultCount: 1 })
+  })
+
+  it('supports an injected search provider while preserving query constraints', async () => {
+    const provider = {
+      search: vi.fn(async () => ({
+        provider: 'fake-search',
+        results: [
+          {
+            title: 'Provider Docs',
+            url: 'https://docs.example.com/page',
+            snippet: 'Result from provider.',
+          },
+          {
+            title: 'Blocked Provider Blog',
+            url: 'https://blog.example.com/page',
+            snippet: 'Blocked result.',
+          },
+        ],
+      })),
+    }
+    const providerTool = createWebSearch('/tmp/test', { provider })
+
+    const result = await providerTool.execute({
+      id: 's4',
+      params: {
+        query: 'provider docs',
+        domains: ['example.com'],
+        blockedDomains: ['blog.example.com'],
+        limit: 10,
+      },
+      signal: new AbortController().signal,
+    })
+
+    expect(provider.search).toHaveBeenCalledWith(
+      expect.objectContaining({
+        query: expect.stringContaining('site:example.com'),
+        domains: ['example.com'],
+        blockedDomains: ['blog.example.com'],
+      }),
+    )
+    expect(result.details).toMatchObject({ provider: 'fake-search', resultCount: 1 })
+    expect(result.content[0]?.text).toContain('Provider Docs')
+    expect(result.content[0]?.text).not.toContain('Blocked Provider Blog')
+  })
+
+  it('returns provider diagnostics when an injected search provider fails', async () => {
+    const provider = {
+      name: 'failing-search',
+      search: vi.fn(async () => {
+        throw new Error('search backend unavailable')
+      }),
+    }
+    const providerTool = createWebSearch('/tmp/test', { provider })
+
+    const result = await providerTool.execute({
+      id: 's5',
+      params: {
+        query: 'provider docs',
+        domains: ['example.com'],
+        recencyDays: 3,
+      },
+      signal: new AbortController().signal,
+    })
+
+    expect(result.isError).toBe(true)
+    expect(result.content[0]?.text).toContain('search backend unavailable')
+    expect(result.details).toMatchObject({
+      provider: 'failing-search',
+      domains: ['example.com'],
+    })
+    expect(result.details?.searchQuery).toContain('site:example.com')
+  })
 })

@@ -6,11 +6,11 @@ X-Mars 的 Web 前端界面，基于 React 18 + Vite + Tailwind CSS 构建，提
 
 ## 核心功能
 
-| 页面 | 功能 |
-|------|------|
-| Chat | 聊天界面（消息流、工具调用展示、任务列表） |
-| CodeWiki | 代码文档可视化 |
-| TraceAnalysis | Agent 执行追踪分析（@xyflow/react 流图） |
+| 页面          | 功能                                       |
+| ------------- | ------------------------------------------ |
+| Chat          | 聊天界面（消息流、工具调用展示、任务列表） |
+| CodeWiki      | 代码文档可视化                             |
+| TraceAnalysis | Agent 执行追踪分析（@xyflow/react 流图）   |
 
 ## 技术栈
 

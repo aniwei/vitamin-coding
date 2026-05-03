@@ -9,8 +9,7 @@ describe('json schema to zod', () => {
       jsonSchemaPropertyToZod({ type: 'string', enum: ['red', 'blue'] }).safeParse('red').success,
     ).toBe(true)
     expect(
-      jsonSchemaPropertyToZod({ type: 'string', enum: ['red', 'blue'] }).safeParse('green')
-        .success,
+      jsonSchemaPropertyToZod({ type: 'string', enum: ['red', 'blue'] }).safeParse('green').success,
     ).toBe(false)
   })
 

@@ -11,9 +11,9 @@ export function DebugStatusBadge() {
     return (
       <button
         onClick={togglePanel}
-        className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-medium animate-pulse"
+        className='flex items-center gap-1 px-2 py-0.5 rounded-full bg-amber-100 text-amber-700 text-[10px] font-medium animate-pulse'
       >
-        <Bug className="w-3 h-3" />
+        <Bug className='w-3 h-3' />
         Paused {currentSnapshot?.point ? `at ${currentSnapshot.point}` : ''}
       </button>
     )
@@ -23,9 +23,9 @@ export function DebugStatusBadge() {
     return (
       <button
         onClick={togglePanel}
-        className="flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-medium"
+        className='flex items-center gap-1.5 px-2.5 py-0.5 rounded-full bg-green-100 text-green-700 text-[10px] font-medium'
       >
-        <Bug className="w-3 h-3" />
+        <Bug className='w-3 h-3' />
         Devtools
       </button>
     )
@@ -34,9 +34,9 @@ export function DebugStatusBadge() {
   return (
     <button
       onClick={togglePanel}
-      className="flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-medium"
+      className='flex items-center gap-1 px-2 py-0.5 rounded-full bg-gray-100 text-gray-500 text-[10px] font-medium'
     >
-      <Bug className="w-3 h-3" />
+      <Bug className='w-3 h-3' />
       Debug Off
     </button>
   )

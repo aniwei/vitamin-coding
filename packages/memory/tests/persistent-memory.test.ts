@@ -52,9 +52,7 @@ describe('PersistentMemory', () => {
   it('#given sources with content #then load populates memories', async () => {
     store.set('~/.x-mars/AGENTS.md', 'preferences')
 
-    const pm = new PersistentMemory(store, [
-      { path: '~/.x-mars/AGENTS.md', writable: true },
-    ])
+    const pm = new PersistentMemory(store, [{ path: '~/.x-mars/AGENTS.md', writable: true }])
     await pm.load()
 
     const memories = pm.getMemories()
@@ -65,9 +63,7 @@ describe('PersistentMemory', () => {
   it('#given loaded memories #then getInjection returns formatted text', async () => {
     store.set('~/.x-mars/AGENTS.md', 'User likes TypeScript')
 
-    const pm = new PersistentMemory(store, [
-      { path: '~/.x-mars/AGENTS.md', writable: true },
-    ])
+    const pm = new PersistentMemory(store, [{ path: '~/.x-mars/AGENTS.md', writable: true }])
     await pm.load()
 
     const injection = pm.getInjection()

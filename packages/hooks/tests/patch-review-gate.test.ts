@@ -1,9 +1,6 @@
 import { describe, expect, it } from 'vitest'
 import { HookRegistry, createPatchReviewGateHook } from '../src'
-import type {
-  ToolExecuteAfterInput,
-  ToolExecuteAfterOutput,
-} from '../src'
+import type { ToolExecuteAfterInput, ToolExecuteAfterOutput } from '../src'
 
 function makeInput(overrides: Partial<ToolExecuteAfterInput> = {}): ToolExecuteAfterInput {
   return {

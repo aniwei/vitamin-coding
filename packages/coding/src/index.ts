@@ -17,12 +17,14 @@ export {
   formatContextDiagnostics,
   getLastAssistantText,
   runJsonMode,
+  runJsonStreamMode,
   runPrintMode,
   runRpcMode,
 } from './modes/run-modes'
 export type {
   InteractiveResult,
   JsonModeResult,
+  JsonStreamEvent,
   RpcPromptParams,
   RpcRequest,
   RpcResponse,

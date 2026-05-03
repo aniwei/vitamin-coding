@@ -33,14 +33,16 @@ describe('full preset orchestration tools', () => {
         error: 'failed upstream',
       }))
 
-      await expect(tool.execute({
-        id: 'ac2',
-        params: {
-          agent: 'explore',
-          prompt: 'inspect repository',
-        },
-        signal,
-      })).rejects.toThrow('failed upstream')
+      await expect(
+        tool.execute({
+          id: 'ac2',
+          params: {
+            agent: 'explore',
+            prompt: 'inspect repository',
+          },
+          signal,
+        }),
+      ).rejects.toThrow('failed upstream')
     })
   })
 

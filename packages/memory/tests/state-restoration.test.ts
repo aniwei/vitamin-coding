@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { collectRestorationState, buildRestorationMessage, createEmptyRestorationState } from '../src/state-restoration'
+import {
+  collectRestorationState,
+  buildRestorationMessage,
+  createEmptyRestorationState,
+} from '../src/state-restoration'
 import type { Message } from '@x-mars/ai'
 
 function makeToolResult(toolName: string, text: string, details: unknown = {}): Message {
@@ -145,11 +149,9 @@ describe('collectRestorationState', () => {
           action: 'set',
           todos: [{ id: 'T1', title: 'verify restore', status: 'in_progress' }],
         }),
-        makeToolResult(
-          'write_todos',
-          '[done] T2: keep compact context',
-          { todos: [{ id: 'T1', title: 'verify restore', status: 'done' }] },
-        ),
+        makeToolResult('write_todos', '[done] T2: keep compact context', {
+          todos: [{ id: 'T1', title: 'verify restore', status: 'done' }],
+        }),
       ]
 
       const state = collectRestorationState(messages)

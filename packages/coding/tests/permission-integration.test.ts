@@ -70,8 +70,12 @@ function makeToolCall(name: string, id: string, args: Record<string, unknown> = 
 
 function createSchema<T>() {
   return {
-    parse(input: unknown) { return input as T },
-    safeParse(input: unknown) { return { success: true as const, data: input as T } },
+    parse(input: unknown) {
+      return input as T
+    },
+    safeParse(input: unknown) {
+      return { success: true as const, data: input as T }
+    },
   }
 }
 
@@ -151,13 +155,15 @@ describe('Permission guard through HookRegistry', () => {
     hooks.register(createPermissionGuardHook(registry, auditLog))
 
     // Allowed operation
-    await hooks.execute('tool.execute.before',
+    await hooks.execute(
+      'tool.execute.before',
       makeBeforeInput({ toolName: 'read', args: { path: '/etc/hosts' } }),
       makeBeforeOutput({ path: '/etc/hosts' }),
     )
 
     // Denied operation
-    await hooks.execute('tool.execute.before',
+    await hooks.execute(
+      'tool.execute.before',
       makeBeforeInput({ toolName: 'write', args: { path: '/etc/passwd' } }),
       makeBeforeOutput({ path: '/etc/passwd' }),
     )
@@ -177,8 +183,8 @@ describe('Permission guard in AgentSession tool execution', () => {
     const stream = (context: StreamContext, _signal: AbortSignal) => {
       const eventStream = createEventStream<StreamEvent, AssistantMessage>()
       setTimeout(() => {
-        const hasToolResult = context.messages.some(m =>
-          typeof m === 'object' && m !== null && 'role' in m && m.role === 'tool_result',
+        const hasToolResult = context.messages.some(
+          (m) => typeof m === 'object' && m !== null && 'role' in m && m.role === 'tool_result',
         )
 
         const response = hasToolResult
@@ -215,8 +221,8 @@ describe('Permission guard in AgentSession tool execution', () => {
 
     // The tool_result should contain the denial message
     const messages = session.messages()
-    const toolResult = messages.find(m =>
-      typeof m === 'object' && m !== null && 'role' in m && m.role === 'tool_result',
+    const toolResult = messages.find(
+      (m) => typeof m === 'object' && m !== null && 'role' in m && m.role === 'tool_result',
     ) as { role: 'tool_result'; content: Array<{ type: string; text?: string }> } | undefined
 
     expect(toolResult).toBeDefined()
@@ -227,8 +233,8 @@ describe('Permission guard in AgentSession tool execution', () => {
     const stream = (context: StreamContext, _signal: AbortSignal) => {
       const eventStream = createEventStream<StreamEvent, AssistantMessage>()
       setTimeout(() => {
-        const hasToolResult = context.messages.some(m =>
-          typeof m === 'object' && m !== null && 'role' in m && m.role === 'tool_result',
+        const hasToolResult = context.messages.some(
+          (m) => typeof m === 'object' && m !== null && 'role' in m && m.role === 'tool_result',
         )
 
         const response = hasToolResult
@@ -265,8 +271,8 @@ describe('Permission guard in AgentSession tool execution', () => {
     await agentSession.prompt('read file')
 
     const messages = session.messages()
-    const toolResult = messages.find(m =>
-      typeof m === 'object' && m !== null && 'role' in m && m.role === 'tool_result',
+    const toolResult = messages.find(
+      (m) => typeof m === 'object' && m !== null && 'role' in m && m.role === 'tool_result',
     ) as { role: 'tool_result'; content: Array<{ type: string; text?: string }> } | undefined
 
     expect(toolResult).toBeDefined()
@@ -306,7 +312,7 @@ describe('XMarsApp permission policy wiring', () => {
   it('registers permission-guard hook on initialization', () => {
     const app = createTestApp()
     const registered = app.hookRegistry.getRegistered('tool.execute.before')
-    const guardHook = registered.find(h => h.name === 'permission-guard')
+    const guardHook = registered.find((h) => h.name === 'permission-guard')
 
     expect(guardHook).toBeDefined()
     expect(guardHook!.priority).toBe(5)
@@ -316,7 +322,7 @@ describe('XMarsApp permission policy wiring', () => {
   it('initializes with builtin policies', () => {
     const app = createTestApp()
     const policies = app.permissionRegistry.getAll()
-    const policyNames = policies.map(p => p.name)
+    const policyNames = policies.map((p) => p.name)
 
     expect(policyNames).toContain('mode::auto')
     expect(policyNames).toContain('builtin::file-guard')
@@ -335,14 +341,14 @@ describe('XMarsApp permission policy wiring', () => {
 
     // Default is auto mode
     let policies = app.permissionRegistry.getAll()
-    expect(policies.some(p => p.name === 'mode::auto')).toBe(true)
+    expect(policies.some((p) => p.name === 'mode::auto')).toBe(true)
 
     // Update to readonly mode
     await app.settings.update({ permission_mode: 'readonly' })
 
     policies = app.permissionRegistry.getAll()
-    expect(policies.some(p => p.name === 'mode::readonly')).toBe(true)
-    expect(policies.some(p => p.name === 'mode::auto')).toBe(false)
+    expect(policies.some((p) => p.name === 'mode::readonly')).toBe(true)
+    expect(policies.some((p) => p.name === 'mode::auto')).toBe(false)
 
     await app.stop()
   })
@@ -405,7 +411,8 @@ describe('Combined permission pipeline scenarios', () => {
 
     // Read allowed
     const readOutput = makeBeforeOutput({ path: '/etc/hosts' })
-    await hooks.execute('tool.execute.before',
+    await hooks.execute(
+      'tool.execute.before',
       makeBeforeInput({ toolName: 'read', args: { path: '/etc/hosts' } }),
       readOutput,
     )
@@ -413,7 +420,8 @@ describe('Combined permission pipeline scenarios', () => {
 
     // Write denied by readonly
     const writeOutput = makeBeforeOutput({ path: '/project/foo.ts' })
-    await hooks.execute('tool.execute.before',
+    await hooks.execute(
+      'tool.execute.before',
       makeBeforeInput({ toolName: 'write', args: { path: '/project/foo.ts' } }),
       writeOutput,
     )
@@ -430,7 +438,8 @@ describe('Combined permission pipeline scenarios', () => {
 
     // web-agent can search
     const searchOutput = makeBeforeOutput()
-    await hooks.execute('tool.execute.before',
+    await hooks.execute(
+      'tool.execute.before',
       makeBeforeInput({ agentName: 'web-agent', toolName: 'web-search' }),
       searchOutput,
     )
@@ -438,15 +447,21 @@ describe('Combined permission pipeline scenarios', () => {
 
     // web-agent cannot write
     const writeOutput = makeBeforeOutput({ path: '/project/x.ts' })
-    await hooks.execute('tool.execute.before',
-      makeBeforeInput({ agentName: 'web-agent', toolName: 'write', args: { path: '/project/x.ts' } }),
+    await hooks.execute(
+      'tool.execute.before',
+      makeBeforeInput({
+        agentName: 'web-agent',
+        toolName: 'write',
+        args: { path: '/project/x.ts' },
+      }),
       writeOutput,
     )
     expect(writeOutput.cancelled).toBe(true)
 
     // lead agent is unrestricted
     const leadOutput = makeBeforeOutput({ path: '/project/x.ts' })
-    await hooks.execute('tool.execute.before',
+    await hooks.execute(
+      'tool.execute.before',
       makeBeforeInput({ agentName: 'lead', toolName: 'write', args: { path: '/project/x.ts' } }),
       leadOutput,
     )
@@ -464,7 +479,8 @@ describe('Combined permission pipeline scenarios', () => {
 
     // Within scope
     const inOutput = makeBeforeOutput({ path: '/project/src/app.ts' })
-    await hooks.execute('tool.execute.before',
+    await hooks.execute(
+      'tool.execute.before',
       makeBeforeInput({ toolName: 'edit', args: { path: '/project/src/app.ts' } }),
       inOutput,
     )
@@ -472,7 +488,8 @@ describe('Combined permission pipeline scenarios', () => {
 
     // Outside scope
     const outOutput = makeBeforeOutput({ path: '/project/tests/foo.test.ts' })
-    await hooks.execute('tool.execute.before',
+    await hooks.execute(
+      'tool.execute.before',
       makeBeforeInput({ toolName: 'edit', args: { path: '/project/tests/foo.test.ts' } }),
       outOutput,
     )
@@ -487,7 +504,8 @@ describe('Combined permission pipeline scenarios', () => {
     hooks.register(createPermissionGuardHook(registry))
 
     const output = makeBeforeOutput({ path: '/project/foo.ts' })
-    await hooks.execute('tool.execute.before',
+    await hooks.execute(
+      'tool.execute.before',
       makeBeforeInput({ toolName: 'write', args: { path: '/project/foo.ts' } }),
       output,
     )
@@ -513,7 +531,8 @@ describe('Combined permission pipeline scenarios', () => {
 
     // bash denied
     const bashOutput = makeBeforeOutput({ command: 'ls' })
-    await hooks.execute('tool.execute.before',
+    await hooks.execute(
+      'tool.execute.before',
       makeBeforeInput({ toolName: 'bash', args: { command: 'ls' } }),
       bashOutput,
     )
@@ -521,10 +540,7 @@ describe('Combined permission pipeline scenarios', () => {
 
     // read allowed
     const readOutput = makeBeforeOutput()
-    await hooks.execute('tool.execute.before',
-      makeBeforeInput({ toolName: 'read' }),
-      readOutput,
-    )
+    await hooks.execute('tool.execute.before', makeBeforeInput({ toolName: 'read' }), readOutput)
     expect(readOutput.cancelled).toBe(false)
   })
 })

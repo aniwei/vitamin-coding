@@ -25,13 +25,17 @@ describe('GitHubCopilotOAuthProvider.refreshToken', () => {
     const originalFetch = globalThis.fetch
     const expiresAt = Math.floor(Date.now() / 1000) + 3600
 
-    globalThis.fetch = async () => new Response(JSON.stringify({
-      token: 'copilot-token',
-      expires_at: expiresAt,
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          token: 'copilot-token',
+          expires_at: expiresAt,
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
 
     try {
       const credentials = await provider.refreshToken({
@@ -54,17 +58,20 @@ describe('GitHubCopilotOAuthProvider.refreshToken', () => {
     const originalFetch = globalThis.fetch
 
     // 源码校验 !data.token，返回空对象触发错误
-    globalThis.fetch = async () => new Response(JSON.stringify({}), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    globalThis.fetch = async () =>
+      new Response(JSON.stringify({}), {
+        status: 200,
+        headers: { 'Content-Type': 'application/json' },
+      })
 
     try {
-      await expect(provider.refreshToken({
-        refresh: 'gh-token',
-        access: 'old-access',
-        expires: 0,
-      })).rejects.toThrow('Invalid Copilot token response fields.')
+      await expect(
+        provider.refreshToken({
+          refresh: 'gh-token',
+          access: 'old-access',
+          expires: 0,
+        }),
+      ).rejects.toThrow('Invalid Copilot token response fields.')
     } finally {
       globalThis.fetch = originalFetch
     }
@@ -84,22 +91,31 @@ describe('GitHubCopilotOAuthProvider.login', () => {
     globalThis.fetch = async () => {
       callCount++
       if (callCount === 1) {
-        return new Response(JSON.stringify({
-          device_code: 'dev-code',
-          user_code: 'ABCD-EFGH',
-          verification_uri: 'https://github.com/login/device',
-          interval: 1,
-          expires_in: 900,
-        }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+        return new Response(
+          JSON.stringify({
+            device_code: 'dev-code',
+            user_code: 'ABCD-EFGH',
+            verification_uri: 'https://github.com/login/device',
+            interval: 1,
+            expires_in: 900,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        )
       } else if (callCount === 2) {
-        return new Response(JSON.stringify({
-          access_token: 'gh-access-token',
-        }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+        return new Response(
+          JSON.stringify({
+            access_token: 'gh-access-token',
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        )
       } else {
-        return new Response(JSON.stringify({
-          token: 'copilot-access-token',
-          expires_at: expiresAt,
-        }), { status: 200, headers: { 'Content-Type': 'application/json' } })
+        return new Response(
+          JSON.stringify({
+            token: 'copilot-access-token',
+            expires_at: expiresAt,
+          }),
+          { status: 200, headers: { 'Content-Type': 'application/json' } },
+        )
       }
     }
 
@@ -131,11 +147,13 @@ describe('GitHubCopilotOAuthProvider.login', () => {
     const controller = new AbortController()
     controller.abort()
 
-    await expect(provider.login({
-      onPrompt: async () => '',
-      onAuth: () => {},
-      signal: controller.signal,
-    })).rejects.toThrow('Login cancelled')
+    await expect(
+      provider.login({
+        onPrompt: async () => '',
+        onAuth: () => {},
+        signal: controller.signal,
+      }),
+    ).rejects.toThrow('Login cancelled')
   })
 
   it('throws when device code response is invalid', async () => {
@@ -143,18 +161,24 @@ describe('GitHubCopilotOAuthProvider.login', () => {
     const originalFetch = globalThis.fetch
 
     // 源码校验 !data.device_code，返回无该字段的响应触发错误
-    globalThis.fetch = async () => new Response(JSON.stringify({
-      error: 'bad_verification_code',
-    }), {
-      status: 200,
-      headers: { 'Content-Type': 'application/json' },
-    })
+    globalThis.fetch = async () =>
+      new Response(
+        JSON.stringify({
+          error: 'bad_verification_code',
+        }),
+        {
+          status: 200,
+          headers: { 'Content-Type': 'application/json' },
+        },
+      )
 
     try {
-      await expect(provider.login({
-        onPrompt: async () => '',
-        onAuth: () => {},
-      })).rejects.toThrow('GitHub device authorization returned invalid response fields.')
+      await expect(
+        provider.login({
+          onPrompt: async () => '',
+          onAuth: () => {},
+        }),
+      ).rejects.toThrow('GitHub device authorization returned invalid response fields.')
     } finally {
       globalThis.fetch = originalFetch
     }

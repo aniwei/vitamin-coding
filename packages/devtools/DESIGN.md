@@ -128,3 +128,36 @@ XMarsApp 初始化
 
 - 测试文件数：4
 - 覆盖：断点注册/启用/条件、快照生成、步进控制、Worker 通信
+
+## 模块设计基线
+
+### 设计目的
+
+提供运行时调试、断点、快照和审计回放能力，使 Agent 执行流程可以被暂停、观察和复现。
+
+### 接口设计
+
+- `DevtoolsService` / `Service`：调试服务生命周期与连接管理。
+- `BREAKPOINT_POINTS` / `DebugSnapshot`：断点定义与快照结构。
+- `Debugger` tools：breakpoints、resume、step、continue 等控制工具。
+- `AuditTraceRecorder` / `replayAuditTrace()`：记录并重放审计事件。
+
+### 方法论
+
+调试能力以 Hook/事件旁路接入，不侵入 Agent 核心逻辑；暂停点必须携带可序列化快照，便于 UI 和测试消费。
+
+### 实现逻辑
+
+运行时触发断点后生成快照并等待调试命令；调试服务接收命令后恢复、单步或修改 payload，再把控制权交还给执行循环。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[Agent / Hook event] --> B[breakpoint matched]
+  B --> C[create DebugSnapshot]
+  C --> D[DevtoolsService]
+  D --> E{debug command}
+  E -- resume/step --> F[continue runtime]
+  E -- inspect --> C
+```

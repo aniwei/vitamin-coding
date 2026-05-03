@@ -229,7 +229,7 @@ export interface HookPayloadMap {
     input: { task: Record<string, unknown>; error: Record<string, unknown> }
     output: void
   }
-  'task.cancelled': { input: { taskId: string }; output: void }
+  'task.cancelled': { input: { taskId: string; task?: Record<string, unknown> }; output: void }
   'task.recovered': {
     input: { task: Record<string, unknown>; fromCheckpoint: string }
     output: void

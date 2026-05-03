@@ -46,7 +46,9 @@ export function InputBox() {
   }, [mentionQuery, showFileMention])
 
   const handleSend = () => {
-    if (!input.trim() || !isConnected || !hasActiveSession) {return}
+    if (!input.trim() || !isConnected || !hasActiveSession) {
+      return
+    }
 
     sendMessage(input.trim())
     setInput('')
@@ -62,7 +64,9 @@ export function InputBox() {
   }
 
   const handleFileSelect = (file: FileItem) => {
-    if (!textareaRef.current) {return}
+    if (!textareaRef.current) {
+      return
+    }
 
     // Replace @query with @file.path
     const before = input.substring(0, mentionStartPos)
@@ -152,10 +156,10 @@ export function InputBox() {
   }
 
   return (
-    <div className="bg-bg-000 p-4">
-      <div className="w-full relative">
-        <div className="rounded-lg border-[0.5px] border-border-300/15 bg-bg-000/60 focus-within:bg-bg-000 focus-within:shadow-sm transition-all">
-          <div className="flex gap-2 p-2">
+    <div className='bg-bg-000 p-4'>
+      <div className='w-full relative'>
+        <div className='rounded-lg border-[0.5px] border-border-300/15 bg-bg-000/60 focus-within:bg-bg-000 focus-within:shadow-sm transition-all'>
+          <div className='flex gap-2 p-2'>
             <textarea
               ref={textareaRef}
               value={input}
@@ -171,57 +175,57 @@ export function InputBox() {
                       : 'Type your message... (use @ to mention files)'
               }
               disabled={!isConnected || !hasActiveSession}
-              className="flex-1 bg-transparent text-text-000 placeholder-text-500 rounded-md px-3 py-2 resize-none border-0 focus:outline-none focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed"
+              className='flex-1 bg-transparent text-text-000 placeholder-text-500 rounded-md px-3 py-2 resize-none border-0 focus:outline-none focus:ring-0 disabled:opacity-50 disabled:cursor-not-allowed'
               rows={2}
             />
-            <div className="flex gap-1.5 self-end">
+            <div className='flex gap-1.5 self-end'>
               {isLoading && (
                 <button
                   onClick={handleStop}
-                  className="px-3 py-2 rounded-lg transition-colors font-medium bg-danger-100 hover:bg-danger-000 text-white hover-scale"
-                  title="Stop (Esc)"
+                  className='px-3 py-2 rounded-lg transition-colors font-medium bg-danger-100 hover:bg-danger-000 text-white hover-scale'
+                  title='Stop (Esc)'
                 >
                   <svg
-                    className="w-4 h-4"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                    className='w-4 h-4'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    stroke='currentColor'
                     strokeWidth={2.5}
                   >
-                    <rect x="6" y="6" width="12" height="12" rx="1" />
+                    <rect x='6' y='6' width='12' height='12' rx='1' />
                   </svg>
                 </button>
               )}
               <button
                 onClick={handleSend}
                 disabled={!input.trim() || !isConnected || !hasActiveSession}
-                className="px-4 py-2 rounded-lg transition-colors font-medium bg-accent-main-100 hover:bg-accent-main-200 text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-bg-300 disabled:text-text-500 hover-scale"
-                title="Send (Enter)"
+                className='px-4 py-2 rounded-lg transition-colors font-medium bg-accent-main-100 hover:bg-accent-main-200 text-white disabled:opacity-40 disabled:cursor-not-allowed disabled:bg-bg-300 disabled:text-text-500 hover-scale'
+                title='Send (Enter)'
               >
-                <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 24 24">
-                  <path d="M2.01 21L23 12 2.01 3 2 10l15 2-15 2z" />
+                <svg className='w-5 h-5' fill='currentColor' viewBox='0 0 24 24'>
+                  <path d='M2.01 21L23 12 2.01 3 2 10l15 2-15 2z' />
                 </svg>
               </button>
             </div>
           </div>
         </div>
 
-        <div className="flex items-center justify-between mt-2">
-          <div className="text-xs text-text-500 px-1">
+        <div className='flex items-center justify-between mt-2'>
+          <div className='text-xs text-text-500 px-1'>
             Press{' '}
-            <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs">
+            <kbd className='px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs'>
               @
             </kbd>{' '}
             to mention files ·{' '}
-            <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs">
+            <kbd className='px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs'>
               Enter
             </kbd>{' '}
             to send ·{' '}
-            <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs">
+            <kbd className='px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs'>
               Shift + Enter
             </kbd>{' '}
             for new line ·{' '}
-            <kbd className="px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs">
+            <kbd className='px-1.5 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs'>
               Esc
             </kbd>{' '}
             to stop

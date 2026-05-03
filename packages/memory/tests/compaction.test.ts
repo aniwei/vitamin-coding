@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { findCutPoint, needsCompaction, isEligibleForManualCompact, prepareCompaction } from '../src/compaction'
+import {
+  findCutPoint,
+  needsCompaction,
+  isEligibleForManualCompact,
+  prepareCompaction,
+} from '../src/compaction'
 import { estimateTokens } from '../src/token-estimator'
 
 import type { Message } from '@x-mars/ai'
@@ -70,18 +75,22 @@ describe('needsCompaction', () => {
 
   it('#given messages above trigger #then returns true', () => {
     const messages = [userMsg('x'.repeat(100_000))]
-    expect(needsCompaction(messages, 1000, {
-      enabled: true,
-      trigger: ['tokens', 10],
-    })).toBe(true)
+    expect(
+      needsCompaction(messages, 1000, {
+        enabled: true,
+        trigger: ['tokens', 10],
+      }),
+    ).toBe(true)
   })
 
   it('#given enabled false #then always returns false', () => {
     const messages = [userMsg('x'.repeat(100_000))]
-    expect(needsCompaction(messages, 100, {
-      enabled: false,
-      trigger: ['tokens', 1],
-    })).toBe(false)
+    expect(
+      needsCompaction(messages, 100, {
+        enabled: false,
+        trigger: ['tokens', 1],
+      }),
+    ).toBe(false)
   })
 })
 
@@ -89,16 +98,20 @@ describe('isEligibleForManualCompact', () => {
   it('#given messages at 50% of trigger #then returns true', () => {
     // trigger = tokens 100, so 50% = 50 tokens needed
     const messages = [userMsg('x'.repeat(400))] // ~100 tokens
-    expect(isEligibleForManualCompact(messages, 1000, {
-      trigger: ['tokens', 100],
-    })).toBe(true)
+    expect(
+      isEligibleForManualCompact(messages, 1000, {
+        trigger: ['tokens', 100],
+      }),
+    ).toBe(true)
   })
 
   it('#given messages well below 50% of trigger #then returns false', () => {
     const messages = [userMsg('hi')]
-    expect(isEligibleForManualCompact(messages, 200_000, {
-      trigger: ['tokens', 99999],
-    })).toBe(false)
+    expect(
+      isEligibleForManualCompact(messages, 200_000, {
+        trigger: ['tokens', 99999],
+      }),
+    ).toBe(false)
   })
 })
 
@@ -131,11 +144,7 @@ describe('prepareCompaction', () => {
   })
 
   it('#given previousSummary #then includes it in preparation', () => {
-    const messages = [
-      userMsg('a'.repeat(200)),
-      assistantMsg('b'.repeat(200)),
-      userMsg('recent'),
-    ]
+    const messages = [userMsg('a'.repeat(200)), assistantMsg('b'.repeat(200)), userMsg('recent')]
 
     const result = prepareCompaction(messages, 1000, { keepRecent: ['tokens', 10] }, 'old summary')
     expect(result).not.toBeNull()

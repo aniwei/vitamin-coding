@@ -1,6 +1,12 @@
 import { describe, expect, it } from 'vitest'
 import { Agent, type AgentMessage } from '@x-mars/agent'
-import { createEventStream, type AssistantMessage, type Model, type StreamContext, type StreamEvent } from '@x-mars/ai'
+import {
+  createEventStream,
+  type AssistantMessage,
+  type Model,
+  type StreamContext,
+  type StreamEvent,
+} from '@x-mars/ai'
 import { PermissionAuditLog, PermissionPolicyRegistry, createHookRegistry } from '@x-mars/hooks'
 import { createInMemorySessionStore } from '@x-mars/session'
 import { createPluginAgentRegistry, createPluginCommandRegistry } from '@x-mars/tools'
@@ -64,7 +70,10 @@ function makeEchoStream() {
     const userText = context.messages
       .filter((m) => typeof m === 'object' && m !== null && 'role' in m && m.role === 'user')
       .flatMap((m) => ('content' in m && Array.isArray(m.content) ? m.content : []))
-      .filter((part) => typeof part === 'object' && part !== null && 'type' in part && part.type === 'text')
+      .filter(
+        (part) =>
+          typeof part === 'object' && part !== null && 'type' in part && part.type === 'text',
+      )
       .map((part) => ('text' in part ? String(part.text) : ''))
       .join(' ')
       .trim()
@@ -291,7 +300,9 @@ describe('run modes', () => {
     expect(response.type).toBe('response')
     if (response.type === 'response') {
       expect(response.text).toContain('Arguments: staging')
-      expect(response.text).toContain('- environment (required, string, choices: staging, production)')
+      expect(response.text).toContain(
+        '- environment (required, string, choices: staging, production)',
+      )
     }
   })
 
@@ -450,14 +461,10 @@ describe('run modes', () => {
     const session = await createSession('interactive-plugin-command-permission-deny')
     const registry = createPluginCommandRegistry()
     let called = false
-    registry.register(
-      { name: 'deploy', permissions: ['shell'] },
-      'deploy-plugin',
-      async () => {
-        called = true
-        return { type: 'response', text: 'must not run' }
-      },
-    )
+    registry.register({ name: 'deploy', permissions: ['shell'] }, 'deploy-plugin', async () => {
+      called = true
+      return { type: 'response', text: 'must not run' }
+    })
     const permissionRegistry = new PermissionPolicyRegistry()
     permissionRegistry.register({
       name: 'deny-plugin-shell',
@@ -805,10 +812,9 @@ describe('run modes', () => {
 
   it('renderPluginCommandPrompt includes description and arguments conservatively', () => {
     expect(
-      renderPluginCommandPrompt(
-        { name: 'review', description: 'Review changed files.' },
-        ['--staged'],
-      ),
+      renderPluginCommandPrompt({ name: 'review', description: 'Review changed files.' }, [
+        '--staged',
+      ]),
     ).toBe('Run plugin command "/review".\n\nReview changed files.\n\nArguments: --staged')
   })
 

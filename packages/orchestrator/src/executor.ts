@@ -51,7 +51,7 @@ export class TaskExecutor {
     private readonly retryPolicy: RetryPolicy,
     private readonly circuitBreaker: CircuitBreaker,
     private readonly runSession: (options: RunSessionOptions) => Promise<RunSessionResult>,
-    private readonly maxActiveTasks: number,
+    private readonly maxActiveTasks: number | (() => number),
   ) {}
 
   async dispatch(args: {
@@ -74,10 +74,11 @@ export class TaskExecutor {
   }> {
     // 并发度检查
     const running = await this.taskStore.list({ status: 'running' })
-    if (running.length >= this.maxActiveTasks) {
+    const maxActiveTasks = resolveMaxActiveTasks(this.maxActiveTasks)
+    if (running.length >= maxActiveTasks) {
       return {
         success: false,
-        error: `Max active tasks reached (${this.maxActiveTasks}). Wait for running tasks to complete.`,
+        error: `Max active tasks reached (${maxActiveTasks}). Wait for running tasks to complete.`,
       }
     }
 
@@ -236,9 +237,25 @@ export class TaskExecutor {
 
       this.circuitBreaker.success()
 
+      const completedTask: Task = {
+        ...task,
+        status: 'completed',
+        output,
+        sessionId: result.sessionId,
+        sidechain,
+        completedAt: Date.now(),
+      }
+
       await this.hookRegistry.emit('task.completed', {
-        task: { ...task, status: 'completed', output } as unknown as Record<string, unknown>,
+        task: completedTask as unknown as Record<string, unknown>,
         result: output as unknown as Record<string, unknown>,
+        subagentResult: {
+          taskId,
+          agent: task.input.subagent,
+          sessionId: result.sessionId,
+          summary: sidechain.summary,
+          outputTail: tailText(outputText),
+        },
       })
 
       return {
@@ -298,7 +315,13 @@ export class TaskExecutor {
       })
 
       await this.hookRegistry.emit('task.failed', {
-        task: { ...task, status: 'failed' } as unknown as Record<string, unknown>,
+        task: {
+          ...task,
+          status: 'failed',
+          error: taskError,
+          sidechain,
+          completedAt: Date.now(),
+        } as unknown as Record<string, unknown>,
         error: taskError as unknown as Record<string, unknown>,
       })
 
@@ -376,7 +399,13 @@ export class TaskExecutor {
     })
 
     await this.hookRegistry.emit('task.failed', {
-      task: { ...task, status: 'failed' } as unknown as Record<string, unknown>,
+      task: {
+        ...task,
+        status: 'failed',
+        error: taskError,
+        sidechain,
+        completedAt: Date.now(),
+      } as unknown as Record<string, unknown>,
       error: taskError as unknown as Record<string, unknown>,
     })
 
@@ -387,6 +416,11 @@ export class TaskExecutor {
       error: message,
     }
   }
+}
+
+function resolveMaxActiveTasks(limit: number | (() => number)): number {
+  const value = typeof limit === 'function' ? limit() : limit
+  return Number.isFinite(value) && value > 0 ? Math.floor(value) : 10
 }
 
 function buildSidechainRunOptions(
@@ -419,6 +453,10 @@ function normalizeTimeoutMs(timeoutMs: number | undefined): number | undefined {
     return undefined
   }
   return Math.floor(timeoutMs)
+}
+
+function tailText(text: string, maxLength = 1200): string {
+  return text.length > maxLength ? text.slice(text.length - maxLength) : text
 }
 
 class TaskTimeoutError extends Error {

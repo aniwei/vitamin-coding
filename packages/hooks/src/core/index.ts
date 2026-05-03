@@ -15,7 +15,9 @@ export {
   createLabelTruncatorHook,
   createRulesInjectorHook,
   createOutputTruncationHook,
+  createToolOutputPersistenceHook,
 } from './tool-guard'
+export type { ToolOutputPersistenceConfig } from './tool-guard'
 
 export {
   createContextInjectorHook,
@@ -59,6 +61,15 @@ export type { ToolErrorTrackerConfig } from './tool-guard'
 
 export { createTokenBudgetHook, trackTokenUsage, getTokenUsage, clearTokenUsage } from './transform'
 export type { TokenBudgetConfig } from './transform'
+
+export { createCommandHook, isCommandHookConfig } from './command'
+export type {
+  CommandHookConfig,
+  CommandHookMatcher,
+  CommandHookRunner,
+  CommandHookRunInput,
+  CommandHookRunResult,
+} from './command'
 
 // Permission
 export {

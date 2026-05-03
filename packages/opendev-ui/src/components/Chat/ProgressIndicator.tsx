@@ -31,14 +31,14 @@ export const ProgressIndicator = React.memo(function ProgressIndicator({
   }, [])
 
   return (
-    <div className="bg-bg-000 border border-border-300/15 rounded-lg px-4 py-3 animate-fade-in">
-      <div className="flex items-center gap-3">
+    <div className='bg-bg-000 border border-border-300/15 rounded-lg px-4 py-3 animate-fade-in'>
+      <div className='flex items-center gap-3'>
         <span
           className={`text-base font-medium ${SPINNER_COLORS[colorIndex]} transition-colors duration-100`}
         >
           {SPINNER_FRAMES[spinnerIndex]}
         </span>
-        <span className="text-sm text-text-300 font-medium">
+        <span className='text-sm text-text-300 font-medium'>
           {progressMessage ? progressMessage : `${THINKING_VERBS[verbIndex]}...`}
         </span>
       </div>

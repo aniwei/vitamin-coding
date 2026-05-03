@@ -69,3 +69,34 @@
 - 测试文件数：2
 - `invariant.test.ts`：断言行为、错误类型、verbosity 控制
 - `tsup-strip-invariant-plugin.test.ts`：9 种 AST 变换场景
+
+## 模块设计基线
+
+### 设计目的
+
+提供开发期断言和构建期剥离能力，使运行时代码可保留强约束而不增加生产包负担。
+
+### 接口设计
+
+- `invariant(condition, message)`：运行时断言。
+- `assertNever(value)`：穷尽性检查。
+- `tsdown-strip-invariant-plugin`：构建时剥离断言代码。
+
+### 方法论
+
+在边界处显式断言，在构建链路中消除可证明的开发辅助代码，兼顾开发安全和产物体积。
+
+### 实现逻辑
+
+源码调用 invariant 表达设计前置条件；测试覆盖错误路径；构建插件在产物阶段按规则移除或压缩断言。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[source code invariant] --> B[dev/test runtime check]
+  A --> C[tsdown plugin]
+  C --> D[strip invariant in build]
+  B --> E[fail fast]
+  D --> F[production bundle]
+```

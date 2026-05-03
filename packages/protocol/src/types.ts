@@ -175,11 +175,49 @@ export type WebSocketMessage =
       type: 'Chat.reviewFailed'
       data: { sessionId: string; review: ProtocolPatchReviewEvent; issues: string[] }
     }
-  | { type: 'Chat.subagentStart'; data: { sessionId: string; agentName: string } }
-  | { type: 'Chat.subagentComplete'; data: { sessionId: string; agentName: string } }
+  | {
+      type: 'Chat.subagentStart'
+      data: {
+        sessionId: string
+        agentName: string
+        subagentId?: string
+        taskId?: string
+        toolCallId?: string
+        agentType?: string
+        subagentName?: string
+        task?: string
+        description?: string
+      }
+    }
+  | {
+      type: 'Chat.subagentComplete'
+      data: {
+        sessionId: string
+        agentName: string
+        subagentId?: string
+        taskId?: string
+        toolCallId?: string
+        success?: boolean
+        summary?: string
+        resultSummary?: string
+        outputTail?: string
+        childSessionId?: string
+      }
+    }
   | { type: 'Chat.parallelAgentsStart'; data: { sessionId: string; count: number } }
   | { type: 'Chat.parallelAgentsDone'; data: { sessionId: string } }
-  | { type: 'Chat.taskCompleted'; data: { sessionId: string; taskId: string } }
+  | {
+      type: 'Chat.taskCompleted'
+      data: {
+        sessionId: string
+        taskId: string
+        agentName?: string
+        status?: string
+        summary?: string
+        outputTail?: string
+        childSessionId?: string
+      }
+    }
   | { type: 'Chat.progress'; data: { sessionId: string; phase: string; turnIndex?: number } }
   | {
       type: 'Session.statusUpdate'

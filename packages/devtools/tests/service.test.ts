@@ -16,22 +16,38 @@ const testDir = dirname(fileURLToPath(import.meta.url))
 const devtoolsDistUrl = pathToFileURL(resolve(testDir, '../dist/index.js')).href
 
 async function loadDevtoolsDist(): Promise<{
-  DevtoolsService: new (options?: { port?: number }, breakpoints?: unknown) => {
+  DevtoolsService: new (
+    options?: { port?: number },
+    breakpoints?: unknown,
+  ) => {
     url: string
     start(): Promise<void>
     stop(): Promise<void>
     broadcast(message: string): void
-    pause(snapshot: { turn: number; point: string; frameDepth: number; messagesCount: number }): Promise<unknown>
+    pause(snapshot: {
+      turn: number
+      point: string
+      frameDepth: number
+      messagesCount: number
+    }): Promise<unknown>
   }
   Breakpoints: new () => unknown
 }> {
   return import(/* @vite-ignore */ devtoolsDistUrl) as Promise<{
-    DevtoolsService: new (options?: { port?: number }, breakpoints?: unknown) => {
+    DevtoolsService: new (
+      options?: { port?: number },
+      breakpoints?: unknown,
+    ) => {
       url: string
       start(): Promise<void>
       stop(): Promise<void>
       broadcast(message: string): void
-      pause(snapshot: { turn: number; point: string; frameDepth: number; messagesCount: number }): Promise<unknown>
+      pause(snapshot: {
+        turn: number
+        point: string
+        frameDepth: number
+        messagesCount: number
+      }): Promise<unknown>
     }
     Breakpoints: new () => unknown
   }>

@@ -1,5 +1,9 @@
 import { describe, expect, it } from 'vitest'
-import { DeferredToolManager, createToolSearchTool, getDeferredToolNames } from '../src/deferred-tools'
+import {
+  DeferredToolManager,
+  createToolSearchTool,
+  getDeferredToolNames,
+} from '../src/deferred-tools'
 import type { AgentTool, ToolResult } from '../src/types'
 import type { ZodType } from '@x-mars/ai'
 
@@ -29,9 +33,18 @@ function makeTool(name: string, opts: Partial<AgentTool> = {}): AgentTool {
 
 const readTool = makeTool('read')
 const writeTool = makeTool('write', { readonly: false })
-const notebookTool = makeTool('notebook_edit', { shouldDefer: true, description: 'Edit Jupyter notebooks' })
-const webSearchTool = makeTool('web_search', { shouldDefer: true, description: 'Search the web for information' })
-const cronTool = makeTool('cron_create', { shouldDefer: true, description: 'Create scheduled cron jobs' })
+const notebookTool = makeTool('notebook_edit', {
+  shouldDefer: true,
+  description: 'Edit Jupyter notebooks',
+})
+const webSearchTool = makeTool('web_search', {
+  shouldDefer: true,
+  description: 'Search the web for information',
+})
+const cronTool = makeTool('cron_create', {
+  shouldDefer: true,
+  description: 'Create scheduled cron jobs',
+})
 
 const allTools = [readTool, writeTool, notebookTool, webSearchTool, cronTool]
 

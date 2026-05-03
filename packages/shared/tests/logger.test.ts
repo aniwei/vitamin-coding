@@ -40,7 +40,9 @@ describe('createLogger', () => {
             .trim()
             .split('\n')
             .filter((line) => line.includes(batch))
-          if (matchedLines.length >= 10) break
+          if (matchedLines.length >= 10) {
+            break
+          }
         } catch {
           // 文件可能尚未被 transport 创建
         }
@@ -59,7 +61,10 @@ describe('createLogger', () => {
 
 describe('plugin log contributions', () => {
   it('#then plugin sinks receive redacted log events', async () => {
-    registerPluginLogContribution({ sinks: [{ name: 'memory-sink', kind: 'memory' }] }, 'log-plugin')
+    registerPluginLogContribution(
+      { sinks: [{ name: 'memory-sink', kind: 'memory' }] },
+      'log-plugin',
+    )
     const log = createLogger('test:plugin-sink')
     const marker = `plugin-log-${Date.now()}`
 
@@ -77,7 +82,9 @@ describe('plugin log contributions', () => {
       entries = getPluginLogSinkEntries('log-plugin').filter((entry) =>
         JSON.stringify(entry.event).includes(marker),
       )
-      if (entries.length > 0) break
+      if (entries.length > 0) {
+        break
+      }
       await new Promise((resolve) => setTimeout(resolve, 50))
     }
 

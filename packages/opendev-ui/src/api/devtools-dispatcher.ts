@@ -7,7 +7,9 @@ import type { LogEntry } from '../types/logs'
 let initialized = false
 
 export function setupDevtoolsHandle(): void {
-  if (initialized) {return}
+  if (initialized) {
+    return
+  }
   initialized = true
 
   ws.on('Debugger.paused', (msg) => {

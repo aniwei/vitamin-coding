@@ -36,9 +36,7 @@ describe('buildLessonInjection', () => {
   })
 
   it('#given lesson with multiple tags #then joins with comma', () => {
-    const result = buildLessonInjection([
-      makeLesson({ tags: ['ts', 'testing', 'vitest'] }),
-    ])
+    const result = buildLessonInjection([makeLesson({ tags: ['ts', 'testing', 'vitest'] })])
     expect(result).toContain('[ts, testing, vitest]')
   })
 })

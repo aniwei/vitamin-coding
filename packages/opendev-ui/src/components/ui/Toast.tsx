@@ -12,21 +12,23 @@ export function ToastContainer() {
   const toasts = useToastStore((state) => state.toasts)
   const removeToast = useToastStore((state) => state.removeToast)
 
-  if (toasts.length === 0) {return null}
+  if (toasts.length === 0) {
+    return null
+  }
 
   return (
-    <div className="fixed top-14 right-4 z-[10000] flex flex-col gap-2 max-w-sm">
+    <div className='fixed top-14 right-4 z-[10000] flex flex-col gap-2 max-w-sm'>
       {toasts.map((toast) => (
         <div
           key={toast.id}
           className={`flex items-center gap-2 px-3 py-2 rounded-lg border shadow-lg text-sm animate-slide-up ${VARIANT_STYLES[toast.variant]}`}
         >
-          <span className="flex-1">{toast.message}</span>
+          <span className='flex-1'>{toast.message}</span>
           <button
             onClick={() => removeToast(toast.id)}
-            className="flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity"
+            className='flex-shrink-0 opacity-60 hover:opacity-100 transition-opacity'
           >
-            <X className="w-3.5 h-3.5" />
+            <X className='w-3.5 h-3.5' />
           </button>
         </div>
       ))}

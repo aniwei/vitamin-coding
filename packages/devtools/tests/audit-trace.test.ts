@@ -1,10 +1,6 @@
 import { describe, expect, it } from 'vitest'
 
-import {
-  AuditTraceRecorder,
-  replayAuditTrace,
-  type AuditTrace,
-} from '../src/audit-trace'
+import { AuditTraceRecorder, replayAuditTrace, type AuditTrace } from '../src/audit-trace'
 
 describe('AuditTraceRecorder', () => {
   it('records debug, tool, permission, plugin command, and model events with redaction', () => {
@@ -15,34 +11,49 @@ describe('AuditTraceRecorder', () => {
       metadata: { token: 'secret', scenario: 'unit' },
     })
 
-    recorder.recordSnapshot({
-      turn: 1,
-      point: 'tool_before',
-      frameDepth: 0,
-      messagesCount: 2,
-    }, 's1')
-    recorder.recordToolExecution({
-      type: 'started',
-      toolName: 'bash',
-      args: { command: 'echo ok', authorization: 'Bearer secret' },
-    }, 's1')
-    recorder.recordPermissionDecision({
-      toolName: 'bash',
-      decision: { effect: 'deny', ruleName: 'deny-test' },
-    }, 's1')
-    recorder.recordPluginCommand({
-      kind: 'plugin-command',
-      pluginId: 'deploy-plugin',
-      commandName: 'deploy',
-      stage: 'handler',
-      status: 'failed',
-      token: 'secret',
-    }, 's1')
-    recorder.recordModelResponse({
-      model: 'test-model',
-      apiKey: 'secret',
-      text: 'done',
-    }, 's1')
+    recorder.recordSnapshot(
+      {
+        turn: 1,
+        point: 'tool_before',
+        frameDepth: 0,
+        messagesCount: 2,
+      },
+      's1',
+    )
+    recorder.recordToolExecution(
+      {
+        type: 'started',
+        toolName: 'bash',
+        args: { command: 'echo ok', authorization: 'Bearer secret' },
+      },
+      's1',
+    )
+    recorder.recordPermissionDecision(
+      {
+        toolName: 'bash',
+        decision: { effect: 'deny', ruleName: 'deny-test' },
+      },
+      's1',
+    )
+    recorder.recordPluginCommand(
+      {
+        kind: 'plugin-command',
+        pluginId: 'deploy-plugin',
+        commandName: 'deploy',
+        stage: 'handler',
+        status: 'failed',
+        token: 'secret',
+      },
+      's1',
+    )
+    recorder.recordModelResponse(
+      {
+        model: 'test-model',
+        apiKey: 'secret',
+        text: 'done',
+      },
+      's1',
+    )
 
     const trace = recorder.export()
 

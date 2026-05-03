@@ -263,3 +263,37 @@ SessionManager
 
 - 测试文件数：6
 - 覆盖：会话 CRUD、分支、压缩、持久化适配、管理器 GC、分页
+
+## 模块设计基线
+
+### 设计目的
+
+管理会话、分支、上下文构建、持久化恢复和空闲回收，是 Agent 消息历史的领域模型。
+
+### 接口设计
+
+- `InMemorySession`：单会话消息树和分支操作。
+- `SessionManager`：多会话 active/restore/save/evict 管理。
+- `FileSessionPersistence` / `HttpSessionPersistence` / `InMemorySessionPersistence`：持久化后端。
+- `createSessionStorage()`：按配置创建存储。
+
+### 方法论
+
+会话数据与 Agent 执行解耦；分支保留对话历史的可回溯性；持久化以快照为单位。
+
+### 实现逻辑
+
+用户消息追加到当前分支，Agent 读取 `buildContext()` 执行，完成后追加 assistant/tool 消息并保存快照，空闲时按策略回收。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[user/agent message] --> B[InMemorySession.append]
+  B --> C[branch entries]
+  C --> D[buildContext]
+  D --> E[AgentSession]
+  E --> F[SessionManager.save]
+  F --> G[persistence backend]
+  G --> H[restore / evict]
+```

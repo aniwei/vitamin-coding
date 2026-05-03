@@ -86,9 +86,9 @@ describe('McpClient', () => {
     it('#then throws MCP_NOT_READY error', async () => {
       const client = createMcpClient('test', { command: 'echo' })
 
-      await expect(
-        client.callTool({ name: 'some-tool', arguments: {} }),
-      ).rejects.toThrow('not ready')
+      await expect(client.callTool({ name: 'some-tool', arguments: {} })).rejects.toThrow(
+        'not ready',
+      )
     })
   })
 
@@ -202,9 +202,13 @@ describe('McpClient', () => {
         setTimeout(() => process.exit(0), 10000);
       `
 
-      const client = createMcpClient('sim', { command: 'node', args: ['-e', script] }, {
-        requestTimeoutMs: 5000,
-      })
+      const client = createMcpClient(
+        'sim',
+        { command: 'node', args: ['-e', script] },
+        {
+          requestTimeoutMs: 5000,
+        },
+      )
 
       await client.connect()
 
@@ -291,16 +295,20 @@ describe('McpClient', () => {
         setTimeout(() => process.exit(0), 10000);
       `
 
-      const client = createMcpClient('err', { command: 'node', args: ['-e', script] }, {
-        requestTimeoutMs: 5000,
-      })
+      const client = createMcpClient(
+        'err',
+        { command: 'node', args: ['-e', script] },
+        {
+          requestTimeoutMs: 5000,
+        },
+      )
 
       await client.connect()
       expect(client.getStatus()).toBe('ready')
 
-      await expect(
-        client.callTool({ name: 'fail', arguments: {} }),
-      ).rejects.toThrow('Tool execution failed')
+      await expect(client.callTool({ name: 'fail', arguments: {} })).rejects.toThrow(
+        'Tool execution failed',
+      )
 
       await client.disconnect()
     }, 10_000)

@@ -29,8 +29,12 @@ function formatCost(cost: number): string {
 
 function getContextColor(pct: number): string {
   const remaining = 100 - pct
-  if (remaining < 25) {return 'bg-red-500/10 text-red-600 border-red-500/20'}
-  if (remaining < 50) {return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'}
+  if (remaining < 25) {
+    return 'bg-red-500/10 text-red-600 border-red-500/20'
+  }
+  if (remaining < 50) {
+    return 'bg-yellow-500/10 text-yellow-600 border-yellow-500/20'
+  }
   return 'bg-emerald-500/10 text-emerald-700 border-emerald-500/20'
 }
 
@@ -98,7 +102,9 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
   }, [cycleThinkingLevel, cycleAutonomy, toggleSidebar, onOpenCommandPalette])
 
   const getProjectName = (path: string) => {
-    if (!path) {return ''}
+    if (!path) {
+      return ''
+    }
     const parts = path.replace(/\/$/, '').split('/')
     return parts[parts.length - 1] || path
   }
@@ -107,15 +113,15 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
     'inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full border text-xs font-medium cursor-pointer transition-colors select-none hover-scale-pill'
 
   return (
-    <header className="h-12 flex-shrink-0 sticky top-0 z-40 flex items-center gap-3 px-4 bg-bg-000 border-b border-gray-200">
+    <header className='h-12 flex-shrink-0 sticky top-0 z-40 flex items-center gap-3 px-4 bg-bg-000 border-b border-gray-200'>
       {/* ── Left: Sidebar toggle + Brand ── */}
-      <div className="flex items-center gap-3 flex-shrink-0">
+      <div className='flex items-center gap-3 flex-shrink-0'>
         <button
           onClick={toggleSidebar}
-          className="w-8 h-8 rounded-md flex items-center justify-center hover:bg-gray-200/50 transition-colors hover-lift"
+          className='w-8 h-8 rounded-md flex items-center justify-center hover:bg-gray-200/50 transition-colors hover-lift'
           title={sidebarCollapsed ? 'Expand sidebar (Ctrl/Cmd+B)' : 'Collapse sidebar (Ctrl/Cmd+B)'}
         >
-          <PanelLeft className="w-5 h-5 text-gray-600" />
+          <PanelLeft className='w-5 h-5 text-gray-600' />
         </button>
 
         {/* Logo */}
@@ -125,20 +131,20 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
           className="w-7 h-7 rounded-lg shadow-sm flex-shrink-0"
         /> */}
 
-        <div className="flex items-baseline gap-1.5">
-          <span className="text-sm font-bold tracking-tight text-gray-900">X-MARS</span>
-          <span className="text-[10px] uppercase tracking-wider text-gray-500 hidden sm:inline">
+        <div className='flex items-baseline gap-1.5'>
+          <span className='text-sm font-bold tracking-tight text-gray-900'>X-MARS</span>
+          <span className='text-[10px] uppercase tracking-wider text-gray-500 hidden sm:inline'>
             AI Assistant
           </span>
         </div>
       </div>
 
       {/* ── Spacer ── */}
-      <div className="flex-1" />
+      <div className='flex-1' />
 
       {/* ── Center-Right: Status Pills ── */}
       {status && (
-        <div className="flex items-center gap-2 flex-shrink-0">
+        <div className='flex items-center gap-2 flex-shrink-0'>
           {/* Cost pill — only shown when agent has run */}
           {status.sessionCost != null && status.sessionCost > 0 && (
             <span
@@ -163,15 +169,15 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
           <button
             onClick={toggleMode}
             className={`${pillBase} ${MODE_STYLES[status.mode]}`}
-            title="Normal: full tool access · Plan: read-only exploration. Click to toggle"
+            title='Normal: full tool access · Plan: read-only exploration. Click to toggle'
           >
             {status.mode === 'plan' && (
-              <svg className="w-3 h-3" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+              <svg className='w-3 h-3' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
                 <path
-                  strokeLinecap="round"
-                  strokeLinejoin="round"
+                  strokeLinecap='round'
+                  strokeLinejoin='round'
                   strokeWidth={2}
-                  d="M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2"
+                  d='M9 5H7a2 2 0 00-2 2v12a2 2 0 002 2h10a2 2 0 002-2V7a2 2 0 00-2-2h-2M9 5a2 2 0 002 2h2a2 2 0 002-2M9 5a2 2 0 012-2h2a2 2 0 012 2'
                 />
               </svg>
             )}
@@ -182,7 +188,7 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
           <button
             onClick={cycleAutonomy}
             className={`${pillBase} ${AUTONOMY_STYLES[status.autonomyLevel]}`}
-            title="Manual: approve each tool · Semi-Auto: auto-approve safe tools · Auto: approve all. Click to cycle (Ctrl+Shift+A)"
+            title='Manual: approve each tool · Semi-Auto: auto-approve safe tools · Auto: approve all. Click to cycle (Ctrl+Shift+A)'
           >
             Approval: {status.autonomyLevel}
           </button>
@@ -191,7 +197,7 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
           <button
             onClick={cycleThinkingLevel}
             className={`${pillBase} ${THINKING_STYLES[thinkingLevel] || THINKING_STYLES['Medium']}`}
-            title="Controls how much the AI reasons before responding. Click to cycle (Ctrl+Shift+T)"
+            title='Controls how much the AI reasons before responding. Click to cycle (Ctrl+Shift+T)'
           >
             Think: {thinkingLevel}
           </button>
@@ -203,9 +209,9 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
           <button
             onClick={onOpenCommandPalette}
             className={`${pillBase} bg-bg-200 text-text-400 border-border-300/30 hover:bg-bg-300`}
-            title="Command palette (Ctrl/Cmd+K)"
+            title='Command palette (Ctrl/Cmd+K)'
           >
-            <Command className="w-3 h-3" />
+            <Command className='w-3 h-3' />
           </button>
 
           {/* Connection pill */}
@@ -226,24 +232,24 @@ export function TopBar({ onOpenCommandPalette }: TopBarProps) {
 
       {/* ── Far-Right: Project / Model ── */}
       {status && (
-        <div className="flex items-center gap-2 text-xs text-text-500 flex-shrink-0 ml-1 hidden md:flex">
+        <div className='flex items-center gap-2 text-xs text-text-500 flex-shrink-0 ml-1 hidden md:flex'>
           {status.workingDirectory && (
-            <span className="truncate max-w-[160px]" title={status.workingDirectory}>
+            <span className='truncate max-w-[160px]' title={status.workingDirectory}>
               {getProjectName(status.workingDirectory)}
               {status.gitBranch && (
-                <span className="text-text-400">
-                  <span className="text-text-500"> / </span>
+                <span className='text-text-400'>
+                  <span className='text-text-500'> / </span>
                   {status.gitBranch}
                 </span>
               )}
             </span>
           )}
 
-          {status.workingDirectory && status.model && <span className="text-gray-300">|</span>}
+          {status.workingDirectory && status.model && <span className='text-gray-300'>|</span>}
 
           {status.model && (
             <span
-              className="font-mono text-text-400 truncate max-w-[140px]"
+              className='font-mono text-text-400 truncate max-w-[140px]'
               title={`${status.modelProvider}/${status.model}`}
             >
               {status.model}

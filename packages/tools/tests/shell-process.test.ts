@@ -14,18 +14,22 @@ describe('shell process helper', () => {
   })
 
   it('rejects when process times out', async () => {
-    await expect(spawn('node', ['-e', 'setTimeout(() => {}, 2000)'], {
-      timeout: 100,
-    })).rejects.toThrow('Process timed out')
+    await expect(
+      spawn('node', ['-e', 'setTimeout(() => {}, 2000)'], {
+        timeout: 100,
+      }),
+    ).rejects.toThrow('Process timed out')
   })
 
   it('rejects when aborted before start', async () => {
     const controller = new AbortController()
     controller.abort()
 
-    await expect(spawn('node', ['-e', 'process.stdout.write("x")'], {
-      timeout: 1000,
-      signal: controller.signal,
-    })).rejects.toThrow('Process execution aborted before start')
+    await expect(
+      spawn('node', ['-e', 'process.stdout.write("x")'], {
+        timeout: 1000,
+        signal: controller.signal,
+      }),
+    ).rejects.toThrow('Process execution aborted before start')
   })
 })

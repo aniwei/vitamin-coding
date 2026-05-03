@@ -145,7 +145,9 @@ export function MCPSettings() {
   }
 
   const handleDelete = async (name: string) => {
-    if (!confirm(`Remove "${name}"? This action cannot be undone.`)) {return}
+    if (!confirm(`Remove "${name}"? This action cannot be undone.`)) {
+      return
+    }
 
     try {
       await deleteMCPServer(name)
@@ -180,18 +182,18 @@ export function MCPSettings() {
   console.log('[MCPSettings] Rendering with:', { isLoading, serversCount: servers.length, error })
 
   return (
-    <div className="space-y-4">
+    <div className='space-y-4'>
       {/* Header */}
-      <div className="flex items-center justify-between">
+      <div className='flex items-center justify-between'>
         <div>
-          <h3 className="text-lg font-semibold text-gray-900">MCP Servers</h3>
-          <p className="text-sm text-gray-500 mt-0.5">
+          <h3 className='text-lg font-semibold text-gray-900'>MCP Servers</h3>
+          <p className='text-sm text-gray-500 mt-0.5'>
             Manage Model Context Protocol server connections
           </p>
         </div>
         <button
           onClick={() => setShowAddModal(true)}
-          className="px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors"
+          className='px-4 py-2 text-sm font-medium text-white bg-gray-900 rounded-lg hover:bg-gray-800 transition-colors'
         >
           Add Server
         </button>
@@ -199,30 +201,30 @@ export function MCPSettings() {
 
       {/* Error Banner */}
       {error && (
-        <div className="flex items-center justify-between px-4 py-3 bg-red-50 border border-red-200 rounded-lg">
-          <div className="flex items-center gap-3">
+        <div className='flex items-center justify-between px-4 py-3 bg-red-50 border border-red-200 rounded-lg'>
+          <div className='flex items-center gap-3'>
             <svg
-              className="w-5 h-5 text-red-600"
-              fill="none"
-              viewBox="0 0 24 24"
-              stroke="currentColor"
+              className='w-5 h-5 text-red-600'
+              fill='none'
+              viewBox='0 0 24 24'
+              stroke='currentColor'
             >
               <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                strokeLinecap='round'
+                strokeLinejoin='round'
                 strokeWidth={2}
-                d="M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+                d='M12 8v4m0 4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
               />
             </svg>
-            <p className="text-sm text-red-800">{error}</p>
+            <p className='text-sm text-red-800'>{error}</p>
           </div>
-          <button onClick={() => setError(null)} className="text-red-600 hover:text-red-800">
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <button onClick={() => setError(null)} className='text-red-600 hover:text-red-800'>
+            <svg className='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
               <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                strokeLinecap='round'
+                strokeLinejoin='round'
                 strokeWidth={2}
-                d="M6 18L18 6M6 6l12 12"
+                d='M6 18L18 6M6 6l12 12'
               />
             </svg>
           </button>
@@ -248,8 +250,8 @@ export function MCPSettings() {
       )}
 
       {/* Footer Info */}
-      <div className="pt-4 border-t border-gray-200">
-        <p className="text-xs text-gray-500">
+      <div className='pt-4 border-t border-gray-200'>
+        <p className='text-xs text-gray-500'>
           <strong>Note:</strong> Connected servers are available in both terminal and web interface.
           Changes take effect immediately.
         </p>
@@ -292,33 +294,33 @@ export function MCPSettings() {
 
 function LoadingState() {
   return (
-    <div className="text-center py-12 bg-gray-50 rounded-lg border border-gray-200">
-      <div className="inline-flex items-center justify-center w-12 h-12 mb-3">
-        <div className="w-8 h-8 border-3 border-gray-300 border-t-gray-900 rounded-full animate-spin" />
+    <div className='text-center py-12 bg-gray-50 rounded-lg border border-gray-200'>
+      <div className='inline-flex items-center justify-center w-12 h-12 mb-3'>
+        <div className='w-8 h-8 border-3 border-gray-300 border-t-gray-900 rounded-full animate-spin' />
       </div>
-      <p className="text-sm text-gray-600">Loading MCP servers...</p>
+      <p className='text-sm text-gray-600'>Loading MCP servers...</p>
     </div>
   )
 }
 
 function EmptyState() {
   return (
-    <div className="text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200">
+    <div className='text-center py-12 bg-gray-50 rounded-lg border-2 border-dashed border-gray-200'>
       <svg
-        className="w-12 h-12 mx-auto text-gray-300 mb-3"
-        fill="none"
-        viewBox="0 0 24 24"
-        stroke="currentColor"
+        className='w-12 h-12 mx-auto text-gray-300 mb-3'
+        fill='none'
+        viewBox='0 0 24 24'
+        stroke='currentColor'
       >
         <path
-          strokeLinecap="round"
-          strokeLinejoin="round"
+          strokeLinecap='round'
+          strokeLinejoin='round'
           strokeWidth={1.5}
-          d="M5 12h14M12 5l7 7-7 7"
+          d='M5 12h14M12 5l7 7-7 7'
         />
       </svg>
-      <p className="text-sm text-gray-600 font-medium mb-1">No MCP servers configured</p>
-      <p className="text-xs text-gray-500">Click "Add Server" above to add your first MCP server</p>
+      <p className='text-sm text-gray-600 font-medium mb-1'>No MCP servers configured</p>
+      <p className='text-xs text-gray-500'>Click "Add Server" above to add your first MCP server</p>
     </div>
   )
 }
@@ -345,8 +347,8 @@ function ServerTable({
   onDelete,
 }: ServerTableProps) {
   return (
-    <div className="bg-white border border-gray-200 rounded-lg overflow-x-auto">
-      <table className="w-full divide-y divide-gray-200">
+    <div className='bg-white border border-gray-200 rounded-lg overflow-x-auto'>
+      <table className='w-full divide-y divide-gray-200'>
         <colgroup>
           <col style={{ width: '40%' }} /> {/* Name */}
           <col style={{ width: '15%' }} /> {/* Status */}
@@ -354,26 +356,26 @@ function ServerTable({
           <col style={{ width: '15%' }} /> {/* Auto-start */}
           <col style={{ width: '15%' }} /> {/* Actions */}
         </colgroup>
-        <thead className="bg-gray-50">
+        <thead className='bg-gray-50'>
           <tr>
-            <th className="px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase whitespace-nowrap">
+            <th className='px-4 py-3 text-left text-sm font-semibold text-gray-700 uppercase whitespace-nowrap'>
               Name
             </th>
-            <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase whitespace-nowrap">
+            <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase whitespace-nowrap'>
               Status
             </th>
-            <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase whitespace-nowrap">
+            <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase whitespace-nowrap'>
               Enabled
             </th>
-            <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase whitespace-nowrap">
+            <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase whitespace-nowrap'>
               Auto-start
             </th>
-            <th className="px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase whitespace-nowrap">
+            <th className='px-4 py-3 text-center text-sm font-semibold text-gray-700 uppercase whitespace-nowrap'>
               Actions
             </th>
           </tr>
         </thead>
-        <tbody className="bg-white">
+        <tbody className='bg-white'>
           {servers.map((server) => (
             <ServerRow
               key={server.name}
@@ -421,20 +423,20 @@ function ServerRow({
   }
 
   return (
-    <tr className="hover:bg-gray-50 transition-colors">
+    <tr className='hover:bg-gray-50 transition-colors'>
       {/* Name + Action Buttons */}
-      <td className="px-4 py-3">
-        <div className="flex items-center gap-3">
-          <div className="flex-1 min-w-0">
-            <div className="text-sm font-medium text-gray-900 truncate">{server.name}</div>
-            <div className="text-xs text-gray-500">{server.configLocation}</div>
+      <td className='px-4 py-3'>
+        <div className='flex items-center gap-3'>
+          <div className='flex-1 min-w-0'>
+            <div className='text-sm font-medium text-gray-900 truncate'>{server.name}</div>
+            <div className='text-xs text-gray-500'>{server.configLocation}</div>
           </div>
-          <div className="flex items-center gap-2">
+          <div className='flex items-center gap-2'>
             {/* Connect Button */}
             <button
               onClick={() => onConnect(server.name)}
               disabled={isProcessing || isConnected}
-              className="px-3 py-1.5 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 whitespace-nowrap"
+              className='px-3 py-1.5 text-sm font-medium text-white bg-gray-900 hover:bg-gray-800 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed disabled:bg-gray-400 whitespace-nowrap'
             >
               Connect
             </button>
@@ -443,7 +445,7 @@ function ServerRow({
             <button
               onClick={() => onDisconnect(server.name)}
               disabled={isProcessing || !isConnected}
-              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className='px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap'
             >
               Disconnect
             </button>
@@ -452,7 +454,7 @@ function ServerRow({
             <button
               onClick={handleTest}
               disabled={isProcessing}
-              className="px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className='px-3 py-1.5 text-sm font-medium text-blue-700 bg-blue-50 border border-blue-200 hover:bg-blue-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap'
             >
               Test
             </button>
@@ -461,7 +463,7 @@ function ServerRow({
             <button
               onClick={() => onViewTools(server.name)}
               disabled={isProcessing || !isConnected}
-              className="px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap"
+              className='px-3 py-1.5 text-sm font-medium text-gray-700 bg-white border border-gray-300 hover:bg-gray-50 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed whitespace-nowrap'
             >
               Tools
             </button>
@@ -470,55 +472,55 @@ function ServerRow({
       </td>
 
       {/* Status */}
-      <td className="px-4 py-3 text-center whitespace-nowrap">
+      <td className='px-4 py-3 text-center whitespace-nowrap'>
         {isProcessing ? (
-          <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto" />
+          <div className='w-4 h-4 border-2 border-gray-300 border-t-gray-900 rounded-full animate-spin mx-auto' />
         ) : isConnected ? (
-          <div className="flex items-center justify-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-green-500" />
-            <span className="text-sm font-medium text-green-700">On</span>
+          <div className='flex items-center justify-center gap-1.5'>
+            <div className='w-2 h-2 rounded-full bg-green-500' />
+            <span className='text-sm font-medium text-green-700'>On</span>
           </div>
         ) : (
-          <div className="flex items-center justify-center gap-1.5">
-            <div className="w-2 h-2 rounded-full bg-gray-300" />
-            <span className="text-sm text-gray-500">Off</span>
+          <div className='flex items-center justify-center gap-1.5'>
+            <div className='w-2 h-2 rounded-full bg-gray-300' />
+            <span className='text-sm text-gray-500'>Off</span>
           </div>
         )}
       </td>
 
       {/* Enabled */}
-      <td className="px-4 py-3 text-center whitespace-nowrap">
+      <td className='px-4 py-3 text-center whitespace-nowrap'>
         {server.config.enabled ? (
-          <svg className="w-5 h-5 text-green-600 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+          <svg className='w-5 h-5 text-green-600 mx-auto' fill='currentColor' viewBox='0 0 20 20'>
             <path
-              fillRule="evenodd"
-              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-              clipRule="evenodd"
+              fillRule='evenodd'
+              d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
+              clipRule='evenodd'
             />
           </svg>
         ) : (
-          <span className="text-gray-300">-</span>
+          <span className='text-gray-300'>-</span>
         )}
       </td>
 
       {/* Auto-start */}
-      <td className="px-4 py-3 text-center whitespace-nowrap">
+      <td className='px-4 py-3 text-center whitespace-nowrap'>
         {server.config.autoStart ? (
-          <svg className="w-5 h-5 text-green-600 mx-auto" fill="currentColor" viewBox="0 0 20 20">
+          <svg className='w-5 h-5 text-green-600 mx-auto' fill='currentColor' viewBox='0 0 20 20'>
             <path
-              fillRule="evenodd"
-              d="M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z"
-              clipRule="evenodd"
+              fillRule='evenodd'
+              d='M16.707 5.293a1 1 0 010 1.414l-8 8a1 1 0 01-1.414 0l-4-4a1 1 0 011.414-1.414L8 12.586l7.293-7.293a1 1 0 011.414 0z'
+              clipRule='evenodd'
             />
           </svg>
         ) : (
-          <span className="text-gray-300">-</span>
+          <span className='text-gray-300'>-</span>
         )}
       </td>
 
       {/* Actions - Dropdown only */}
-      <td className="px-4 py-3 text-center whitespace-nowrap">
-        <div className="flex items-center justify-center">
+      <td className='px-4 py-3 text-center whitespace-nowrap'>
+        <div className='flex items-center justify-center'>
           <DropdownMenu
             server={server}
             isProcessing={isProcessing}
@@ -561,35 +563,35 @@ function DropdownMenu({ server, isProcessing, onEdit, onDelete }: DropdownMenuPr
   }, [isOpen])
 
   return (
-    <div className="relative" ref={dropdownRef}>
+    <div className='relative' ref={dropdownRef}>
       {/* Dropdown Trigger Button */}
       <button
         onClick={() => setIsOpen(!isOpen)}
         disabled={isProcessing}
-        className="p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
-        title="More actions"
+        className='p-2 text-gray-400 hover:text-gray-600 hover:bg-gray-100 rounded-md transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
+        title='More actions'
       >
-        <svg className="w-5 h-5" fill="currentColor" viewBox="0 0 20 20">
-          <path d="M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z" />
+        <svg className='w-5 h-5' fill='currentColor' viewBox='0 0 20 20'>
+          <path d='M10 6a2 2 0 110-4 2 2 0 010 4zM10 12a2 2 0 110-4 2 2 0 010 4zM10 18a2 2 0 110-4 2 2 0 010 4z' />
         </svg>
       </button>
 
       {/* Dropdown Menu */}
       {isOpen && (
-        <div className="absolute right-0 mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden">
+        <div className='absolute right-0 mt-1 w-32 bg-white border border-gray-200 rounded-lg shadow-lg z-10 overflow-hidden'>
           <button
             onClick={() => {
               onEdit(server)
               setIsOpen(false)
             }}
-            className="w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2"
+            className='w-full px-3 py-2 text-left text-sm text-gray-700 hover:bg-gray-50 transition-colors flex items-center gap-2'
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
               <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                strokeLinecap='round'
+                strokeLinejoin='round'
                 strokeWidth={2}
-                d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z"
+                d='M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z'
               />
             </svg>
             Edit
@@ -599,14 +601,14 @@ function DropdownMenu({ server, isProcessing, onEdit, onDelete }: DropdownMenuPr
               onDelete(server.name)
               setIsOpen(false)
             }}
-            className="w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2"
+            className='w-full px-3 py-2 text-left text-sm text-red-600 hover:bg-red-50 transition-colors flex items-center gap-2'
           >
-            <svg className="w-4 h-4" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+            <svg className='w-4 h-4' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
               <path
-                strokeLinecap="round"
-                strokeLinejoin="round"
+                strokeLinecap='round'
+                strokeLinejoin='round'
                 strokeWidth={2}
-                d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
               />
             </svg>
             Remove

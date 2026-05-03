@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  truncateHead,
-  truncateLine,
-  truncateTail,
-} from '../src/truncate'
+import { truncateHead, truncateLine, truncateTail } from '../src/truncate'
 
 describe('truncateHead', () => {
   it('returns original content when within limits', () => {

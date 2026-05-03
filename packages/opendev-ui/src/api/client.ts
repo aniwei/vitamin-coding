@@ -27,6 +27,14 @@ class APIClient {
     return postJson('/chat/interrupt')
   }
 
+  async cancelSubagentTask(taskId: string): Promise<{
+    status: string
+    message: string
+    taskId: string
+  }> {
+    return postJson(`/chat/tasks/${encodeURIComponent(taskId)}/cancel`)
+  }
+
   // Session 相关接口
   async listSessions(): Promise<Session[]> {
     return getJson('/sessions')
@@ -66,7 +74,9 @@ class APIClient {
     try {
       return await getJson(`/sessions/${sessionId}/messages`)
     } catch (error) {
-      if (error instanceof ApiError && error.status === 404) {return []}
+      if (error instanceof ApiError && error.status === 404) {
+        return []
+      }
       throw error
     }
   }
@@ -123,15 +133,15 @@ class APIClient {
   async listFiles(
     query?: string,
   ): Promise<{ files: Array<{ path: string; name: string; isFile: boolean }> }> {
-    const url = query
-      ? `/sessions/files?query=${encodeURIComponent(query)}`
-      : '/sessions/files'
+    const url = query ? `/sessions/files?query=${encodeURIComponent(query)}` : '/sessions/files'
     return getJson(url)
   }
 
   async getBridgeInfo(): Promise<{ bridgeMode: boolean; sessionId: string | null }> {
     const response = await requestRaw('/sessions/bridge-info')
-    if (!response.ok) {return { bridgeMode: false, sessionId: null }}
+    if (!response.ok) {
+      return { bridgeMode: false, sessionId: null }
+    }
     return response.json()
   }
 

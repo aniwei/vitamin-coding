@@ -70,7 +70,12 @@ describe('createPersistence', () => {
       getAuth: async () => ({ token: 'abc' }),
       getHeaders: async () => ({ 'X-Team': 'xMars' }),
       fetch: (async (_input: string | URL | Request, init?: RequestInit) => {
-        requests.push({ headers: Object.fromEntries(Object.entries(init?.headers ?? {})) as Record<string, string> })
+        requests.push({
+          headers: Object.fromEntries(Object.entries(init?.headers ?? {})) as Record<
+            string,
+            string
+          >,
+        })
         return new Response(JSON.stringify({ ids: [] }), {
           status: 200,
           headers: { 'Content-Type': 'application/json' },
@@ -84,8 +89,8 @@ describe('createPersistence', () => {
   })
 
   it('throws for unknown storage type', () => {
-    expect(() =>
-      createPersistence({ type: 'unknown' as any } as any),
-    ).toThrow('Unsupported storage type')
+    expect(() => createPersistence({ type: 'unknown' as any } as any)).toThrow(
+      'Unsupported storage type',
+    )
   })
 })

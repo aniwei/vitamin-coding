@@ -28,7 +28,7 @@ export function ThinkingBlock({ content, level, isActive }: ThinkingBlockProps) 
   }, [content])
 
   return (
-    <div className="animate-slide-up">
+    <div className='animate-slide-up'>
       <div className={`border-l-2 ${accentColor} rounded-r-lg overflow-hidden bg-bg-100/50`}>
         {/* Header */}
         <button
@@ -38,19 +38,19 @@ export function ThinkingBlock({ content, level, isActive }: ThinkingBlockProps) 
           {/* Brain icon */}
           <svg
             className={`w-3.5 h-3.5 flex-shrink-0 transition-colors ${isCritique ? 'text-amber-400/70' : 'text-indigo-400/70'}`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+            fill='none'
+            viewBox='0 0 24 24'
+            stroke='currentColor'
             strokeWidth={1.5}
           >
             <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
-              d="M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714a2.25 2.25 0 0 0 .659 1.591L19 14.5m-4.75-11.396c.251.023.501.05.75.082M12 3c2.5 0 5 .5 7 1.5M12 3c-2.5 0-5 .5-7 1.5m14 0v3m-14-3v3"
+              strokeLinecap='round'
+              strokeLinejoin='round'
+              d='M9.75 3.104v5.714a2.25 2.25 0 0 1-.659 1.591L5 14.5M9.75 3.104c-.251.023-.501.05-.75.082m.75-.082a24.301 24.301 0 0 1 4.5 0m0 0v5.714a2.25 2.25 0 0 0 .659 1.591L19 14.5m-4.75-11.396c.251.023.501.05.75.082M12 3c2.5 0 5 .5 7 1.5M12 3c-2.5 0-5 .5-7 1.5m14 0v3m-14-3v3'
             />
           </svg>
 
-          <span className="text-xs font-medium text-text-400 uppercase tracking-wide">
+          <span className='text-xs font-medium text-text-400 uppercase tracking-wide'>
             {isCritique ? 'Critique' : 'Thinking'}
           </span>
 
@@ -68,24 +68,24 @@ export function ThinkingBlock({ content, level, isActive }: ThinkingBlockProps) 
             className={`w-3 h-3 text-text-500 transition-transform duration-200 flex-shrink-0 ml-auto ${
               isExpanded ? 'rotate-90' : ''
             }`}
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+            fill='none'
+            viewBox='0 0 24 24'
+            stroke='currentColor'
           >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M9 5l7 7-7 7" />
+            <path strokeLinecap='round' strokeLinejoin='round' strokeWidth={2} d='M9 5l7 7-7 7' />
           </svg>
         </button>
 
         {/* Content — always rendered, clipped when collapsed */}
-        <div className="relative">
+        <div className='relative'>
           <div
-            className="overflow-hidden transition-all duration-300 ease-in-out"
+            className='overflow-hidden transition-all duration-300 ease-in-out'
             style={{
               maxHeight: isExpanded ? `${contentHeight + 24}px` : '48px',
             }}
           >
-            <div ref={contentRef} className="px-3 pb-3">
-              <pre className="text-xs text-text-300 whitespace-pre-wrap font-mono leading-relaxed">
+            <div ref={contentRef} className='px-3 pb-3'>
+              <pre className='text-xs text-text-300 whitespace-pre-wrap font-mono leading-relaxed'>
                 {content}
               </pre>
             </div>

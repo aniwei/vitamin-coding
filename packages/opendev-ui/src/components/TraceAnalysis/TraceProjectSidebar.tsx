@@ -8,9 +8,13 @@ function formatProjectName(name: string): string {
 }
 
 function formatTimestamp(ts?: string): string {
-  if (!ts) {return ''}
+  if (!ts) {
+    return ''
+  }
   const d = new Date(ts)
-  if (isNaN(d.getTime())) {return ''}
+  if (isNaN(d.getTime())) {
+    return ''
+  }
   return (
     d.toLocaleDateString() + ' ' + d.toLocaleTimeString([], { hour: '2-digit', minute: '2-digit' })
   )
@@ -31,14 +35,14 @@ export function TraceProjectSidebar() {
   }, [loadProjects])
 
   return (
-    <div className="w-60 h-full bg-bg-100 border-r border-border-300/20 flex flex-col font-sans shrink-0">
+    <div className='w-60 h-full bg-bg-100 border-r border-border-300/20 flex flex-col font-sans shrink-0'>
       {/* Projects */}
-      <div className="py-3 flex flex-col">
-        <div className="px-4 mb-1.5 text-[10px] font-bold text-text-400 uppercase tracking-wider flex items-center gap-1.5">
+      <div className='py-3 flex flex-col'>
+        <div className='px-4 mb-1.5 text-[10px] font-bold text-text-400 uppercase tracking-wider flex items-center gap-1.5'>
           Projects
         </div>
         {projects.length === 0 && (
-          <div className="px-4 text-[11px] text-text-400 italic">No projects found</div>
+          <div className='px-4 text-[11px] text-text-400 italic'>No projects found</div>
         )}
         {projects.map((p) => (
           <button
@@ -51,8 +55,8 @@ export function TraceProjectSidebar() {
             }`}
             title={p}
           >
-            <span className="text-xs shrink-0">📁</span>
-            <span className="overflow-hidden text-ellipsis whitespace-nowrap flex-1">
+            <span className='text-xs shrink-0'>📁</span>
+            <span className='overflow-hidden text-ellipsis whitespace-nowrap flex-1'>
               {formatProjectName(p)}
             </span>
           </button>
@@ -61,17 +65,17 @@ export function TraceProjectSidebar() {
 
       {/* Sessions */}
       {selectedProject && (
-        <div className="py-3 flex flex-col flex-1 overflow-y-auto border-t border-border-300/20">
-          <div className="px-4 mb-1.5 text-[10px] font-bold text-text-400 uppercase tracking-wider flex items-center gap-1.5">
+        <div className='py-3 flex flex-col flex-1 overflow-y-auto border-t border-border-300/20'>
+          <div className='px-4 mb-1.5 text-[10px] font-bold text-text-400 uppercase tracking-wider flex items-center gap-1.5'>
             Sessions
             {sessions.length > 0 && (
-              <span className="bg-bg-200 text-text-400 rounded-full px-1.5 text-[9px]">
+              <span className='bg-bg-200 text-text-400 rounded-full px-1.5 text-[9px]'>
                 {sessions.length}
               </span>
             )}
           </div>
           {loading && !selectedSessionId && (
-            <div className="px-4 text-[11px] text-text-400 italic">Loading\u2026</div>
+            <div className='px-4 text-[11px] text-text-400 italic'>Loading\u2026</div>
           )}
           {sessions.map((s: TraceSessionInfo) => (
             <button
@@ -83,14 +87,14 @@ export function TraceProjectSidebar() {
                   : 'bg-transparent border-l-2 border-l-transparent hover:bg-bg-200'
               }`}
             >
-              <div className="flex items-center gap-1.5">
-                <span className="text-[11px] font-semibold text-text-200 overflow-hidden text-ellipsis whitespace-nowrap flex-1 font-mono">
+              <div className='flex items-center gap-1.5'>
+                <span className='text-[11px] font-semibold text-text-200 overflow-hidden text-ellipsis whitespace-nowrap flex-1 font-mono'>
                   {s.title || s.sessionId.slice(0, 12)}
                 </span>
               </div>
-              <div className="text-[10px] text-text-400 font-mono">
+              <div className='text-[10px] text-text-400 font-mono'>
                 <span>{s.messageCount} msgs</span>
-                {s.timestamp && <span className="ml-1.5">{formatTimestamp(s.timestamp)}</span>}
+                {s.timestamp && <span className='ml-1.5'>{formatTimestamp(s.timestamp)}</span>}
               </div>
             </button>
           ))}

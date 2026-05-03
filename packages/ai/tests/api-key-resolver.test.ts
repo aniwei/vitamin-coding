@@ -35,7 +35,9 @@ function makeMockProvider(
       return options.loginResult ?? { refresh: 'r', access: 'a', expires: Date.now() + 60_000 }
     },
     async refreshToken(creds) {
-      if (options.refreshToken) return options.refreshToken(creds)
+      if (options.refreshToken) {
+        return options.refreshToken(creds)
+      }
       return { ...creds, access: 'refreshed', expires: Date.now() + 60_000 }
     },
     getAccessKey(creds) {
@@ -175,7 +177,10 @@ describe('AuthStore', () => {
 
       await expect(store.getCredentialKey('github-copilot')).resolves.toBe('fresh-access')
 
-      const raw = JSON.parse(await readFile(path, 'utf-8')) as Record<string, OAuthCredentials & { type: string }>
+      const raw = JSON.parse(await readFile(path, 'utf-8')) as Record<
+        string,
+        OAuthCredentials & { type: string }
+      >
       expect(raw['github-copilot']).toMatchObject({
         type: 'oauth',
         refresh: 'refresh-token',
@@ -201,8 +206,11 @@ describe('AuthStore', () => {
       await expect(store.getCredentialKey('openai')).resolves.toBe('env-key')
       await expect(store.hasCredential('openai')).resolves.toBe(true)
     } finally {
-      if (previous === undefined) delete process.env[keyName]
-      else process.env[keyName] = previous
+      if (previous === undefined) {
+        delete process.env[keyName]
+      } else {
+        process.env[keyName] = previous
+      }
 
       await cleanupPath(path)
     }

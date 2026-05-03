@@ -9,8 +9,8 @@ import { createWrite } from './fs/write'
 import { createEdit } from './fs/edit'
 
 // Web
-import { createWebFetch } from './web/fetch'
-import { createWebSearch } from './web/search'
+import { createWebFetch, type WebFetchProvider } from './web/fetch'
+import { createWebSearch, type WebSearchProvider } from './web/search'
 
 // Orchestration
 import { createTaskDelegate, type TaskDispatch } from './orchestration/task-delegate'
@@ -35,21 +35,20 @@ import { createWriteTodos, type WriteTodos } from './orchestration/write-todos'
 import { createCaptureFileState, type CaptureFileState } from './orchestration/capture-file-state'
 
 import { createLearn, type LearnCallback } from './orchestration/learn'
-
-// LSP
-// import { createLspDefinition } from './lsp/definition'
-// import { createLspReferences } from './lsp/references'
-// import { createLspSymbols } from './lsp/symbols'
-// import { createLspDiagnostics } from './lsp/diagnostics'
-// import { createLspPrepareRename, createLspRename } from './lsp/rename'
+import { createToolOutputRead } from './orchestration/tool-output-read'
+import { createAgentList, type ListAgents } from './orchestration/agent-list'
+import { createAgentCancel, type CancelAgent } from './orchestration/agent-cancel'
 
 // Session
 import { createSessionManager, type SessionManager } from './session/session-manager'
+import { createSessionSearch, type SearchSessions } from './session/session-search'
+import { createExecuteCode, type ProgrammaticToolInvoker } from './code'
 
 // Skill
 import { createSkillLoad, type LoadSkill } from './skill/skill-load'
 import { createSkillExecute, type ExecuteSkill } from './skill/skill-execute'
 import { createSkillSearch, type SearchSkills } from './skill/skill-search'
+import { createSkillView, type ViewSkill } from './skill/skill-view'
 import { createSkillCreate, type CreateSkill } from './skill/skill-create'
 import { createSkillImprove, type ImproveSkill } from './skill/skill-improve'
 import { createMcpAgentTools, type McpManager } from './mcp'
@@ -62,6 +61,7 @@ export interface RegisterBuiltinOptions {
   loadSkill: LoadSkill
   executeSkill: ExecuteSkill
   searchSkills?: SearchSkills
+  viewSkill?: ViewSkill
   createSkill?: CreateSkill
   improveSkill?: ImproveSkill
 
@@ -75,11 +75,17 @@ export interface RegisterBuiltinOptions {
   cancelBackground?: CancelBackground
   clarifyRequest?: ClarifyRequest
   sessionManager?: SessionManager
+  searchSessions?: SearchSessions
+  invokeProgrammaticTool?: ProgrammaticToolInvoker
   writeTodos?: WriteTodos
   captureFileState?: CaptureFileState
   learn?: LearnCallback
+  listAgents?: ListAgents
+  cancelAgent?: CancelAgent
   sessionId?: string
   mcpManager?: McpManager
+  webFetchProvider?: WebFetchProvider
+  webSearchProvider?: WebSearchProvider
 }
 
 // 注册所有内置工具 (minimal + standard + full 预设)
@@ -144,22 +150,35 @@ export function registerBuiltinTools(
   )
 
   // Web 工具
-  registry.register([createWebFetch(projectRoot), createWebSearch(projectRoot)], {
-    preset: 'standard',
-    category: 'web',
-    builtin: true,
-    shouldDefer: true,
-    guideline: [
-      'Use web_fetch to read specific URLs when you know the page address.',
-      'Use web_search to find information when you need to discover relevant URLs.',
-      'Prefer web_search → web_fetch workflow: search first, then fetch specific results.',
-      'web_fetch cannot render JavaScript-heavy pages (SPAs). Use for documentation, articles, APIs.',
-    ].join('\n'),
-  })
+  registry.register(
+    [
+      createWebFetch(projectRoot, { provider: options.webFetchProvider }),
+      createWebSearch(projectRoot, { provider: options.webSearchProvider }),
+    ],
+    {
+      preset: 'standard',
+      category: 'web',
+      builtin: true,
+      shouldDefer: true,
+      guideline: [
+        'Use web_fetch to read specific URLs when you know the page address.',
+        'Use web_search to find information when you need to discover relevant URLs.',
+        'Prefer web_search → web_fetch workflow: search first, then fetch specific results.',
+        'Use domains / allowedDomains whenever the user or task constrains which sites are acceptable sources.',
+        'Use recencyDays for current information instead of relying on stale general results.',
+        'web_fetch cannot render JavaScript-heavy pages (SPAs). Use for documentation, articles, APIs.',
+      ].join('\n'),
+    },
+  )
 
   // 任务调度工具
   registry.register(
-    [createTaskDelegate(projectRoot, options.dispatchTask), createWriteTodos(options.writeTodos)],
+    [
+      createTaskDelegate(projectRoot, options.dispatchTask),
+      createWriteTodos(options.writeTodos),
+      createToolOutputRead(projectRoot),
+      createAgentList(options.listAgents),
+    ],
     {
       preset: 'standard',
       category: 'orchestration',
@@ -167,23 +186,13 @@ export function registerBuiltinTools(
       guideline: [
         'Use task_delegate to route tasks to more suitable sub-agents by category — useful for tasks requiring specialization or lifecycle management. Provide clear, complete context — sub-agents start with a blank slate.',
         'Use write_todos for complex tasks to build and maintain a step list first — for UI visibility and memory aid, not to drive execution.',
+        'Use tool_output_read to read full persisted outputs when a previous tool result only returned a preview and outputArtifact metadata.',
+        'Use agent_list before agent_call / agent_task when you need to discover available sub-agent profiles, tool boundaries, or plugin/file-based agents.',
         'Break complex tasks into small, independently verifiable subtasks (2-5 minutes each) before delegating.',
         'Do not delegate tasks that require the current conversation context or interactive clarification.',
       ].join('\n'),
     },
   )
-
-  // LSP 工具（opt-in，需要 enableLsp: true）
-  // if (options.enableLsp) {
-  //   registry.register([
-  //     createLspDefinition(projectRoot),
-  //     createLspReferences(projectRoot),
-  //     createLspSymbols(projectRoot),
-  //     createLspDiagnostics(projectRoot),
-  //     createLspPrepareRename(projectRoot),
-  //     createLspRename(projectRoot),
-  //   ], { preset: 'standard', category: 'lsp', builtin: true })
-  // }
 
   /// full
   // 编排工具
@@ -196,11 +205,13 @@ export function registerBuiltinTools(
       createTaskGet(projectRoot, { get: options.getTask }),
       createTaskList(projectRoot, { list: options.listTasks }),
       createTaskUpdate(projectRoot, { update: options.updateTask }),
+      createAgentCancel(options.cancelAgent),
       createBackgroundOutputTool(options.getBackgroundOutput),
       createBackgroundCancelTool(options.cancelBackground),
       createClarifyRequest(projectRoot, options.clarifyRequest),
       createCaptureFileState(options.captureFileState),
       createLearn(options.sessionId ?? '', options.learn),
+      createExecuteCode({ invokeTool: options.invokeProgrammaticTool }),
     ],
     {
       preset: 'full',
@@ -213,7 +224,9 @@ export function registerBuiltinTools(
         'Use clarify_request to clarify ambiguous requirements with the user rather than guessing. Only use when genuinely blocked — missing context, conflicting constraints, or needing explicit approval. Include all available context.',
         'Use capture_file_state when conversation is long and you need to refresh understanding of workspace changes.',
         'Use learn to record reusable insights (patterns, mistakes, strategies) — not routine progress notes.',
+        'Use execute_code only for compact, repeated tool-call workflows. Always pass the smallest allowedTools whitelist.',
         'Check task status with task_get/task_list before creating duplicate tasks. Cancel stale tasks with task_update.',
+        'Use agent_cancel when a named sub-agent has stale or unwanted active tasks. Use agent_list first to inspect activeTaskCount and runningTaskIds.',
         'Monitor background tasks with background_output periodically. Cancel unresponsive tasks rather than waiting indefinitely.',
       ].join('\n'),
     },
@@ -237,10 +250,25 @@ export function registerBuiltinTools(
     )
   }
 
+  if (options.searchSessions) {
+    registry.register([createSessionSearch({ searchSessions: options.searchSessions })], {
+      preset: 'full',
+      category: 'session',
+      builtin: true,
+      shouldDefer: true,
+      guideline: [
+        'Use session_search to recall prior conversations before asking the user to repeat historical context.',
+        'Search with concise domain terms, file names, feature names, or error text. Open a specific session only after finding relevant evidence.',
+        'Treat results as retrieval hints: verify current files before applying old decisions.',
+      ].join('\n'),
+    })
+  }
+
   // Skill 工具
   registry.register(
     [
       createSkillSearch(options.searchSkills),
+      createSkillView(options.viewSkill),
       createSkillLoad(projectRoot, options.loadSkill),
       createSkillExecute(projectRoot, options.executeSkill),
       createSkillCreate(options.createSkill),
@@ -253,6 +281,7 @@ export function registerBuiltinTools(
       shouldDefer: true,
       guideline: [
         'Use skill_search to discover matching skills by intent before loading or executing one.',
+        'Use skill_view to read a skill body or a specific linked reference/template file on demand.',
         'Load skills with skill_load before executing them. Skills are reusable workflow templates (e.g., TDD, debugging, code review).',
         'Use skill_create for reusable project workflows; generated skills must include valid frontmatter and a concrete body.',
         'Use skill_improve to record refinements while preserving the existing Skill content.',

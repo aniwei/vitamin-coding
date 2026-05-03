@@ -27,11 +27,11 @@ export function LogFilter() {
   )
 
   return (
-    <div className="flex items-center gap-1.5 px-2 py-1 border-b border-gray-200 bg-gray-50/80">
+    <div className='flex items-center gap-1.5 px-2 py-1 border-b border-gray-200 bg-gray-50/80'>
       <select
         value={minLevel}
         onChange={(e) => setMinLevel(e.target.value as LogLevel)}
-        className="text-[10px] border border-gray-200 rounded px-1 py-0.5 bg-white"
+        className='text-[10px] border border-gray-200 rounded px-1 py-0.5 bg-white'
       >
         {LEVELS.map((l) => (
           <option key={l} value={l}>
@@ -43,15 +43,15 @@ export function LogFilter() {
       <input
         value={moduleFilter}
         onChange={(e) => setModuleFilter(e.target.value)}
-        placeholder="module..."
-        className="w-16 text-[10px] border border-gray-200 rounded px-1.5 py-0.5"
+        placeholder='module...'
+        className='w-16 text-[10px] border border-gray-200 rounded px-1.5 py-0.5'
       />
 
       <input
         defaultValue={searchQuery}
         onChange={(e) => handleSearchChange(e.target.value)}
-        placeholder="search..."
-        className="flex-1 text-[10px] border border-gray-200 rounded px-1.5 py-0.5"
+        placeholder='search...'
+        className='flex-1 text-[10px] border border-gray-200 rounded px-1.5 py-0.5'
       />
 
       <button
@@ -59,17 +59,17 @@ export function LogFilter() {
         className={`p-0.5 rounded ${
           autoScroll ? 'bg-blue-100 text-blue-600' : 'text-gray-400 hover:bg-gray-100'
         }`}
-        title="Auto-scroll"
+        title='Auto-scroll'
       >
-        <ArrowDownToLine className="w-3 h-3" />
+        <ArrowDownToLine className='w-3 h-3' />
       </button>
 
       <button
         onClick={clear}
-        className="p-0.5 rounded text-gray-400 hover:bg-gray-100 hover:text-red-500"
-        title="Clear logs"
+        className='p-0.5 rounded text-gray-400 hover:bg-gray-100 hover:text-red-500'
+        title='Clear logs'
       >
-        <Trash2 className="w-3 h-3" />
+        <Trash2 className='w-3 h-3' />
       </button>
     </div>
   )

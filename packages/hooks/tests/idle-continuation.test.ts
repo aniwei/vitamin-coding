@@ -10,10 +10,7 @@ describe('createIdleContinuationHook', () => {
       resumeWork: (sessionId) => resumed.push(sessionId),
     })
 
-    hook.handle(
-      { sessionId: 'sess-active', metadata: {} },
-      undefined as never,
-    )
+    hook.handle({ sessionId: 'sess-active', metadata: {} }, undefined as never)
 
     expect(resumed).toEqual(['sess-active'])
   })
@@ -26,10 +23,7 @@ describe('createIdleContinuationHook', () => {
       resumeWork: (sessionId) => resumed.push(sessionId),
     })
 
-    hook.handle(
-      { sessionId: 'sess-idle', metadata: {} },
-      undefined as never,
-    )
+    hook.handle({ sessionId: 'sess-idle', metadata: {} }, undefined as never)
 
     expect(resumed).toHaveLength(0)
   })

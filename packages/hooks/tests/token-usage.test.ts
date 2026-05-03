@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  trackTokenUsage,
-  getTokenUsage,
-  clearTokenUsage,
-} from '../src/index'
+import { trackTokenUsage, getTokenUsage, clearTokenUsage } from '../src/index'
 
 describe('Token usage tracking utilities', () => {
   it('#trackTokenUsage accumulates per session', () => {

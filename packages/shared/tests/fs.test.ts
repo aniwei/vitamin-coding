@@ -4,13 +4,7 @@ import { join } from 'node:path'
 import { afterEach, beforeEach, describe, expect, it } from 'vitest'
 import { writeFile } from 'node:fs/promises'
 import { stat } from 'node:fs/promises'
-import {
-  isDirectory,
-  isFile,
-  mkdirp,
-  exists,
-  rimraf,
-} from '../src/fs-extra'
+import { isDirectory, isFile, mkdirp, exists, rimraf } from '../src/fs-extra'
 
 describe('fs utilities', () => {
   let tempDir: string

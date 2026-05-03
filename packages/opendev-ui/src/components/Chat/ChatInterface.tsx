@@ -24,14 +24,18 @@ export function ChatInterface() {
     api
       .getBridgeInfo()
       .then((info) => {
-        if (cancelled) {return}
+        if (cancelled) {
+          return
+        }
         if (info.bridgeMode && info.sessionId) {
           loadSession(info.sessionId)
         }
         setBridgeChecked(true)
       })
       .catch(() => {
-        if (!cancelled) {setBridgeChecked(true)}
+        if (!cancelled) {
+          setBridgeChecked(true)
+        }
       })
     return () => {
       cancelled = true
@@ -48,10 +52,10 @@ export function ChatInterface() {
   }
 
   return (
-    <div className="flex flex-col h-full relative animate-fade-in">
+    <div className='flex flex-col h-full relative animate-fade-in'>
       {error && (
-        <div className="bg-red-50 border border-red-200 text-red-800 px-4 py-3 mx-6 mt-4 rounded-lg">
-          <strong className="font-semibold">Error:</strong> {error}
+        <div className='bg-red-50 border border-red-200 text-red-800 px-4 py-3 mx-6 mt-4 rounded-lg'>
+          <strong className='font-semibold'>Error:</strong> {error}
         </div>
       )}
 

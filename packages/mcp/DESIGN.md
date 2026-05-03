@@ -129,3 +129,36 @@ MCP 协议客户端，实现 MCP 2024-11-05 规范：
 ## 测试策略
 
 - 当前无独立测试文件（通过集成测试覆盖）
+
+## 模块设计基线
+
+### 设计目的
+
+实现 MCP 客户端、服务器管理、工具适配和传输层，使外部 MCP 能力进入 X-Mars 工具体系。
+
+### 接口设计
+
+- `McpManager` / `createMcpManager()`：管理多个 MCP server 生命周期。
+- `McpClient` / `createMcpClient()`：单 server 协议客户端。
+- `McpToolAdapter`：把 MCP tool 转换为 AgentTool。
+- `transport`：stdio 等进程传输抽象。
+
+### 方法论
+
+把连接管理、协议请求和工具适配分层；MCP 失败应局部降级，不阻断主 Agent 启动。
+
+### 实现逻辑
+
+读取 MCP 配置后启动传输，初始化客户端并拉取工具/资源/提示，转换成 X-Mars 工具注册到 ToolRegistry。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[MCP config] --> B[McpManager]
+  B --> C[Transport process]
+  C --> D[McpClient initialize]
+  D --> E[list tools/resources/prompts]
+  E --> F[McpToolAdapter]
+  F --> G[ToolRegistry]
+```

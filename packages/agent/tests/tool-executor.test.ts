@@ -48,11 +48,7 @@ function makeTool(
   }
 }
 
-function makeToolCall(
-  name: string,
-  id?: string,
-  args: Record<string, unknown> = {},
-): ToolCall {
+function makeToolCall(name: string, id?: string, args: Record<string, unknown> = {}): ToolCall {
   return {
     type: 'tool_call',
     id: id ?? `call_${name}`,
@@ -182,7 +178,10 @@ describe('ToolExecutor', () => {
         agentName: 'lead',
       })
 
-      const result = await executor.execute(makeToolCall('contextual'), new AbortController().signal)
+      const result = await executor.execute(
+        makeToolCall('contextual'),
+        new AbortController().signal,
+      )
 
       expect(result.isError).toBeUndefined()
       expect(received).toEqual({

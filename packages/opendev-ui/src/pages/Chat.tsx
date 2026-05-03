@@ -20,11 +20,11 @@ export function Chat() {
   const closeStatusDialog = useCallback(() => setStatusDialogOpen(false), [])
 
   return (
-    <div className="h-screen flex flex-col bg-bg-100">
+    <div className='h-screen flex flex-col bg-bg-100'>
       <TopBar onOpenCommandPalette={openCommandPalette} />
-      <div className="flex-1 flex overflow-hidden">
+      <div className='flex-1 flex overflow-hidden'>
         <SessionsSidebar />
-        <main className="flex-1 flex flex-col overflow-hidden bg-bg-000">
+        <main className='flex-1 flex flex-col overflow-hidden bg-bg-000'>
           <ChatInterface />
         </main>
         <Devtools />

@@ -4,7 +4,13 @@ import { Agent } from '../src/agent'
 import { createEventStream } from '../../ai/src/index'
 import { createLogger } from '@x-mars/shared'
 
-import type { AssistantMessage, Model, StreamContext, StreamEvent, ToolCall } from '../../ai/src/index'
+import type {
+  AssistantMessage,
+  Model,
+  StreamContext,
+  StreamEvent,
+  ToolCall,
+} from '../../ai/src/index'
 import type { AgentTool, ToolHookExecutor } from '../src/types'
 
 function makeModel(): Model {
@@ -68,7 +74,9 @@ function makeStream(responses: AssistantMessage[]) {
     const eventStream = createEventStream<StreamEvent, AssistantMessage>()
     const message = responses[index++]
     setTimeout(() => {
-      if (!message) return
+      if (!message) {
+        return
+      }
       eventStream.push({ type: 'start', partial: message })
       eventStream.complete(message)
     }, 0)
@@ -168,9 +176,7 @@ describe('Agent', () => {
     describe('#when the stream returns a final assistant message', () => {
       it('#then tracks status, turn count, and token usage from the loop', async () => {
         const agent = new Agent({
-          stream: makeStream([
-            makeAssistantMessage([{ type: 'text', text: 'done' }], 'end_turn'),
-          ]),
+          stream: makeStream([makeAssistantMessage([{ type: 'text', text: 'done' }], 'end_turn')]),
         })
 
         const messages = [{ role: 'user' as const, content: 'start', timestamp: Date.now() }]
@@ -196,12 +202,20 @@ describe('Agent', () => {
       it('#then forwards hookExecutor, agentName, and sessionId into tool execution', async () => {
         const agent = new Agent({
           stream: makeStream([
-            makeAssistantMessage([makeToolCall('echo', 'tc_echo', { value: 'from-model' })], 'tool_use'),
+            makeAssistantMessage(
+              [makeToolCall('echo', 'tc_echo', { value: 'from-model' })],
+              'tool_use',
+            ),
             makeAssistantMessage([{ type: 'text', text: 'done' }], 'end_turn'),
           ]),
         })
 
-        const hookCalls: Array<{ phase: 'before' | 'after'; sessionId: string; agentName: string; args?: Record<string, unknown> }> = []
+        const hookCalls: Array<{
+          phase: 'before' | 'after'
+          sessionId: string
+          agentName: string
+          args?: Record<string, unknown>
+        }> = []
         const hookExecutor: ToolHookExecutor = {
           async executeBeforeHooks(input) {
             hookCalls.push({
@@ -239,7 +253,9 @@ describe('Agent', () => {
           parameters: createSchema<Record<string, unknown>>() as never,
           async execute(ctx) {
             return {
-              content: [{ type: 'text', text: String((ctx.params as Record<string, unknown>).value) }],
+              content: [
+                { type: 'text', text: String((ctx.params as Record<string, unknown>).value) },
+              ],
             }
           },
         }
@@ -272,7 +288,12 @@ describe('Agent', () => {
         ])
 
         const toolResultMessage = messages.find((message) => {
-          return typeof message === 'object' && message !== null && 'role' in message && message.role === 'tool_result'
+          return (
+            typeof message === 'object' &&
+            message !== null &&
+            'role' in message &&
+            message.role === 'tool_result'
+          )
         }) as { role: 'tool_result'; content: Array<{ type: string; text?: string }> } | undefined
 
         expect(toolResultMessage?.content[0]?.text).toBe('after-hook')

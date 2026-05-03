@@ -44,6 +44,7 @@ const TEST_TOOL_SETS = createPermissionToolSetsFromRegistry([
   { name: 'edit', metadata: { category: 'fs' } },
   { name: 'bash', metadata: { category: 'shell' } },
   { name: 'web_fetch', readonly: true, metadata: { category: 'web' } },
+  { name: 'web_search', readonly: true, metadata: { category: 'web' } },
   { name: 'mcp__docs__fetch', readonly: true },
 ])
 
@@ -168,11 +169,13 @@ describe('PermissionPolicyRegistry', () => {
         priority: 10,
         enabled: true,
         scope: {},
-        rules: [{
-          name: 'deny-env',
-          effect: 'deny',
-          match: { paths: [/\.env$/] },
-        }],
+        rules: [
+          {
+            name: 'deny-env',
+            effect: 'deny',
+            match: { paths: [/\.env$/] },
+          },
+        ],
       })
 
       const envDecision = registry.evaluate(makeContext({ filePath: '/project/.env' }))
@@ -190,17 +193,21 @@ describe('PermissionPolicyRegistry', () => {
         priority: 10,
         enabled: true,
         scope: {},
-        rules: [{
-          name: 'deny-env',
-          effect: 'deny',
-          match: { paths: [/\.env$/] },
-        }],
+        rules: [
+          {
+            name: 'deny-env',
+            effect: 'deny',
+            match: { paths: [/\.env$/] },
+          },
+        ],
       })
 
-      const decision = registry.evaluate(makeContext({
-        filePath: '/project/src/app.ts',
-        filePaths: ['/project/src/app.ts', '/project/.env'],
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          filePath: '/project/src/app.ts',
+          filePaths: ['/project/src/app.ts', '/project/.env'],
+        }),
+      )
       expect(decision.effect).toBe('deny')
     })
 
@@ -212,21 +219,25 @@ describe('PermissionPolicyRegistry', () => {
         priority: 10,
         enabled: true,
         scope: {},
-        rules: [{
-          name: 'deny-large-args',
-          effect: 'deny',
-          match: {
-            condition: (ctx) => Object.keys(ctx.args).length > 5,
+        rules: [
+          {
+            name: 'deny-large-args',
+            effect: 'deny',
+            match: {
+              condition: (ctx) => Object.keys(ctx.args).length > 5,
+            },
           },
-        }],
+        ],
       })
 
       const smallDecision = registry.evaluate(makeContext({ args: { a: 1 } }))
       expect(smallDecision.effect).toBe('allow')
 
-      const largeDecision = registry.evaluate(makeContext({
-        args: { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6 },
-      }))
+      const largeDecision = registry.evaluate(
+        makeContext({
+          args: { a: 1, b: 2, c: 3, d: 4, e: 5, f: 6 },
+        }),
+      )
       expect(largeDecision.effect).toBe('deny')
     })
   })
@@ -299,7 +310,7 @@ describe('PermissionPolicyRegistry', () => {
       })
 
       const effective = registry.getEffective('lead')
-      expect(effective.map(p => p.name)).toEqual(['global'])
+      expect(effective.map((p) => p.name)).toEqual(['global'])
     })
   })
 })
@@ -334,16 +345,20 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createFileGuardPolicy({ fileWriteTools: ['apply_patch'] }))
 
-      const denied = registry.evaluate(makeContext({
-        toolName: 'apply_patch',
-        filePath: '/etc/passwd',
-      }))
+      const denied = registry.evaluate(
+        makeContext({
+          toolName: 'apply_patch',
+          filePath: '/etc/passwd',
+        }),
+      )
       expect(denied.effect).toBe('deny')
 
-      const allowed = registry.evaluate(makeContext({
-        toolName: 'write',
-        filePath: '/etc/passwd',
-      }))
+      const allowed = registry.evaluate(
+        makeContext({
+          toolName: 'write',
+          filePath: '/etc/passwd',
+        }),
+      )
       expect(allowed.effect).toBe('allow')
     })
   })
@@ -353,10 +368,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(FILE_GUARD_POLICY)
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'write',
-        filePath: '/etc/passwd',
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'write',
+          filePath: '/etc/passwd',
+        }),
+      )
       expect(decision.effect).toBe('allow')
     })
 
@@ -364,10 +381,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(FILE_GUARD_POLICY)
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'edit',
-        filePath: '/project/node_modules/pkg/index.js',
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'edit',
+          filePath: '/project/node_modules/pkg/index.js',
+        }),
+      )
       expect(decision.effect).toBe('allow')
     })
 
@@ -375,10 +394,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(FILE_GUARD_POLICY)
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'write',
-        filePath: '/project/src/app.ts',
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'write',
+          filePath: '/project/src/app.ts',
+        }),
+      )
       expect(decision.effect).toBe('allow')
     })
 
@@ -386,10 +407,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(FILE_GUARD_POLICY)
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'read',
-        filePath: '/etc/hosts',
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'read',
+          filePath: '/etc/hosts',
+        }),
+      )
       expect(decision.effect).toBe('allow')
     })
   })
@@ -399,10 +422,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(DESTRUCTIVE_COMMAND_POLICY)
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'bash',
-        args: { command: 'rm -rf /tmp/build' },
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'bash',
+          args: { command: 'rm -rf /tmp/build' },
+        }),
+      )
       expect(decision.effect).toBe('ask')
     })
 
@@ -410,10 +435,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(DESTRUCTIVE_COMMAND_POLICY)
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'bash',
-        args: { command: 'git push --force origin main' },
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'bash',
+          args: { command: 'git push --force origin main' },
+        }),
+      )
       expect(decision.effect).toBe('ask')
     })
 
@@ -421,10 +448,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(DESTRUCTIVE_COMMAND_POLICY)
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'bash',
-        args: { command: 'ls -la' },
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'bash',
+          args: { command: 'ls -la' },
+        }),
+      )
       expect(decision.effect).toBe('allow')
     })
   })
@@ -435,10 +464,12 @@ describe('Built-in Policies', () => {
       registry.register(createNonBypassableSafetyPolicy(TEST_TOOL_SETS))
       registry.register(createPermissionModePolicy('bypass', TEST_TOOL_SETS))
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'write',
-        filePath: '/etc/passwd',
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'write',
+          filePath: '/etc/passwd',
+        }),
+      )
 
       expect(decision.effect).toBe('deny')
       expect(decision.policyName).toBe('builtin::non-bypassable-safety')
@@ -450,10 +481,12 @@ describe('Built-in Policies', () => {
       registry.register(createNonBypassableSafetyPolicy(TEST_TOOL_SETS))
       registry.register(createPermissionModePolicy('bypass', TEST_TOOL_SETS))
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'bash',
-        args: { command: 'rm -rf /' },
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'bash',
+          args: { command: 'rm -rf /' },
+        }),
+      )
 
       expect(decision.effect).toBe('deny')
       expect(decision.policyName).toBe('builtin::non-bypassable-safety')
@@ -465,10 +498,12 @@ describe('Built-in Policies', () => {
       registry.register(createNonBypassableSafetyPolicy(TEST_TOOL_SETS))
       registry.register(DESTRUCTIVE_COMMAND_POLICY)
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'bash',
-        args: { command: 'rm -rf /tmp/build' },
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'bash',
+          args: { command: 'rm -rf /tmp/build' },
+        }),
+      )
 
       expect(decision.effect).toBe('ask')
       expect(decision.policyName).toBe('builtin::destructive-guard')
@@ -480,10 +515,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createNetworkSafetyPolicy(TEST_TOOL_SETS))
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'web_fetch',
-        urls: ['http://localhost:3000/internal'],
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'web_fetch',
+          urls: ['http://localhost:3000/internal'],
+        }),
+      )
 
       expect(decision.effect).toBe('deny')
       expect(decision.policyName).toBe('builtin::network-safety')
@@ -494,10 +531,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createNetworkSafetyPolicy(TEST_TOOL_SETS))
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'web_fetch',
-        urls: ['http://192.168.1.20/admin'],
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'web_fetch',
+          urls: ['http://192.168.1.20/admin'],
+        }),
+      )
 
       expect(decision.effect).toBe('deny')
     })
@@ -506,10 +545,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createNetworkSafetyPolicy(TEST_TOOL_SETS))
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'web_fetch',
-        urls: ['http://169.254.169.254/latest/meta-data'],
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'web_fetch',
+          urls: ['http://169.254.169.254/latest/meta-data'],
+        }),
+      )
 
       expect(decision.effect).toBe('deny')
     })
@@ -518,10 +559,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createNetworkSafetyPolicy(TEST_TOOL_SETS))
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'web_fetch',
-        urls: ['https://example.com/docs'],
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'web_fetch',
+          urls: ['https://example.com/docs'],
+        }),
+      )
 
       expect(decision.effect).toBe('allow')
     })
@@ -530,10 +573,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createNetworkSafetyPolicy(TEST_TOOL_SETS))
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'mcp__docs__fetch',
-        urls: ['file:///etc/passwd'],
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'mcp__docs__fetch',
+          urls: ['file:///etc/passwd'],
+        }),
+      )
 
       expect(decision.effect).toBe('deny')
     })
@@ -544,10 +589,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createDirectoryFreezePolicy('/project/src', TEST_TOOL_SETS))
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'edit',
-        filePath: '/project/src/index.ts',
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'edit',
+          filePath: '/project/src/index.ts',
+        }),
+      )
       expect(decision.effect).toBe('allow')
     })
 
@@ -555,10 +602,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createDirectoryFreezePolicy('/project/src', TEST_TOOL_SETS))
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'edit',
-        filePath: '/project/tests/app.test.ts',
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'edit',
+          filePath: '/project/tests/app.test.ts',
+        }),
+      )
       expect(decision.effect).toBe('deny')
     })
 
@@ -566,11 +615,13 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createDirectoryFreezePolicy('/project/src', TEST_TOOL_SETS))
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'edit',
-        filePath: '/project/src/index.ts',
-        filePaths: ['/project/src/index.ts', '/project/tests/index.ts'],
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'edit',
+          filePath: '/project/src/index.ts',
+          filePaths: ['/project/src/index.ts', '/project/tests/index.ts'],
+        }),
+      )
       expect(decision.effect).toBe('deny')
     })
   })
@@ -593,10 +644,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createAgentBoundaryPolicy('web-agent', ['web-search', 'web-fetch', 'read']))
 
-      const decision = registry.evaluate(makeContext({
-        agentName: 'web-agent',
-        toolName: 'web-search',
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          agentName: 'web-agent',
+          toolName: 'web-search',
+        }),
+      )
       expect(decision.effect).toBe('allow')
     })
 
@@ -604,10 +657,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createAgentBoundaryPolicy('web-agent', ['web-search', 'web-fetch', 'read']))
 
-      const decision = registry.evaluate(makeContext({
-        agentName: 'web-agent',
-        toolName: 'write',
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          agentName: 'web-agent',
+          toolName: 'write',
+        }),
+      )
       expect(decision.effect).toBe('deny')
       expect(decision.reason).toContain('web-agent')
     })
@@ -616,10 +671,12 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createAgentBoundaryPolicy('web-agent', ['web-search']))
 
-      const decision = registry.evaluate(makeContext({
-        agentName: 'lead',
-        toolName: 'write',
-      }))
+      const decision = registry.evaluate(
+        makeContext({
+          agentName: 'lead',
+          toolName: 'write',
+        }),
+      )
       expect(decision.effect).toBe('allow')
     })
   })
@@ -629,17 +686,19 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createSidechainBoundaryPolicy())
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'bash',
-        metadata: {
-          sidechain: {
-            policy: {
-              permissionMode: 'restricted',
-              allowedTools: ['read'],
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'bash',
+          metadata: {
+            sidechain: {
+              policy: {
+                permissionMode: 'restricted',
+                allowedTools: ['read'],
+              },
             },
           },
-        },
-      }))
+        }),
+      )
 
       expect(decision.effect).toBe('deny')
       expect(decision.policyName).toBe('builtin::sidechain-boundary')
@@ -650,18 +709,20 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createSidechainBoundaryPolicy())
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'bash',
-        metadata: {
-          sidechain: {
-            policy: {
-              permissionMode: 'restricted',
-              allowedTools: ['bash'],
-              deniedTools: ['bash'],
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'bash',
+          metadata: {
+            sidechain: {
+              policy: {
+                permissionMode: 'restricted',
+                allowedTools: ['bash'],
+                deniedTools: ['bash'],
+              },
             },
           },
-        },
-      }))
+        }),
+      )
 
       expect(decision.effect).toBe('deny')
       expect(decision.ruleName).toBe('deny-sidechain-denied-tools')
@@ -671,18 +732,20 @@ describe('Built-in Policies', () => {
       const registry = new PermissionPolicyRegistry()
       registry.register(createSidechainBoundaryPolicy())
 
-      const decision = registry.evaluate(makeContext({
-        toolName: 'write',
-        filePath: '../outside.ts',
-        filePaths: ['../outside.ts'],
-        metadata: {
-          sidechain: {
-            policy: {
-              workspaceRoot: '/project/allowed',
+      const decision = registry.evaluate(
+        makeContext({
+          toolName: 'write',
+          filePath: '../outside.ts',
+          filePaths: ['../outside.ts'],
+          metadata: {
+            sidechain: {
+              policy: {
+                workspaceRoot: '/project/allowed',
+              },
             },
           },
-        },
-      }))
+        }),
+      )
 
       expect(decision.effect).toBe('deny')
       expect(decision.ruleName).toBe('deny-sidechain-workspace-escape')
@@ -783,13 +846,25 @@ describe('PermissionAuditLog', () => {
     const log = new PermissionAuditLog()
 
     log.record(makeContext({ sessionId: 'a' }), {
-      effect: 'allow', policyName: 'p', ruleName: 'r', timestamp: 1, evaluatedPolicies: 1,
+      effect: 'allow',
+      policyName: 'p',
+      ruleName: 'r',
+      timestamp: 1,
+      evaluatedPolicies: 1,
     })
     log.record(makeContext({ sessionId: 'a' }), {
-      effect: 'deny', policyName: 'p', ruleName: 'r', timestamp: 2, evaluatedPolicies: 1,
+      effect: 'deny',
+      policyName: 'p',
+      ruleName: 'r',
+      timestamp: 2,
+      evaluatedPolicies: 1,
     })
     log.record(makeContext({ sessionId: 'b' }), {
-      effect: 'deny', policyName: 'p', ruleName: 'r', timestamp: 3, evaluatedPolicies: 1,
+      effect: 'deny',
+      policyName: 'p',
+      ruleName: 'r',
+      timestamp: 3,
+      evaluatedPolicies: 1,
     })
 
     expect(log.getEntries({ sessionId: 'a' })).toHaveLength(2)
@@ -801,10 +876,18 @@ describe('PermissionAuditLog', () => {
     const log = new PermissionAuditLog()
 
     log.record(makeContext({ sessionId: 'a' }), {
-      effect: 'allow', policyName: 'p', ruleName: 'r', timestamp: 1, evaluatedPolicies: 1,
+      effect: 'allow',
+      policyName: 'p',
+      ruleName: 'r',
+      timestamp: 1,
+      evaluatedPolicies: 1,
     })
     log.record(makeContext({ sessionId: 'b' }), {
-      effect: 'deny', policyName: 'p', ruleName: 'r', timestamp: 2, evaluatedPolicies: 1,
+      effect: 'deny',
+      policyName: 'p',
+      ruleName: 'r',
+      timestamp: 2,
+      evaluatedPolicies: 1,
     })
 
     log.clear('a')
@@ -817,7 +900,11 @@ describe('PermissionAuditLog', () => {
 
     for (let i = 0; i < 10; i++) {
       log.record(makeContext(), {
-        effect: 'allow', policyName: 'p', ruleName: 'r', timestamp: i, evaluatedPolicies: 1,
+        effect: 'allow',
+        policyName: 'p',
+        ruleName: 'r',
+        timestamp: i,
+        evaluatedPolicies: 1,
       })
     }
 
@@ -832,11 +919,19 @@ describe('PermissionAuditLog', () => {
     })
 
     log.record(makeContext({ sessionId: 's1' }), {
-      effect: 'deny', policyName: 'p', ruleName: 'r', timestamp: 1, evaluatedPolicies: 1,
+      effect: 'deny',
+      policyName: 'p',
+      ruleName: 'r',
+      timestamp: 1,
+      evaluatedPolicies: 1,
     })
     unsubscribe()
     log.record(makeContext({ sessionId: 's2' }), {
-      effect: 'allow', policyName: 'default', ruleName: 'default-allow', timestamp: 2, evaluatedPolicies: 0,
+      effect: 'allow',
+      policyName: 'default',
+      ruleName: 'default-allow',
+      timestamp: 2,
+      evaluatedPolicies: 0,
     })
 
     expect(entries).toEqual(['s1:deny'])
@@ -892,15 +987,75 @@ describe('compilePolicyFromSetting', () => {
   it('compiles path strings into RegExp[]', () => {
     const config: PermissionPolicySetting = {
       name: 'path-policy',
-      rules: [
-        { name: 'deny-configs', effect: 'deny', paths: ['\\.config\\.'] },
-      ],
+      rules: [{ name: 'deny-configs', effect: 'deny', paths: ['\\.config\\.'] }],
     }
 
     const policy = compilePolicyFromSetting(config)
     const pathPatterns = policy.rules[0]!.match.paths!
     expect(pathPatterns).toHaveLength(1)
     expect(pathPatterns[0]!.test('project.config.json')).toBe(true)
+  })
+
+  it('compiles Read and Write DSL rules into tool and path matchers', () => {
+    const registry = new PermissionPolicyRegistry()
+    registry.register(
+      compilePolicyFromSetting({
+        name: 'dsl-policy',
+        rules: [
+          { name: 'allow-read-src', effect: 'allow', match: 'Read(src/**)' },
+          { name: 'deny-write-src', effect: 'deny', match: 'Write(src/**)' },
+        ],
+      }),
+    )
+
+    const readDecision = registry.evaluate(
+      makeContext({
+        toolName: 'read',
+        filePaths: ['src/index.ts'],
+      }),
+    )
+    const writeDecision = registry.evaluate(
+      makeContext({
+        toolName: 'apply_patch',
+        filePaths: ['src/index.ts'],
+      }),
+    )
+
+    expect(readDecision.effect).toBe('allow')
+    expect(readDecision.ruleName).toBe('allow-read-src')
+    expect(writeDecision.effect).toBe('deny')
+    expect(writeDecision.ruleName).toBe('deny-write-src')
+  })
+
+  it('compiles Bash DSL rules into command matchers', () => {
+    const registry = new PermissionPolicyRegistry()
+    registry.register(
+      compilePolicyFromSetting({
+        name: 'bash-dsl',
+        rules: [
+          { name: 'allow-git-status', effect: 'allow', match: 'Bash(git status*)' },
+          { name: 'deny-other-bash', effect: 'deny', tools: ['bash'] },
+        ],
+      }),
+    )
+
+    const gitStatus = registry.evaluate(
+      makeContext({
+        toolName: 'bash',
+        args: { command: 'git status --short' },
+      }),
+    )
+    const install = registry.evaluate(
+      makeContext({
+        toolName: 'bash',
+        args: { command: 'pnpm install' },
+      }),
+    )
+
+    expect(gitStatus.effect).toBe('allow')
+    expect(gitStatus.ruleName).toBe('allow-git-status')
+    expect(install.effect).toBe('deny')
+    expect(install.ruleName).toBe('deny-other-bash')
   })
 
   it('uses defaults for optional fields', () => {
@@ -928,16 +1083,20 @@ describe('compilePolicyFromSetting', () => {
   it('does not allow a setting policy to bypass non-bypassable safety', () => {
     const registry = new PermissionPolicyRegistry()
     registry.register(createNonBypassableSafetyPolicy(TEST_TOOL_SETS))
-    registry.register(compilePolicyFromSetting({
-      name: 'unsafe-user-allow',
-      priority: -20000,
-      rules: [{ name: 'allow-all', effect: 'allow' }],
-    }))
+    registry.register(
+      compilePolicyFromSetting({
+        name: 'unsafe-user-allow',
+        priority: -20000,
+        rules: [{ name: 'allow-all', effect: 'allow' }],
+      }),
+    )
 
-    const decision = registry.evaluate(makeContext({
-      toolName: 'bash',
-      args: { command: 'rm -rf /' },
-    }))
+    const decision = registry.evaluate(
+      makeContext({
+        toolName: 'bash',
+        args: { command: 'rm -rf /' },
+      }),
+    )
 
     expect(decision.effect).toBe('deny')
     expect(decision.policyName).toBe('builtin::non-bypassable-safety')
@@ -1149,6 +1308,51 @@ describe('createPermissionGuardHook', () => {
     expect(() => hook.handle!(input, output)).toThrow('Permission denied')
     expect(output.cancelled).toBe(true)
   })
+
+  it('extracts web_search domain filters for network policy evaluation', () => {
+    const registry = new PermissionPolicyRegistry()
+    registry.register(createNetworkSafetyPolicy(TEST_TOOL_SETS))
+    const hook = createPermissionGuardHook(registry)
+
+    const input: ToolExecuteBeforeInput = {
+      toolName: 'web_search',
+      toolCallId: 'tc-1',
+      args: { query: 'internal docs', domains: ['localhost'] },
+      agentName: 'lead',
+      sessionId: 'sess-1',
+    }
+    const output: ToolExecuteBeforeOutput = {
+      args: input.args,
+      cancelled: false,
+    }
+
+    expect(() => hook.handle!(input, output)).toThrow('Permission denied')
+    expect(output.cancelled).toBe(true)
+  })
+
+  it('extracts web_fetch allowed domains for network policy evaluation', () => {
+    const registry = new PermissionPolicyRegistry()
+    registry.register(createNetworkSafetyPolicy(TEST_TOOL_SETS))
+    const hook = createPermissionGuardHook(registry)
+
+    const input: ToolExecuteBeforeInput = {
+      toolName: 'web_fetch',
+      toolCallId: 'tc-1',
+      args: {
+        url: 'https://example.com/docs',
+        allowedDomains: ['192.168.1.20'],
+      },
+      agentName: 'lead',
+      sessionId: 'sess-1',
+    }
+    const output: ToolExecuteBeforeOutput = {
+      args: input.args,
+      cancelled: false,
+    }
+
+    expect(() => hook.handle!(input, output)).toThrow('Permission denied')
+    expect(output.cancelled).toBe(true)
+  })
 })
 
 // ═══ Combined policy evaluation ═══
@@ -1165,25 +1369,31 @@ describe('Combined Policy Scenarios', () => {
     expect(read.effect).toBe('allow')
 
     // Write to normal path → falls through auto allow, not blocked by file-guard
-    const normalWrite = registry.evaluate(makeContext({
-      toolName: 'write',
-      filePath: '/project/src/app.ts',
-    }))
+    const normalWrite = registry.evaluate(
+      makeContext({
+        toolName: 'write',
+        filePath: '/project/src/app.ts',
+      }),
+    )
     expect(normalWrite.effect).toBe('allow')
 
     // Write to protected path → denied by file-guard
-    const protectedWrite = registry.evaluate(makeContext({
-      toolName: 'write',
-      filePath: '/project/node_modules/pkg/index.js',
-    }))
+    const protectedWrite = registry.evaluate(
+      makeContext({
+        toolName: 'write',
+        filePath: '/project/node_modules/pkg/index.js',
+      }),
+    )
     expect(protectedWrite.effect).toBe('deny')
     expect(protectedWrite.policyName).toBe('builtin::file-guard')
 
     // Destructive bash → ask
-    const destructive = registry.evaluate(makeContext({
-      toolName: 'bash',
-      args: { command: 'rm -rf /tmp/build' },
-    }))
+    const destructive = registry.evaluate(
+      makeContext({
+        toolName: 'bash',
+        args: { command: 'rm -rf /tmp/build' },
+      }),
+    )
     expect(destructive.effect).toBe('ask')
     expect(destructive.policyName).toBe('builtin::destructive-guard')
   })
@@ -1195,25 +1405,31 @@ describe('Combined Policy Scenarios', () => {
     registry.register(createAgentBoundaryPolicy('searcher', ['web-search', 'read']))
 
     // searcher can use allowed tools
-    const searchAllowed = registry.evaluate(makeContext({
-      agentName: 'searcher',
-      toolName: 'web-search',
-    }))
+    const searchAllowed = registry.evaluate(
+      makeContext({
+        agentName: 'searcher',
+        toolName: 'web-search',
+      }),
+    )
     expect(searchAllowed.effect).toBe('allow')
 
     // searcher cannot use undeclared tools
-    const searchDenied = registry.evaluate(makeContext({
-      agentName: 'searcher',
-      toolName: 'write',
-    }))
+    const searchDenied = registry.evaluate(
+      makeContext({
+        agentName: 'searcher',
+        toolName: 'write',
+      }),
+    )
     expect(searchDenied.effect).toBe('deny')
 
     // other agent can still use write
-    const leadWrite = registry.evaluate(makeContext({
-      agentName: 'lead',
-      toolName: 'write',
-      filePath: '/project/src/app.ts',
-    }))
+    const leadWrite = registry.evaluate(
+      makeContext({
+        agentName: 'lead',
+        toolName: 'write',
+        filePath: '/project/src/app.ts',
+      }),
+    )
     expect(leadWrite.effect).toBe('allow')
   })
 })

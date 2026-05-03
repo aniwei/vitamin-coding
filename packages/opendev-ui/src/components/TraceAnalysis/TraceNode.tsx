@@ -58,48 +58,48 @@ function TraceNodeComponent({ data, selected }: NodeProps<TraceFlowNode>) {
         selected ? 'ring-2 ring-accent-main-100 shadow-lg' : 'shadow-sm'
       }`}
     >
-      <Handle type="target" position={Position.Top} className={`!w-2 !h-2 ${config.dotClass}`} />
+      <Handle type='target' position={Position.Top} className={`!w-2 !h-2 ${config.dotClass}`} />
 
-      <div className="flex items-center gap-1.5 mb-1.5">
+      <div className='flex items-center gap-1.5 mb-1.5'>
         <span className={`w-1.5 h-1.5 rounded-full shrink-0 ${config.dotClass}`} />
-        <span className="text-text-200 font-bold text-[10px] tracking-wider">{config.label}</span>
+        <span className='text-text-200 font-bold text-[10px] tracking-wider'>{config.label}</span>
         {data.agentId && (
-          <span className="text-text-400 text-[9px] ml-auto">agent:{data.agentId.slice(0, 7)}</span>
+          <span className='text-text-400 text-[9px] ml-auto'>agent:{data.agentId.slice(0, 7)}</span>
         )}
         {data.subagentId && !data.agentId && (
-          <span className="text-text-400 text-[9px] ml-auto">
+          <span className='text-text-400 text-[9px] ml-auto'>
             sub:{data.subagentId.slice(0, 7)}
           </span>
         )}
       </div>
 
-      <div className="text-text-200 text-[11px] leading-[1.4] overflow-hidden line-clamp-3">
-        {preview || <span className="text-text-400 italic">(no content)</span>}
+      <div className='text-text-200 text-[11px] leading-[1.4] overflow-hidden line-clamp-3'>
+        {preview || <span className='text-text-400 italic'>(no content)</span>}
       </div>
 
       {data.tools.length > 0 && (
-        <div className="flex flex-wrap gap-1 mt-1.5">
+        <div className='flex flex-wrap gap-1 mt-1.5'>
           {data.tools.slice(0, 4).map((tool, i) => (
             <span
               key={i}
-              className="bg-bg-200 border border-border-300/20 text-text-400 rounded px-1.5 text-[9px] font-semibold"
+              className='bg-bg-200 border border-border-300/20 text-text-400 rounded px-1.5 text-[9px] font-semibold'
             >
               {tool}
             </span>
           ))}
           {data.tools.length > 4 && (
-            <span className="text-text-400 text-[9px]">+{data.tools.length - 4}</span>
+            <span className='text-text-400 text-[9px]'>+{data.tools.length - 4}</span>
           )}
         </div>
       )}
 
       {data.timestamp && (
-        <div className="text-text-400 text-[9px] mt-1">
+        <div className='text-text-400 text-[9px] mt-1'>
           {new Date(data.timestamp).toLocaleTimeString()}
         </div>
       )}
 
-      <Handle type="source" position={Position.Bottom} className={`!w-2 !h-2 ${config.dotClass}`} />
+      <Handle type='source' position={Position.Bottom} className={`!w-2 !h-2 ${config.dotClass}`} />
     </div>
   )
 }

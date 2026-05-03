@@ -15,13 +15,13 @@ export function TableOfContents({ items, activeId }: TableOfContentsProps) {
   }
 
   return (
-    <aside className="w-56 bg-white border-l border-gray-200 overflow-y-auto sticky top-0 h-[calc(100vh-6.5rem)] hidden xl:block">
-      <div className="p-4">
-        <h3 className="text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3">
+    <aside className='w-56 bg-white border-l border-gray-200 overflow-y-auto sticky top-0 h-[calc(100vh-6.5rem)] hidden xl:block'>
+      <div className='p-4'>
+        <h3 className='text-xs font-semibold text-gray-500 uppercase tracking-wider mb-3'>
           On This Page
         </h3>
         <nav>
-          <ul className="space-y-2">
+          <ul className='space-y-2'>
             {items.map((item) => (
               <li key={item.id} style={{ paddingLeft: `${(item.level - 2) * 12}px` }}>
                 <a

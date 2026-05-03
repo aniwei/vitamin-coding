@@ -54,7 +54,9 @@ function normalizeFileChange(raw: any): FileChange {
 }
 
 function normalizeSummary(raw: any): FileChangesSummary | null {
-  if (!raw || typeof raw !== 'object') {return null}
+  if (!raw || typeof raw !== 'object') {
+    return null
+  }
   return {
     total: raw.total ?? 0,
     created: raw.created ?? 0,

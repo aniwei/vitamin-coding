@@ -12,7 +12,9 @@ export function collapseGraph(
   rawNodes: GraphNode[],
   rawEdges: Edge[],
 ): { nodes: AnyFlowNode[]; edges: Edge[] } {
-  if (rawNodes.length === 0) {return { nodes: rawNodes, edges: rawEdges }}
+  if (rawNodes.length === 0) {
+    return { nodes: rawNodes, edges: rawEdges }
+  }
 
   const nodeIds = new Set(rawNodes.map((n) => n.id))
 
@@ -23,7 +25,9 @@ export function collapseGraph(
     outEdges.set(n.id, [])
   }
   for (const e of rawEdges) {
-    if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) {continue}
+    if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) {
+      continue
+    }
     outEdges.get(e.source)!.push(e.target)
     inEdges.get(e.target)!.push(e.source)
   }
@@ -39,10 +43,14 @@ export function collapseGraph(
     const stack = [...(outEdges.get(id) ?? [])]
     while (stack.length > 0) {
       const cid = stack.pop()!
-      if (visited.has(cid)) {continue}
+      if (visited.has(cid)) {
+        continue
+      }
       visited.add(cid)
       if (isHookProgress(cid)) {
-        for (const grandchild of outEdges.get(cid) ?? []) {stack.push(grandchild)}
+        for (const grandchild of outEdges.get(cid) ?? []) {
+          stack.push(grandchild)
+        }
       } else {
         result.push(cid)
       }
@@ -54,16 +62,24 @@ export function collapseGraph(
     let cur = id
     while (isHookProgress(cur)) {
       const parents = inEdges.get(cur) ?? []
-      if (parents.length !== 1) {break}
+      if (parents.length !== 1) {
+        break
+      }
       cur = parents[0]
     }
     return cur
   }
 
   const isLinear = (id: string) => {
-    if (nodeMap.get(id)?.type === 'taskNode') {return false}
-    if (nodeMap.get(id)?.type === 'toolNode') {return false}
-    if (isHookProgress(id)) {return false}
+    if (nodeMap.get(id)?.type === 'taskNode') {
+      return false
+    }
+    if (nodeMap.get(id)?.type === 'toolNode') {
+      return false
+    }
+    if (isHookProgress(id)) {
+      return false
+    }
     const ins = inEdges.get(id) ?? []
     const outs = meaningfulOuts(id)
     return ins.length === 1 && outs.length === 1
@@ -73,11 +89,17 @@ export function collapseGraph(
   const chains: string[][] = []
 
   for (const n of rawNodes) {
-    if (!isLinear(n.id)) {continue}
+    if (!isLinear(n.id)) {
+      continue
+    }
     const parentId = inEdges.get(n.id)![0]
     const effectiveParentId = isHookProgress(parentId) ? realParent(parentId) : parentId
-    if (isLinear(effectiveParentId)) {continue}
-    if (nodeToChain.has(n.id)) {continue}
+    if (isLinear(effectiveParentId)) {
+      continue
+    }
+    if (nodeToChain.has(n.id)) {
+      continue
+    }
 
     const members: string[] = []
     let cur: string = n.id
@@ -88,7 +110,9 @@ export function collapseGraph(
       members.push(cur)
       nodeToChain.set(cur, chainIdx)
       const children = meaningfulOuts(cur)
-      if (children.length !== 1) {break}
+      if (children.length !== 1) {
+        break
+      }
       cur = children[0]
     }
 
@@ -110,8 +134,12 @@ export function collapseGraph(
   }
 
   for (const n of rawNodes) {
-    if (!isHookProgress(n.id)) {continue}
-    if (nodeToChain.has(n.id)) {continue}
+    if (!isHookProgress(n.id)) {
+      continue
+    }
+    if (nodeToChain.has(n.id)) {
+      continue
+    }
     const parentIds = inEdges.get(n.id) ?? []
     for (const parentId of parentIds) {
       const chainIdx = nodeToChain.get(parentId)
@@ -134,7 +162,9 @@ export function collapseGraph(
   for (let i = 0; i < chains.length; i++) {
     const members = chains[i]
     if (members.length < 3) {
-      for (const id of members) {nodeToChain.delete(id)}
+      for (const id of members) {
+        nodeToChain.delete(id)
+      }
       continue
     }
     const events: AnyNodeData[] = members
@@ -160,12 +190,18 @@ export function collapseGraph(
   const outputEdges: Edge[] = []
 
   for (const e of rawEdges) {
-    if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) {continue}
+    if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) {
+      continue
+    }
     const src = remapId(e.source)
     const tgt = remapId(e.target)
-    if (src === tgt) {continue}
+    if (src === tgt) {
+      continue
+    }
     const key = `${src}->${tgt}`
-    if (seenEdges.has(key)) {continue}
+    if (seenEdges.has(key)) {
+      continue
+    }
     seenEdges.add(key)
     outputEdges.push({
       id: `ce-${src}-${tgt}`,

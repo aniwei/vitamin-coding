@@ -71,3 +71,36 @@
 ## 测试策略
 
 - 测试文件数：1（`env.test.ts`，覆盖 normalizeEnv 的 6 种边界情况）
+
+## 模块设计基线
+
+### 设计目的
+
+集中定义运行时路径、环境变量、阈值和默认常量，是所有包共享的配置基底。
+
+### 接口设计
+
+- `X_MARS_HOME` / `X_MARS_PROJECT_DIR`：用户级与项目级目录。
+- `LOG_FILE` / `LOG_LEVEL`：日志默认配置。
+- `TOOLS_*` / `MEMORY_*` / `SESSION_*`：工具、记忆、会话阈值。
+- `normalizeEnv()`：安全读取正整数环境变量。
+
+### 方法论
+
+环境常量在模块加载时一次性归一化，避免不同包各自读取 `process.env` 造成语义漂移。
+
+### 实现逻辑
+
+读取 `process.env` 和 Node 内置环境，归一化路径与数值，导出不可变常量供上层包消费。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[process.env / os.homedir] --> B[normalizeEnv / normalizePath]
+  B --> C[constants]
+  C --> D[tools]
+  C --> E[memory]
+  C --> F[session]
+  C --> G[setting/logger]
+```

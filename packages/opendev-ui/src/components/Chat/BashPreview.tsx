@@ -9,7 +9,9 @@ interface BashPreviewProps {
  * Strips ANSI escape sequences.
  */
 export function BashPreview({ output, maxLines = 4 }: BashPreviewProps) {
-  if (!output) {return null}
+  if (!output) {
+    return null
+  }
 
   // Strip ANSI escape sequences
   const cleaned = output.replace(/\x1b\[[0-9;]*[a-zA-Z]/g, '')
@@ -17,9 +19,9 @@ export function BashPreview({ output, maxLines = 4 }: BashPreviewProps) {
 
   if (lines.length <= maxLines) {
     return (
-      <div className="font-mono text-sm text-text-300 leading-6">
+      <div className='font-mono text-sm text-text-300 leading-6'>
         {lines.map((line, i) => (
-          <div key={i} className="truncate">
+          <div key={i} className='truncate'>
             {line}
           </div>
         ))}
@@ -32,15 +34,15 @@ export function BashPreview({ output, maxLines = 4 }: BashPreviewProps) {
   const hiddenCount = lines.length - 4
 
   return (
-    <div className="font-mono text-sm text-text-300 leading-6">
+    <div className='font-mono text-sm text-text-300 leading-6'>
       {firstTwo.map((line, i) => (
-        <div key={`first-${i}`} className="truncate">
+        <div key={`first-${i}`} className='truncate'>
           {line}
         </div>
       ))}
-      <div className="text-text-400 italic">… +{hiddenCount} lines</div>
+      <div className='text-text-400 italic'>… +{hiddenCount} lines</div>
       {lastTwo.map((line, i) => (
-        <div key={`last-${i}`} className="truncate">
+        <div key={`last-${i}`} className='truncate'>
           {line}
         </div>
       ))}

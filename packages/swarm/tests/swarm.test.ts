@@ -1,12 +1,7 @@
 import { describe, it, expect } from 'vitest'
 import { createSwarm, Swarm, type SwarmRunResult } from '../src/swarm'
 import { SwarmConfigError, AgentNotFoundError } from '../src/errors'
-import type {
-  SwarmAgentDef,
-  SwarmConfig,
-  SwarmContext,
-  SwarmRunContextFactory,
-} from '../src/types'
+import type { SwarmAgentDef, SwarmConfig, SwarmContext, SwarmRunContextFactory } from '../src/types'
 import type { AgentRunContext } from '@x-mars/agent'
 import type { Model } from '@x-mars/ai'
 
@@ -36,16 +31,18 @@ function makeAgentDef(overrides: Partial<SwarmAgentDef> & { id: string }): Swarm
   }
 }
 
-/** 
+/**
  * createRunContext 工厂 — 返回符合 AgentRunContext 接口的基础上下文。
  * 注意：executeAgentTurn 内部使用 new Agent()（无 stream 配置），
  * 因此实际 LLM 调用会失败。此工厂仅用于验证编排逻辑（事件分发、路由等），
  * 不验证 Agent 的实际执行结果。
  */
-function createTestRunContextFactory(
-  _responseText = 'Test response',
-): SwarmRunContextFactory {
-  return (agentDef: SwarmAgentDef, _context: SwarmContext, _signal: AbortSignal): AgentRunContext => {
+function createTestRunContextFactory(_responseText = 'Test response'): SwarmRunContextFactory {
+  return (
+    agentDef: SwarmAgentDef,
+    _context: SwarmContext,
+    _signal: AbortSignal,
+  ): AgentRunContext => {
     return {
       model: agentDef.model ?? testModel,
       systemPrompt: agentDef.systemPrompt,
@@ -60,68 +57,70 @@ function createTestRunContextFactory(
 describe('Swarm', () => {
   describe('configuration validation', () => {
     it('throws on empty name', () => {
-      expect(() => createSwarm({
-        name: '',
-        agents: [makeAgentDef({ id: 'a' })],
-        defaultModel: testModel,
-        pattern: 'handoff',
-        createRunContext: createTestRunContextFactory(),
-      })).toThrow(SwarmConfigError)
+      expect(() =>
+        createSwarm({
+          name: '',
+          agents: [makeAgentDef({ id: 'a' })],
+          defaultModel: testModel,
+          pattern: 'handoff',
+          createRunContext: createTestRunContextFactory(),
+        }),
+      ).toThrow(SwarmConfigError)
     })
 
     it('throws on empty agents', () => {
-      expect(() => createSwarm({
-        name: 'test',
-        agents: [],
-        defaultModel: testModel,
-        pattern: 'handoff',
-        createRunContext: createTestRunContextFactory(),
-      })).toThrow(SwarmConfigError)
+      expect(() =>
+        createSwarm({
+          name: 'test',
+          agents: [],
+          defaultModel: testModel,
+          pattern: 'handoff',
+          createRunContext: createTestRunContextFactory(),
+        }),
+      ).toThrow(SwarmConfigError)
     })
 
     it('throws on duplicate agent IDs', () => {
-      expect(() => createSwarm({
-        name: 'test',
-        agents: [
-          makeAgentDef({ id: 'a' }),
-          makeAgentDef({ id: 'a' }),
-        ],
-        defaultModel: testModel,
-        pattern: 'handoff',
-        createRunContext: createTestRunContextFactory(),
-      })).toThrow(SwarmConfigError)
+      expect(() =>
+        createSwarm({
+          name: 'test',
+          agents: [makeAgentDef({ id: 'a' }), makeAgentDef({ id: 'a' })],
+          defaultModel: testModel,
+          pattern: 'handoff',
+          createRunContext: createTestRunContextFactory(),
+        }),
+      ).toThrow(SwarmConfigError)
     })
 
     it('throws on invalid handoff target', () => {
-      expect(() => createSwarm({
-        name: 'test',
-        agents: [
-          makeAgentDef({ id: 'a', handoffTargets: ['nonexistent'] }),
-        ],
-        defaultModel: testModel,
-        pattern: 'handoff',
-        createRunContext: createTestRunContextFactory(),
-      })).toThrow(SwarmConfigError)
+      expect(() =>
+        createSwarm({
+          name: 'test',
+          agents: [makeAgentDef({ id: 'a', handoffTargets: ['nonexistent'] })],
+          defaultModel: testModel,
+          pattern: 'handoff',
+          createRunContext: createTestRunContextFactory(),
+        }),
+      ).toThrow(SwarmConfigError)
     })
 
     it('throws on invalid pipeline agent', () => {
-      expect(() => createSwarm({
-        name: 'test',
-        agents: [makeAgentDef({ id: 'a' })],
-        defaultModel: testModel,
-        pattern: 'sequential',
-        pipeline: ['a', 'nonexistent'],
-        createRunContext: createTestRunContextFactory(),
-      })).toThrow(SwarmConfigError)
+      expect(() =>
+        createSwarm({
+          name: 'test',
+          agents: [makeAgentDef({ id: 'a' })],
+          defaultModel: testModel,
+          pattern: 'sequential',
+          pipeline: ['a', 'nonexistent'],
+          createRunContext: createTestRunContextFactory(),
+        }),
+      ).toThrow(SwarmConfigError)
     })
 
     it('creates successfully with valid config', () => {
       const swarm = createSwarm({
         name: 'test',
-        agents: [
-          makeAgentDef({ id: 'a' }),
-          makeAgentDef({ id: 'b', handoffTargets: ['a'] }),
-        ],
+        agents: [makeAgentDef({ id: 'a' }), makeAgentDef({ id: 'b', handoffTargets: ['a'] })],
         defaultModel: testModel,
         pattern: 'handoff',
         createRunContext: createTestRunContextFactory(),

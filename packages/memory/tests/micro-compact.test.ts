@@ -33,10 +33,7 @@ const oneMinAgo = Date.now() - 60 * 1000
 
 describe('timeMicroCompact', () => {
   it('#given recent tool outputs #then leaves unchanged', () => {
-    const messages = [
-      userMsg('hello', oneMinAgo),
-      toolResult('x'.repeat(500), oneMinAgo),
-    ]
+    const messages = [userMsg('hello', oneMinAgo), toolResult('x'.repeat(500), oneMinAgo)]
     const result = timeMicroCompact(messages, { ageThresholdMs: 300_000 })
 
     expect(result.changed).toBe(false)
@@ -81,9 +78,7 @@ describe('timeMicroCompact', () => {
   })
 
   it('#given small outputs below minOutputTokens #then skips them', () => {
-    const messages = [
-      toolResult('ok', fiveMinAgo),
-    ]
+    const messages = [toolResult('ok', fiveMinAgo)]
     const result = timeMicroCompact(messages, {
       ageThresholdMs: 300_000,
       minOutputTokens: 50,
@@ -163,13 +158,9 @@ describe('cachedMicroCompact', () => {
     const cache = new MicroCompactCache()
     const summarize = vi.fn()
 
-    const result = await cachedMicroCompact(
-      messages,
-      200_000,
-      summarize,
-      cache,
-      { trigger: ['tokens', 99999] },
-    )
+    const result = await cachedMicroCompact(messages, 200_000, summarize, cache, {
+      trigger: ['tokens', 99999],
+    })
 
     expect(result.changed).toBe(false)
     expect(summarize).not.toHaveBeenCalled()
@@ -180,13 +171,10 @@ describe('cachedMicroCompact', () => {
     const cache = new MicroCompactCache()
     const summarize = vi.fn().mockResolvedValue('Summary of conversation')
 
-    const result = await cachedMicroCompact(
-      messages,
-      200_000,
-      summarize,
-      cache,
-      { trigger: ['tokens', 100], windowFraction: 0.3 },
-    )
+    const result = await cachedMicroCompact(messages, 200_000, summarize, cache, {
+      trigger: ['tokens', 100],
+      windowFraction: 0.3,
+    })
 
     expect(result.changed).toBe(true)
     expect(result.cached).toBe(false)
@@ -221,13 +209,10 @@ describe('cachedMicroCompact', () => {
     const cache = new MicroCompactCache()
     const summarize = vi.fn()
 
-    const result = await cachedMicroCompact(
-      messages,
-      200_000,
-      summarize,
-      cache,
-      { trigger: ['tokens', 1], windowFraction: 0.3 },
-    )
+    const result = await cachedMicroCompact(messages, 200_000, summarize, cache, {
+      trigger: ['tokens', 1],
+      windowFraction: 0.3,
+    })
 
     expect(result.changed).toBe(false)
   })

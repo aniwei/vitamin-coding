@@ -93,12 +93,14 @@ describe('context-injector hook', () => {
     describe('#when providers return content', () => {
       it('#then injects context at message head', async () => {
         const hookRegistry = createHookRegistry()
-        hookRegistry.register(createContextInjectorHook({
-          contextProviders: [
-            { name: 'env', getContext: () => 'ENV_CONTEXT: production' },
-            { name: 'rules', getContext: () => 'RULES: no semicolons' },
-          ],
-        }))
+        hookRegistry.register(
+          createContextInjectorHook({
+            contextProviders: [
+              { name: 'env', getContext: () => 'ENV_CONTEXT: production' },
+              { name: 'rules', getContext: () => 'RULES: no semicolons' },
+            ],
+          }),
+        )
 
         const input = {
           messages: [{ role: 'user', content: 'hello' }],
@@ -120,16 +122,19 @@ describe('context-injector hook', () => {
     describe('#when a provider throws', () => {
       it('#then skips that provider without blocking', async () => {
         const hookRegistry = createHookRegistry()
-        hookRegistry.register(createContextInjectorHook({
-          contextProviders: [
-            {
-              name: 'failing', getContext: () => {
-                throw new Error('boom')
+        hookRegistry.register(
+          createContextInjectorHook({
+            contextProviders: [
+              {
+                name: 'failing',
+                getContext: () => {
+                  throw new Error('boom')
+                },
               },
-            },
-            { name: 'ok', getContext: () => 'OK_CONTEXT' },
-          ],
-        }))
+              { name: 'ok', getContext: () => 'OK_CONTEXT' },
+            ],
+          }),
+        )
 
         const input = { messages: [{ role: 'user', content: 'hello' }] }
         const output = { messages: [{ role: 'user', content: 'hello' }] }
@@ -145,11 +150,11 @@ describe('context-injector hook', () => {
     describe('#when all providers return null', () => {
       it('#then does not inject anything', async () => {
         const hookRegistry = createHookRegistry()
-        hookRegistry.register(createContextInjectorHook({
-          contextProviders: [
-            { name: 'empty', getContext: () => null },
-          ],
-        }))
+        hookRegistry.register(
+          createContextInjectorHook({
+            contextProviders: [{ name: 'empty', getContext: () => null }],
+          }),
+        )
 
         const input = { messages: [{ role: 'user', content: 'hello' }] }
         const output = { messages: [{ role: 'user', content: 'hello' }] }
@@ -162,11 +167,11 @@ describe('context-injector hook', () => {
     describe('#when async provider is used', () => {
       it('#then resolves promise and injects', async () => {
         const hookRegistry = createHookRegistry()
-        hookRegistry.register(createContextInjectorHook({
-          contextProviders: [
-            { name: 'async', getContext: () => Promise.resolve('ASYNC_CTX') },
-          ],
-        }))
+        hookRegistry.register(
+          createContextInjectorHook({
+            contextProviders: [{ name: 'async', getContext: () => Promise.resolve('ASYNC_CTX') }],
+          }),
+        )
 
         const input = { messages: [{ role: 'user', content: 'hello' }] }
         const output = { messages: [{ role: 'user', content: 'hello' }] }
@@ -281,22 +286,26 @@ describe('thinking-validator hook', () => {
         hookRegistry.register(createThinkingValidatorHook())
 
         const input = {
-          messages: [{
-            role: 'assistant',
-            content: [
-              { type: 'thinking', thinking: '   \n  ' },
-              { type: 'text', text: 'Answer' },
-            ],
-          }],
+          messages: [
+            {
+              role: 'assistant',
+              content: [
+                { type: 'thinking', thinking: '   \n  ' },
+                { type: 'text', text: 'Answer' },
+              ],
+            },
+          ],
         }
         const output = {
-          messages: [{
-            role: 'assistant',
-            content: [
-              { type: 'thinking', thinking: '   \n  ' },
-              { type: 'text', text: 'Answer' },
-            ],
-          }],
+          messages: [
+            {
+              role: 'assistant',
+              content: [
+                { type: 'thinking', thinking: '   \n  ' },
+                { type: 'text', text: 'Answer' },
+              ],
+            },
+          ],
         }
 
         await hookRegistry.execute('messages.transform', input as never, output as never)
@@ -316,7 +325,10 @@ describe('anthropic-effort hook — extended branches', () => {
         hookRegistry.register(createAnthropicEffortHook())
 
         const input = { model: 'claude-sonnet-4-6', provider: 'anthropic' }
-        const output = { metadata: {} } as { thinkingLevel?: string; metadata: Record<string, unknown> }
+        const output = { metadata: {} } as {
+          thinkingLevel?: string
+          metadata: Record<string, unknown>
+        }
 
         await hookRegistry.execute('chat.params', input as never, output as never)
         expect(output.thinkingLevel).toBe('medium')
@@ -331,7 +343,10 @@ describe('anthropic-effort hook — extended branches', () => {
         hookRegistry.register(createAnthropicEffortHook())
 
         const input = { model: 'claude-haiku-4-5', provider: 'anthropic' }
-        const output = { metadata: {} } as { thinkingLevel?: string; metadata: Record<string, unknown> }
+        const output = { metadata: {} } as {
+          thinkingLevel?: string
+          metadata: Record<string, unknown>
+        }
 
         await hookRegistry.execute('chat.params', input as never, output as never)
         expect(output.thinkingLevel).toBe('low')
@@ -366,7 +381,10 @@ describe('babysitting hook', () => {
         hookRegistry.register(createBabysittingHook())
 
         const sessionId = `bab-${Date.now()}`
-        let lastOutput = { result: { content: [{ type: 'text' as const, text: 'err' }] }, metadata: {} as Record<string, unknown> }
+        let lastOutput = {
+          result: { content: [{ type: 'text' as const, text: 'err' }] },
+          metadata: {} as Record<string, unknown>,
+        }
 
         for (let i = 0; i < 4; i++) {
           const input = {
@@ -398,7 +416,10 @@ describe('babysitting hook', () => {
         hookRegistry.register(createBabysittingHook())
 
         const sessionId = `bab-repeat-${Date.now()}`
-        let lastOutput = { result: { content: [{ type: 'text' as const, text: 'ok' }] }, metadata: {} as Record<string, unknown> }
+        let lastOutput = {
+          result: { content: [{ type: 'text' as const, text: 'ok' }] },
+          metadata: {} as Record<string, unknown>,
+        }
 
         for (let i = 0; i < 6; i++) {
           const input = {
@@ -493,7 +514,10 @@ describe('ralph-loop hook — extended patterns', () => {
 
         const sessionId = `ralph-3pat-${Date.now()}`
         const pattern = ['read', 'edit', 'bash']
-        let lastOutput = { result: { content: [{ type: 'text' as const, text: 'ok' }] }, metadata: {} as Record<string, unknown> }
+        let lastOutput = {
+          result: { content: [{ type: 'text' as const, text: 'ok' }] },
+          metadata: {} as Record<string, unknown>,
+        }
 
         for (let rep = 0; rep < 3; rep++) {
           for (const tool of pattern) {

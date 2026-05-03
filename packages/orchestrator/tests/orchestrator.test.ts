@@ -214,9 +214,13 @@ describe('Orchestrator', () => {
         runSession: makeRunSession((opts) => {
           seenSignal = opts.signal
           return new Promise<RunSessionResult>((resolve, reject) => {
-            opts.signal?.addEventListener('abort', () => {
-              reject(new Error('cancelled by orchestrator'))
-            }, { once: true })
+            opts.signal?.addEventListener(
+              'abort',
+              () => {
+                reject(new Error('cancelled by orchestrator'))
+              },
+              { once: true },
+            )
             setTimeout(() => {
               resolve({ text: 'late output', sessionId: 'late-session', durationMs: 100 })
             }, 100)
@@ -230,18 +234,18 @@ describe('Orchestrator', () => {
       })
       expect(dispatched.success).toBe(true)
 
-      await new Promise(r => setTimeout(r, 10))
+      await new Promise((r) => setTimeout(r, 10))
       expect(seenSignal?.aborted).toBe(false)
 
       const cancelled = await orch.cancelBackground(dispatched.id!)
       expect(cancelled.success).toBe(true)
       expect(seenSignal?.aborted).toBe(true)
 
-      await new Promise(r => setTimeout(r, 20))
+      await new Promise((r) => setTimeout(r, 20))
       const task = await orch.taskStore.get(dispatched.id!)
       expect(task?.status).toBe('cancelled')
 
-      await new Promise(r => setTimeout(r, 120))
+      await new Promise((r) => setTimeout(r, 120))
       const latest = await orch.taskStore.get(dispatched.id!)
       expect(latest?.status).toBe('cancelled')
       expect(latest?.output).toBeUndefined()
@@ -259,7 +263,11 @@ describe('Orchestrator', () => {
         })),
       })
 
-      const result = await orch.clarifyRequest({ taskId: 'task_1', question: 'what color?', reason: 'missing_context' })
+      const result = await orch.clarifyRequest({
+        taskId: 'task_1',
+        question: 'what color?',
+        reason: 'missing_context',
+      })
       expect(result.success).toBe(true)
       expect(result.answer).toContain('blue')
     })
@@ -267,7 +275,9 @@ describe('Orchestrator', () => {
     it('escalates on runSession failure', async () => {
       const orch = new Orchestrator({
         hookRegistry: new HookRegistry(),
-        runSession: async () => { throw new Error('session failed') },
+        runSession: async () => {
+          throw new Error('session failed')
+        },
       })
 
       const result = await orch.clarifyRequest({ taskId: 'task_1', question: 'what color?' })

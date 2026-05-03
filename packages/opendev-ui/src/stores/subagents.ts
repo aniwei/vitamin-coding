@@ -98,7 +98,9 @@ export { formatToolVerb, formatToolArg }
 // ─── WebSocket Event Handlers ───────────────────────────────────────────────
 
 ws.on('Chat.subagentStart', (message) => {
-  if (!isRecord(message.data)) {return}
+  if (!isRecord(message.data)) {
+    return
+  }
   const d = message.data
 
   const id = readString(d, 'subagentId', 'toolCallId') || `sa-${Date.now()}`
@@ -142,7 +144,9 @@ ws.on('Chat.subagentStart', (message) => {
 })
 
 ws.on('Chat.nestedToolCall', (message) => {
-  if (!isRecord(message.data)) {return}
+  if (!isRecord(message.data)) {
+    return
+  }
   const d = message.data
 
   // 尝试找到此工具属于哪个 subagent
@@ -156,7 +160,9 @@ ws.on('Chat.nestedToolCall', (message) => {
     useSubagentStore.setState((prev) => {
       const subagents = new Map(prev.subagents)
       const sa = subagents.get(subagentId)
-      if (!sa || sa.finished) {return {}}
+      if (!sa || sa.finished) {
+        return {}
+      }
 
       const activeTools = new Map(sa.activeTools)
       activeTools.set(toolId, {
@@ -177,7 +183,9 @@ ws.on('Chat.nestedToolCall', (message) => {
 })
 
 ws.on('Chat.nestedToolResult', (message) => {
-  if (!isRecord(message.data)) {return}
+  if (!isRecord(message.data)) {
+    return
+  }
   const d = message.data
 
   const subagentId = readString(d, 'subagentId', 'parentSubagentId')
@@ -186,7 +194,9 @@ ws.on('Chat.nestedToolResult', (message) => {
     useSubagentStore.setState((prev) => {
       const subagents = new Map(prev.subagents)
       const sa = subagents.get(subagentId)
-      if (!sa) {return {}}
+      if (!sa) {
+        return {}
+      }
 
       const activeTools = new Map(sa.activeTools)
       const toolId = readString(d, 'toolCallId', 'toolId')
@@ -204,7 +214,9 @@ ws.on('Chat.nestedToolResult', (message) => {
 
       if (matchedId) {
         const tc = activeTools.get(matchedId)
-        if (!tc) {return { subagents }}
+        if (!tc) {
+          return { subagents }
+        }
         activeTools.delete(matchedId)
         const completedTools = [
           ...sa.completedTools,
@@ -229,11 +241,15 @@ ws.on('Chat.nestedToolResult', (message) => {
 })
 
 ws.on('Chat.subagentComplete', (message) => {
-  if (!isRecord(message.data)) {return}
+  if (!isRecord(message.data)) {
+    return
+  }
   const d = message.data
 
   const id = readString(d, 'subagentId', 'toolCallId')
-  if (!id) {return}
+  if (!id) {
+    return
+  }
 
   useSubagentStore.setState((prev) => {
     const subagents = new Map(prev.subagents)
@@ -250,15 +266,16 @@ ws.on('Chat.subagentComplete', (message) => {
         }
       }
     }
-    if (!sa) {return {}}
+    if (!sa) {
+      return {}
+    }
 
     subagents.set(matchedId, {
       ...sa,
       finished: true,
       success: d.success !== false,
       resultSummary:
-        readString(d, 'resultSummary', 'summary') ||
-        (d.success !== false ? 'Completed' : 'Failed'),
+        readString(d, 'resultSummary', 'summary') || (d.success !== false ? 'Completed' : 'Failed'),
       toolCallCount: readNumber(d, 'toolCallCount') || sa.toolCallCount,
       shallowWarning: readString(d, 'shallowWarning') || null,
       activeTools: new Map(),
@@ -271,16 +288,22 @@ ws.on('Chat.subagentComplete', (message) => {
 
 // Token 用量更新（如果后端发送）
 ws.on('Session.statusUpdate', (message) => {
-  if (!isRecord(message.data)) {return}
+  if (!isRecord(message.data)) {
+    return
+  }
   const d = message.data
   const subagentId = readString(d, 'subagentId')
   const tokenCount = readNumber(d, 'tokenCount')
-  if (!subagentId || tokenCount == null) {return}
+  if (!subagentId || tokenCount == null) {
+    return
+  }
 
   useSubagentStore.setState((prev) => {
     const subagents = new Map(prev.subagents)
     const sa = subagents.get(subagentId)
-    if (!sa) {return {}}
+    if (!sa) {
+      return {}
+    }
 
     subagents.set(subagentId, {
       ...sa,

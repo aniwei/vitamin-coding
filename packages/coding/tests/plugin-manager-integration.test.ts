@@ -400,7 +400,9 @@ describe('XMarsApp plugin manager integration', () => {
     let entries = getPluginLogSinkEntries('log-plugin')
     for (let attempt = 0; attempt < 10; attempt++) {
       entries = getPluginLogSinkEntries('log-plugin')
-      if (entries.length > 0) break
+      if (entries.length > 0) {
+        break
+      }
       await new Promise((resolve) => setTimeout(resolve, 50))
     }
 

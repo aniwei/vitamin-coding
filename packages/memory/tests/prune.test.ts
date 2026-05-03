@@ -23,9 +23,7 @@ function toolResult(toolName: string, text: string): ToolResultMessage {
 function assistantWithToolCall(toolName: string, args: Record<string, unknown>): Message {
   return {
     role: 'assistant',
-    content: [
-      { type: 'tool_call', id: 'tc_1', name: toolName, arguments: args },
-    ],
+    content: [{ type: 'tool_call', id: 'tc_1', name: toolName, arguments: args }],
   } as unknown as Message
 }
 
@@ -67,17 +65,15 @@ describe('prune', () => {
 
     // The pruned tool_result should contain the placeholder text
     const prunedMsg = result.messages.find(
-      m => m.role === 'tool_result' && (m as ToolResultMessage).content[0]?.text.includes('[output pruned'),
+      (m) =>
+        m.role === 'tool_result' &&
+        (m as ToolResultMessage).content[0]?.text.includes('[output pruned'),
     )
     expect(prunedMsg).toBeDefined()
   })
 
   it('#given savings below minimum #then returns unchanged', () => {
-    const messages: Message[] = [
-      userMsg('start'),
-      toolResult('read', 'tiny'),
-      userMsg('end'),
-    ]
+    const messages: Message[] = [userMsg('start'), toolResult('read', 'tiny'), userMsg('end')]
 
     const result = prune(messages, SMALL_WINDOW, {
       trigger: ['tokens', 1],
@@ -106,7 +102,7 @@ describe('prune', () => {
 
     // special_tool should NOT be pruned
     const specialMsg = result.messages.find(
-      m => m.role === 'tool_result' && (m as ToolResultMessage).toolName === 'special_tool',
+      (m) => m.role === 'tool_result' && (m as ToolResultMessage).toolName === 'special_tool',
     ) as ToolResultMessage
     expect(specialMsg.content[0].text).toBe(largeOutput)
   })

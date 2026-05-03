@@ -2,8 +2,18 @@
 import { describe, expect, it } from 'vitest'
 
 import { HookRegistry, createHookRegistry } from '../src/hook-registry'
-import { createStreamMetricsHook, createStreamEndMetricsHook, getStreamMetrics, clearStreamMetrics } from '../src/core/stream/stream-metrics'
-import { createCompactionLoggerHook, createCompactionAfterHook, getCompactionStats, clearCompactionStats } from '../src/core/compaction/compaction-logger'
+import {
+  createStreamMetricsHook,
+  createStreamEndMetricsHook,
+  getStreamMetrics,
+  clearStreamMetrics,
+} from '../src/core/stream/stream-metrics'
+import {
+  createCompactionLoggerHook,
+  createCompactionAfterHook,
+  getCompactionStats,
+  clearCompactionStats,
+} from '../src/core/compaction/compaction-logger'
 
 // ═══ HookRegistry 测试 ═══
 

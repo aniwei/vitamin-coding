@@ -281,3 +281,37 @@ CLI / Service --> XMarsApp.create(config)
 
 - 测试文件数：5+
 - 覆盖：XMarsApp 创建、AgentSession 生命周期、运行模式、会话管理器
+
+## 模块设计基线
+
+### 设计目的
+
+作为应用装配层，把模型、工具、Hook、记忆、技能、MCP、会话和编排器组合成完整 X-Mars coding runtime。
+
+### 接口设计
+
+- `createXMars()` / `XMarsApp`：创建运行时容器。
+- `XMarsContext`：暴露 app 内部依赖给 service、session、plugin。
+- `AgentSession` / `createAgentSession()`：创建单会话执行体。
+- `CodingSessionManager`：管理会话创建、恢复、持久化和回收。
+
+### 方法论
+
+容器负责装配，不写死任务流程；Session 负责一次对话生命周期；Hook 和工具负责运行时策略扩展。
+
+### 实现逻辑
+
+启动时加载 setting 并构建所有 registry；创建 session 时组装 prompt、工具集和 Agent；执行时把 Agent 事件桥接到会话与服务层。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[createXMars] --> B[load setting]
+  B --> C[registries: model/tool/hook/skill/mcp]
+  C --> D[XMarsApp]
+  D --> E[create AgentSession]
+  E --> F[prompt + tools + hooks]
+  F --> G[Agent.run]
+  G --> H[session events / persistence]
+```

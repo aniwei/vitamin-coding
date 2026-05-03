@@ -49,7 +49,9 @@ export const MessageItem = React.memo(function MessageItem({
 
   // Render thinking blocks (only when thinking level is not Off)
   if (message.role === 'thinking') {
-    if (thinkingLevel === 'Off') {return null}
+    if (thinkingLevel === 'Off') {
+      return null
+    }
     const isLastThinking = isLoading && isLastMessage
     return (
       <ThinkingBlock
@@ -63,28 +65,28 @@ export const MessageItem = React.memo(function MessageItem({
   const isUser = message.role === 'user'
 
   return (
-    <div className="animate-slide-up" style={staggerStyle}>
+    <div className='animate-slide-up' style={staggerStyle}>
       {isUser ? (
-        <div className="bg-bg-200 border border-border-300/15 rounded-lg px-4 py-3">
-          <div className="flex items-start gap-3">
-            <span className="text-accent-main-100 font-mono text-sm font-bold flex-shrink-0">
+        <div className='bg-bg-200 border border-border-300/15 rounded-lg px-4 py-3'>
+          <div className='flex items-start gap-3'>
+            <span className='text-accent-main-100 font-mono text-sm font-bold flex-shrink-0'>
               #
             </span>
-            <div className="flex-1 text-text-000 font-mono text-sm">{message.content}</div>
+            <div className='flex-1 text-text-000 font-mono text-sm'>{message.content}</div>
           </div>
         </div>
       ) : (
-        <div className="bg-bg-000 border border-border-300/15 rounded-lg px-4 py-3">
-          <div className="flex items-start gap-3">
-            <span className="text-text-400 font-mono text-sm font-medium flex-shrink-0">
+        <div className='bg-bg-000 border border-border-300/15 rounded-lg px-4 py-3'>
+          <div className='flex items-start gap-3'>
+            <span className='text-text-400 font-mono text-sm font-medium flex-shrink-0'>
               &#10095;
             </span>
-            <div className="flex-1 prose prose-sm max-w-none code-hover">
+            <div className='flex-1 prose prose-sm max-w-none code-hover'>
               <ReactMarkdown
                 components={{
                   pre({ children }) {
                     return (
-                      <pre className="rounded-lg p-3 overflow-x-auto my-2 bg-bg-300 border border-border-300/15">
+                      <pre className='rounded-lg p-3 overflow-x-auto my-2 bg-bg-300 border border-border-300/15'>
                         {children}
                       </pre>
                     )
@@ -94,7 +96,7 @@ export const MessageItem = React.memo(function MessageItem({
                     if (language) {
                       return (
                         <code
-                          className="text-text-000 text-sm font-mono"
+                          className='text-text-000 text-sm font-mono'
                           data-language={language}
                           {...props}
                         >
@@ -104,7 +106,7 @@ export const MessageItem = React.memo(function MessageItem({
                     }
                     return (
                       <code
-                        className="text-sm px-1.5 py-0.5 rounded font-mono bg-bg-200 text-text-100 border border-border-300/20"
+                        className='text-sm px-1.5 py-0.5 rounded font-mono bg-bg-200 text-text-100 border border-border-300/20'
                         {...props}
                       >
                         {children}
@@ -112,37 +114,37 @@ export const MessageItem = React.memo(function MessageItem({
                     )
                   },
                   p({ children }) {
-                    return <p className="mb-2 last:mb-0 text-text-200 text-sm">{children}</p>
+                    return <p className='mb-2 last:mb-0 text-text-200 text-sm'>{children}</p>
                   },
                   ul({ children }) {
                     return (
-                      <ul className="list-disc pl-5 space-y-1 mb-2 text-text-200 text-sm">
+                      <ul className='list-disc pl-5 space-y-1 mb-2 text-text-200 text-sm'>
                         {children}
                       </ul>
                     )
                   },
                   ol({ children }) {
                     return (
-                      <ol className="list-decimal pl-5 space-y-1 mb-2 text-text-200 text-sm">
+                      <ol className='list-decimal pl-5 space-y-1 mb-2 text-text-200 text-sm'>
                         {children}
                       </ol>
                     )
                   },
                   li({ children }) {
-                    return <li className="text-text-200 text-sm">{children}</li>
+                    return <li className='text-text-200 text-sm'>{children}</li>
                   },
                   strong({ children }) {
                     return (
-                      <strong className="font-semibold text-text-000 text-sm">{children}</strong>
+                      <strong className='font-semibold text-text-000 text-sm'>{children}</strong>
                     )
                   },
                   a({ children, href }) {
                     return (
                       <a
                         href={href}
-                        className="link-underline text-accent-secondary-100 hover:text-accent-secondary-100/80 text-sm"
-                        target="_blank"
-                        rel="noopener noreferrer"
+                        className='link-underline text-accent-secondary-100 hover:text-accent-secondary-100/80 text-sm'
+                        target='_blank'
+                        rel='noopener noreferrer'
                       >
                         {children}
                       </a>

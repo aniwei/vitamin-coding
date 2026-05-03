@@ -47,9 +47,7 @@ describe('SwarmRouter', () => {
     it('matches keyword array rules', async () => {
       const router = createRouter({
         strategy: 'rule',
-        rules: [
-          { match: ['code', 'implement', 'fix'], agentId: 'coder' },
-        ],
+        rules: [{ match: ['code', 'implement', 'fix'], agentId: 'coder' }],
       })
 
       const ctx = createSwarmContext()

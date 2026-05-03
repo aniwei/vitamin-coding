@@ -26,12 +26,12 @@ function TodoItemRow({ item, indent = 0 }: { item: TodoItem; indent?: number }) 
   return (
     <>
       <div
-        className="flex items-start gap-2 py-0.5 font-mono text-sm leading-6"
+        className='flex items-start gap-2 py-0.5 font-mono text-sm leading-6'
         style={{ paddingLeft: `${indent * 16 + 8}px` }}
       >
         <span className={`shrink-0 w-4 text-center ${statusColor(item.status)}`}>
           {item.status === 'inProgress' ? (
-            <span className="inline-block w-3 h-3 border-2 border-accent-100/60 border-t-transparent rounded-full animate-spin" />
+            <span className='inline-block w-3 h-3 border-2 border-accent-100/60 border-t-transparent rounded-full animate-spin' />
           ) : (
             statusIcon(item.status)
           )}
@@ -61,7 +61,9 @@ export function TodoPanel() {
   const visible = useTodoStore((s) => s.visible)
   const toggleVisible = useTodoStore((s) => s.toggleVisible)
 
-  if (items.length === 0) {return null}
+  if (items.length === 0) {
+    return null
+  }
 
   const completed = items.filter((i) => i.status === 'completed').length
   const total = items.length
@@ -76,23 +78,23 @@ export function TodoPanel() {
       {/* Header */}
       <button
         onClick={toggleVisible}
-        className="w-full flex items-center gap-2 px-4 py-2 text-xs font-mono text-text-300 hover:text-text-200 transition-colors"
+        className='w-full flex items-center gap-2 px-4 py-2 text-xs font-mono text-text-300 hover:text-text-200 transition-colors'
       >
         <span
           className={`font-semibold uppercase tracking-wide ${allDone ? 'text-green-400' : 'text-text-200'}`}
         >
           TODOS{planName ? `: ${planName}` : ''}
         </span>
-        <span className="text-text-400">
+        <span className='text-text-400'>
           ({completed}/{total})
         </span>
-        <div className="flex-1" />
-        <span className="text-text-400 text-[10px]">{visible ? '▼' : '▶'}</span>
+        <div className='flex-1' />
+        <span className='text-text-400 text-[10px]'>{visible ? '▼' : '▶'}</span>
       </button>
 
       {/* Items */}
       {visible && (
-        <div className="px-2 pb-2">
+        <div className='px-2 pb-2'>
           {items.map((item) => (
             <TodoItemRow key={item.id} item={item} />
           ))}

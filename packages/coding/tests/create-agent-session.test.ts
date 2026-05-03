@@ -1,6 +1,15 @@
 import { describe, expect, it } from 'vitest'
 import { Agent, type AgentMessage } from '@x-mars/agent'
-import { createEventStream, createProviderRegistry, type AssistantMessage, type Model, type ProviderStream, type StreamContext, type StreamEvent, type ToolCall } from '@x-mars/ai'
+import {
+  createEventStream,
+  createProviderRegistry,
+  type AssistantMessage,
+  type Model,
+  type ProviderStream,
+  type StreamContext,
+  type StreamEvent,
+  type ToolCall,
+} from '@x-mars/ai'
 import { createHookRegistry } from '@x-mars/hooks'
 import { attachLogListener, createLogger } from '@x-mars/shared'
 import { createInMemorySessionStore } from '@x-mars/session'
@@ -65,7 +74,8 @@ function createSchema<T>() {
 }
 
 function makeStream(response?: AssistantMessage) {
-  const finalResponse = response ?? makeAssistantMessage([{ type: 'text', text: 'hello' }], 'end_turn')
+  const finalResponse =
+    response ?? makeAssistantMessage([{ type: 'text', text: 'hello' }], 'end_turn')
   return (_context: StreamContext, _signal: AbortSignal) => {
     const eventStream = createEventStream<StreamEvent, AssistantMessage>()
     setTimeout(() => {
@@ -80,8 +90,8 @@ function makeToolStream() {
   return (context: StreamContext, _signal: AbortSignal) => {
     const eventStream = createEventStream<StreamEvent, AssistantMessage>()
     setTimeout(() => {
-      const hasToolResult = context.messages.some((m) =>
-        typeof m === 'object' && m !== null && 'role' in m && m.role === 'tool_result'
+      const hasToolResult = context.messages.some(
+        (m) => typeof m === 'object' && m !== null && 'role' in m && m.role === 'tool_result',
       )
       const response = hasToolResult
         ? makeAssistantMessage([{ type: 'text', text: 'done' }], 'end_turn')
@@ -113,13 +123,16 @@ function createLogCollector(entries: string[]) {
 
 function makeProviderRegistry() {
   const registry = createProviderRegistry()
-  registry.register('openai-completions', (): ProviderStream => ({
-    id: 'test-openai',
-    displayName: 'Test OpenAI',
-    async *converse() {
-      // no-op — tests use Agent with custom stream, not provider
-    },
-  }))
+  registry.register(
+    'openai-completions',
+    (): ProviderStream => ({
+      id: 'test-openai',
+      displayName: 'Test OpenAI',
+      async *converse() {
+        // no-op — tests use Agent with custom stream, not provider
+      },
+    }),
+  )
   return registry
 }
 

@@ -1,5 +1,10 @@
 import { describe, expect, it } from 'vitest'
-import { resolveContextSize, computeMemoryDefaults, DEFAULT_COMPACTION_CONFIG, DEFAULT_PRUNE_CONFIG } from '../src/defaults'
+import {
+  resolveContextSize,
+  computeMemoryDefaults,
+  DEFAULT_COMPACTION_CONFIG,
+  DEFAULT_PRUNE_CONFIG,
+} from '../src/defaults'
 
 describe('resolveContextSize', () => {
   it('#given tokens unit #then returns the value directly', () => {

@@ -12,6 +12,13 @@ export interface SkillSearchEntry {
   name: string
   description: string
   trigger?: 'auto' | 'manual'
+  status?: string
+  source?: { type: string; root?: string }
+  readiness?: {
+    status: string
+    missingEnvironmentVariables?: string[]
+    unsupportedPlatform?: string
+  }
   relevance?: number
   matchedKeywords?: string[]
 }
@@ -52,6 +59,12 @@ export function createSkillSearch(search?: SearchSkills): AgentTool<SkillSearchA
               .map((skill) =>
                 [
                   `- ${skill.name}${skill.trigger === 'manual' ? ' [manual]' : ''}: ${skill.description}`,
+                  skill.source?.type ? `  source: ${skill.source.type}` : undefined,
+                  skill.status ? `  status: ${skill.status}` : undefined,
+                  skill.readiness?.status ? `  readiness: ${skill.readiness.status}` : undefined,
+                  skill.readiness?.missingEnvironmentVariables?.length
+                    ? `  missing env: ${skill.readiness.missingEnvironmentVariables.join(', ')}`
+                    : undefined,
                   skill.relevance !== undefined
                     ? `  relevance: ${skill.relevance.toFixed(2)}`
                     : undefined,

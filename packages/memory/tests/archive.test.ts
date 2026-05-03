@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  InMemoryArchiveStorage,
-  formatArchive,
-} from '../src/archive'
+import { InMemoryArchiveStorage, formatArchive } from '../src/archive'
 
 import type { Message } from '@x-mars/ai'
 
@@ -62,10 +59,7 @@ describe('InMemoryArchiveStorage', () => {
 
 describe('formatArchive', () => {
   it('#given messages and summary #then formats as markdown', () => {
-    const messages: Message[] = [
-      userMsg('hello'),
-      assistantMsg('world'),
-    ]
+    const messages: Message[] = [userMsg('hello'), assistantMsg('world')]
     const result = formatArchive(messages, 'test summary', Date.now())
 
     expect(result).toContain('### Summary')

@@ -7,7 +7,12 @@ function createFakeServer() {
   const store = new Map<string, SessionSnapshot<string>>()
 
   const fakeFetch: typeof globalThis.fetch = async (input, init) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : (input as Request).url
+    const url =
+      typeof input === 'string'
+        ? input
+        : input instanceof URL
+          ? input.toString()
+          : (input as Request).url
     const method = init?.method ?? 'GET'
     const path = new URL(url).pathname
 
@@ -25,7 +30,10 @@ function createFakeServer() {
 
     if (method === 'GET') {
       const urlObject = new URL(url)
-      const segments = path.replace(/^\/sessions\/?/, '').split('/').filter(Boolean)
+      const segments = path
+        .replace(/^\/sessions\/?/, '')
+        .split('/')
+        .filter(Boolean)
 
       if (segments.length === 0) {
         const pageParam = urlObject.searchParams.get('page')
@@ -126,8 +134,18 @@ describe('RemoteSessionPersistence', () => {
 
   describe('#when listing', () => {
     it('#then returns all saved ids', async () => {
-      await persistence.save({ version: 1, id: 'a', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
-      await persistence.save({ version: 1, id: 'b', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
+      await persistence.save({
+        version: 1,
+        id: 'a',
+        entries: [],
+        metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] },
+      })
+      await persistence.save({
+        version: 1,
+        id: 'b',
+        entries: [],
+        metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] },
+      })
 
       const ids = await persistence.list()
       expect(ids).toContain('a')
@@ -139,7 +157,18 @@ describe('RemoteSessionPersistence', () => {
   describe('#when paginating', () => {
     it('#then paginates result', async () => {
       for (let i = 0; i < 5; i++) {
-        await persistence.save({ version: 1, id: `s-${i}`, entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
+        await persistence.save({
+          version: 1,
+          id: `s-${i}`,
+          entries: [],
+          metadata: {
+            createdAt: 0,
+            lastActiveAt: 0,
+            messageCount: 0,
+            compactionCount: 0,
+            tags: [],
+          },
+        })
       }
 
       const page0 = await persistence.listPaginated({ page: 0, pageSize: 2 })
@@ -156,7 +185,12 @@ describe('RemoteSessionPersistence', () => {
 
   describe('#when deleting', () => {
     it('#then removes snapshot', async () => {
-      await persistence.save({ version: 1, id: 'del', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
+      await persistence.save({
+        version: 1,
+        id: 'del',
+        entries: [],
+        metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] },
+      })
 
       expect(await persistence.delete('del')).toBe(true)
       expect(await persistence.load('del')).toBeNull()
@@ -190,7 +224,12 @@ describe('RemoteSessionPersistence', () => {
         fetch: server.fakeFetch,
       })
 
-      await storage.save({ version: 1, id: 'factory-remote', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
+      await storage.save({
+        version: 1,
+        id: 'factory-remote',
+        entries: [],
+        metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] },
+      })
       expect(await storage.list()).toContain('factory-remote')
     })
   })
@@ -248,7 +287,12 @@ describe('RemoteSessionPersistence', () => {
       await headerPersistence.list()
       expect(capturedHeaders[0]?.['Content-Type']).toBeUndefined()
 
-      await headerPersistence.save({ version: 1, id: 'x', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
+      await headerPersistence.save({
+        version: 1,
+        id: 'x',
+        entries: [],
+        metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] },
+      })
       expect(capturedHeaders[1]?.['Content-Type']).toBe('application/json')
     })
   })
@@ -282,15 +326,24 @@ describe('RemoteSessionPersistence', () => {
         getAuth: async () => ({ token: 'tok' }),
         fetch: async (input) => {
           capturedUrl = typeof input === 'string' ? input : (input as Request).url
-          return new Response(JSON.stringify({
-            version: 1,
-            id: 'a/b',
-            entries: [],
-            metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] },
-          }), {
-            status: 200,
-            headers: { 'Content-Type': 'application/json' },
-          })
+          return new Response(
+            JSON.stringify({
+              version: 1,
+              id: 'a/b',
+              entries: [],
+              metadata: {
+                createdAt: 0,
+                lastActiveAt: 0,
+                messageCount: 0,
+                compactionCount: 0,
+                tags: [],
+              },
+            }),
+            {
+              status: 200,
+              headers: { 'Content-Type': 'application/json' },
+            },
+          )
         },
         timeoutMs: 1_000,
       })

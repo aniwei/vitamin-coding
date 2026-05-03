@@ -89,6 +89,7 @@ export interface PermissionAuditEntry {
 export interface PermissionRuleConfig {
   name: string
   effect: RuleEffect
+  match?: string
   tools?: string[]
   paths?: string[]
   deny_reason?: string

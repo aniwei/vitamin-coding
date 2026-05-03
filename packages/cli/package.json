@@ -1,6 +1,12 @@
 {
   "name": "@x-mars/cli",
   "version": "0.0.1",
+  "bin": {
+    "x-mars": "./bin/x-mars"
+  },
+  "files": [
+    "dist"
+  ],
   "type": "module",
   "main": "./dist/index.js",
   "types": "./dist/index.d.ts",
@@ -10,11 +16,9 @@
       "import": "./dist/index.js"
     }
   },
-  "files": [
-    "dist"
-  ],
-  "bin": {
-    "x-mars": "./bin/x-mars"
+  "publishConfig": {
+    "access": "public",
+    "registry": "https://registry.npmjs.org"
   },
   "scripts": {
     "build": "tsdown",
@@ -26,12 +30,8 @@
   "dependencies": {
     "@x-mars/ai": "workspace:*",
     "@x-mars/coding": "workspace:*",
-    "@x-mars/setting": "workspace:*",
     "@x-mars/hooks": "workspace:*",
+    "@x-mars/setting": "workspace:*",
     "@x-mars/tools": "workspace:*"
-  },
-  "publishConfig": {
-    "access": "public",
-    "registry": "https://registry.npmjs.org"
   }
 }

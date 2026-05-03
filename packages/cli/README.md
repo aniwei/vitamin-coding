@@ -30,19 +30,19 @@ x-mars auth      # 认证管理
 
 ## 参数
 
-| 参数 | 说明 |
-|------|------|
-| `-p` / `--print` | Print 模式 |
+| 参数                   | 说明             |
+| ---------------------- | ---------------- |
+| `-p` / `--print`       | Print 模式       |
 | `-i` / `--interactive` | Interactive 模式 |
-| `--json` | JSON 模式 |
-| `--rpc` | RPC 模式 |
-| `-m` / `--model` | 指定模型 |
-| `-c` / `--config` | 配置文件路径 |
-| `-d` / `--dir` | 工作目录 |
-| `-v` / `--verbose` | 详细日志 |
-| `--max-tokens` | 最大 token |
-| `--continue` | 继续上次会话 |
-| `--inspect` | 启用调试 |
+| `--json`               | JSON 模式        |
+| `--rpc`                | RPC 模式         |
+| `-m` / `--model`       | 指定模型         |
+| `-c` / `--config`      | 配置文件路径     |
+| `-d` / `--dir`         | 工作目录         |
+| `-v` / `--verbose`     | 详细日志         |
+| `--max-tokens`         | 最大 token       |
+| `--continue`           | 继续上次会话     |
+| `--inspect`            | 启用调试         |
 
 ## 目录概览
 

@@ -134,7 +134,12 @@ describe('WebSocketManager', () => {
       headers: {},
     } as IncomingMessage
 
-    const handled = manager.handleUpgrade(request, socket as unknown as Socket, Buffer.alloc(0), '/ws')
+    const handled = manager.handleUpgrade(
+      request,
+      socket as unknown as Socket,
+      Buffer.alloc(0),
+      '/ws',
+    )
 
     expect(handled).toBe(true)
     expect(socket.writes[0]).toContain('401 Unauthorized')
@@ -149,19 +154,26 @@ describe('WebSocketManager', () => {
       url: '/ws',
       headers: { authorization: 'Bearer secret' },
     } as IncomingMessage
-    const wss = (manager as unknown as {
-      wss: {
-        handleUpgrade: (
-          request: IncomingMessage,
-          socket: Socket,
-          head: Buffer,
-          cb: () => void,
-        ) => void
+    const wss = (
+      manager as unknown as {
+        wss: {
+          handleUpgrade: (
+            request: IncomingMessage,
+            socket: Socket,
+            head: Buffer,
+            cb: () => void,
+          ) => void
+        }
       }
-    }).wss
+    ).wss
     const handleUpgrade = vi.spyOn(wss, 'handleUpgrade').mockImplementation(() => {})
 
-    const handled = manager.handleUpgrade(request, socket as unknown as Socket, Buffer.alloc(0), '/ws')
+    const handled = manager.handleUpgrade(
+      request,
+      socket as unknown as Socket,
+      Buffer.alloc(0),
+      '/ws',
+    )
 
     expect(handled).toBe(true)
     expect(socket.writes).toEqual([])

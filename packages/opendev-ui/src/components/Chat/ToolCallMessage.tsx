@@ -74,18 +74,26 @@ function getToolDisplayParts(toolName: string): { verb: string; label: string } 
     return { verb: 'MCP', label: 'tool' }
   }
 
-  if (toolMap[toolName]) {return toolMap[toolName]}
+  if (toolMap[toolName]) {
+    return toolMap[toolName]
+  }
 
   // Smart fallback: parse tool name tokens into verb + label
   const tokens = toolName.replace(/-/g, '_').split('_').filter(Boolean)
-  if (tokens.length === 0) {return { verb: 'Call', label: 'tool' }}
+  if (tokens.length === 0) {
+    return { verb: 'Call', label: 'tool' }
+  }
   const verb = tokens[0].charAt(0).toUpperCase() + tokens[0].slice(1)
-  if (tokens.length === 1) {return { verb, label: '' }}
+  if (tokens.length === 1) {
+    return { verb, label: '' }
+  }
   return { verb, label: tokens.slice(1).join(' ') }
 }
 
 function summarizeToolArgs(toolName: string, toolArgs: any): string {
-  if (!toolArgs || typeof toolArgs !== 'object') {return ''}
+  if (!toolArgs || typeof toolArgs !== 'object') {
+    return ''
+  }
 
   const primaryKeys: Record<string, string[]> = {
     read_file: ['file_path', 'path'],
@@ -271,9 +279,15 @@ function formatShellResult(toolArgs: any, result: any): string[] {
 
   // Special git command handling
   if (normalizedCmd.includes('git ')) {
-    if (normalizedCmd.includes('push')) {return ['Changes pushed to remote']}
-    if (normalizedCmd.includes('commit')) {return ['Changes committed']}
-    if (normalizedCmd.includes('pull')) {return ['Changes pulled from remote']}
+    if (normalizedCmd.includes('push')) {
+      return ['Changes pushed to remote']
+    }
+    if (normalizedCmd.includes('commit')) {
+      return ['Changes committed']
+    }
+    if (normalizedCmd.includes('pull')) {
+      return ['Changes pulled from remote']
+    }
     return ['Git command completed']
   }
 
@@ -344,7 +358,8 @@ function formatPresentPlanResult(_toolArgs: any, result: any): string[] {
 }
 
 function formatSpawnSubagentResult(toolArgs: any, result: any): string[] {
-  const agentType = toolArgs?.subagent_type || toolArgs?.agent_type || toolArgs?.agentType || 'agent'
+  const agentType =
+    toolArgs?.subagent_type || toolArgs?.agent_type || toolArgs?.agentType || 'agent'
   const output = typeof result?.output === 'string' ? result.output : ''
   if (result?.success === false) {
     return [`${agentType} agent failed`]
@@ -393,8 +408,12 @@ function formatSearchToolsResult(_toolArgs: any, result: any): string[] {
   const output = result?.output || ''
   const lines = output.split('\n').filter((l: string) => l.trim())
   const toolCount = lines.filter((l: string) => l.startsWith('  - ') || l.startsWith('• ')).length
-  if (toolCount > 0) {return [`Found ${toolCount} tool(s)`]}
-  if (output.includes('Found')) {return [lines[0]]}
+  if (toolCount > 0) {
+    return [`Found ${toolCount} tool(s)`]
+  }
+  if (output.includes('Found')) {
+    return [lines[0]]
+  }
   return ['Search complete']
 }
 
@@ -403,7 +422,9 @@ function formatGenericResult(_toolArgs: any, result: any): string[] {
 
   if (typeof output === 'string') {
     const lines = output.split('\n').filter((line: string) => line.trim())
-    if (lines.length === 0) {return []}
+    if (lines.length === 0) {
+      return []
+    }
     return lines.slice(0, 3).concat(lines.length > 3 ? ['…'] : [])
   }
 
@@ -516,10 +537,7 @@ export function ToolCallMessage({ message, hasResult }: ToolCallMessageExtProps)
     if (typeof toolResult === 'string') {
       fullOutput = toolResult
     } else if (rd?.output) {
-      fullOutput =
-        typeof rd.output === 'string'
-          ? rd.output
-          : JSON.stringify(rd.output, null, 2)
+      fullOutput = typeof rd.output === 'string' ? rd.output : JSON.stringify(rd.output, null, 2)
     } else if (Object.keys(rd || {}).length > 0) {
       try {
         fullOutput = JSON.stringify(rd, null, 2)
@@ -540,11 +558,11 @@ export function ToolCallMessage({ message, hasResult }: ToolCallMessageExtProps)
         }`}
       >
         {/* Tool action header */}
-        <div className="flex items-center gap-2 mb-2">
-          <span className="text-text-400 font-mono text-sm leading-6 flex-shrink-0">▶</span>
-          <span className="font-medium text-text-000 text-sm leading-6">{verb}</span>
+        <div className='flex items-center gap-2 mb-2'>
+          <span className='text-text-400 font-mono text-sm leading-6 flex-shrink-0'>▶</span>
+          <span className='font-medium text-text-000 text-sm leading-6'>{verb}</span>
           {summary && (
-            <span className="text-text-200 text-sm bg-bg-000 px-2 py-1 rounded border border-border-300/20 font-mono leading-6">
+            <span className='text-text-200 text-sm bg-bg-000 px-2 py-1 rounded border border-border-300/20 font-mono leading-6'>
               {summary}
             </span>
           )}
@@ -552,15 +570,15 @@ export function ToolCallMessage({ message, hasResult }: ToolCallMessageExtProps)
 
         {/* Subagent in-progress spinner */}
         {toolName === 'spawn_subagent' && hasResult === false && (
-          <div className="ml-4 pl-3 border-l-2 border-border-300/30 flex items-center gap-2">
-            <span className="inline-block w-3 h-3 border-2 border-accent-100/60 border-t-transparent rounded-full animate-spin" />
-            <span className="text-text-300 text-sm font-mono">Running...</span>
+          <div className='ml-4 pl-3 border-l-2 border-border-300/30 flex items-center gap-2'>
+            <span className='inline-block w-3 h-3 border-2 border-accent-100/60 border-t-transparent rounded-full animate-spin' />
+            <span className='text-text-300 text-sm font-mono'>Running...</span>
           </div>
         )}
 
         {/* Tool result summary with proper colors */}
         {!(toolName === 'spawn_subagent' && hasResult === false) && summaryLines.length > 0 && (
-          <div className="ml-4 pl-3 border-l-2 border-border-300/30">
+          <div className='ml-4 pl-3 border-l-2 border-border-300/30'>
             {summaryLines.map((line: string, index: number) => {
               const lineStr = typeof line === 'string' ? line : String(line)
               // Check if this line indicates success or failure
@@ -597,7 +615,7 @@ export function ToolCallMessage({ message, hasResult }: ToolCallMessageExtProps)
         {hasExpandableContent && (
           <button
             onClick={() => setIsExpanded(!isExpanded)}
-            className="ml-4 text-sm text-text-400 hover:text-text-200 font-medium mt-2 leading-6"
+            className='ml-4 text-sm text-text-400 hover:text-text-200 font-medium mt-2 leading-6'
           >
             {isExpanded ? 'Hide details' : 'Show details'}
           </button>
@@ -608,7 +626,7 @@ export function ToolCallMessage({ message, hasResult }: ToolCallMessageExtProps)
           (toolName === 'run_command' || toolName === 'bash_execute') &&
           fullOutput &&
           fullOutput.split('\n').length > 4 && (
-            <div className="ml-4 pl-3 border-l-2 border-border-300/30 mt-1">
+            <div className='ml-4 pl-3 border-l-2 border-border-300/30 mt-1'>
               <BashPreview output={fullOutput} />
             </div>
           )}
@@ -616,18 +634,18 @@ export function ToolCallMessage({ message, hasResult }: ToolCallMessageExtProps)
         {/* Expanded content — always rendered, animated via maxHeight */}
         {hasExpandableContent && (
           <div
-            className="overflow-hidden transition-all duration-300 ease-in-out"
+            className='overflow-hidden transition-all duration-300 ease-in-out'
             style={{
               maxHeight: isExpanded ? `${expandHeight}px` : '0px',
             }}
           >
-            <div ref={expandRef} className="ml-4 mt-3 pl-3 border-t border-border-300/15 pt-3">
+            <div ref={expandRef} className='ml-4 mt-3 pl-3 border-t border-border-300/15 pt-3'>
               {fullOutput &&
               (toolName === 'edit_file' || toolName === 'apply_patch') &&
               fullOutput.includes('@@') ? (
                 <DiffViewer diff={fullOutput} />
               ) : fullOutput ? (
-                <pre className="text-sm text-text-300 font-mono bg-bg-000 border border-border-300/15 rounded p-3 overflow-x-auto leading-6">
+                <pre className='text-sm text-text-300 font-mono bg-bg-000 border border-border-300/15 rounded p-3 overflow-x-auto leading-6'>
                   {fullOutput}
                 </pre>
               ) : null}

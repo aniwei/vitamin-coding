@@ -8,11 +8,11 @@ function App() {
   return (
     <Router>
       <Routes>
-        <Route path="/chat" element={<Chat />} />
-        <Route path="/codewiki" element={<CodeWiki />} />
-        <Route path="/codewiki/:repoName" element={<RepositoryDetailPage />} />
-        <Route path="/traces" element={<TraceAnalysis />} />
-        <Route path="/" element={<Navigate to="/chat" replace />} />
+        <Route path='/chat' element={<Chat />} />
+        <Route path='/codewiki' element={<CodeWiki />} />
+        <Route path='/codewiki/:repoName' element={<RepositoryDetailPage />} />
+        <Route path='/traces' element={<TraceAnalysis />} />
+        <Route path='/' element={<Navigate to='/chat' replace />} />
       </Routes>
     </Router>
   )

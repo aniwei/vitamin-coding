@@ -1,4 +1,6 @@
 import { useEffect, useState } from 'react'
+import { X } from 'lucide-react'
+import { api } from '../../api/client'
 import {
   type ActiveToolCall,
   type SubagentState,
@@ -9,15 +11,21 @@ import {
 
 function formatElapsed(ms: number): string {
   const secs = Math.floor(ms / 1000)
-  if (secs < 60) {return `${secs}s`}
+  if (secs < 60) {
+    return `${secs}s`
+  }
   const mins = Math.floor(secs / 60)
   const remSecs = secs % 60
   return `${mins}m${remSecs}s`
 }
 
 function formatTokens(n: number): string {
-  if (n >= 1_000_000) {return `${(n / 1_000_000).toFixed(1)}M`}
-  if (n >= 1_000) {return `${(n / 1_000).toFixed(1)}k`}
+  if (n >= 1_000_000) {
+    return `${(n / 1_000_000).toFixed(1)}M`
+  }
+  if (n >= 1_000) {
+    return `${(n / 1_000).toFixed(1)}k`
+  }
   return String(n)
 }
 
@@ -51,12 +59,12 @@ function ActiveToolRow({ tool, isLast }: { tool: ActiveToolCall; isLast: boolean
   const connector = isLast ? '└─' : '├─'
 
   return (
-    <div className="flex items-center gap-1.5 text-sm font-mono text-text-300 leading-6 pl-8">
-      <span className="text-text-400">{connector}</span>
-      <Spinner className="text-blue-400" />
-      <span className="text-text-200">{verb}</span>
-      {arg && <span className="text-text-400 truncate max-w-[300px]">{arg}</span>}
-      <span className="text-text-400 ml-auto shrink-0">({formatElapsed(elapsed)})</span>
+    <div className='flex items-center gap-1.5 text-sm font-mono text-text-300 leading-6 pl-8'>
+      <span className='text-text-400'>{connector}</span>
+      <Spinner className='text-blue-400' />
+      <span className='text-text-200'>{verb}</span>
+      {arg && <span className='text-text-400 truncate max-w-[300px]'>{arg}</span>}
+      <span className='text-text-400 ml-auto shrink-0'>({formatElapsed(elapsed)})</span>
     </div>
   )
 }
@@ -65,14 +73,18 @@ function CompletedToolRow({
   toolName,
   success,
   isLast,
-}: { toolName: string; success: boolean; isLast: boolean }) {
+}: {
+  toolName: string
+  success: boolean
+  isLast: boolean
+}) {
   const connector = isLast ? '└─' : '├─'
   const icon = success ? '✓' : '✗'
   const color = success ? 'text-green-400' : 'text-red-400'
 
   return (
-    <div className="flex items-center gap-1.5 text-sm font-mono text-text-400 leading-6 pl-8">
-      <span className="text-text-400">{connector}</span>
+    <div className='flex items-center gap-1.5 text-sm font-mono text-text-400 leading-6 pl-8'>
+      <span className='text-text-400'>{connector}</span>
       <span className={color}>{icon}</span>
       <span>{formatToolVerb(toolName)}</span>
     </div>
@@ -81,9 +93,12 @@ function CompletedToolRow({
 
 function SubagentNode({ sa }: { sa: SubagentState }) {
   const [elapsed, setElapsed] = useState(0)
+  const [cancelPending, setCancelPending] = useState(false)
 
   useEffect(() => {
-    if (sa.finished) {return}
+    if (sa.finished) {
+      return
+    }
     const interval = setInterval(() => {
       setElapsed(Date.now() - sa.startedAt)
     }, 1000)
@@ -91,16 +106,17 @@ function SubagentNode({ sa }: { sa: SubagentState }) {
   }, [sa.startedAt, sa.finished])
 
   const finalElapsed = sa.finished ? Date.now() - sa.startedAt : elapsed
+  const canCancel = !sa.finished && sa.subagentId.length > 0
 
   // Status indicator
   const statusEl = sa.finished ? (
     sa.success ? (
-      <span className="text-green-400 font-bold">✓</span>
+      <span className='text-green-400 font-bold'>✓</span>
     ) : (
-      <span className="text-red-400 font-bold">✗</span>
+      <span className='text-red-400 font-bold'>✗</span>
     )
   ) : (
-    <Spinner className="text-blue-400" />
+    <Spinner className='text-blue-400' />
   )
 
   // Stats string
@@ -125,14 +141,32 @@ function SubagentNode({ sa }: { sa: SubagentState }) {
   )
 
   return (
-    <div className="mb-1">
+    <div className='mb-1'>
       {/* Header line */}
-      <div className="flex items-center gap-1.5 text-sm font-mono leading-6">
-        <span className="text-text-400 pl-2">├─</span>
+      <div className='flex items-center gap-1.5 text-sm font-mono leading-6'>
+        <span className='text-text-400 pl-2'>├─</span>
         {statusEl}
-        <span className="text-cyan-400 font-semibold">{displayName}</span>
-        <span className="text-text-400 truncate">: {taskPreview}</span>
-        <span className="text-text-400 ml-auto shrink-0 text-xs">{stats}</span>
+        <span className='text-cyan-400 font-semibold'>{displayName}</span>
+        <span className='text-text-400 truncate'>: {taskPreview}</span>
+        <span className='text-text-400 ml-auto shrink-0 text-xs'>{stats}</span>
+        {canCancel && (
+          <button
+            type='button'
+            title='Cancel subagent task'
+            aria-label='Cancel subagent task'
+            disabled={cancelPending}
+            onClick={() => {
+              setCancelPending(true)
+              api.cancelSubagentTask(sa.subagentId).catch((error) => {
+                setCancelPending(false)
+                console.error('Failed to cancel subagent task:', error)
+              })
+            }}
+            className='h-5 w-5 shrink-0 rounded border border-border-300/60 text-text-400 hover:text-red-300 hover:border-red-400/60 disabled:opacity-50 disabled:hover:text-text-400 disabled:hover:border-border-300/60'
+          >
+            <X className='h-3.5 w-3.5 mx-auto' aria-hidden='true' />
+          </button>
+        )}
       </div>
 
       {/* Active tool calls */}
@@ -156,19 +190,19 @@ function SubagentNode({ sa }: { sa: SubagentState }) {
 
       {/* Hidden count */}
       {hiddenCount > 0 && !sa.finished && (
-        <div className="text-xs font-mono text-text-400 italic pl-10 leading-6">
+        <div className='text-xs font-mono text-text-400 italic pl-10 leading-6'>
           +{hiddenCount} more tool uses
         </div>
       )}
 
       {/* Shallow warning */}
       {sa.shallowWarning && (
-        <div className="text-xs font-mono text-yellow-400 pl-10 leading-6">{sa.shallowWarning}</div>
+        <div className='text-xs font-mono text-yellow-400 pl-10 leading-6'>{sa.shallowWarning}</div>
       )}
 
       {/* Completion summary (persistent after finish) */}
       {sa.finished && (
-        <div className="text-xs font-mono text-text-400 pl-10 leading-6">
+        <div className='text-xs font-mono text-text-400 pl-10 leading-6'>
           Done ({sa.toolCallCount} tool uses{tokenStr} · {formatElapsed(finalElapsed)})
         </div>
       )}
@@ -180,15 +214,19 @@ export function SubagentTree() {
   const subagents = useSubagentStore((s) => s.subagents)
   const order = useSubagentStore((s) => s.order)
 
-  if (order.length === 0) {return null}
+  if (order.length === 0) {
+    return null
+  }
 
   // Only show if at least one subagent is not finished, or recently finished
   const activeSubagents = order.map((id) => subagents.get(id)).filter(Boolean) as SubagentState[]
-  if (activeSubagents.length === 0) {return null}
+  if (activeSubagents.length === 0) {
+    return null
+  }
 
   return (
-    <div className="border-t border-border-300/30 bg-bg-100/30 py-2 px-2 shrink-0">
-      <div className="text-xs font-mono text-text-300 font-semibold uppercase tracking-wide px-2 pb-1">
+    <div className='border-t border-border-300/30 bg-bg-100/30 py-2 px-2 shrink-0'>
+      <div className='text-xs font-mono text-text-300 font-semibold uppercase tracking-wide px-2 pb-1'>
         Subagents
       </div>
       {activeSubagents.map((sa) => (

@@ -29,7 +29,9 @@ const manifest = {
       permissions: ['filesystem'] as const,
     },
   ],
-  skills: [{ name: 'code-review', path: './skills/code-review/SKILL.md', trigger: 'manual' as const }],
+  skills: [
+    { name: 'code-review', path: './skills/code-review/SKILL.md', trigger: 'manual' as const },
+  ],
   mcpServers: [{ name: 'docs', command: 'mcp-docs', args: ['--stdio'] }],
   hooks: [
     {
@@ -151,12 +153,12 @@ describe('plugin manifest', () => {
     expect(result.errors).toContain('skills[0].path is required')
     expect(result.errors).toContain('skills[0].trigger must be manual or auto')
     expect(result.errors).toContain('mcpServers.name contains duplicate value: mcp')
-    expect(result.errors).toContain(
-      'commands[0].permissions contains invalid permission: root',
-    )
+    expect(result.errors).toContain('commands[0].permissions contains invalid permission: root')
     expect(result.errors).toContain('commands[0].arguments[0].name is required')
     expect(result.errors).toContain('commands[0].arguments[0].required must be a boolean')
-    expect(result.errors).toContain('commands[0].arguments[0].type must be string, number or boolean')
+    expect(result.errors).toContain(
+      'commands[0].arguments[0].type must be string, number or boolean',
+    )
     expect(result.errors).toContain('commands[0].arguments[0].repeatable must be a boolean')
     expect(result.errors).toContain(
       'commands[0].arguments[0].flag must be a command flag name without leading dashes',
@@ -170,7 +172,9 @@ describe('plugin manifest', () => {
     expect(result.errors).toContain('commands[0].arguments[0].default is required')
     expect(result.errors).toContain('devtools.providers[0].kind must be diagnostics or timeline')
     expect(result.errors).toContain('logs.sinks[0].kind must be memory, devtools or custom')
-    expect(result.warnings).toContain('tools[0].module is missing; loader must provide tool implementation')
+    expect(result.warnings).toContain(
+      'tools[0].module is missing; loader must provide tool implementation',
+    )
   })
 
   it('returns load errors for non-object manifests', () => {

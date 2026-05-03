@@ -49,9 +49,13 @@ function createTestPersistence(options?: {
   const token = options?.token ?? 'test-token'
 
   const fakeFetch = (async (input: string | URL | Request, init?: RequestInit) => {
-    const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+    const url =
+      typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
     const method = init?.method ?? 'GET'
-    const headers = Object.fromEntries(Object.entries(init?.headers ?? {})) as Record<string, string>
+    const headers = Object.fromEntries(Object.entries(init?.headers ?? {})) as Record<
+      string,
+      string
+    >
     const body = init?.body ? String(init.body) : null
 
     captured.push({ url, method, headers, body })
@@ -111,12 +115,21 @@ describe('RemotePersistence', () => {
       hasPrevious: false,
     }
 
-    const list = createTestPersistence({ handler: () => jsonResponse({ ids: ['a', 'b'] }) }).persistence
-    const { persistence, captured } = createTestPersistence({ handler: () => jsonResponse(paginatedResult) })
+    const list = createTestPersistence({
+      handler: () => jsonResponse({ ids: ['a', 'b'] }),
+    }).persistence
+    const { persistence, captured } = createTestPersistence({
+      handler: () => jsonResponse(paginatedResult),
+    })
 
     expect(await list.list()).toEqual(['a', 'b'])
 
-    const result = await persistence.listPaginated({ page: 0, pageSize: 10, sortBy: 'createdAt', order: 'asc' })
+    const result = await persistence.listPaginated({
+      page: 0,
+      pageSize: 10,
+      sortBy: 'createdAt',
+      order: 'asc',
+    })
     expect(result).toEqual(paginatedResult)
     expect(captured[0]!.url).toContain('page=0')
     expect(captured[0]!.url).toContain('pageSize=10')
@@ -157,7 +170,8 @@ describe('RemotePersistence', () => {
 
     const captured: CapturedRequest[] = []
     const fakeFetch = (async (input: string | URL | Request, init?: RequestInit) => {
-      const url = typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
+      const url =
+        typeof input === 'string' ? input : input instanceof URL ? input.toString() : input.url
       captured.push({
         url,
         method: init?.method ?? 'GET',
@@ -195,10 +209,11 @@ describe('RemotePersistence', () => {
 
   it('throws RemotePersistenceError on non-404 errors', async () => {
     const failing = createTestPersistence({
-      handler: () => new Response('Internal Server Error', {
-        status: 500,
-        statusText: 'Internal Server Error',
-      }),
+      handler: () =>
+        new Response('Internal Server Error', {
+          status: 500,
+          statusText: 'Internal Server Error',
+        }),
     }).persistence
 
     await expect(failing.list()).rejects.toThrow(RemotePersistenceError)

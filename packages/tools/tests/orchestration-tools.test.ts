@@ -1,6 +1,8 @@
 import { describe, expect, it } from 'vitest'
 
 import { createAgentCall, createReviewCall } from '../src/orchestration/agent-call'
+import { createAgentCancel } from '../src/orchestration/agent-cancel'
+import { createAgentList } from '../src/orchestration/agent-list'
 import { createAgentTask } from '../src/orchestration/agent-task'
 import { createBackgroundCancelTool } from '../src/orchestration/background-task-cancel'
 import { createBackgroundOutputTool } from '../src/orchestration/background-task-output'
@@ -170,23 +172,33 @@ describe('orchestration tools (additional coverage)', () => {
   })
 
   it('agent_call throws when callback is missing', async () => {
-    const tool = createAgentCall('/tmp', undefined as unknown as (agent: string, prompt: string) => Promise<{ success: boolean }>)
+    const tool = createAgentCall(
+      '/tmp',
+      undefined as unknown as (agent: string, prompt: string) => Promise<{ success: boolean }>,
+    )
 
-    await expect(tool.execute({
-      id: 'ac3',
-      params: { agent: 'explore', prompt: 'hello' },
-      signal,
-    })).rejects.toThrow('call_agent function is not provided in options')
+    await expect(
+      tool.execute({
+        id: 'ac3',
+        params: { agent: 'explore', prompt: 'hello' },
+        signal,
+      }),
+    ).rejects.toThrow('call_agent function is not provided in options')
   })
 
   it('review_call throws when callback is missing', async () => {
-    const tool = createReviewCall('/tmp', undefined as unknown as (agent: string, prompt: string) => Promise<{ success: boolean }>)
+    const tool = createReviewCall(
+      '/tmp',
+      undefined as unknown as (agent: string, prompt: string) => Promise<{ success: boolean }>,
+    )
 
-    await expect(tool.execute({
-      id: 'rc3',
-      params: { agent: 'reviewer', prompt: 'hello' },
-      signal,
-    })).rejects.toThrow('call_agent function is not provided in options')
+    await expect(
+      tool.execute({
+        id: 'rc3',
+        params: { agent: 'reviewer', prompt: 'hello' },
+        signal,
+      }),
+    ).rejects.toThrow('call_agent function is not provided in options')
   })
 
   it('agent_task returns isError when dispatch fails', async () => {
@@ -212,20 +224,116 @@ describe('orchestration tools (additional coverage)', () => {
   })
 
   it('agent_task throws when dispatch callback is missing', async () => {
-    const tool = createAgentTask('/tmp', undefined as unknown as (args: {
-      prompt?: string
-      subagent?: string
-      mode: 'sync' | 'background'
-      sessionId?: string
-      sessionMode?: 'ephemeral' | 'sticky'
-      slot?: 'normal' | 'thinking' | 'compact' | 'critique' | 'vision'
-    }) => Promise<{ success: boolean }>)
+    const tool = createAgentTask(
+      '/tmp',
+      undefined as unknown as (args: {
+        prompt?: string
+        subagent?: string
+        mode: 'sync' | 'background'
+        sessionId?: string
+        sessionMode?: 'ephemeral' | 'sticky'
+        slot?: 'normal' | 'thinking' | 'compact' | 'critique' | 'vision'
+      }) => Promise<{ success: boolean }>,
+    )
 
-    await expect(tool.execute({
-      id: 'at4',
-      params: { agent: 'implementer', prompt: 'hello' },
+    await expect(
+      tool.execute({
+        id: 'at4',
+        params: { agent: 'implementer', prompt: 'hello' },
+        signal,
+      }),
+    ).rejects.toThrow('agent_task function is not provided in options')
+  })
+
+  it('agent_list formats available agents and filters disabled agents by default', async () => {
+    const tool = createAgentList(async () => ({
+      success: true,
+      agents: [
+        {
+          name: 'explorer',
+          description: 'Read-only code explorer',
+          source: 'builtin',
+          tools: ['read', 'grep'],
+          capabilities: ['code-search'],
+          activeTaskCount: 1,
+          runningTaskIds: ['task-1'],
+          lastTaskStatus: 'running',
+        },
+        {
+          name: 'legacy',
+          disabled: true,
+          source: 'settings',
+        },
+      ],
+    }))
+
+    const result = await tool.execute({
+      id: 'al1',
+      params: {},
       signal,
-    })).rejects.toThrow('agent_task function is not provided in options')
+    })
+
+    expect(result.isError).toBeUndefined()
+    expect(result.content[0]?.type).toBe('text')
+    if (result.content[0]?.type === 'text') {
+      expect(result.content[0].text).toContain('- explorer')
+      expect(result.content[0].text).toContain('tools: read, grep')
+      expect(result.content[0].text).toContain('activeTasks: 1')
+      expect(result.content[0].text).toContain('runningTaskIds: task-1')
+      expect(result.content[0].text).not.toContain('legacy')
+    }
+    expect(result.details).toMatchObject({
+      agents: [{ name: 'explorer' }],
+    })
+  })
+
+  it('agent_list can include disabled agents when requested', async () => {
+    const tool = createAgentList(async () => ({
+      success: true,
+      agents: [{ name: 'legacy', disabled: true, source: 'settings' }],
+    }))
+
+    const result = await tool.execute({
+      id: 'al2',
+      params: { includeDisabled: true },
+      signal,
+    })
+
+    expect(result.isError).toBeUndefined()
+    expect(result.content[0]?.type).toBe('text')
+    if (result.content[0]?.type === 'text') {
+      expect(result.content[0].text).toContain('- legacy (disabled)')
+    }
+    expect(result.details).toMatchObject({
+      agents: [{ name: 'legacy', disabled: true }],
+    })
+  })
+
+  it('agent_cancel returns cancelled and skipped task details', async () => {
+    const tool = createAgentCancel(async (agent, options) => ({
+      success: true,
+      agent,
+      cancelled: options?.includePending ? ['task-1', 'task-2'] : ['task-1'],
+      skipped: [{ id: 'task-3', status: 'completed', reason: 'not active' }],
+    }))
+
+    const result = await tool.execute({
+      id: 'acancel1',
+      params: { agent: 'explorer', includePending: true },
+      signal,
+    })
+
+    expect(result.isError).toBe(false)
+    expect(result.content[0]?.type).toBe('text')
+    if (result.content[0]?.type === 'text') {
+      expect(result.content[0].text).toContain('Agent explorer cancel completed')
+      expect(result.content[0].text).toContain('Cancelled: task-1, task-2')
+      expect(result.content[0].text).toContain('task-3 (completed: not active)')
+    }
+    expect(result.details).toMatchObject({
+      agent: 'explorer',
+      cancelled: ['task-1', 'task-2'],
+    })
   })
 
   it('write_todos passes sessionId through', async () => {

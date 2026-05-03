@@ -109,3 +109,37 @@
 
 - 测试文件数：11
 - 测试以行为断言为主，覆盖公开接口与关键分支，无 mock/spy。
+
+## 模块设计基线
+
+### 设计目的
+
+提供跨包共享的基础工具，包括错误、日志、事件、资源释放、HTTP、文件系统、路径、JSONC、Markdown 和文本截断。
+
+### 接口设计
+
+- `AgentError` 体系：结构化错误和序列化。
+- `TypedEventEmitter` / `Subscription`：类型安全事件。
+- `createLogger()` / `attachLogListener()`：日志创建和订阅。
+- `request()` / `stream()` / `parseJsonc()` / `truncate*()`：通用工具函数。
+
+### 方法论
+
+共享包只沉淀无业务归属的稳定基础能力；任何跨域逻辑应留在具体包，避免 shared 变成应用层。
+
+### 实现逻辑
+
+各模块从 `src/index.ts` 引用基础能力，shared 内部按职责拆文件并保持无反向依赖。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[package consumer] --> B[@x-mars/shared index]
+  B --> C[error/logger/events]
+  B --> D[fs/path/http]
+  B --> E[jsonc/markdown/truncate]
+  C --> F[domain package]
+  D --> F
+  E --> F
+```

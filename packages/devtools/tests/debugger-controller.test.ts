@@ -65,9 +65,9 @@ describe('Debugger', () => {
     } as unknown as DevtoolsService
 
     const debuggerController = new Debugger(fakeService, new Breakpoints())
-    const points = debuggerController.breakpoints.list().map(item => item.point)
+    const points = debuggerController.breakpoints.list().map((item) => item.point)
 
-    expect(points).toEqual(BREAKPOINT_POINTS.map(item => item.point))
+    expect(points).toEqual(BREAKPOINT_POINTS.map((item) => item.point))
   })
 
   it('updates single breakpoint through debugger APIs', () => {
@@ -97,9 +97,9 @@ describe('Debugger', () => {
     const debuggerController = new Debugger(fakeService, new Breakpoints())
 
     debuggerController.disableAllBreakpoints()
-    expect(debuggerController.listBreakpoints().every(item => item.enabled === false)).toBe(true)
+    expect(debuggerController.listBreakpoints().every((item) => item.enabled === false)).toBe(true)
 
     debuggerController.enableAllBreakpoints()
-    expect(debuggerController.listBreakpoints().every(item => item.enabled === true)).toBe(true)
+    expect(debuggerController.listBreakpoints().every((item) => item.enabled === true)).toBe(true)
   })
 })

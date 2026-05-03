@@ -326,3 +326,37 @@ AgentSession.run() 前
 
 - 测试文件数：6
 - 覆盖：压缩管线、持久记忆加载、token 估算、经验存储、文件状态追踪
+
+## 模块设计基线
+
+### 设计目的
+
+提供会话记忆、压缩、裁剪、摘要、持久化归档和语义检索能力，控制长上下文成本和连续性。
+
+### 接口设计
+
+- `MemoryManager` / `PersistentMemory`：记忆读写和分层管理。
+- `compact()` / `prune()` / `microCompact()` / `snip()`：上下文缩减算法。
+- `ArchiveStorage`：持久化会话消息和摘要。
+- `semanticRetrieval()`：按查询选择相关历史。
+
+### 方法论
+
+优先保护最近上下文和显式用户事实；压缩只在预算压力下触发；所有删减都要返回节省量和可审计结果。
+
+### 实现逻辑
+
+上下文进入模型前计算预算，按阈值触发 prune 或 compact，必要时从持久记忆检索相关条目并注入 prompt。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[messages + budget] --> B[estimate tokens]
+  B --> C{over threshold?}
+  C -- no --> D[pass through]
+  C -- yes --> E[prune / compact / snip]
+  E --> F[archive summary]
+  F --> G[retrieval injection]
+  G --> H[model context]
+```

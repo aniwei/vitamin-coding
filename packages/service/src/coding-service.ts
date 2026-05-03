@@ -8,8 +8,9 @@ import { EventBridge } from './event-bridge'
 import { DebugBridge } from './debug-bridge'
 import { InboundRouter } from './inbound-router'
 import { createApp } from './create-app'
+import { routeTaskEvent } from './task-event-router'
 import { type IncomingMessage, type Server } from 'node:http'
-import type { CodingServiceOptions, WebSocketClientMessage } from './types'
+import type { CodingServiceOptions, WebSocketClientMessage, WebSocketMessage } from './types'
 import type { Socket } from 'node:net'
 import type { AgentSession, XMarsContext } from '@x-mars/coding'
 import { defineHook } from '@x-mars/hooks'
@@ -76,7 +77,7 @@ export class CodingService {
   }
 
   registerHooks(xMars: XMarsContext): void {
-    xMars.hookRegistry.register(
+    xMars.hookRegistry.registerAll([
       defineHook({
         name: 'service_session_attach',
         timing: 'session.created',
@@ -88,11 +89,66 @@ export class CodingService {
           }
         },
       }),
-    )
+      defineHook({
+        name: 'service_task_created',
+        timing: 'task.created',
+        priority: 5,
+        handle: (payload) => {
+          for (const message of routeTaskEvent({ timing: 'task.created', payload })) {
+            this.sendTaskMessage(message)
+          }
+        },
+      }),
+      defineHook({
+        name: 'service_task_started',
+        timing: 'task.started',
+        priority: 5,
+        handle: (payload) => {
+          for (const message of routeTaskEvent({ timing: 'task.started', payload })) {
+            this.sendTaskMessage(message)
+          }
+        },
+      }),
+      defineHook({
+        name: 'service_task_completed',
+        timing: 'task.completed',
+        priority: 5,
+        handle: (payload) => {
+          for (const message of routeTaskEvent({ timing: 'task.completed', payload })) {
+            this.sendTaskMessage(message)
+          }
+        },
+      }),
+      defineHook({
+        name: 'service_task_failed',
+        timing: 'task.failed',
+        priority: 5,
+        handle: (payload) => {
+          for (const message of routeTaskEvent({ timing: 'task.failed', payload })) {
+            this.sendTaskMessage(message)
+          }
+        },
+      }),
+      defineHook({
+        name: 'service_task_cancelled',
+        timing: 'task.cancelled',
+        priority: 5,
+        handle: (payload) => {
+          for (const message of routeTaskEvent({ timing: 'task.cancelled', payload })) {
+            this.sendTaskMessage(message)
+          }
+        },
+      }),
+    ])
   }
 
   unregisterHooks(xMars: XMarsContext): void {
     xMars.hookRegistry.unregister('service_session_attach')
+    xMars.hookRegistry.unregister('service_task_created')
+    xMars.hookRegistry.unregister('service_task_started')
+    xMars.hookRegistry.unregister('service_task_completed')
+    xMars.hookRegistry.unregister('service_task_failed')
+    xMars.hookRegistry.unregister('service_task_cancelled')
   }
 
   getSession(sessionId: string): AgentSession | undefined {
@@ -114,6 +170,19 @@ export class CodingService {
 
   private readonly onWsMessage = (clientId: string, message: WebSocketClientMessage): void => {
     this.router.dispatch(clientId, message)
+  }
+
+  private sendTaskMessage(message: WebSocketMessage): void {
+    const sessionId =
+      typeof message.data === 'object' &&
+      message.data !== null &&
+      'sessionId' in message.data &&
+      typeof message.data.sessionId === 'string'
+        ? message.data.sessionId
+        : undefined
+    if (sessionId) {
+      this.ws.sendToSession(sessionId, message)
+    }
   }
 
   async start(): Promise<void> {

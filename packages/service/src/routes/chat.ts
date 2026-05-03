@@ -50,6 +50,26 @@ export function createChatRoute(service: CodingService): Hono {
     return c.json({ status: 'ok', message: 'interrupted' })
   })
 
+  app.post('/tasks/:id/cancel', async (c) => {
+    const taskId = c.req.param('id')
+    const tool = service.xMars.toolRegistry.get('task_update')
+    if (!tool) {
+      return c.json({ status: 'error', message: 'task_update not available' }, 503)
+    }
+
+    const result = await tool.execute({
+      id: `cancel-${taskId}`,
+      params: { id: taskId, action: 'cancel' },
+      signal: c.req.raw.signal,
+    })
+    const text = result.content.find((item) => item.type === 'text')?.text ?? 'cancel requested'
+    if (result.isError) {
+      return c.json({ status: 'error', message: text }, 400)
+    }
+
+    return c.json({ status: 'ok', message: text, taskId })
+  })
+
   app.delete('/clear', async (c) => {
     const session = service.getActiveSession()
     if (!session) {

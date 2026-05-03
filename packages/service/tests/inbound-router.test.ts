@@ -42,7 +42,9 @@ describe('InboundRouter', () => {
       sendToClient: vi.fn(),
     }
     const xMars = {
-      getSession: vi.fn((id: string) => (id === 's1' ? { id: 's1', resolvePatchReview } : undefined)),
+      getSession: vi.fn((id: string) =>
+        id === 's1' ? { id: 's1', resolvePatchReview } : undefined,
+      ),
       getActiveSession: vi.fn(() => undefined),
     }
     const router = new InboundRouter(

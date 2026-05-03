@@ -18,7 +18,8 @@ interface RawTodoItem {
 }
 
 function mapTodoItem(t: RawTodoItem): TodoItem {
-  const status = t.status === 'inProgress' ? 'inProgress' : t.status === 'completed' ? 'completed' : 'pending'
+  const status =
+    t.status === 'inProgress' ? 'inProgress' : t.status === 'completed' ? 'completed' : 'pending'
   return {
     id: t.id || String(Math.random()),
     content: t.content || t.title || '',
@@ -45,7 +46,9 @@ export const useTodoStore = create<TodoStore>((set) => ({
 
 // 监听包含 todo 状态的工具执行结果
 ws.on('Chat.toolResult', (message) => {
-  if (!isRecord(message.data)) {return}
+  if (!isRecord(message.data)) {
+    return
+  }
   const d = message.data
 
   const toolName = readString(d, 'toolName')
@@ -65,9 +68,13 @@ ws.on('Chat.toolResult', (message) => {
 
 // 监听可能携带 todo 数据的状态更新
 ws.on('Session.statusUpdate', (message) => {
-  if (!isRecord(message.data)) {return}
+  if (!isRecord(message.data)) {
+    return
+  }
   const d = message.data
-  if (!Array.isArray(d.todos)) {return}
+  if (!Array.isArray(d.todos)) {
+    return
+  }
 
   const items: TodoItem[] = (d.todos as RawTodoItem[]).map(mapTodoItem)
   useTodoStore.getState().setItems(items, readString(d, 'planName'))

@@ -346,3 +346,38 @@ while true:
 
 - 测试文件数：5
 - 覆盖：Agent 工厂、Agent 循环、Agent 状态机、错误类型、工具执行器
+
+## 模块设计基线
+
+### 设计目的
+
+封装单 Agent 的模型调用、工具执行、回合推进和状态事件，是运行时最小执行单元。它把上层传入的消息、工具、Hook 和模型流组合为可恢复、可观测、可中止的工作循环。
+
+### 接口设计
+
+- `Agent` / `createAgent()`：创建并运行单 Agent。
+- `run(context)` / `abort()` / `steer()` / `followUp()`：控制一次或多次回合执行。
+- `ToolExecutor` / `partitionToolCalls()`：将工具调用按只读并行、写入串行的策略执行。
+- `AgentEvents`：向 session、service、devtools 转发流事件、工具事件和生命周期事件。
+
+### 方法论
+
+以状态机约束生命周期，以事件流暴露可观测性，以工具分区降低并发风险；所有副作用必须通过工具执行器和 Hook 网关。
+
+### 实现逻辑
+
+Agent 先构造模型请求，再消费流式输出；若模型返回工具调用，则进入工具执行阶段并把结果回填消息列表，直到 stop reason 表示结束或达到最大轮次。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[Agent.run context] --> B[transform messages]
+  B --> C[LLM stream]
+  C --> D{tool calls?}
+  D -- no --> E[assistant message]
+  D -- yes --> F[partition tools]
+  F --> G[execute read parallel / write serial]
+  G --> H[append tool results]
+  H --> C
+```

@@ -15,15 +15,5 @@
     "typescript/no-non-null-assertion": "warn",
     "unicorn/no-array-for-each": "warn"
   },
-  "ignorePatterns": [
-    "dist",
-    "node_modules",
-    "*.json",
-    "*.md",
-    "**/*.test.ts",
-    "**/*.spec.ts",
-    "packages/cli/**",
-    "packages/web-ui/**",
-    "packages/opendev-ui/**"
-  ]
+  "ignorePatterns": ["dist", "node_modules", "*.json", "*.md"]
 }

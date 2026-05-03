@@ -19,11 +19,14 @@ interface BreakpointNodeProps {
   data: BreakpointNodeData
 }
 
-const CATEGORY_STYLES: Record<Category, {
-  bar: string       // left accent bar color
-  bg: string        // background
-  label: string     // label text color
-}> = {
+const CATEGORY_STYLES: Record<
+  Category,
+  {
+    bar: string // left accent bar color
+    bg: string // background
+    label: string // label text color
+  }
+> = {
   agent_work_loop: { bar: 'bg-blue-400', bg: 'bg-blue-50', label: 'text-blue-800' },
   work_loop_injection: { bar: 'bg-cyan-400', bg: 'bg-cyan-50', label: 'text-cyan-800' },
   tool_executor: { bar: 'bg-orange-400', bg: 'bg-orange-50', label: 'text-orange-800' },
@@ -60,47 +63,55 @@ export const BreakpointNode = memo(({ data }: BreakpointNodeProps) => {
             : 'border-gray-200'
       } ${isVirtual ? 'opacity-60' : ''}`}
     >
-      <Handle type="target" position={Position.Top} className="w-2 h-2 !bg-gray-400" />
+      <Handle type='target' position={Position.Top} className='w-2 h-2 !bg-gray-400' />
 
       {/* Left category accent bar */}
       {!isVirtual && <div className={`w-1 shrink-0 ${cat.bar}`} />}
 
       {/* Content */}
-      <div className={`flex-1 flex items-center justify-between px-3 py-2 ${isVirtual ? 'bg-gray-100' : cat.bg}`}>
-        <div className="flex flex-col gap-0.5 min-w-0">
-          <span className={`text-[11px] font-semibold leading-tight ${isVirtual ? 'text-gray-500 italic' : cat.label}`}>
+      <div
+        className={`flex-1 flex items-center justify-between px-3 py-2 ${isVirtual ? 'bg-gray-100' : cat.bg}`}
+      >
+        <div className='flex flex-col gap-0.5 min-w-0'>
+          <span
+            className={`text-[11px] font-semibold leading-tight ${isVirtual ? 'text-gray-500 italic' : cat.label}`}
+          >
             {displayLabel}
           </span>
           {!isVirtual && (
-            <span className="text-[9px] font-mono text-gray-400 truncate">{point}</span>
+            <span className='text-[9px] font-mono text-gray-400 truncate'>{point}</span>
           )}
         </div>
 
         {!isVirtual && (
-          <label className="flex items-center cursor-pointer ml-3 shrink-0">
-            <div className="relative">
+          <label className='flex items-center cursor-pointer ml-3 shrink-0'>
+            <div className='relative'>
               <input
-                type="checkbox"
-                className="sr-only"
+                type='checkbox'
+                className='sr-only'
                 checked={isEnabled}
                 onChange={() => toggleBreakpoint(point)}
                 title={isEnabled ? 'Disable breakpoint' : 'Enable breakpoint'}
               />
-              <div className={`block w-7 h-4 rounded-full transition-colors ${isEnabled ? cat.bar : 'bg-gray-300'}`} />
-              <div className={`dot absolute left-0.5 top-0.5 bg-white w-3 h-3 rounded-full transition-transform ${isEnabled ? 'translate-x-3' : ''}`} />
+              <div
+                className={`block w-7 h-4 rounded-full transition-colors ${isEnabled ? cat.bar : 'bg-gray-300'}`}
+              />
+              <div
+                className={`dot absolute left-0.5 top-0.5 bg-white w-3 h-3 rounded-full transition-transform ${isEnabled ? 'translate-x-3' : ''}`}
+              />
             </div>
           </label>
         )}
       </div>
 
       {isPausedHere && (
-        <span className="absolute -left-2 -top-2 flex h-4 w-4">
-          <span className="animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75" />
-          <span className="relative inline-flex rounded-full h-4 w-4 bg-amber-500" />
+        <span className='absolute -left-2 -top-2 flex h-4 w-4'>
+          <span className='animate-ping absolute inline-flex h-full w-full rounded-full bg-amber-400 opacity-75' />
+          <span className='relative inline-flex rounded-full h-4 w-4 bg-amber-500' />
         </span>
       )}
 
-      <Handle type="source" position={Position.Bottom} className="w-2 h-2 !bg-gray-400" />
+      <Handle type='source' position={Position.Bottom} className='w-2 h-2 !bg-gray-400' />
     </div>
   )
 })

@@ -33,7 +33,12 @@ function createManagerStub(): McpManager {
             readResource: async () => [{ uri: 'file:///guide.md', text: '# Guide' }],
             getPrompt: async () => ({
               description: 'Summarize a document',
-              messages: [{ role: 'user' as const, content: { type: 'text' as const, text: 'Summarize ${topic}' } }],
+              messages: [
+                {
+                  role: 'user' as const,
+                  content: { type: 'text' as const, text: 'Summarize ${topic}' },
+                },
+              ],
             }),
           }
         : undefined,

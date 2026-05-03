@@ -784,7 +784,7 @@ ws.on('Chat.subagentStart', (message) => {
 ws.on('Chat.subagentComplete', (message) => {
   const sid = resolveSessionId(message.data)
   if (!sid) {return}
-  const { toolCallId, success } = message.data
+  const { toolCallId, success, outputTail, resultSummary, summary } = message.data
 
   useChatStore.setState((state) => {
     const sessionState = getSessionState(state.sessionStates, sid)
@@ -800,7 +800,14 @@ ws.on('Chat.subagentComplete', (message) => {
         const updatedMessages = [...msgs]
         updatedMessages[i] = {
           ...msgs[i],
-          toolResult: { success, output: success ? 'Agent completed' : 'Agent failed' },
+          toolResult: {
+            success,
+            output:
+              outputTail ||
+              resultSummary ||
+              summary ||
+              (success ? 'Agent completed' : 'Agent failed'),
+          },
           toolSuccess: success,
         }
         return patchSession(state, sid, { messages: updatedMessages })

@@ -395,9 +395,7 @@ describe('ToolRegistry', () => {
       const coverage = registry.getMetadataCoverage('minimal')
 
       expect(coverage.percent).toBe(0)
-      expect(coverage.issues).toEqual([
-        { toolName: 'bare', missing: ['category', 'guidance'] },
-      ])
+      expect(coverage.issues).toEqual([{ toolName: 'bare', missing: ['category', 'guidance'] }])
     })
   })
 })

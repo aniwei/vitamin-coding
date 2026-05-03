@@ -38,9 +38,15 @@ function applyFilter(
   const minSeverity = LOG_LEVEL_SEVERITY[minLevel]
   const lowerQuery = searchQuery.toLowerCase()
   return entries.filter((e) => {
-    if (LOG_LEVEL_SEVERITY[e.level] < minSeverity) {return false}
-    if (moduleFilter && !e.module.includes(moduleFilter)) {return false}
-    if (lowerQuery && !e.message.toLowerCase().includes(lowerQuery)) {return false}
+    if (LOG_LEVEL_SEVERITY[e.level] < minSeverity) {
+      return false
+    }
+    if (moduleFilter && !e.module.includes(moduleFilter)) {
+      return false
+    }
+    if (lowerQuery && !e.message.toLowerCase().includes(lowerQuery)) {
+      return false
+    }
     return true
   })
 }
@@ -108,8 +114,11 @@ export const useLogStore = create<LogState>((set) => ({
   toggleExpanded: (id) => {
     set((s) => {
       const next = new Set(s.expandedIds)
-      if (next.has(id)) {next.delete(id)}
-      else {next.add(id)}
+      if (next.has(id)) {
+        next.delete(id)
+      } else {
+        next.add(id)
+      }
       return { expandedIds: next }
     })
   },

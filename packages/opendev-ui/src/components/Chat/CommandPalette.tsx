@@ -131,27 +131,29 @@ export function CommandPalette({ isOpen, onClose, onOpenStatus }: CommandPalette
     [filtered, selectedIndex, onClose],
   )
 
-  if (!isOpen) {return null}
+  if (!isOpen) {
+    return null
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-start justify-center pt-[20vh]" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/30" />
+    <div className='fixed inset-0 z-50 flex items-start justify-center pt-[20vh]' onClick={onClose}>
+      <div className='absolute inset-0 bg-black/30' />
       <div
-        className="relative w-full max-w-lg bg-bg-000 border border-border-300/30 rounded-xl shadow-2xl overflow-hidden animate-scale-in"
+        className='relative w-full max-w-lg bg-bg-000 border border-border-300/30 rounded-xl shadow-2xl overflow-hidden animate-scale-in'
         onClick={(e) => e.stopPropagation()}
       >
         <input
           ref={inputRef}
-          type="text"
+          type='text'
           value={query}
           onChange={(e) => setQuery(e.target.value)}
           onKeyDown={handleKeyDown}
-          placeholder="Type a command..."
-          className="w-full px-4 py-3 text-sm bg-transparent border-b border-border-300/20 text-text-000 placeholder-text-400 outline-none"
+          placeholder='Type a command...'
+          className='w-full px-4 py-3 text-sm bg-transparent border-b border-border-300/20 text-text-000 placeholder-text-400 outline-none'
         />
-        <div className="max-h-64 overflow-y-auto py-1">
+        <div className='max-h-64 overflow-y-auto py-1'>
           {filtered.length === 0 ? (
-            <div className="px-4 py-3 text-sm text-text-400">No matching commands</div>
+            <div className='px-4 py-3 text-sm text-text-400'>No matching commands</div>
           ) : (
             filtered.map((cmd, i) => (
               <button
@@ -163,23 +165,23 @@ export function CommandPalette({ isOpen, onClose, onOpenStatus }: CommandPalette
                     : 'text-text-200 hover:bg-bg-200'
                 }`}
               >
-                <span className="font-mono font-medium text-accent-main-100 min-w-[120px]">
+                <span className='font-mono font-medium text-accent-main-100 min-w-[120px]'>
                   {cmd.label}
                 </span>
-                <span className="text-text-300">{cmd.description}</span>
+                <span className='text-text-300'>{cmd.description}</span>
               </button>
             ))
           )}
         </div>
-        <div className="px-4 py-2 border-t border-border-300/20 text-xs text-text-400 flex gap-3">
+        <div className='px-4 py-2 border-t border-border-300/20 text-xs text-text-400 flex gap-3'>
           <span>
-            <kbd className="px-1 py-0.5 bg-bg-200 rounded text-text-300">↑↓</kbd> navigate
+            <kbd className='px-1 py-0.5 bg-bg-200 rounded text-text-300'>↑↓</kbd> navigate
           </span>
           <span>
-            <kbd className="px-1 py-0.5 bg-bg-200 rounded text-text-300">Enter</kbd> select
+            <kbd className='px-1 py-0.5 bg-bg-200 rounded text-text-300'>Enter</kbd> select
           </span>
           <span>
-            <kbd className="px-1 py-0.5 bg-bg-200 rounded text-text-300">Esc</kbd> close
+            <kbd className='px-1 py-0.5 bg-bg-200 rounded text-text-300'>Esc</kbd> close
           </span>
         </div>
       </div>

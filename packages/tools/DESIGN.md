@@ -3,7 +3,7 @@
 ## 设计目标
 
 - 提供 Agent 可用工具的注册、分组与发现能力。
-- 内置 30+ 工具覆盖文件系统、搜索、Shell、Web、编排、会话、技能、LSP 等 8 个域。
+- 内置工具覆盖文件系统、搜索、Shell、Web、编排、会话、技能等域。
 - 支持预设分层（minimal / standard / full），按场景裁剪工具集。
 
 ## 非目标
@@ -56,7 +56,7 @@ interface ToolEntry {
 | ---------- | --------------------------------------------------------- |
 | `minimal`  | read_file / list_dir / grep / find_file / web_fetch       |
 | `standard` | + write_file / edit_file / multi_edit / bash / web_search |
-| `full`     | + lsp\_\* / task_delegate / agent_call / load_skill       |
+| `full`     | + task_delegate / agent_call / load_skill                 |
 
 ### 内置工具分类
 
@@ -104,14 +104,6 @@ interface ToolEntry {
 
 - `load_skill`：加载 SKILL.md 技能文件
 
-#### LSP（lsp/）
-
-- `lsp_definition`：跳转定义
-- `lsp_references`：查找引用
-- `lsp_symbols`：符号搜索
-- `lsp_diagnostics`：诊断信息
-- `lsp_rename`：重命名符号
-
 ### 二进制执行器（binary-executor-registry.ts）
 
 管理第三方二进制工具（ripgrep / find 等）的下载、缓存与按平台执行。`BinaryExecutorRegistry` 支持自动下载和版本管理。
@@ -148,7 +140,6 @@ XMarsApp 初始化
 | `src/builtin-tools/orchestration/` | 9 个编排工具                                  |
 | `src/builtin-tools/session/`       | 2 个会话工具                                  |
 | `src/builtin-tools/skill/`         | 1 个技能工具                                  |
-| `src/builtin-tools/lsp/`           | 5 个 LSP 工具                                 |
 
 ## 入口与依赖
 
@@ -160,3 +151,37 @@ XMarsApp 初始化
 
 - 测试文件数：8
 - 覆盖：工具注册、预设切换、各类别内置工具行为、二进制执行器
+
+## 模块设计基线
+
+### 设计目的
+
+提供 Agent 可调用工具、工具注册表、内置工具、MCP 工具、插件命令和 Claude Code 兼容导入能力。
+
+### 接口设计
+
+- `ToolRegistry` / `registerBuiltinTools()`：工具注册和预设开关。
+- `AgentTool`：工具名称、schema、只读标记和 execute 入口。
+- `PluginManager` / `PluginCommandRegistry`：插件加载和命令注册。
+- `create*` 工厂：文件、搜索、shell、web、orchestration、skill 等工具。
+
+### 方法论
+
+工具只描述能力和参数契约，不自行绕过权限；读工具可并行，写工具交由 Agent 和 Hook 管线串行治理。
+
+### 实现逻辑
+
+启动时注册内置工具和插件/MCP 工具；Agent 根据 registry 获取可用工具；工具执行时校验参数、调用实现并返回标准 `ToolResult`。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[XMarsApp init] --> B[ToolRegistry]
+  B --> C[register builtin tools]
+  B --> D[register MCP tools]
+  B --> E[register plugin commands]
+  F[Agent tool call] --> G[validate args]
+  G --> H[execute tool]
+  H --> I[ToolResult]
+```

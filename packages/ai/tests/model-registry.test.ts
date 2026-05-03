@@ -111,7 +111,11 @@ describe('ModelRegistry', () => {
       const registry = createModelRegistry()
       registry.setDefault(makeModel('openai/default'))
 
-      const resolved = registry.resolve({ provider: 'anthropic', name: 'claude-4', api: 'anthropic-messages' })
+      const resolved = registry.resolve({
+        provider: 'anthropic',
+        name: 'claude-4',
+        api: 'anthropic-messages',
+      })
       expect(resolved.api).toBe('anthropic-messages')
     })
 
@@ -179,7 +183,7 @@ describe('createDefaultModelRegistry', () => {
 
   it('reasoning models have thinkingLevels', () => {
     const registry = createDefaultModelRegistry()
-    const reasoningModels = registry.getAll().filter(m => m.reasoning)
+    const reasoningModels = registry.getAll().filter((m) => m.reasoning)
     expect(reasoningModels.length).toBeGreaterThan(0)
     for (const model of reasoningModels) {
       expect(model.thinkingLevels).toBeDefined()

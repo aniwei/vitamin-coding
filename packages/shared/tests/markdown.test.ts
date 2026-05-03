@@ -27,14 +27,14 @@ describe('createGfmProcessor', () => {
     const proc = createGfmProcessor()
     const tree = proc.parse('| A | B |\n|---|---|\n| 1 | 2 |')
     expect(tree.type).toBe('root')
-    const table = tree.children.find(n => n.type === 'table')
+    const table = tree.children.find((n) => n.type === 'table')
     expect(table).toBeDefined()
   })
 
   it('#parses task lists', () => {
     const proc = createGfmProcessor()
     const tree = proc.parse('- [x] done\n- [ ] todo')
-    const list = tree.children.find(n => n.type === 'list')
+    const list = tree.children.find((n) => n.type === 'list')
     expect(list).toBeDefined()
     expect(list!.children!.length).toBe(2)
   })
@@ -44,7 +44,7 @@ describe('createFrontmatterProcessor', () => {
   it('#parses yaml frontmatter nodes', () => {
     const proc = createFrontmatterProcessor()
     const tree = proc.parse('---\ntitle: test\n---\n\nBody')
-    const yamlNode = tree.children.find(n => n.type === 'yaml')
+    const yamlNode = tree.children.find((n) => n.type === 'yaml')
     expect(yamlNode).toBeDefined()
     expect(yamlNode!.value).toContain('title: test')
   })
@@ -75,7 +75,7 @@ describe('extractBoldLabels', () => {
   it('#extracts bold label-value pairs', () => {
     const proc = createMarkdownProcessor()
     const tree = proc.parse('**Name:** Alice **Role:** Admin')
-    const para = tree.children.find(n => n.type === 'paragraph')
+    const para = tree.children.find((n) => n.type === 'paragraph')
     const labels = extractBoldLabels(para!)
     expect(labels.length).toBe(2)
     expect(labels[0]!.label).toBe('Name')
@@ -91,7 +91,7 @@ describe('extractBoldLabels', () => {
   it('#ignores bold without trailing colon', () => {
     const proc = createMarkdownProcessor()
     const tree = proc.parse('**NoColon** text')
-    const para = tree.children.find(n => n.type === 'paragraph')
+    const para = tree.children.find((n) => n.type === 'paragraph')
     expect(extractBoldLabels(para!)).toEqual([])
   })
 })
@@ -122,10 +122,7 @@ describe('countChecks', () => {
   })
 
   it('#ignores items without checked property', () => {
-    const items: MdastNode[] = [
-      { type: 'listItem' },
-      { type: 'listItem', checked: false },
-    ]
+    const items: MdastNode[] = [{ type: 'listItem' }, { type: 'listItem', checked: false }]
     expect(countChecks(items)).toEqual({ total: 1, checked: 0 })
   })
 
@@ -176,7 +173,7 @@ describe('extractBodyFromAst', () => {
     const content = '---\ntitle: test\n---\n\nBody here'
     const proc = createFrontmatterProcessor()
     const tree = proc.parse(content)
-    const yamlNode = tree.children.find(n => n.type === 'yaml') as YamlNode | undefined
+    const yamlNode = tree.children.find((n) => n.type === 'yaml') as YamlNode | undefined
     const body = extractBodyFromAst(content, yamlNode)
     expect(body).toBe('Body here')
   })

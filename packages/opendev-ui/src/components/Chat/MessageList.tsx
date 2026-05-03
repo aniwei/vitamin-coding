@@ -31,7 +31,9 @@ export function MessageList() {
   // Smart auto-scroll: track user scroll position
   const handleScroll = useCallback(() => {
     const container = scrollContainerRef.current
-    if (!container) {return}
+    if (!container) {
+      return
+    }
 
     const distanceFromBottom = container.scrollHeight - container.scrollTop - container.clientHeight
     const nearBottom = distanceFromBottom < 50
@@ -63,7 +65,9 @@ export function MessageList() {
   // Custom Page Up/Page Down handling with shorter scroll distance
   useEffect(() => {
     const handleKeyDown = (e: KeyboardEvent) => {
-      if (!scrollContainerRef.current) {return}
+      if (!scrollContainerRef.current) {
+        return
+      }
 
       const scrollDistance = 300 // Shorter scroll distance (default is ~viewport height)
 
@@ -93,10 +97,10 @@ export function MessageList() {
   return (
     <div
       ref={scrollContainerRef}
-      className="flex-1 overflow-y-auto bg-bg-100"
+      className='flex-1 overflow-y-auto bg-bg-100'
       onScroll={handleScroll}
     >
-      <div className="max-w-5xl mx-auto py-6 px-4 md:px-8 space-y-4">
+      <div className='max-w-5xl mx-auto py-6 px-4 md:px-8 space-y-4'>
         {messages.map((message, index) => {
           const isLastMessage = index === messages.length - 1
           return (

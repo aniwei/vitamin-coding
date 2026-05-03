@@ -145,18 +145,18 @@ export function RepositoryDetailPage({ searchQuery = '' }: RepositoryDetailPageP
 
   if (!repository) {
     return (
-      <div className="min-h-screen bg-gray-50 flex items-center justify-center">
-        <div className="text-center">
-          <div className="w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center">
-            <FolderIcon className="w-10 h-10 text-gray-400" />
+      <div className='min-h-screen bg-gray-50 flex items-center justify-center'>
+        <div className='text-center'>
+          <div className='w-20 h-20 mx-auto mb-6 bg-gray-100 rounded-full flex items-center justify-center'>
+            <FolderIcon className='w-10 h-10 text-gray-400' />
           </div>
-          <h3 className="text-xl font-semibold text-gray-900 mb-2">Repository Not Found</h3>
-          <p className="text-gray-600 mb-6">The repository "{repoName}" could not be found.</p>
+          <h3 className='text-xl font-semibold text-gray-900 mb-2'>Repository Not Found</h3>
+          <p className='text-gray-600 mb-6'>The repository "{repoName}" could not be found.</p>
           <Link
-            to="/codewiki"
-            className="inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors"
+            to='/codewiki'
+            className='inline-flex items-center gap-2 px-4 py-2 bg-purple-600 hover:bg-purple-700 text-white font-medium rounded-lg transition-colors'
           >
-            <ArrowLeftIcon className="w-4 h-4" />
+            <ArrowLeftIcon className='w-4 h-4' />
             Back to CodeWiki
           </Link>
         </div>
@@ -172,12 +172,12 @@ export function RepositoryDetailPage({ searchQuery = '' }: RepositoryDetailPageP
   }
 
   return (
-    <div className="min-h-screen bg-white">
+    <div className='min-h-screen bg-white'>
       {/* Breadcrumb Navigation */}
       <Breadcrumb items={breadcrumbItems} />
 
       {/* 3-Column Layout */}
-      <div className="flex">
+      <div className='flex'>
         {/* Left Sidebar - Wiki Navigation */}
         <WikiSidebar
           wikiPages={mockWikiPages}
@@ -186,15 +186,15 @@ export function RepositoryDetailPage({ searchQuery = '' }: RepositoryDetailPageP
         />
 
         {/* Main Content Area */}
-        <main className="flex-1 bg-white min-h-[calc(100vh-6.5rem)]">
+        <main className='flex-1 bg-white min-h-[calc(100vh-6.5rem)]'>
           {selectedPage ? (
             <DocumentationContent wikiPage={selectedPage} />
           ) : (
-            <div className="flex items-center justify-center h-96">
-              <div className="text-center">
-                <FolderIcon className="w-16 h-16 text-gray-400 mx-auto mb-4" />
-                <h3 className="text-lg font-medium text-gray-900 mb-2">Select a page</h3>
-                <p className="text-gray-600">
+            <div className='flex items-center justify-center h-96'>
+              <div className='text-center'>
+                <FolderIcon className='w-16 h-16 text-gray-400 mx-auto mb-4' />
+                <h3 className='text-lg font-medium text-gray-900 mb-2'>Select a page</h3>
+                <p className='text-gray-600'>
                   Choose a wiki page from the sidebar to view its content
                 </p>
               </div>

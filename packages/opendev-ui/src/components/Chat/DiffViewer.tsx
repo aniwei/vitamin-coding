@@ -30,12 +30,14 @@ function parseDiff(raw: string): DiffLine[] {
  * Renders a unified diff with colored add/remove lines.
  */
 export function DiffViewer({ diff }: DiffViewerProps) {
-  if (!diff) {return null}
+  if (!diff) {
+    return null
+  }
 
   const lines = parseDiff(diff)
 
   return (
-    <div className="font-mono text-sm leading-6 rounded border border-border-300/15 bg-bg-000 overflow-x-auto">
+    <div className='font-mono text-sm leading-6 rounded border border-border-300/15 bg-bg-000 overflow-x-auto'>
       {lines.map((line, i) => {
         let className = 'px-3 py-0 whitespace-pre '
         switch (line.type) {

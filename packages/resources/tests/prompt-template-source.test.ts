@@ -2,7 +2,10 @@ import { describe, expect, it, beforeEach, afterEach } from 'vitest'
 import { mkdtemp, writeFile, mkdir, rm } from 'node:fs/promises'
 import { join } from 'node:path'
 import { tmpdir } from 'node:os'
-import { FilesystemPromptTemplateSource, InMemoryPromptTemplateSource } from '../src/prompt-template-source'
+import {
+  FilesystemPromptTemplateSource,
+  InMemoryPromptTemplateSource,
+} from '../src/prompt-template-source'
 
 describe('InMemoryPromptTemplateSource', () => {
   it('returns empty templates by default', async () => {
@@ -47,11 +50,11 @@ describe('FilesystemPromptTemplateSource', () => {
 
     expect(result.templates.length).toBeGreaterThanOrEqual(2)
 
-    const names = result.templates.map(t => t.name)
+    const names = result.templates.map((t) => t.name)
     expect(names).toContain('code-review')
     expect(names).toContain('refactor')
 
-    const review = result.templates.find(t => t.name === 'code-review')
+    const review = result.templates.find((t) => t.name === 'code-review')
     expect(review?.source).toBe('project')
     expect(review?.content).toContain('Review this code.')
   })
@@ -65,7 +68,7 @@ describe('FilesystemPromptTemplateSource', () => {
     const source = new FilesystemPromptTemplateSource({ workspaceDir: tempDir })
     const result = await source.load()
 
-    const projectTemplates = result.templates.filter(t => t.source === 'project')
+    const projectTemplates = result.templates.filter((t) => t.source === 'project')
     expect(projectTemplates).toHaveLength(1)
     expect(projectTemplates[0]?.name).toBe('valid')
   })
@@ -84,7 +87,7 @@ describe('FilesystemPromptTemplateSource', () => {
     })
     const result = await source.load()
 
-    const collisions = result.diagnostics.filter(d => d.type === 'collision')
+    const collisions = result.diagnostics.filter((d) => d.type === 'collision')
     expect(collisions).toHaveLength(1)
     expect(collisions[0]?.name).toBe('dupe')
   })
@@ -106,12 +109,12 @@ describe('FilesystemPromptTemplateSource', () => {
     const source = new FilesystemPromptTemplateSource({ workspaceDir: tempDir })
 
     const before = await source.load()
-    const beforeNames = before.templates.map(t => t.name)
+    const beforeNames = before.templates.map((t) => t.name)
     expect(beforeNames).not.toContain('dynamic')
 
     source.setPromptDirs([extraDir])
     const after = await source.load()
-    const afterNames = after.templates.map(t => t.name)
+    const afterNames = after.templates.map((t) => t.name)
     expect(afterNames).toContain('dynamic')
   })
 })

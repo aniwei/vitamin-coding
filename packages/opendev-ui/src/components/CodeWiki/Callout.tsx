@@ -50,9 +50,9 @@ export function Callout({ type, title, children }: CalloutProps) {
 
   return (
     <div className={`rounded-lg border p-4 my-4 ${styles.container}`}>
-      <div className="flex gap-3">
+      <div className='flex gap-3'>
         <Icon className={`w-5 h-5 flex-shrink-0 ${styles.icon}`} />
-        <div className="flex-1">
+        <div className='flex-1'>
           {title && <div className={`font-semibold mb-1 ${styles.title}`}>{title}</div>}
           <div className={`text-sm ${styles.text}`}>{children}</div>
         </div>

@@ -51,7 +51,9 @@ function makeStream(responses: AssistantMessage[]) {
     const eventStream = createEventStream<StreamEvent, AssistantMessage>()
     const message = responses[index++]
     setTimeout(() => {
-      if (!message) return
+      if (!message) {
+        return
+      }
       eventStream.push({ type: 'start', partial: message })
       eventStream.complete(message)
     }, 0)

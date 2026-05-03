@@ -71,7 +71,10 @@ describe('binary tools', () => {
     rmSync(getThirdPartyToolBinaryDir('x_mars_ensure_local_bin') + ext, { force: true })
     rmSync(join(getThirdPartyToolDir(), 'fd-10.4.2'), { recursive: true, force: true })
     rmSync(join(getThirdPartyToolDir(), 'rg-15.1.0'), { recursive: true, force: true })
-    rmSync(join(getThirdPartyToolDir(), 'x_mars_ensure_local_bin-1.0.0'), { recursive: true, force: true })
+    rmSync(join(getThirdPartyToolDir(), 'x_mars_ensure_local_bin-1.0.0'), {
+      recursive: true,
+      force: true,
+    })
     process.env.PATH = originalPath
   })
 
@@ -217,5 +220,4 @@ describe('binary tools', () => {
     expect(result.exitCode).toBe(0)
     expect(result.stdout.toLowerCase()).toContain('ripgrep')
   })
-
 })

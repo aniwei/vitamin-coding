@@ -18,8 +18,12 @@ const NODE_WIDTH = 260
 const NODE_HEIGHT = 100
 
 function extractPreview(content: string | ContentBlock[] | undefined): string {
-  if (!content) {return ''}
-  if (typeof content === 'string') {return content.slice(0, 200)}
+  if (!content) {
+    return ''
+  }
+  if (typeof content === 'string') {
+    return content.slice(0, 200)
+  }
 
   const texts = content
     .filter((b) => b.type === 'text')
@@ -27,13 +31,17 @@ function extractPreview(content: string | ContentBlock[] | undefined): string {
     .join(' ')
     .trim()
 
-  if (texts) {return texts.slice(0, 200)}
+  if (texts) {
+    return texts.slice(0, 200)
+  }
 
   const results = content.filter((b) => b.type === 'tool_result')
   if (results.length > 0) {
     const first = results[0]
     const c = first.content
-    if (typeof c === 'string') {return c.slice(0, 200)}
+    if (typeof c === 'string') {
+      return c.slice(0, 200)
+    }
   }
 
   const thinking = content.filter((b) => b.type === 'thinking')
@@ -54,21 +62,35 @@ function extractPreview(content: string | ContentBlock[] | undefined): string {
 }
 
 function extractTools(content: string | ContentBlock[] | undefined): string[] {
-  if (!content || typeof content === 'string') {return []}
+  if (!content || typeof content === 'string') {
+    return []
+  }
   return content.filter((b) => b.type === 'tool_use').map((b) => b.name || 'unknown')
 }
 
 function classifyEvent(event: TraceEvent): NodeEventType {
-  if (event.type === 'user') {return 'user'}
-  if (event.type === 'assistant') {return 'assistant'}
-  if (event.type === 'summary') {return 'summary'}
+  if (event.type === 'user') {
+    return 'user'
+  }
+  if (event.type === 'assistant') {
+    return 'assistant'
+  }
+  if (event.type === 'summary') {
+    return 'summary'
+  }
 
   if (event.type === 'progress') {
     const dataType = event.data?.type
-    if (dataType === 'hook_progress') {return 'hook-progress'}
+    if (dataType === 'hook_progress') {
+      return 'hook-progress'
+    }
     const inner = event.data?.message
-    if (inner?.type === 'user') {return 'subagent-user'}
-    if (inner?.type === 'assistant') {return 'subagent-assistant'}
+    if (inner?.type === 'user') {
+      return 'subagent-user'
+    }
+    if (inner?.type === 'assistant') {
+      return 'subagent-assistant'
+    }
   }
   return 'user'
 }
@@ -83,8 +105,12 @@ export function buildGraph(sessionData: SessionData): { nodes: TraceFlowNode[]; 
   const seenIds = new Set<string>()
 
   function addEvent(event: TraceEvent) {
-    if (!event.uuid) {return}
-    if (seenIds.has(event.uuid)) {return}
+    if (!event.uuid) {
+      return
+    }
+    if (seenIds.has(event.uuid)) {
+      return
+    }
     seenIds.add(event.uuid)
 
     const eventType = classifyEvent(event)
@@ -93,9 +119,12 @@ export function buildGraph(sessionData: SessionData): { nodes: TraceFlowNode[]; 
       event.type === 'file-history-snapshot' ||
       event.type === 'system' ||
       event.type === 'queue-operation'
-    )
-      {return}
-    if (event.type === 'progress' && eventType === 'user') {return}
+    ) {
+      return
+    }
+    if (event.type === 'progress' && eventType === 'user') {
+      return
+    }
 
     const subagentId =
       event.type === 'progress' && event.data?.agentId ? event.data.agentId : undefined
@@ -163,7 +192,9 @@ function getNodeContentBlocks(node: TraceFlowNode): ContentBlock[] {
   } else if (event.type === 'progress' && event.data?.message) {
     content = event.data.message.message?.content
   }
-  if (!content || typeof content === 'string') {return []}
+  if (!content || typeof content === 'string') {
+    return []
+  }
   return content
 }
 
@@ -186,8 +217,9 @@ function collectToolCalls(assistantNode: TraceFlowNode, userNode: TraceFlowNode)
     let resultText: string | undefined
     if (result) {
       const c = result.content
-      if (typeof c === 'string') {resultText = c}
-      else if (Array.isArray(c)) {
+      if (typeof c === 'string') {
+        resultText = c
+      } else if (Array.isArray(c)) {
         resultText = c
           .filter((b) => b.type === 'text')
           .map((b) => b.text || '')
@@ -211,7 +243,9 @@ export function mergeToolCallNodes(
   const nodeIds = new Set(rawNodes.map((n) => n.id))
 
   const outEdges = new Map<string, string[]>()
-  for (const n of rawNodes) {outEdges.set(n.id, [])}
+  for (const n of rawNodes) {
+    outEdges.set(n.id, [])
+  }
   for (const e of rawEdges) {
     if (nodeIds.has(e.source) && nodeIds.has(e.target)) {
       outEdges.get(e.source)!.push(e.target)
@@ -223,44 +257,68 @@ export function mergeToolCallNodes(
   const mergedNodes: (ToolFlowNode | TaskFlowNode)[] = []
 
   for (const node of rawNodes) {
-    if (toRemove.has(node.id)) {continue}
+    if (toRemove.has(node.id)) {
+      continue
+    }
     const et = node.data.eventType
-    if (et !== 'assistant' && et !== 'subagent-assistant') {continue}
-    if (!nodeHasToolUse(node)) {continue}
+    if (et !== 'assistant' && et !== 'subagent-assistant') {
+      continue
+    }
+    if (!nodeHasToolUse(node)) {
+      continue
+    }
 
     const allChildren = outEdges.get(node.id) ?? []
     const childId = allChildren.find((cid) => {
-      if (toRemove.has(cid)) {return false}
+      if (toRemove.has(cid)) {
+        return false
+      }
       const child = nodeMap.get(cid)
-      if (!child) {return false}
+      if (!child) {
+        return false
+      }
       const cet = child.data.eventType
       return (cet === 'user' || cet === 'subagent-user') && nodeHasToolResult(child)
     })
-    if (!childId) {continue}
+    if (!childId) {
+      continue
+    }
     const childNode = nodeMap.get(childId)!
 
     let toolCalls = collectToolCalls(node, childNode)
     const nodesToAbsorb: string[] = []
 
     const parallelStack = allChildren.filter((cid) => {
-      if (cid === childId || toRemove.has(cid)) {return false}
+      if (cid === childId || toRemove.has(cid)) {
+        return false
+      }
       const child = nodeMap.get(cid)
-      if (!child) {return false}
+      if (!child) {
+        return false
+      }
       const cet = child.data.eventType
       return (cet === 'assistant' || cet === 'subagent-assistant') && nodeHasToolUse(child)
     })
 
     while (parallelStack.length > 0) {
       const parId = parallelStack.pop()!
-      if (toRemove.has(parId) || nodesToAbsorb.includes(parId)) {continue}
+      if (toRemove.has(parId) || nodesToAbsorb.includes(parId)) {
+        continue
+      }
       const parNode = nodeMap.get(parId)
-      if (!parNode) {continue}
+      if (!parNode) {
+        continue
+      }
 
       const parChildren = outEdges.get(parId) ?? []
       const parResultId = parChildren.find((cid) => {
-        if (toRemove.has(cid)) {return false}
+        if (toRemove.has(cid)) {
+          return false
+        }
         const child = nodeMap.get(cid)
-        if (!child) {return false}
+        if (!child) {
+          return false
+        }
         const cet = child.data.eventType
         return (cet === 'user' || cet === 'subagent-user') && nodeHasToolResult(child)
       })
@@ -271,9 +329,13 @@ export function mergeToolCallNodes(
         nodesToAbsorb.push(parId, parResultId)
 
         for (const cid of parChildren) {
-          if (cid === parResultId || toRemove.has(cid)) {continue}
+          if (cid === parResultId || toRemove.has(cid)) {
+            continue
+          }
           const child = nodeMap.get(cid)
-          if (!child) {continue}
+          if (!child) {
+            continue
+          }
           const cet = child.data.eventType
           if ((cet === 'assistant' || cet === 'subagent-assistant') && nodeHasToolUse(child)) {
             parallelStack.push(cid)
@@ -365,12 +427,18 @@ export function mergeToolCallNodes(
   const outputEdges: Edge[] = []
 
   for (const e of rawEdges) {
-    if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) {continue}
+    if (!nodeIds.has(e.source) || !nodeIds.has(e.target)) {
+      continue
+    }
     const src = nodeRemap.get(e.source) ?? e.source
     const tgt = nodeRemap.get(e.target) ?? e.target
-    if (src === tgt) {continue}
+    if (src === tgt) {
+      continue
+    }
     const key = `${src}->${tgt}`
-    if (seenEdges.has(key)) {continue}
+    if (seenEdges.has(key)) {
+      continue
+    }
     seenEdges.add(key)
     outputEdges.push({ ...e, id: `te-${src}-${tgt}`, source: src, target: tgt })
   }
@@ -388,14 +456,18 @@ function getNodeTimestamp(data: Record<string, unknown>): number {
   const ts = data.timestamp
   if (typeof ts === 'string') {
     const t = new Date(ts).getTime()
-    if (!isNaN(t)) {return t}
+    if (!isNaN(t)) {
+      return t
+    }
   }
   const events = data.events as Array<{ timestamp?: string }> | undefined
   if (events) {
     for (const ev of events) {
       if (ev.timestamp) {
         const t = new Date(ev.timestamp).getTime()
-        if (!isNaN(t)) {return t}
+        if (!isNaN(t)) {
+          return t
+        }
       }
     }
   }
@@ -420,7 +492,9 @@ export function layoutGraph<
     position: { x: number; y: number }
   },
 >(nodes: T[], edges: Edge[]): { nodes: T[]; edges: Edge[] } {
-  if (nodes.length === 0) {return { nodes, edges }}
+  if (nodes.length === 0) {
+    return { nodes, edges }
+  }
 
   const nodeMap = new Map(nodes.map((n) => [n.id, n]))
   const nodeIds = new Set(nodes.map((n) => n.id))
@@ -441,15 +515,21 @@ export function layoutGraph<
   const componentOf = new Map<string, number>()
   let numComponents = 0
   for (const startNode of nodes) {
-    if (componentOf.has(startNode.id)) {continue}
+    if (componentOf.has(startNode.id)) {
+      continue
+    }
     const comp = numComponents++
     const stack = [startNode.id]
     while (stack.length > 0) {
       const id = stack.pop()!
-      if (componentOf.has(id)) {continue}
+      if (componentOf.has(id)) {
+        continue
+      }
       componentOf.set(id, comp)
       for (const nb of [...(outEdges.get(id) ?? []), ...(inEdges.get(id) ?? [])]) {
-        if (!componentOf.has(nb)) {stack.push(nb)}
+        if (!componentOf.has(nb)) {
+          stack.push(nb)
+        }
       }
     }
   }
@@ -458,7 +538,9 @@ export function layoutGraph<
   for (const node of nodes) {
     const comp = componentOf.get(node.id)!
     const t = getNodeTimestamp(node.data)
-    if (!compMinTime.has(comp) || t < compMinTime.get(comp)!) {compMinTime.set(comp, t)}
+    if (!compMinTime.has(comp) || t < compMinTime.get(comp)!) {
+      compMinTime.set(comp, t)
+    }
   }
   const primaryComp = [...compMinTime.entries()].sort((a, b) => a[1] - b[1])[0]?.[0] ?? 0
 
@@ -467,8 +549,12 @@ export function layoutGraph<
   const secondaryComps = new Map<number, T[]>()
   for (const node of nodes) {
     const comp = componentOf.get(node.id)!
-    if (comp === primaryComp) {continue}
-    if (!secondaryComps.has(comp)) {secondaryComps.set(comp, [])}
+    if (comp === primaryComp) {
+      continue
+    }
+    if (!secondaryComps.has(comp)) {
+      secondaryComps.set(comp, [])
+    }
     secondaryComps.get(comp)!.push(node)
   }
 
@@ -484,12 +570,16 @@ export function layoutGraph<
   }
   while (queue.length > 0) {
     const { id, lane } = queue.shift()!
-    if (nodeLane.has(id)) {continue}
+    if (nodeLane.has(id)) {
+      continue
+    }
     nodeLane.set(id, lane)
     const node = nodeMap.get(id)
     const isTask = node?.type === 'taskNode'
     for (const childId of outEdges.get(id) ?? []) {
-      if (queued.has(childId)) {continue}
+      if (queued.has(childId)) {
+        continue
+      }
       queued.add(childId)
       const childNode = nodeMap.get(childId)
       if (isTask && childNode && isSubagentType(childNode.data)) {
@@ -501,7 +591,9 @@ export function layoutGraph<
     }
   }
   for (const n of primaryNodes) {
-    if (!nodeLane.has(n.id)) {nodeLane.set(n.id, 0)}
+    if (!nodeLane.has(n.id)) {
+      nodeLane.set(n.id, 0)
+    }
   }
 
   const primaryIdSet = new Set(primaryNodes.map((n) => n.id))
@@ -513,7 +605,9 @@ export function layoutGraph<
     .map((n) => n.id)
   while (dfsStack.length > 0) {
     const id = dfsStack.pop()!
-    if (topoVisited.has(id)) {continue}
+    if (topoVisited.has(id)) {
+      continue
+    }
     topoVisited.add(id)
     topoOrder.push(id)
     const children = (outEdges.get(id) ?? []).filter(
@@ -521,17 +615,25 @@ export function layoutGraph<
     )
     const continuationChildren = children.filter((c) => !subagentEdgeKeys.has(`${id}->${c}`))
     const subagentChildren = children.filter((c) => subagentEdgeKeys.has(`${id}->${c}`))
-    for (const c of [...continuationChildren].reverse()) {dfsStack.push(c)}
-    for (const c of [...subagentChildren].reverse()) {dfsStack.push(c)}
+    for (const c of [...continuationChildren].reverse()) {
+      dfsStack.push(c)
+    }
+    for (const c of [...subagentChildren].reverse()) {
+      dfsStack.push(c)
+    }
   }
   for (const n of primaryNodes) {
-    if (!topoVisited.has(n.id)) {topoOrder.push(n.id)}
+    if (!topoVisited.has(n.id)) {
+      topoOrder.push(n.id)
+    }
   }
 
   const laneCurrentY = new Map<number, number>()
   for (const n of primaryNodes) {
     const lane = nodeLane.get(n.id) ?? 0
-    if (!laneCurrentY.has(lane)) {laneCurrentY.set(lane, MARGIN_Y)}
+    if (!laneCurrentY.has(lane)) {
+      laneCurrentY.set(lane, MARGIN_Y)
+    }
   }
 
   const nodeY = new Map<string, number>()
@@ -541,16 +643,24 @@ export function layoutGraph<
     const lane = nodeLane.get(id) ?? 0
 
     for (const parentId of inEdges.get(id) ?? []) {
-      if (!nodeY.has(parentId)) {continue}
-      if ((nodeLane.get(parentId) ?? 0) === lane) {continue}
+      if (!nodeY.has(parentId)) {
+        continue
+      }
+      if ((nodeLane.get(parentId) ?? 0) === lane) {
+        continue
+      }
       const parentBottom =
         nodeY.get(parentId)! + (nodeHeightMap.get(parentId) ?? NODE_HEIGHT) + NODE_GAP
-      if (parentBottom > (laneCurrentY.get(lane) ?? MARGIN_Y)) {laneCurrentY.set(lane, parentBottom)}
+      if (parentBottom > (laneCurrentY.get(lane) ?? MARGIN_Y)) {
+        laneCurrentY.set(lane, parentBottom)
+      }
     }
 
     if (lane === 0) {
       for (const [l, y] of laneCurrentY) {
-        if (l !== 0 && y > (laneCurrentY.get(0) ?? MARGIN_Y)) {laneCurrentY.set(0, y)}
+        if (l !== 0 && y > (laneCurrentY.get(0) ?? MARGIN_Y)) {
+          laneCurrentY.set(0, y)
+        }
       }
     }
 
@@ -577,15 +687,21 @@ export function layoutGraph<
     const bfsQ = compRoots.map((n) => n.id)
     while (bfsQ.length > 0) {
       const id = bfsQ.shift()!
-      if (visited.has(id)) {continue}
+      if (visited.has(id)) {
+        continue
+      }
       visited.add(id)
       order.push(id)
       for (const childId of outEdges.get(id) ?? []) {
-        if (!visited.has(childId)) {bfsQ.push(childId)}
+        if (!visited.has(childId)) {
+          bfsQ.push(childId)
+        }
       }
     }
     for (const n of compNodes) {
-      if (!visited.has(n.id)) {order.push(n.id)}
+      if (!visited.has(n.id)) {
+        order.push(n.id)
+      }
     }
     order.forEach((id, rank) => {
       nodeLane.set(id, compLane)

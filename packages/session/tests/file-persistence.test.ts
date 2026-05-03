@@ -53,8 +53,18 @@ describe('DiskSessionPersistence', () => {
 
   describe('#when listing', () => {
     it('#then returns all saved session ids', async () => {
-      await persistence.save({ version: 1, id: 'a', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
-      await persistence.save({ version: 1, id: 'b', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
+      await persistence.save({
+        version: 1,
+        id: 'a',
+        entries: [],
+        metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] },
+      })
+      await persistence.save({
+        version: 1,
+        id: 'b',
+        entries: [],
+        metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] },
+      })
 
       const ids = await persistence.list()
       expect(ids).toContain('a')
@@ -65,7 +75,12 @@ describe('DiskSessionPersistence', () => {
 
   describe('#when deleting', () => {
     it('#then removes the persisted session', async () => {
-      await persistence.save({ version: 1, id: 'del-me', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
+      await persistence.save({
+        version: 1,
+        id: 'del-me',
+        entries: [],
+        metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] },
+      })
 
       const deleted = await persistence.delete('del-me')
       expect(deleted).toBe(true)
@@ -81,7 +96,12 @@ describe('DiskSessionPersistence', () => {
 
   describe('#when id contains path traversal characters', () => {
     it('#then round-trips the id safely', async () => {
-      await persistence.save({ version: 1, id: '../evil', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
+      await persistence.save({
+        version: 1,
+        id: '../evil',
+        entries: [],
+        metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] },
+      })
 
       const ids = await persistence.list()
       expect(ids).toHaveLength(1)
@@ -100,9 +120,22 @@ describe('DiskSessionPersistence', () => {
         entries: [
           { type: 'message', id: 'e1', message: 'a', timestamp: 100 },
           { type: 'message', id: 'e2', parentId: 'e1', message: 'b', timestamp: 200 },
-          { type: 'compaction', id: 'e3', parentId: 'e2', summary: 'sum', compactedCount: 1, timestamp: 300 },
+          {
+            type: 'compaction',
+            id: 'e3',
+            parentId: 'e2',
+            summary: 'sum',
+            compactedCount: 1,
+            timestamp: 300,
+          },
         ],
-        metadata: { createdAt: 100, lastActiveAt: 300, messageCount: 2, compactionCount: 1, tags: ['v1'] },
+        metadata: {
+          createdAt: 100,
+          lastActiveAt: 300,
+          messageCount: 2,
+          compactionCount: 1,
+          tags: ['v1'],
+        },
         leafId: 'e3',
       })
 
@@ -122,7 +155,12 @@ describe('DiskSessionPersistence', () => {
   describe('#createDiskSessionPersistence factory', () => {
     it('#then returns working persistence', async () => {
       const persistenceFromFactory = createDiskSessionPersistence<string>({ baseDir: tempDir })
-      await persistenceFromFactory.save({ version: 1, id: 'factory-test', entries: [], metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] } })
+      await persistenceFromFactory.save({
+        version: 1,
+        id: 'factory-test',
+        entries: [],
+        metadata: { createdAt: 0, lastActiveAt: 0, messageCount: 0, compactionCount: 0, tags: [] },
+      })
 
       const ids = await persistenceFromFactory.list()
       expect(ids).toContain('factory-test')

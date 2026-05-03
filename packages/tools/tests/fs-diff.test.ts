@@ -61,7 +61,9 @@ describe('fs diff utility', () => {
 
   it('adds ellipsis for large unchanged ranges', () => {
     const oldLines = Array.from({ length: 30 }, (_, i) => `line-${i + 1}`).join('\n')
-    const newLines = Array.from({ length: 30 }, (_, i) => (i === 14 ? 'line-15-updated' : `line-${i + 1}`)).join('\n')
+    const newLines = Array.from({ length: 30 }, (_, i) =>
+      i === 14 ? 'line-15-updated' : `line-${i + 1}`,
+    ).join('\n')
 
     const result = diff(oldLines, newLines, 2)
 

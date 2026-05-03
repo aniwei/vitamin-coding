@@ -265,3 +265,36 @@ AgentSession.chat()
 
 - 测试文件数：6
 - 覆盖：提示组装、模板解析、Profile 解析、环境上下文、缓存失效、Lesson 注入
+
+## 模块设计基线
+
+### 设计目的
+
+管理系统提示、子代理提示、模板片段和提示组装策略，为 Agent 提供可组合的 prompt 产物。
+
+### 接口设计
+
+- `PromptManager`：加载、注册、组装 prompt section。
+- `assemblePreset()`：按 preset 生成系统提示。
+- `subAgentPrompt`：子代理提示构建。
+- `prompts/*.md`：内置提示词资产。
+
+### 方法论
+
+Prompt 作为运行时产物按需组装，section 可由 Hook 改写，避免把提示词硬编码在 Agent 循环内。
+
+### 实现逻辑
+
+创建 session 时确定 preset；执行前加载模板和上下文 section，经 Hook transform 后输出最终 system prompt。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[preset + context] --> B[PromptManager]
+  B --> C[load sections/templates]
+  C --> D[assemble prompt]
+  D --> E[system-prompt hooks]
+  E --> F[final system prompt]
+  F --> G[AgentSession]
+```

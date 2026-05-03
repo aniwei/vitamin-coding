@@ -28,11 +28,15 @@ export function AskUser() {
 
   // Keyboard shortcuts
   useEffect(() => {
-    if (!pendingAskUser) {return}
+    if (!pendingAskUser) {
+      return
+    }
 
     const handleKeyDown = (e: KeyboardEvent) => {
       const questions = pendingAskUser.questions
-      if (!questions || currentIdx >= questions.length) {return}
+      if (!questions || currentIdx >= questions.length) {
+        return
+      }
       const q = questions[currentIdx]
 
       // Number keys to select options
@@ -43,8 +47,11 @@ export function AskUser() {
         if (q.multiSelect) {
           setSelectedOptions((prev) => {
             const next = new Set(prev)
-            if (next.has(optIdx)) {next.delete(optIdx)}
-            else {next.add(optIdx)}
+            if (next.has(optIdx)) {
+              next.delete(optIdx)
+            } else {
+              next.add(optIdx)
+            }
             return next
           })
         } else {
@@ -86,10 +93,14 @@ export function AskUser() {
     return () => window.removeEventListener('keydown', handleKeyDown)
   }, [pendingAskUser, currentIdx, selectedOptions, showOther, otherText])
 
-  if (!pendingAskUser) {return null}
+  if (!pendingAskUser) {
+    return null
+  }
 
   const questions = pendingAskUser.questions
-  if (!questions || questions.length === 0) {return null}
+  if (!questions || questions.length === 0) {
+    return null
+  }
 
   const currentQuestion: AskUserQuestion = questions[currentIdx]
   const isLastQuestion = currentIdx === questions.length - 1
@@ -98,8 +109,11 @@ export function AskUser() {
     if (currentQuestion.multiSelect) {
       setSelectedOptions((prev) => {
         const next = new Set(prev)
-        if (next.has(optIdx)) {next.delete(optIdx)}
-        else {next.add(optIdx)}
+        if (next.has(optIdx)) {
+          next.delete(optIdx)
+        } else {
+          next.add(optIdx)
+        }
         return next
       })
       setShowOther(false)
@@ -166,14 +180,14 @@ export function AskUser() {
   }
 
   return (
-    <div className="fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in">
-      <div className="bg-bg-000 rounded-xl shadow-2xl border border-border-300/15 max-w-lg w-full mx-4 animate-slide-up">
+    <div className='fixed inset-0 bg-black/20 backdrop-blur-sm flex items-center justify-center z-50 animate-fade-in'>
+      <div className='bg-bg-000 rounded-xl shadow-2xl border border-border-300/15 max-w-lg w-full mx-4 animate-slide-up'>
         {/* Header */}
-        <div className="border-b border-border-300/15 px-6 py-4">
-          <div className="flex items-center justify-between">
-            <h2 className="text-lg font-semibold text-text-000">Question</h2>
+        <div className='border-b border-border-300/15 px-6 py-4'>
+          <div className='flex items-center justify-between'>
+            <h2 className='text-lg font-semibold text-text-000'>Question</h2>
             {questions.length > 1 && (
-              <div className="flex items-center gap-1.5">
+              <div className='flex items-center gap-1.5'>
                 {questions.map((_, i) => (
                   <div
                     key={i}
@@ -190,20 +204,20 @@ export function AskUser() {
             )}
           </div>
           {currentQuestion.header && (
-            <span className="inline-block mt-2 px-2 py-0.5 bg-accent-secondary-900 text-accent-secondary-100 text-xs font-medium rounded">
+            <span className='inline-block mt-2 px-2 py-0.5 bg-accent-secondary-900 text-accent-secondary-100 text-xs font-medium rounded'>
               {currentQuestion.header}
             </span>
           )}
         </div>
 
         {/* Question */}
-        <div className="px-6 py-5 space-y-4">
-          <p className="text-sm text-text-100 font-medium leading-relaxed">
+        <div className='px-6 py-5 space-y-4'>
+          <p className='text-sm text-text-100 font-medium leading-relaxed'>
             {currentQuestion.question}
           </p>
 
           {/* Options */}
-          <div className="space-y-2">
+          <div className='space-y-2'>
             {currentQuestion.options.map((opt, i) => {
               const isSelected = selectedOptions.has(i)
               return (
@@ -226,24 +240,24 @@ export function AskUser() {
                   >
                     {isSelected && (
                       <svg
-                        className="w-3 h-3 text-white"
-                        fill="none"
-                        viewBox="0 0 24 24"
-                        stroke="currentColor"
+                        className='w-3 h-3 text-white'
+                        fill='none'
+                        viewBox='0 0 24 24'
+                        stroke='currentColor'
                       >
                         <path
-                          strokeLinecap="round"
-                          strokeLinejoin="round"
+                          strokeLinecap='round'
+                          strokeLinejoin='round'
                           strokeWidth={3}
-                          d="M5 13l4 4L19 7"
+                          d='M5 13l4 4L19 7'
                         />
                       </svg>
                     )}
                   </div>
 
-                  <div className="flex-1">
-                    <div className="flex items-center gap-2">
-                      <span className="text-xs font-mono text-text-500 bg-bg-200 px-1.5 py-0.5 rounded">
+                  <div className='flex-1'>
+                    <div className='flex items-center gap-2'>
+                      <span className='text-xs font-mono text-text-500 bg-bg-200 px-1.5 py-0.5 rounded'>
                         {i + 1}
                       </span>
                       <span
@@ -253,7 +267,7 @@ export function AskUser() {
                       </span>
                     </div>
                     {opt.description && (
-                      <p className="text-xs text-text-400 mt-1 ml-7">{opt.description}</p>
+                      <p className='text-xs text-text-400 mt-1 ml-7'>{opt.description}</p>
                     )}
                   </div>
                 </button>
@@ -277,11 +291,11 @@ export function AskUser() {
             {/* Other text input */}
             {showOther && (
               <input
-                type="text"
+                type='text'
                 value={otherText}
                 onChange={(e) => setOtherText(e.target.value)}
-                placeholder="Type your answer..."
-                className="w-full px-4 py-2.5 border border-border-300/20 rounded-lg text-sm text-text-000 bg-bg-000 focus:outline-none focus:ring-2 focus:ring-accent-secondary-100 focus:border-accent-secondary-100 placeholder-text-500"
+                placeholder='Type your answer...'
+                className='w-full px-4 py-2.5 border border-border-300/20 rounded-lg text-sm text-text-000 bg-bg-000 focus:outline-none focus:ring-2 focus:ring-accent-secondary-100 focus:border-accent-secondary-100 placeholder-text-500'
                 autoFocus
               />
             )}
@@ -289,19 +303,19 @@ export function AskUser() {
         </div>
 
         {/* Footer */}
-        <div className="border-t border-border-300/15 px-6 py-4 bg-bg-100 flex items-center justify-between">
+        <div className='border-t border-border-300/15 px-6 py-4 bg-bg-100 flex items-center justify-between'>
           <button
             onClick={handleCancel}
-            className="px-3 py-1.5 text-sm text-text-400 hover:text-text-200 transition-colors"
+            className='px-3 py-1.5 text-sm text-text-400 hover:text-text-200 transition-colors'
           >
             Cancel
           </button>
 
-          <div className="flex items-center gap-2">
+          <div className='flex items-center gap-2'>
             {currentIdx > 0 && (
               <button
                 onClick={handleBack}
-                className="px-4 py-2 text-sm font-medium text-text-200 bg-bg-000 border border-border-300/20 rounded-lg hover:bg-bg-200 transition-colors"
+                className='px-4 py-2 text-sm font-medium text-text-200 bg-bg-000 border border-border-300/20 rounded-lg hover:bg-bg-200 transition-colors'
               >
                 Back
               </button>
@@ -309,7 +323,7 @@ export function AskUser() {
             <button
               onClick={handleNext}
               disabled={selectedOptions.size === 0 && !(showOther && otherText.trim())}
-              className="px-4 py-2 text-sm font-medium text-white bg-accent-secondary-100 rounded-lg hover:bg-accent-secondary-100/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed"
+              className='px-4 py-2 text-sm font-medium text-white bg-accent-secondary-100 rounded-lg hover:bg-accent-secondary-100/90 transition-colors disabled:opacity-50 disabled:cursor-not-allowed'
             >
               {isLastQuestion ? 'Submit' : 'Next'}
             </button>
@@ -317,22 +331,22 @@ export function AskUser() {
         </div>
 
         {/* Keyboard hints */}
-        <div className="text-center pb-3">
-          <p className="text-xs text-text-500">
+        <div className='text-center pb-3'>
+          <p className='text-xs text-text-500'>
             Press{' '}
-            <kbd className="px-1 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono">
+            <kbd className='px-1 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono'>
               1
             </kbd>
             -
-            <kbd className="px-1 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono">
+            <kbd className='px-1 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono'>
               {currentQuestion.options.length}
             </kbd>{' '}
             to select,{' '}
-            <kbd className="px-1 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono">
+            <kbd className='px-1 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono'>
               Enter
             </kbd>{' '}
             to confirm,{' '}
-            <kbd className="px-1 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono">
+            <kbd className='px-1 py-0.5 bg-bg-200 border border-border-300/20 rounded text-xs font-mono'>
               Esc
             </kbd>{' '}
             to cancel

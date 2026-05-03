@@ -1,5 +1,9 @@
+import { mkdtemp, mkdir, writeFile } from 'node:fs/promises'
+import { tmpdir } from 'node:os'
+import { join } from 'node:path'
 import { describe, expect, it } from 'vitest'
 import { SettingsManager, createSettingsManager } from '../src/settings-manager'
+import { createSettingStore } from '@x-mars/setting'
 
 // ═══ SettingsManager ═══
 
@@ -107,6 +111,74 @@ describe('SettingsManager', () => {
 
     expect(mgr.config).toBeDefined()
     expect(mgr.config.log_level).toBe('info')
+  })
+
+  it('loads user, project, project-local, managed, and runtime layers in order', async () => {
+    const store = createSettingStore({
+      type: 'memory',
+      initial: {
+        '/user/config.jsonc': JSON.stringify({
+          model: 'user-model',
+          disabled_tools: ['user-tool'],
+        }),
+        '/workspace/.x-mars/config.jsonc': JSON.stringify({
+          model: 'project-model',
+          disabled_tools: ['project-tool'],
+        }),
+        '/workspace/.x-mars/config.local.jsonc': JSON.stringify({
+          theme: 'dark',
+          disabled_tools: ['local-tool'],
+        }),
+        '/managed/config.jsonc': JSON.stringify({
+          model: 'managed-model',
+          disabled_tools: ['managed-tool'],
+        }),
+      },
+    })
+
+    const mgr = await createSettingsManager({
+      workspaceDir: '/workspace',
+      userConfigPath: '/user/config.jsonc',
+      managedConfigPath: '/managed/config.jsonc',
+      overrides: { model: 'runtime-model' },
+      store,
+    })
+
+    expect(mgr.config.model).toBe('runtime-model')
+    expect(mgr.config.theme).toBe('dark')
+    expect(mgr.config.disabled_tools).toEqual([
+      'user-tool',
+      'project-tool',
+      'local-tool',
+      'managed-tool',
+    ])
+  })
+
+  it('merges workspace file agents with settings agents and runtime overrides', async () => {
+    const workspaceDir = await mkdtemp(join(tmpdir(), 'x-mars-settings-agents-'))
+    await mkdir(join(workspaceDir, '.x-mars', 'agents'), { recursive: true })
+    await writeFile(
+      join(workspaceDir, '.x-mars', 'agents', 'reviewer.md'),
+      ['---', 'tools: [read, grep]', '---', 'Review from file.'].join('\n'),
+      'utf-8',
+    )
+
+    const mgr = await createSettingsManager({
+      workspaceDir,
+      overrides: {
+        agents: {
+          reviewer: {
+            tools: ['read'],
+            system_prompt: 'Review from override.',
+          },
+        },
+      },
+    })
+
+    expect(mgr.config.agents?.reviewer).toMatchObject({
+      tools: ['read'],
+      system_prompt: 'Review from override.',
+    })
   })
 
   it('dispose cleans up resources', async () => {

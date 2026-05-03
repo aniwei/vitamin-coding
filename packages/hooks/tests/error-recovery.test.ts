@@ -1,8 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  createErrorRecoveryHook,
-  resetErrorRecoveryCounter,
-} from '../src/index'
+import { createErrorRecoveryHook, resetErrorRecoveryCounter } from '../src/index'
 
 describe('createErrorRecoveryHook', () => {
   it('#handles recoverable error within retry limit', () => {
@@ -14,10 +11,7 @@ describe('createErrorRecoveryHook', () => {
     })
 
     const error = new Error('Rate limit exceeded')
-    hook.handle(
-      { sessionId: 'sess-1', metadata: {}, error },
-      undefined as never,
-    )
+    hook.handle({ sessionId: 'sess-1', metadata: {}, error }, undefined as never)
 
     expect(recovered).toHaveLength(1)
     expect(recovered[0]!.sessionId).toBe('sess-1')

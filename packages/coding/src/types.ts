@@ -9,6 +9,8 @@ import type {
   PluginStateStore,
   PluginCommandRegistry,
   PluginAgentRegistry,
+  WebFetchProvider,
+  WebSearchProvider,
 } from '@x-mars/tools'
 import type { McpManager } from '@x-mars/tools'
 import type { PromptProviderOptions } from '@x-mars/prompt'
@@ -78,6 +80,8 @@ export interface XMarsAppOptions {
   sessionUrl?: string
   maxSessions?: number
   maxToolTurns?: number
+  /** Optional sub-agent/task concurrency limit. settings.workflow.max_active_tasks overrides it. */
+  maxActiveTasks?: number
   resourceManager?: ResourceManager
   /** prompt 提供者配置，默认使用内置 prompts 目录 */
   prompt?: PromptProviderOptions
@@ -89,6 +93,10 @@ export interface XMarsAppOptions {
   skillProvider?: SkillProvider
   /** 可选 MCP manager。提供后注册 MCP resource/prompt 工具并注入 MCP prompt section。 */
   mcpManager?: McpManager
+  /** 可选 WebFetch provider。未提供时使用 @x-mars/tools 默认 native fetch provider。 */
+  webFetchProvider?: WebFetchProvider
+  /** 可选 WebSearch provider。未提供时使用 @x-mars/tools 默认 Brave HTML fallback provider。 */
+  webSearchProvider?: WebSearchProvider
   /** 本地插件根目录。启动时扫描并加载其中的 plugin.json / x-mars-plugin.json。 */
   pluginRoots?: string[]
   /**

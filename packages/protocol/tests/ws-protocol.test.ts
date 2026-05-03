@@ -1,9 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  isValidWebSocketMessage,
-  validateWebSocketMessage,
-  type WebSocketMessage,
-} from '../src'
+import { isValidWebSocketMessage, validateWebSocketMessage, type WebSocketMessage } from '../src'
 
 describe('websocket protocol validation', () => {
   it('#accepts valid runtime connection state messages', () => {

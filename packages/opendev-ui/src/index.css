@@ -1,6 +1,6 @@
-@import "@xyflow/react/dist/style.css";
+@import '@xyflow/react/dist/style.css';
 
-@import "tailwindcss";
+@import 'tailwindcss';
 @config "../tailwind.config.js";
 
 :root {
@@ -224,7 +224,7 @@ pre {
   text-decoration: none !important;
 }
 .link-underline::after {
-  content: "";
+  content: '';
   position: absolute;
   bottom: -1px;
   left: 0;
@@ -289,7 +289,9 @@ pre {
 
 /* Code block hover lift */
 .code-hover pre {
-  transition: transform 0.2s ease, box-shadow 0.2s ease;
+  transition:
+    transform 0.2s ease,
+    box-shadow 0.2s ease;
 }
 .code-hover pre:hover {
   transform: translateY(-1px);

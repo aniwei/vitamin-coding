@@ -370,3 +370,38 @@ Agent 执行循环中：
 
 - 测试文件数：7
 - 覆盖：Hook 注册执行、权限策略评估、审计日志、预设模式、内置 Hook 行为
+
+## 模块设计基线
+
+### 设计目的
+
+提供 Agent 执行期的可插拔拦截、观察和策略治理能力，覆盖消息、工具、权限、质量、流指标和会话事件。
+
+### 接口设计
+
+- `HookRegistry` / `createHookRegistry()`：注册、排序和执行 Hook。
+- `defineHook()`：声明 Hook 规格。
+- `PermissionPolicyRegistry`：工具权限策略注册与裁决。
+- 内置 Hook：file guard、permission guard、output truncation、token budget、phase tracking 等。
+
+### 方法论
+
+用 timing + priority 构建稳定管线；拦截型 Hook 可修改输入输出，观察型 Hook 只记录事实；失败 Hook 经 safe wrapper 隔离。
+
+### 实现逻辑
+
+运行时在固定 timing 调用 registry；registry 按 priority 顺序执行 Hook，合并变更结果或记录观察事件。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[runtime timing] --> B[HookRegistry]
+  B --> C[sort by priority]
+  C --> D{hook type}
+  D -- interceptor --> E[transform input/output]
+  D -- observer --> F[record side effect]
+  E --> G[next hook]
+  F --> G
+  G --> H[runtime continues]
+```

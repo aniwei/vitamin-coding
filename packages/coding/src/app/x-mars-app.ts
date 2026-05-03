@@ -1,5 +1,6 @@
 import { Devtools } from '@x-mars/devtools'
 import { createModelSlot, createDefaultProviderRegistry, ModelRegistry } from '@x-mars/ai'
+import { createToolExecutor } from '@x-mars/agent'
 import {
   createHookRegistry,
   PermissionPolicyRegistry,
@@ -10,8 +11,11 @@ import {
   createDisabledToolsPolicy,
   compilePolicyFromSetting,
   createPermissionRegistry,
+  createToolOutputPersistenceHook,
+  createCommandHook,
+  isCommandHookConfig,
 } from '@x-mars/hooks'
-import type { PermissionMode, PermissionPolicySetting } from '@x-mars/hooks'
+import type { CommandHookConfig, PermissionMode, PermissionPolicySetting } from '@x-mars/hooks'
 import {
   createToolRegistry,
   createPluginManager,
@@ -28,6 +32,10 @@ import {
   type McpManager,
   type PluginManager,
   type PluginStateStore,
+  type ListAgents,
+  type CancelAgent,
+  type SearchSessions,
+  type ProgrammaticToolInvoker,
 } from '@x-mars/tools'
 import { SESSION_MAX } from '@x-mars/env'
 import { createResourceManager, SettingsManager } from '@x-mars/resources'
@@ -51,6 +59,7 @@ import {
   createInMemoryCodingSessionManager,
   createRemoteCodingSessionManager,
 } from '../session/coding-session-manager'
+import { createToolHookExecutor } from '../session/hooks'
 import {
   createToolGuidanceHook,
   createSkillCatalogHook,
@@ -69,6 +78,7 @@ import {
 } from '@x-mars/prompt'
 import type { AgentProfile } from '@x-mars/prompt'
 import { BUILTIN_AGENT_PROFILES } from '@x-mars/setting'
+import type { CommandHookSetting } from '@x-mars/setting'
 
 import type { AgentTool } from '@x-mars/agent'
 import type { AuthStore, Model, ProviderRegistry, WorkflowSlot } from '@x-mars/ai'
@@ -174,11 +184,14 @@ export class XMarsApp implements XMarsContext {
   private readonly pluginStateStore?: PluginStateStore
 
   private readonly orchestrator: Orchestrator
+  private readonly defaultMaxActiveTasks?: number
 
   private disposed = false
   private settingsLoaded = false
   private defaultToolPreset: 'minimal' | 'standard' | 'full' = 'full'
   private currentPermissionMode: PermissionMode = 'auto'
+  private readonly settingCommandHookNames = new Set<string>()
+  private readonly settingDisabledHookNames = new Set<string>()
 
   public get tools(): AgentTool[] {
     return this.toolRegistry.getAvailable(this.defaultToolPreset).map((tool) => ({
@@ -225,6 +238,7 @@ export class XMarsApp implements XMarsContext {
 
     this.maxSessions = maxSessions ?? SESSION_MAX
     this.maxToolTurns = maxToolTurns ?? 10
+    this.defaultMaxActiveTasks = options.maxActiveTasks
     this.workspaceDir = workspaceDir ?? process.cwd()
 
     this.logger = createLogger(logger.name, {
@@ -277,6 +291,8 @@ export class XMarsApp implements XMarsContext {
         this.defaultToolPreset = setting.tool_preset
       }
 
+      this.syncDisabledHooks(setting.disabled_hooks)
+      this.syncCommandHooks(setting.command_hooks, setting.disabled_hooks)
       this.updatePermissionPolicies(setting)
     })
 
@@ -375,6 +391,7 @@ export class XMarsApp implements XMarsContext {
     this.auditLog = auditLog
 
     this.registerHooks()
+    this.setupMcpSkillSync()
   }
 
   private async ensureSettingsLoaded(): Promise<void> {
@@ -770,7 +787,20 @@ export class XMarsApp implements XMarsContext {
     return new Orchestrator({
       hookRegistry: this.hookRegistry,
       runSession: run,
+      maxActiveTasks: () => this.resolveMaxActiveTasks(),
     })
+  }
+
+  private resolveMaxActiveTasks(): number {
+    const workflow = this.settings.get('workflow')
+    const value =
+      typeof workflow?.max_active_tasks === 'number'
+        ? workflow.max_active_tasks
+        : typeof workflow?.maxActiveTasks === 'number'
+          ? workflow.maxActiveTasks
+          : this.defaultMaxActiveTasks
+
+    return typeof value === 'number' && Number.isFinite(value) && value > 0 ? Math.floor(value) : 10
   }
 
   private initToolRegistry(options: XMarsAppOptions): ToolRegistry {
@@ -793,20 +823,210 @@ export class XMarsApp implements XMarsContext {
       ? (query, searchOptions) =>
           skillProvider.search?.(query, searchOptions) ?? Promise.resolve([])
       : undefined
+    const viewSkill = skillProvider?.view
+      ? (input: Parameters<NonNullable<SkillProvider['view']>>[0]) =>
+          skillProvider.view?.(input) ??
+          Promise.resolve({ success: false, error: 'Skill view is not configured.' })
+      : undefined
     const createSkill: CreateSkill | undefined = skillProvider?.create
       ? (input) => skillProvider.create?.(input) ?? Promise.resolve({ success: false })
       : undefined
     const improveSkill: ImproveSkill | undefined = skillProvider?.improve
       ? (input) => skillProvider.improve?.(input) ?? Promise.resolve({ success: false })
       : undefined
+    const listAgents: ListAgents = async ({ includeDisabled } = {}) => {
+      await this.ensureSettingsLoaded()
+      const tasks = await this.orchestrator.taskStore.list()
+      const runtimeByAgent = new Map<
+        string,
+        {
+          activeTaskCount: number
+          runningTaskIds: string[]
+          recentTaskIds: string[]
+          lastTaskStatus?: string
+        }
+      >()
+      for (const task of tasks) {
+        const name = task.input.subagent
+        if (!name) {
+          continue
+        }
+        const runtime = runtimeByAgent.get(name) ?? {
+          activeTaskCount: 0,
+          runningTaskIds: [],
+          recentTaskIds: [],
+        }
+        if (task.status === 'running' || task.status === 'pending') {
+          runtime.activeTaskCount++
+        }
+        if (task.status === 'running') {
+          runtime.runningTaskIds.push(task.id)
+        }
+        runtime.recentTaskIds.push(task.id)
+        runtime.lastTaskStatus = task.status
+        runtimeByAgent.set(name, runtime)
+      }
+
+      const agents = new Map<
+        string,
+        {
+          name: string
+          description?: string
+          source?: 'builtin' | 'file' | 'settings' | 'plugin' | 'unknown'
+          filePath?: string
+          tools?: string[]
+          capabilities?: string[]
+          categories?: string[]
+          defaultWorkflowSlot?: string
+          maxToolTurns?: number
+          disabled?: boolean
+          activeTaskCount?: number
+          runningTaskIds?: string[]
+          recentTaskIds?: string[]
+          lastTaskStatus?: string
+        }
+      >()
+
+      for (const profile of BUILTIN_AGENT_PROFILES) {
+        const runtime = runtimeByAgent.get(profile.name)
+        agents.set(profile.name, {
+          name: profile.name,
+          description: profile.taskTypes.join(', '),
+          source: 'builtin',
+          tools: resolveAgentToolNames(profile.defaultTools),
+          capabilities: profile.capabilities,
+          categories: profile.taskTypes,
+          maxToolTurns: profile.defaultMaxToolTurns,
+          ...runtime,
+        })
+      }
+
+      for (const [name, agent] of Object.entries(this.settings.get('agents') ?? {})) {
+        const filePath = typeof agent.filePath === 'string' ? agent.filePath : undefined
+        const runtime = runtimeByAgent.get(name)
+        agents.set(name, {
+          name,
+          description: agent.description,
+          source: filePath ? 'file' : 'settings',
+          filePath,
+          tools: agent.tools,
+          capabilities: agent.capabilities,
+          categories: agent.categories,
+          defaultWorkflowSlot: agent.default_workflow_slot,
+          maxToolTurns: agent.max_tool_turns,
+          disabled: agent.disabled,
+          ...runtime,
+        })
+      }
+
+      for (const { pluginId, agent } of this.pluginAgentRegistry.list()) {
+        const runtime = runtimeByAgent.get(agent.name)
+        agents.set(agent.name, {
+          name: agent.name,
+          description: agent.description,
+          source: 'plugin',
+          tools: agent.tools,
+          categories: [`plugin:${pluginId}`],
+          ...runtime,
+        })
+      }
+
+      return {
+        success: true,
+        agents: [...agents.values()].filter((agent) => includeDisabled || !agent.disabled),
+      }
+    }
+    const cancelAgent: CancelAgent = async (agent, { includePending } = {}) => {
+      const tasks = await this.orchestrator.taskStore.list()
+      const cancelled: string[] = []
+      const skipped: Array<{ id: string; status: string; reason: string }> = []
+
+      for (const task of tasks) {
+        if (task.input.subagent !== agent) {
+          continue
+        }
+        if (task.status !== 'running' && !(includePending && task.status === 'pending')) {
+          skipped.push({
+            id: task.id,
+            status: task.status,
+            reason: includePending ? 'not active' : 'not running',
+          })
+          continue
+        }
+
+        const result = await this.orchestrator.updateTask(task.id, 'cancel')
+        if (result.success) {
+          cancelled.push(task.id)
+        } else {
+          skipped.push({
+            id: task.id,
+            status: task.status,
+            reason: result.message,
+          })
+        }
+      }
+
+      return {
+        success: true,
+        agent,
+        cancelled,
+        skipped,
+      }
+    }
+    const searchSessions: SearchSessions = (input) =>
+      this.codingSessionManager.searchSessions(input)
+    const invokeProgrammaticTool: ProgrammaticToolInvoker = async ({ name, params }) => {
+      if (name === 'execute_code') {
+        return {
+          content: [{ type: 'text', text: 'execute_code cannot call itself' }],
+          isError: true,
+        }
+      }
+
+      const tool = this.toolRegistry.get(name)
+      if (!tool) {
+        return {
+          content: [{ type: 'text', text: `Unknown tool: ${name}` }],
+          isError: true,
+        }
+      }
+
+      const executor = createToolExecutor([tool], {
+        hookExecutor: createToolHookExecutor({
+          hookRegistry: this.hookRegistry,
+          agentName: 'execute_code',
+          sessionId: 'programmatic',
+          metadata: { source: 'execute_code' },
+        }),
+        agentName: 'execute_code',
+        sessionId: 'programmatic',
+      })
+
+      return executor.execute(
+        {
+          type: 'tool_call',
+          id: `execute_code:${name}:${Date.now()}`,
+          name,
+          arguments: params,
+        },
+        new AbortController().signal,
+      )
+    }
 
     const registry = createToolRegistry(this.workspaceDir, {
       callAgent: this.orchestrator.callAgent,
       loadSkill,
       executeSkill,
       searchSkills,
+      viewSkill,
       createSkill,
       improveSkill,
+      listAgents,
+      cancelAgent,
+      searchSessions,
+      invokeProgrammaticTool,
+      webFetchProvider: options.webFetchProvider,
+      webSearchProvider: options.webSearchProvider,
       dispatchTask: this.orchestrator.dispatchTask,
       createTask: this.orchestrator.createTask,
       getTask: this.orchestrator.getTask,
@@ -885,6 +1105,11 @@ export class XMarsApp implements XMarsContext {
 
   private registerHooks(): void {
     this.hookRegistry.register(
+      createToolOutputPersistenceHook({
+        baseDir: `${this.workspaceDir}/.x-mars/tool-outputs`,
+      }),
+    )
+    this.hookRegistry.register(
       createToolGuidanceHook(this.toolRegistry, () => this.defaultToolPreset),
     )
     if (this.mcpManager) {
@@ -899,6 +1124,39 @@ export class XMarsApp implements XMarsContext {
     this.hookRegistry.registerAll(
       createSessionLearningHooks((id) => this.getSession(id), this.promptManager),
     )
+  }
+
+  private setupMcpSkillSync(): void {
+    if (!this.mcpManager || !this.skillProvider?.syncMcpSkills) {
+      return
+    }
+
+    const sync = (reason: string): void => {
+      void this.skillProvider
+        ?.syncMcpSkills?.(this.mcpManager!)
+        .then((result) => {
+          if (result.synced > 0 || result.errors.length > 0) {
+            this.logger.info(
+              'MCP skill sync completed after %s: synced=%d skipped=%d errors=%d',
+              reason,
+              result.synced,
+              result.skipped,
+              result.errors.length,
+            )
+          }
+        })
+        .catch((error) => {
+          this.logger.warn(
+            'MCP skill sync failed after %s: %s',
+            reason,
+            error instanceof Error ? error.message : String(error),
+          )
+        })
+    }
+
+    this.mcpManager.on('server.connected', () => sync('server.connected'))
+    this.mcpManager.on('resources.changed', () => sync('resources.changed'))
+    sync('initialization')
   }
 
   private updatePermissionPolicies(setting: {
@@ -916,6 +1174,54 @@ export class XMarsApp implements XMarsContext {
       'Permission policies synced: %d policies active',
       this.permissionRegistry.getAll().length,
     )
+  }
+
+  private syncDisabledHooks(disabledHooks: string[] | undefined): void {
+    const next = new Set(disabledHooks ?? [])
+
+    for (const name of this.settingDisabledHookNames) {
+      if (!next.has(name)) {
+        this.hookRegistry.enable(name)
+      }
+    }
+
+    for (const name of next) {
+      this.hookRegistry.disable(name)
+    }
+
+    this.settingDisabledHookNames.clear()
+    for (const name of next) {
+      this.settingDisabledHookNames.add(name)
+    }
+  }
+
+  private syncCommandHooks(
+    commandHooks: CommandHookSetting[] | undefined,
+    disabledHooks: string[] | undefined,
+  ): void {
+    for (const name of this.settingCommandHookNames) {
+      this.hookRegistry.unregister(name)
+    }
+    this.settingCommandHookNames.clear()
+
+    const disabled = new Set(disabledHooks ?? [])
+
+    for (const hook of commandHooks ?? []) {
+      if (!isCommandHookConfig(hook) || hook.enabled === false) {
+        continue
+      }
+
+      const runtimeName = `setting::command-hook::${hook.name}`
+      const enabled = !disabled.has(hook.name) && !disabled.has(runtimeName)
+      const config: CommandHookConfig = {
+        ...hook,
+        name: runtimeName,
+        enabled,
+      }
+
+      this.hookRegistry.register(createCommandHook(config))
+      this.settingCommandHookNames.add(runtimeName)
+    }
   }
 
   private syncModePolicy(

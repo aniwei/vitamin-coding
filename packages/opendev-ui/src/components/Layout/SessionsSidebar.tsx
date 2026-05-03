@@ -148,10 +148,18 @@ export function SessionsSidebar() {
     const diffHours = Math.floor(diffMs / 3600000)
     const diffDays = Math.floor(diffMs / 86400000)
 
-    if (diffMins < 1) {return 'Just now'}
-    if (diffMins < 60) {return `${diffMins}m ago`}
-    if (diffHours < 24) {return `${diffHours}h ago`}
-    if (diffDays < 7) {return `${diffDays}d ago`}
+    if (diffMins < 1) {
+      return 'Just now'
+    }
+    if (diffMins < 60) {
+      return `${diffMins}m ago`
+    }
+    if (diffHours < 24) {
+      return `${diffHours}h ago`
+    }
+    if (diffDays < 7) {
+      return `${diffDays}d ago`
+    }
     return date.toLocaleDateString()
   }
 
@@ -208,7 +216,9 @@ export function SessionsSidebar() {
   }
 
   const confirmDeleteSession = async () => {
-    if (!deleteSessionId) {return}
+    if (!deleteSessionId) {
+      return
+    }
 
     try {
       const response = await fetch(`/api/sessions/${deleteSessionId}`, { method: 'DELETE' })
@@ -238,7 +248,9 @@ export function SessionsSidebar() {
   }
 
   const confirmDelete = async () => {
-    if (!deleteWorkspace) {return}
+    if (!deleteWorkspace) {
+      return
+    }
 
     try {
       const currentSid = useChatStore.getState().currentSessionId
@@ -289,16 +301,16 @@ export function SessionsSidebar() {
 
   return (
     <aside
-      className="h-full flex flex-col relative overflow-hidden flex-shrink-0 bg-gray-50 border-r border-gray-200"
+      className='h-full flex flex-col relative overflow-hidden flex-shrink-0 bg-gray-50 border-r border-gray-200'
       style={{
         width: isCollapsed ? 64 : 320,
         transition: 'width 300ms cubic-bezier(0.25, 0.46, 0.45, 0.94)',
       }}
     >
       {showCollapsedContent ? (
-        <div className="min-w-[64px] flex flex-col h-full animate-content-fade">
+        <div className='min-w-[64px] flex flex-col h-full animate-content-fade'>
           {/* Collapsed Workspace Icons */}
-          <div className="flex-1 overflow-y-auto py-3 space-y-2 flex flex-col items-center">
+          <div className='flex-1 overflow-y-auto py-3 space-y-2 flex flex-col items-center'>
             {workspaces.slice(0, 5).map((workspace) => {
               const hasActiveSession = workspace.sessions.some((s) => s.id === currentSessionId)
               const hasRunningSession = workspace.sessions.some((s) => runningSessions.has(s.id))
@@ -307,7 +319,7 @@ export function SessionsSidebar() {
               return (
                 <div
                   key={workspace.path}
-                  className="relative group"
+                  className='relative group'
                   title={`${projectName} (${workspace.sessions.length} sessions)`}
                 >
                   <button
@@ -328,18 +340,18 @@ export function SessionsSidebar() {
                     />
                   </button>
                   {hasRunningSession && (
-                    <div className="absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-[1.5px] border-amber-200 border-t-amber-500 animate-spin" />
+                    <div className='absolute -top-0.5 -right-0.5 w-2.5 h-2.5 rounded-full border-[1.5px] border-amber-200 border-t-amber-500 animate-spin' />
                   )}
 
                   {/* Tooltip */}
-                  <div className="absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap opacity-60 group-hover:opacity-100 pointer-events-none z-50 shadow-lg">
-                    <div className="font-medium text-sm mb-1">{projectName}</div>
-                    <div className="text-gray-300 text-xs">
+                  <div className='absolute left-full ml-2 top-1/2 transform -translate-y-1/2 bg-gray-900 text-white text-xs rounded-lg px-3 py-2 whitespace-nowrap opacity-60 group-hover:opacity-100 pointer-events-none z-50 shadow-lg'>
+                    <div className='font-medium text-sm mb-1'>{projectName}</div>
+                    <div className='text-gray-300 text-xs'>
                       {workspace.sessions.length} session
                       {workspace.sessions.length !== 1 ? 's' : ''}
                     </div>
-                    {hasActiveSession && <div className="text-amber-300 text-xs mt-1">Active</div>}
-                    <div className="absolute right-full top-1/2 transform -translate-y-1/2 border-4 border-transparent border-r-gray-900"></div>
+                    {hasActiveSession && <div className='text-amber-300 text-xs mt-1'>Active</div>}
+                    <div className='absolute right-full top-1/2 transform -translate-y-1/2 border-4 border-transparent border-r-gray-900'></div>
                   </div>
                 </div>
               )
@@ -348,7 +360,9 @@ export function SessionsSidebar() {
             {/* New Workspace Button (Collapsed) */}
             <button
               onClick={() => {
-                if (currentSessionIsEmpty) {return}
+                if (currentSessionIsEmpty) {
+                  return
+                }
                 toggleSidebar()
                 setTimeout(() => setIsNewSessionOpen(true), 100)
               }}
@@ -364,25 +378,25 @@ export function SessionsSidebar() {
                   : 'Start Conversation'
               }
             >
-              <PlusIcon className="w-5 h-5" />
+              <PlusIcon className='w-5 h-5' />
             </button>
           </div>
 
           {/* Collapsed Footer */}
-          <div className="p-2 border-t border-gray-200 bg-gray-50">
+          <div className='p-2 border-t border-gray-200 bg-gray-50'>
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="w-full p-2 text-gray-700 hover:text-gray-900 bg-white hover:bg-amber-50/30 border border-gray-200 hover:border-amber-300 rounded-xl flex items-center justify-center"
-              title="Settings"
+              className='w-full p-2 text-gray-700 hover:text-gray-900 bg-white hover:bg-amber-50/30 border border-gray-200 hover:border-amber-300 rounded-xl flex items-center justify-center'
+              title='Settings'
             >
-              <Cog6ToothIcon className="w-5 h-5" />
+              <Cog6ToothIcon className='w-5 h-5' />
             </button>
           </div>
         </div>
       ) : (
-        <div className="min-w-[320px] flex flex-col h-full animate-content-fade">
+        <div className='min-w-[320px] flex flex-col h-full animate-content-fade'>
           {/* Compact New Chat Header */}
-          <div className="flex items-center justify-between px-4 py-3 border-b border-gray-200">
+          <div className='flex items-center justify-between px-4 py-3 border-b border-gray-200'>
             <button
               onClick={currentSessionIsEmpty ? undefined : handleNewWorkspace}
               disabled={currentSessionIsEmpty}
@@ -395,50 +409,50 @@ export function SessionsSidebar() {
                   : 'bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-600 hover:to-blue-700 text-white shadow-sm hover:shadow-md'
               }`}
             >
-              <PlusIcon className="w-4 h-4" />
+              <PlusIcon className='w-4 h-4' />
               <span>New Chat</span>
             </button>
           </div>
 
           {/* Workspaces Header */}
-          <div className="px-5 py-4 border-b border-gray-100">
-            <h2 className="text-xs font-semibold text-gray-500 uppercase tracking-wider">
+          <div className='px-5 py-4 border-b border-gray-100'>
+            <h2 className='text-xs font-semibold text-gray-500 uppercase tracking-wider'>
               Workspaces
             </h2>
           </div>
 
           {/* Workspaces List */}
-          <div className="flex-1 overflow-y-auto px-4 py-3">
+          <div className='flex-1 overflow-y-auto px-4 py-3'>
             {isLoading ? (
-              <div className="space-y-3 px-0 py-3">
-                <div className="skeleton-shimmer h-16 rounded-xl" />
-                <div className="skeleton-shimmer h-16 rounded-xl" />
-                <div className="skeleton-shimmer h-16 rounded-xl" />
+              <div className='space-y-3 px-0 py-3'>
+                <div className='skeleton-shimmer h-16 rounded-xl' />
+                <div className='skeleton-shimmer h-16 rounded-xl' />
+                <div className='skeleton-shimmer h-16 rounded-xl' />
               </div>
             ) : workspaces.length === 0 ? (
-              <div className="flex flex-col items-center justify-center py-12 px-4 text-center">
-                <div className="w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4">
+              <div className='flex flex-col items-center justify-center py-12 px-4 text-center'>
+                <div className='w-16 h-16 rounded-full bg-gray-100 flex items-center justify-center mb-4'>
                   <svg
-                    className="w-8 h-8 text-gray-400"
-                    fill="none"
-                    viewBox="0 0 24 24"
-                    stroke="currentColor"
+                    className='w-8 h-8 text-gray-400'
+                    fill='none'
+                    viewBox='0 0 24 24'
+                    stroke='currentColor'
                   >
                     <path
-                      strokeLinecap="round"
-                      strokeLinejoin="round"
+                      strokeLinecap='round'
+                      strokeLinejoin='round'
                       strokeWidth={1.5}
-                      d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                      d='M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'
                     />
                   </svg>
                 </div>
-                <h3 className="text-sm font-medium text-gray-900 mb-1">No workspaces yet</h3>
-                <p className="text-xs text-gray-500 max-w-[200px]">
+                <h3 className='text-sm font-medium text-gray-900 mb-1'>No workspaces yet</h3>
+                <p className='text-xs text-gray-500 max-w-[200px]'>
                   Start a conversation to create your first workspace
                 </p>
               </div>
             ) : (
-              <div className="space-y-3 animate-fade-in">
+              <div className='space-y-3 animate-fade-in'>
                 {workspaces.map((workspace) => {
                   const isExpanded = expandedWorkspaces.has(workspace.path)
                   const hasActiveSession = workspace.sessions.some((s) => s.id === currentSessionId)
@@ -447,7 +461,7 @@ export function SessionsSidebar() {
                   return (
                     <div
                       key={workspace.path}
-                      className="relative w-full rounded-xl bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm"
+                      className='relative w-full rounded-xl bg-white border border-gray-200 hover:border-gray-300 hover:shadow-sm'
                     >
                       {/* Workspace Header */}
                       <button
@@ -455,9 +469,9 @@ export function SessionsSidebar() {
                           e.stopPropagation()
                           toggleWorkspace(workspace.path, e)
                         }}
-                        className="w-full px-4 py-3.5 text-left group cursor-pointer hover:bg-gray-100/50 rounded-t-xl"
+                        className='w-full px-4 py-3.5 text-left group cursor-pointer hover:bg-gray-100/50 rounded-t-xl'
                       >
-                        <div className="flex items-start gap-2 pr-10">
+                        <div className='flex items-start gap-2 pr-10'>
                           <ChevronDownIcon
                             className={`mt-0.5 w-4 h-4 flex-shrink-0 text-gray-500 ${
                               isExpanded ? 'rotate-0' : '-rotate-90'
@@ -465,31 +479,31 @@ export function SessionsSidebar() {
                             style={{ transition: 'transform 200ms ease' }}
                           />
 
-                          <div className="mt-0.5 w-4 h-4 rounded flex-shrink-0 flex items-center justify-center bg-gray-100 group-hover:bg-gray-200">
+                          <div className='mt-0.5 w-4 h-4 rounded flex-shrink-0 flex items-center justify-center bg-gray-100 group-hover:bg-gray-200'>
                             <svg
-                              className="w-2.5 h-2.5 text-gray-500"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
+                              className='w-2.5 h-2.5 text-gray-500'
+                              fill='none'
+                              viewBox='0 0 24 24'
+                              stroke='currentColor'
                             >
                               <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
                                 strokeWidth={2.5}
-                                d="M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z"
+                                d='M3 7v10a2 2 0 002 2h14a2 2 0 002-2V9a2 2 0 00-2-2h-6l-2-2H5a2 2 0 00-2 2z'
                               />
                             </svg>
                           </div>
 
-                          <div className="flex-1 min-w-0">
+                          <div className='flex-1 min-w-0'>
                             <h3
-                              className="text-sm font-semibold text-gray-900 truncate"
+                              className='text-sm font-semibold text-gray-900 truncate'
                               title={workspace.path}
                             >
                               {projectName}
                             </h3>
-                            <div className="flex items-center justify-between text-xs mt-1">
-                              <span className="text-gray-400 truncate" title={workspace.path}>
+                            <div className='flex items-center justify-between text-xs mt-1'>
+                              <span className='text-gray-400 truncate' title={workspace.path}>
                                 {formatDate(
                                   workspace.mostRecent.updatedAt || workspace.mostRecent.createdAt,
                                 )}
@@ -514,33 +528,33 @@ export function SessionsSidebar() {
                           e.stopPropagation()
                           handleDeleteWorkspace(workspace, e)
                         }}
-                        className="absolute top-3.5 right-3 w-7 h-7 rounded-md flex items-center justify-center hover:bg-red-100 text-gray-400 hover:text-red-600 bg-white shadow-sm z-10 delete-glow"
-                        title="Delete workspace"
+                        className='absolute top-3.5 right-3 w-7 h-7 rounded-md flex items-center justify-center hover:bg-red-100 text-gray-400 hover:text-red-600 bg-white shadow-sm z-10 delete-glow'
+                        title='Delete workspace'
                       >
                         <svg
-                          className="w-4 h-4"
-                          fill="none"
-                          viewBox="0 0 24 24"
-                          stroke="currentColor"
+                          className='w-4 h-4'
+                          fill='none'
+                          viewBox='0 0 24 24'
+                          stroke='currentColor'
                         >
                           <path
-                            strokeLinecap="round"
-                            strokeLinejoin="round"
+                            strokeLinecap='round'
+                            strokeLinejoin='round'
                             strokeWidth={2}
-                            d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                            d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
                           />
                         </svg>
                       </button>
 
                       {/* Sessions List (Animated expand/collapse) */}
                       <div
-                        className="overflow-hidden transition-all duration-300"
+                        className='overflow-hidden transition-all duration-300'
                         style={{
                           maxHeight: isExpanded ? '1000px' : '0px',
                           opacity: isExpanded ? 1 : 0,
                         }}
                       >
-                        <div className="px-4 pb-3 space-y-1.5 border-t border-gray-100 pt-2">
+                        <div className='px-4 pb-3 space-y-1.5 border-t border-gray-100 pt-2'>
                           {/* Add New Session Button */}
                           <button
                             onClick={
@@ -561,19 +575,19 @@ export function SessionsSidebar() {
                             }`}
                           >
                             <svg
-                              className="w-3.5 h-3.5"
-                              fill="none"
-                              viewBox="0 0 24 24"
-                              stroke="currentColor"
+                              className='w-3.5 h-3.5'
+                              fill='none'
+                              viewBox='0 0 24 24'
+                              stroke='currentColor'
                             >
                               <path
-                                strokeLinecap="round"
-                                strokeLinejoin="round"
+                                strokeLinecap='round'
+                                strokeLinejoin='round'
                                 strokeWidth={2}
-                                d="M12 4v16m8-8H4"
+                                d='M12 4v16m8-8H4'
                               />
                             </svg>
-                            <span className="text-xs font-medium">New Session</span>
+                            <span className='text-xs font-medium'>New Session</span>
                           </button>
 
                           {/* Sessions List */}
@@ -587,7 +601,7 @@ export function SessionsSidebar() {
                             )
 
                             return (
-                              <div key={session.id} className="relative group">
+                              <div key={session.id} className='relative group'>
                                 <button
                                   onClick={(e) => handleSessionClick(session, e)}
                                   className={`w-full px-4 py-3 pr-10 rounded-lg text-left cursor-pointer ${
@@ -596,12 +610,12 @@ export function SessionsSidebar() {
                                       : 'bg-white border border-gray-200 hover:border-amber-300 hover:bg-amber-50/30 hover:scale-[1.01] hover:shadow-sm transition-all duration-200'
                                   }`}
                                 >
-                                  <div className="flex items-center gap-1.5">
+                                  <div className='flex items-center gap-1.5'>
                                     {isRunning && (
-                                      <div className="w-3.5 h-3.5 rounded-full border-2 border-amber-200 border-t-amber-500 animate-spin flex-shrink-0" />
+                                      <div className='w-3.5 h-3.5 rounded-full border-2 border-amber-200 border-t-amber-500 animate-spin flex-shrink-0' />
                                     )}
                                     {needsAttention && !isRunning && (
-                                      <div className="w-4 h-4 rounded-full bg-orange-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">
+                                      <div className='w-4 h-4 rounded-full bg-orange-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0'>
                                         !
                                       </div>
                                     )}
@@ -614,18 +628,18 @@ export function SessionsSidebar() {
                                       {sessionLabel}
                                     </div>
                                     {needsAttention && isRunning && (
-                                      <div className="w-4 h-4 rounded-full bg-orange-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0">
+                                      <div className='w-4 h-4 rounded-full bg-orange-500 text-white text-[9px] font-bold flex items-center justify-center flex-shrink-0'>
                                         !
                                       </div>
                                     )}
                                     {session.hasSessionModel && (
                                       <span
-                                        className="w-2 h-2 rounded-full bg-purple-400 flex-shrink-0"
-                                        title="Custom model"
+                                        className='w-2 h-2 rounded-full bg-purple-400 flex-shrink-0'
+                                        title='Custom model'
                                       />
                                     )}
                                   </div>
-                                  <div className="flex items-center justify-between text-xs mt-1">
+                                  <div className='flex items-center justify-between text-xs mt-1'>
                                     <span
                                       className={`${
                                         isActiveSession ? 'text-amber-600' : 'text-gray-400'
@@ -644,7 +658,7 @@ export function SessionsSidebar() {
                                 </button>
 
                                 {/* Session Action Buttons */}
-                                <div className="absolute top-1.5 right-1.5 flex gap-0.5 opacity-60 group-hover:opacity-100 z-10">
+                                <div className='absolute top-1.5 right-1.5 flex gap-0.5 opacity-60 group-hover:opacity-100 z-10'>
                                   {/* Session Model Button */}
                                   <button
                                     onClick={(e) => {
@@ -652,28 +666,28 @@ export function SessionsSidebar() {
                                       setSessionModelSessionId(session.id)
                                       setSessionModelLabel(getSessionLabel(session))
                                     }}
-                                    className="w-6 h-6 rounded flex items-center justify-center hover:bg-amber-100 text-gray-400 hover:text-amber-600"
-                                    title="Session models"
+                                    className='w-6 h-6 rounded flex items-center justify-center hover:bg-amber-100 text-gray-400 hover:text-amber-600'
+                                    title='Session models'
                                   >
-                                    <Cog6ToothIcon className="w-3.5 h-3.5" />
+                                    <Cog6ToothIcon className='w-3.5 h-3.5' />
                                   </button>
                                   {/* Delete Session Button */}
                                   <button
                                     onClick={(e) => handleDeleteSession(session.id, e)}
-                                    className="w-6 h-6 rounded flex items-center justify-center hover:bg-red-100 text-gray-400 hover:text-red-600 delete-glow"
-                                    title="Delete session"
+                                    className='w-6 h-6 rounded flex items-center justify-center hover:bg-red-100 text-gray-400 hover:text-red-600 delete-glow'
+                                    title='Delete session'
                                   >
                                     <svg
-                                      className="w-3.5 h-3.5"
-                                      fill="none"
-                                      viewBox="0 0 24 24"
-                                      stroke="currentColor"
+                                      className='w-3.5 h-3.5'
+                                      fill='none'
+                                      viewBox='0 0 24 24'
+                                      stroke='currentColor'
                                     >
                                       <path
-                                        strokeLinecap="round"
-                                        strokeLinejoin="round"
+                                        strokeLinecap='round'
+                                        strokeLinejoin='round'
                                         strokeWidth={2}
-                                        d="M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16"
+                                        d='M19 7l-.867 12.142A2 2 0 0116.138 21H7.862a2 2 0 01-1.995-1.858L5 7m5 4v6m4-6v6m1-10V4a1 1 0 00-1-1h-4a1 1 0 00-1 1v3M4 7h16'
                                       />
                                     </svg>
                                   </button>
@@ -691,12 +705,12 @@ export function SessionsSidebar() {
           </div>
 
           {/* Footer - Expanded */}
-          <div className="p-4 border-t border-gray-200 bg-gray-50">
+          <div className='p-4 border-t border-gray-200 bg-gray-50'>
             <button
               onClick={() => setIsSettingsOpen(true)}
-              className="w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white hover:bg-amber-50/30 border border-gray-200 hover:border-amber-300 rounded-xl flex items-center justify-center gap-2"
+              className='w-full px-4 py-2.5 text-sm font-medium text-gray-700 hover:text-gray-900 bg-white hover:bg-amber-50/30 border border-gray-200 hover:border-amber-300 rounded-xl flex items-center justify-center gap-2'
             >
-              <Cog6ToothIcon className="w-4 h-4" />
+              <Cog6ToothIcon className='w-4 h-4' />
               <span>Settings</span>
             </button>
           </div>
@@ -727,30 +741,30 @@ export function SessionsSidebar() {
       {deleteSessionId &&
         createPortal(
           <div
-            className="fixed inset-0 bg-black/50 z-[99999] flex items-center justify-center"
+            className='fixed inset-0 bg-black/50 z-[99999] flex items-center justify-center'
             onClick={() => setDeleteSessionId(null)}
           >
             <div
-              className="bg-white p-6 rounded-xl min-w-[400px] shadow-2xl animate-scale-in"
+              className='bg-white p-6 rounded-xl min-w-[400px] shadow-2xl animate-scale-in'
               onClick={(e) => e.stopPropagation()}
             >
-              <h3 className="text-lg font-semibold text-gray-900 mb-3">Delete Session</h3>
-              <p className="text-sm text-gray-500 mb-5">
+              <h3 className='text-lg font-semibold text-gray-900 mb-3'>Delete Session</h3>
+              <p className='text-sm text-gray-500 mb-5'>
                 Are you sure you want to delete session{' '}
-                <strong className="text-gray-700">{deleteSessionId.substring(0, 8)}</strong>?
+                <strong className='text-gray-700'>{deleteSessionId.substring(0, 8)}</strong>?
                 <br />
                 This action cannot be undone.
               </p>
-              <div className="flex gap-3 justify-end">
+              <div className='flex gap-3 justify-end'>
                 <button
                   onClick={() => setDeleteSessionId(null)}
-                  className="px-4 py-2 border border-gray-300 bg-white rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors"
+                  className='px-4 py-2 border border-gray-300 bg-white rounded-lg text-sm font-medium text-gray-700 hover:bg-gray-50 transition-colors'
                 >
                   Cancel
                 </button>
                 <button
                   onClick={confirmDeleteSession}
-                  className="px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors"
+                  className='px-4 py-2 bg-red-500 hover:bg-red-600 text-white rounded-lg text-sm font-medium transition-colors'
                 >
                   Delete
                 </button>

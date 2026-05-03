@@ -142,14 +142,16 @@ describe('builtin tools', () => {
         const root = await createWorkspace()
         const bashTool = createBash(root)
 
-        await expect(bashTool.execute({
-          id: 'b2',
-          params: {
-            command: 'sleep 2',
-            timeout: 1000,
-          },
-          signal: new AbortController().signal,
-        })).rejects.toThrow('Process timed out')
+        await expect(
+          bashTool.execute({
+            id: 'b2',
+            params: {
+              command: 'sleep 2',
+              timeout: 1000,
+            },
+            signal: new AbortController().signal,
+          }),
+        ).rejects.toThrow('Process timed out')
       })
     })
   })

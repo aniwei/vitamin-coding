@@ -1,7 +1,5 @@
 import { describe, expect, it } from 'vitest'
-import {
-  createInMemoryResourceManager,
-} from '../src/resource-manager'
+import { createInMemoryResourceManager } from '../src/resource-manager'
 import type { PromptTemplate, LoadedResources } from '../src/resource-manager'
 
 // ═══ ResourceManager ═══

@@ -1,11 +1,23 @@
 import { cp, mkdir, rm, writeFile } from 'node:fs/promises'
 import { createRequire } from 'node:module'
+import { homedir } from 'node:os'
 import { join, relative, resolve } from 'node:path'
 import { createInterface } from 'node:readline'
+import type { Readable } from 'node:stream'
 
-import { createXMars, InteractiveMode, runJsonMode, runPrintMode } from '@x-mars/coding'
+import {
+  createXMars,
+  InteractiveMode,
+  runRpcMode,
+  runJsonMode,
+  runJsonStreamMode,
+  runPrintMode,
+  type AgentSession,
+  type RpcRequest,
+} from '@x-mars/coding'
+import { FileSettingStore, loadSetting, type XMarsSetting } from '@x-mars/setting'
 
-import type { CLIOptions, RunMode } from './types'
+import type { CLIOptions, RepositoryWorkflowOptions, RunMode } from './types'
 import {
   createFilePluginStateStore,
   importClaudeCodePlugin,
@@ -36,6 +48,8 @@ export function parseCLI(argv: string[]): ParsedCLI {
   let configPath: string | undefined
   let projectDir = process.cwd()
   let verbose = false
+  let ci = false
+  let workflow: RepositoryWorkflowOptions | undefined
   let maxTokens: number | undefined
   let continueSession: string | undefined
   let inspect: number | true | undefined
@@ -56,7 +70,10 @@ export function parseCLI(argv: string[]): ParsedCLI {
 
     // doctor / config / auth 不需要 prompt
     if (subCommand === 'run') {
-      prompt = args.slice(1).filter(a => !a.startsWith('-')).join(' ')
+      prompt = args
+        .slice(1)
+        .filter((a) => !a.startsWith('-'))
+        .join(' ')
       mode = 'print'
     }
   }
@@ -76,6 +93,9 @@ export function parseCLI(argv: string[]): ParsedCLI {
         break
       case '--json':
         mode = 'json'
+        break
+      case '--json-stream':
+        mode = 'json-stream'
         break
       case '--rpc':
         mode = 'rpc'
@@ -98,6 +118,28 @@ export function parseCLI(argv: string[]): ParsedCLI {
       case '--verbose':
       case '-v':
         verbose = true
+        break
+      case '--ci':
+        ci = true
+        break
+      case '--commit':
+        workflow = { ...workflow, commit: true }
+        if (mode === 'interactive') {
+          mode = 'print'
+        }
+        break
+      case '--pr':
+        workflow = { ...workflow, commit: true, pr: true }
+        if (mode === 'interactive') {
+          mode = 'print'
+        }
+        break
+      case '--base':
+        i++
+        workflow = { ...workflow, base: args[i] }
+        break
+      case '--draft':
+        workflow = { ...workflow, draft: true }
         break
       case '--max-tokens':
         i++
@@ -129,7 +171,7 @@ export function parseCLI(argv: string[]): ParsedCLI {
         }
         break
     }
-    
+
     i++
   }
 
@@ -141,6 +183,8 @@ export function parseCLI(argv: string[]): ParsedCLI {
       configPath,
       projectDir,
       verbose,
+      ci,
+      workflow,
       maxTokens,
       continueSession,
       inspect,
@@ -158,16 +202,23 @@ x-mars - AI 助理命令行工具
   x-mars [提示词]              使用提示词启动（print 模式）
   x-mars                       进入交互式 TUI 模式
   x-mars --json "query"        JSON 输出模式
+  x-mars --json-stream "query" JSON Lines 事件流输出模式
 
 选项:
   -i, --interactive         Interactive 模式（默认）
   -p, --print               Print 模式（非交互）
   --json                    JSON 输出模式
+  --json-stream             JSON Lines 事件流输出模式
   --rpc                     RPC 服务模式（供 SDK 使用）
   -m, --model <id>          指定模型
   -c, --config <path>       配置文件路径
   -d, --project <dir>       项目目录
   -v, --verbose             输出详细日志
+  --ci                      CI 模式：按结果返回稳定 exit code
+  --commit                  受控提交工作流：检查变更、验证后只提交相关文件
+  --pr                      受控 PR 工作流：在受控提交后创建或给出 PR 命令
+  --base <branch>           PR 目标分支
+  --draft                   创建 draft PR
   --max-tokens <n>          最大输出 token 数
   --continue <id>           继续已有会话
   --inspect[=port]          启用 Node.js inspector（默认: 9229）
@@ -203,9 +254,18 @@ export async function runCli(): Promise<number> {
   }
 
   if (subCommand === 'config') {
-    // TODO: implement config
-    return 0
+    return await runConfigCommand(subCommandArgs, options)
   }
+
+  if (options.mode !== 'interactive' && options.mode !== 'rpc') {
+    options.prompt = options.prompt ?? (await readStdinPrompt(process.stdin))
+  }
+
+  if (!options.prompt && hasRepositoryWorkflow(options.workflow)) {
+    options.prompt = 'Complete the requested repository workflow for the current workspace.'
+  }
+
+  options.prompt = buildRepositoryWorkflowPrompt(options.prompt, options.workflow)
 
   if (!options.prompt && options.mode !== 'interactive' && options.mode !== 'rpc') {
     printHelp()
@@ -241,7 +301,10 @@ export async function runCli(): Promise<number> {
       case 'print': {
         if (options.prompt) {
           const session = await app.createSession()
-          await runPrintMode(session, options.prompt)
+          const response = await runPrintMode(session, options.prompt)
+          if (options.ci) {
+            return getCiExitCode({ status: session.status, response })
+          }
         }
         break
       }
@@ -250,6 +313,19 @@ export async function runCli(): Promise<number> {
           const session = await app.createSession()
           const result = await runJsonMode(session, options.prompt)
           process.stdout.write(JSON.stringify(result, null, 2) + '\n')
+          if (options.ci) {
+            return getCiExitCode(result)
+          }
+        }
+        break
+      }
+      case 'json-stream': {
+        if (options.prompt) {
+          const session = await app.createSession()
+          const result = await runJsonStreamMode(session, options.prompt)
+          if (options.ci) {
+            return getCiExitCode(result)
+          }
         }
         break
       }
@@ -263,17 +339,18 @@ export async function runCli(): Promise<number> {
           requirePluginConfirmation: true,
         })
         const rl = createInterface({ input: process.stdin, output: process.stdout })
-        const prompt = () => rl.question('x-mars> ', async (input) => {
-          const result = await interactive.handleInput(input)
-          if (result.type === 'exit') {
-            rl.close()
-            return
-          }
-          if (result.type === 'response' || result.type === 'system') {
-            process.stdout.write(result.text + '\n')
-          }
-          prompt()
-        })
+        const prompt = () =>
+          rl.question('x-mars> ', async (input) => {
+            const result = await interactive.handleInput(input)
+            if (result.type === 'exit') {
+              rl.close()
+              return
+            }
+            if (result.type === 'response' || result.type === 'system') {
+              process.stdout.write(result.text + '\n')
+            }
+            prompt()
+          })
         await new Promise<void>((resolve) => {
           rl.on('close', resolve)
           prompt()
@@ -281,8 +358,8 @@ export async function runCli(): Promise<number> {
         break
       }
       case 'rpc': {
-        await app.createSession()
-        // TODO: implement RPC mode (stdin/stdout JSON-RPC)
+        const session = await app.createSession()
+        await runRpcLoop(session, process.stdin)
         break
       }
     }
@@ -291,6 +368,239 @@ export async function runCli(): Promise<number> {
   } finally {
     await app.stop()
   }
+}
+
+export function getCiExitCode(result: { status: string; response: string }): number {
+  if (result.status !== 'completed') {
+    return 1
+  }
+  const firstLine = result.response.trimStart().split(/\r?\n/, 1)[0]?.trim().toLowerCase()
+  if (firstLine === 'done_with_concerns') {
+    return 2
+  }
+  return 0
+}
+
+export function buildRepositoryWorkflowPrompt(
+  prompt: string | undefined,
+  workflow: RepositoryWorkflowOptions | undefined,
+): string | undefined {
+  if (!prompt || !hasRepositoryWorkflow(workflow)) {
+    return prompt
+  }
+
+  const lines = [
+    prompt,
+    '',
+    'Repository workflow constraints:',
+    '- Inspect repository status and relevant diffs before changing repository state.',
+    '- Treat unrelated or pre-existing changes as out of scope; do not stage, revert, or overwrite them.',
+    '- Run the relevant checks before finalizing. If checks fail, report the failing commands and finish with done_with_concerns.',
+  ]
+
+  if (workflow?.commit) {
+    lines.push(
+      '- Commit workflow: stage only files relevant to this task, create one concise commit, and report the commit hash.',
+      '- If relevant changes cannot be separated from unrelated work, do not commit; explain the blocker and finish with done_with_concerns.',
+    )
+  }
+
+  if (workflow?.pr) {
+    const base = workflow.base ? ` targeting ${workflow.base}` : ''
+    const draft = workflow.draft ? ' as a draft' : ''
+    lines.push(
+      `- PR workflow: after a successful controlled commit, create a pull request${base}${draft} when the repository tooling and authentication are available.`,
+      '- If PR creation is unavailable, do not keep retrying; provide the exact command the user can run and finish with done_with_concerns.',
+    )
+  }
+
+  return lines.join('\n')
+}
+
+function hasRepositoryWorkflow(workflow: RepositoryWorkflowOptions | undefined): boolean {
+  return Boolean(workflow?.commit || workflow?.pr)
+}
+
+export async function readStdinPrompt(
+  input: Readable & { isTTY?: boolean },
+): Promise<string | undefined> {
+  if (input.isTTY) {
+    return undefined
+  }
+
+  input.setEncoding('utf8')
+  let data = ''
+  for await (const chunk of input) {
+    data += String(chunk)
+  }
+
+  const trimmed = data.trim()
+  return trimmed.length > 0 ? trimmed : undefined
+}
+
+export async function runRpcLoop(
+  session: AgentSession,
+  input: Readable,
+  writer: (line: string) => void = (line) => process.stdout.write(`${line}\n`),
+): Promise<void> {
+  const rl = createInterface({ input, crlfDelay: Infinity })
+
+  for await (const line of rl) {
+    const trimmed = line.trim()
+    if (!trimmed) {
+      continue
+    }
+
+    try {
+      const request = JSON.parse(trimmed) as RpcRequest
+      const response = await runRpcMode(session, request)
+      writer(JSON.stringify(response))
+    } catch (error) {
+      const message = error instanceof Error ? error.message : String(error)
+      writer(JSON.stringify({ ok: false, error: message }))
+    }
+  }
+}
+
+export interface ConfigLayerPaths {
+  user: string
+  project: string
+  projectLocal: string
+  managed?: string
+}
+
+export function resolveConfigLayerPaths(
+  options: Pick<CLIOptions, 'projectDir' | 'configPath'>,
+  env: NodeJS.ProcessEnv = process.env,
+): ConfigLayerPaths {
+  const home = env.X_MARS_HOME || join(homedir(), '.x-mars')
+  return {
+    user: resolve(home, 'config.jsonc'),
+    project: resolve(options.configPath ?? resolve(options.projectDir, '.x-mars/config.jsonc')),
+    projectLocal: resolve(options.projectDir, '.x-mars/config.local.jsonc'),
+    managed: env.X_MARS_MANAGED_CONFIG ? resolve(env.X_MARS_MANAGED_CONFIG) : undefined,
+  }
+}
+
+export async function runConfigCommand(
+  argsText: string,
+  options: Pick<CLIOptions, 'projectDir' | 'configPath'>,
+  writer: (text: string) => void = (text) => process.stdout.write(text),
+): Promise<number> {
+  const args = argsText.trim().split(/\s+/).filter(Boolean)
+  const command = args[0] ?? 'list'
+  const key = args[1]
+  const paths = resolveConfigLayerPaths(options)
+
+  if (command === 'path' || command === 'paths') {
+    writer(formatConfigPaths(paths))
+    return 0
+  }
+
+  if (command !== 'list' && command !== 'get' && command !== 'set') {
+    writer('Usage: x-mars config [list|get <key>|set <key> <value>|path]\n')
+    return 1
+  }
+
+  if (command === 'set') {
+    if (!key || args.length < 3) {
+      writer('Usage: x-mars config set <key> <value>\n')
+      return 1
+    }
+
+    const configKey = key
+    const store = new FileSettingStore()
+    const existing = await store.read(paths.projectLocal)
+    const config = existing ? parseConfigObject(existing) : {}
+    setConfigValue(config, configKey, parseConfigValue(args.slice(2).join(' ')))
+    await store.write(paths.projectLocal, config)
+    writer(`Updated ${configKey} in ${paths.projectLocal}\n`)
+    return 0
+  }
+
+  const config = await loadSetting({
+    store: new FileSettingStore(),
+    paths: [paths.user, paths.project, paths.projectLocal, paths.managed].filter(
+      (path): path is string => Boolean(path),
+    ),
+  })
+
+  if (command === 'get') {
+    if (!key) {
+      writer('Usage: x-mars config get <key>\n')
+      return 1
+    }
+
+    const value = getConfigValue(config, key)
+    if (value === undefined) {
+      writer(`Config key not found: ${key}\n`)
+      return 1
+    }
+    writer(JSON.stringify(value, null, 2) + '\n')
+    return 0
+  }
+
+  writer(JSON.stringify(config, null, 2) + '\n')
+  return 0
+}
+
+function formatConfigPaths(paths: ConfigLayerPaths): string {
+  const lines = [
+    `user\t${paths.user ?? ''}`,
+    `project\t${paths.project ?? ''}`,
+    `project-local\t${paths.projectLocal ?? ''}`,
+  ]
+  if (paths.managed) {
+    lines.push(`managed\t${paths.managed}`)
+  }
+  return `${lines.join('\n')}\n`
+}
+
+function getConfigValue(config: Readonly<XMarsSetting>, key: string): unknown {
+  return key.split('.').reduce<unknown>((value, part) => {
+    if (typeof value !== 'object' || value === null) {
+      return undefined
+    }
+    return (value as Record<string, unknown>)[part]
+  }, config)
+}
+
+function setConfigValue(config: Record<string, unknown>, key: string, value: unknown): void {
+  const parts = key.split('.').filter(Boolean)
+  if (parts.length === 0) {
+    throw new Error('Config key cannot be empty')
+  }
+
+  let target = config
+  for (const part of parts.slice(0, -1)) {
+    const current = target[part]
+    if (typeof current !== 'object' || current === null || Array.isArray(current)) {
+      target[part] = {}
+    }
+    target = target[part] as Record<string, unknown>
+  }
+
+  target[parts[parts.length - 1]!] = value
+}
+
+function parseConfigValue(value: string): unknown {
+  try {
+    return JSON.parse(value)
+  } catch {
+    return value
+  }
+}
+
+function parseConfigObject(content: string): Record<string, unknown> {
+  const parsed = JSON.parse(stripJsonComments(content))
+  if (typeof parsed !== 'object' || parsed === null || Array.isArray(parsed)) {
+    return {}
+  }
+  return parsed as Record<string, unknown>
+}
+
+function stripJsonComments(content: string): string {
+  return content.replace(/\/\*[\s\S]*?\*\//g, '').replace(/(^|[^:])\/\/.*$/gm, '$1')
 }
 
 export async function runPluginCommand(

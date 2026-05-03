@@ -510,3 +510,34 @@ dispatchTask(args: { prompt, subagent, category, mode, slot, ... })
 ## 9. 一句话总结
 
 `@x-mars/coding` 当前是一个"以 `XMarsApp` 为装配中心、以 `AgentSession` 为执行中心、以 `Orchestrator` 为任务复用中心、以 `PromptManager + AgentProfile + Hook` 为方法论承载面"的 coding runtime；它已经具备主/子代理 prompt 自动分发、agent profile 模板组装、`write_todos` 纯 UI/记忆规划工具、`task_delegate` prompt-based 直接分发、preferredModelTier 自动选模、slot 透传、只读并行工具、phase 注入和运行学习的完整闭环。
+
+## 模块设计基线
+
+### 设计目的
+
+作为运行时总览设计文档，跨包描述 coding runtime 的装配原则、主路径和当前已落地的运行方式。
+
+### 接口设计
+
+- 面向读者的接口是文档章节：架构总览、组件职责、执行流程和边界说明。
+- 它引用 `@x-mars/coding`、`@x-mars/orchestrator`、`@x-mars/tools`、`@x-mars/prompt`、`@x-mars/memory` 的公共运行路径。
+
+### 方法论
+
+只记录当前代码已经落地的设计，不写未来态；跨包流程优先用图和边界说明表达。
+
+### 实现逻辑
+
+从 XMarsApp 装配开始，串联 Prompt、ToolRegistry、Orchestrator、AgentSession 和 Agent work-loop，说明数据如何穿过运行时。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[Runtime design doc] --> B[XMarsApp assembly]
+  B --> C[Prompt / Tools / Hooks / Memory]
+  C --> D[AgentSession]
+  D --> E[Agent work-loop]
+  E --> F[Events / Persistence / Orchestration]
+  F --> G[documented runtime behavior]
+```

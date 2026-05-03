@@ -18,28 +18,28 @@
 
 3 个核心页面：
 
-| 页面           | 功能                                                       |
-| -------------- | ---------------------------------------------------------- |
-| **Chat**       | 主聊天界面，消息流展示、工具调用可视化、任务列表            |
-| **CodeWiki**   | 代码文档可视化（文件结构、符号引用关系）                    |
+| 页面              | 功能                                                     |
+| ----------------- | -------------------------------------------------------- |
+| **Chat**          | 主聊天界面，消息流展示、工具调用可视化、任务列表         |
+| **CodeWiki**      | 代码文档可视化（文件结构、符号引用关系）                 |
 | **TraceAnalysis** | Agent 执行追踪分析（执行时间线、token 用量、工具调用图） |
 
 ### 状态管理（Pinia Stores）
 
 基于 Pinia 的模块化 store：
 
-| Store               | 职责                                      |
-| ------------------- | ----------------------------------------- |
-| `chatStore`         | 消息列表、输入状态、当前会话 ID           |
-| `sessionStore`      | 多会话管理（列表/创建/删除/切换）         |
-| `devtoolsStore`     | 调试面板状态、断点列表                    |
-| `fileChangesStore`  | 文件变更追踪（diff 显示）                 |
-| `logsStore`         | 日志条目展示                              |
-| `statusStore`       | Agent 状态机状态、WebSocket 连接状态       |
-| `subagentsStore`    | 子 Agent 状态（用于 orchestrator/swarm）  |
-| `toastStore`        | 全局通知消息（success / warning / error） |
-| `todoStore`         | 任务列表（与 Agent write_todos 工具同步） |
-| `traceStore`        | 执行追踪数据（turn 记录 + token 统计）    |
+| Store              | 职责                                      |
+| ------------------ | ----------------------------------------- |
+| `chatStore`        | 消息列表、输入状态、当前会话 ID           |
+| `sessionStore`     | 多会话管理（列表/创建/删除/切换）         |
+| `devtoolsStore`    | 调试面板状态、断点列表                    |
+| `fileChangesStore` | 文件变更追踪（diff 显示）                 |
+| `logsStore`        | 日志条目展示                              |
+| `statusStore`      | Agent 状态机状态、WebSocket 连接状态      |
+| `subagentsStore`   | 子 Agent 状态（用于 orchestrator/swarm）  |
+| `toastStore`       | 全局通知消息（success / warning / error） |
+| `todoStore`        | 任务列表（与 Agent write_todos 工具同步） |
+| `traceStore`       | 执行追踪数据（turn 记录 + token 统计）    |
 
 ### API 通信层（src/api/）
 
@@ -132,20 +132,20 @@ App.mount()
 
 ## 模块分层
 
-| 目录/文件              | 职责                                     |
-| ---------------------- | ---------------------------------------- |
-| `src/pages/`           | Chat / CodeWiki / TraceAnalysis 页面组件 |
-| `src/components/chat/` | 聊天相关组件（消息/输入/工具调用）       |
-| `src/components/devtools/` | 调试面板组件                         |
-| `src/stores/`          | Pinia 状态管理（9个 store）              |
-| `src/api/client.ts`    | HTTP API 客户端                          |
-| `src/api/websocket.ts` | WebSocket 客户端（自动重连）             |
-| `src/api/devtools.ts`  | 调试 API 客户端                          |
-| `src/composables/`     | Vue Composables                          |
-| `src/types/`           | 类型定义                                 |
-| `src/main.ts`          | Vue 应用入口（挂载 + Pinia + Router）    |
-| `vite.config.ts`       | Vite 构建配置（含 proxy 到后端）         |
-| `tailwind.config.js`   | Tailwind 样式配置                        |
+| 目录/文件                  | 职责                                     |
+| -------------------------- | ---------------------------------------- |
+| `src/pages/`               | Chat / CodeWiki / TraceAnalysis 页面组件 |
+| `src/components/chat/`     | 聊天相关组件（消息/输入/工具调用）       |
+| `src/components/devtools/` | 调试面板组件                             |
+| `src/stores/`              | Pinia 状态管理（9个 store）              |
+| `src/api/client.ts`        | HTTP API 客户端                          |
+| `src/api/websocket.ts`     | WebSocket 客户端（自动重连）             |
+| `src/api/devtools.ts`      | 调试 API 客户端                          |
+| `src/composables/`         | Vue Composables                          |
+| `src/types/`               | 类型定义                                 |
+| `src/main.ts`              | Vue 应用入口（挂载 + Pinia + Router）    |
+| `vite.config.ts`           | Vite 构建配置（含 proxy 到后端）         |
+| `tailwind.config.js`       | Tailwind 样式配置                        |
 
 ## 入口与依赖
 
@@ -158,7 +158,6 @@ App.mount()
 - 以 Vitest 组件测试 + E2E 测试（Playwright）为主
 - 覆盖：store 状态逻辑、WebSocket 事件处理、关键组件渲染
 
-
 ## 非目标
 
 - 不实现后端业务逻辑。
@@ -169,6 +168,7 @@ App.mount()
 ### 页面结构
 
 3 个核心页面：
+
 - **Chat**：主聊天界面，支持消息流、工具调用展示、任务列表
 - **CodeWiki**：代码文档可视化
 - **TraceAnalysis**：Agent 执行追踪分析
@@ -177,17 +177,17 @@ App.mount()
 
 基于 Zustand 的模块化 store：
 
-| Store | 职责 |
-|-------|------|
-| `chatStore` | 消息列表、输入状态、会话管理 |
-| `devtoolsStore` | 调试面板状态、断点管理 |
-| `fileChangesStore` | 文件变更追踪 |
-| `logsStore` | 日志展示 |
-| `statusStore` | Agent 状态、连接状态 |
-| `subagentsStore` | 子 Agent 状态 |
-| `toastStore` | 通知消息 |
-| `todoStore` | 任务列表 |
-| `traceStore` | 执行追踪数据 |
+| Store              | 职责                         |
+| ------------------ | ---------------------------- |
+| `chatStore`        | 消息列表、输入状态、会话管理 |
+| `devtoolsStore`    | 调试面板状态、断点管理       |
+| `fileChangesStore` | 文件变更追踪                 |
+| `logsStore`        | 日志展示                     |
+| `statusStore`      | Agent 状态、连接状态         |
+| `subagentsStore`   | 子 Agent 状态                |
+| `toastStore`       | 通知消息                     |
+| `todoStore`        | 任务列表                     |
+| `traceStore`       | 执行追踪数据                 |
 
 ### API 通信层
 
@@ -214,6 +214,7 @@ Layout/                  # 全局布局（导航、侧边栏）
 ### 流图可视化
 
 基于 `@xyflow/react`（原 React Flow）实现执行流可视化：
+
 - Agent 执行节点
 - 工具调用边
 - 分支和并行路径
@@ -242,15 +243,15 @@ Layout/                  # 全局布局（导航、侧边栏）
 
 ## 模块分层
 
-| 目录 | 职责 |
-|------|------|
-| `src/pages/` | Chat / CodeWiki / TraceAnalysis 页面 |
-| `src/components/` | 按功能域组织的组件 |
-| `src/stores/` | Zustand 状态管理 |
-| `src/api/` | HTTP + WebSocket 通信 |
-| `src/hooks/` | React Hooks |
-| `src/utils/` | 工具函数 |
-| `src/types/` | 类型定义 |
+| 目录              | 职责                                 |
+| ----------------- | ------------------------------------ |
+| `src/pages/`      | Chat / CodeWiki / TraceAnalysis 页面 |
+| `src/components/` | 按功能域组织的组件                   |
+| `src/stores/`     | Zustand 状态管理                     |
+| `src/api/`        | HTTP + WebSocket 通信                |
+| `src/hooks/`      | React Hooks                          |
+| `src/utils/`      | 工具函数                             |
+| `src/types/`      | 类型定义                             |
 
 ## 入口与依赖
 
@@ -261,3 +262,37 @@ Layout/                  # 全局布局（导航、侧边栏）
 ## 测试策略
 
 - 以 Storybook / E2E 测试为主
+
+## 模块设计基线
+
+### 设计目的
+
+提供浏览器端运行界面，承载会话、聊天、工具事件、TODO、状态和 devtools 的可视化交互。
+
+### 接口设计
+
+- `src/api/*`：REST/WebSocket 客户端。
+- `components/Chat` / `Layout` / `Devtools`：主要交互组件。
+- `stores/*`：前端状态模型。
+- `vite build`：构建静态资源到 service 可托管目录。
+
+### 方法论
+
+UI 只消费 service 暴露的协议事件，不直接触碰 Agent 内部对象；本地状态以 store 管理，网络边界以 api 层隔离。
+
+### 实现逻辑
+
+页面启动后建立 WebSocket，加载会话与工作区状态；用户输入发送到 service；流式事件更新消息、工具状态和调试面板。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[Browser UI] --> B[REST api]
+  A --> C[WebSocket]
+  B --> D[@x-mars/service]
+  C --> D
+  D --> E[AgentSession events]
+  E --> F[stores]
+  F --> G[components render]
+```

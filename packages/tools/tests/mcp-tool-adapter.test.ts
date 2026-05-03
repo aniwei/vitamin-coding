@@ -20,8 +20,7 @@ function createClientStub(
     getTools: () => tools,
     getServerInfo: () => null,
     onToolsChanged: () => {},
-    callTool: async () =>
-      callResult ?? { content: [{ type: 'text', text: 'stub result' }] },
+    callTool: async () => callResult ?? { content: [{ type: 'text', text: 'stub result' }] },
     connect: async () => {},
     disconnect: async () => {},
     refreshTools: async () => tools,
@@ -221,7 +220,9 @@ describe('MCP Tool Adapter', () => {
       const client = createClientStub('s', [tool])
       const adapted = createMcpToolAdapter(client, tool, 's')
 
-      expect(adapted.parameters.safeParse({ config: { host: 'localhost', port: 8080 } }).success).toBe(true)
+      expect(
+        adapted.parameters.safeParse({ config: { host: 'localhost', port: 8080 } }).success,
+      ).toBe(true)
       expect(adapted.parameters.safeParse({ config: { host: 'localhost' } }).success).toBe(true)
       expect(adapted.parameters.safeParse({ config: {} }).success).toBe(false) // host is required
     })
@@ -308,7 +309,9 @@ describe('MCP Tool Adapter', () => {
         inputSchema: { type: 'object' },
       }
       const callResult: McpToolCallResult = {
-        content: [{ type: 'resource', resource: { uri: 'file:///tmp/data.txt', text: 'file content' } }],
+        content: [
+          { type: 'resource', resource: { uri: 'file:///tmp/data.txt', text: 'file content' } },
+        ],
       }
       const client = createClientStub('fs', [tool], callResult)
       const adapted = createMcpToolAdapter(client, tool, 'fs')

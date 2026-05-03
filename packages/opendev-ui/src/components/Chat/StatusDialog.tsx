@@ -27,7 +27,9 @@ export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
   const [loading, setLoading] = useState(false)
 
   useEffect(() => {
-    if (!isOpen) {return}
+    if (!isOpen) {
+      return
+    }
     setLoading(true)
     listMCPServers()
       .then((data) => setMcpServers(data?.servers || []))
@@ -35,62 +37,64 @@ export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
       .finally(() => setLoading(false))
   }, [isOpen])
 
-  if (!isOpen) {return null}
+  if (!isOpen) {
+    return null
+  }
 
   return (
-    <div className="fixed inset-0 z-50 flex items-center justify-center" onClick={onClose}>
-      <div className="absolute inset-0 bg-black/30" />
+    <div className='fixed inset-0 z-50 flex items-center justify-center' onClick={onClose}>
+      <div className='absolute inset-0 bg-black/30' />
       <div
-        className="relative w-full max-w-md bg-bg-000 border border-border-300/30 rounded-xl shadow-2xl overflow-hidden"
+        className='relative w-full max-w-md bg-bg-000 border border-border-300/30 rounded-xl shadow-2xl overflow-hidden'
         onClick={(e) => e.stopPropagation()}
       >
-        <div className="flex items-center justify-between px-4 py-3 border-b border-border-300/20">
-          <h2 className="text-sm font-semibold text-text-000">Session Status</h2>
-          <button onClick={onClose} className="text-text-400 hover:text-text-200">
-            <X className="w-4 h-4" />
+        <div className='flex items-center justify-between px-4 py-3 border-b border-border-300/20'>
+          <h2 className='text-sm font-semibold text-text-000'>Session Status</h2>
+          <button onClick={onClose} className='text-text-400 hover:text-text-200'>
+            <X className='w-4 h-4' />
           </button>
         </div>
 
-        <div className="px-4 py-3 space-y-4 max-h-[60vh] overflow-y-auto">
+        <div className='px-4 py-3 space-y-4 max-h-[60vh] overflow-y-auto'>
           {/* Model Info */}
           <section>
-            <h3 className="text-xs font-semibold uppercase text-text-400 mb-2">Model</h3>
-            <div className="text-sm text-text-200 space-y-1">
-              <div className="flex justify-between">
-                <span className="text-text-400">Provider</span>
-                <span className="font-mono">{status?.modelProvider || '—'}</span>
+            <h3 className='text-xs font-semibold uppercase text-text-400 mb-2'>Model</h3>
+            <div className='text-sm text-text-200 space-y-1'>
+              <div className='flex justify-between'>
+                <span className='text-text-400'>Provider</span>
+                <span className='font-mono'>{status?.modelProvider || '—'}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-text-400">Model</span>
-                <span className="font-mono">{status?.model || '—'}</span>
+              <div className='flex justify-between'>
+                <span className='text-text-400'>Model</span>
+                <span className='font-mono'>{status?.model || '—'}</span>
               </div>
             </div>
           </section>
 
           {/* Session Info */}
           <section>
-            <h3 className="text-xs font-semibold uppercase text-text-400 mb-2">Session</h3>
-            <div className="text-sm text-text-200 space-y-1">
-              <div className="flex justify-between">
-                <span className="text-text-400">ID</span>
-                <span className="font-mono">{currentSessionId || '—'}</span>
+            <h3 className='text-xs font-semibold uppercase text-text-400 mb-2'>Session</h3>
+            <div className='text-sm text-text-200 space-y-1'>
+              <div className='flex justify-between'>
+                <span className='text-text-400'>ID</span>
+                <span className='font-mono'>{currentSessionId || '—'}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-text-400">Messages</span>
+              <div className='flex justify-between'>
+                <span className='text-text-400'>Messages</span>
                 <span>{sessionMessages}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-text-400">Mode</span>
-                <span className="capitalize">{status?.mode || '—'}</span>
+              <div className='flex justify-between'>
+                <span className='text-text-400'>Mode</span>
+                <span className='capitalize'>{status?.mode || '—'}</span>
               </div>
-              <div className="flex justify-between">
-                <span className="text-text-400">Autonomy</span>
+              <div className='flex justify-between'>
+                <span className='text-text-400'>Autonomy</span>
                 <span>{status?.autonomyLevel || '—'}</span>
               </div>
               {status?.sessionCost != null && (
-                <div className="flex justify-between">
-                  <span className="text-text-400">Cost</span>
-                  <span className="font-mono">
+                <div className='flex justify-between'>
+                  <span className='text-text-400'>Cost</span>
+                  <span className='font-mono'>
                     {status.sessionCost < 0.01
                       ? `$${status.sessionCost.toFixed(4)}`
                       : `$${status.sessionCost.toFixed(2)}`}
@@ -98,8 +102,8 @@ export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
                 </div>
               )}
               {status?.contextUsagePct != null && (
-                <div className="flex justify-between">
-                  <span className="text-text-400">Context Usage</span>
+                <div className='flex justify-between'>
+                  <span className='text-text-400'>Context Usage</span>
                   <span>{Math.round(status.contextUsagePct)}%</span>
                 </div>
               )}
@@ -108,22 +112,22 @@ export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
 
           {/* MCP Servers */}
           <section>
-            <h3 className="text-xs font-semibold uppercase text-text-400 mb-2">MCP Servers</h3>
+            <h3 className='text-xs font-semibold uppercase text-text-400 mb-2'>MCP Servers</h3>
             {loading ? (
-              <div className="text-sm text-text-400">Loading...</div>
+              <div className='text-sm text-text-400'>Loading...</div>
             ) : mcpServers.length === 0 ? (
-              <div className="text-sm text-text-400">No MCP servers configured</div>
+              <div className='text-sm text-text-400'>No MCP servers configured</div>
             ) : (
-              <div className="space-y-1.5">
+              <div className='space-y-1.5'>
                 {mcpServers.map((server) => (
-                  <div key={server.name} className="flex items-center gap-2 text-sm">
+                  <div key={server.name} className='flex items-center gap-2 text-sm'>
                     <span
                       className={`w-2 h-2 rounded-full flex-shrink-0 ${
                         server.status === 'connected' ? 'bg-emerald-500' : 'bg-gray-400'
                       }`}
                     />
-                    <span className="text-text-200 font-mono">{server.name}</span>
-                    <span className="text-text-400 text-xs">
+                    <span className='text-text-200 font-mono'>{server.name}</span>
+                    <span className='text-text-400 text-xs'>
                       {server.status === 'connected'
                         ? `connected (${server.toolsCount} tools)`
                         : 'disconnected'}
@@ -137,12 +141,14 @@ export function StatusDialog({ isOpen, onClose }: StatusDialogProps) {
           {/* Working Directory */}
           {status?.workingDirectory && (
             <section>
-              <h3 className="text-xs font-semibold uppercase text-text-400 mb-2">
+              <h3 className='text-xs font-semibold uppercase text-text-400 mb-2'>
                 Working Directory
               </h3>
-              <div className="text-sm text-text-200 font-mono break-all">{status.workingDirectory}</div>
+              <div className='text-sm text-text-200 font-mono break-all'>
+                {status.workingDirectory}
+              </div>
               {status.gitBranch && (
-                <div className="text-sm text-text-400 mt-1">Branch: {status.gitBranch}</div>
+                <div className='text-sm text-text-400 mt-1'>Branch: {status.gitBranch}</div>
               )}
             </section>
           )}

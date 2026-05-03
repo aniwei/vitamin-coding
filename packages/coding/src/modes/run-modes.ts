@@ -1,4 +1,4 @@
-import type { AgentMessage } from '@x-mars/agent'
+import type { AgentMessage, AgentSessionEvent } from '@x-mars/agent'
 import type {
   PermissionAuditLog,
   PermissionContext,
@@ -35,6 +35,13 @@ export interface JsonModeResult {
   status: string
   messageCount: number
   response: string
+}
+
+export interface JsonStreamEvent {
+  type: string
+  sessionId: string
+  timestamp: string
+  data?: Record<string, unknown>
 }
 
 export interface RpcPromptParams {
@@ -85,6 +92,30 @@ export async function runJsonMode(session: AgentSession, prompt: string): Promis
     status: session.status,
     messageCount: session.session.messages().length,
     response: getLastAssistantText(session.session.messages()),
+  }
+}
+
+export async function runJsonStreamMode(
+  session: AgentSession,
+  prompt: string,
+  writer: (event: JsonStreamEvent) => void = (event) =>
+    process.stdout.write(`${JSON.stringify(event)}\n`),
+): Promise<JsonModeResult> {
+  const unsubscribe = session.subscribe((event) => {
+    writer(serializeJsonStreamEvent(event))
+  })
+
+  try {
+    const result = await runJsonMode(session, prompt)
+    writer({
+      type: 'result',
+      sessionId: result.sessionId,
+      timestamp: new Date().toISOString(),
+      data: result as unknown as Record<string, unknown>,
+    })
+    return result
+  } finally {
+    unsubscribe()
   }
 }
 
@@ -631,4 +662,36 @@ export function getLastAssistantText(messages: readonly AgentMessage[]): string 
   }
 
   return ''
+}
+
+function serializeJsonStreamEvent(event: AgentSessionEvent): JsonStreamEvent {
+  const base = {
+    type: event.type,
+    sessionId: event.sessionId,
+    timestamp: new Date().toISOString(),
+  }
+
+  switch (event.type) {
+    case 'prompt_start':
+      return { ...base, data: { text: event.text } }
+    case 'stream_event':
+      return { ...base, data: { event: event.event } }
+    case 'streaming_start':
+      return { ...base, data: { model: event.model } }
+    case 'streaming_end':
+      return { ...base, data: { model: event.model, stopReason: event.stopReason } }
+    case 'turn_start':
+    case 'turn_end':
+      return { ...base, data: { turnIndex: event.turnIndex } }
+    case 'tool_call_start':
+      return { ...base, data: { toolCall: event.toolCall } }
+    case 'tool_call_end':
+      return { ...base, data: { toolCall: event.toolCall, isError: event.isError } }
+    case 'tool_execution_event':
+      return { ...base, data: { event: event.event } }
+    case 'error':
+      return { ...base, data: { message: event.error.message } }
+    default:
+      return base
+  }
 }

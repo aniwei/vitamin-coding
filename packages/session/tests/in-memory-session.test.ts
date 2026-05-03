@@ -78,7 +78,7 @@ describe('InMemorySession', () => {
       const session = new InMemorySession<string>('s1')
       session.append('a')
       session.append('b')
-      
+
       const ctx = session.buildContext()
       expect(ctx.summary).toBeUndefined()
       expect(ctx.messages).toEqual(['a', 'b'])
@@ -351,7 +351,7 @@ describe('InMemorySession', () => {
     it('#then lastActiveAt advances on append', async () => {
       const session = new InMemorySession<string>('lat-1')
       const t0 = session.metadata().lastActiveAt
-      await new Promise(r => setTimeout(r, 10))
+      await new Promise((r) => setTimeout(r, 10))
       session.append('x')
       expect(session.metadata().lastActiveAt).toBeGreaterThan(t0)
     })
@@ -360,7 +360,7 @@ describe('InMemorySession', () => {
       const session = new InMemorySession<string>('lat-2')
       session.append('x')
       const t0 = session.metadata().lastActiveAt
-      await new Promise(r => setTimeout(r, 10))
+      await new Promise((r) => setTimeout(r, 10))
       session.compact('s', 1)
       expect(session.metadata().lastActiveAt).toBeGreaterThan(t0)
     })
@@ -370,7 +370,7 @@ describe('InMemorySession', () => {
       session.append('x')
       const entryId = session.entries()[0].id
       const t0 = session.metadata().lastActiveAt
-      await new Promise(r => setTimeout(r, 10))
+      await new Promise((r) => setTimeout(r, 10))
       session.branch(entryId)
       expect(session.metadata().lastActiveAt).toBeGreaterThan(t0)
     })
@@ -378,7 +378,7 @@ describe('InMemorySession', () => {
     it('#then lastActiveAt advances on setTitle', async () => {
       const session = new InMemorySession<string>('lat-4')
       const t0 = session.metadata().lastActiveAt
-      await new Promise(r => setTimeout(r, 10))
+      await new Promise((r) => setTimeout(r, 10))
       session.setTitle('new')
       expect(session.metadata().lastActiveAt).toBeGreaterThan(t0)
     })

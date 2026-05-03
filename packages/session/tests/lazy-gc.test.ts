@@ -66,7 +66,7 @@ describe('SessionManager lazy idle collection', () => {
       threshold: 2,
     })
 
-    const first = await manager.create('first') as InMemorySession<string>
+    const first = (await manager.create('first')) as InMemorySession<string>
     ageSession(first, 100)
 
     await manager.create('second')
@@ -74,7 +74,12 @@ describe('SessionManager lazy idle collection', () => {
 
     await manager.create('third')
     expect(manager.get('first')).toBeUndefined()
-    expect(manager.list().map((session: { id: string }) => session.id).sort()).toEqual(['second', 'third'])
+    expect(
+      manager
+        .list()
+        .map((session: { id: string }) => session.id)
+        .sort(),
+    ).toEqual(['second', 'third'])
 
     manager.dispose()
   })
@@ -90,18 +95,64 @@ describe('SessionManager lazy idle collection', () => {
     await manager.create('first')
     await manager.create('second')
 
-    await expect(manager.create('third')).rejects.toThrow('Max sessions (2) reached after idle collection.')
+    await expect(manager.create('third')).rejects.toThrow(
+      'Max sessions (2) reached after idle collection.',
+    )
 
     manager.dispose()
   })
 
   it('restoreAll respects existing sessions, lazy collection, and hard capacity', async () => {
     const now = Date.now()
-    const persistence = new InMemoryPersistence<string>(new Map([
-      ['remote-1', { version: 1, id: 'remote-1', entries: [], metadata: { createdAt: now, lastActiveAt: now, messageCount: 0, compactionCount: 0, tags: [] } }],
-      ['remote-2', { version: 1, id: 'remote-2', entries: [], metadata: { createdAt: now, lastActiveAt: now, messageCount: 0, compactionCount: 0, tags: [] } }],
-      ['remote-3', { version: 1, id: 'remote-3', entries: [], metadata: { createdAt: now, lastActiveAt: now, messageCount: 0, compactionCount: 0, tags: [] } }],
-    ]))
+    const persistence = new InMemoryPersistence<string>(
+      new Map([
+        [
+          'remote-1',
+          {
+            version: 1,
+            id: 'remote-1',
+            entries: [],
+            metadata: {
+              createdAt: now,
+              lastActiveAt: now,
+              messageCount: 0,
+              compactionCount: 0,
+              tags: [],
+            },
+          },
+        ],
+        [
+          'remote-2',
+          {
+            version: 1,
+            id: 'remote-2',
+            entries: [],
+            metadata: {
+              createdAt: now,
+              lastActiveAt: now,
+              messageCount: 0,
+              compactionCount: 0,
+              tags: [],
+            },
+          },
+        ],
+        [
+          'remote-3',
+          {
+            version: 1,
+            id: 'remote-3',
+            entries: [],
+            metadata: {
+              createdAt: now,
+              lastActiveAt: now,
+              messageCount: 0,
+              compactionCount: 0,
+              tags: [],
+            },
+          },
+        ],
+      ]),
+    )
 
     const manager = new SessionManager<string>({
       store: createInMemorySessionStore<string>(),
@@ -111,14 +162,19 @@ describe('SessionManager lazy idle collection', () => {
       threshold: 2,
     })
 
-    const stale = await manager.create('stale') as InMemorySession<string>
+    const stale = (await manager.create('stale')) as InMemorySession<string>
     await manager.create('keep')
     ageSession(stale, 100)
 
     const restored = await manager.restoreAll()
 
     expect(restored).toBe(2)
-    expect(manager.list().map((session: { id: string }) => session.id).sort()).toEqual(['keep', 'remote-1', 'remote-2'])
+    expect(
+      manager
+        .list()
+        .map((session: { id: string }) => session.id)
+        .sort(),
+    ).toEqual(['keep', 'remote-1', 'remote-2'])
 
     manager.dispose()
   })

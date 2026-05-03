@@ -38,10 +38,7 @@ export function ModelSettings() {
   const loadSettings = async () => {
     try {
       setLoading(true)
-      const [providersData, configData] = await Promise.all([
-        api.listProviders(),
-        api.getSetting(),
-      ])
+      const [providersData, configData] = await Promise.all([api.listProviders(), api.getSetting()])
 
       setProviders(providersData)
       setConfig(configData)
@@ -109,9 +106,9 @@ export function ModelSettings() {
 
   if (loading) {
     return (
-      <div className="flex items-center justify-center py-12">
-        <div className="flex items-center gap-2 text-gray-600">
-          <div className="w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin" />
+      <div className='flex items-center justify-center py-12'>
+        <div className='flex items-center gap-2 text-gray-600'>
+          <div className='w-4 h-4 border-2 border-gray-300 border-t-gray-600 rounded-full animate-spin' />
           <span>Loading settings...</span>
         </div>
       </div>
@@ -119,26 +116,26 @@ export function ModelSettings() {
   }
 
   return (
-    <div className="space-y-6">
+    <div className='space-y-6'>
       {/* Header Info */}
-      <div className="bg-blue-50 border border-blue-200 rounded-lg p-4">
-        <div className="flex items-start gap-3">
+      <div className='bg-blue-50 border border-blue-200 rounded-lg p-4'>
+        <div className='flex items-start gap-3'>
           <svg
-            className="w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5"
-            fill="none"
-            viewBox="0 0 24 24"
-            stroke="currentColor"
+            className='w-5 h-5 text-blue-600 flex-shrink-0 mt-0.5'
+            fill='none'
+            viewBox='0 0 24 24'
+            stroke='currentColor'
           >
             <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              strokeLinecap='round'
+              strokeLinejoin='round'
               strokeWidth={2}
-              d="M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z"
+              d='M13 16h-1v-4h-1m1-4h.01M21 12a9 9 0 11-18 0 9 9 0 0118 0z'
             />
           </svg>
-          <div className="flex-1">
-            <h4 className="text-sm font-semibold text-blue-900 mb-1">Model System</h4>
-            <p className="text-xs text-blue-700 leading-relaxed">
+          <div className='flex-1'>
+            <h4 className='text-sm font-semibold text-blue-900 mb-1'>Model System</h4>
+            <p className='text-xs text-blue-700 leading-relaxed'>
               Configure different models for different tasks: <strong>Normal</strong> for standard
               coding,
               <strong> Thinking</strong> for complex reasoning, <strong>Compact</strong> for context
@@ -152,15 +149,15 @@ export function ModelSettings() {
 
       {/* Normal Model */}
       <ModelSlot
-        title="Normal Model"
-        description="For standard coding tasks and general-purpose operations"
+        title='Normal Model'
+        description='For standard coding tasks and general-purpose operations'
         icon={
-          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className='w-5 h-5 text-white' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
             <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              strokeLinecap='round'
+              strokeLinejoin='round'
               strokeWidth={2}
-              d="M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4"
+              d='M10 20l4-16m4 4l4 4-4 4M6 16l-4-4 4-4'
             />
           </svg>
         }
@@ -173,15 +170,15 @@ export function ModelSettings() {
 
       {/* Thinking Model */}
       <ModelSlot
-        title="Thinking Model"
-        description="For complex reasoning and planning tasks (falls back to Normal if not set)"
+        title='Thinking Model'
+        description='For complex reasoning and planning tasks (falls back to Normal if not set)'
         icon={
-          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className='w-5 h-5 text-white' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
             <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              strokeLinecap='round'
+              strokeLinejoin='round'
               strokeWidth={2}
-              d="M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z"
+              d='M9.663 17h4.673M12 3v1m6.364 1.636l-.707.707M21 12h-1M4 12H3m3.343-5.657l-.707-.707m2.828 9.9a5 5 0 117.072 0l-.548.547A3.374 3.374 0 0014 18.469V19a2 2 0 11-4 0v-.531c0-.895-.356-1.754-.988-2.386l-.548-.547z'
             />
           </svg>
         }
@@ -191,20 +188,20 @@ export function ModelSettings() {
         onProviderChange={setThinkingProvider}
         onModelChange={setThinkingModel}
         optional
-        notSetText="Use Normal Model"
+        notSetText='Use Normal Model'
       />
 
       {/* Compact Model */}
       <ModelSlot
-        title="Compact Model"
-        description="For context compaction summaries (falls back to Normal)"
+        title='Compact Model'
+        description='For context compaction summaries (falls back to Normal)'
         icon={
-          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className='w-5 h-5 text-white' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
             <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              strokeLinecap='round'
+              strokeLinejoin='round'
               strokeWidth={2}
-              d="M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10"
+              d='M19 11H5m14 0a2 2 0 012 2v6a2 2 0 01-2 2H5a2 2 0 01-2-2v-6a2 2 0 012-2m14 0V9a2 2 0 00-2-2M5 11V9a2 2 0 012-2m0 0V5a2 2 0 012-2h6a2 2 0 012 2v2M7 7h10'
             />
           </svg>
         }
@@ -214,26 +211,26 @@ export function ModelSettings() {
         onProviderChange={setCompactProvider}
         onModelChange={setCompactModel}
         optional
-        notSetText="Use Normal Model"
+        notSetText='Use Normal Model'
       />
 
       {/* Vision Model */}
       <ModelSlot
-        title="Vision Model"
-        description="For image processing and multi-modal tasks (vision unavailable if not set)"
+        title='Vision Model'
+        description='For image processing and multi-modal tasks (vision unavailable if not set)'
         icon={
-          <svg className="w-5 h-5 text-white" fill="none" viewBox="0 0 24 24" stroke="currentColor">
+          <svg className='w-5 h-5 text-white' fill='none' viewBox='0 0 24 24' stroke='currentColor'>
             <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              strokeLinecap='round'
+              strokeLinejoin='round'
               strokeWidth={2}
-              d="M15 12a3 3 0 11-6 0 3 3 0 016 0z"
+              d='M15 12a3 3 0 11-6 0 3 3 0 016 0z'
             />
             <path
-              strokeLinecap="round"
-              strokeLinejoin="round"
+              strokeLinecap='round'
+              strokeLinejoin='round'
               strokeWidth={2}
-              d="M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z"
+              d='M2.458 12C3.732 7.943 7.523 5 12 5c4.478 0 8.268 2.943 9.542 7-1.274 4.057-5.064 7-9.542 7-4.477 0-8.268-2.943-9.542-7z'
             />
           </svg>
         }
@@ -243,28 +240,28 @@ export function ModelSettings() {
         onProviderChange={setVisionProvider}
         onModelChange={setVisionModel}
         optional
-        notSetText="Vision Disabled"
+        notSetText='Vision Disabled'
       />
 
       {/* Global Settings */}
-      <div className="border-t border-gray-200 pt-6 space-y-4">
-        <h3 className="text-sm font-semibold text-gray-900">Global Settings</h3>
+      <div className='border-t border-gray-200 pt-6 space-y-4'>
+        <h3 className='text-sm font-semibold text-gray-900'>Global Settings</h3>
 
         {/* Temperature */}
         <div>
-          <label className="block text-sm font-medium text-gray-900 mb-2">
+          <label className='block text-sm font-medium text-gray-900 mb-2'>
             Temperature: {temperature.toFixed(2)}
           </label>
           <input
-            type="range"
-            min="0"
-            max="2"
-            step="0.1"
+            type='range'
+            min='0'
+            max='2'
+            step='0.1'
             value={temperature}
             onChange={(e) => setTemperature(Number.parseFloat(e.target.value))}
-            className="w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer"
+            className='w-full h-2 bg-gray-200 rounded-lg appearance-none cursor-pointer'
           />
-          <div className="flex justify-between text-xs text-gray-500 mt-1">
+          <div className='flex justify-between text-xs text-gray-500 mt-1'>
             <span>Precise</span>
             <span>Balanced</span>
             <span>Creative</span>
@@ -273,15 +270,15 @@ export function ModelSettings() {
       </div>
 
       {/* Save Button */}
-      <div className="pt-4 border-t border-gray-200">
+      <div className='pt-4 border-t border-gray-200'>
         <button
           onClick={handleSave}
           disabled={saving}
-          className="w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium shadow-md hover:shadow-lg"
+          className='w-full px-4 py-3 bg-gradient-to-r from-blue-500 to-purple-600 hover:from-blue-600 hover:to-purple-700 text-white rounded-lg disabled:opacity-50 disabled:cursor-not-allowed transition-all font-medium shadow-md hover:shadow-lg'
         >
           {saving ? (
-            <span className="flex items-center justify-center gap-2">
-              <div className="w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin" />
+            <span className='flex items-center justify-center gap-2'>
+              <div className='w-4 h-4 border-2 border-white border-t-transparent rounded-full animate-spin' />
               Saving...
             </span>
           ) : (

@@ -162,9 +162,7 @@ describe('buildIndexContent', () => {
   describe('#given long description', () => {
     it('#then truncates to 120 chars', () => {
       const longDesc = 'A'.repeat(200)
-      const entries: MemoryEntry[] = [
-        { ...sampleEntry, description: longDesc },
-      ]
+      const entries: MemoryEntry[] = [{ ...sampleEntry, description: longDesc }]
 
       const content = buildIndexContent(entries)
       expect(content).not.toContain(longDesc)
@@ -246,8 +244,9 @@ describe('filterMemoryByScope', () => {
       },
     ]
 
-    expect(filterMemoryByScope(scoped, { scopes: ['team'], team: 'platform' }).map((e) => e.name))
-      .toEqual(['platform_api'])
+    expect(
+      filterMemoryByScope(scoped, { scopes: ['team'], team: 'platform' }).map((e) => e.name),
+    ).toEqual(['platform_api'])
   })
 })
 

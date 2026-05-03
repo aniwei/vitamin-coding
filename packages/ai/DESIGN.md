@@ -177,3 +177,36 @@ ProviderRegistry.resolveAccessKey(model)
 - 测试文件数：13
 - 覆盖：API Key 解析、费用计算、事件流背压、回退链、OAuth 流程、模型注册、Provider 注册、流式调用、Token 计数等。
 - 集成风格：直接构造对象并调用，不使用 mock。
+
+## 模块设计基线
+
+### 设计目的
+
+提供模型、Provider、认证、流式事件和成本统计的统一抽象，使 Agent 不依赖具体厂商 API。
+
+### 接口设计
+
+- `ModelRegistry` / `ModelSlot`：注册并按工作流插槽解析模型。
+- `ProviderRegistry`：按模型 provider 懒加载并调用 provider。
+- `AuthStore` / `OAuthRegistry`：解析 API key 和 OAuth 凭证。
+- `stream()` / `complete()` / `simple()`：统一模型调用入口。
+
+### 方法论
+
+把模型能力、认证来源和调用协议拆开；Provider 只负责协议适配，Registry 负责选择与生命周期，调用方只消费标准消息和 `StreamEvent`。
+
+### 实现逻辑
+
+调用方提交标准消息、工具和模型规格；注册表解析模型与 provider，认证层解析凭证，provider 输出流事件，最终折叠为 `AssistantMessage`。
+
+### 流程逻辑图
+
+```mermaid
+flowchart TD
+  A[Agent request] --> B[ModelSlot / ModelRegistry]
+  B --> C[ProviderRegistry]
+  C --> D[AuthStore]
+  D --> E[Provider.converse]
+  E --> F[StreamEvent]
+  F --> G[AssistantMessage / usage / cost]
+```

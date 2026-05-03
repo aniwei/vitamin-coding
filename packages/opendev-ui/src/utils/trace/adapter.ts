@@ -11,8 +11,12 @@ function makeUuid(index: number, suffix?: string): string {
 }
 
 function stringifyResult(result: unknown): string {
-  if (result === null || result === undefined) {return ''}
-  if (typeof result === 'string') {return result}
+  if (result === null || result === undefined) {
+    return ''
+  }
+  if (typeof result === 'string') {
+    return result
+  }
   try {
     return JSON.stringify(result, null, 2)
   } catch {
@@ -33,7 +37,9 @@ export function adaptOpenDevMessages(
   for (let i = 0; i < messages.length; i++) {
     const msg = messages[i]
 
-    if (msg.role === 'system') {continue}
+    if (msg.role === 'system') {
+      continue
+    }
 
     if (msg.role === 'user') {
       const uuid = makeUuid(i, 'user')
@@ -87,15 +93,12 @@ export function adaptOpenDevMessages(
       // 将 token 使用量映射到 trace 视图所需的格式
       const usage = msg.tokenUsage
         ? {
-            inputTokens: (msg.tokenUsage.inputTokens ??
-              msg.tokenUsage.promptTokens ??
-              0) as number,
+            inputTokens: (msg.tokenUsage.inputTokens ?? msg.tokenUsage.promptTokens ?? 0) as number,
             outputTokens: (msg.tokenUsage.outputTokens ??
               msg.tokenUsage.completionTokens ??
               0) as number,
             cacheReadInputTokens: (msg.tokenUsage.cacheReadInputTokens ?? 0) as number,
-            cacheCreationInputTokens: (msg.tokenUsage.cacheCreationInputTokens ??
-              0) as number,
+            cacheCreationInputTokens: (msg.tokenUsage.cacheCreationInputTokens ?? 0) as number,
           }
         : undefined
 
